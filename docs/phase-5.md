@@ -483,6 +483,12 @@ Phase 5.11 は、固定 review seed の Phase 5.10 gate を保ったまま、rot
 * entry support instability は score 全体の合計、entry ごとの局所最大、連続発生、解決期限未達を確認できる。
 * manual listening judgement が `pass` でない代表 seed と境界 seed は、引き続き Phase 6 前 blocker として review bundle に残る。
 
+#### Phase 5.11 後の再レビュー
+
+Phase 5.11 後の複数 seed review では、固定 review seed、rotation seed、adversarial seed はすべて自動 gate を通過したが、20 seed に margin follow-up が残った。特に entry support instability の局所最大と連続発生、modal seed の counter-subject identity、shared rhythm overlap、leap recovery miss が閾値付近に張り付いている。詳細は `phase-5-11-quality-review.md` を参照する。
+
+このため、Phase 6 の操作パラメータへ進む前に、Phase 5.12 では旋律線、entry 支持和声、装飾、フレーズ境界を候補生成と scoring の両方で改善する。Phase 5.13 では follow-up の理由を seed、section、voice、entry/cadence 周辺の単位で説明できるようにする。
+
 ### Phase 5.12: 旋律線とフレーズ整形
 
 * 大跳躍後の反行、順次回収、局所的な山と谷、長期 contour を候補生成と scoring に入れる。
@@ -491,6 +497,8 @@ Phase 5.11 は、固定 review seed の Phase 5.10 gate を保ったまま、rot
 * 装飾は候補密度だけでなく、phrase、cadence、entry に対する配置理由を diagnostics へ残す。
 * subject return や cadence target の前後に、聴感上の呼吸と緊張解決が分かる phrase boundary を置く。
 * `bright-answer`、`contrary-motion`、`modal-answer` は leap recovery の境界 seed として扱う。
+* `tight-stretto`、`modal-cadence`、`fugue-smoke`、`wide-key`、`contrary-answer` は entry 支持和声の境界 seed として扱う。
+* `restless-line`、`minor-entry`、`sparse-cadence`、`modal-answer` は rhythmic independence と shared rhythm の境界 seed として扱う。
 * `ornament-test` と `ornament-cadence` は、装飾密度ではなく装飾の配置理由を diagnostics で説明できる境界 seed にする。
 
 ### Phase 5.13: 評価重みと pairwise preference
