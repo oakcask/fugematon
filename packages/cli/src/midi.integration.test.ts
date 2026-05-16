@@ -91,6 +91,14 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
             rhythmicIndependenceScore: number;
           };
         };
+        phase59Gate: {
+          passed: boolean;
+          failures: unknown[];
+          metrics: {
+            selectedCandidateEvaluationCount: number;
+            maxSelectedCandidateTextureCost: number;
+          };
+        };
       }[];
     };
     const listeningReview = JSON.parse(await readFile(join(directory, "listening-review.json"), "utf8")) as {
@@ -134,6 +142,10 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       assert.ok(entry.diagnosticsSummary.hardConstraintFailures >= 0);
       assert.ok(entry.diagnosticsSummary.texture.rhythmicIndependenceScore >= 0);
       assert.ok(entry.diagnosticsSummary.texture.rhythmicIndependenceScore <= 1);
+      assert.equal(typeof entry.phase59Gate.passed, "boolean");
+      assert.ok(Array.isArray(entry.phase59Gate.failures));
+      assert.ok(entry.phase59Gate.metrics.selectedCandidateEvaluationCount >= 0);
+      assert.ok(entry.phase59Gate.metrics.maxSelectedCandidateTextureCost >= 0);
     }
     for (const entry of listeningReview.seeds) {
       assert.ok(files.includes(entry.diagnosticsFile));
@@ -141,7 +153,16 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       assert.equal(entry.judgement, "not-reviewed");
       assert.equal(entry.criteria.subjectMemorability, "not-reviewed");
       assert.equal(entry.notes, "");
-      assert.deepEqual(entry.blockers, []);
+      if (
+        entry.seed === "bach-001" ||
+        entry.seed === "fugue-smoke" ||
+        entry.seed === "minor-entry" ||
+        entry.seed === "wide-key"
+      ) {
+        assert.deepEqual(entry.blockers, ["manual listening judgement must be pass before Phase 6"]);
+      } else {
+        assert.deepEqual(entry.blockers, []);
+      }
       assert.ok(!entry.diagnosticsFile.includes(directory));
       assert.ok(!entry.midiFile.includes(directory));
     }

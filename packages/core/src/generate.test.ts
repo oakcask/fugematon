@@ -19,6 +19,7 @@ import {
 } from "./constants.js";
 import type { MetaEvent, NoteEvent, ScoreEvent } from "./events.js";
 import { generateScore } from "./generate.js";
+import { evaluatePhase59Diagnostics } from "./review-gate.js";
 
 test("generateScore is deterministic for identical input", () => {
   const input = {
@@ -420,24 +421,32 @@ test("generateScore reports phase-5.7 modal context diagnostics", () => {
 test("generateScore applies phase-5.9 beauty gates across review seeds", () => {
   for (const { seed } of PHASE_5_REVIEW_SEEDS) {
     const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
-    const evaluations = output.diagnostics.selectedCandidateEvaluations;
-    const textureCosts = evaluations.map((evaluation) => evaluation.dimensions.texture.cost);
-    const melodyCosts = evaluations.map((evaluation) => evaluation.dimensions.melody.cost);
+    const gate = evaluatePhase59Diagnostics(seed, output.diagnostics);
 
-    assert.ok(evaluations.length > 0);
+    assert.deepEqual(gate.failures, []);
+    assert.equal(gate.passed, true);
     assert.ok(
-      output.diagnostics.counterSubjectIdentityRetention >=
-        PHASE_5_9_DIAGNOSTICS_PROFILE.minCounterSubjectIdentityRetention,
+      gate.metrics.counterSubjectIdentityRetention >= PHASE_5_9_DIAGNOSTICS_PROFILE.minCounterSubjectIdentityRetention,
     );
-    assert.ok(output.diagnostics.rhythmicIndependenceScore >= PHASE_5_9_DIAGNOSTICS_PROFILE.minRhythmicIndependenceScore);
-    assert.ok(output.diagnostics.unisonOverlapCount <= PHASE_5_9_DIAGNOSTICS_PROFILE.maxUnisonOverlapCount);
-    assert.ok(output.diagnostics.sameDirectionMotionCount <= PHASE_5_9_DIAGNOSTICS_PROFILE.maxSameDirectionMotionCount);
-    assert.ok(output.diagnostics.sharedRhythmOverlapCount <= PHASE_5_9_DIAGNOSTICS_PROFILE.maxSharedRhythmOverlapCount);
-    assert.ok(output.diagnostics.leapRecoveryMisses <= PHASE_5_9_DIAGNOSTICS_PROFILE.maxLeapRecoveryMisses);
-    assert.ok(Math.max(...textureCosts) <= PHASE_5_9_DIAGNOSTICS_PROFILE.maxSelectedCandidateTextureCost);
-    assert.ok(average(textureCosts) <= PHASE_5_9_DIAGNOSTICS_PROFILE.maxAverageSelectedCandidateTextureCost);
-    assert.ok(Math.max(...melodyCosts) <= PHASE_5_9_DIAGNOSTICS_PROFILE.maxSelectedCandidateMelodyCost);
-    assert.ok(average(melodyCosts) <= PHASE_5_9_DIAGNOSTICS_PROFILE.maxAverageSelectedCandidateMelodyCost);
+    assert.ok(gate.metrics.rhythmicIndependenceScore >= PHASE_5_9_DIAGNOSTICS_PROFILE.minRhythmicIndependenceScore);
+    assert.ok(gate.metrics.unisonOverlapCount <= PHASE_5_9_DIAGNOSTICS_PROFILE.maxUnisonOverlapCount);
+    assert.ok(gate.metrics.sameDirectionMotionCount <= PHASE_5_9_DIAGNOSTICS_PROFILE.maxSameDirectionMotionCount);
+    assert.ok(gate.metrics.sharedRhythmOverlapCount <= PHASE_5_9_DIAGNOSTICS_PROFILE.maxSharedRhythmOverlapCount);
+    assert.ok(gate.metrics.leapRecoveryMisses <= PHASE_5_9_DIAGNOSTICS_PROFILE.maxLeapRecoveryMisses);
+    assert.ok(
+      gate.metrics.maxSelectedCandidateTextureCost <= PHASE_5_9_DIAGNOSTICS_PROFILE.maxSelectedCandidateTextureCost,
+    );
+    assert.ok(
+      gate.metrics.averageSelectedCandidateTextureCost <=
+        PHASE_5_9_DIAGNOSTICS_PROFILE.maxAverageSelectedCandidateTextureCost,
+    );
+    assert.ok(
+      gate.metrics.maxSelectedCandidateMelodyCost <= PHASE_5_9_DIAGNOSTICS_PROFILE.maxSelectedCandidateMelodyCost,
+    );
+    assert.ok(
+      gate.metrics.averageSelectedCandidateMelodyCost <=
+        PHASE_5_9_DIAGNOSTICS_PROFILE.maxAverageSelectedCandidateMelodyCost,
+    );
   }
 });
 
@@ -475,11 +484,6 @@ test("generateScore applies phase-5.9 boundary seed gates", () => {
 
 function countIssues(issues: readonly { code: string }[], code: string): number {
   return issues.filter((issue) => issue.code === code).length;
-}
-
-function average(values: readonly number[]): number {
-  assert.ok(values.length > 0);
-  return values.reduce((total, value) => total + value, 0) / values.length;
 }
 
 function asMetaEvent(event: ScoreEvent | undefined): MetaEvent {
