@@ -121,3 +121,36 @@ export const PHASE_5_7_DIAGNOSTICS_PROFILE = {
   minModalCadenceHits: 1,
   maxTonalCadenceOveruseWarnings: 0,
 } as const;
+
+export const PHASE_5_9_DIAGNOSTICS_PROFILE = {
+  minCounterSubjectIdentityRetention: 0.58,
+  minRhythmicIndependenceScore: 0.08,
+  maxUnisonOverlapCount: 762,
+  maxSameDirectionMotionCount: 661,
+  maxSharedRhythmOverlapCount: 906,
+  maxLeapRecoveryMisses: 30,
+  maxSelectedCandidateTextureCost: 1050,
+  maxAverageSelectedCandidateTextureCost: 805,
+  maxSelectedCandidateMelodyCost: 315,
+  maxAverageSelectedCandidateMelodyCost: 76,
+  boundarySeeds: {
+    "modal-dorian": {
+      minCounterSubjectIdentityRetention: 0.58,
+      minModalContextCount: 1,
+      minModalCharacteristicToneHits: 1,
+      minModalCadenceHits: 1,
+    },
+    "close-imitation": {
+      minCounterSubjectIdentityRetention: 0.84,
+      maxSharedRhythmOverlapCount: 810,
+    },
+    "sparse-cadence": {
+      maxLeapRecoveryMisses: 13,
+      minCounterSubjectIdentityRetention: 0.94,
+    },
+    "ornament-test": {
+      minOrnamentDensity: 0.1,
+      maxSelectedCandidateTextureCost: 995,
+    },
+  },
+} as const;

@@ -10,6 +10,7 @@ import {
   PHASE_4_REPRESENTATIVE_SEEDS,
   PHASE_5_6_DIAGNOSTICS_PROFILE,
   PHASE_5_7_DIAGNOSTICS_PROFILE,
+  PHASE_5_9_DIAGNOSTICS_PROFILE,
   PHASE_5_DIAGNOSTICS_PROFILE,
   PHASE_5_LENGTH_TICKS,
   PHASE_5_REVIEW_SEEDS,
@@ -416,8 +417,69 @@ test("generateScore reports phase-5.7 modal context diagnostics", () => {
   );
 });
 
+test("generateScore applies phase-5.9 beauty gates across review seeds", () => {
+  for (const { seed } of PHASE_5_REVIEW_SEEDS) {
+    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
+    const evaluations = output.diagnostics.selectedCandidateEvaluations;
+    const textureCosts = evaluations.map((evaluation) => evaluation.dimensions.texture.cost);
+    const melodyCosts = evaluations.map((evaluation) => evaluation.dimensions.melody.cost);
+
+    assert.ok(evaluations.length > 0);
+    assert.ok(
+      output.diagnostics.counterSubjectIdentityRetention >=
+        PHASE_5_9_DIAGNOSTICS_PROFILE.minCounterSubjectIdentityRetention,
+    );
+    assert.ok(output.diagnostics.rhythmicIndependenceScore >= PHASE_5_9_DIAGNOSTICS_PROFILE.minRhythmicIndependenceScore);
+    assert.ok(output.diagnostics.unisonOverlapCount <= PHASE_5_9_DIAGNOSTICS_PROFILE.maxUnisonOverlapCount);
+    assert.ok(output.diagnostics.sameDirectionMotionCount <= PHASE_5_9_DIAGNOSTICS_PROFILE.maxSameDirectionMotionCount);
+    assert.ok(output.diagnostics.sharedRhythmOverlapCount <= PHASE_5_9_DIAGNOSTICS_PROFILE.maxSharedRhythmOverlapCount);
+    assert.ok(output.diagnostics.leapRecoveryMisses <= PHASE_5_9_DIAGNOSTICS_PROFILE.maxLeapRecoveryMisses);
+    assert.ok(Math.max(...textureCosts) <= PHASE_5_9_DIAGNOSTICS_PROFILE.maxSelectedCandidateTextureCost);
+    assert.ok(average(textureCosts) <= PHASE_5_9_DIAGNOSTICS_PROFILE.maxAverageSelectedCandidateTextureCost);
+    assert.ok(Math.max(...melodyCosts) <= PHASE_5_9_DIAGNOSTICS_PROFILE.maxSelectedCandidateMelodyCost);
+    assert.ok(average(melodyCosts) <= PHASE_5_9_DIAGNOSTICS_PROFILE.maxAverageSelectedCandidateMelodyCost);
+  }
+});
+
+test("generateScore applies phase-5.9 boundary seed gates", () => {
+  const boundaryProfiles = PHASE_5_9_DIAGNOSTICS_PROFILE.boundarySeeds;
+
+  for (const [seed, profile] of Object.entries(boundaryProfiles)) {
+    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
+    const textureCosts = output.diagnostics.selectedCandidateEvaluations.map(
+      (evaluation) => evaluation.dimensions.texture.cost,
+    );
+
+    if ("minCounterSubjectIdentityRetention" in profile) {
+      assert.ok(output.diagnostics.counterSubjectIdentityRetention >= profile.minCounterSubjectIdentityRetention);
+    }
+    if ("maxSharedRhythmOverlapCount" in profile) {
+      assert.ok(output.diagnostics.sharedRhythmOverlapCount <= profile.maxSharedRhythmOverlapCount);
+    }
+    if ("maxLeapRecoveryMisses" in profile) {
+      assert.ok(output.diagnostics.leapRecoveryMisses <= profile.maxLeapRecoveryMisses);
+    }
+    if ("minOrnamentDensity" in profile) {
+      assert.ok(output.diagnostics.ornamentDensity >= profile.minOrnamentDensity);
+    }
+    if ("maxSelectedCandidateTextureCost" in profile) {
+      assert.ok(Math.max(...textureCosts) <= profile.maxSelectedCandidateTextureCost);
+    }
+    if ("minModalContextCount" in profile) {
+      assert.ok(output.diagnostics.modalContextCount >= profile.minModalContextCount);
+      assert.ok(output.diagnostics.modalCharacteristicToneHits >= profile.minModalCharacteristicToneHits);
+      assert.ok(output.diagnostics.modalCadenceHits >= profile.minModalCadenceHits);
+    }
+  }
+});
+
 function countIssues(issues: readonly { code: string }[], code: string): number {
   return issues.filter((issue) => issue.code === code).length;
+}
+
+function average(values: readonly number[]): number {
+  assert.ok(values.length > 0);
+  return values.reduce((total, value) => total + value, 0) / values.length;
 }
 
 function asMetaEvent(event: ScoreEvent | undefined): MetaEvent {
