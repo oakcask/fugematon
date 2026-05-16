@@ -25,6 +25,7 @@ export type {
   KeySignature,
   MetaEvent,
   NoteEvent,
+  NoteRole,
   PlannedEntry,
   ScoreEvent,
   TimeSignature,

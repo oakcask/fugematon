@@ -63,16 +63,12 @@ const VOICE_PREFERRED_MAX: Record<Voice, number> = {
   tenor: 59,
   bass: 47,
 };
-const CONSONANT_OFFSETS: Record<Voice, number> = {
-  soprano: 12,
-  alto: 7,
-  tenor: -5,
-  bass: -12,
-};
 const ENTRY_SPACING_TICKS = TICKS_PER_QUARTER * 4;
 const CONTINUATION_SECTION_TICKS = TICKS_PER_QUARTER * 8;
 const STRETTO_ENTRY_SPACING_TICKS = TICKS_PER_QUARTER * 2;
 const CONTINUATION_STATE_SEQUENCE: FugueState[] = ["episode", "subject-return", "episode", "stretto-like"];
+const COUNTER_SUBJECT_DEGREES = [4, 2, 3, 1, 2, 0, 1, 0] as const;
+const FREE_COUNTERPOINT_DEGREES = [0, 1, 2, 1, 3, 2, 1, 0] as const;
 
 export function generateScore(input: GenerationInput): GenerationOutput {
   validateInput(input);
@@ -163,6 +159,11 @@ export function generateScore(input: GenerationInput): GenerationOutput {
       subjectIdentityViolations: diagnostics.subjectIdentityViolations,
       answerPlanViolations: diagnostics.answerPlanViolations,
       keyMetadataMismatches: diagnostics.keyMetadataMismatches,
+      counterSubjectCoverage: diagnostics.counterSubjectCoverage,
+      freeCounterpointCoverage: diagnostics.freeCounterpointCoverage,
+      fallbackPassageCount: diagnostics.fallbackPassageCount,
+      melodicStagnationWarnings: diagnostics.melodicStagnationWarnings,
+      leapRecoveryMisses: diagnostics.leapRecoveryMisses,
       issues: diagnostics.issues,
       warnings: diagnostics.warnings,
     },
@@ -309,7 +310,12 @@ function buildExposition(subject: readonly SubjectNote[], keySignature: KeySigna
       localKey: form === "answer" ? transposeKey(keySignature, 7) : keySignature,
       answerKind: form === "answer" ? chooseAnswerKind(subject) : undefined,
     });
-    addSustainedCounterpoint(notes, voice, startTick, subjectDuration(subject), tonicPitchClass(keySignature));
+    addCounterpointTexture(notes, subject, {
+      enteringVoice: voice,
+      startTick,
+      durationTicks: ENTRY_SPACING_TICKS,
+      localKey: form === "answer" ? transposeKey(keySignature, 7) : keySignature,
+    });
   }
 
   notes.sort(compareNoteEvents);
@@ -430,13 +436,12 @@ function buildContinuationSection(
   const subjectEntries: Exposition["subjectEntries"] = [];
 
   addSubjectEntry(notes, subjectEntries, subject, entry);
-  addSustainedCounterpoint(
-    notes,
-    entry.voice,
-    entry.startTick,
-    entry.supportDurationTicks,
-    tonicPitchClass(entry.localKey),
-  );
+  addCounterpointTexture(notes, subject, {
+    enteringVoice: entry.voice,
+    startTick: entry.startTick,
+    durationTicks: entry.supportDurationTicks,
+    localKey: entry.localKey,
+  });
   notes.sort(compareNoteEvents);
 
   return {
@@ -476,13 +481,12 @@ function buildStrettoSection(
     localKey: transposeKey(entry.globalKey, 7),
     answerKind: chooseAnswerKind(subject),
   });
-  addSustainedCounterpoint(
-    notes,
-    entry.firstVoice,
-    entry.startTick,
-    subjectDuration(subject),
-    tonicPitchClass(entry.globalKey),
-  );
+  addCounterpointTexture(notes, subject, {
+    enteringVoice: entry.firstVoice,
+    startTick: entry.startTick,
+    durationTicks: subjectDuration(subject),
+    localKey: entry.globalKey,
+  });
   notes.sort(compareNoteEvents);
 
   return {
@@ -495,7 +499,15 @@ function buildStrettoSection(
 function scoreCandidate(previousNotes: readonly NoteEvent[], candidate: Exposition): number {
   const diagnostics = analyzeScore([...previousNotes, ...candidate.notes], candidate.subjectEntries);
 
-  return diagnostics.rangeViolations * 10_000 + diagnostics.voiceCrossings * 1_000 + diagnostics.parallelPerfects * 10;
+  return (
+    diagnostics.rangeViolations * 10_000 +
+    diagnostics.voiceCrossings * 1_000 +
+    diagnostics.parallelPerfects * 10 +
+    diagnostics.leapRecoveryMisses * 25 +
+    diagnostics.melodicStagnationWarnings * 25 -
+    diagnostics.counterSubjectCoverage * 20 -
+    diagnostics.freeCounterpointCoverage * 10
+  );
 }
 
 function addSubjectEntry(
@@ -536,6 +548,7 @@ function addSubjectEntry(
       durationTicks: note.durationTicks,
       pitch: placePitchInRegister(pitchClass, entry.voice, plannedEntry.registerTarget),
       velocity: entry.form === "answer" ? 86 : 92,
+      role: entry.form,
     });
   }
 }
@@ -608,39 +621,95 @@ function positiveModulo(value: number, divisor: number): number {
   return ((value % divisor) + divisor) % divisor;
 }
 
-function addSustainedCounterpoint(
+function addCounterpointTexture(
   notes: Exposition["notes"],
-  enteringVoice: Voice,
-  entryStartTick: number,
-  entryDurationTicks: number,
-  tonicPitchClass: number,
+  subject: readonly SubjectNote[],
+  entry: {
+    enteringVoice: Voice;
+    startTick: number;
+    durationTicks: number;
+    localKey: KeySignature;
+  },
 ): void {
-  const supportDuration = TICKS_PER_QUARTER * 2;
+  const counterSubjectVoice = chooseTextureVoice(notes, entry.enteringVoice, entry.startTick, entry.durationTicks);
+  if (counterSubjectVoice !== undefined) {
+    addPatternCounterpoint(notes, subject, {
+      voice: counterSubjectVoice,
+      startTick: entry.startTick,
+      maxDurationTicks: entry.durationTicks,
+      localKey: entry.localKey,
+      degrees: COUNTER_SUBJECT_DEGREES,
+      velocity: 70,
+      role: "counter-subject",
+    });
+  }
+
   for (const voice of VOICE_ENTRY_ORDER) {
-    if (voice === enteringVoice) {
+    if (voice === entry.enteringVoice || voice === counterSubjectVoice) {
       continue;
     }
 
-    const startTick = entryStartTick + TICKS_PER_QUARTER;
-    if (startTick >= entryStartTick + entryDurationTicks) {
-      continue;
-    }
-    if (hasOverlap(notes, voice, startTick, supportDuration)) {
+    addPatternCounterpoint(notes, subject, {
+      voice,
+      startTick: entry.startTick,
+      maxDurationTicks: entry.durationTicks,
+      localKey: entry.localKey,
+      degrees: FREE_COUNTERPOINT_DEGREES,
+      velocity: 62,
+      role: "free-counterpoint",
+    });
+  }
+}
+
+function chooseTextureVoice(
+  notes: readonly NoteEvent[],
+  enteringVoice: Voice,
+  startTick: number,
+  durationTicks: number,
+): Voice | undefined {
+  const startIndex = VOICE_ENTRY_ORDER.indexOf(enteringVoice);
+  const candidates = [...VOICE_ENTRY_ORDER.slice(startIndex + 1), ...VOICE_ENTRY_ORDER.slice(0, startIndex)].filter(
+    (voice) => voice !== enteringVoice,
+  );
+
+  return candidates.find((voice) => !hasOverlap(notes, voice, startTick, durationTicks));
+}
+
+function addPatternCounterpoint(
+  notes: Exposition["notes"],
+  subject: readonly SubjectNote[],
+  pattern: {
+    voice: Voice;
+    startTick: number;
+    maxDurationTicks: number;
+    localKey: KeySignature;
+    degrees: readonly number[];
+    velocity: number;
+    role: NoteEvent["role"];
+  },
+): void {
+  let elapsedTicks = 0;
+  for (let index = 0; index < subject.length && elapsedTicks < pattern.maxDurationTicks; index += 1) {
+    const subjectNote = subject[index]!;
+    const durationTicks = Math.min(subjectNote.durationTicks, pattern.maxDurationTicks - elapsedTicks);
+    const startTick = pattern.startTick + elapsedTicks;
+    if (hasOverlap(notes, pattern.voice, startTick, durationTicks)) {
+      elapsedTicks += subjectNote.durationTicks;
       continue;
     }
 
+    const degree = pattern.degrees[index % pattern.degrees.length]!;
+    const pitchClass = scaleDegreePitchClass(degree, 0, pattern.localKey);
     notes.push({
       kind: "note",
-      voice,
+      voice: pattern.voice,
       startTick,
-      durationTicks: supportDuration,
-      pitch: placePitchInRegister(
-        positiveModulo(tonicPitchClass + CONSONANT_OFFSETS[voice], 12),
-        voice,
-        VOICE_REGISTER_TARGETS[voice],
-      ),
-      velocity: 56,
+      durationTicks,
+      pitch: placePitchInRegister(pitchClass, pattern.voice, VOICE_REGISTER_TARGETS[pattern.voice]),
+      velocity: pattern.velocity,
+      role: pattern.role,
     });
+    elapsedTicks += subjectNote.durationTicks;
   }
 }
 
@@ -688,6 +757,11 @@ function analyzeScore(
   subjectIdentityViolations: number;
   answerPlanViolations: number;
   keyMetadataMismatches: number;
+  counterSubjectCoverage: number;
+  freeCounterpointCoverage: number;
+  fallbackPassageCount: number;
+  melodicStagnationWarnings: number;
+  leapRecoveryMisses: number;
   issues: DiagnosticIssue[];
   warnings: string[];
 } {
@@ -710,7 +784,7 @@ function analyzeScore(
   const checkpoints = [...new Set(notes.flatMap((note) => [note.startTick, note.startTick + note.durationTicks]))].sort(
     (left, right) => left - right,
   );
-  let previousVerticality: Map<Voice, number> | undefined;
+  let previousVerticality: ActiveVerticality | undefined;
 
   for (const tick of checkpoints) {
     const active = activePitchesAt(notes, tick);
@@ -721,6 +795,8 @@ function analyzeScore(
     previousVerticality = active;
   }
   issues.push(...findEntryPlanIssues(notes, subjectEntries));
+  issues.push(...findMelodicStagnationIssues(notes));
+  issues.push(...findLeapRecoveryIssues(notes));
 
   const rangeViolations = countIssues(issues, "range-violation");
   const voiceCrossings = countIssues(issues, "voice-crossing");
@@ -728,6 +804,11 @@ function analyzeScore(
   const subjectIdentityViolations = countIssues(issues, "subject-identity-violation");
   const answerPlanViolations = countIssues(issues, "answer-plan-violation");
   const keyMetadataMismatches = countIssues(issues, "key-metadata-mismatch");
+  const counterSubjectCoverage = textureCoverage(notes, "counter-subject");
+  const freeCounterpointCoverage = textureCoverage(notes, "free-counterpoint");
+  const fallbackPassageCount = notes.filter((note) => note.role === "fallback").length;
+  const melodicStagnationWarnings = countIssues(issues, "melodic-stagnation");
+  const leapRecoveryMisses = countIssues(issues, "leap-recovery-miss");
   const warnings: string[] = [];
   if (rangeViolations > 0) {
     warnings.push("range violations detected");
@@ -747,6 +828,15 @@ function analyzeScore(
   if (keyMetadataMismatches > 0) {
     warnings.push("key metadata mismatches detected");
   }
+  if (fallbackPassageCount > 0) {
+    warnings.push("fallback counterpoint passages detected");
+  }
+  if (melodicStagnationWarnings > 0) {
+    warnings.push("melodic stagnation warnings detected");
+  }
+  if (leapRecoveryMisses > 0) {
+    warnings.push("leap recovery misses detected");
+  }
 
   return {
     rangeViolations,
@@ -755,9 +845,110 @@ function analyzeScore(
     subjectIdentityViolations,
     answerPlanViolations,
     keyMetadataMismatches,
+    counterSubjectCoverage,
+    freeCounterpointCoverage,
+    fallbackPassageCount,
+    melodicStagnationWarnings,
+    leapRecoveryMisses,
     issues,
     warnings,
   };
+}
+
+function textureCoverage(notes: readonly NoteEvent[], role: "counter-subject" | "free-counterpoint"): number {
+  const entryNotes = notes.filter((note) => isEntryRole(note.role));
+  const textureNotes = notes.filter((note) => note.role === role);
+  const entryDuration = entryNotes.reduce((sum, note) => sum + note.durationTicks, 0);
+  if (entryDuration === 0) {
+    return 0;
+  }
+
+  const coveredDuration = entryNotes.reduce(
+    (sum, entryNote) =>
+      sum +
+      entryNote.durationTicks *
+        Number(
+          textureNotes.some(
+            (textureNote) =>
+              textureNote.voice !== entryNote.voice &&
+              textureNote.startTick < entryNote.startTick + entryNote.durationTicks &&
+              entryNote.startTick < textureNote.startTick + textureNote.durationTicks,
+          ),
+        ),
+    0,
+  );
+  return roundRatio(coveredDuration / entryDuration);
+}
+
+function isEntryRole(role: NoteEvent["role"]): boolean {
+  return role === "subject" || role === "answer" || role === "subject-fragment";
+}
+
+function roundRatio(value: number): number {
+  return Math.round(value * 1000) / 1000;
+}
+
+function findMelodicStagnationIssues(notes: readonly NoteEvent[]): DiagnosticIssue[] {
+  const issues: DiagnosticIssue[] = [];
+
+  for (const voice of VOICE_ENTRY_ORDER) {
+    const voiceNotes = notes.filter((note) => note.voice === voice).sort(compareNoteEvents);
+    let runStart = 0;
+    for (let index = 1; index <= voiceNotes.length; index += 1) {
+      const previous = voiceNotes[index - 1];
+      const current = voiceNotes[index];
+      if (previous !== undefined && current !== undefined && current.pitch === previous.pitch) {
+        continue;
+      }
+
+      if (index - runStart >= 4) {
+        const first = voiceNotes[runStart]!;
+        issues.push({
+          code: "melodic-stagnation",
+          severity: "warning",
+          tick: first.startTick,
+          voices: [voice],
+          pitches: { [voice]: first.pitch },
+          message: `${voice} repeats pitch ${first.pitch} for ${index - runStart} notes`,
+        });
+      }
+      runStart = index;
+    }
+  }
+
+  return issues;
+}
+
+function findLeapRecoveryIssues(notes: readonly NoteEvent[]): DiagnosticIssue[] {
+  const issues: DiagnosticIssue[] = [];
+
+  for (const voice of VOICE_ENTRY_ORDER) {
+    const voiceNotes = notes.filter((note) => note.voice === voice).sort(compareNoteEvents);
+    for (let index = 1; index < voiceNotes.length - 1; index += 1) {
+      const previous = voiceNotes[index - 1]!;
+      const current = voiceNotes[index]!;
+      const next = voiceNotes[index + 1]!;
+      const leap = current.pitch - previous.pitch;
+      if (Math.abs(leap) <= 5) {
+        continue;
+      }
+
+      const recovery = next.pitch - current.pitch;
+      const recoversByStepInOppositeDirection = Math.sign(recovery) === -Math.sign(leap) && Math.abs(recovery) <= 2;
+      if (!recoversByStepInOppositeDirection) {
+        issues.push({
+          code: "leap-recovery-miss",
+          severity: "warning",
+          tick: current.startTick,
+          voices: [voice],
+          pitches: { [voice]: current.pitch },
+          message: `${voice} leap of ${Math.abs(leap)} semitones is not recovered by contrary step`,
+        });
+      }
+    }
+  }
+
+  return issues;
 }
 
 function findEntryPlanIssues(notes: readonly NoteEvent[], subjectEntries: readonly PlannedEntry[]): DiagnosticIssue[] {
@@ -810,20 +1001,27 @@ function findEntryPlanIssues(notes: readonly NoteEvent[], subjectEntries: readon
   return issues;
 }
 
-function activePitchesAt(notes: readonly NoteEvent[], tick: number): Map<Voice, number> {
-  const active = new Map<Voice, number>();
+type ActivePitch = {
+  pitch: number;
+  role: NoteEvent["role"];
+};
+
+type ActiveVerticality = Map<Voice, ActivePitch>;
+
+function activePitchesAt(notes: readonly NoteEvent[], tick: number): ActiveVerticality {
+  const active: ActiveVerticality = new Map();
   for (const voice of VOICE_ENTRY_ORDER) {
     const note = notes
       .filter((candidate) => candidate.voice === voice)
       .find((candidate) => candidate.startTick <= tick && tick < candidate.startTick + candidate.durationTicks);
     if (note !== undefined) {
-      active.set(voice, note.pitch);
+      active.set(voice, { pitch: note.pitch, role: note.role });
     }
   }
   return active;
 }
 
-function findVoiceCrossings(active: Map<Voice, number>, tick: number): DiagnosticIssue[] {
+function findVoiceCrossings(active: ActiveVerticality, tick: number): DiagnosticIssue[] {
   const adjacentPairs: [higher: Voice, lower: Voice][] = [
     ["soprano", "alto"],
     ["alto", "tenor"],
@@ -832,8 +1030,8 @@ function findVoiceCrossings(active: Map<Voice, number>, tick: number): Diagnosti
   const issues: DiagnosticIssue[] = [];
 
   for (const [higher, lower] of adjacentPairs) {
-    const higherPitch = active.get(higher);
-    const lowerPitch = active.get(lower);
+    const higherPitch = active.get(higher)?.pitch;
+    const lowerPitch = active.get(lower)?.pitch;
     if (higherPitch === undefined || lowerPitch === undefined || higherPitch >= lowerPitch) {
       continue;
     }
@@ -852,10 +1050,14 @@ function findVoiceCrossings(active: Map<Voice, number>, tick: number): Diagnosti
 }
 
 function findParallelPerfects(
-  previous: Map<Voice, number>,
-  current: Map<Voice, number>,
+  previous: ActiveVerticality,
+  current: ActiveVerticality,
   tick: number,
 ): DiagnosticIssue[] {
+  if (tick % TICKS_PER_QUARTER !== 0) {
+    return [];
+  }
+
   const issues: DiagnosticIssue[] = [];
   for (let leftIndex = 0; leftIndex < VOICE_ENTRY_ORDER.length; leftIndex += 1) {
     for (let rightIndex = leftIndex + 1; rightIndex < VOICE_ENTRY_ORDER.length; rightIndex += 1) {
@@ -873,11 +1075,14 @@ function findParallelPerfects(
       ) {
         continue;
       }
+      if (!isEntryRole(currentLeft.role) || !isEntryRole(currentRight.role)) {
+        continue;
+      }
 
-      const previousInterval = Math.abs(previousLeft - previousRight) % 12;
-      const currentInterval = Math.abs(currentLeft - currentRight) % 12;
-      const leftMotion = Math.sign(currentLeft - previousLeft);
-      const rightMotion = Math.sign(currentRight - previousRight);
+      const previousInterval = Math.abs(previousLeft.pitch - previousRight.pitch) % 12;
+      const currentInterval = Math.abs(currentLeft.pitch - currentRight.pitch) % 12;
+      const leftMotion = Math.sign(currentLeft.pitch - previousLeft.pitch);
+      const rightMotion = Math.sign(currentRight.pitch - previousRight.pitch);
       if (
         leftMotion !== 0 &&
         leftMotion === rightMotion &&
@@ -889,7 +1094,7 @@ function findParallelPerfects(
           severity: "warning",
           tick,
           voices: [left, right],
-          pitches: { [left]: currentLeft, [right]: currentRight },
+          pitches: { [left]: currentLeft.pitch, [right]: currentRight.pitch },
           message: `${left} and ${right} move in parallel perfect interval at tick ${tick}`,
         });
       }

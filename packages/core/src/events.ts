@@ -2,6 +2,8 @@ import type { TICKS_PER_QUARTER, VOICES } from "./constants.js";
 
 export type Voice = (typeof VOICES)[number];
 
+export type NoteRole = "subject" | "answer" | "subject-fragment" | "counter-subject" | "free-counterpoint" | "fallback";
+
 export type NoteEvent = {
   kind: "note";
   voice: Voice;
@@ -9,6 +11,7 @@ export type NoteEvent = {
   durationTicks: number;
   pitch: number;
   velocity: number;
+  role?: NoteRole;
 };
 
 export type TimeSignature = {
@@ -112,7 +115,9 @@ export type DiagnosticIssueCode =
   | "parallel-perfect"
   | "subject-identity-violation"
   | "answer-plan-violation"
-  | "key-metadata-mismatch";
+  | "key-metadata-mismatch"
+  | "melodic-stagnation"
+  | "leap-recovery-miss";
 
 export type DiagnosticIssue = {
   code: DiagnosticIssueCode;
@@ -139,6 +144,11 @@ export type GenerationDiagnostics = {
   subjectIdentityViolations: number;
   answerPlanViolations: number;
   keyMetadataMismatches: number;
+  counterSubjectCoverage: number;
+  freeCounterpointCoverage: number;
+  fallbackPassageCount: number;
+  melodicStagnationWarnings: number;
+  leapRecoveryMisses: number;
   issues: DiagnosticIssue[];
   warnings: string[];
 };
