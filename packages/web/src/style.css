@@ -33,6 +33,17 @@ button {
   cursor: pointer;
 }
 
+button:disabled {
+  cursor: wait;
+  opacity: 0.64;
+}
+
+button.secondary {
+  border: 1px solid rgba(60, 43, 30, 0.22);
+  color: #3c2b1e;
+  background: rgba(255, 248, 237, 0.64);
+}
+
 input {
   min-width: 0;
   width: 100%;
@@ -117,13 +128,30 @@ h1 {
   color: #6b5a47;
 }
 
-.score-card {
+.score-card,
+.transport-card {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.8rem;
   max-width: 64rem;
   padding: 1rem;
   animation: rise 580ms ease-out 160ms both;
+}
+
+.score-card {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.transport-card {
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  margin-top: 1rem;
+  border: 1px solid rgba(60, 43, 30, 0.15);
+  border-radius: 1.6rem;
+  box-shadow: 0 1.5rem 4rem rgba(63, 45, 28, 0.13);
+  background:
+    linear-gradient(135deg, rgba(60, 43, 30, 0.08), rgba(255, 248, 237, 0.72)),
+    rgba(255, 248, 237, 0.56);
+  animation-delay: 220ms;
 }
 
 .score-card > div {
@@ -132,10 +160,18 @@ h1 {
   background: rgba(255, 255, 255, 0.36);
 }
 
-.score-card strong {
+.score-card strong,
+.transport-card strong {
   display: block;
   margin-top: 0.35rem;
   font-size: clamp(1.25rem, 3vw, 2.2rem);
+}
+
+.transport-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  justify-content: flex-end;
 }
 
 @keyframes rise {
@@ -155,7 +191,16 @@ h1 {
   }
 
   .seed-row,
-  .score-card {
+  .score-card,
+  .transport-card {
     grid-template-columns: 1fr;
+  }
+
+  .transport-actions {
+    justify-content: stretch;
+  }
+
+  .transport-actions button {
+    flex: 1 1 9rem;
   }
 }
