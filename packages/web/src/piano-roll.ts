@@ -1,8 +1,9 @@
 import type { Voice } from "@fugematon/core";
-import type { PlaybackModel } from "./score.js";
+import type { PlaybackEntry, PlaybackModel } from "./score.js";
 
 export type PianoRollNoteLayout = {
   voice: Voice;
+  entry?: PlaybackEntry;
   x: number;
   y: number;
   width: number;
@@ -14,6 +15,11 @@ const VOICE_COLORS: Record<Voice, string> = {
   alto: "#c58b2c",
   tenor: "#397d6a",
   bass: "#2f4f76",
+};
+const ENTRY_STROKES: Record<PlaybackEntry["form"], string> = {
+  subject: "#f8fbf2",
+  answer: "#15130f",
+  "subject-fragment": "#eef0c8",
 };
 
 const LEFT_GUTTER = 44;
@@ -35,6 +41,7 @@ export function computePianoRollLayout(
 
     return {
       voice: note.voice,
+      entry: note.entry,
       x: LEFT_GUTTER + (note.startSecond / model.totalSeconds) * usableWidth,
       y: TOP_GUTTER + (1 - normalizedPitch) * usableHeight,
       width: Math.max(2, (note.durationSecond / model.totalSeconds) * usableWidth),
@@ -70,6 +77,12 @@ export function drawPianoRoll(
     context.globalAlpha = 0.88;
     roundRect(context, note.x, note.y, note.width, note.height, 5);
     context.fill();
+    if (note.entry !== undefined) {
+      context.globalAlpha = 0.94;
+      context.strokeStyle = ENTRY_STROKES[note.entry.form];
+      context.lineWidth = note.entry.state === "stretto-like" ? 3 : 2;
+      context.stroke();
+    }
   }
 
   context.globalAlpha = 1;

@@ -10,6 +10,9 @@ test("createPlaybackModel extracts timing metadata and notes", () => {
   assert.equal(model.ticksPerQuarter, 480);
   assert.equal(model.totalTicks, output.diagnostics.generatedUntilTick);
   assert.equal(model.notes.length, output.diagnostics.noteCount);
+  assert.deepEqual(model.stateTransitions, output.diagnostics.stateTransitions);
+  assert.equal(model.subjectEntries.length, output.diagnostics.subjectEntries.length);
+  assert.ok(model.notes.some((note) => note.entry?.state === "exposition"));
   assert.ok(model.bpm >= 66);
   assert.ok(model.totalSeconds > 0);
   assert.ok(model.pitchRange.min <= model.pitchRange.max);
