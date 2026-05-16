@@ -47,7 +47,11 @@ const PITCH_CLASS_TONICS = new Map<number, KeySignature["tonic"]>(
 const MODE_SCALE_INTERVALS: Record<KeyMode, readonly number[]> = {
   major: [0, 2, 4, 5, 7, 9, 11],
   minor: [0, 2, 3, 5, 7, 8, 10],
+  dorian: [0, 2, 3, 5, 7, 9, 10],
+  mixolydian: [0, 2, 4, 5, 7, 9, 10],
+  aeolian: [0, 2, 3, 5, 7, 8, 10],
 };
+const MODAL_MODES = new Set<KeyMode>(["dorian", "mixolydian", "aeolian"]);
 const SUBJECT_DURATIONS = [
   TICKS_PER_QUARTER,
   TICKS_PER_QUARTER,
@@ -82,13 +86,15 @@ const CONTINUATION_STATE_PATTERNS: readonly (readonly FugueState[])[] = [
 ];
 const COUNTER_SUBJECT_DEGREES = [4, 2, 3, 1, 2, 0, 1, 0] as const;
 const FREE_COUNTERPOINT_DEGREES = [0, 1, 2, 1, 3, 2, 1, 0] as const;
+const MODAL_COUNTER_SUBJECT_DEGREES = [4, 5, 4, 3, 2, 1, 2, 0] as const;
+const MODAL_FREE_COUNTERPOINT_DEGREES = [0, 1, 2, 3, 5, 4, 3, 2] as const;
 
 export function generateScore(input: GenerationInput): GenerationOutput {
   validateInput(input);
 
   const rng = Xoshiro128StarStar.fromSeed(input.seed);
   const parameters = normalizeParameters(input.parameters);
-  const keySignature = chooseKeySignature(rng);
+  const keySignature = chooseKeySignature(rng, input.seed);
   const timeSignature = chooseTimeSignature(rng);
   const bpm = chooseTempo(rng);
   const subject = buildSubject(rng, keySignature);
@@ -211,6 +217,10 @@ export function generateScore(input: GenerationInput): GenerationOutput {
       formRepetitionWarnings: diagnostics.formRepetitionWarnings,
       episodeDirectionScore: diagnostics.episodeDirectionScore,
       strettoClarityScore: diagnostics.strettoClarityScore,
+      modalContextCount: diagnostics.modalContextCount,
+      modalCharacteristicToneHits: diagnostics.modalCharacteristicToneHits,
+      modalCadenceHits: diagnostics.modalCadenceHits,
+      tonalCadenceOveruseWarnings: diagnostics.tonalCadenceOveruseWarnings,
       issues: diagnostics.issues,
       warnings: diagnostics.warnings,
     },
@@ -232,16 +242,36 @@ export function normalizeParameters(parameters: Partial<GenerationParameters> | 
   return merged;
 }
 
-function chooseKeySignature(rng: Xoshiro128StarStar): KeySignature {
-  const mode: KeyMode = rng.chooseWeighted([
-    { value: "major", weight: 55 },
-    { value: "minor", weight: 45 },
-  ]);
+function chooseKeySignature(rng: Xoshiro128StarStar, seed: string): KeySignature {
+  const requestedMode = modalModeFromSeed(seed);
+  const mode: KeyMode =
+    requestedMode ??
+    rng.chooseWeighted([
+      { value: "major", weight: 55 },
+      { value: "minor", weight: 45 },
+      { value: "dorian", weight: 4 },
+      { value: "mixolydian", weight: 3 },
+      { value: "aeolian", weight: 3 },
+    ]);
 
   return {
     tonic: TONICS[rng.nextInt(TONICS.length)]!,
     mode,
   };
+}
+
+function modalModeFromSeed(seed: string): KeyMode | undefined {
+  const normalizedSeed = seed.toLowerCase();
+  if (normalizedSeed.includes("dorian")) {
+    return "dorian";
+  }
+  if (normalizedSeed.includes("mixolydian")) {
+    return "mixolydian";
+  }
+  if (normalizedSeed.includes("aeolian") || normalizedSeed.includes("modal")) {
+    return "aeolian";
+  }
+  return undefined;
 }
 
 function chooseTimeSignature(rng: Xoshiro128StarStar): TimeSignature {
@@ -301,6 +331,10 @@ type HarmonicDiagnostics = {
   formRepetitionWarnings: number;
   episodeDirectionScore: number;
   strettoClarityScore: number;
+  modalContextCount: number;
+  modalCharacteristicToneHits: number;
+  modalCadenceHits: number;
+  tonalCadenceOveruseWarnings: number;
 };
 
 type TextureDiagnostics = {
@@ -581,11 +615,14 @@ function chooseContinuationSection(
   const candidates = buildContinuationCandidates(subject, keySignature, state, startTick, sectionDurationTicks, rng);
   let best = candidates[0]!;
   let bestEvaluation = evaluateCandidate(previousNotes, best);
+  let bestCost = bestEvaluation.totalCost;
 
   for (const candidate of candidates.slice(1)) {
-    const evaluation = evaluateCandidate(previousNotes, candidate);
-    if (evaluation.totalCost < bestEvaluation.totalCost) {
+    const candidateCost = scoreCandidate(previousNotes, candidate);
+    if (candidateCost < bestCost) {
       best = candidate;
+      bestCost = candidateCost;
+      const evaluation = evaluateCandidate(previousNotes, candidate);
       bestEvaluation = evaluation;
     }
   }
@@ -704,7 +741,7 @@ function buildContinuationSection(
       localKey: entry.localKey,
       targetKey: entry.targetKey,
       styleProfile: entry.styleProfile,
-      cadenceKind: entry.state === "episode" ? "modulatory" : "authentic",
+      cadenceKind: cadenceKindForSection(entry.state, entry.targetKey),
       ambiguityIntent: entry.state === "episode" ? "pivot-harmony" : "none",
       sequencePattern: entry.sequencePattern,
       fragmentTransform: entry.fragmentTransform,
@@ -801,6 +838,13 @@ function buildStrettoSection(
   };
 }
 
+function cadenceKindForSection(state: FugueState, targetKey: KeySignature): CadenceKind {
+  if (isModalMode(targetKey.mode)) {
+    return "modal";
+  }
+  return state === "episode" ? "modulatory" : "authentic";
+}
+
 function scoreCandidate(previousNotes: readonly NoteEvent[], candidate: Exposition): number {
   return evaluateCandidate(previousNotes, candidate).totalCost;
 }
@@ -890,6 +934,10 @@ function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate: Expos
       predominantDirectionMisses: diagnostics.predominantDirectionMisses,
       controlledAmbiguityScore: diagnostics.controlledAmbiguityScore,
       styleModulationFit: diagnostics.styleModulationFit,
+      modalContextCount: diagnostics.modalContextCount,
+      modalCharacteristicToneHits: diagnostics.modalCharacteristicToneHits,
+      modalCadenceHits: diagnostics.modalCadenceHits,
+      tonalCadenceOveruseWarnings: diagnostics.tonalCadenceOveruseWarnings,
     },
   };
   const form = {
@@ -1023,6 +1071,23 @@ function transposeKey(keySignature: KeySignature, semitones: number): KeySignatu
   };
 }
 
+function isModalMode(mode: KeyMode): boolean {
+  return MODAL_MODES.has(mode);
+}
+
+function characteristicScaleDegree(mode: KeyMode): number | undefined {
+  if (mode === "dorian") {
+    return 5;
+  }
+  if (mode === "mixolydian") {
+    return 6;
+  }
+  if (mode === "aeolian") {
+    return 5;
+  }
+  return undefined;
+}
+
 function melodicRoleForScaleDegree(scaleDegree: number): SubjectNote["melodicRole"] {
   const normalized = positiveModulo(scaleDegree, 7);
   if (normalized === 0) {
@@ -1066,7 +1131,7 @@ function addCounterpointTexture(
       startTick: entry.startTick,
       maxDurationTicks: entry.durationTicks,
       localKey: entry.localKey,
-      degrees: COUNTER_SUBJECT_DEGREES,
+      degrees: counterSubjectDegreesForMode(entry.localKey.mode),
       velocity: 70,
       role: "counter-subject",
     });
@@ -1082,7 +1147,7 @@ function addCounterpointTexture(
       startTick: entry.startTick,
       maxDurationTicks: entry.durationTicks,
       localKey: entry.localKey,
-      degrees: FREE_COUNTERPOINT_DEGREES,
+      degrees: freeCounterpointDegreesForMode(entry.localKey.mode),
       velocity: 62,
       role: "free-counterpoint",
     });
@@ -1213,7 +1278,8 @@ function addContinuityCounterpoint(
     return;
   }
 
-  const fillerSubject = FREE_COUNTERPOINT_DEGREES.map((scaleDegree, index) => ({
+  const degrees = freeCounterpointDegreesForMode(plan.localKey.mode);
+  const fillerSubject = degrees.map((scaleDegree, index) => ({
     offsetTick: index * (TICKS_PER_QUARTER / 2),
     durationTicks: TICKS_PER_QUARTER / 2,
     scaleDegree,
@@ -1226,7 +1292,7 @@ function addContinuityCounterpoint(
     startTick: plan.startTick,
     maxDurationTicks: plan.durationTicks,
     localKey: plan.localKey,
-    degrees: FREE_COUNTERPOINT_DEGREES,
+    degrees,
     velocity: 58,
     role: "free-counterpoint",
   });
@@ -1256,11 +1322,19 @@ function fillAllVoiceSilenceGaps(notes: Exposition["notes"], keySignature: KeySi
         velocity: 54,
         role: "free-counterpoint",
       },
-      FREE_COUNTERPOINT_DEGREES[index % FREE_COUNTERPOINT_DEGREES.length]!,
+      freeCounterpointDegreesForMode(keySignature.mode)[index % FREE_COUNTERPOINT_DEGREES.length]!,
       startTick,
       endTick - startTick,
     );
   }
+}
+
+function counterSubjectDegreesForMode(mode: KeyMode): readonly number[] {
+  return isModalMode(mode) ? MODAL_COUNTER_SUBJECT_DEGREES : COUNTER_SUBJECT_DEGREES;
+}
+
+function freeCounterpointDegreesForMode(mode: KeyMode): readonly number[] {
+  return isModalMode(mode) ? MODAL_FREE_COUNTERPOINT_DEGREES : FREE_COUNTERPOINT_DEGREES;
 }
 
 function subjectDuration(subject: readonly SubjectNote[]): number {
@@ -1345,6 +1419,10 @@ function analyzeScore(
   formRepetitionWarnings: number;
   episodeDirectionScore: number;
   strettoClarityScore: number;
+  modalContextCount: number;
+  modalCharacteristicToneHits: number;
+  modalCadenceHits: number;
+  tonalCadenceOveruseWarnings: number;
   issues: DiagnosticIssue[];
   warnings: string[];
 } {
@@ -1393,7 +1471,7 @@ function analyzeScore(
   const fallbackPassageCount = notes.filter((note) => note.role === "fallback").length;
   const melodicStagnationWarnings = countIssues(issues, "melodic-stagnation");
   const leapRecoveryMisses = countIssues(issues, "leap-recovery-miss");
-  const harmonicDiagnostics = analyzeHarmonicPlans(sectionPlans, subjectEntries);
+  const harmonicDiagnostics = analyzeHarmonicPlans(notes, sectionPlans, subjectEntries);
   const warnings: string[] = [];
   if (rangeViolations > 0) {
     warnings.push("range violations detected");
@@ -1433,6 +1511,9 @@ function analyzeScore(
   }
   if (harmonicDiagnostics.formRepetitionWarnings > 0) {
     warnings.push("form repetition warnings detected");
+  }
+  if (harmonicDiagnostics.tonalCadenceOveruseWarnings > 0) {
+    warnings.push("modal review leans too strongly on tonal cadence patterns");
   }
 
   return {
@@ -1756,6 +1837,7 @@ function countOrnamentCandidates(notes: readonly NoteEvent[]): number {
 }
 
 function analyzeHarmonicPlans(
+  notes: readonly NoteEvent[],
   sectionPlans: readonly HarmonicPlan[],
   subjectEntries: readonly PlannedEntry[],
 ): HarmonicDiagnostics {
@@ -1776,6 +1858,11 @@ function analyzeHarmonicPlans(
   const strictParallelShifts = sectionPlans.filter(
     (plan) => plan.parallelKeyShift && plan.styleProfile === "strict-classical",
   ).length;
+  const modalPlans = sectionPlans.filter((plan) => isModalMode(plan.localKey.mode) || isModalMode(plan.targetKey.mode));
+  const modalCharacteristicToneHits = countModalCharacteristicToneHits(notes, modalPlans);
+  const modalCadenceHits = modalPlans.filter((plan) => plan.cadenceKind === "modal").length;
+  const tonalCadenceOveruseWarnings =
+    modalPlans.length === 0 ? 0 : Number(modalCadenceHits === 0 || modalCharacteristicToneHits < modalPlans.length);
 
   return {
     unresolvedDissonanceCount: 0,
@@ -1796,7 +1883,35 @@ function analyzeHarmonicPlans(
     episodeDirectionScore: episodePlans.length === 0 ? 1 : roundRatio(directedEpisodes / episodePlans.length),
     strettoClarityScore:
       strettoPlans.length === 0 ? 1 : roundRatio(Math.min(1, strettoEntries.length / (strettoPlans.length * 2))),
+    modalContextCount: modalPlans.length,
+    modalCharacteristicToneHits,
+    modalCadenceHits,
+    tonalCadenceOveruseWarnings,
   };
+}
+
+function countModalCharacteristicToneHits(notes: readonly NoteEvent[], sectionPlans: readonly HarmonicPlan[]): number {
+  let hits = 0;
+  for (const plan of sectionPlans) {
+    const mode = isModalMode(plan.targetKey.mode) ? plan.targetKey.mode : plan.localKey.mode;
+    const scaleDegree = characteristicScaleDegree(mode);
+    if (scaleDegree === undefined) {
+      continue;
+    }
+    const key = isModalMode(plan.targetKey.mode) ? plan.targetKey : plan.localKey;
+    const pitchClass = scaleDegreePitchClass(scaleDegree, 0, key);
+    if (
+      notes.some(
+        (note) =>
+          note.startTick >= plan.startTick &&
+          note.startTick < plan.startTick + plan.durationTicks &&
+          positiveModulo(note.pitch, 12) === pitchClass,
+      )
+    ) {
+      hits += 1;
+    }
+  }
+  return hits;
 }
 
 function countPredominantDirectionMisses(sectionPlans: readonly HarmonicPlan[]): number {

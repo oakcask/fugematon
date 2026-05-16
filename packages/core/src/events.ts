@@ -19,7 +19,7 @@ export type TimeSignature = {
   denominator: 4 | 8;
 };
 
-export type KeyMode = "major" | "minor";
+export type KeyMode = "major" | "minor" | "dorian" | "mixolydian" | "aeolian";
 
 export type KeySignature = {
   tonic: string;
@@ -252,6 +252,10 @@ export type GenerationDiagnostics = {
   formRepetitionWarnings: number;
   episodeDirectionScore: number;
   strettoClarityScore: number;
+  modalContextCount: number;
+  modalCharacteristicToneHits: number;
+  modalCadenceHits: number;
+  tonalCadenceOveruseWarnings: number;
   issues: DiagnosticIssue[];
   warnings: string[];
 };

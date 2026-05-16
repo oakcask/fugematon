@@ -334,6 +334,26 @@ Phase 5.6 は、既存の Phase 5 gate を保ったまま、候補選択と diag
 * modal seed は実際に modal context を生成することを diagnostics で確認する。
 * mode の特徴音、modal cadence、tonal cadence への寄りすぎを指標化する。
 
+#### 実装記録
+
+Phase 5.7 は、review seed 名だけが modal で実体は minor だった問題を修正し、modal context を生成結果と diagnostics の両方で確認できるようにした。
+
+* `KeyMode` に dorian、mixolydian、aeolian を追加した。
+* `modal-dorian` は dorian mode の key signature、entry plan、section plan を生成する。
+* modal mode の counterpoint は特徴音を含む degree pattern を使い、modal context が実音にも現れるようにした。
+* modal section は modal cadence として扱い、tonal cadence への寄りすぎを diagnostics で warning 化できる。
+* diagnostics に modal context count、modal characteristic tone hits、modal cadence hits、tonal cadence overuse warnings を追加した。
+* MIDI key signature は dorian と mixolydian を relative major、aeolian を relative minor として書き出す。
+
+#### 完了判定
+
+リポジトリ上の Phase 5.7 自動完了条件は満たしている。
+
+* `modal-dorian` の key signature と section plan が dorian mode になる。
+* modal context、特徴音、modal cadence は diagnostics 上で確認できる。
+* tonal cadence への寄りすぎは representative modal seed の gate で 0 warning を維持する。
+* Phase 5.6 までの hard constraints と review seed gate は維持している。
+
 ### Phase 5.8: 聴取 gate
 
 * review bundle ごとに手動聴取メモを残す形式を決める。

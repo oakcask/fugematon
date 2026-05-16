@@ -8,8 +8,9 @@ import {
   PHASE_3_REPRESENTATIVE_SEEDS,
   PHASE_4_DIAGNOSTICS_PROFILE,
   PHASE_4_REPRESENTATIVE_SEEDS,
-  PHASE_5_DIAGNOSTICS_PROFILE,
   PHASE_5_6_DIAGNOSTICS_PROFILE,
+  PHASE_5_7_DIAGNOSTICS_PROFILE,
+  PHASE_5_DIAGNOSTICS_PROFILE,
   PHASE_5_LENGTH_TICKS,
   PHASE_5_REVIEW_SEEDS,
   TICKS_PER_QUARTER,
@@ -295,6 +296,29 @@ test("generateScore reports phase-5.6 beauty and texture diagnostics", () => {
   assert.ok(output.diagnostics.ornamentDensity >= PHASE_5_6_DIAGNOSTICS_PROFILE.minOrnamentDensity);
   assert.ok(output.diagnostics.durationDistribution.quarter > 0);
   assert.ok(output.diagnostics.durationDistribution.eighth > 0);
+});
+
+test("generateScore reports phase-5.7 modal context diagnostics", () => {
+  const output = generateScore({ seed: "modal-dorian", lengthTicks: PHASE_5_LENGTH_TICKS });
+  const keySignature = output.events.find(
+    (event): event is Extract<MetaEvent, { type: "key-signature" }> =>
+      event.kind === "meta" && event.type === "key-signature",
+  );
+
+  assert.equal(keySignature?.payload.mode, "dorian");
+  assert.ok(output.diagnostics.sectionPlans.every((plan) => plan.localKey.mode === "dorian"));
+  assert.ok(
+    output.diagnostics.sectionPlans.some((plan) => plan.cadenceKind === "modal" && plan.targetKey.mode === "dorian"),
+  );
+  assert.ok(output.diagnostics.modalContextCount >= PHASE_5_7_DIAGNOSTICS_PROFILE.minModalContextCount);
+  assert.ok(
+    output.diagnostics.modalCharacteristicToneHits >= PHASE_5_7_DIAGNOSTICS_PROFILE.minModalCharacteristicToneHits,
+  );
+  assert.ok(output.diagnostics.modalCadenceHits >= PHASE_5_7_DIAGNOSTICS_PROFILE.minModalCadenceHits);
+  assert.equal(
+    output.diagnostics.tonalCadenceOveruseWarnings,
+    PHASE_5_7_DIAGNOSTICS_PROFILE.maxTonalCadenceOveruseWarnings,
+  );
 });
 
 function countIssues(issues: readonly { code: string }[], code: string): number {
