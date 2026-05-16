@@ -69,9 +69,17 @@
 * seed が調性だけでなく、形式、密度、entry 間隔、episode 長にも影響するようにする。
 * 成功条件は「主題以外の声部も旋律として歌い、episode が次の entry へ向かい、状態の区切りで調性的な緊張と解決が聴こえ、複数 seed が同型の固定 cycle に聞こえないこと」とする。
 
+### Phase 5.6-5.8: 美しさ gate の追加
+
+* Phase 6 へ進む前に、Phase 5 review bundle で見つかった音楽品質の弱点を扱う。
+* Phase 5.6 では、leap recovery、counter-subject、free counterpoint、episode direction、stretto clarity の diagnostics を分解し、満点が並ぶ指標を疑える状態にする。
+* Phase 5.6 では、`fugue-smoke` の聴取で見つかった冒頭4声同時発音、同音高・同方向進行の過多、リズム語彙不足、同音連打、装飾音不足、全声部休止も texture と rhythm の品質問題として扱う。
+* Phase 5.7 では、dorian、mixolydian、aeolian などの modal context を実装し、modal seed が実際に旋法として生成されることを確認する。
+* Phase 5.8 では、MIDI または Web UI による手動聴取 gate を固定し、自動 diagnostics だけで美しさを完了判定しない。`fugue-smoke` は回帰確認 seed として、冒頭 entry、声部独立、音価の多様性、装飾、休符の扱いを聴取 rubric に含める。
+
 ### Phase 6: 履歴、巻き戻し、操作パラメータ
 
-* Phase 6 は Phase 5 の品質ゲート通過後に開始する。
+* Phase 6 は Phase 5.8 の聴取 gate 通過後に開始する。
 * 生成済みイベントをメモリ上のリングバッファに保存する。
 * 保存済み範囲内では event replay により巻き戻して再生し直せるようにする。
 * strictness、density、subjectPresence などの MVP 用スライダを追加する。

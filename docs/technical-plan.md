@@ -475,7 +475,12 @@ pnpm fugematon diagnose --seed bach-001 --ticks 7680
 * Phase 3 UI follow-up: 長尺化した default score をピアノロール全体へ圧縮表示せず、固定秒数の追従 viewport と表示範囲計算テストを追加した。
 * Phase 4: 主題を scale degree ベースの抽象表現へ移し、entry plan、true answer、tonal answer、主題同一性 diagnostics を実装する。
 * Phase 5: 音楽的品質ゲートとして、レビュー harness、counter-subject、自由対位、旋律美 scoring、HarmonicPlan、VoiceLeadingObligation、episode sequence、cadence plan、stretto clarity、和声安定度スコアを実装する。
-* Phase 6: Phase 5 の品質ゲート通過後に、リングバッファ履歴、巻き戻し replay、MVP 用スライダ、parameter-change メタイベントを実装する。
+* Phase 5.6: Phase 5 review bundle で見つかった大跳躍回収、texture 指標の粗さ、満点に張り付く美しさ diagnostics を修正する。`fugue-smoke` で確認した冒頭4声同時発音、同音高・同方向進行の過多、リズム語彙不足、同音連打、装飾音不足、全声部休止を diagnostics と scoring に入れる。
+* Phase 5.7: dorian、mixolydian、aeolian などの modal context を実装し、modal review seed が実際に旋法として生成されることを diagnostics で確認する。
+* Phase 5.8: review bundle の手動聴取 gate と聴取メモ rubric を固定し、自動 diagnostics だけで Phase 6 へ進まないようにする。`fugue-smoke` は回帰確認 seed として、冒頭 entry、声部独立、音価の多様性、装飾、休符の扱いを確認する。
+* Phase 5.9: 候補評価を hard constraint、rule-based soft score、learned aesthetic score に分け、`CandidateEvaluation` の dimension 別 breakdown、feature version、evaluation model version を diagnostics と review bundle に出す。
+* Phase 5.10: 事前学習済み評価パラメータを検討する。runtime には説明可能な小型重みモデルだけを入れ、offline pairwise ranking で learned weights を作り、manual weights と A/B review する。
+* Phase 6: Phase 5.8 の聴取 gate と Phase 5.9 の評価内訳整備後に、リングバッファ履歴、巻き戻し replay、MVP 用スライダ、parameter-change メタイベントを実装する。
 * Phase 7: Dedicated Web Worker による生成探索の分離、生成期限、フォールバック候補を実装する。
 
 ## 生成期限とフォールバック
@@ -522,6 +527,11 @@ pnpm fugematon diagnose --seed bach-001 --ticks 7680
   * 同主調転調や parallel major/minor shift が、style profile に対して過多または不足になっていない。
   * 複数 seed の形式、密度、entry 間隔、episode 長が固定 cycle に偏りすぎない。
   * melodic stagnation、leap recovery miss、fallback passage count、stretto clarity score が代表 seed の閾値内である。
+  * 冒頭4声同時発音、ユニゾン過多、同方向進行過多、同一リズム過多、同音連打、全声部休止が代表 seed の閾値内である。
+  * 音価分布と装飾音密度が style profile と section の役割に対して不足していない。
+  * 候補評価は total cost だけでなく、counterpoint、melody、texture、subject clarity、harmony、form の dimension 別 breakdown を出せる。
+  * learned aesthetic score を使う場合も、hard constraint failure を採用候補に戻さない。
+  * feature version と evaluation model version が diagnostics に記録され、重み変更で ScoreEvent 列が変わる場合は generatorVersion を更新する。
   * 手動聴取用 MIDI と diagnostics summary を再生成できる。
 * Phase 6 以降の CI で確認する項目：
   * parameter-change メタイベントは、次の状態遷移以降のイベントにのみ影響する。

@@ -12,7 +12,7 @@
     "test": "pnpm build && node --test packages/*/dist/**/*.test.js",
     "ui:inspect": "playwright test --project=chromium",
     "web:dev": "pnpm --filter @fugematon/web dev",
-    "fugematon": "pnpm --filter @fugematon/cli exec node dist/index.js",
+    "fugematon": "node packages/cli/dist/index.js",
     "samples:generate": "pnpm build && node packages/cli/dist/index.js midi --seed fugue-smoke --ticks 7680 --out samples/fugue-smoke-phase1.mid"
   },
   "devDependencies": {
