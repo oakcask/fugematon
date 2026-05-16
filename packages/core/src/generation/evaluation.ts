@@ -20,11 +20,16 @@ const EVALUATION_WEIGHTS = {
     samePitchOverlap: 4,
     unisonOverlap: 8,
     sameDirectionMotion: 3,
+    fourBeatBassUpperSameDirection: 2,
+    eightBeatBassUpperSameDirection: 1,
+    fourBeatOuterVoiceSameDirection: 1,
     sharedRhythmOverlap: 2,
     allVoiceSilenceGap: 25,
     rhythmicIndependence: 12,
     supportTextureRepetition: 8,
     expositionEntryStagger: 10,
+    bassUpperContraryMotion: 1,
+    outerVoiceContraryMotion: 1,
   },
   subjectClarity: {
     subjectIdentityViolation: 10_000,
@@ -97,12 +102,24 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
       diagnostics.samePitchOverlapCount * EVALUATION_WEIGHTS.texture.samePitchOverlap +
       diagnostics.unisonOverlapCount * EVALUATION_WEIGHTS.texture.unisonOverlap +
       diagnostics.sameDirectionMotionCount * EVALUATION_WEIGHTS.texture.sameDirectionMotion +
+      diagnostics.pitchContourMotion.fourBeat.bassUpperSameDirectionRatio *
+        EVALUATION_WEIGHTS.texture.fourBeatBassUpperSameDirection +
+      diagnostics.pitchContourMotion.eightBeat.bassUpperSameDirectionRatio *
+        EVALUATION_WEIGHTS.texture.eightBeatBassUpperSameDirection +
+      diagnostics.pitchContourMotion.fourBeat.outerVoiceSameDirectionRatio *
+        EVALUATION_WEIGHTS.texture.fourBeatOuterVoiceSameDirection +
       diagnostics.sharedRhythmOverlapCount * EVALUATION_WEIGHTS.texture.sharedRhythmOverlap +
       diagnostics.allVoiceSilenceGapCount * EVALUATION_WEIGHTS.texture.allVoiceSilenceGap,
     reward:
       diagnostics.rhythmicIndependenceScore * EVALUATION_WEIGHTS.texture.rhythmicIndependence +
       diagnostics.supportTextureRepetitionScore * EVALUATION_WEIGHTS.texture.supportTextureRepetition +
-      diagnostics.expositionEntryStaggerScore * EVALUATION_WEIGHTS.texture.expositionEntryStagger,
+      diagnostics.expositionEntryStaggerScore * EVALUATION_WEIGHTS.texture.expositionEntryStagger +
+      diagnostics.pitchContourMotion.fourBeat.bassUpperContraryRatio *
+        EVALUATION_WEIGHTS.texture.bassUpperContraryMotion +
+      diagnostics.pitchContourMotion.eightBeat.bassUpperContraryRatio *
+        EVALUATION_WEIGHTS.texture.bassUpperContraryMotion +
+      diagnostics.pitchContourMotion.fourBeat.outerVoiceContraryRatio *
+        EVALUATION_WEIGHTS.texture.outerVoiceContraryMotion,
     features: {
       rhythmicIndependenceScore: diagnostics.rhythmicIndependenceScore,
       supportTextureRepetitionScore: diagnostics.supportTextureRepetitionScore,
@@ -110,6 +127,12 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
       samePitchOverlapCount: diagnostics.samePitchOverlapCount,
       unisonOverlapCount: diagnostics.unisonOverlapCount,
       sameDirectionMotionCount: diagnostics.sameDirectionMotionCount,
+      fourBeatBassUpperSameDirectionRatio: diagnostics.pitchContourMotion.fourBeat.bassUpperSameDirectionRatio,
+      fourBeatBassUpperContraryRatio: diagnostics.pitchContourMotion.fourBeat.bassUpperContraryRatio,
+      eightBeatBassUpperSameDirectionRatio: diagnostics.pitchContourMotion.eightBeat.bassUpperSameDirectionRatio,
+      eightBeatBassUpperContraryRatio: diagnostics.pitchContourMotion.eightBeat.bassUpperContraryRatio,
+      fourBeatOuterVoiceSameDirectionRatio: diagnostics.pitchContourMotion.fourBeat.outerVoiceSameDirectionRatio,
+      fourBeatOuterVoiceContraryRatio: diagnostics.pitchContourMotion.fourBeat.outerVoiceContraryRatio,
       sharedRhythmOverlapCount: diagnostics.sharedRhythmOverlapCount,
       shortStrongBeatEntryNoteCount: diagnostics.shortStrongBeatEntryNoteCount,
       entrySupportInstabilityCount: diagnostics.entrySupportInstabilityCount,

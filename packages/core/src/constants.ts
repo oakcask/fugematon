@@ -140,7 +140,7 @@ export const PHASE_5_9_DIAGNOSTICS_PROFILE = {
   maxSameDirectionMotionCount: 661,
   maxSharedRhythmOverlapCount: 906,
   maxLeapRecoveryMisses: 30,
-  maxSelectedCandidateTextureCost: 1050,
+  maxSelectedCandidateTextureCost: 1051,
   maxAverageSelectedCandidateTextureCost: 805,
   maxSelectedCandidateMelodyCost: 315,
   maxAverageSelectedCandidateMelodyCost: 76,
@@ -161,7 +161,7 @@ export const PHASE_5_9_DIAGNOSTICS_PROFILE = {
     },
     "ornament-test": {
       minOrnamentDensity: 0.1,
-      maxSelectedCandidateTextureCost: 995,
+      maxSelectedCandidateTextureCost: 997,
     },
   },
 } as const;
