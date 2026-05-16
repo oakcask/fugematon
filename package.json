@@ -1,0 +1,15 @@
+{
+  "name": "fugematon",
+  "private": true,
+  "packageManager": "pnpm@11.1.2",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -b",
+    "test": "pnpm build && node --test packages/core/dist/**/*.test.js packages/cli/dist/**/*.test.js",
+    "fugematon": "pnpm --filter @fugematon/cli exec node dist/index.js"
+  },
+  "devDependencies": {
+    "@types/node": "^25.8.0",
+    "typescript": "^6.0.3"
+  }
+}
