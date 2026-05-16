@@ -7,42 +7,34 @@ permissions:
   contents: read
 
 jobs:
-  validate:
+  collect:
     runs-on: ubuntu-latest
+    outputs:
+      subjects: ${{ steps.subjects.outputs.subjects }}
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-      - name: Validate commit messages
+      - name: Collect commit subjects
+        id: subjects
         shell: bash
         env:
-          EVENT_NAME: ${{ github.event_name }}
-          BEFORE_SHA: ${{ github.event.before }}
-          HEAD_SHA: ${{ github.sha }}
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           set -euo pipefail
 
-          if [[ "${EVENT_NAME}" == "pull_request" ]]; then
-            range="${PR_BASE_SHA}..${PR_HEAD_SHA}"
-          elif [[ "${BEFORE_SHA}" =~ ^0+$ ]]; then
-            range="${HEAD_SHA}"
-          else
-            range="${BEFORE_SHA}..${HEAD_SHA}"
-          fi
+          delimiter="commit_subjects_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}"
 
-          pattern='^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\([a-z0-9._-]+\))?!?: .+$'
-          failed=0
+          {
+            printf 'subjects<<%s\n' "${delimiter}"
+            git log --format=%s "${PR_BASE_SHA}..${PR_HEAD_SHA}"
+            printf '%s\n' "${delimiter}"
+          } >> "${GITHUB_OUTPUT}"
 
-          while IFS= read -r subject; do
-            if [[ ! "${subject}" =~ ${pattern} ]]; then
-              printf 'Invalid commit subject: %s\n' "${subject}"
-              failed=1
-            fi
-          done < <(git log --format=%s "${range}")
-
-          if [[ "${failed}" -ne 0 ]]; then
-            printf '\nCommit subjects must follow Conventional Commits, for example: feat(cli): add dry-run option\n'
-            exit 1
-          fi
+  validate:
+    needs: collect
+    uses: ./.github/workflows/shared--conventional-commits.yaml
+    with:
+      subjects: ${{ needs.collect.outputs.subjects }}
+      label: commit subject
