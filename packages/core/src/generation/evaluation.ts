@@ -2,6 +2,51 @@ import type { CandidateEvaluation, NoteEvent } from "../events.js";
 import { analyzeScore } from "./diagnostics.js";
 import type { Exposition } from "./types.js";
 
+const EVALUATION_WEIGHTS = {
+  hardFailure: 10_000,
+  counterpoint: {
+    parallelPerfect: 10,
+    counterSubjectCoverage: 20,
+    freeCounterpointCoverage: 10,
+    counterSubjectInvertibility: 8,
+  },
+  melody: {
+    leapRecoveryMiss: 35,
+    melodicStagnation: 25,
+    freeCounterpointContour: 12,
+    ornamentDensity: 6,
+  },
+  texture: {
+    samePitchOverlap: 4,
+    unisonOverlap: 8,
+    sameDirectionMotion: 3,
+    sharedRhythmOverlap: 2,
+    allVoiceSilenceGap: 25,
+    rhythmicIndependence: 12,
+    supportTextureRepetition: 8,
+    expositionEntryStagger: 10,
+  },
+  subjectClarity: {
+    subjectIdentityViolation: 10_000,
+    answerPlanViolation: 1_000,
+    counterSubjectIdentityRetention: 10,
+  },
+  harmony: {
+    unresolvedDissonance: 100,
+    strongBeatDissonance: 50,
+    predominantDirectionMiss: 30,
+    unresolvedAmbiguity: 30,
+    controlledAmbiguity: 10,
+    styleModulationFit: 8,
+    harmonicFunctionMatch: 1,
+  },
+  form: {
+    formRepetition: 50,
+    episodeDirection: 10,
+    strettoClarity: 10,
+  },
+} as const;
+
 export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate: Exposition): CandidateEvaluation {
   const recentNotes = previousNotes.slice(-64);
   const diagnostics = analyzeScore(
@@ -21,11 +66,11 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
     )
     .map((issue) => issue.code);
   const counterpoint = {
-    cost: diagnostics.parallelPerfects * 10,
+    cost: diagnostics.parallelPerfects * EVALUATION_WEIGHTS.counterpoint.parallelPerfect,
     reward:
-      diagnostics.counterSubjectCoverage * 20 +
-      diagnostics.freeCounterpointCoverage * 10 +
-      diagnostics.counterSubjectInvertibilityScore * 8,
+      diagnostics.counterSubjectCoverage * EVALUATION_WEIGHTS.counterpoint.counterSubjectCoverage +
+      diagnostics.freeCounterpointCoverage * EVALUATION_WEIGHTS.counterpoint.freeCounterpointCoverage +
+      diagnostics.counterSubjectInvertibilityScore * EVALUATION_WEIGHTS.counterpoint.counterSubjectInvertibility,
     features: {
       counterSubjectCoverage: diagnostics.counterSubjectCoverage,
       freeCounterpointCoverage: diagnostics.freeCounterpointCoverage,
@@ -34,8 +79,12 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
     },
   };
   const melody = {
-    cost: diagnostics.leapRecoveryMisses * 35 + diagnostics.melodicStagnationWarnings * 25,
-    reward: diagnostics.freeCounterpointContourScore * 12 + diagnostics.ornamentDensity * 6,
+    cost:
+      diagnostics.leapRecoveryMisses * EVALUATION_WEIGHTS.melody.leapRecoveryMiss +
+      diagnostics.melodicStagnationWarnings * EVALUATION_WEIGHTS.melody.melodicStagnation,
+    reward:
+      diagnostics.freeCounterpointContourScore * EVALUATION_WEIGHTS.melody.freeCounterpointContour +
+      diagnostics.ornamentDensity * EVALUATION_WEIGHTS.melody.ornamentDensity,
     features: {
       leapRecoveryMisses: diagnostics.leapRecoveryMisses,
       melodicStagnationWarnings: diagnostics.melodicStagnationWarnings,
@@ -45,15 +94,15 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
   };
   const texture = {
     cost:
-      diagnostics.samePitchOverlapCount * 4 +
-      diagnostics.unisonOverlapCount * 8 +
-      diagnostics.sameDirectionMotionCount * 3 +
-      diagnostics.sharedRhythmOverlapCount * 2 +
-      diagnostics.allVoiceSilenceGapCount * 25,
+      diagnostics.samePitchOverlapCount * EVALUATION_WEIGHTS.texture.samePitchOverlap +
+      diagnostics.unisonOverlapCount * EVALUATION_WEIGHTS.texture.unisonOverlap +
+      diagnostics.sameDirectionMotionCount * EVALUATION_WEIGHTS.texture.sameDirectionMotion +
+      diagnostics.sharedRhythmOverlapCount * EVALUATION_WEIGHTS.texture.sharedRhythmOverlap +
+      diagnostics.allVoiceSilenceGapCount * EVALUATION_WEIGHTS.texture.allVoiceSilenceGap,
     reward:
-      diagnostics.rhythmicIndependenceScore * 12 +
-      diagnostics.supportTextureRepetitionScore * 8 +
-      diagnostics.expositionEntryStaggerScore * 10,
+      diagnostics.rhythmicIndependenceScore * EVALUATION_WEIGHTS.texture.rhythmicIndependence +
+      diagnostics.supportTextureRepetitionScore * EVALUATION_WEIGHTS.texture.supportTextureRepetition +
+      diagnostics.expositionEntryStaggerScore * EVALUATION_WEIGHTS.texture.expositionEntryStagger,
     features: {
       rhythmicIndependenceScore: diagnostics.rhythmicIndependenceScore,
       supportTextureRepetitionScore: diagnostics.supportTextureRepetitionScore,
@@ -68,8 +117,11 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
     },
   };
   const subjectClarity = {
-    cost: diagnostics.subjectIdentityViolations * 10_000 + diagnostics.answerPlanViolations * 1_000,
-    reward: diagnostics.counterSubjectIdentityRetention * 10,
+    cost:
+      diagnostics.subjectIdentityViolations * EVALUATION_WEIGHTS.subjectClarity.subjectIdentityViolation +
+      diagnostics.answerPlanViolations * EVALUATION_WEIGHTS.subjectClarity.answerPlanViolation,
+    reward:
+      diagnostics.counterSubjectIdentityRetention * EVALUATION_WEIGHTS.subjectClarity.counterSubjectIdentityRetention,
     features: {
       subjectIdentityViolations: diagnostics.subjectIdentityViolations,
       answerPlanViolations: diagnostics.answerPlanViolations,
@@ -78,14 +130,14 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
   };
   const harmony = {
     cost:
-      diagnostics.unresolvedDissonanceCount * 100 +
-      diagnostics.strongBeatDissonanceCount * 50 +
-      diagnostics.predominantDirectionMisses * 30 +
-      diagnostics.unresolvedAmbiguityWarnings * 30,
+      diagnostics.unresolvedDissonanceCount * EVALUATION_WEIGHTS.harmony.unresolvedDissonance +
+      diagnostics.strongBeatDissonanceCount * EVALUATION_WEIGHTS.harmony.strongBeatDissonance +
+      diagnostics.predominantDirectionMisses * EVALUATION_WEIGHTS.harmony.predominantDirectionMiss +
+      diagnostics.unresolvedAmbiguityWarnings * EVALUATION_WEIGHTS.harmony.unresolvedAmbiguity,
     reward:
-      diagnostics.controlledAmbiguityScore * 10 +
-      diagnostics.styleModulationFit * 8 +
-      diagnostics.harmonicFunctionMatches,
+      diagnostics.controlledAmbiguityScore * EVALUATION_WEIGHTS.harmony.controlledAmbiguity +
+      diagnostics.styleModulationFit * EVALUATION_WEIGHTS.harmony.styleModulationFit +
+      diagnostics.harmonicFunctionMatches * EVALUATION_WEIGHTS.harmony.harmonicFunctionMatch,
     features: {
       unresolvedDissonanceCount: diagnostics.unresolvedDissonanceCount,
       predominantDirectionMisses: diagnostics.predominantDirectionMisses,
@@ -99,8 +151,10 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
     },
   };
   const form = {
-    cost: diagnostics.formRepetitionWarnings * 50,
-    reward: diagnostics.episodeDirectionScore * 10 + diagnostics.strettoClarityScore * 10,
+    cost: diagnostics.formRepetitionWarnings * EVALUATION_WEIGHTS.form.formRepetition,
+    reward:
+      diagnostics.episodeDirectionScore * EVALUATION_WEIGHTS.form.episodeDirection +
+      diagnostics.strettoClarityScore * EVALUATION_WEIGHTS.form.strettoClarity,
     features: {
       formRepetitionWarnings: diagnostics.formRepetitionWarnings,
       episodeDirectionScore: diagnostics.episodeDirectionScore,
@@ -108,7 +162,7 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
     },
   };
   const totalCost =
-    hardFailures.length * 10_000 +
+    hardFailures.length * EVALUATION_WEIGHTS.hardFailure +
     counterpoint.cost -
     counterpoint.reward +
     melody.cost -
