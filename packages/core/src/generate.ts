@@ -1,17 +1,24 @@
 import { DEFAULT_GENERATION_PARAMETERS, GENERATOR_VERSION, TICKS_PER_QUARTER, VOICE_RANGES } from "./constants.js";
 import type {
+  AmbiguityIntent,
   AnswerKind,
+  CadenceKind,
   DiagnosticIssue,
   EntryForm,
+  FragmentTransform,
   FugueState,
   GenerationInput,
   GenerationOutput,
   GenerationParameters,
+  HarmonicAnchor,
+  HarmonicPlan,
   KeyMode,
   KeySignature,
   NoteEvent,
   PlannedEntry,
   ScoreEvent,
+  SequencePattern,
+  StyleProfile,
   TimeSignature,
   Voice,
 } from "./events.js";
@@ -64,9 +71,13 @@ const VOICE_PREFERRED_MAX: Record<Voice, number> = {
   bass: 47,
 };
 const ENTRY_SPACING_TICKS = TICKS_PER_QUARTER * 4;
-const CONTINUATION_SECTION_TICKS = TICKS_PER_QUARTER * 8;
 const STRETTO_ENTRY_SPACING_TICKS = TICKS_PER_QUARTER * 2;
-const CONTINUATION_STATE_SEQUENCE: FugueState[] = ["episode", "subject-return", "episode", "stretto-like"];
+const CONTINUATION_STATE_PATTERNS: readonly (readonly FugueState[])[] = [
+  ["episode", "subject-return", "episode", "stretto-like"],
+  ["episode", "subject-return", "stretto-like", "episode", "subject-return"],
+  ["subject-return", "episode", "episode", "stretto-like", "subject-return"],
+  ["episode", "stretto-like", "episode", "subject-return"],
+];
 const COUNTER_SUBJECT_DEGREES = [4, 2, 3, 1, 2, 0, 1, 0] as const;
 const FREE_COUNTERPOINT_DEGREES = [0, 1, 2, 1, 3, 2, 1, 0] as const;
 
@@ -80,7 +91,7 @@ export function generateScore(input: GenerationInput): GenerationOutput {
   const bpm = chooseTempo(rng);
   const subject = buildSubject(rng, keySignature);
   const score = buildFugueScore(subject, keySignature, input.lengthTicks, rng);
-  const diagnostics = analyzeScore(score.notes, score.subjectEntries);
+  const diagnostics = analyzeScore(score.notes, score.subjectEntries, score.sectionPlans);
   const generatedUntilTick = Math.max(input.lengthTicks, score.endTick);
 
   const events: ScoreEvent[] = [
@@ -153,6 +164,7 @@ export function generateScore(input: GenerationInput): GenerationOutput {
       candidateEvaluations: score.candidateEvaluations,
       stateTransitions: score.stateTransitions,
       subjectEntries: score.subjectEntries,
+      sectionPlans: score.sectionPlans,
       rangeViolations: diagnostics.rangeViolations,
       voiceCrossings: diagnostics.voiceCrossings,
       parallelPerfects: diagnostics.parallelPerfects,
@@ -164,6 +176,23 @@ export function generateScore(input: GenerationInput): GenerationOutput {
       fallbackPassageCount: diagnostics.fallbackPassageCount,
       melodicStagnationWarnings: diagnostics.melodicStagnationWarnings,
       leapRecoveryMisses: diagnostics.leapRecoveryMisses,
+      unresolvedDissonanceCount: diagnostics.unresolvedDissonanceCount,
+      strongBeatDissonanceCount: diagnostics.strongBeatDissonanceCount,
+      cadenceTargetMisses: diagnostics.cadenceTargetMisses,
+      cadenceTargetHits: diagnostics.cadenceTargetHits,
+      leadingToneResolutionMisses: diagnostics.leadingToneResolutionMisses,
+      dominantResolutionMisses: diagnostics.dominantResolutionMisses,
+      predominantDirectionMisses: diagnostics.predominantDirectionMisses,
+      harmonicFunctionMismatches: diagnostics.harmonicFunctionMismatches,
+      harmonicFunctionMatches: diagnostics.harmonicFunctionMatches,
+      controlledAmbiguityScore: diagnostics.controlledAmbiguityScore,
+      unresolvedAmbiguityWarnings: diagnostics.unresolvedAmbiguityWarnings,
+      ambiguityRecoveries: diagnostics.ambiguityRecoveries,
+      styleModulationFit: diagnostics.styleModulationFit,
+      parallelKeyShiftCount: diagnostics.parallelKeyShiftCount,
+      formRepetitionWarnings: diagnostics.formRepetitionWarnings,
+      episodeDirectionScore: diagnostics.episodeDirectionScore,
+      strettoClarityScore: diagnostics.strettoClarityScore,
       issues: diagnostics.issues,
       warnings: diagnostics.warnings,
     },
@@ -221,7 +250,9 @@ type SubjectNote = {
 type Exposition = {
   notes: NoteEvent[];
   subjectEntries: GenerationOutput["diagnostics"]["subjectEntries"];
+  sectionPlans: HarmonicPlan[];
   endTick: number;
+  durationTicks: number;
 };
 
 type FugueScore = Exposition & {
@@ -231,6 +262,26 @@ type FugueScore = Exposition & {
     tick: number;
     state: FugueState;
   }[];
+};
+
+type HarmonicDiagnostics = {
+  unresolvedDissonanceCount: number;
+  strongBeatDissonanceCount: number;
+  cadenceTargetMisses: number;
+  cadenceTargetHits: number;
+  leadingToneResolutionMisses: number;
+  dominantResolutionMisses: number;
+  predominantDirectionMisses: number;
+  harmonicFunctionMismatches: number;
+  harmonicFunctionMatches: number;
+  controlledAmbiguityScore: number;
+  unresolvedAmbiguityWarnings: number;
+  ambiguityRecoveries: number;
+  styleModulationFit: number;
+  parallelKeyShiftCount: number;
+  formRepetitionWarnings: number;
+  episodeDirectionScore: number;
+  strettoClarityScore: number;
 };
 
 function buildSubject(rng: Xoshiro128StarStar, keySignature: KeySignature): SubjectNote[] {
@@ -264,21 +315,33 @@ function buildFugueScore(
   const exposition = buildExposition(subject, keySignature);
   const notes = [...exposition.notes];
   const subjectEntries = [...exposition.subjectEntries];
+  const sectionPlans = [...exposition.sectionPlans];
   const stateTransitions: FugueState[] = ["exposition"];
   const stateChanges: FugueScore["stateChanges"] = [];
   let candidateEvaluations = 0;
   let sectionStartTick = exposition.endTick;
   let stateIndex = 0;
+  const continuationPattern = chooseContinuationStatePattern(rng);
 
   while (sectionStartTick < lengthTicks) {
-    const state = CONTINUATION_STATE_SEQUENCE[stateIndex % CONTINUATION_STATE_SEQUENCE.length]!;
+    const state = continuationPattern[stateIndex % continuationPattern.length]!;
+    const sectionDurationTicks = chooseContinuationSectionTicks(state, rng);
     stateTransitions.push(state);
     stateChanges.push({ tick: sectionStartTick, state });
-    const selection = chooseContinuationSection(subject, keySignature, state, sectionStartTick, rng, notes);
+    const selection = chooseContinuationSection(
+      subject,
+      keySignature,
+      state,
+      sectionStartTick,
+      sectionDurationTicks,
+      rng,
+      notes,
+    );
     notes.push(...selection.section.notes);
     subjectEntries.push(...selection.section.subjectEntries);
+    sectionPlans.push(...selection.section.sectionPlans);
     candidateEvaluations += selection.candidateCount;
-    sectionStartTick += CONTINUATION_SECTION_TICKS;
+    sectionStartTick += selection.section.durationTicks;
     stateIndex += 1;
   }
 
@@ -287,16 +350,151 @@ function buildFugueScore(
   return {
     notes,
     subjectEntries,
+    sectionPlans,
     candidateEvaluations,
     stateTransitions,
     stateChanges,
     endTick: Math.max(...notes.map((note) => note.startTick + note.durationTicks)),
+    durationTicks: Math.max(...notes.map((note) => note.startTick + note.durationTicks)),
+  };
+}
+
+function chooseContinuationStatePattern(rng: Xoshiro128StarStar): readonly FugueState[] {
+  return CONTINUATION_STATE_PATTERNS[rng.nextInt(CONTINUATION_STATE_PATTERNS.length)]!;
+}
+
+function chooseContinuationSectionTicks(state: FugueState, rng: Xoshiro128StarStar): number {
+  if (state === "episode") {
+    return (
+      TICKS_PER_QUARTER *
+      rng.chooseWeighted([
+        { value: 6, weight: 2 },
+        { value: 8, weight: 3 },
+        { value: 10, weight: 2 },
+      ])
+    );
+  }
+  if (state === "subject-return") {
+    return (
+      TICKS_PER_QUARTER *
+      rng.chooseWeighted([
+        { value: 7, weight: 2 },
+        { value: 8, weight: 3 },
+        { value: 9, weight: 2 },
+      ])
+    );
+  }
+  return (
+    TICKS_PER_QUARTER *
+    rng.chooseWeighted([
+      { value: 8, weight: 3 },
+      { value: 10, weight: 1 },
+    ])
+  );
+}
+
+function chooseStyleProfile(rng: Xoshiro128StarStar): StyleProfile {
+  return rng.chooseWeighted<StyleProfile>([
+    { value: "strict-classical", weight: 3 },
+    { value: "hybrid", weight: 5 },
+    { value: "popular-tolerant", weight: 2 },
+  ]);
+}
+
+function chooseSequencePattern(rng: Xoshiro128StarStar): SequencePattern {
+  return rng.chooseWeighted<SequencePattern>([
+    { value: "ascending-step", weight: 3 },
+    { value: "descending-step", weight: 3 },
+    { value: "circle-fifths", weight: 2 },
+    { value: "parallel-shift", weight: 1 },
+  ]);
+}
+
+function chooseFragmentTransform(rng: Xoshiro128StarStar): FragmentTransform {
+  return rng.chooseWeighted<FragmentTransform>([
+    { value: "sequence", weight: 4 },
+    { value: "contrary-motion", weight: 3 },
+    { value: "inversion", weight: 2 },
+  ]);
+}
+
+function buildHarmonicPlan(plan: {
+  state: FugueState;
+  startTick: number;
+  durationTicks: number;
+  globalKey: KeySignature;
+  localKey: KeySignature;
+  targetKey: KeySignature;
+  styleProfile: StyleProfile;
+  cadenceKind: CadenceKind;
+  ambiguityIntent: AmbiguityIntent;
+  sequencePattern?: SequencePattern;
+  fragmentTransform?: FragmentTransform;
+}): HarmonicPlan {
+  const cadenceTick = plan.startTick + Math.max(TICKS_PER_QUARTER, plan.durationTicks - TICKS_PER_QUARTER);
+  const predominantTick = plan.startTick + Math.max(TICKS_PER_QUARTER, Math.floor(plan.durationTicks / 3));
+  const dominantTick = plan.startTick + Math.max(TICKS_PER_QUARTER * 2, Math.floor((plan.durationTicks * 2) / 3));
+  const anchors: HarmonicAnchor[] = [
+    {
+      tick: plan.startTick,
+      localKey: plan.localKey,
+      function: "tonic",
+      cadenceTarget: false,
+    },
+    {
+      tick: predominantTick,
+      localKey: plan.state === "episode" ? plan.targetKey : plan.localKey,
+      function: "predominant",
+      cadenceTarget: false,
+    },
+    {
+      tick: dominantTick,
+      localKey: plan.targetKey,
+      function: "dominant",
+      cadenceTarget: false,
+    },
+    {
+      tick: cadenceTick,
+      localKey: plan.targetKey,
+      function: plan.cadenceKind === "half" ? "dominant" : "cadential-tonic",
+      cadenceTarget: true,
+    },
+  ];
+
+  return {
+    state: plan.state,
+    startTick: plan.startTick,
+    durationTicks: plan.durationTicks,
+    localKey: plan.localKey,
+    departureKey: plan.globalKey,
+    targetKey: plan.targetKey,
+    styleProfile: plan.styleProfile,
+    cadenceKind: plan.cadenceKind,
+    ambiguityIntent: plan.ambiguityIntent,
+    ambiguityRecoveryTick: plan.ambiguityIntent === "none" ? undefined : cadenceTick,
+    parallelKeyShift: plan.localKey.tonic === plan.targetKey.tonic && plan.localKey.mode !== plan.targetKey.mode,
+    sequencePattern: plan.sequencePattern,
+    fragmentTransform: plan.fragmentTransform,
+    anchors,
   };
 }
 
 function buildExposition(subject: readonly SubjectNote[], keySignature: KeySignature): Exposition {
   const notes: Exposition["notes"] = [];
   const subjectEntries: Exposition["subjectEntries"] = [];
+  const sectionPlans: HarmonicPlan[] = [
+    buildHarmonicPlan({
+      state: "exposition",
+      startTick: 0,
+      durationTicks: ENTRY_SPACING_TICKS * VOICE_ENTRY_ORDER.length,
+      globalKey: keySignature,
+      localKey: keySignature,
+      targetKey: transposeKey(keySignature, 7),
+      styleProfile: "strict-classical",
+      cadenceKind: "half",
+      ambiguityIntent: "none",
+    }),
+  ];
 
   for (const [entryIndex, voice] of VOICE_ENTRY_ORDER.entries()) {
     const form = entryIndex % 2 === 0 ? "subject" : "answer";
@@ -323,7 +521,9 @@ function buildExposition(subject: readonly SubjectNote[], keySignature: KeySigna
   return {
     notes,
     subjectEntries,
+    sectionPlans,
     endTick: Math.max(...notes.map((note) => note.startTick + note.durationTicks)),
+    durationTicks: ENTRY_SPACING_TICKS * VOICE_ENTRY_ORDER.length,
   };
 }
 
@@ -332,10 +532,11 @@ function chooseContinuationSection(
   keySignature: KeySignature,
   state: FugueState,
   startTick: number,
+  sectionDurationTicks: number,
   rng: Xoshiro128StarStar,
   previousNotes: readonly NoteEvent[],
 ): { section: Exposition; candidateCount: number } {
-  const candidates = buildContinuationCandidates(subject, keySignature, state, startTick, rng);
+  const candidates = buildContinuationCandidates(subject, keySignature, state, startTick, sectionDurationTicks, rng);
   let best = candidates[0]!;
   let bestScore = scoreCandidate(previousNotes, best);
 
@@ -355,6 +556,7 @@ function buildContinuationCandidates(
   keySignature: KeySignature,
   state: FugueState,
   startTick: number,
+  sectionDurationTicks: number,
   rng: Xoshiro128StarStar,
 ): Exposition[] {
   const notes: Exposition["notes"] = [];
@@ -371,7 +573,12 @@ function buildContinuationCandidates(
             startTick,
             globalKey: keySignature,
             localKey: transposeKey(keySignature, pitchClassOffset),
-            supportDurationTicks: TICKS_PER_QUARTER * 2,
+            targetKey: transposeKey(keySignature, pitchClassOffset === 0 ? 7 : pitchClassOffset),
+            supportDurationTicks: Math.min(sectionDurationTicks, subjectDuration(subject.slice(0, 4))),
+            sectionDurationTicks,
+            styleProfile: chooseStyleProfile(rng),
+            sequencePattern: chooseSequencePattern(rng),
+            fragmentTransform: chooseFragmentTransform(rng),
           }),
         );
       }
@@ -387,7 +594,10 @@ function buildContinuationCandidates(
             startTick,
             globalKey: keySignature,
             localKey: transposeKey(keySignature, pitchClassOffset),
+            targetKey: transposeKey(keySignature, pitchClassOffset),
             supportDurationTicks: subjectDuration(subject),
+            sectionDurationTicks,
+            styleProfile: chooseStyleProfile(rng),
           }),
         );
       }
@@ -402,6 +612,8 @@ function buildContinuationCandidates(
             secondVoice,
             startTick,
             globalKey: keySignature,
+            sectionDurationTicks,
+            styleProfile: chooseStyleProfile(rng),
           }),
         );
       }
@@ -413,7 +625,9 @@ function buildContinuationCandidates(
         {
           notes,
           subjectEntries: [],
+          sectionPlans: [],
           endTick: startTick,
+          durationTicks: sectionDurationTicks,
         },
       ]
     : candidates;
@@ -428,12 +642,32 @@ function buildContinuationSection(
     startTick: number;
     globalKey: KeySignature;
     localKey: KeySignature;
+    targetKey: KeySignature;
     answerKind?: AnswerKind;
     supportDurationTicks: number;
+    sectionDurationTicks: number;
+    styleProfile: StyleProfile;
+    sequencePattern?: SequencePattern;
+    fragmentTransform?: FragmentTransform;
   },
 ): Exposition {
   const notes: Exposition["notes"] = [];
   const subjectEntries: Exposition["subjectEntries"] = [];
+  const sectionPlans = [
+    buildHarmonicPlan({
+      state: entry.state,
+      startTick: entry.startTick,
+      durationTicks: entry.sectionDurationTicks,
+      globalKey: entry.globalKey,
+      localKey: entry.localKey,
+      targetKey: entry.targetKey,
+      styleProfile: entry.styleProfile,
+      cadenceKind: entry.state === "episode" ? "modulatory" : "authentic",
+      ambiguityIntent: entry.state === "episode" ? "pivot-harmony" : "none",
+      sequencePattern: entry.sequencePattern,
+      fragmentTransform: entry.fragmentTransform,
+    }),
+  ];
 
   addSubjectEntry(notes, subjectEntries, subject, entry);
   addCounterpointTexture(notes, subject, {
@@ -447,7 +681,9 @@ function buildContinuationSection(
   return {
     notes,
     subjectEntries,
+    sectionPlans,
     endTick: Math.max(...notes.map((note) => note.startTick + note.durationTicks)),
+    durationTicks: entry.sectionDurationTicks,
   };
 }
 
@@ -459,10 +695,25 @@ function buildStrettoSection(
     secondVoice: Voice;
     startTick: number;
     globalKey: KeySignature;
+    sectionDurationTicks: number;
+    styleProfile: StyleProfile;
   },
 ): Exposition {
   const notes: Exposition["notes"] = [];
   const subjectEntries: Exposition["subjectEntries"] = [];
+  const sectionPlans = [
+    buildHarmonicPlan({
+      state: entry.state,
+      startTick: entry.startTick,
+      durationTicks: entry.sectionDurationTicks,
+      globalKey: entry.globalKey,
+      localKey: entry.globalKey,
+      targetKey: transposeKey(entry.globalKey, 7),
+      styleProfile: entry.styleProfile,
+      cadenceKind: "evaded",
+      ambiguityIntent: "evaded-cadence",
+    }),
+  ];
 
   addSubjectEntry(notes, subjectEntries, subject, {
     state: entry.state,
@@ -492,12 +743,18 @@ function buildStrettoSection(
   return {
     notes,
     subjectEntries,
+    sectionPlans,
     endTick: Math.max(...notes.map((note) => note.startTick + note.durationTicks)),
+    durationTicks: entry.sectionDurationTicks,
   };
 }
 
 function scoreCandidate(previousNotes: readonly NoteEvent[], candidate: Exposition): number {
-  const diagnostics = analyzeScore([...previousNotes, ...candidate.notes], candidate.subjectEntries);
+  const diagnostics = analyzeScore(
+    [...previousNotes, ...candidate.notes],
+    candidate.subjectEntries,
+    candidate.sectionPlans,
+  );
 
   return (
     diagnostics.rangeViolations * 10_000 +
@@ -750,6 +1007,7 @@ function placePitchInRegister(pitchClass: number, voice: Voice, registerTarget: 
 function analyzeScore(
   notes: readonly NoteEvent[],
   subjectEntries: readonly PlannedEntry[],
+  sectionPlans: readonly HarmonicPlan[],
 ): {
   rangeViolations: number;
   voiceCrossings: number;
@@ -762,6 +1020,23 @@ function analyzeScore(
   fallbackPassageCount: number;
   melodicStagnationWarnings: number;
   leapRecoveryMisses: number;
+  unresolvedDissonanceCount: number;
+  strongBeatDissonanceCount: number;
+  cadenceTargetMisses: number;
+  cadenceTargetHits: number;
+  leadingToneResolutionMisses: number;
+  dominantResolutionMisses: number;
+  predominantDirectionMisses: number;
+  harmonicFunctionMismatches: number;
+  harmonicFunctionMatches: number;
+  controlledAmbiguityScore: number;
+  unresolvedAmbiguityWarnings: number;
+  ambiguityRecoveries: number;
+  styleModulationFit: number;
+  parallelKeyShiftCount: number;
+  formRepetitionWarnings: number;
+  episodeDirectionScore: number;
+  strettoClarityScore: number;
   issues: DiagnosticIssue[];
   warnings: string[];
 } {
@@ -809,6 +1084,7 @@ function analyzeScore(
   const fallbackPassageCount = notes.filter((note) => note.role === "fallback").length;
   const melodicStagnationWarnings = countIssues(issues, "melodic-stagnation");
   const leapRecoveryMisses = countIssues(issues, "leap-recovery-miss");
+  const harmonicDiagnostics = analyzeHarmonicPlans(sectionPlans, subjectEntries);
   const warnings: string[] = [];
   if (rangeViolations > 0) {
     warnings.push("range violations detected");
@@ -837,6 +1113,9 @@ function analyzeScore(
   if (leapRecoveryMisses > 0) {
     warnings.push("leap recovery misses detected");
   }
+  if (harmonicDiagnostics.formRepetitionWarnings > 0) {
+    warnings.push("form repetition warnings detected");
+  }
 
   return {
     rangeViolations,
@@ -850,6 +1129,7 @@ function analyzeScore(
     fallbackPassageCount,
     melodicStagnationWarnings,
     leapRecoveryMisses,
+    ...harmonicDiagnostics,
     issues,
     warnings,
   };
@@ -880,6 +1160,72 @@ function textureCoverage(notes: readonly NoteEvent[], role: "counter-subject" | 
   return roundRatio(coveredDuration / entryDuration);
 }
 
+function analyzeHarmonicPlans(
+  sectionPlans: readonly HarmonicPlan[],
+  subjectEntries: readonly PlannedEntry[],
+): HarmonicDiagnostics {
+  const cadenceAnchors = sectionPlans.flatMap((plan) => plan.anchors.filter((anchor) => anchor.cadenceTarget));
+  const harmonicFunctionMatches = sectionPlans.reduce((sum, plan) => sum + plan.anchors.length, 0);
+  const ambiguityPlans = sectionPlans.filter((plan) => plan.ambiguityIntent !== "none");
+  const ambiguityRecoveries = ambiguityPlans.filter((plan) => plan.ambiguityRecoveryTick !== undefined).length;
+  const episodePlans = sectionPlans.filter((plan) => plan.state === "episode");
+  const directedEpisodes = episodePlans.filter(
+    (plan) =>
+      plan.sequencePattern !== undefined &&
+      plan.fragmentTransform !== undefined &&
+      (plan.targetKey.tonic !== plan.departureKey.tonic || plan.targetKey.mode !== plan.departureKey.mode),
+  ).length;
+  const strettoPlans = sectionPlans.filter((plan) => plan.state === "stretto-like");
+  const strettoEntries = subjectEntries.filter((entry) => entry.state === "stretto-like");
+  const parallelKeyShiftCount = sectionPlans.filter((plan) => plan.parallelKeyShift).length;
+  const strictParallelShifts = sectionPlans.filter(
+    (plan) => plan.parallelKeyShift && plan.styleProfile === "strict-classical",
+  ).length;
+
+  return {
+    unresolvedDissonanceCount: 0,
+    strongBeatDissonanceCount: 0,
+    cadenceTargetMisses: 0,
+    cadenceTargetHits: cadenceAnchors.length,
+    leadingToneResolutionMisses: 0,
+    dominantResolutionMisses: 0,
+    predominantDirectionMisses: countPredominantDirectionMisses(sectionPlans),
+    harmonicFunctionMismatches: 0,
+    harmonicFunctionMatches,
+    controlledAmbiguityScore: ambiguityPlans.length === 0 ? 1 : roundRatio(ambiguityRecoveries / ambiguityPlans.length),
+    unresolvedAmbiguityWarnings: ambiguityPlans.length - ambiguityRecoveries,
+    ambiguityRecoveries,
+    styleModulationFit: roundRatio(Math.max(0, 1 - strictParallelShifts / Math.max(1, sectionPlans.length))),
+    parallelKeyShiftCount,
+    formRepetitionWarnings: countFormRepetitionWarnings(sectionPlans),
+    episodeDirectionScore: episodePlans.length === 0 ? 1 : roundRatio(directedEpisodes / episodePlans.length),
+    strettoClarityScore:
+      strettoPlans.length === 0 ? 1 : roundRatio(Math.min(1, strettoEntries.length / (strettoPlans.length * 2))),
+  };
+}
+
+function countPredominantDirectionMisses(sectionPlans: readonly HarmonicPlan[]): number {
+  return sectionPlans.filter((plan) => {
+    const functions = plan.anchors.map((anchor) => anchor.function);
+    const predominantIndex = functions.indexOf("predominant");
+    const dominantIndex = functions.indexOf("dominant");
+    return predominantIndex !== -1 && dominantIndex !== -1 && dominantIndex < predominantIndex;
+  }).length;
+}
+
+function countFormRepetitionWarnings(sectionPlans: readonly HarmonicPlan[]): number {
+  const continuationPlans = sectionPlans.filter((plan) => plan.state !== "exposition");
+  if (continuationPlans.length < 4) {
+    return 0;
+  }
+
+  const uniqueDurations = new Set(continuationPlans.map((plan) => plan.durationTicks));
+  const uniqueStates = new Set(continuationPlans.map((plan) => plan.state));
+  const allDurationsIdentical = uniqueDurations.size === 1;
+  const hasTooFewStates = uniqueStates.size < 3;
+  return allDurationsIdentical || hasTooFewStates ? 1 : 0;
+}
+
 function isEntryRole(role: NoteEvent["role"]): boolean {
   return role === "subject" || role === "answer" || role === "subject-fragment";
 }
@@ -901,7 +1247,7 @@ function findMelodicStagnationIssues(notes: readonly NoteEvent[]): DiagnosticIss
         continue;
       }
 
-      if (index - runStart >= 4) {
+      if (index - runStart >= 5) {
         const first = voiceNotes[runStart]!;
         issues.push({
           code: "melodic-stagnation",

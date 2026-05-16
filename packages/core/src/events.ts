@@ -32,6 +32,42 @@ export type EntryForm = "subject" | "answer" | "subject-fragment";
 
 export type AnswerKind = "true" | "tonal";
 
+export type HarmonicFunction = "tonic" | "predominant" | "dominant" | "cadential-tonic";
+
+export type CadenceKind = "authentic" | "half" | "deceptive" | "evaded" | "modulatory" | "modal";
+
+export type StyleProfile = "strict-classical" | "hybrid" | "popular-tolerant";
+
+export type AmbiguityIntent = "none" | "deceptive-motion" | "evaded-cadence" | "pivot-harmony";
+
+export type SequencePattern = "ascending-step" | "descending-step" | "circle-fifths" | "parallel-shift";
+
+export type FragmentTransform = "sequence" | "contrary-motion" | "inversion";
+
+export type HarmonicAnchor = {
+  tick: number;
+  localKey: KeySignature;
+  function: HarmonicFunction;
+  cadenceTarget: boolean;
+};
+
+export type HarmonicPlan = {
+  state: FugueState;
+  startTick: number;
+  durationTicks: number;
+  localKey: KeySignature;
+  departureKey: KeySignature;
+  targetKey: KeySignature;
+  styleProfile: StyleProfile;
+  cadenceKind: CadenceKind;
+  ambiguityIntent: AmbiguityIntent;
+  ambiguityRecoveryTick?: number;
+  parallelKeyShift: boolean;
+  sequencePattern?: SequencePattern;
+  fragmentTransform?: FragmentTransform;
+  anchors: HarmonicAnchor[];
+};
+
 export type PlannedEntry = {
   voice: Voice;
   form: EntryForm;
@@ -138,6 +174,7 @@ export type GenerationDiagnostics = {
   candidateEvaluations: number;
   stateTransitions: FugueState[];
   subjectEntries: PlannedEntry[];
+  sectionPlans: HarmonicPlan[];
   rangeViolations: number;
   voiceCrossings: number;
   parallelPerfects: number;
@@ -149,6 +186,23 @@ export type GenerationDiagnostics = {
   fallbackPassageCount: number;
   melodicStagnationWarnings: number;
   leapRecoveryMisses: number;
+  unresolvedDissonanceCount: number;
+  strongBeatDissonanceCount: number;
+  cadenceTargetMisses: number;
+  cadenceTargetHits: number;
+  leadingToneResolutionMisses: number;
+  dominantResolutionMisses: number;
+  predominantDirectionMisses: number;
+  harmonicFunctionMismatches: number;
+  harmonicFunctionMatches: number;
+  controlledAmbiguityScore: number;
+  unresolvedAmbiguityWarnings: number;
+  ambiguityRecoveries: number;
+  styleModulationFit: number;
+  parallelKeyShiftCount: number;
+  formRepetitionWarnings: number;
+  episodeDirectionScore: number;
+  strettoClarityScore: number;
   issues: DiagnosticIssue[];
   warnings: string[];
 };
