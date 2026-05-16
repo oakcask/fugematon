@@ -1,8 +1,15 @@
 import { TICKS_PER_QUARTER, VOICE_RANGES } from "../constants.js";
 import type { DiagnosticIssue, DurationDistribution, HarmonicPlan, NoteEvent, PlannedEntry, Voice } from "../events.js";
 import { analyzeHarmonicPlans } from "./harmony-diagnostics.js";
+import { isModalMode } from "./key.js";
 import { scaleDegreePitchClass } from "./pitch.js";
-import { COUNTER_SUBJECT_DEGREES, compareNoteEvents, positiveModulo, VOICE_ENTRY_ORDER } from "./shared.js";
+import {
+  COUNTER_SUBJECT_DEGREES,
+  compareNoteEvents,
+  MODAL_COUNTER_SUBJECT_DEGREES,
+  positiveModulo,
+  VOICE_ENTRY_ORDER,
+} from "./shared.js";
 import type { ActiveVerticality, TextureDiagnostics } from "./types.js";
 
 export function analyzeScore(
@@ -103,7 +110,7 @@ export function analyzeScore(
   const keyMetadataMismatches = countIssues(issues, "key-metadata-mismatch");
   const counterSubjectCoverage = textureCoverage(notes, "counter-subject");
   const freeCounterpointCoverage = textureCoverage(notes, "free-counterpoint");
-  const textureDiagnostics = analyzeTextureDiagnostics(notes, subjectEntries);
+  const textureDiagnostics = analyzeTextureDiagnostics(notes, subjectEntries, sectionPlans);
   const fallbackPassageCount = notes.filter((note) => note.role === "fallback").length;
   const melodicStagnationWarnings = countIssues(issues, "melodic-stagnation");
   const leapRecoveryMisses = countIssues(issues, "leap-recovery-miss");
@@ -199,6 +206,7 @@ function textureCoverage(notes: readonly NoteEvent[], role: "counter-subject" | 
 function analyzeTextureDiagnostics(
   notes: readonly NoteEvent[],
   subjectEntries: readonly PlannedEntry[],
+  sectionPlans: readonly HarmonicPlan[],
 ): TextureDiagnostics {
   const counterSubjectNotes = notes.filter((note) => note.role === "counter-subject").sort(compareNoteEvents);
   const freeCounterpointNotes = notes.filter((note) => note.role === "free-counterpoint").sort(compareNoteEvents);
@@ -209,7 +217,7 @@ function analyzeTextureDiagnostics(
   const supportNoteCount = Math.max(1, supportNotes.length);
 
   return {
-    counterSubjectIdentityRetention: contourRetention(counterSubjectNotes, COUNTER_SUBJECT_DEGREES),
+    counterSubjectIdentityRetention: counterSubjectIdentityRetention(counterSubjectNotes, sectionPlans),
     counterSubjectInvertibilityScore: invertibilityNearEntries(notes, subjectEntries),
     freeCounterpointContourScore: contourVariety(freeCounterpointNotes),
     rhythmicIndependenceScore: roundRatio(Math.max(0, 1 - verticalStats.sharedRhythmOverlapCount / supportNoteCount)),
@@ -227,6 +235,19 @@ function analyzeTextureDiagnostics(
     ornamentCandidateCount,
     ornamentDensity: roundRatio(ornamentCandidateCount / supportNoteCount),
   };
+}
+
+function counterSubjectIdentityRetention(
+  counterSubjectNotes: readonly NoteEvent[],
+  sectionPlans: readonly HarmonicPlan[],
+): number {
+  const strictRetention = contourRetention(counterSubjectNotes, COUNTER_SUBJECT_DEGREES);
+  const hasModalPlan = sectionPlans.some((plan) => isModalMode(plan.localKey.mode) || isModalMode(plan.targetKey.mode));
+  if (!hasModalPlan) {
+    return strictRetention;
+  }
+
+  return Math.max(strictRetention, contourRetention(counterSubjectNotes, MODAL_COUNTER_SUBJECT_DEGREES));
 }
 
 function contourRetention(notes: readonly NoteEvent[], expectedDegrees: readonly number[]): number {

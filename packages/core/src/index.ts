@@ -12,6 +12,8 @@ export {
   PHASE_5_7_DIAGNOSTICS_PROFILE,
   PHASE_5_9_DIAGNOSTICS_PROFILE,
   PHASE_5_10_DIAGNOSTICS_PROFILE,
+  PHASE_5_11_DIAGNOSTICS_PROFILE,
+  PHASE_5_11_ROTATION_SEEDS,
   PHASE_5_DIAGNOSTICS_PROFILE,
   PHASE_5_LENGTH_TICKS,
   PHASE_5_REVIEW_SEEDS,
@@ -54,9 +56,11 @@ export type {
   Phase59GateFailure,
   Phase59GateResult,
   Phase510GateResult,
+  Phase511GateResult,
 } from "./review-gate.js";
 export {
   evaluatePhase59Diagnostics,
   evaluatePhase510Diagnostics,
+  evaluatePhase511Diagnostics,
   phase59ManualListeningBlockers,
 } from "./review-gate.js";
