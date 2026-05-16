@@ -173,9 +173,53 @@ export type ScoreDimension = {
   features: Record<string, number>;
 };
 
+export type CandidateEntryExplanation = {
+  voice: Voice;
+  form: EntryForm;
+  state: FugueState;
+  startTick: number;
+  instabilityCount: number;
+  severeIntervalCount: number;
+  unresolvedSevereIntervalCount: number;
+};
+
+export type CandidateVoicePairExplanation = {
+  leftVoice: Voice;
+  rightVoice: Voice;
+  samePitchOverlapCount: number;
+  unisonOverlapCount: number;
+  sharedRhythmOverlapCount: number;
+  sameDirectionMotionCount: number;
+};
+
+export type CandidateVoiceExplanation = {
+  voice: Voice;
+  leapRecoveryMisses: number;
+  repeatedPitchRunCount: number;
+};
+
+export type CandidateSectionExplanation = {
+  state: FugueState;
+  startTick: number;
+  durationTicks: number;
+  cadenceKind: CadenceKind;
+  cadenceTargetCount: number;
+  soloTextureRisk: number;
+};
+
+export type CandidateEvaluationExplanations = {
+  entries: CandidateEntryExplanation[];
+  voicePairs: CandidateVoicePairExplanation[];
+  voices: CandidateVoiceExplanation[];
+  sections: CandidateSectionExplanation[];
+};
+
 export type CandidateEvaluation = {
+  featureVersion: 1;
+  evaluationModelVersion: 1;
   totalCost: number;
   hardFailures: DiagnosticIssueCode[];
+  explanations: CandidateEvaluationExplanations;
   dimensions: {
     counterpoint: ScoreDimension;
     melody: ScoreDimension;
