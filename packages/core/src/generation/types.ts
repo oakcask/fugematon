@@ -8,6 +8,7 @@ import type {
   HarmonicPlan,
   NoteEvent,
   OrnamentPlacementReasons,
+  PitchContourMotionSummary,
   SoloTextureSummary,
 } from "../events.js";
 
@@ -83,6 +84,7 @@ export type TextureDiagnostics = {
   repeatedPitchRunCount: number;
   allVoiceSilenceGapCount: number;
   soloTexture: SoloTextureSummary;
+  pitchContourMotion: PitchContourMotionSummary;
   ornamentCandidateCount: number;
   ornamentDensity: number;
   ornamentPlacementReasons: OrnamentPlacementReasons;

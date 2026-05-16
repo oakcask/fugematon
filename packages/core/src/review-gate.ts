@@ -3,6 +3,7 @@ import {
   PHASE_5_10_DIAGNOSTICS_PROFILE,
   PHASE_5_11_DIAGNOSTICS_PROFILE,
   PHASE_6_DIAGNOSTICS_PROFILE,
+  PHASE_7_DIAGNOSTICS_PROFILE,
 } from "./constants.js";
 import type { GenerationDiagnostics } from "./events.js";
 
@@ -59,6 +60,21 @@ export type Phase6GateResult = {
     ornamentPlacementReasonCount: number;
     expositionDurationTicks: number;
     firstContinuationStartTick: number;
+  };
+};
+
+export type Phase7GateResult = {
+  passed: boolean;
+  failures: Phase59GateFailure[];
+  metrics: Phase6GateResult["metrics"] & {
+    fourBeatBassUpperSameDirectionRatio: number;
+    fourBeatBassUpperContraryRatio: number;
+    eightBeatBassUpperSameDirectionRatio: number;
+    eightBeatBassUpperContraryRatio: number;
+    fourBeatOuterVoiceSameDirectionRatio: number;
+    fourBeatOuterVoiceContraryRatio: number;
+    fourBeatBassUpperComparisonCount: number;
+    eightBeatBassUpperComparisonCount: number;
   };
 };
 
@@ -383,6 +399,78 @@ export function evaluatePhase6Diagnostics(seed: string, diagnostics: GenerationD
     "firstContinuationStartTick",
     metrics.firstContinuationStartTick,
     PHASE_6_DIAGNOSTICS_PROFILE.maxFirstContinuationStartTick,
+  );
+
+  return {
+    passed: failures.length === 0,
+    failures,
+    metrics,
+  };
+}
+
+export function evaluatePhase7Diagnostics(seed: string, diagnostics: GenerationDiagnostics): Phase7GateResult {
+  const phase6Gate = evaluatePhase6Diagnostics(seed, diagnostics);
+  const { fourBeat, eightBeat } = diagnostics.pitchContourMotion;
+  const metrics = {
+    ...phase6Gate.metrics,
+    fourBeatBassUpperSameDirectionRatio: fourBeat.bassUpperSameDirectionRatio,
+    fourBeatBassUpperContraryRatio: fourBeat.bassUpperContraryRatio,
+    eightBeatBassUpperSameDirectionRatio: eightBeat.bassUpperSameDirectionRatio,
+    eightBeatBassUpperContraryRatio: eightBeat.bassUpperContraryRatio,
+    fourBeatOuterVoiceSameDirectionRatio: fourBeat.outerVoiceSameDirectionRatio,
+    fourBeatOuterVoiceContraryRatio: fourBeat.outerVoiceContraryRatio,
+    fourBeatBassUpperComparisonCount: fourBeat.bassUpperComparisonCount,
+    eightBeatBassUpperComparisonCount: eightBeat.bassUpperComparisonCount,
+  };
+  const failures = [...phase6Gate.failures];
+
+  addMaximumFailure(
+    failures,
+    "fourBeatBassUpperSameDirectionRatio",
+    metrics.fourBeatBassUpperSameDirectionRatio,
+    PHASE_7_DIAGNOSTICS_PROFILE.maxFourBeatBassUpperSameDirectionRatio,
+  );
+  addMinimumFailure(
+    failures,
+    "fourBeatBassUpperContraryRatio",
+    metrics.fourBeatBassUpperContraryRatio,
+    PHASE_7_DIAGNOSTICS_PROFILE.minFourBeatBassUpperContraryRatio,
+  );
+  addMaximumFailure(
+    failures,
+    "eightBeatBassUpperSameDirectionRatio",
+    metrics.eightBeatBassUpperSameDirectionRatio,
+    PHASE_7_DIAGNOSTICS_PROFILE.maxEightBeatBassUpperSameDirectionRatio,
+  );
+  addMinimumFailure(
+    failures,
+    "eightBeatBassUpperContraryRatio",
+    metrics.eightBeatBassUpperContraryRatio,
+    PHASE_7_DIAGNOSTICS_PROFILE.minEightBeatBassUpperContraryRatio,
+  );
+  addMaximumFailure(
+    failures,
+    "fourBeatOuterVoiceSameDirectionRatio",
+    metrics.fourBeatOuterVoiceSameDirectionRatio,
+    PHASE_7_DIAGNOSTICS_PROFILE.maxFourBeatOuterVoiceSameDirectionRatio,
+  );
+  addMinimumFailure(
+    failures,
+    "fourBeatOuterVoiceContraryRatio",
+    metrics.fourBeatOuterVoiceContraryRatio,
+    PHASE_7_DIAGNOSTICS_PROFILE.minFourBeatOuterVoiceContraryRatio,
+  );
+  addMinimumFailure(
+    failures,
+    "fourBeatBassUpperComparisonCount",
+    metrics.fourBeatBassUpperComparisonCount,
+    PHASE_7_DIAGNOSTICS_PROFILE.minContourComparisonCount,
+  );
+  addMinimumFailure(
+    failures,
+    "eightBeatBassUpperComparisonCount",
+    metrics.eightBeatBassUpperComparisonCount,
+    PHASE_7_DIAGNOSTICS_PROFILE.minContourComparisonCount,
   );
 
   return {

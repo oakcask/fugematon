@@ -18,6 +18,7 @@ import {
   PHASE_5_LENGTH_TICKS,
   PHASE_5_REVIEW_SEEDS,
   PHASE_6_DIAGNOSTICS_PROFILE,
+  PHASE_7_DIAGNOSTICS_PROFILE,
   TICKS_PER_QUARTER,
   VOICES,
 } from "./constants.js";
@@ -25,6 +26,7 @@ import type { MetaEvent, NoteEvent, ScoreEvent } from "./events.js";
 import { generateScore } from "./generate.js";
 import {
   evaluatePhase6Diagnostics,
+  evaluatePhase7Diagnostics,
   evaluatePhase59Diagnostics,
   evaluatePhase510Diagnostics,
   evaluatePhase511Diagnostics,
@@ -619,6 +621,55 @@ test("generateScore applies phase-6 observation gate across fixed and rotation s
     assert.ok(gate.metrics.ornamentPlacementReasonCount >= PHASE_6_DIAGNOSTICS_PROFILE.minOrnamentPlacementReasonCount);
     assert.ok(gate.metrics.expositionDurationTicks <= PHASE_6_DIAGNOSTICS_PROFILE.maxExpositionDurationTicks);
     assert.ok(gate.metrics.firstContinuationStartTick <= PHASE_6_DIAGNOSTICS_PROFILE.maxFirstContinuationStartTick);
+  }
+});
+
+test("generateScore reports phase-7 contour motion diagnostics", () => {
+  const output = generateScore({ seed: "wide-key", lengthTicks: PHASE_5_LENGTH_TICKS });
+  const { fourBeat, eightBeat } = output.diagnostics.pitchContourMotion;
+
+  assert.equal(fourBeat.windowTicks, TICKS_PER_QUARTER * 4);
+  assert.equal(eightBeat.windowTicks, TICKS_PER_QUARTER * 8);
+  assert.ok(fourBeat.bassUpperComparisonCount > 0);
+  assert.ok(eightBeat.bassUpperComparisonCount > 0);
+  assert.equal(fourBeat.bassUpperSameDirectionRatio + fourBeat.bassUpperContraryRatio, 1);
+  assert.equal(eightBeat.bassUpperSameDirectionRatio + eightBeat.bassUpperContraryRatio, 1);
+  assert.ok(fourBeat.outerVoiceSameDirectionRatio >= 0);
+  assert.ok(fourBeat.outerVoiceContraryRatio >= 0);
+});
+
+test("generateScore applies phase-7 contour gates across fixed and rotation seeds", () => {
+  const seeds = [...PHASE_5_REVIEW_SEEDS, ...PHASE_5_11_ROTATION_SEEDS];
+
+  for (const { seed } of seeds) {
+    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
+    const gate = evaluatePhase7Diagnostics(seed, output.diagnostics);
+
+    assert.deepEqual(gate.failures, []);
+    assert.equal(gate.passed, true);
+    assert.ok(
+      gate.metrics.fourBeatBassUpperSameDirectionRatio <=
+        PHASE_7_DIAGNOSTICS_PROFILE.maxFourBeatBassUpperSameDirectionRatio,
+    );
+    assert.ok(
+      gate.metrics.fourBeatBassUpperContraryRatio >= PHASE_7_DIAGNOSTICS_PROFILE.minFourBeatBassUpperContraryRatio,
+    );
+    assert.ok(
+      gate.metrics.eightBeatBassUpperSameDirectionRatio <=
+        PHASE_7_DIAGNOSTICS_PROFILE.maxEightBeatBassUpperSameDirectionRatio,
+    );
+    assert.ok(
+      gate.metrics.eightBeatBassUpperContraryRatio >= PHASE_7_DIAGNOSTICS_PROFILE.minEightBeatBassUpperContraryRatio,
+    );
+    assert.ok(
+      gate.metrics.fourBeatOuterVoiceSameDirectionRatio <=
+        PHASE_7_DIAGNOSTICS_PROFILE.maxFourBeatOuterVoiceSameDirectionRatio,
+    );
+    assert.ok(
+      gate.metrics.fourBeatOuterVoiceContraryRatio >= PHASE_7_DIAGNOSTICS_PROFILE.minFourBeatOuterVoiceContraryRatio,
+    );
+    assert.ok(gate.metrics.fourBeatBassUpperComparisonCount >= PHASE_7_DIAGNOSTICS_PROFILE.minContourComparisonCount);
+    assert.ok(gate.metrics.eightBeatBassUpperComparisonCount >= PHASE_7_DIAGNOSTICS_PROFILE.minContourComparisonCount);
   }
 });
 

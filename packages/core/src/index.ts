@@ -18,6 +18,7 @@ export {
   PHASE_5_LENGTH_TICKS,
   PHASE_5_REVIEW_SEEDS,
   PHASE_6_DIAGNOSTICS_PROFILE,
+  PHASE_7_DIAGNOSTICS_PROFILE,
   TICKS_PER_QUARTER,
   VOICES,
 } from "./constants.js";
@@ -44,6 +45,8 @@ export type {
   NoteEvent,
   NoteRole,
   OrnamentPlacementReasons,
+  PitchContourMotionSummary,
+  PitchContourWindowSummary,
   PlannedEntry,
   ScoreDimension,
   ScoreEvent,
@@ -59,6 +62,7 @@ export { seedToUint32State, Xoshiro128StarStar } from "./prng.js";
 export type {
   ManualListeningJudgement,
   Phase6GateResult,
+  Phase7GateResult,
   Phase59GateFailure,
   Phase59GateResult,
   Phase510GateResult,
@@ -66,6 +70,7 @@ export type {
 } from "./review-gate.js";
 export {
   evaluatePhase6Diagnostics,
+  evaluatePhase7Diagnostics,
   evaluatePhase59Diagnostics,
   evaluatePhase510Diagnostics,
   evaluatePhase511Diagnostics,

@@ -231,6 +231,21 @@ export type OrnamentPlacementReasons = {
   total: number;
 };
 
+export type PitchContourWindowSummary = {
+  windowTicks: number;
+  bassUpperComparisonCount: number;
+  bassUpperSameDirectionRatio: number;
+  bassUpperContraryRatio: number;
+  outerVoiceComparisonCount: number;
+  outerVoiceSameDirectionRatio: number;
+  outerVoiceContraryRatio: number;
+};
+
+export type PitchContourMotionSummary = {
+  fourBeat: PitchContourWindowSummary;
+  eightBeat: PitchContourWindowSummary;
+};
+
 export type GenerationDiagnostics = {
   generatorVersion: number;
   seed: string;
@@ -271,6 +286,7 @@ export type GenerationDiagnostics = {
   repeatedPitchRunCount: number;
   allVoiceSilenceGapCount: number;
   soloTexture: SoloTextureSummary;
+  pitchContourMotion: PitchContourMotionSummary;
   ornamentCandidateCount: number;
   ornamentDensity: number;
   ornamentPlacementReasons: OrnamentPlacementReasons;
