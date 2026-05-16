@@ -19,6 +19,7 @@ jobs:
     name: Find dependent PRs
     if: >-
       github.event.pull_request.merged == true &&
+      github.event.pull_request.base.ref == github.event.repository.default_branch &&
       github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     outputs:
@@ -84,24 +85,7 @@ jobs:
                 .[]
                 | select(.headRepository.nameWithOwner == env.REPO)
               ]
-            ' > dependent-prs-by-base.json
-
-          gh pr list \
-            --repo "$REPO" \
-            --state open \
-            --label "$AUTO_REBASE_LABEL" \
-            --json number,headRefName,headRepository \
-            --jq '
-              [
-                .[]
-                | select(.headRepository.nameWithOwner == env.REPO)
-              ]
-            ' > dependent-prs-by-label.json
-
-          jq -s 'add | unique_by(.number)' \
-            dependent-prs-by-base.json \
-            dependent-prs-by-label.json \
-            > dependent-prs.json
+            ' > dependent-prs.json
 
           count="$(jq 'length' dependent-prs.json)"
           echo "count=$count" >> "$GITHUB_OUTPUT"
