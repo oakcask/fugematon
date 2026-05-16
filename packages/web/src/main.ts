@@ -1,5 +1,6 @@
 import { generateScore } from "@fugematon/core";
 import "./style.css";
+import { ScorePlayer } from "./audio.js";
 import { createPlaybackModel, type PlaybackModel } from "./score.js";
 
 const DEFAULT_SEED = "fugue-smoke";
@@ -47,6 +48,16 @@ app.innerHTML = `
         <strong id="pitch-span"></strong>
       </div>
     </section>
+    <section class="transport-card">
+      <div>
+        <span class="metric-label">Transport</span>
+        <strong id="transport-status">Ready</strong>
+      </div>
+      <div class="transport-actions">
+        <button type="button" id="start">Start</button>
+        <button type="button" class="secondary" id="stop">Stop</button>
+      </div>
+    </section>
   </section>
 `;
 
@@ -56,9 +67,14 @@ const tempo = requireElement(document.querySelector<HTMLElement>("#tempo"), "tem
 const duration = requireElement(document.querySelector<HTMLElement>("#duration"), "duration metric");
 const notes = requireElement(document.querySelector<HTMLElement>("#notes"), "notes metric");
 const pitchSpan = requireElement(document.querySelector<HTMLElement>("#pitch-span"), "pitch span metric");
+const startButton = requireElement(document.querySelector<HTMLButtonElement>("#start"), "start button");
+const stopButton = requireElement(document.querySelector<HTMLButtonElement>("#stop"), "stop button");
+const transportStatus = requireElement(document.querySelector<HTMLElement>("#transport-status"), "transport status");
 
 seedInput.value = state.seed;
 render(state);
+
+let player: ScorePlayer | undefined;
 
 seedForm.addEventListener("submit", (event) => {
   event.preventDefault();
@@ -68,8 +84,19 @@ seedForm.addEventListener("submit", (event) => {
     return;
   }
 
+  player?.stop();
   state = createState(nextSeed);
   render(state);
+  transportStatus.textContent = "Ready";
+});
+
+startButton.addEventListener("click", () => {
+  void startPlayback();
+});
+
+stopButton.addEventListener("click", () => {
+  player?.stop();
+  transportStatus.textContent = "Stopped";
 });
 
 function createState(seed: string): AppState {
@@ -84,6 +111,21 @@ function render(nextState: AppState): void {
   duration.textContent = `${nextState.model.totalSeconds.toFixed(1)} s`;
   notes.textContent = `${nextState.model.notes.length}`;
   pitchSpan.textContent = `${nextState.model.pitchRange.min}-${nextState.model.pitchRange.max}`;
+}
+
+async function startPlayback(): Promise<void> {
+  startButton.disabled = true;
+  transportStatus.textContent = "Starting";
+
+  try {
+    player ??= new ScorePlayer();
+    await player.play(state.model);
+    transportStatus.textContent = `Playing ${state.seed}`;
+  } catch (error) {
+    transportStatus.textContent = error instanceof Error ? error.message : "Playback failed";
+  } finally {
+    startButton.disabled = false;
+  }
 }
 
 function requireElement<TElement extends Element>(element: TElement | null, name: string): TElement {
