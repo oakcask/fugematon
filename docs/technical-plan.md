@@ -125,17 +125,59 @@
   * 声部交差: 0
   * 4声の NoteEvent 欠落: 0
   * exposition の主題または応答の欠落: 0
+  * exposition の応答が主題に対して5度関係で提示されること: diagnostics で確認する。
   * 並達5度・並達8度の疑い: diagnostics に記録するが、CI 失敗条件にはしない。
   * 不協和の未解決疑い: diagnostics に記録するが、CI 失敗条件にはしない。
 * Phase 3 以降の閾値：
   * 声域違反: 0
   * 声部交差: 0
+  * exposition、subject return、stretto-like section の主題 entry が、主調、属調、近親調の計画に沿って現れる。
+  * 応答 entry は5度関係を維持しつつ、entry 周辺の持続的な完全8度や並達完全音程が主題の聴感を支配しない。
+  * modal seed では、local mode の特徴音が主題または episode に現れ、tonal cadence だけに回収されすぎない。
   * 並達5度・並達8度の疑い: 生成長に対する比率で上限を置く。
   * 不協和の未解決疑い: 生成長に対する比率で上限を置く。
   * 主題または主題断片の再出現: 状態ごとに最低回数を置く。
   * 生成所要時間: リアルタイム再生の先読み量を下回らない上限を置く。
 * 閾値はコード内に散らさず、CI 用の diagnostics profile として管理する。
 * diagnostics の項目追加は互換的変更として扱うが、既存閾値の厳格化は generatorVersion とは別に CI 設定の変更として扱う。
+
+## 主題 entry 計画
+
+* exposition の基本形は、主題、5度上の応答、主題、5度上の応答とする。
+  * 声部順は seed によって変えてよいが、entry ごとの form と移調関係は diagnostics で確認できるようにする。
+  * 5度上または4度下の関係は、pitch class 差分だけではなく、local key と scale degree mapping で表現する。
+* Phase 1 の実装は固定の真応答でよい。
+  * 応答は主題を5度移調したものとして生成する。
+  * 現行実装では semitone offset による近似を許すが、後続フェーズではスケール度数ベースの表現へ置き換える。
+  * 縦に鳴る完全8度や完全5度を完全には避けないが、声域違反と声部交差は 0 に保つ。
+* Phase 2 では生成ロジックを大きく変えず、可視化で主題と応答の entry を確認しやすくする。
+* Phase 3 では、候補生成とスコアリングに主題 entry plan を渡す。
+  * entry plan は、状態、開始 tick、声部、form、global key、local key、local mode、scale degree mapping、移調関係を持つ。
+  * 候補は entry plan を満たすことを強く加点し、対位法違反を減点する。
+  * 応答 entry 周辺では、5度関係の再認識性と、縦の完全8度・並達完全音程の抑制を別々に評価する。
+  * 真応答と調性応答を選べるようにし、主題の輪郭が tonic-dominant に強く依存する場合は調性応答を優先する。
+* subject return では、主調だけに戻すのではなく、近親調での主題再提示も許す。
+  * 無限生成では、entry plan が単調にならないよう、声部、調性、密度を状態機械が選ぶ。
+  * ただし主題の再認識性を落としすぎないよう、主題冒頭の輪郭とリズムは優先して保つ。
+
+## 教会旋法の導入計画
+
+* 教会旋法は Phase 1 の固定 exposition には入れず、音階モデルをスケール度数ベースへ移した後に導入する。
+  * Phase 1-2 は major/minor と現行 MIDI 出力の安定を優先する。
+  * Phase 3 で local key と local mode を entry plan に持たせる。
+  * Phase 3 後半または Phase 4 で、modal seed を代表 seed セットへ追加する。
+* 最初に扱う mode は dorian、mixolydian、aeolian とする。
+  * dorian は短調寄りだが第6音が特徴になり、対位法的にも扱いやすい。
+  * mixolydian は長調寄りだが第7音が特徴になり、強すぎる導音解決を避けた終止を作りやすい。
+  * aeolian は自然短音階として minor との比較対象にする。
+* phrygian と lydian は、特徴音が強いため通常候補に入れる前に境界値 seed で検証する。
+* locrian は初期の通常生成対象から外す。
+  * tonic triad の不安定さが高く、Fugematon の長時間再生の基盤としては別の評価設計が必要になる。
+* modal context では、次の評価を diagnostics または soft score に追加する。
+  * mode の特徴音が主題または episode で聴き取れる。
+  * tonal な導音や属和音に寄りすぎて、mode の性格が消えていない。
+  * modal cadence が状態遷移の区切りとして機能している。
+  * semitone transposition ではなく scale degree mapping によって subject return が生成されている。
 
 ## 生成エンジン API 案
 
