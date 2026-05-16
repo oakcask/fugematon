@@ -4,5 +4,6 @@ dist/
 app-dist/
 *.tsbuildinfo
 samples/**/*.mid
+samples/**/*.json
 playwright-report/
 test-results/
