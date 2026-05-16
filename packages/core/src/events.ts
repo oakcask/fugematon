@@ -23,6 +23,8 @@ export type KeySignature = {
   mode: KeyMode;
 };
 
+export type FugueState = "exposition" | "episode" | "subject-return" | "stretto-like";
+
 export type MetaEvent =
   | {
       kind: "meta";
@@ -58,7 +60,7 @@ export type MetaEvent =
       kind: "meta";
       type: "state-change";
       tick: number;
-      payload: { state: string };
+      payload: { state: FugueState };
     }
   | {
       kind: "meta";
@@ -105,10 +107,11 @@ export type GenerationDiagnostics = {
   generatedUntilTick: number;
   eventCount: number;
   noteCount: number;
-  stateTransitions: string[];
+  stateTransitions: FugueState[];
   subjectEntries: {
     voice: Voice;
-    form: "subject" | "answer";
+    form: "subject" | "answer" | "subject-fragment";
+    state: FugueState;
     startTick: number;
     pitchClassOffset: number;
   }[];

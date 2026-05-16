@@ -6,6 +6,7 @@ import {
 } from "./constants.js";
 import type {
   DiagnosticIssue,
+  FugueState,
   GenerationInput,
   GenerationOutput,
   GenerationParameters,
@@ -58,6 +59,9 @@ const CONSONANT_OFFSETS: Record<Voice, number> = {
   bass: -12,
 };
 const ENTRY_SPACING_TICKS = TICKS_PER_QUARTER * 4;
+const CONTINUATION_SECTION_TICKS = TICKS_PER_QUARTER * 8;
+const STRETTO_ENTRY_SPACING_TICKS = TICKS_PER_QUARTER * 2;
+const STATE_SEQUENCE: FugueState[] = ["exposition", "episode", "subject-return", "episode", "stretto-like"];
 
 export function generateScore(input: GenerationInput): GenerationOutput {
   validateInput(input);
@@ -68,9 +72,9 @@ export function generateScore(input: GenerationInput): GenerationOutput {
   const timeSignature = chooseTimeSignature(rng);
   const bpm = chooseTempo(rng);
   const subject = buildSubject(rng, keySignature);
-  const exposition = buildExposition(subject, keySignature);
-  const diagnostics = analyzeExposition(exposition.notes);
-  const generatedUntilTick = Math.max(input.lengthTicks, exposition.endTick);
+  const score = buildFugueScore(subject, keySignature, input.lengthTicks, rng);
+  const diagnostics = analyzeExposition(score.notes);
+  const generatedUntilTick = Math.max(input.lengthTicks, score.endTick);
 
   const events: ScoreEvent[] = [
     {
@@ -115,7 +119,13 @@ export function generateScore(input: GenerationInput): GenerationOutput {
       tick: 0,
       payload: { state: "exposition" },
     },
-    ...exposition.notes,
+    ...score.stateChanges.map((stateChange) => ({
+      kind: "meta" as const,
+      type: "state-change" as const,
+      tick: stateChange.tick,
+      payload: { state: stateChange.state },
+    })),
+    ...score.notes,
     {
       kind: "meta",
       type: "score-end",
@@ -132,9 +142,9 @@ export function generateScore(input: GenerationInput): GenerationOutput {
       lengthTicks: input.lengthTicks,
       generatedUntilTick,
       eventCount: events.length,
-      noteCount: exposition.notes.length,
-      stateTransitions: ["exposition"],
-      subjectEntries: exposition.subjectEntries,
+      noteCount: score.notes.length,
+      stateTransitions: score.stateTransitions,
+      subjectEntries: score.subjectEntries,
       rangeViolations: diagnostics.rangeViolations,
       voiceCrossings: diagnostics.voiceCrossings,
       parallelPerfects: diagnostics.parallelPerfects,
@@ -197,6 +207,14 @@ type Exposition = {
   endTick: number;
 };
 
+type FugueScore = Exposition & {
+  stateTransitions: FugueState[];
+  stateChanges: {
+    tick: number;
+    state: FugueState;
+  }[];
+};
+
 function buildSubject(rng: Xoshiro128StarStar, keySignature: KeySignature): SubjectNote[] {
   const shape = rng.chooseWeighted<readonly number[]>([
     { value: SUBJECT_DEGREES, weight: 3 },
@@ -216,6 +234,42 @@ function buildSubject(rng: Xoshiro128StarStar, keySignature: KeySignature): Subj
   });
 }
 
+function buildFugueScore(
+  subject: readonly SubjectNote[],
+  keySignature: KeySignature,
+  lengthTicks: number,
+  rng: Xoshiro128StarStar,
+): FugueScore {
+  const exposition = buildExposition(subject, keySignature);
+  const notes = [...exposition.notes];
+  const subjectEntries = [...exposition.subjectEntries];
+  const stateTransitions: FugueState[] = ["exposition"];
+  const stateChanges: FugueScore["stateChanges"] = [];
+  let sectionStartTick = exposition.endTick;
+  let stateIndex = 1;
+
+  while (sectionStartTick < lengthTicks) {
+    const state = STATE_SEQUENCE[stateIndex % STATE_SEQUENCE.length]!;
+    stateTransitions.push(state);
+    stateChanges.push({ tick: sectionStartTick, state });
+    const section = buildContinuationSection(subject, keySignature, state, sectionStartTick, rng);
+    notes.push(...section.notes);
+    subjectEntries.push(...section.subjectEntries);
+    sectionStartTick += CONTINUATION_SECTION_TICKS;
+    stateIndex += 1;
+  }
+
+  notes.sort(compareNoteEvents);
+
+  return {
+    notes,
+    subjectEntries,
+    stateTransitions,
+    stateChanges,
+    endTick: Math.max(...notes.map((note) => note.startTick + note.durationTicks)),
+  };
+}
+
 function buildExposition(subject: readonly SubjectNote[], keySignature: KeySignature): Exposition {
   const notes: Exposition["notes"] = [];
   const subjectEntries: Exposition["subjectEntries"] = [];
@@ -228,19 +282,14 @@ function buildExposition(subject: readonly SubjectNote[], keySignature: KeySigna
     const form = entryIndex % 2 === 0 ? "subject" : "answer";
     const startTick = entryIndex * ENTRY_SPACING_TICKS;
     const pitchClassOffset = form === "answer" ? 7 : 0;
-    subjectEntries.push({ voice, form, startTick, pitchClassOffset });
-
-    for (const note of subject) {
-      notes.push({
-        kind: "note",
-        voice,
-        startTick: startTick + note.offsetTick,
-        durationTicks: note.durationTicks,
-        pitch: fitPitchToRange(VOICE_BASE_OCTAVES[voice] + tonic + pitchClassOffset + note.degree, voice),
-        velocity: form === "subject" ? 92 : 86,
-      });
-    }
-
+    addSubjectEntry(notes, subjectEntries, subject, {
+      state: "exposition",
+      voice,
+      form,
+      startTick,
+      tonic,
+      pitchClassOffset,
+    });
     addSustainedCounterpoint(notes, voice, startTick, subjectDuration(subject), tonic);
   }
 
@@ -251,6 +300,118 @@ function buildExposition(subject: readonly SubjectNote[], keySignature: KeySigna
     subjectEntries,
     endTick: Math.max(...notes.map((note) => note.startTick + note.durationTicks)),
   };
+}
+
+function buildContinuationSection(
+  subject: readonly SubjectNote[],
+  keySignature: KeySignature,
+  state: FugueState,
+  startTick: number,
+  rng: Xoshiro128StarStar,
+): Exposition {
+  const notes: Exposition["notes"] = [];
+  const subjectEntries: Exposition["subjectEntries"] = [];
+  const tonic = TONIC_PITCH_CLASSES.get(keySignature.tonic);
+  if (tonic === undefined) {
+    throw new Error(`unsupported tonic: ${keySignature.tonic}`);
+  }
+
+  if (state === "episode") {
+    const voice = VOICE_ENTRY_ORDER[rng.nextInt(VOICE_ENTRY_ORDER.length)]!;
+    addSubjectEntry(notes, subjectEntries, subject.slice(0, 4), {
+      state,
+      voice,
+      form: "subject-fragment",
+      startTick,
+      tonic,
+      pitchClassOffset: choose(rng, [0, 5, 7] as const),
+    });
+    addSustainedCounterpoint(notes, voice, startTick, TICKS_PER_QUARTER * 2, tonic);
+  } else if (state === "subject-return") {
+    const voice = VOICE_ENTRY_ORDER[rng.nextInt(VOICE_ENTRY_ORDER.length)]!;
+    addSubjectEntry(notes, subjectEntries, subject, {
+      state,
+      voice,
+      form: "subject",
+      startTick,
+      tonic,
+      pitchClassOffset: choose(rng, [0, 5, 7, 9] as const),
+    });
+    addSustainedCounterpoint(notes, voice, startTick, subjectDuration(subject), tonic);
+  } else {
+    const firstVoiceIndex = rng.nextInt(VOICE_ENTRY_ORDER.length);
+    const firstVoice = VOICE_ENTRY_ORDER[firstVoiceIndex]!;
+    const secondVoice = VOICE_ENTRY_ORDER[(firstVoiceIndex + 2) % VOICE_ENTRY_ORDER.length]!;
+    addSubjectEntry(notes, subjectEntries, subject.slice(0, 6), {
+      state,
+      voice: firstVoice,
+      form: "subject",
+      startTick,
+      tonic,
+      pitchClassOffset: 0,
+    });
+    addSubjectEntry(notes, subjectEntries, subject.slice(0, 6), {
+      state,
+      voice: secondVoice,
+      form: "answer",
+      startTick: startTick + STRETTO_ENTRY_SPACING_TICKS,
+      tonic,
+      pitchClassOffset: 7,
+    });
+    addSustainedCounterpoint(notes, firstVoice, startTick, subjectDuration(subject), tonic);
+  }
+
+  notes.sort(compareNoteEvents);
+
+  return {
+    notes,
+    subjectEntries,
+    endTick: Math.max(...notes.map((note) => note.startTick + note.durationTicks)),
+  };
+}
+
+function addSubjectEntry(
+  notes: NoteEvent[],
+  subjectEntries: Exposition["subjectEntries"],
+  subject: readonly SubjectNote[],
+  entry: {
+    state: FugueState;
+    voice: Voice;
+    form: "subject" | "answer" | "subject-fragment";
+    startTick: number;
+    tonic: number;
+    pitchClassOffset: number;
+  },
+): void {
+  subjectEntries.push({
+    voice: entry.voice,
+    form: entry.form,
+    state: entry.state,
+    startTick: entry.startTick,
+    pitchClassOffset: entry.pitchClassOffset,
+  });
+
+  for (const note of subject) {
+    notes.push({
+      kind: "note",
+      voice: entry.voice,
+      startTick: entry.startTick + note.offsetTick,
+      durationTicks: note.durationTicks,
+      pitch: fitPitchToRange(
+        VOICE_BASE_OCTAVES[entry.voice] + entry.tonic + entry.pitchClassOffset + note.degree,
+        entry.voice,
+      ),
+      velocity: entry.form === "answer" ? 86 : 92,
+    });
+  }
+}
+
+function choose<T>(rng: Xoshiro128StarStar, values: readonly T[]): T {
+  if (values.length === 0) {
+    throw new Error("values must not be empty");
+  }
+
+  return values[rng.nextInt(values.length)]!;
 }
 
 function addSustainedCounterpoint(
