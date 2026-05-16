@@ -27,6 +27,7 @@ app.innerHTML = `
       <label for="seed">Seed</label>
       <div class="seed-row">
         <input id="seed" name="seed" autocomplete="off" spellcheck="false" />
+        <button type="button" class="secondary" id="random-seed">Random seed</button>
         <button type="submit">Regenerate</button>
       </div>
       <p class="hint">The same seed always produces the same Phase 4 score.</p>
@@ -75,6 +76,10 @@ app.innerHTML = `
 
 const seedForm = requireElement(document.querySelector<HTMLFormElement>("#seed-form"), "seed form");
 const seedInput = requireElement(document.querySelector<HTMLInputElement>("#seed"), "seed input");
+const randomSeedButton = requireElement(
+  document.querySelector<HTMLButtonElement>("#random-seed"),
+  "random seed button",
+);
 const tempo = requireElement(document.querySelector<HTMLElement>("#tempo"), "tempo metric");
 const duration = requireElement(document.querySelector<HTMLElement>("#duration"), "duration metric");
 const notes = requireElement(document.querySelector<HTMLElement>("#notes"), "notes metric");
@@ -95,18 +100,11 @@ let animationFrame: number | undefined;
 
 seedForm.addEventListener("submit", (event) => {
   event.preventDefault();
-  const nextSeed = seedInput.value.trim();
-  if (nextSeed.length === 0) {
-    seedInput.value = state.seed;
-    return;
-  }
+  regenerateScore(seedInput.value);
+});
 
-  player?.stop();
-  cancelVisualizerLoop();
-  state = createState(nextSeed);
-  render(state);
-  drawPianoRoll(pianoRoll, state.model, 0);
-  transportStatus.textContent = "Ready";
+randomSeedButton.addEventListener("click", () => {
+  regenerateScore(createRandomSeed());
 });
 
 startButton.addEventListener("click", () => {
@@ -123,6 +121,28 @@ stopButton.addEventListener("click", () => {
 window.addEventListener("resize", () => {
   drawPianoRoll(pianoRoll, state.model, player?.playbackSecond ?? 0);
 });
+
+function regenerateScore(seed: string): void {
+  const nextSeed = seed.trim();
+  if (nextSeed.length === 0) {
+    seedInput.value = state.seed;
+    return;
+  }
+
+  seedInput.value = nextSeed;
+  player?.stop();
+  cancelVisualizerLoop();
+  state = createState(nextSeed);
+  render(state);
+  drawPianoRoll(pianoRoll, state.model, 0);
+  transportStatus.textContent = "Ready";
+}
+
+function createRandomSeed(): string {
+  const values = new Uint32Array(2);
+  window.crypto.getRandomValues(values);
+  return `seed-${Array.from(values, (value) => value.toString(36).padStart(7, "0")).join("-")}`;
+}
 
 function createState(seed: string): AppState {
   return {
