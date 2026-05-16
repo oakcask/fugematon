@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { VOICES } from "./constants.js";
+import { PHASE_1_DIAGNOSTICS_PROFILE, PHASE_1_REPRESENTATIVE_SEEDS, VOICES } from "./constants.js";
 import type { MetaEvent, NoteEvent, ScoreEvent } from "./events.js";
 import { generateScore } from "./generate.js";
 
@@ -68,15 +68,18 @@ test("generateScore exposes ordered subject and answer entries", () => {
 });
 
 test("generateScore validates representative phase-1 seeds", () => {
-  for (const seed of ["bach-001", "fugue-smoke", "minor-entry", "wide-key"]) {
+  for (const { seed, category } of PHASE_1_REPRESENTATIVE_SEEDS) {
     const output = generateScore({ seed, lengthTicks: 7680 });
     const notes = output.events.filter((event): event is NoteEvent => event.kind === "note");
 
+    assert.ok(category === "fixed" || category === "boundary");
     assert.ok(output.diagnostics.generatedUntilTick >= 7680);
     assert.equal(output.diagnostics.subjectEntries.length, 4);
     assert.deepEqual(new Set(notes.map((note) => note.voice)), new Set(VOICES));
-    assert.equal(output.diagnostics.rangeViolations, 0);
+    assert.equal(output.diagnostics.rangeViolations, PHASE_1_DIAGNOSTICS_PROFILE.rangeViolations);
+    assert.equal(output.diagnostics.voiceCrossings, PHASE_1_DIAGNOSTICS_PROFILE.voiceCrossings);
     assert.equal(countIssues(output.diagnostics.issues, "range-violation"), 0);
+    assert.equal(countIssues(output.diagnostics.issues, "voice-crossing"), 0);
     for (const issue of output.diagnostics.issues) {
       assert.equal(issue.severity, "warning");
       assert.ok(Number.isSafeInteger(issue.tick));

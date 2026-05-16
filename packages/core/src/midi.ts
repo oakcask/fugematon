@@ -33,43 +33,33 @@ type MidiEvent = {
 };
 
 export function exportMidi(events: readonly ScoreEvent[]): Uint8Array {
-  const trackEvents = buildTrackEvents(events);
-  const trackBytes = encodeTrack(trackEvents);
+  const tracks = [
+    encodeTrack(buildMetaTrackEvents(events)),
+    ...VOICES.map((voice) => encodeTrack(buildVoiceTrackEvents(events, voice))),
+  ];
 
   return bytes([
     ...ascii("MThd"),
     ...uint32(6),
-    ...uint16(0),
     ...uint16(1),
+    ...uint16(tracks.length),
     ...uint16(TICKS_PER_QUARTER),
-    ...ascii("MTrk"),
-    ...uint32(trackBytes.length),
-    ...trackBytes,
+    ...tracks.flatMap((trackBytes) => [
+      ...ascii("MTrk"),
+      ...uint32(trackBytes.length),
+      ...trackBytes,
+    ]),
   ]);
 }
 
-function buildTrackEvents(events: readonly ScoreEvent[]): MidiEvent[] {
+function buildMetaTrackEvents(events: readonly ScoreEvent[]): MidiEvent[] {
   const trackEvents: MidiEvent[] = [];
-  let scoreEndTick = 0;
 
   for (const event of events) {
     if (event.kind === "note") {
-      const channel = VOICE_CHANNELS[event.voice];
-      trackEvents.push({
-        tick: event.startTick,
-        order: 3,
-        bytes: [0x90 | channel, event.pitch, event.velocity],
-      });
-      trackEvents.push({
-        tick: event.startTick + event.durationTicks,
-        order: 2,
-        bytes: [0x80 | channel, event.pitch, 0],
-      });
-      scoreEndTick = Math.max(scoreEndTick, event.startTick + event.durationTicks);
       continue;
     }
 
-    scoreEndTick = Math.max(scoreEndTick, event.tick);
     if (event.type === "tempo-change") {
       const microsPerQuarter = Math.round(60_000_000 / event.payload.bpm);
       trackEvents.push({
@@ -92,17 +82,62 @@ function buildTrackEvents(events: readonly ScoreEvent[]): MidiEvent[] {
     }
   }
 
-  for (const [index, voice] of VOICES.entries()) {
-    trackEvents.push({
-      tick: 0,
-      order: 1,
-      bytes: [0xc0 | VOICE_CHANNELS[voice], index === 3 ? 32 : 19],
-    });
-  }
-
-  trackEvents.push({ tick: scoreEndTick, order: 4, bytes: [0xff, 0x2f, 0x00] });
+  trackEvents.push({ tick: scoreEndTick(events), order: 4, bytes: [0xff, 0x2f, 0x00] });
   trackEvents.sort((left, right) => left.tick - right.tick || left.order - right.order);
   return trackEvents;
+}
+
+function buildVoiceTrackEvents(events: readonly ScoreEvent[], voice: Voice): MidiEvent[] {
+  const channel = VOICE_CHANNELS[voice];
+  const voiceIndex = VOICES.indexOf(voice);
+  const trackEvents: MidiEvent[] = [
+    {
+      tick: 0,
+      order: 0,
+      bytes: [0xff, 0x03, voice.length, ...ascii(voice)],
+    },
+    {
+      tick: 0,
+      order: 1,
+      bytes: [0xc0 | channel, voiceIndex === 3 ? 32 : 19],
+    },
+  ];
+  let endTick = 0;
+
+  for (const event of events) {
+    if (event.kind !== "note" || event.voice !== voice) {
+      continue;
+    }
+
+    trackEvents.push({
+      tick: event.startTick,
+      order: 3,
+      bytes: [0x90 | channel, event.pitch, event.velocity],
+    });
+    trackEvents.push({
+      tick: event.startTick + event.durationTicks,
+      order: 2,
+      bytes: [0x80 | channel, event.pitch, 0],
+    });
+    endTick = Math.max(endTick, event.startTick + event.durationTicks);
+  }
+
+  trackEvents.push({ tick: endTick, order: 4, bytes: [0xff, 0x2f, 0x00] });
+  trackEvents.sort((left, right) => left.tick - right.tick || left.order - right.order);
+  return trackEvents;
+}
+
+function scoreEndTick(events: readonly ScoreEvent[]): number {
+  let endTick = 0;
+  for (const event of events) {
+    if (event.kind === "note") {
+      endTick = Math.max(endTick, event.startTick + event.durationTicks);
+    } else {
+      endTick = Math.max(endTick, event.tick);
+    }
+  }
+
+  return endTick;
 }
 
 function encodeTrack(events: readonly MidiEvent[]): number[] {

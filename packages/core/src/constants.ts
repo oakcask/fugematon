@@ -16,3 +16,15 @@ export const DEFAULT_GENERATION_PARAMETERS = {
   density: 0.5,
   subjectPresence: 0.7,
 } as const;
+
+export const PHASE_1_DIAGNOSTICS_PROFILE = {
+  rangeViolations: 0,
+  voiceCrossings: 0,
+} as const;
+
+export const PHASE_1_REPRESENTATIVE_SEEDS = [
+  { seed: "bach-001", category: "fixed" },
+  { seed: "fugue-smoke", category: "fixed" },
+  { seed: "minor-entry", category: "boundary" },
+  { seed: "wide-key", category: "boundary" },
+] as const;
