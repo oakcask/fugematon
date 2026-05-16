@@ -1,0 +1,4 @@
+interface:
+  display_name: "UI Inspection"
+  short_description: "Inspect the Web UI with Vite and Playwright"
+  default_prompt: "Use $ui-inspection when browser-level Web UI validation is needed."
