@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdtemp, readdir, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -24,6 +24,30 @@ test("midi command writes a valid standard MIDI file", async () => {
     assert.ok(result.metaEventTypes.has(0x58));
     assert.ok(result.metaEventTypes.has(0x59));
     assert.ok(result.metaEventTypes.has(0x03));
+  } finally {
+    await rm(directory, { force: true, recursive: true });
+  }
+});
+
+test("review command writes diagnostics and MIDI files for phase-5 seeds", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "fugematon-review-"));
+  try {
+    await main(["review", "--ticks", "960", "--out", directory]);
+
+    const files = await readdir(directory);
+    const summary = JSON.parse(await readFile(join(directory, "summary.json"), "utf8")) as {
+      lengthTicks: number;
+      seeds: { seed: string; diagnosticsFile: string; midiFile: string }[];
+    };
+
+    assert.equal(summary.lengthTicks, 960);
+    assert.ok(summary.seeds.length > 1);
+    for (const entry of summary.seeds) {
+      assert.ok(files.includes(entry.diagnosticsFile));
+      assert.ok(files.includes(entry.midiFile));
+      assert.ok(!entry.diagnosticsFile.includes(directory));
+      assert.ok(!entry.midiFile.includes(directory));
+    }
   } finally {
     await rm(directory, { force: true, recursive: true });
   }

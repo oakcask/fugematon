@@ -17,8 +17,15 @@ export type CliCommand =
       out: string;
     }
   | {
+      name: "review";
+      lengthTicks: number;
+      out: string;
+    }
+  | {
       name: "help";
     };
+
+const DEFAULT_REVIEW_TICKS = 129600;
 
 export function parseArgs(argv: readonly string[]): CliCommand {
   const [command, ...rest] = argv;
@@ -27,11 +34,19 @@ export function parseArgs(argv: readonly string[]): CliCommand {
     return { name: "help" };
   }
 
-  if (command !== "generate" && command !== "diagnose" && command !== "midi") {
+  if (command !== "generate" && command !== "diagnose" && command !== "midi" && command !== "review") {
     throw new Error(`unknown command: ${command}`);
   }
 
   const options = parseOptions(rest);
+  if (command === "review") {
+    const lengthTicks = Number(options.get("ticks") ?? options.get("lengthTicks") ?? DEFAULT_REVIEW_TICKS);
+    if (!Number.isSafeInteger(lengthTicks) || lengthTicks <= 0) {
+      throw new Error("--ticks must be a positive safe integer");
+    }
+    return { name: "review", lengthTicks, out: requiredOption(options, "out") };
+  }
+
   const seed = requiredOption(options, "seed");
   const lengthTicks = Number(requiredOption(options, "ticks", "lengthTicks"));
 
@@ -61,6 +76,7 @@ export function helpText(): string {
     "  fugematon generate --seed <seed> --ticks <lengthTicks> [--out <file>]",
     "  fugematon diagnose --seed <seed> --ticks <lengthTicks>",
     "  fugematon midi --seed <seed> --ticks <lengthTicks> --out <file>",
+    "  fugematon review --out <directory> [--ticks <lengthTicks>]",
   ].join("\n");
 }
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
-import { writeFile } from "node:fs/promises";
-import { exportMidi, generateScore } from "@fugematon/core";
+import { mkdir, writeFile } from "node:fs/promises";
+import { join } from "node:path";
+import { exportMidi, generateScore, PHASE_5_REVIEW_SEEDS } from "@fugematon/core";
 import { helpText, parseArgs } from "./args.js";
 
 export async function main(argv: readonly string[] = process.argv.slice(2)): Promise<void> {
@@ -8,6 +9,11 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
 
   if (command.name === "help") {
     console.log(helpText());
+    return;
+  }
+
+  if (command.name === "review") {
+    await writeReviewBundle(command.out, command.lengthTicks);
     return;
   }
 
@@ -33,6 +39,32 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
   }
 
   await writeFile(command.out, json, "utf8");
+}
+
+async function writeReviewBundle(outDirectory: string, lengthTicks: number): Promise<void> {
+  await mkdir(outDirectory, { recursive: true });
+  const summary = {
+    lengthTicks,
+    seeds: [] as {
+      seed: string;
+      category: string;
+      diagnosticsFile: string;
+      midiFile: string;
+    }[],
+  };
+
+  for (const { seed, category } of PHASE_5_REVIEW_SEEDS) {
+    const output = generateScore({ seed, lengthTicks });
+    const safeSeed = seed.replaceAll(/[^a-z0-9-]/gi, "-");
+    const diagnosticsFile = `${safeSeed}.diagnostics.json`;
+    const midiFile = `${safeSeed}.mid`;
+
+    await writeFile(join(outDirectory, diagnosticsFile), `${JSON.stringify(output.diagnostics, null, 2)}\n`, "utf8");
+    await writeFile(join(outDirectory, midiFile), exportMidi(output.events));
+    summary.seeds.push({ seed, category, diagnosticsFile, midiFile });
+  }
+
+  await writeFile(join(outDirectory, "summary.json"), `${JSON.stringify(summary, null, 2)}\n`, "utf8");
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

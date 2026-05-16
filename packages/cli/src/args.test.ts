@@ -28,9 +28,20 @@ test("parseArgs parses midi command", () => {
   });
 });
 
+test("parseArgs parses review command", () => {
+  assert.deepEqual(parseArgs(["review", "--ticks", "960", "--out", "review"]), {
+    name: "review",
+    lengthTicks: 960,
+    out: "review",
+  });
+  assert.equal(parseArgs(["review", "--out", "review"]).name, "review");
+});
+
 test("parseArgs rejects invalid arguments", () => {
   assert.throws(() => parseArgs(["missing"]), /unknown command/);
   assert.throws(() => parseArgs(["generate", "--seed", "bach-001"]), /missing --ticks/);
   assert.throws(() => parseArgs(["midi", "--seed", "bach-001", "--ticks", "960"]), /missing --out/);
+  assert.throws(() => parseArgs(["review", "--ticks", "0", "--out", "review"]), /--ticks/);
+  assert.throws(() => parseArgs(["review", "--ticks", "960"]), /missing --out/);
   assert.throws(() => parseArgs(["generate", "--seed", "bach-001", "--ticks", "0"]), /--ticks/);
 });
