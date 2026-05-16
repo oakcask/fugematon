@@ -22,6 +22,8 @@ If the user is only brainstorming, discuss the placement and tradeoffs without e
 
 ## Placement Guide
 
+Default to progressive disclosure: keep `AGENTS.md` as a short entry point for always-on principles and skill discovery. Do not add task-specific procedures, command recipes, checklists, or troubleshooting flows to `AGENTS.md`; create or update a skill instead, then link to it from `AGENTS.md` only when agents must discover it by default.
+
 Use `AGENTS.md` when:
 
 - The rule should shape default agent behavior across many tasks.
@@ -61,6 +63,7 @@ Use templates or documentation when:
 ## Implementation Rules
 
 - Keep policy text short and concrete.
+- Before expanding `AGENTS.md`, check whether the content is a task-specific procedure that belongs in a skill.
 - Do not duplicate the same long rule across multiple files; put the principle in one place and enforcement in another when needed.
 - Avoid environment-specific or personal information in examples, generated files, comments, tests, logs, and commit messages.
 - Reuse existing CI jobs, scripts, lint tools, and repository naming conventions when practical.
