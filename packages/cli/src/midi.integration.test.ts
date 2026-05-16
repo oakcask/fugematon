@@ -5,6 +5,49 @@ import { join } from "node:path";
 import test from "node:test";
 import { main } from "./index.js";
 
+test("generate command writes score event JSON to stdout", async () => {
+  const stdout = await captureConsoleLog(() => main(["generate", "--seed", "bach-001", "--ticks", "960"]));
+  const events = JSON.parse(stdout) as { kind: string; type?: string; tick?: number }[];
+
+  assert.ok(events.length > 0);
+  assert.equal(events[0]?.kind, "meta");
+  assert.equal(events[0]?.type, "generator-version");
+  assert.equal(events.at(-1)?.kind, "meta");
+  assert.equal(events.at(-1)?.type, "score-end");
+  assert.ok((events.at(-1)?.tick ?? 0) >= 960);
+});
+
+test("generate command writes score event JSON to a file", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "fugematon-generate-"));
+  try {
+    const outputPath = join(directory, "score.json");
+
+    await main(["generate", "--seed", "bach-001", "--ticks", "960", "--out", outputPath]);
+
+    const events = JSON.parse(await readFile(outputPath, "utf8")) as { kind: string; type?: string }[];
+    assert.ok(events.length > 0);
+    assert.equal(events[0]?.type, "generator-version");
+    assert.equal(events.at(-1)?.type, "score-end");
+  } finally {
+    await rm(directory, { force: true, recursive: true });
+  }
+});
+
+test("diagnose command writes diagnostics JSON to stdout", async () => {
+  const stdout = await captureConsoleLog(() => main(["diagnose", "--seed", "bach-001", "--ticks", "960"]));
+  const diagnostics = JSON.parse(stdout) as {
+    seed: string;
+    lengthTicks: number;
+    eventCount: number;
+    noteCount: number;
+  };
+
+  assert.equal(diagnostics.seed, "bach-001");
+  assert.equal(diagnostics.lengthTicks, 960);
+  assert.ok(diagnostics.eventCount > 0);
+  assert.ok(diagnostics.noteCount > 0);
+});
+
 test("midi command writes a valid standard MIDI file", async () => {
   const directory = await mkdtemp(join(tmpdir(), "fugematon-midi-"));
   try {
@@ -51,6 +94,12 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
   } finally {
     await rm(directory, { force: true, recursive: true });
   }
+});
+
+test("commands reject invalid arguments before writing output", async () => {
+  await assert.rejects(() => main(["generate", "--seed", "bach-001", "--ticks", "0"]), /--ticks/);
+  await assert.rejects(() => main(["midi", "--seed", "bach-001", "--ticks", "960"]), /missing --out/);
+  await assert.rejects(() => main(["unknown"]), /unknown command/);
 });
 
 type MidiParseResult = {
@@ -227,4 +276,21 @@ class MidiCursor {
     assert.ok(this.position + length <= limit, "MIDI event length must fit in track");
     this.position += length;
   }
+}
+
+async function captureConsoleLog(action: () => Promise<void>): Promise<string> {
+  const originalLog = console.log;
+  const chunks: string[] = [];
+
+  console.log = (...args: unknown[]) => {
+    chunks.push(args.map(String).join(" "));
+  };
+
+  try {
+    await action();
+  } finally {
+    console.log = originalLog;
+  }
+
+  return chunks.join("\n");
 }
