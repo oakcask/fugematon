@@ -1,4 +1,4 @@
-name: test
+name: test / pnpm test
 
 on:
   pull_request:
@@ -15,7 +15,6 @@ env:
 
 jobs:
   test:
-    name: Test
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
