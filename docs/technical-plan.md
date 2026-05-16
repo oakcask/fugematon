@@ -153,8 +153,60 @@
     * ScoreEvent の key-signature、entry plan の local key、実際の pitch class sequence が矛盾しない。
   * cadence target miss: Phase 5 までは diagnostics 記録、Phase 5 完了時に代表 seed の上限を置く。
   * modal seed では、local mode の特徴音が主題または episode に現れ、tonal cadence だけに回収されすぎない。
+* Phase 5 は音楽的品質ゲートとして扱う。
+  * hard constraints だけでなく、counter-subject coverage、free counterpoint coverage、melodic stagnation、leap recovery、leading tone resolution、dominant resolution、predominant direction、cadence target hit、harmonic function match、episode direction、stretto clarity を diagnostics または soft score に持たせる。
+  * tonal context では導音から主音への解決と predominant -> dominant -> tonic の進行を強く評価し、cadence 周辺では未解決を品質ゲートの対象にする。
+  * deceptive motion、evaded cadence、pivot harmony、modulatory motion は、後続の harmonic anchor へ到達する場合に管理された曖昧さとして加点する。
+  * 曖昧な解決が複数 section にわたって回収されない場合は unresolved ambiguity warning として扱う。
+  * 同主調への転調、parallel major/minor shift、借用和音的な色彩変化は style profile に応じて評価し、strict-classical では控えめ、hybrid または popular-tolerant では表情変化として許容する。
+  * modal context では古典的な導音解決を常に強制せず、mode の特徴音と modal cadence の説得力を別指標で扱う。
+  * 複数 seed の note 数、entry 数、状態遷移列が不自然に同型になり続ける場合は form repetition warning として扱う。
+  * Phase 6 の操作パラメータは、Phase 5 の代表 seed が品質ゲートを通過してから増やす。
 * 閾値はコード内に散らさず、CI 用の diagnostics profile として管理する。
 * diagnostics の項目追加は互換的変更として扱うが、既存閾値の厳格化は generatorVersion とは別に CI 設定の変更として扱う。
+
+## 調性的処理計画
+
+Phase 5 では、調性的処理を cadence 直前の後処理ではなく、section 計画、候補生成、候補 scoring、diagnostics の共通データとして扱う。
+
+* HarmonicPlan を section ごとに持つ。
+  * global key、local key、departure key、target key、mode context を保持する。
+  * style profile を保持し、strict-classical、hybrid、popular-tolerant の評価重みを切り替える。
+  * 強拍、entry 直前、cadence target など、形式上重要な tick に harmonic anchor を置く。
+  * harmonic function は tonic、predominant、dominant、cadential tonic を最低限扱う。
+* VoiceLeadingObligation を声部ごとに持つ。
+  * 導音、掛留、強い不協和、半音階的経過音が出た場合、期待される解決先と解決期限を記録する。
+  * tonal cadence 周辺では導音から主音への解決を強く要求する。
+  * modal context では導音解決を機械的に要求せず、modal cadence の到達音と特徴音を優先する。
+* CadencePlan を state transition と subject return preparation に置く。
+  * authentic cadence、half cadence、deceptive または modulatory motion、modal cadence を区別する。
+  * authentic cadence では dominant から tonic への解決と、可能な場合は導音から主音への声部進行を評価する。
+  * half cadence は次の section へ緊張を残す計画として扱い、終止扱いにしない。
+  * evaded cadence は、予告された tonic 到達を避けて次の harmonic anchor へ向かう表現として扱う。
+  * pivot harmony は、旧 local key と新 local key の両方で説明できる響きとして扱い、転調の接続に使う。
+  * parallel major/minor shift は、同じ tonic のまま mode を変える色彩変化として扱う。
+  * borrowed-chord color shift は、局所的な響きの変化として扱い、local key の恒久変更とは区別する。
+* 候補 scoring は全 tick を和声で縛らない。
+  * 弱拍と内声には旋律的自由を残す。
+  * 強拍、entry 直前、subject return 前後、cadence target では harmonic anchor を強く評価する。
+  * dominant が tonic へ解決しない場合は、次の local key へ向かう deceptive または modulatory motion として説明できる候補だけを許す。
+  * 解決の曖昧化は、近い将来の target key、subject return、または cadence target に向かう意図がある場合に加点する。
+  * ambiguity budget を section ごとに持ち、曖昧な解決が過密になったり長く回収されなかったりする候補を減点する。
+  * 同主調転調は主題の pitch-class identity と声部進行を壊さない範囲で許し、style modulation fit と parallel key shift count で過不足を評価する。
+  * strict-classical profile では同主調転調を稀な色彩変化として扱い、popular-tolerant profile では section contrast や長時間生成の変化として積極的に評価できる。
+* diagnostics に以下を追加する。
+  * leading tone resolution miss
+  * dominant resolution miss
+  * predominant direction miss
+  * harmonic function mismatch
+  * cadence target miss
+  * modal cadence mismatch
+  * unresolved voice-leading obligation
+  * controlled ambiguity score
+  * unresolved ambiguity warning
+  * modulation path mismatch
+  * style modulation fit
+  * parallel key shift count
 
 ## 主題 entry 計画
 
@@ -422,8 +474,8 @@ pnpm fugematon diagnose --seed bach-001 --ticks 7680
 * Phase 3: exposition -> episode -> subject return -> episode -> stretto-like section の状態機械と、数小節単位の候補生成・スコアリングを実装する。
 * Phase 3 UI follow-up: 長尺化した default score をピアノロール全体へ圧縮表示せず、固定秒数の追従 viewport と表示範囲計算テストを追加した。
 * Phase 4: 主題を scale degree ベースの抽象表現へ移し、entry plan、true answer、tonal answer、主題同一性 diagnostics を実装する。
-* Phase 5: counter-subject、自由対位、episode sequence、cadence plan、和声安定度スコアを実装する。
-* Phase 6: リングバッファ履歴、巻き戻し replay、MVP 用スライダ、parameter-change メタイベントを実装する。
+* Phase 5: 音楽的品質ゲートとして、レビュー harness、counter-subject、自由対位、旋律美 scoring、HarmonicPlan、VoiceLeadingObligation、episode sequence、cadence plan、stretto clarity、和声安定度スコアを実装する。
+* Phase 6: Phase 5 の品質ゲート通過後に、リングバッファ履歴、巻き戻し replay、MVP 用スライダ、parameter-change メタイベントを実装する。
 * Phase 7: Dedicated Web Worker による生成探索の分離、生成期限、フォールバック候補を実装する。
 
 ## 生成期限とフォールバック
@@ -462,8 +514,15 @@ pnpm fugematon diagnose --seed bach-001 --ticks 7680
   * 代表 seed の exposition と subject return で、主題同一性違反が 0 である。
 * Phase 5 以降の CI で確認する項目：
   * counter-subject が主題と同時に鳴っても、声域違反、声部交差、未解決の強い不協和が閾値以下である。
-  * 強拍の和声安定度と cadence target miss が代表 seed の閾値内である。
-  * episode が次の local key または subject return へ向かう plan を持つ。
+  * 強拍の和声安定度、leading tone resolution miss、dominant resolution miss、cadence target miss が代表 seed の閾値内である。
+  * episode が次の local key または subject return へ向かう harmonic plan を持つ。
+  * tonal context の subject return 前後で predominant -> dominant -> tonic の方向付けが確認できる。
+  * deceptive motion、evaded cadence、pivot harmony、modulatory motion が、次の local key または harmonic anchor への到達として説明できる。
+  * unresolved ambiguity warning と modulation path mismatch が代表 seed の閾値内である。
+  * 同主調転調や parallel major/minor shift が、style profile に対して過多または不足になっていない。
+  * 複数 seed の形式、密度、entry 間隔、episode 長が固定 cycle に偏りすぎない。
+  * melodic stagnation、leap recovery miss、fallback passage count、stretto clarity score が代表 seed の閾値内である。
+  * 手動聴取用 MIDI と diagnostics summary を再生成できる。
 * Phase 6 以降の CI で確認する項目：
   * parameter-change メタイベントは、次の状態遷移以降のイベントにのみ影響する。
 * Phase 2 以降の手動またはブラウザテストで確認する項目：
