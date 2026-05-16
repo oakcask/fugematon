@@ -89,6 +89,9 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
           hardConstraintFailures: number;
           texture: {
             rhythmicIndependenceScore: number;
+            maxEntrySupportInstabilityPerEntry: number;
+            maxConsecutiveEntrySupportInstabilities: number;
+            unresolvedEntrySupportInstabilityCount: number;
           };
         };
         phase59Gate: {
@@ -98,6 +101,11 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
             selectedCandidateEvaluationCount: number;
             maxSelectedCandidateTextureCost: number;
           };
+        };
+        phase511Gate: {
+          passed: boolean;
+          failures: unknown[];
+          followUps: unknown[];
         };
       }[];
     };
@@ -121,7 +129,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       preferences: unknown[];
     };
 
-    assert.equal(summary.schemaVersion, 2);
+    assert.equal(summary.schemaVersion, 3);
     assert.equal(summary.lengthTicks, 960);
     assert.ok(summary.seeds.length > 1);
     assert.equal(listeningReview.schemaVersion, 1);
@@ -146,6 +154,12 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       assert.ok(Array.isArray(entry.phase59Gate.failures));
       assert.ok(entry.phase59Gate.metrics.selectedCandidateEvaluationCount >= 0);
       assert.ok(entry.phase59Gate.metrics.maxSelectedCandidateTextureCost >= 0);
+      assert.equal(typeof entry.phase511Gate.passed, "boolean");
+      assert.ok(Array.isArray(entry.phase511Gate.failures));
+      assert.ok(Array.isArray(entry.phase511Gate.followUps));
+      assert.ok(entry.diagnosticsSummary.texture.maxEntrySupportInstabilityPerEntry >= 0);
+      assert.ok(entry.diagnosticsSummary.texture.maxConsecutiveEntrySupportInstabilities >= 0);
+      assert.ok(entry.diagnosticsSummary.texture.unresolvedEntrySupportInstabilityCount >= 0);
     }
     for (const entry of listeningReview.seeds) {
       assert.ok(files.includes(entry.diagnosticsFile));

@@ -35,6 +35,9 @@ export type Phase510GateResult = {
   metrics: Phase59GateResult["metrics"] & {
     shortStrongBeatEntryNoteCount: number;
     entrySupportInstabilityCount: number;
+    maxEntrySupportInstabilityPerEntry: number;
+    maxConsecutiveEntrySupportInstabilities: number;
+    unresolvedEntrySupportInstabilityCount: number;
   };
 };
 
@@ -139,6 +142,16 @@ export function evaluatePhase510Diagnostics(seed: string, diagnostics: Generatio
     ...phase59Gate.metrics,
     shortStrongBeatEntryNoteCount: diagnostics.shortStrongBeatEntryNoteCount,
     entrySupportInstabilityCount: diagnostics.entrySupportInstabilityCount,
+    maxEntrySupportInstabilityPerEntry: maximum(
+      diagnostics.entrySupportInstabilityDetails.map((detail) => detail.instabilityCount),
+    ),
+    maxConsecutiveEntrySupportInstabilities: maximum(
+      diagnostics.entrySupportInstabilityDetails.map((detail) => detail.maxConsecutiveInstabilities),
+    ),
+    unresolvedEntrySupportInstabilityCount: diagnostics.entrySupportInstabilityDetails.reduce(
+      (sum, detail) => sum + detail.unresolvedInstabilityCount,
+      0,
+    ),
   };
   const failures = [...phase59Gate.failures];
 
@@ -240,6 +253,24 @@ export function evaluatePhase511Diagnostics(seed: string, diagnostics: Generatio
     "entrySupportInstabilityCount",
     metrics.entrySupportInstabilityCount,
     PHASE_5_11_DIAGNOSTICS_PROFILE.maxEntrySupportInstabilityCount,
+  );
+  addMaximumFailure(
+    failures,
+    "maxEntrySupportInstabilityPerEntry",
+    metrics.maxEntrySupportInstabilityPerEntry,
+    PHASE_5_11_DIAGNOSTICS_PROFILE.maxEntrySupportInstabilityPerEntry,
+  );
+  addMaximumFailure(
+    failures,
+    "maxConsecutiveEntrySupportInstabilities",
+    metrics.maxConsecutiveEntrySupportInstabilities,
+    PHASE_5_11_DIAGNOSTICS_PROFILE.maxConsecutiveEntrySupportInstabilities,
+  );
+  addMaximumFailure(
+    failures,
+    "unresolvedEntrySupportInstabilityCount",
+    metrics.unresolvedEntrySupportInstabilityCount,
+    PHASE_5_11_DIAGNOSTICS_PROFILE.maxUnresolvedEntrySupportInstabilityCount,
   );
   addMinimumFailure(
     failures,
@@ -459,6 +490,24 @@ function addPhase511FollowUps(
     `${seed}.entrySupportInstabilityCount`,
     metrics.entrySupportInstabilityCount,
     PHASE_5_11_DIAGNOSTICS_PROFILE.maxEntrySupportInstabilityCount,
+  );
+  addMaximumMarginFollowUp(
+    followUps,
+    `${seed}.maxEntrySupportInstabilityPerEntry`,
+    metrics.maxEntrySupportInstabilityPerEntry,
+    PHASE_5_11_DIAGNOSTICS_PROFILE.maxEntrySupportInstabilityPerEntry,
+  );
+  addMaximumMarginFollowUp(
+    followUps,
+    `${seed}.maxConsecutiveEntrySupportInstabilities`,
+    metrics.maxConsecutiveEntrySupportInstabilities,
+    PHASE_5_11_DIAGNOSTICS_PROFILE.maxConsecutiveEntrySupportInstabilities,
+  );
+  addMaximumMarginFollowUp(
+    followUps,
+    `${seed}.unresolvedEntrySupportInstabilityCount`,
+    metrics.unresolvedEntrySupportInstabilityCount,
+    PHASE_5_11_DIAGNOSTICS_PROFILE.maxUnresolvedEntrySupportInstabilityCount,
   );
 
   const modalProfile =

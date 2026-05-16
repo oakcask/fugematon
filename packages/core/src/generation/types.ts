@@ -1,6 +1,7 @@
 import type {
   CandidateEvaluation,
   DurationDistribution,
+  EntrySupportInstabilitySummary,
   FugueState,
   GenerationOutput,
   HarmonicPlan,
@@ -71,6 +72,7 @@ export type TextureDiagnostics = {
   sharedRhythmOverlapCount: number;
   shortStrongBeatEntryNoteCount: number;
   entrySupportInstabilityCount: number;
+  entrySupportInstabilityDetails: EntrySupportInstabilitySummary[];
   durationDistribution: DurationDistribution;
   repeatedPitchRunCount: number;
   allVoiceSilenceGapCount: number;

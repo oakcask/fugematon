@@ -197,6 +197,16 @@ export type DurationDistribution = {
   other: number;
 };
 
+export type EntrySupportInstabilitySummary = {
+  voice: Voice;
+  form: EntryForm;
+  state: FugueState;
+  startTick: number;
+  instabilityCount: number;
+  maxConsecutiveInstabilities: number;
+  unresolvedInstabilityCount: number;
+};
+
 export type GenerationDiagnostics = {
   generatorVersion: number;
   seed: string;
@@ -229,6 +239,7 @@ export type GenerationDiagnostics = {
   sharedRhythmOverlapCount: number;
   shortStrongBeatEntryNoteCount: number;
   entrySupportInstabilityCount: number;
+  entrySupportInstabilityDetails: EntrySupportInstabilitySummary[];
   durationDistribution: DurationDistribution;
   repeatedPitchRunCount: number;
   allVoiceSilenceGapCount: number;

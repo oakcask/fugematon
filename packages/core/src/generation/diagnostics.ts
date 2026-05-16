@@ -1,5 +1,13 @@
 import { TICKS_PER_QUARTER, VOICE_RANGES } from "../constants.js";
-import type { DiagnosticIssue, DurationDistribution, HarmonicPlan, NoteEvent, PlannedEntry, Voice } from "../events.js";
+import type {
+  DiagnosticIssue,
+  DurationDistribution,
+  EntrySupportInstabilitySummary,
+  HarmonicPlan,
+  NoteEvent,
+  PlannedEntry,
+  Voice,
+} from "../events.js";
 import { analyzeHarmonicPlans } from "./harmony-diagnostics.js";
 import { isModalMode } from "./key.js";
 import { scaleDegreePitchClass } from "./pitch.js";
@@ -37,6 +45,7 @@ export function analyzeScore(
   sharedRhythmOverlapCount: number;
   shortStrongBeatEntryNoteCount: number;
   entrySupportInstabilityCount: number;
+  entrySupportInstabilityDetails: EntrySupportInstabilitySummary[];
   durationDistribution: DurationDistribution;
   repeatedPitchRunCount: number;
   allVoiceSilenceGapCount: number;
@@ -215,6 +224,7 @@ function analyzeTextureDiagnostics(
   const repeatedPitchRunCount = countRepeatedPitchRuns(notes, 3);
   const ornamentCandidateCount = countOrnamentCandidates(notes);
   const supportNoteCount = Math.max(1, supportNotes.length);
+  const entrySupportInstabilityDetails = analyzeEntrySupportInstabilities(notes, subjectEntries);
 
   return {
     counterSubjectIdentityRetention: counterSubjectIdentityRetention(counterSubjectNotes, sectionPlans),
@@ -228,7 +238,11 @@ function analyzeTextureDiagnostics(
     sameDirectionMotionCount: verticalStats.sameDirectionMotionCount,
     sharedRhythmOverlapCount: verticalStats.sharedRhythmOverlapCount,
     shortStrongBeatEntryNoteCount: countShortStrongBeatEntryNotes(notes),
-    entrySupportInstabilityCount: countEntrySupportInstabilities(notes, subjectEntries),
+    entrySupportInstabilityCount: entrySupportInstabilityDetails.reduce(
+      (sum, detail) => sum + detail.instabilityCount,
+      0,
+    ),
+    entrySupportInstabilityDetails,
     durationDistribution: durationDistribution(notes),
     repeatedPitchRunCount,
     allVoiceSilenceGapCount: countAllVoiceSilenceGaps(notes),
@@ -504,55 +518,82 @@ function countShortStrongBeatEntryNotes(notes: readonly NoteEvent[]): number {
   ).length;
 }
 
-function countEntrySupportInstabilities(notes: readonly NoteEvent[], subjectEntries: readonly PlannedEntry[]): number {
-  let instabilities = 0;
+function analyzeEntrySupportInstabilities(
+  notes: readonly NoteEvent[],
+  subjectEntries: readonly PlannedEntry[],
+): EntrySupportInstabilitySummary[] {
+  return subjectEntries.map((entry) => {
+    const ticks = entrySupportCheckpoints(notes, entry);
+    const unstableTicks = ticks.filter((tick) => hasEntrySupportInstabilityAt(notes, entry, tick));
+    let consecutive = 0;
+    let maxConsecutiveInstabilities = 0;
+    let unresolvedInstabilityCount = 0;
 
-  for (const entry of subjectEntries) {
-    const entryWindowEndTick = entry.startTick + TICKS_PER_QUARTER * 2;
-    const checkpoints = [
-      ...new Set(
-        notes
-          .filter(
-            (note) => note.startTick < entryWindowEndTick && entry.startTick < note.startTick + note.durationTicks,
-          )
-          .flatMap((note) => [note.startTick, note.startTick + note.durationTicks]),
-      ),
-    ].sort((left, right) => left - right);
-
-    for (const tick of checkpoints) {
-      if (tick < entry.startTick || tick >= entryWindowEndTick || tick % (TICKS_PER_QUARTER / 2) !== 0) {
+    for (const tick of ticks) {
+      if (!unstableTicks.includes(tick)) {
+        consecutive = 0;
         continue;
       }
 
-      const entryNote = notes.find(
-        (note) =>
-          note.voice === entry.voice &&
-          note.startTick <= tick &&
-          tick < note.startTick + note.durationTicks &&
-          isEntryRole(note.role),
+      consecutive += 1;
+      maxConsecutiveInstabilities = Math.max(maxConsecutiveInstabilities, consecutive);
+      const resolutionDeadlineTick = tick + TICKS_PER_QUARTER;
+      const resolvesBeforeDeadline = ticks.some(
+        (candidateTick) =>
+          candidateTick > tick && candidateTick <= resolutionDeadlineTick && !unstableTicks.includes(candidateTick),
       );
-      if (entryNote === undefined) {
-        continue;
-      }
-
-      const supportNotes = notes.filter(
-        (note) =>
-          note.voice !== entry.voice &&
-          note.startTick <= tick &&
-          tick < note.startTick + note.durationTicks &&
-          (note.role === "counter-subject" || note.role === "free-counterpoint"),
-      );
-      if (
-        supportNotes.some((supportNote) =>
-          isEntrySupportInstability(Math.abs(entryNote.pitch - supportNote.pitch) % 12),
-        )
-      ) {
-        instabilities += 1;
+      if (!resolvesBeforeDeadline) {
+        unresolvedInstabilityCount += 1;
       }
     }
+
+    return {
+      voice: entry.voice,
+      form: entry.form,
+      state: entry.state,
+      startTick: entry.startTick,
+      instabilityCount: unstableTicks.length,
+      maxConsecutiveInstabilities,
+      unresolvedInstabilityCount,
+    };
+  });
+}
+
+function entrySupportCheckpoints(notes: readonly NoteEvent[], entry: PlannedEntry): number[] {
+  const entryWindowEndTick = entry.startTick + TICKS_PER_QUARTER * 2;
+  return [
+    ...new Set(
+      notes
+        .filter((note) => note.startTick < entryWindowEndTick && entry.startTick < note.startTick + note.durationTicks)
+        .flatMap((note) => [note.startTick, note.startTick + note.durationTicks]),
+    ),
+  ]
+    .filter((tick) => tick >= entry.startTick && tick < entryWindowEndTick && tick % (TICKS_PER_QUARTER / 2) === 0)
+    .sort((left, right) => left - right);
+}
+
+function hasEntrySupportInstabilityAt(notes: readonly NoteEvent[], entry: PlannedEntry, tick: number): boolean {
+  const entryNote = notes.find(
+    (note) =>
+      note.voice === entry.voice &&
+      note.startTick <= tick &&
+      tick < note.startTick + note.durationTicks &&
+      isEntryRole(note.role),
+  );
+  if (entryNote === undefined) {
+    return false;
   }
 
-  return instabilities;
+  const supportNotes = notes.filter(
+    (note) =>
+      note.voice !== entry.voice &&
+      note.startTick <= tick &&
+      tick < note.startTick + note.durationTicks &&
+      (note.role === "counter-subject" || note.role === "free-counterpoint"),
+  );
+  return supportNotes.some((supportNote) =>
+    isEntrySupportInstability(Math.abs(entryNote.pitch - supportNote.pitch) % 12),
+  );
 }
 
 function isEntrySupportInstability(intervalClass: number): boolean {
