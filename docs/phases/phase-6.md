@@ -24,6 +24,6 @@ Phase 6 のリポジトリ上の自動完了条件は満たしている。
 
 ## 持ち越し
 
-Phase 6 後の音楽美レビューでは、自動 gate は全 seed で通過したが、entry 支持和声、旋律 contour、exact same-pitch unison、rhythmic lockstep、solo texture、形式の固定性がまだ十分ではないと判断した。詳細は [../reviews/phase-6-quality-review.md](../reviews/phase-6-quality-review.md) を参照する。
+Phase 6 後の音楽美レビューでは、自動 gate は全 seed で通過したが、entry 支持和声、旋律 contour、exact same-pitch unison、rhythmic lockstep、solo texture、形式の固定性がまだ十分ではないと判断した。追加の概形進行レビューでは、4 拍窓の bass と上声の同方向進行率が平均 0.555 で、複数パートが数拍単位で並行する偏りも確認した。詳細は [../reviews/phase-6-quality-review.md](../reviews/phase-6-quality-review.md) と [../reviews/phase-6-contour-motion-review.md](../reviews/phase-6-contour-motion-review.md) を参照する。
 
-Phase 7 の前半では、評価説明力の前に entry 支持和声、旋律 contour、voice-pair/register placement、episode/continuation planner を改善する。候補評価の重みを dimension ごとに説明し、follow-up の理由を seed、section、voice、entry/cadence 周辺の単位で出す作業は、その後の Phase 7 後半で扱う。
+Phase 7 の前半では、評価説明力の前に entry 支持和声、旋律 contour、voice-pair/register placement、episode/continuation planner を改善する。旋律 contour では声部単体の大跳躍回収だけでなく、4 拍窓と 8 拍窓の bass-upper same-direction ratio、contrary ratio、outer-voice contour を diagnostics と scoring に入れる。候補評価の重みを dimension ごとに説明し、follow-up の理由を seed、section、voice、entry/cadence 周辺の単位で出す作業は、その後の Phase 7 後半で扱う。
