@@ -11,6 +11,7 @@ export {
   PHASE_5_6_DIAGNOSTICS_PROFILE,
   PHASE_5_7_DIAGNOSTICS_PROFILE,
   PHASE_5_9_DIAGNOSTICS_PROFILE,
+  PHASE_5_10_DIAGNOSTICS_PROFILE,
   PHASE_5_DIAGNOSTICS_PROFILE,
   PHASE_5_LENGTH_TICKS,
   PHASE_5_REVIEW_SEEDS,
@@ -48,8 +49,14 @@ export type {
 export { generateScore, normalizeParameters } from "./generate.js";
 export { exportMidi } from "./midi.js";
 export { seedToUint32State, Xoshiro128StarStar } from "./prng.js";
-export type { ManualListeningJudgement, Phase59GateFailure, Phase59GateResult } from "./review-gate.js";
+export type {
+  ManualListeningJudgement,
+  Phase59GateFailure,
+  Phase59GateResult,
+  Phase510GateResult,
+} from "./review-gate.js";
 export {
   evaluatePhase59Diagnostics,
+  evaluatePhase510Diagnostics,
   phase59ManualListeningBlockers,
 } from "./review-gate.js";

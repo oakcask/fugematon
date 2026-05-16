@@ -1,4 +1,4 @@
-import { PHASE_5_9_DIAGNOSTICS_PROFILE } from "./constants.js";
+import { PHASE_5_9_DIAGNOSTICS_PROFILE, PHASE_5_10_DIAGNOSTICS_PROFILE } from "./constants.js";
 import type { GenerationDiagnostics } from "./events.js";
 
 export type Phase59GateFailure = {
@@ -22,6 +22,15 @@ export type Phase59GateResult = {
     averageSelectedCandidateTextureCost: number;
     maxSelectedCandidateMelodyCost: number;
     averageSelectedCandidateMelodyCost: number;
+  };
+};
+
+export type Phase510GateResult = {
+  passed: boolean;
+  failures: Phase59GateFailure[];
+  metrics: Phase59GateResult["metrics"] & {
+    shortStrongBeatEntryNoteCount: number;
+    entrySupportInstabilityCount: number;
   };
 };
 
@@ -116,6 +125,60 @@ export function evaluatePhase59Diagnostics(seed: string, diagnostics: Generation
   };
 }
 
+export function evaluatePhase510Diagnostics(seed: string, diagnostics: GenerationDiagnostics): Phase510GateResult {
+  const phase59Gate = evaluatePhase59Diagnostics(seed, diagnostics);
+  const metrics = {
+    ...phase59Gate.metrics,
+    shortStrongBeatEntryNoteCount: diagnostics.shortStrongBeatEntryNoteCount,
+    entrySupportInstabilityCount: diagnostics.entrySupportInstabilityCount,
+  };
+  const failures = [...phase59Gate.failures];
+
+  addMinimumFailure(
+    failures,
+    "rhythmicIndependenceScore",
+    metrics.rhythmicIndependenceScore,
+    PHASE_5_10_DIAGNOSTICS_PROFILE.minRhythmicIndependenceScore,
+  );
+  addMaximumFailure(
+    failures,
+    "unisonOverlapCount",
+    metrics.unisonOverlapCount,
+    PHASE_5_10_DIAGNOSTICS_PROFILE.maxUnisonOverlapCount,
+  );
+  addMaximumFailure(
+    failures,
+    "sameDirectionMotionCount",
+    metrics.sameDirectionMotionCount,
+    PHASE_5_10_DIAGNOSTICS_PROFILE.maxSameDirectionMotionCount,
+  );
+  addMaximumFailure(
+    failures,
+    "sharedRhythmOverlapCount",
+    metrics.sharedRhythmOverlapCount,
+    PHASE_5_10_DIAGNOSTICS_PROFILE.maxSharedRhythmOverlapCount,
+  );
+  addMaximumFailure(
+    failures,
+    "shortStrongBeatEntryNoteCount",
+    metrics.shortStrongBeatEntryNoteCount,
+    PHASE_5_10_DIAGNOSTICS_PROFILE.maxShortStrongBeatEntryNoteCount,
+  );
+  addMaximumFailure(
+    failures,
+    "entrySupportInstabilityCount",
+    metrics.entrySupportInstabilityCount,
+    PHASE_5_10_DIAGNOSTICS_PROFILE.maxEntrySupportInstabilityCount,
+  );
+  addPhase510BoundaryFailures(failures, seed, diagnostics);
+
+  return {
+    passed: failures.length === 0,
+    failures,
+    metrics,
+  };
+}
+
 export function phase59ManualListeningBlockers(category: string, judgement: ManualListeningJudgement): string[] {
   if ((category === "representative" || category === "boundary") && judgement !== "pass") {
     return ["manual listening judgement must be pass before Phase 6"];
@@ -186,6 +249,52 @@ function addBoundaryFailures(
       profile.minModalCharacteristicToneHits,
     );
     addMinimumFailure(failures, `${seed}.modalCadenceHits`, diagnostics.modalCadenceHits, profile.minModalCadenceHits);
+  }
+}
+
+function addPhase510BoundaryFailures(
+  failures: Phase59GateFailure[],
+  seed: string,
+  diagnostics: GenerationDiagnostics,
+): void {
+  const profile =
+    PHASE_5_10_DIAGNOSTICS_PROFILE.boundarySeeds[seed as keyof typeof PHASE_5_10_DIAGNOSTICS_PROFILE.boundarySeeds];
+
+  if (profile === undefined) {
+    return;
+  }
+
+  if ("minCounterSubjectIdentityRetention" in profile) {
+    addMinimumFailure(
+      failures,
+      `${seed}.counterSubjectIdentityRetention`,
+      diagnostics.counterSubjectIdentityRetention,
+      profile.minCounterSubjectIdentityRetention,
+    );
+  }
+  if ("maxShortStrongBeatEntryNoteCount" in profile) {
+    addMaximumFailure(
+      failures,
+      `${seed}.shortStrongBeatEntryNoteCount`,
+      diagnostics.shortStrongBeatEntryNoteCount,
+      profile.maxShortStrongBeatEntryNoteCount,
+    );
+  }
+  if ("maxEntrySupportInstabilityCount" in profile) {
+    addMaximumFailure(
+      failures,
+      `${seed}.entrySupportInstabilityCount`,
+      diagnostics.entrySupportInstabilityCount,
+      profile.maxEntrySupportInstabilityCount,
+    );
+  }
+  if ("maxSharedRhythmOverlapCount" in profile) {
+    addMaximumFailure(
+      failures,
+      `${seed}.sharedRhythmOverlapCount`,
+      diagnostics.sharedRhythmOverlapCount,
+      profile.maxSharedRhythmOverlapCount,
+    );
   }
 }
 

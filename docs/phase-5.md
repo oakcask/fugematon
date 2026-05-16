@@ -429,6 +429,26 @@ Phase 5.9 は、Phase 5.6/5.7 で導入した分解 diagnostics を review seed 
 * modal context では、mode の特徴音を入れても counter-subject identity retention が落ちないよう、旋法的色彩と再認識性を同時に評価する。
 * 音価分布を style profile と section role に結び付け、`ornament-test` が装飾密度だけでなく装飾の配置理由を diagnostics で説明できるようにする。
 
+#### 実装記録
+
+Phase 5.10 は、Phase 5.9 の review seed gate を保ったまま、声部独立と entry 周辺の濁りを Phase 6 前の自動 gate として固定した。
+
+* diagnostics は、強拍上の短い entry note 数と、entry 開始直後に支え声部が作る不安定な 2 度、4 度、増減音程を `shortStrongBeatEntryNoteCount` と `entrySupportInstabilityCount` として記録する。
+* candidate evaluation の texture/harmony feature には、unison overlap、same direction motion、short strong-beat entry note、entry support instability を残し、候補選択の理由を review できるようにした。
+* `PHASE_5_10_DIAGNOSTICS_PROFILE` は、Phase 5.9 の横断 gate に加えて、short strong-beat entry note と entry support instability の全 review seed 上限を持つ。
+* `fugue-smoke` は、冒頭主題の metric accent と最初の応唱周辺の濁りを境界条件として持つ。
+* `modal-dorian` は、modal context と counter-subject identity retention を同時に満たす境界 seed として扱う。
+* review bundle の `summary.json` は seed ごとの `phase510Gate` を出力する。
+
+#### 完了判定
+
+リポジトリ上の Phase 5.10 自動完了条件は満たしている。
+
+* review seed 全体で Phase 5.9 gate を維持し、rhythmic independence、unison overlap、same direction motion、shared rhythm overlap の横断閾値を満たす。
+* 強拍上の短い entry note と entry support instability は review seed 全体の上限内である。
+* `fugue-smoke` と `modal-dorian` は、Phase 5.10 の境界 seed 条件を満たす。
+* 声部独立とリズム対位法の質的判断は、Phase 5.8 で固定した manual listening gate へ引き続き残す。
+
 ### Phase 5.11: 旋律線とフレーズ整形
 
 * 大跳躍後の反行、順次回収、局所的な山と谷、長期 contour を候補生成と scoring に入れる。
