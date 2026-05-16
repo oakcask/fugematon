@@ -3,6 +3,6 @@ node_modules/
 dist/
 app-dist/
 *.tsbuildinfo
-samples/*.mid
+samples/**/*.mid
 playwright-report/
 test-results/
