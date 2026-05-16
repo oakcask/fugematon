@@ -56,15 +56,40 @@ test("generateScore exposes ordered subject and answer entries", () => {
   const output = generateScore({ seed: "bach-001", lengthTicks: 7680 });
 
   assert.deepEqual(
-    output.diagnostics.subjectEntries.map((entry) => [entry.voice, entry.form, entry.startTick]),
+    output.diagnostics.subjectEntries.slice(0, 4).map((entry) => [entry.voice, entry.form, entry.state, entry.startTick]),
     [
-      ["alto", "subject", 0],
-      ["soprano", "answer", 1920],
-      ["tenor", "subject", 3840],
-      ["bass", "answer", 5760],
+      ["alto", "subject", "exposition", 0],
+      ["soprano", "answer", "exposition", 1920],
+      ["tenor", "subject", "exposition", 3840],
+      ["bass", "answer", "exposition", 5760],
     ],
   );
   assert.ok(output.diagnostics.generatedUntilTick >= 7680);
+});
+
+test("generateScore extends long scores with phase-3 fugue states", () => {
+  const output = generateScore({ seed: "fugue-smoke", lengthTicks: 43_200 });
+  const stateChanges = output.events.filter(
+    (event): event is Extract<MetaEvent, { type: "state-change" }> =>
+      event.kind === "meta" && event.type === "state-change",
+  );
+
+  assert.ok(output.diagnostics.generatedUntilTick >= 43_200);
+  assert.ok(output.diagnostics.stateTransitions.includes("episode"));
+  assert.ok(output.diagnostics.stateTransitions.includes("subject-return"));
+  assert.ok(output.diagnostics.stateTransitions.includes("stretto-like"));
+  assert.ok(
+    output.diagnostics.subjectEntries.some(
+      (entry) => entry.state === "subject-return" && entry.form === "subject",
+    ),
+  );
+  assert.ok(
+    output.diagnostics.subjectEntries.some((entry) => entry.state === "stretto-like" && entry.form === "answer"),
+  );
+  assert.deepEqual(
+    stateChanges.map((event) => event.payload.state),
+    output.diagnostics.stateTransitions,
+  );
 });
 
 test("generateScore validates representative phase-1 seeds", () => {
