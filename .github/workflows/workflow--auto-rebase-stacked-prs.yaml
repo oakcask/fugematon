@@ -29,6 +29,7 @@ jobs:
     env:
       REPO: ${{ github.repository }}
       OLD_BASE_REF: ${{ github.event.pull_request.head.ref }}
+      NEW_BASE_REF: ${{ github.event.pull_request.base.ref }}
       AUTO_REBASE_LABEL: auto-rebase
       MANUAL_REBASE_LABEL: needs-manual-rebase
 
@@ -85,7 +86,25 @@ jobs:
                 .[]
                 | select(.headRepository.nameWithOwner == env.REPO)
               ]
-            ' > dependent-prs.json
+            ' > dependent-prs-by-old-base.json
+
+          gh pr list \
+            --repo "$REPO" \
+            --state open \
+            --base "$NEW_BASE_REF" \
+            --label "$AUTO_REBASE_LABEL" \
+            --json number,headRefName,headRepository \
+            --jq '
+              [
+                .[]
+                | select(.headRepository.nameWithOwner == env.REPO)
+              ]
+            ' > dependent-prs-by-new-base.json
+
+          jq -s 'add | unique_by(.number)' \
+            dependent-prs-by-old-base.json \
+            dependent-prs-by-new-base.json \
+            > dependent-prs.json
 
           count="$(jq 'length' dependent-prs.json)"
           echo "count=$count" >> "$GITHUB_OUTPUT"
@@ -109,7 +128,6 @@ jobs:
       REPO: ${{ github.repository }}
       OLD_BASE_PR_NUMBER: ${{ github.event.pull_request.number }}
       OLD_BASE_REF: ${{ github.event.pull_request.head.ref }}
-      OLD_BASE_SHA: ${{ github.event.pull_request.head.sha }}
       NEW_BASE_REF: ${{ github.event.pull_request.base.ref }}
       DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
       AUTO_REBASE_LABEL: auto-rebase
@@ -159,7 +177,12 @@ jobs:
             "+refs/pull/${OLD_BASE_PR_NUMBER}/head:refs/remotes/origin/old-base-pr/${OLD_BASE_PR_NUMBER}" \
             "+refs/heads/${HEAD_REF}:refs/remotes/origin/${HEAD_REF}" \
             && git switch --detach "origin/${HEAD_REF}"; then
-            if ! rebase_from="$(git merge-base "$OLD_BASE_SHA" HEAD)"; then
+            old_base_tip="origin/old-base-pr/${OLD_BASE_PR_NUMBER}"
+            if ! rebase_from="$(git merge-base "$old_base_tip" HEAD)"; then
+              status=skipped
+            elif git merge-base --is-ancestor "$rebase_from" "origin/${NEW_BASE_REF}"; then
+              status=skipped
+            elif [[ "$rebase_from" == "$(git merge-base "origin/${NEW_BASE_REF}" HEAD)" ]]; then
               status=skipped
             elif [[ "$rebase_from" == "$(git rev-parse HEAD)" ]]; then
               status=skipped
