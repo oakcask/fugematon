@@ -42,10 +42,7 @@ test("generateScore emits a tick-based phase-1 exposition", () => {
   assert.equal(last.tick, output.diagnostics.generatedUntilTick);
   assert.deepEqual(output.diagnostics.stateTransitions, ["exposition"]);
   assert.equal(output.diagnostics.subjectEntries.length, 4);
-  assert.deepEqual(
-    new Set(notes.map((note) => note.voice)),
-    new Set(VOICES),
-  );
+  assert.deepEqual(new Set(notes.map((note) => note.voice)), new Set(VOICES));
   assert.equal(output.diagnostics.noteCount, notes.length);
   assert.equal(output.diagnostics.rangeViolations, 0);
   assert.equal(output.diagnostics.subjectIdentityViolations, 0);
@@ -59,10 +56,7 @@ test("generateScore emits a tick-based phase-1 exposition", () => {
 test("generateScore validates reproducibility inputs", () => {
   assert.throws(() => generateScore({ seed: "", lengthTicks: 960 }), /seed/);
   assert.throws(() => generateScore({ seed: "x", lengthTicks: 0 }), /lengthTicks/);
-  assert.throws(
-    () => generateScore({ seed: "x", lengthTicks: 960, parameters: { strictness: 2 } }),
-    /strictness/,
-  );
+  assert.throws(() => generateScore({ seed: "x", lengthTicks: 960, parameters: { strictness: 2 } }), /strictness/);
 });
 
 test("generateScore exposes ordered subject and answer entries", () => {
@@ -102,9 +96,7 @@ test("generateScore extends long scores with phase-3 fugue states", () => {
   assert.ok(output.diagnostics.stateTransitions.includes("subject-return"));
   assert.ok(output.diagnostics.stateTransitions.includes("stretto-like"));
   assert.ok(
-    output.diagnostics.subjectEntries.some(
-      (entry) => entry.state === "subject-return" && entry.form === "subject",
-    ),
+    output.diagnostics.subjectEntries.some((entry) => entry.state === "subject-return" && entry.form === "subject"),
   );
   assert.ok(
     output.diagnostics.subjectEntries.some((entry) => entry.state === "stretto-like" && entry.form === "answer"),
@@ -146,13 +138,9 @@ test("generateScore validates representative phase-3 seeds", () => {
     const subjectReturns = output.diagnostics.subjectEntries.filter(
       (entry) => entry.state === "subject-return" && entry.form === "subject",
     ).length;
-    const strettoEntries = output.diagnostics.subjectEntries.filter(
-      (entry) => entry.state === "stretto-like",
-    ).length;
+    const strettoEntries = output.diagnostics.subjectEntries.filter((entry) => entry.state === "stretto-like").length;
     const totalMinutes = scoreMinutes(output.diagnostics.generatedUntilTick);
-    const maxParallelPerfects = Math.ceil(
-      totalMinutes * PHASE_3_DIAGNOSTICS_PROFILE.maxParallelPerfectsPerMinute,
-    );
+    const maxParallelPerfects = Math.ceil(totalMinutes * PHASE_3_DIAGNOSTICS_PROFILE.maxParallelPerfectsPerMinute);
 
     assert.ok(category === "fixed" || category === "boundary");
     assert.ok(output.diagnostics.generatedUntilTick >= PHASE_3_LENGTH_TICKS);
@@ -173,10 +161,7 @@ test("generateScore validates representative phase-4 seeds", () => {
     assert.ok(category === "fixed" || category === "boundary");
     assert.equal(output.diagnostics.rangeViolations, PHASE_4_DIAGNOSTICS_PROFILE.rangeViolations);
     assert.equal(output.diagnostics.voiceCrossings, PHASE_4_DIAGNOSTICS_PROFILE.voiceCrossings);
-    assert.equal(
-      output.diagnostics.subjectIdentityViolations,
-      PHASE_4_DIAGNOSTICS_PROFILE.subjectIdentityViolations,
-    );
+    assert.equal(output.diagnostics.subjectIdentityViolations, PHASE_4_DIAGNOSTICS_PROFILE.subjectIdentityViolations);
     assert.equal(output.diagnostics.answerPlanViolations, PHASE_4_DIAGNOSTICS_PROFILE.answerPlanViolations);
     assert.equal(output.diagnostics.keyMetadataMismatches, PHASE_4_DIAGNOSTICS_PROFILE.keyMetadataMismatches);
     assert.ok(
@@ -195,10 +180,7 @@ test("generateScore validates representative phase-4 seeds", () => {
   }
 });
 
-function countIssues(
-  issues: readonly { code: string }[],
-  code: string,
-): number {
+function countIssues(issues: readonly { code: string }[], code: string): number {
   return issues.filter((issue) => issue.code === code).length;
 }
 

@@ -1,5 +1,5 @@
 import { TICKS_PER_QUARTER, VOICES } from "./constants.js";
-import type { KeyMode, KeySignature, ScoreEvent, TimeSignature, Voice } from "./events.js";
+import type { KeySignature, ScoreEvent, TimeSignature, Voice } from "./events.js";
 
 const VOICE_CHANNELS: Record<Voice, number> = {
   soprano: 0,
@@ -44,11 +44,7 @@ export function exportMidi(events: readonly ScoreEvent[]): Uint8Array {
     ...uint16(1),
     ...uint16(tracks.length),
     ...uint16(TICKS_PER_QUARTER),
-    ...tracks.flatMap((trackBytes) => [
-      ...ascii("MTrk"),
-      ...uint32(trackBytes.length),
-      ...trackBytes,
-    ]),
+    ...tracks.flatMap((trackBytes) => [...ascii("MTrk"), ...uint32(trackBytes.length), ...trackBytes]),
   ]);
 }
 
@@ -153,12 +149,7 @@ function encodeTrack(events: readonly MidiEvent[]): number[] {
 }
 
 function encodeTimeSignature(signature: TimeSignature): [number, number, number, number] {
-  return [signature.numerator, Math.log2(signature.denominator), 24, 8] as [
-    number,
-    number,
-    number,
-    number,
-  ];
+  return [signature.numerator, Math.log2(signature.denominator), 24, 8] as [number, number, number, number];
 }
 
 function encodeKeySignature(signature: KeySignature): [number, number] {
