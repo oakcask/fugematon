@@ -85,7 +85,25 @@ jobs:
                 | select(.isDraft == false)
                 | select(.headRepository.nameWithOwner == env.REPO)
               ]
-            ' > dependent-prs.json
+            ' > dependent-prs-by-base.json
+
+          gh pr list \
+            --repo "$REPO" \
+            --state open \
+            --label "$AUTO_REBASE_LABEL" \
+            --json number,headRefName,headRepository,isDraft \
+            --jq '
+              [
+                .[]
+                | select(.isDraft == false)
+                | select(.headRepository.nameWithOwner == env.REPO)
+              ]
+            ' > dependent-prs-by-label.json
+
+          jq -s 'add | unique_by(.number)' \
+            dependent-prs-by-base.json \
+            dependent-prs-by-label.json \
+            > dependent-prs.json
 
           count="$(jq 'length' dependent-prs.json)"
           echo "count=$count" >> "$GITHUB_OUTPUT"
