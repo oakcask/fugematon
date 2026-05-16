@@ -1,6 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { PHASE_1_DIAGNOSTICS_PROFILE, PHASE_1_REPRESENTATIVE_SEEDS, VOICES } from "./constants.js";
+import {
+  PHASE_1_DIAGNOSTICS_PROFILE,
+  PHASE_1_REPRESENTATIVE_SEEDS,
+  PHASE_3_DIAGNOSTICS_PROFILE,
+  PHASE_3_LENGTH_TICKS,
+  PHASE_3_REPRESENTATIVE_SEEDS,
+  TICKS_PER_QUARTER,
+  VOICES,
+} from "./constants.js";
 import type { MetaEvent, NoteEvent, ScoreEvent } from "./events.js";
 import { generateScore } from "./generate.js";
 
@@ -68,13 +76,13 @@ test("generateScore exposes ordered subject and answer entries", () => {
 });
 
 test("generateScore extends long scores with phase-3 fugue states", () => {
-  const output = generateScore({ seed: "fugue-smoke", lengthTicks: 43_200 });
+  const output = generateScore({ seed: "fugue-smoke", lengthTicks: PHASE_3_LENGTH_TICKS });
   const stateChanges = output.events.filter(
     (event): event is Extract<MetaEvent, { type: "state-change" }> =>
       event.kind === "meta" && event.type === "state-change",
   );
 
-  assert.ok(output.diagnostics.generatedUntilTick >= 43_200);
+  assert.ok(output.diagnostics.generatedUntilTick >= PHASE_3_LENGTH_TICKS);
   assert.ok(output.diagnostics.stateTransitions.includes("episode"));
   assert.ok(output.diagnostics.stateTransitions.includes("subject-return"));
   assert.ok(output.diagnostics.stateTransitions.includes("stretto-like"));
@@ -90,6 +98,7 @@ test("generateScore extends long scores with phase-3 fugue states", () => {
     stateChanges.map((event) => event.payload.state),
     output.diagnostics.stateTransitions,
   );
+  assert.ok(output.diagnostics.candidateEvaluations > 0);
 });
 
 test("generateScore validates representative phase-1 seeds", () => {
@@ -114,6 +123,34 @@ test("generateScore validates representative phase-1 seeds", () => {
   }
 });
 
+test("generateScore validates representative phase-3 seeds", () => {
+  for (const { seed, category } of PHASE_3_REPRESENTATIVE_SEEDS) {
+    const startMilliseconds = performance.now();
+    const output = generateScore({ seed, lengthTicks: PHASE_3_LENGTH_TICKS });
+    const elapsedMilliseconds = performance.now() - startMilliseconds;
+    const subjectReturns = output.diagnostics.subjectEntries.filter(
+      (entry) => entry.state === "subject-return" && entry.form === "subject",
+    ).length;
+    const strettoEntries = output.diagnostics.subjectEntries.filter(
+      (entry) => entry.state === "stretto-like",
+    ).length;
+    const totalMinutes = scoreMinutes(output.diagnostics.generatedUntilTick);
+    const maxParallelPerfects = Math.ceil(
+      totalMinutes * PHASE_3_DIAGNOSTICS_PROFILE.maxParallelPerfectsPerMinute,
+    );
+
+    assert.ok(category === "fixed" || category === "boundary");
+    assert.ok(output.diagnostics.generatedUntilTick >= PHASE_3_LENGTH_TICKS);
+    assert.equal(output.diagnostics.rangeViolations, PHASE_3_DIAGNOSTICS_PROFILE.rangeViolations);
+    assert.equal(output.diagnostics.voiceCrossings, PHASE_3_DIAGNOSTICS_PROFILE.voiceCrossings);
+    assert.ok(output.diagnostics.parallelPerfects <= maxParallelPerfects);
+    assert.ok(subjectReturns >= PHASE_3_DIAGNOSTICS_PROFILE.minSubjectReturns);
+    assert.ok(strettoEntries >= PHASE_3_DIAGNOSTICS_PROFILE.minStrettoEntries);
+    assert.ok(output.diagnostics.candidateEvaluations > 0);
+    assert.ok(elapsedMilliseconds < PHASE_3_DIAGNOSTICS_PROFILE.maxGenerationMilliseconds);
+  }
+});
+
 function countIssues(
   issues: readonly { code: "range-violation" | "voice-crossing" | "parallel-perfect" }[],
   code: "range-violation" | "voice-crossing" | "parallel-perfect",
@@ -128,4 +165,8 @@ function asMetaEvent(event: ScoreEvent | undefined): MetaEvent {
   }
 
   return event;
+}
+
+function scoreMinutes(ticks: number): number {
+  return ticks / (TICKS_PER_QUARTER * 90);
 }
