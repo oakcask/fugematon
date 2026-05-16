@@ -6,7 +6,8 @@
   "scripts": {
     "build": "tsc -b",
     "test": "pnpm build && node --test packages/core/dist/**/*.test.js packages/cli/dist/**/*.test.js",
-    "fugematon": "pnpm --filter @fugematon/cli exec node dist/index.js"
+    "fugematon": "pnpm --filter @fugematon/cli exec node dist/index.js",
+    "samples:generate": "pnpm build && node packages/cli/dist/index.js midi --seed fugue-smoke --ticks 7680 --out samples/fugue-smoke-phase1.mid"
   },
   "devDependencies": {
     "@types/node": "^25.8.0",
