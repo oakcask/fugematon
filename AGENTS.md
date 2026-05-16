@@ -20,6 +20,7 @@
 ## GitHub CLI
 
 - When creating or editing pull requests, run `gh pr create` or `gh pr edit` directly so existing command-prefix approval rules can match it.
+- When creating a stacked pull request, add the `auto-rebase` label as part of PR creation or immediately after creation.
 - Do not wrap `gh pr create` or `gh pr edit` in `bash -lc`, shell functions, command substitutions, or inline environment assignments unless the user explicitly requests that form.
 - If a direct `gh pr create` or `gh pr edit` fails with a GitHub API connection error, treat it as a sandbox network failure and retry the same direct command with the existing GitHub CLI approval prefix instead of stopping at the first failure.
 
