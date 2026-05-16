@@ -21,6 +21,6 @@ jobs:
         with:
           go-version: stable
       - name: Install actionlint
-        run: go install github.com/rhysd/actionlint/cmd/actionlint@${ACTIONLINT_VERSION}
+        run: go install "github.com/rhysd/actionlint/cmd/actionlint@${ACTIONLINT_VERSION}"
       - name: Validate workflows
         run: actionlint
