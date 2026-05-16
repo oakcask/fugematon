@@ -12,6 +12,7 @@
 - When looking for project plans, implementation phases, design rationale, or open work, start with `docs/README.md`.
 - Use the docs index to choose only the relevant planning documents, such as `docs/reference/technical-plan.md`, `docs/reference/design.md`, and the current phase notes.
 - Before changing planned behavior or phase scope, check the relevant docs and keep the docs aligned with the code change.
+- When generating review bundles for verification, write `pnpm fugematon review --out` under `samples/<review-name>` so generated JSON and MIDI files match existing ignore rules. Do not use unignored temporary directories such as `.tmp` for review output.
 
 ## Task-Specific Skills
 
