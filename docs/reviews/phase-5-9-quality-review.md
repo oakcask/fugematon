@@ -64,13 +64,13 @@ leap recovery miss は全 seed で発生し、範囲は 13-30 件だった。最
 
 selected candidate の集計では、subject clarity、harmony、form の cost がすべて 0 だった。top-level diagnostics でも `episodeDirectionScore`、`strettoClarityScore`、`controlledAmbiguityScore`、`styleModulationFit`、`freeCounterpointContourScore` は満点に張り付きやすい。
 
-これは該当 dimension が常に良いというより、現行 feature が粗く、section 単位や entry 周辺の違いを十分に評価していない可能性が高い。Phase 5.12 では、満点の理由と低評価の理由を seed、section、voice、entry/cadence 周辺の単位で説明できるようにし、満点が並ぶ指標は Phase 通過条件から外す。
+これは該当 dimension が常に良いというより、現行 feature が粗く、section 単位や entry 周辺の違いを十分に評価していない可能性が高い。現行計画では Phase 7 で、満点の理由と低評価の理由を seed、section、voice、entry/cadence 周辺の単位で説明できるようにし、満点が並ぶ指標は Phase 通過条件から外す。
 
 ### 4. `fugue-smoke` の最初の応唱で和声機能を無視した濁りが出る
 
 `fugue-smoke` の実生成を確認すると、最初のソプラノ応唱は tick 1920 で入り、同時に残っているアルト主題の Ab とソプラノ応唱の Bb が 2 半音でぶつかる。直後も、tick 2400 ではアルト G とソプラノ C の完全4度、tick 3360 ではアルト Eb とソプラノ Eb のユニゾン、tick 3600 ではアルト D とソプラノ Eb の半音衝突が続く。tick 1920 の Ab は Eb major では 4 度音、Bb major の応唱文脈では scale 外音であり、ソプラノの Bb は応唱 local key の root である。現行評価では `strongBeatDissonanceCount` と `unresolvedDissonanceCount` がどちらも 0 で、selected candidate の harmony cost も全件 0 のため、この entry 周辺の濁りは harmony dimension では検出されていない。
 
-この問題は、単純な dissonance count や weak-beat passing tone 判定だけでは検出しにくい。entry 周辺では、subject/answer の重要音、低声部または持続声部が担う harmonic root、強拍上の chord member、avoid note、4 度音の扱い、解決先をまとめて評価する必要がある。対位法的な破綻がなくても、avoid note が主題や応唱の目立つ音として強調されると、音楽的には破綻に近い濁りになる。Phase 5.10 では entry 周辺の完全協和過密だけでなく、応唱と支える声部が作る 2 度衝突、root や structural note 周辺の不安定な 4 度/5 度構成、解決を伴わない avoid note を候補選択の主要コストに入れる。Phase 5.12 では、harmony cost が 0 になる候補について、root、chord member、avoid note status、non-chord tone role、解決期限を説明できるまで gate 対象にしない。
+この問題は、単純な dissonance count や weak-beat passing tone 判定だけでは検出しにくい。entry 周辺では、subject/answer の重要音、低声部または持続声部が担う harmonic root、強拍上の chord member、avoid note、4 度音の扱い、解決先をまとめて評価する必要がある。対位法的な破綻がなくても、avoid note が主題や応唱の目立つ音として強調されると、音楽的には破綻に近い濁りになる。Phase 5.10 では entry 周辺の完全協和過密だけでなく、応唱と支える声部が作る 2 度衝突、root や structural note 周辺の不安定な 4 度/5 度構成、解決を伴わない avoid note を候補選択の主要コストに入れる。現行計画では Phase 7 で、harmony cost が 0 になる候補について、root、chord member、avoid note status、non-chord tone role、解決期限を説明できるまで gate 対象にしない。
 
 ### 5. modal seed の counter-subject identity が弱い
 
@@ -88,7 +88,7 @@ Phase 5.11 では、trill、mordent、turn、passing tone、neighbor tone を単
 
 Phase 5.8 で `listening-review.json` は生成されるが、今回の bundle では seed 別判定は `not-reviewed` のままである。自動 diagnostics が clean でも、声部独立、旋律線、長時間の退屈さは聴取で最終確認する必要がある。
 
-Phase 5.9 以降は、代表 seed と境界 seed の manual judgement が `pass` でない限り Phase 6 へ進まない、という運用を plan と gate の両方に反映する。
+Phase 5.9 以降は、代表 seed と境界 seed の manual judgement が `pass` でない限り操作機能フェーズへ進まない、という運用を plan と gate の両方に反映する。
 
 ### 8. 固定 review seed だけでは seed fragility を捕捉しきれない
 
@@ -96,20 +96,20 @@ Phase 5.9 の stacked draft PR 作成後に、別セッションで review bundl
 
 この結果は、Phase 5.9 gate が固定 review seed の既知分布を捕捉している一方で、未知 seed に対する美しさの余裕をまだ保証していないことを示す。特に modal context を持つ `angular-answer` は modal diagnostics 自体は出ているが、counter-subject の再認識性が大きく落ちているため、`modal-dorian` だけを境界 seed にする運用では modal seed の劣化を見逃す可能性がある。
 
-Phase 5.10-5.12 では、固定 review seed の閾値だけでなく、rotation seed または adversarial seed の小さな集合を毎回入れ替えて、声部独立、counter-subject identity、modal seed の再認識性が review seed 固有の調整に過適合していないことを確認する。
+Phase 5.10-5.11 では、固定 review seed の閾値だけでなく、rotation seed または adversarial seed の小さな集合を毎回入れ替えて、声部独立、counter-subject identity、modal seed の再認識性が review seed 固有の調整に過適合していないことを確認する。旋律線と評価説明力は Phase 6-7 の課題として続ける。
 
 ## 計画への反映
 
-Phase 6 の履歴、巻き戻し、操作パラメータは、以下の美しさ gate を通過するまで開始しない。
+現行計画では、Phase 5 は Phase 5.11 で完了し、旋律線と評価説明力は Phase 6-7 に移す。履歴、巻き戻し、操作パラメータは Phase 8 で扱い、以下の美しさ gate を通過するまで開始しない。
 
 ### Phase 5.9: review seed 全体の美しさ gate
 
 * review seed 全体に hard constraints と soft beauty metrics の集計 gate を置く。
 * rhythmic independence、unison overlap、same direction motion、shared rhythm overlap、leap recovery miss、selected candidate の texture cost と melody cost は、代表 seed だけでなく全 review seed で上限または下限を持つ。
 * `modal-dorian`、`close-imitation`、`sparse-cadence`、`ornament-test` は境界 seed として個別の通過条件を持つ。
-* 固定 review seed に通っても Phase 6 へ進まず、Phase 5.10-5.12 で rotation seed または adversarial seed の小集合を追加し、未知 seed の rhythmic independence と counter-subject identity の余裕を確認する。
+* 固定 review seed に通っても操作機能フェーズへ進まず、Phase 5.10-5.11 で rotation seed または adversarial seed の小集合を追加し、未知 seed の rhythmic independence と counter-subject identity の余裕を確認する。
 * `fugue-smoke` は、アルト主題後の最初のソプラノ応唱が、支え声部と不安定な 2 度衝突、応唱 local key の root と scale 外音の衝突、解決感の弱い 4 度構成を作らないことを回帰確認する。
-* manual listening judgement が `pass` でない seed は、Phase 6 前の blocker として扱う。
+* manual listening judgement が `pass` でない seed は、操作機能フェーズ前の blocker として扱う。
 * 満点に張り付く指標は、section 単位の説明が出るまで Phase 通過条件にしない。
 
 ### Phase 5.10: 声部独立とリズム対位法
@@ -121,14 +121,14 @@ Phase 6 の履歴、巻き戻し、操作パラメータは、以下の美しさ
 * entry 周辺と stretto-like section では、完全協和の過密、同一リズム、声部間の輪郭同化、応唱と支える声部の 2 度衝突、root や structural note 周辺の不安定な 4 度/5 度構成、解決を伴わない avoid note を通常 section より厳しく扱う。
 * texture cost が高い候補を、hard constraints が clean という理由だけでは採用しない。
 
-### Phase 5.11: 旋律線、装飾、フレーズ整形
+### Phase 6: 旋律線、装飾、フレーズ整形
 
 * 大跳躍後の反行、順次回収、局所的な山と谷、長期 contour を候補生成と scoring に入れる。
 * 意図しない同音連打は tie または装飾的反復へ変換する。
 * cadence 前、entry 終端、長い保持音の前後に、trill、mordent、turn、passing tone、neighbor tone を style profile と phrase role に応じて配置する。
 * `ornament-test` は装飾密度ではなく、装飾の配置理由を diagnostics で説明できる境界 seed にする。
 
-### Phase 5.12: 評価重みと preference の説明可能化
+### Phase 7: 評価重みと preference の説明可能化
 
 * `EvaluationWeights` は feature version と evaluation model version を持つ外部定義にする。
 * review bundle は total cost だけでなく、dimension 別の cost/reward、低評価理由、満点理由を出す。
@@ -138,6 +138,6 @@ Phase 6 の履歴、巻き戻し、操作パラメータは、以下の美しさ
 * learned weights を検討する場合も、runtime には外部 API や大型モデルを入れない。
 * learned weights は hard constraints と manual listening gate を上書きできない。
 
-### Phase 6: 履歴、巻き戻し、操作パラメータ
+### Phase 8: 履歴、巻き戻し、操作パラメータ
 
-Phase 6 は、Phase 5.9-5.12 の美しさ gate が代表 seed と境界 seed で通った後に開始する。UI 操作で退屈さや声部独立の弱さを隠すのではなく、生成器そのものが美しいフーガ的構造を作れることを先に確認する。
+Phase 8 は、Phase 6-7 の美しさ gate が代表 seed と境界 seed で通った後に開始する。UI 操作で退屈さや声部独立の弱さを隠すのではなく、生成器そのものが美しいフーガ的構造を作れることを先に確認する。

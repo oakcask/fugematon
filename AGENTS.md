@@ -10,11 +10,12 @@
 ## Project Context
 
 - When looking for project plans, implementation phases, design rationale, or open work, start with `docs/README.md`.
-- Use the docs index to choose only the relevant planning documents, such as `docs/technical-plan.md`, `docs/design.md`, and the current phase notes.
+- Use the docs index to choose only the relevant planning documents, such as `docs/reference/technical-plan.md`, `docs/reference/design.md`, and the current phase notes.
 - Before changing planned behavior or phase scope, check the relevant docs and keep the docs aligned with the code change.
 
 ## Task-Specific Skills
 
+- Use `docs-progressive-disclosure` when creating, reorganizing, splitting, merging, or maintaining documentation structure.
 - Use `conventional-commits` when authoring commit messages or PR titles.
 - Use `change-rationale-writing` when drafting commit bodies, PR descriptions, changelog entries, release notes, or decision records.
 - Use `github-pr-operations` when creating, editing, or managing pull requests with GitHub CLI.

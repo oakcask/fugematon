@@ -2,24 +2,22 @@
 
 フーガを奏でる無限オルゴール Fugematon プロジェクトの計画ドキュメントです。
 
-AI agent が必要な文脈だけ読めるよう、元の IDEA.md を以下に分割しています。
+AI agent は、まずこのファイルだけを読んでから、作業に必要な下位ドキュメントだけを開いてください。長い背景説明やレビュー本文は下位ディレクトリへ分けています。
 
-* [要件](requirements.md): 外部的要件と技術的目標。
-* [設計メモ](design.md): MVP フェーズ、内部表現、生成アルゴリズム、状態機械、モジュール分割。
-* [技術計画](technical-plan.md): 採用技術、API、CLI、パッケージ構成、CI、MIDI、再現データ形式、実装順序。
-* [Phase 0 実装メモ](phase-0.md): core API、CLI、PRNG、時間モデル、決定性テストの実装記録。
-* [Phase 1 実装メモ](phase-1.md): 固定長4声 exposition、diagnostics、MIDI、代表 seed CI 検証の実装記録。
-* [Phase 2 実装メモ](phase-2.md): ブラウザ再生、WebAudio、Canvas 2D ピアノロール、seed 再現の実装記録。
-* [Phase 3 実装メモ](phase-3.md): 継続生成、候補スコアリング、長尺 diagnostics、主題 entry 強調の実装記録と既知の音楽的制約。
-* [Phase 4 実装メモ](phase-4.md): 主題同一性、調性モデル、応答計画、entry plan の実装記録。
-* [Phase 4 音楽品質レビュー](phase-4-quality-review.md): Phase 4 完了後の複数 seed 生成レビューと、以降の計画再編の根拠。
-* [Phase 5 計画メモ](phase-5.md): 音楽的品質ゲート、counter-subject、自由対位、episode sequence、cadence plan の改善計画。
-* [Phase 5 音楽品質レビュー](phase-5-quality-review.md): Phase 5 review bundle の複数 seed 診断と、Phase 6 前に追加する美しさ gate の根拠。
-* [Phase 5.8 音楽美レビュー](phase-5-8-quality-review.md): Phase 5.7 後の複数 seed 診断と、声部独立、旋律線、聴取 gate を Phase 6 より前へ再編する根拠。
-* [Phase 5.9 音楽美レビュー](phase-5-9-quality-review.md): Phase 5.8 後の複数 seed 診断と、review seed 全体の美しさ gate へ再編する根拠。
-* [Phase 5.10 音楽美レビュー](phase-5-10-quality-review.md): Phase 5.10 後の固定 seed と rotation seed の診断、および Phase 5.11-5.13 への再編の根拠。
-* [Phase 5.11 音楽美レビュー](phase-5-11-quality-review.md): Phase 5.11 後の固定 seed、rotation seed、adversarial seed の診断と、Phase 5.12-5.13 への再編の根拠。
-* [未決事項](open-questions.md): 現時点の未決事項（ある場合）の記録。
+## 読み分け
+
+* 仕様や外部要件を確認する: [reference/requirements.md](reference/requirements.md)
+* 設計思想、音楽モデル、状態機械を確認する: [reference/design.md](reference/design.md)
+* API、CLI、CI、データ形式、実装順序を確認する: [reference/technical-plan.md](reference/technical-plan.md)
+* 実装フェーズの計画や完了記録を確認する: [phases/README.md](phases/README.md)
+* 音楽品質レビューの根拠を確認する: [reviews/README.md](reviews/README.md)
+
+## Agent 向け最短ルート
+
+* 予定や open work を探す場合は [phases/README.md](phases/README.md) を読み、該当 Phase だけ開く。
+* Phase scope や実装順序を変える場合は [reference/technical-plan.md](reference/technical-plan.md) と該当 Phase メモを合わせて確認する。
+* 音楽品質 gate、seed、diagnostics の理由を変える場合は該当レビューを [reviews/README.md](reviews/README.md) から選ぶ。
+* 履歴調査以外では、古い Phase や古いレビューを順番に全部読まない。
 
 ## プロジェクト概要
 
