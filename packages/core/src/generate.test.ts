@@ -681,6 +681,52 @@ test("generateScore applies phase-7 contour gates across fixed and rotation seed
   }
 });
 
+test("generateScore keeps phase-7 late-quality regression seeds explainable before scoring changes", () => {
+  const regressionSeeds = [
+    "restless-line",
+    "sparse-cadence",
+    "modal-answer",
+    "bright-answer",
+    "minor-entry",
+    "modal-cadence",
+    "lyrical-line",
+    "fugue-smoke",
+    "tight-stretto",
+    "wide-key",
+    "dense-modal",
+    "angular-answer",
+    "modal-dorian",
+    "contrary-motion",
+  ];
+
+  for (const seed of regressionSeeds) {
+    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
+    const gate = evaluatePhase7Diagnostics(seed, output.diagnostics);
+    const selectedEvaluation = output.diagnostics.selectedCandidateEvaluations[0];
+
+    assert.deepEqual(gate.failures, []);
+    assert.equal(gate.passed, true);
+    assert.ok(selectedEvaluation !== undefined);
+    assert.ok(output.diagnostics.entrySupportInstabilityDetails.length > 0);
+    assert.ok(output.diagnostics.entrySupportSevereIntervalDetails.length > 0);
+    assert.equal(
+      output.diagnostics.entrySupportInstabilityCount,
+      output.diagnostics.entrySupportInstabilityDetails.reduce((sum, detail) => sum + detail.instabilityCount, 0),
+    );
+    assert.equal(
+      output.diagnostics.severeEntryIntervalCount,
+      output.diagnostics.entrySupportSevereIntervalDetails.reduce((sum, detail) => sum + detail.severeIntervalCount, 0),
+    );
+    assert.ok("samePitchOverlapCount" in selectedEvaluation.dimensions.texture.features);
+    assert.ok("unisonOverlapCount" in selectedEvaluation.dimensions.texture.features);
+    assert.ok("sharedRhythmOverlapCount" in selectedEvaluation.dimensions.texture.features);
+    assert.ok("entrySupportInstabilityCount" in selectedEvaluation.dimensions.harmony.features);
+    assert.ok("formRepetitionWarnings" in selectedEvaluation.dimensions.form.features);
+    assert.ok("leapRecoveryMisses" in selectedEvaluation.dimensions.melody.features);
+    assert.ok("counterSubjectIdentityRetention" in selectedEvaluation.dimensions.subjectClarity.features);
+  }
+});
+
 function countIssues(issues: readonly { code: string }[], code: string): number {
   return issues.filter((issue) => issue.code === code).length;
 }
