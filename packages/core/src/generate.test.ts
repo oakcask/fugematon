@@ -685,40 +685,33 @@ test("generateScore applies phase-7 contour gates across fixed and rotation seed
   }
 });
 
-test("generateScore keeps phase-7 late-quality regression seeds explainable before scoring changes", () => {
-  const regressionSeeds = [
-    "restless-line",
-    "sparse-cadence",
-    "modal-answer",
-    "bright-answer",
-    "minor-entry",
-    "modal-cadence",
-    "lyrical-line",
-    "fugue-smoke",
-    "tight-stretto",
-    "wide-key",
-    "dense-modal",
-    "angular-answer",
-    "modal-dorian",
-    "contrary-motion",
-  ];
+test("generateScore pins phase-7 entry harmony blocker evidence before scoring changes", () => {
+  const blockerSeeds = [
+    ["fugue-smoke", 145, 108, 100, 3, 3, 3],
+    ["modal-cadence", 149, 108, 91, 4, 3, 3],
+    ["lyrical-line", 145, 108, 100, 3, 3, 3],
+    ["tight-stretto", 160, 105, 97, 4, 3, 3],
+    ["wide-key", 143, 105, 97, 3, 3, 3],
+  ] as const;
 
-  for (const seed of regressionSeeds) {
+  for (const [
+    seed,
+    instabilityCount,
+    severeIntervalCount,
+    unresolvedSevereIntervalCount,
+    selectedInstabilityCount,
+    selectedSevereIntervalCount,
+    selectedUnresolvedSevereIntervalCount,
+  ] of blockerSeeds) {
     const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
     const gate = evaluatePhase7Diagnostics(seed, output.diagnostics);
-    const selectedEvaluation = output.diagnostics.selectedCandidateEvaluations[0];
+    const selectedEvaluation = requireSelectedCandidateEvaluation(output.diagnostics.selectedCandidateEvaluations);
 
     assert.deepEqual(gate.failures, []);
     assert.equal(gate.passed, true);
-    assert.ok(selectedEvaluation !== undefined);
-    assert.equal(selectedEvaluation.featureVersion, 1);
-    assert.equal(selectedEvaluation.evaluationModelVersion, 1);
-    assert.ok(selectedEvaluation.explanations.entries.some((entry) => entry.instabilityCount > 0));
-    assert.ok(selectedEvaluation.explanations.voicePairs.some((pair) => pair.unisonOverlapCount > 0));
-    assert.ok(selectedEvaluation.explanations.voices.some((voice) => voice.leapRecoveryMisses >= 0));
-    assert.ok(selectedEvaluation.explanations.sections.some((section) => section.cadenceTargetCount > 0));
-    assert.ok(output.diagnostics.entrySupportInstabilityDetails.length > 0);
-    assert.ok(output.diagnostics.entrySupportSevereIntervalDetails.length > 0);
+    assert.equal(output.diagnostics.entrySupportInstabilityCount, instabilityCount);
+    assert.equal(output.diagnostics.severeEntryIntervalCount, severeIntervalCount);
+    assert.equal(output.diagnostics.unresolvedSevereEntryIntervalCount, unresolvedSevereIntervalCount);
     assert.equal(
       output.diagnostics.entrySupportInstabilityCount,
       output.diagnostics.entrySupportInstabilityDetails.reduce((sum, detail) => sum + detail.instabilityCount, 0),
@@ -727,13 +720,128 @@ test("generateScore keeps phase-7 late-quality regression seeds explainable befo
       output.diagnostics.severeEntryIntervalCount,
       output.diagnostics.entrySupportSevereIntervalDetails.reduce((sum, detail) => sum + detail.severeIntervalCount, 0),
     );
-    assert.ok("samePitchOverlapCount" in selectedEvaluation.dimensions.texture.features);
-    assert.ok("unisonOverlapCount" in selectedEvaluation.dimensions.texture.features);
-    assert.ok("sharedRhythmOverlapCount" in selectedEvaluation.dimensions.texture.features);
-    assert.ok("entrySupportInstabilityCount" in selectedEvaluation.dimensions.harmony.features);
-    assert.ok("formRepetitionWarnings" in selectedEvaluation.dimensions.form.features);
-    assert.ok("leapRecoveryMisses" in selectedEvaluation.dimensions.melody.features);
+    assert.equal(selectedEvaluation.dimensions.harmony.cost, 0);
+    assert.equal(selectedEvaluation.dimensions.harmony.features.entrySupportInstabilityCount, selectedInstabilityCount);
+    assert.equal(selectedEvaluation.dimensions.harmony.features.severeEntryIntervalCount, selectedSevereIntervalCount);
+    assert.equal(
+      selectedEvaluation.dimensions.harmony.features.unresolvedSevereEntryIntervalCount,
+      selectedUnresolvedSevereIntervalCount,
+    );
+    assert.ok(
+      selectedEvaluation.explanations.entries.some(
+        (entry) =>
+          entry.instabilityCount === selectedInstabilityCount &&
+          entry.severeIntervalCount === selectedSevereIntervalCount &&
+          entry.unresolvedSevereIntervalCount === selectedUnresolvedSevereIntervalCount,
+      ),
+    );
+  }
+});
+
+test("generateScore pins phase-7 voice-pair independence blocker evidence before scoring changes", () => {
+  const blockerSeeds = [
+    ["contrary-motion", 40, 528, 778, 4, 2, 26, 7, 54, 14],
+    ["fugue-smoke", 33, 597, 834, 0, 0, 27, 7, 54, 12],
+    ["minor-entry", 26, 736, 906, 0, 0, 50, 15, 70, 20],
+    ["modal-answer", 11, 751, 906, 0, 0, 46, 14, 70, 20],
+  ] as const;
+
+  for (const [
+    seed,
+    samePitchOverlapCount,
+    unisonOverlapCount,
+    sharedRhythmOverlapCount,
+    selectedSamePitchFeatureCount,
+    selectedSamePitchExplanationCount,
+    selectedUnisonFeatureCount,
+    selectedUnisonExplanationCount,
+    selectedSharedRhythmFeatureCount,
+    selectedSharedRhythmExplanationCount,
+  ] of blockerSeeds) {
+    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
+    const selectedEvaluation = requireSelectedCandidateEvaluation(output.diagnostics.selectedCandidateEvaluations);
+
+    assert.equal(output.diagnostics.samePitchOverlapCount, samePitchOverlapCount);
+    assert.equal(output.diagnostics.unisonOverlapCount, unisonOverlapCount);
+    assert.equal(output.diagnostics.sharedRhythmOverlapCount, sharedRhythmOverlapCount);
+    assert.equal(selectedEvaluation.dimensions.texture.features.samePitchOverlapCount, selectedSamePitchFeatureCount);
+    assert.equal(selectedEvaluation.dimensions.texture.features.unisonOverlapCount, selectedUnisonFeatureCount);
+    assert.equal(
+      selectedEvaluation.dimensions.texture.features.sharedRhythmOverlapCount,
+      selectedSharedRhythmFeatureCount,
+    );
+    assert.equal(
+      maximum(selectedEvaluation.explanations.voicePairs.map((pair) => pair.samePitchOverlapCount)),
+      selectedSamePitchExplanationCount,
+    );
+    assert.equal(
+      maximum(selectedEvaluation.explanations.voicePairs.map((pair) => pair.unisonOverlapCount)),
+      selectedUnisonExplanationCount,
+    );
+    assert.equal(
+      maximum(selectedEvaluation.explanations.voicePairs.map((pair) => pair.sharedRhythmOverlapCount)),
+      selectedSharedRhythmExplanationCount,
+    );
+  }
+});
+
+test("generateScore pins phase-7 modal counter-subject retention blocker seeds", () => {
+  const blockerSeeds = [
+    ["modal-cadence", 0.573],
+    ["dense-modal", 0.573],
+    ["angular-answer", 0.591],
+    ["modal-answer", 0.608],
+    ["modal-dorian", 0.627],
+  ] as const;
+
+  for (const [seed, counterSubjectIdentityRetention] of blockerSeeds) {
+    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
+    const selectedEvaluation = requireSelectedCandidateEvaluation(output.diagnostics.selectedCandidateEvaluations);
+
+    assert.equal(roundMetric(output.diagnostics.counterSubjectIdentityRetention), counterSubjectIdentityRetention);
+    assert.ok(output.diagnostics.modalContextCount > 0);
     assert.ok("counterSubjectIdentityRetention" in selectedEvaluation.dimensions.subjectClarity.features);
+    assert.equal(selectedEvaluation.featureVersion, 1);
+    assert.equal(selectedEvaluation.evaluationModelVersion, 1);
+  }
+});
+
+test("generateScore pins phase-7 melody and form blocker evidence before scoring changes", () => {
+  const blockerSeeds = [
+    ["modal-answer", 33, 2, 1, 36, 13, 13, 2],
+    ["contrary-motion", 29, 7, 4, 42, 15, 15, 8],
+    ["modal-dorian", 27, 3, 1, 37, 13, 13, 8],
+    ["lyrical-line", 22, 3, 2, 42, 16, 16, 8],
+  ] as const;
+
+  for (const [
+    seed,
+    leapRecoveryMisses,
+    selectedMelodyLeapRecoveryMisses,
+    selectedVoiceLeapRecoveryMisses,
+    soloRunCount,
+    unsupportedSoloRunCount,
+    abruptTextureDropCount,
+    selectedSectionSoloTextureRisk,
+  ] of blockerSeeds) {
+    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
+    const selectedEvaluation = requireSelectedCandidateEvaluation(output.diagnostics.selectedCandidateEvaluations);
+
+    assert.equal(output.diagnostics.leapRecoveryMisses, leapRecoveryMisses);
+    assert.equal(selectedEvaluation.dimensions.melody.features.leapRecoveryMisses, selectedMelodyLeapRecoveryMisses);
+    assert.equal(
+      maximum(selectedEvaluation.explanations.voices.map((voice) => voice.leapRecoveryMisses)),
+      selectedVoiceLeapRecoveryMisses,
+    );
+    assert.equal(output.diagnostics.soloTexture.soloRunCount, soloRunCount);
+    assert.equal(output.diagnostics.soloTexture.unsupportedSoloRunCount, unsupportedSoloRunCount);
+    assert.equal(output.diagnostics.soloTexture.abruptTextureDropCount, abruptTextureDropCount);
+    assert.equal(
+      maximum(selectedEvaluation.explanations.sections.map((section) => section.soloTextureRisk)),
+      selectedSectionSoloTextureRisk,
+    );
+    assert.ok(selectedEvaluation.explanations.sections.every((section) => section.cadenceTargetCount > 0));
+    assert.ok("formRepetitionWarnings" in selectedEvaluation.dimensions.form.features);
   }
 });
 
@@ -756,4 +864,29 @@ function scoreMinutes(ticks: number): number {
 
 function positiveModulo(value: number, divisor: number): number {
   return ((value % divisor) + divisor) % divisor;
+}
+
+function requireSelectedCandidateEvaluation(
+  selectedCandidateEvaluations: ReturnType<typeof generateScore>["diagnostics"]["selectedCandidateEvaluations"],
+) {
+  const selectedEvaluation = selectedCandidateEvaluations[0];
+
+  assert.ok(selectedEvaluation !== undefined);
+  assert.equal(selectedEvaluation.featureVersion, 1);
+  assert.equal(selectedEvaluation.evaluationModelVersion, 1);
+  assert.ok(selectedEvaluation.explanations.entries.length > 0);
+  assert.ok(selectedEvaluation.explanations.voicePairs.length > 0);
+  assert.ok(selectedEvaluation.explanations.voices.length > 0);
+  assert.ok(selectedEvaluation.explanations.sections.length > 0);
+
+  return selectedEvaluation;
+}
+
+function maximum(values: readonly number[]): number {
+  assert.ok(values.length > 0);
+  return Math.max(...values);
+}
+
+function roundMetric(value: number): number {
+  return Number(value.toFixed(3));
 }
