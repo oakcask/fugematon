@@ -388,9 +388,13 @@ Phase 5.8 は、review bundle を自動 diagnostics だけでなく手動聴取 
 
 ### Phase 5.9: review seed 全体の美しさ gate
 
+Phase 5.8 後の再レビューでは、hard constraints は全 14 seed で 0 のままだが、全 seed で texture independence warning と leap recovery miss が残った。詳細は `phase-5-9-quality-review.md` を参照する。
+
 * Phase 5.6/5.7 の分解指標を、単一代表 seed だけでなく review seed 全体に適用する。
 * modal seed、close imitation seed、ornament seed、sparse cadence seed を、それぞれ専用の境界条件として扱う。
 * counter-subject identity retention、rhythmic independence、unison overlap、same direction motion、shared rhythm overlap、leap recovery miss、selected candidate の melody cost と texture cost に review seed 全体の閾値を置く。
+* selected candidate の texture cost が高い候補を、hard constraints が clean という理由だけでは採用しない。
+* manual listening judgement が `pass` でない代表 seed または境界 seed は Phase 6 前の blocker として扱う。
 * `episodeDirectionScore`、`strettoClarityScore`、`styleModulationFit`、`controlledAmbiguityScore`、`freeCounterpointContourScore` が全 seed で満点に張り付く場合は、section 単位の説明が出るまで Phase 通過条件にしない。
 * Phase 5.8 の手動聴取で問題になった seed は、次回 review bundle でも同じ観点を回帰確認する。
 
@@ -399,6 +403,7 @@ Phase 5.8 は、review bundle を自動 diagnostics だけでなく手動聴取 
 * counter-subject と free counterpoint に、主題と異なるリズム型、反行、保持と動きの交替、休符の受け渡しを持たせる。
 * unison overlap、same direction motion、shared rhythm overlap を候補選択の主要コストへ引き上げる。
 * entry 周辺と stretto-like section では、完全協和の過密と同一リズムの重なりを通常 section より厳しく扱う。
+* modal context では、mode の特徴音を入れても counter-subject identity retention が落ちないよう、旋法的色彩と再認識性を同時に評価する。
 * 音価分布を style profile と section role に結び付け、`ornament-test` が装飾密度だけでなく装飾の配置理由を diagnostics で説明できるようにする。
 
 ### Phase 5.11: 旋律線とフレーズ整形
@@ -406,12 +411,14 @@ Phase 5.8 は、review bundle を自動 diagnostics だけでなく手動聴取 
 * 大跳躍後の反行、順次回収、局所的な山と谷、長期 contour を候補生成と scoring に入れる。
 * 意図しない同音連打は tie または装飾的反復へ変換する。
 * cadence 前、entry 終端、長い保持音の前後に、trill、mordent、turn、passing tone、neighbor tone を style profile に応じて配置する。
+* 装飾は候補密度だけでなく、phrase、cadence、entry に対する配置理由を diagnostics へ残す。
 * subject return や cadence target の前後に、聴感上の呼吸と緊張解決が分かる phrase boundary を置く。
 
 ### Phase 5.12: 評価重みと pairwise preference
 
 * 手調整の `EvaluationWeights` を source code 内の散在した係数から分離し、feature version と evaluation model version を持つ小さな定義として管理する。
 * review bundle は、total cost だけでなく dimension 別の score breakdown を出力する。
+* subject clarity、harmony、form の cost が常に 0 になる場合は、満点理由と低評価理由を seed、section、voice、entry/cadence 周辺の単位で説明できるまで gate 対象にしない。
 * hard constraint、rule-based soft score、learned aesthetic score の寄与を別々に表示し、どの重みが候補選択を支配したか確認できるようにする。
 * offline training で pairwise preference から soft score の重みを学習する場合、初期モデルは線形重みまたは説明可能な小型モデルに限定し、runtime に外部 API、非決定的推論、大型モデルを入れない。
 * learned weights は hard constraints と manual listening gate を上書きできない。採用前に manual weights と A/B review し、代表 seed の diagnostics と聴取 gate を同時に満たすことを確認する。
@@ -419,6 +426,6 @@ Phase 5.8 は、review bundle を自動 diagnostics だけでなく手動聴取 
 
 ## 対象外
 
-* 操作パラメータの UI は Phase 5.8-5.12 の美しさ gate、声部独立、旋律線、評価内訳整備後、Phase 6 で扱う。
+* 操作パラメータの UI は Phase 5.9-5.12 の美しさ gate、声部独立、旋律線、評価内訳整備後、Phase 6 で扱う。
 * 生成探索の Worker 化は Phase 7 で扱う。
 * 五線譜表示は別途必要性が固まってから扱う。
