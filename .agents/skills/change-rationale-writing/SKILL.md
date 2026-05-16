@@ -106,6 +106,7 @@ Avoid:
 - Mention implementation details only when they clarify the rationale, consequence, or review focus.
 - Keep claims proportional to evidence.
 - Do not include environment-specific or personal information.
+- Avoid GitHub mention syntax unless the purpose is to notify that user or team. For verification commands in PR descriptions, prefer root scripts like `pnpm build`, package paths like `packages/web`, or escaped scoped package names so package scopes do not become mentions.
 
 ## Examples
 

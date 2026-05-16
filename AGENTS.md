@@ -15,6 +15,7 @@
 
 - Write all commit messages, PR titles, PR descriptions, changelog entries, and release notes authored by agents in English.
 - If source material, user requests, or generated drafts are in another language, translate the final change message into clear reviewer-facing English before publishing it.
+- Avoid GitHub mention syntax in change messages unless deliberately notifying a user or team. In PR descriptions, prefer root scripts such as `pnpm build`, package directory names such as `packages/web`, or escaped scoped package names.
 
 ## UI Inspection
 
