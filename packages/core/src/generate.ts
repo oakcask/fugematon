@@ -5,7 +5,9 @@ import {
   VOICE_RANGES,
 } from "./constants.js";
 import type {
+  AnswerKind,
   DiagnosticIssue,
+  EntryForm,
   FugueState,
   GenerationInput,
   GenerationOutput,
@@ -13,6 +15,7 @@ import type {
   KeyMode,
   KeySignature,
   NoteEvent,
+  PlannedEntry,
   ScoreEvent,
   TimeSignature,
   Voice,
@@ -34,6 +37,13 @@ const TONIC_PITCH_CLASSES = new Map<string, number>([
   ["Db", 1],
   ["F#", 6],
 ]);
+const PITCH_CLASS_TONICS = new Map<number, KeySignature["tonic"]>(
+  [...TONIC_PITCH_CLASSES.entries()].map(([tonic, pitchClass]) => [pitchClass, tonic]),
+);
+const MODE_SCALE_INTERVALS: Record<KeyMode, readonly number[]> = {
+  major: [0, 2, 4, 5, 7, 9, 11],
+  minor: [0, 2, 3, 5, 7, 8, 10],
+};
 const SUBJECT_DURATIONS = [
   TICKS_PER_QUARTER,
   TICKS_PER_QUARTER,
@@ -44,13 +54,13 @@ const SUBJECT_DURATIONS = [
   TICKS_PER_QUARTER,
   TICKS_PER_QUARTER,
 ] as const;
-const SUBJECT_DEGREES = [0, 2, 4, 5, 7, 5, 4, 2] as const;
+const SUBJECT_DEGREES = [0, 1, 2, 3, 4, 3, 2, 1] as const;
 const VOICE_ENTRY_ORDER: Voice[] = ["alto", "soprano", "tenor", "bass"];
-const VOICE_BASE_OCTAVES: Record<Voice, number> = {
-  soprano: 60,
-  alto: 55,
-  tenor: 48,
-  bass: 28,
+const VOICE_REGISTER_TARGETS: Record<Voice, number> = {
+  soprano: 76,
+  alto: 67,
+  tenor: 52,
+  bass: 40,
 };
 const VOICE_PREFERRED_MAX: Record<Voice, number> = {
   soprano: 81,
@@ -79,7 +89,7 @@ export function generateScore(input: GenerationInput): GenerationOutput {
   const bpm = chooseTempo(rng);
   const subject = buildSubject(rng, keySignature);
   const score = buildFugueScore(subject, keySignature, input.lengthTicks, rng);
-  const diagnostics = analyzeExposition(score.notes);
+  const diagnostics = analyzeScore(score.notes, score.subjectEntries);
   const generatedUntilTick = Math.max(input.lengthTicks, score.endTick);
 
   const events: ScoreEvent[] = [
@@ -155,6 +165,9 @@ export function generateScore(input: GenerationInput): GenerationOutput {
       rangeViolations: diagnostics.rangeViolations,
       voiceCrossings: diagnostics.voiceCrossings,
       parallelPerfects: diagnostics.parallelPerfects,
+      subjectIdentityViolations: diagnostics.subjectIdentityViolations,
+      answerPlanViolations: diagnostics.answerPlanViolations,
+      keyMetadataMismatches: diagnostics.keyMetadataMismatches,
       issues: diagnostics.issues,
       warnings: diagnostics.warnings,
     },
@@ -205,7 +218,10 @@ function chooseTempo(rng: Xoshiro128StarStar): number {
 type SubjectNote = {
   offsetTick: number;
   durationTicks: number;
-  degree: number;
+  scaleDegree: number;
+  accidental: number;
+  importantTone: boolean;
+  melodicRole: "tonic" | "passing" | "predominant" | "dominant";
 };
 
 type Exposition = {
@@ -226,16 +242,19 @@ type FugueScore = Exposition & {
 function buildSubject(rng: Xoshiro128StarStar, keySignature: KeySignature): SubjectNote[] {
   const shape = rng.chooseWeighted<readonly number[]>([
     { value: SUBJECT_DEGREES, weight: 3 },
-    { value: [0, 2, 3, 5, 7, 5, 3, 2] as const, weight: keySignature.mode === "minor" ? 3 : 1 },
-    { value: [0, 4, 2, 5, 7, 5, 4, 2] as const, weight: 2 },
+    { value: [0, 1, 2, 3, 4, 3, 2, 1] as const, weight: keySignature.mode === "minor" ? 3 : 1 },
+    { value: [0, 2, 1, 3, 4, 3, 2, 1] as const, weight: 2 },
   ]);
 
   let offsetTick = 0;
-  return shape.map((degree, index) => {
+  return shape.map((scaleDegree, index) => {
     const note = {
       offsetTick,
       durationTicks: SUBJECT_DURATIONS[index]!,
-      degree,
+      scaleDegree,
+      accidental: 0,
+      importantTone: scaleDegree === 0 || scaleDegree === 4 || index === shape.length - 1,
+      melodicRole: melodicRoleForScaleDegree(scaleDegree),
     };
     offsetTick += note.durationTicks;
     return note;
@@ -284,24 +303,20 @@ function buildFugueScore(
 function buildExposition(subject: readonly SubjectNote[], keySignature: KeySignature): Exposition {
   const notes: Exposition["notes"] = [];
   const subjectEntries: Exposition["subjectEntries"] = [];
-  const tonic = TONIC_PITCH_CLASSES.get(keySignature.tonic);
-  if (tonic === undefined) {
-    throw new Error(`unsupported tonic: ${keySignature.tonic}`);
-  }
 
   for (const [entryIndex, voice] of VOICE_ENTRY_ORDER.entries()) {
     const form = entryIndex % 2 === 0 ? "subject" : "answer";
     const startTick = entryIndex * ENTRY_SPACING_TICKS;
-    const pitchClassOffset = form === "answer" ? 7 : 0;
     addSubjectEntry(notes, subjectEntries, subject, {
       state: "exposition",
       voice,
       form,
       startTick,
-      tonic,
-      pitchClassOffset,
+      globalKey: keySignature,
+      localKey: form === "answer" ? transposeKey(keySignature, 7) : keySignature,
+      answerKind: form === "answer" ? chooseAnswerKind(subject) : undefined,
     });
-    addSustainedCounterpoint(notes, voice, startTick, subjectDuration(subject), tonic);
+    addSustainedCounterpoint(notes, voice, startTick, subjectDuration(subject), tonicPitchClass(keySignature));
   }
 
   notes.sort(compareNoteEvents);
@@ -344,10 +359,6 @@ function buildContinuationCandidates(
   rng: Xoshiro128StarStar,
 ): Exposition[] {
   const notes: Exposition["notes"] = [];
-  const tonic = TONIC_PITCH_CLASSES.get(keySignature.tonic);
-  if (tonic === undefined) {
-    throw new Error(`unsupported tonic: ${keySignature.tonic}`);
-  }
   const candidates: Exposition[] = [];
 
   if (state === "episode") {
@@ -359,8 +370,8 @@ function buildContinuationCandidates(
             voice,
             form: "subject-fragment",
             startTick,
-            tonic,
-            pitchClassOffset,
+            globalKey: keySignature,
+            localKey: transposeKey(keySignature, pitchClassOffset),
             supportDurationTicks: TICKS_PER_QUARTER * 2,
           }),
         );
@@ -375,8 +386,8 @@ function buildContinuationCandidates(
             voice,
             form: "subject",
             startTick,
-            tonic,
-            pitchClassOffset,
+            globalKey: keySignature,
+            localKey: transposeKey(keySignature, pitchClassOffset),
             supportDurationTicks: subjectDuration(subject),
           }),
         );
@@ -391,7 +402,7 @@ function buildContinuationCandidates(
             firstVoice,
             secondVoice,
             startTick,
-            tonic,
+            globalKey: keySignature,
           }),
         );
       }
@@ -414,10 +425,11 @@ function buildContinuationSection(
   entry: {
     state: FugueState;
     voice: Voice;
-    form: "subject" | "answer" | "subject-fragment";
+    form: EntryForm;
     startTick: number;
-    tonic: number;
-    pitchClassOffset: number;
+    globalKey: KeySignature;
+    localKey: KeySignature;
+    answerKind?: AnswerKind;
     supportDurationTicks: number;
   },
 ): Exposition {
@@ -425,7 +437,7 @@ function buildContinuationSection(
   const subjectEntries: Exposition["subjectEntries"] = [];
 
   addSubjectEntry(notes, subjectEntries, subject, entry);
-  addSustainedCounterpoint(notes, entry.voice, entry.startTick, entry.supportDurationTicks, entry.tonic);
+  addSustainedCounterpoint(notes, entry.voice, entry.startTick, entry.supportDurationTicks, tonicPitchClass(entry.localKey));
   notes.sort(compareNoteEvents);
 
   return {
@@ -442,7 +454,7 @@ function buildStrettoSection(
     firstVoice: Voice;
     secondVoice: Voice;
     startTick: number;
-    tonic: number;
+    globalKey: KeySignature;
   },
 ): Exposition {
   const notes: Exposition["notes"] = [];
@@ -453,18 +465,19 @@ function buildStrettoSection(
     voice: entry.firstVoice,
     form: "subject",
     startTick: entry.startTick,
-    tonic: entry.tonic,
-    pitchClassOffset: 0,
+    globalKey: entry.globalKey,
+    localKey: entry.globalKey,
   });
   addSubjectEntry(notes, subjectEntries, subject, {
     state: entry.state,
     voice: entry.secondVoice,
     form: "answer",
     startTick: entry.startTick + STRETTO_ENTRY_SPACING_TICKS,
-    tonic: entry.tonic,
-    pitchClassOffset: 7,
+    globalKey: entry.globalKey,
+    localKey: transposeKey(entry.globalKey, 7),
+    answerKind: chooseAnswerKind(subject),
   });
-  addSustainedCounterpoint(notes, entry.firstVoice, entry.startTick, subjectDuration(subject), entry.tonic);
+  addSustainedCounterpoint(notes, entry.firstVoice, entry.startTick, subjectDuration(subject), tonicPitchClass(entry.globalKey));
   notes.sort(compareNoteEvents);
 
   return {
@@ -475,7 +488,7 @@ function buildStrettoSection(
 }
 
 function scoreCandidate(previousNotes: readonly NoteEvent[], candidate: Exposition): number {
-  const diagnostics = analyzeExposition([...previousNotes, ...candidate.notes]);
+  const diagnostics = analyzeScore([...previousNotes, ...candidate.notes], candidate.subjectEntries);
 
   return diagnostics.rangeViolations * 10_000 + diagnostics.voiceCrossings * 1_000 + diagnostics.parallelPerfects * 10;
 }
@@ -487,33 +500,107 @@ function addSubjectEntry(
   entry: {
     state: FugueState;
     voice: Voice;
-    form: "subject" | "answer" | "subject-fragment";
+    form: EntryForm;
     startTick: number;
-    tonic: number;
-    pitchClassOffset: number;
+    globalKey: KeySignature;
+    localKey: KeySignature;
+    answerKind?: AnswerKind;
   },
 ): void {
-  subjectEntries.push({
+  const plannedSubject = applyEntryPlanToSubject(subject, entry.form, entry.answerKind);
+  const plannedEntry: PlannedEntry = {
     voice: entry.voice,
     form: entry.form,
     state: entry.state,
     startTick: entry.startTick,
-    pitchClassOffset: entry.pitchClassOffset,
-  });
+    globalKey: entry.globalKey,
+    localKey: entry.localKey,
+    answerKind: entry.answerKind,
+    registerTarget: VOICE_REGISTER_TARGETS[entry.voice],
+    expectedDegreePattern: plannedSubject.map((note) => note.scaleDegree),
+    actualPitchClassSequence: plannedSubject.map((note) => pitchClassForSubjectNote(note, entry.localKey)),
+  };
+  subjectEntries.push(plannedEntry);
 
-  for (const note of subject) {
+  for (const note of plannedSubject) {
+    const pitchClass = pitchClassForSubjectNote(note, entry.localKey);
     notes.push({
       kind: "note",
       voice: entry.voice,
       startTick: entry.startTick + note.offsetTick,
       durationTicks: note.durationTicks,
-      pitch: fitPitchToRange(
-        VOICE_BASE_OCTAVES[entry.voice] + entry.tonic + entry.pitchClassOffset + note.degree,
-        entry.voice,
-      ),
+      pitch: placePitchInRegister(pitchClass, entry.voice, plannedEntry.registerTarget),
       velocity: entry.form === "answer" ? 86 : 92,
     });
   }
+}
+
+function applyEntryPlanToSubject(
+  subject: readonly SubjectNote[],
+  form: EntryForm,
+  answerKind: AnswerKind | undefined,
+): SubjectNote[] {
+  if (form !== "answer" || answerKind !== "tonal") {
+    return subject.map((note) => ({ ...note }));
+  }
+
+  return subject.map((note) =>
+    note.importantTone && note.scaleDegree === 4
+      ? { ...note, scaleDegree: 3, melodicRole: "predominant" }
+      : { ...note },
+  );
+}
+
+function chooseAnswerKind(subject: readonly SubjectNote[]): AnswerKind {
+  return subject.some((note) => note.importantTone && note.scaleDegree === 4) ? "tonal" : "true";
+}
+
+function pitchClassForSubjectNote(note: SubjectNote, keySignature: KeySignature): number {
+  return scaleDegreePitchClass(note.scaleDegree, note.accidental, keySignature);
+}
+
+function scaleDegreePitchClass(scaleDegree: number, accidental: number, keySignature: KeySignature): number {
+  const intervals = MODE_SCALE_INTERVALS[keySignature.mode];
+  const octave = Math.floor(scaleDegree / intervals.length);
+  const scaleIndex = positiveModulo(scaleDegree, intervals.length);
+  return positiveModulo(tonicPitchClass(keySignature) + intervals[scaleIndex]! + octave * 12 + accidental, 12);
+}
+
+function tonicPitchClass(keySignature: KeySignature): number {
+  const tonic = TONIC_PITCH_CLASSES.get(keySignature.tonic);
+  if (tonic === undefined) {
+    throw new Error(`unsupported tonic: ${keySignature.tonic}`);
+  }
+  return tonic;
+}
+
+function transposeKey(keySignature: KeySignature, semitones: number): KeySignature {
+  const tonic = PITCH_CLASS_TONICS.get(positiveModulo(tonicPitchClass(keySignature) + semitones, 12));
+  if (tonic === undefined) {
+    throw new Error(`unsupported transposed key from ${keySignature.tonic}`);
+  }
+  return {
+    tonic,
+    mode: keySignature.mode,
+  };
+}
+
+function melodicRoleForScaleDegree(scaleDegree: number): SubjectNote["melodicRole"] {
+  const normalized = positiveModulo(scaleDegree, 7);
+  if (normalized === 0) {
+    return "tonic";
+  }
+  if (normalized === 3) {
+    return "predominant";
+  }
+  if (normalized === 4) {
+    return "dominant";
+  }
+  return "passing";
+}
+
+function positiveModulo(value: number, divisor: number): number {
+  return ((value % divisor) + divisor) % divisor;
 }
 
 function addSustainedCounterpoint(
@@ -542,7 +629,11 @@ function addSustainedCounterpoint(
       voice,
       startTick,
       durationTicks: supportDuration,
-      pitch: fitPitchToRange(VOICE_BASE_OCTAVES[voice] + tonicPitchClass + CONSONANT_OFFSETS[voice], voice),
+      pitch: placePitchInRegister(
+        positiveModulo(tonicPitchClass + CONSONANT_OFFSETS[voice], 12),
+        voice,
+        VOICE_REGISTER_TARGETS[voice],
+      ),
       velocity: 56,
     });
   }
@@ -565,7 +656,15 @@ function hasOverlap(
   );
 }
 
-function fitPitchToRange(pitch: number, voice: Voice): number {
+function placePitchInRegister(pitchClass: number, voice: Voice, registerTarget: number): number {
+  let pitch = positiveModulo(pitchClass, 12);
+  while (pitch < registerTarget - 6) {
+    pitch += 12;
+  }
+  while (pitch > registerTarget + 6) {
+    pitch -= 12;
+  }
+
   const range = VOICE_RANGES[voice];
   let fitted = pitch;
   while (fitted < range.min) {
@@ -580,10 +679,13 @@ function fitPitchToRange(pitch: number, voice: Voice): number {
   return fitted;
 }
 
-function analyzeExposition(notes: readonly NoteEvent[]): {
+function analyzeScore(notes: readonly NoteEvent[], subjectEntries: readonly PlannedEntry[]): {
   rangeViolations: number;
   voiceCrossings: number;
   parallelPerfects: number;
+  subjectIdentityViolations: number;
+  answerPlanViolations: number;
+  keyMetadataMismatches: number;
   issues: DiagnosticIssue[];
   warnings: string[];
 } {
@@ -616,10 +718,14 @@ function analyzeExposition(notes: readonly NoteEvent[]): {
     }
     previousVerticality = active;
   }
+  issues.push(...findEntryPlanIssues(notes, subjectEntries));
 
   const rangeViolations = countIssues(issues, "range-violation");
   const voiceCrossings = countIssues(issues, "voice-crossing");
   const parallelPerfects = countIssues(issues, "parallel-perfect");
+  const subjectIdentityViolations = countIssues(issues, "subject-identity-violation");
+  const answerPlanViolations = countIssues(issues, "answer-plan-violation");
+  const keyMetadataMismatches = countIssues(issues, "key-metadata-mismatch");
   const warnings: string[] = [];
   if (rangeViolations > 0) {
     warnings.push("range violations detected");
@@ -630,8 +736,76 @@ function analyzeExposition(notes: readonly NoteEvent[]): {
   if (parallelPerfects > 0) {
     warnings.push("parallel perfect intervals suspected");
   }
+  if (subjectIdentityViolations > 0) {
+    warnings.push("subject identity violations detected");
+  }
+  if (answerPlanViolations > 0) {
+    warnings.push("answer plan violations detected");
+  }
+  if (keyMetadataMismatches > 0) {
+    warnings.push("key metadata mismatches detected");
+  }
 
-  return { rangeViolations, voiceCrossings, parallelPerfects, issues, warnings };
+  return {
+    rangeViolations,
+    voiceCrossings,
+    parallelPerfects,
+    subjectIdentityViolations,
+    answerPlanViolations,
+    keyMetadataMismatches,
+    issues,
+    warnings,
+  };
+}
+
+function findEntryPlanIssues(notes: readonly NoteEvent[], subjectEntries: readonly PlannedEntry[]): DiagnosticIssue[] {
+  const issues: DiagnosticIssue[] = [];
+
+  for (const entry of subjectEntries) {
+    const entryNotes = notes
+      .filter((note) => note.voice === entry.voice && note.startTick >= entry.startTick)
+      .sort(compareNoteEvents)
+      .slice(0, entry.expectedDegreePattern.length);
+    const pitchClassSequence = entryNotes.map((note) => positiveModulo(note.pitch, 12));
+    const matchesPlan =
+      pitchClassSequence.length === entry.actualPitchClassSequence.length &&
+      pitchClassSequence.every((pitchClass, index) => pitchClass === entry.actualPitchClassSequence[index]);
+
+    if (!matchesPlan) {
+      issues.push({
+        code: entry.form === "answer" ? "answer-plan-violation" : "subject-identity-violation",
+        severity: "warning",
+        tick: entry.startTick,
+        voices: [entry.voice],
+        pitches: entryNotes[0] === undefined ? {} : { [entry.voice]: entryNotes[0].pitch },
+        message:
+          entry.form === "answer"
+            ? `${entry.voice} answer does not match the planned ${entry.answerKind ?? "true"} answer`
+            : `${entry.voice} ${entry.form} does not match the planned degree pattern`,
+      });
+      continue;
+    }
+
+    const expectedPitchClassesFromKey = entry.expectedDegreePattern.map((scaleDegree) =>
+      scaleDegreePitchClass(scaleDegree, 0, entry.localKey),
+    );
+    const matchesLocalKey =
+      expectedPitchClassesFromKey.length === entry.actualPitchClassSequence.length &&
+      expectedPitchClassesFromKey.every((pitchClass, index) => pitchClass === entry.actualPitchClassSequence[index]) &&
+      pitchClassSequence.every((pitchClass, index) => pitchClass === expectedPitchClassesFromKey[index]);
+    if (!matchesLocalKey) {
+      issues.push({
+        code: "key-metadata-mismatch",
+        severity: "warning",
+        tick: entry.startTick,
+        voices: [entry.voice],
+        pitches: entryNotes[0] === undefined ? {} : { [entry.voice]: entryNotes[0].pitch },
+        message: `${entry.voice} entry pitch classes do not match local key ${entry.localKey.tonic} ${entry.localKey.mode}`,
+      });
+    }
+  }
+
+  return issues;
 }
 
 function activePitchesAt(notes: readonly NoteEvent[], tick: number): Map<Voice, number> {

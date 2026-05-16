@@ -25,6 +25,23 @@ export type KeySignature = {
 
 export type FugueState = "exposition" | "episode" | "subject-return" | "stretto-like";
 
+export type EntryForm = "subject" | "answer" | "subject-fragment";
+
+export type AnswerKind = "true" | "tonal";
+
+export type PlannedEntry = {
+  voice: Voice;
+  form: EntryForm;
+  state: FugueState;
+  startTick: number;
+  globalKey: KeySignature;
+  localKey: KeySignature;
+  answerKind?: AnswerKind;
+  registerTarget: number;
+  expectedDegreePattern: number[];
+  actualPitchClassSequence: number[];
+};
+
 export type MetaEvent =
   | {
       kind: "meta";
@@ -89,7 +106,13 @@ export type GenerationInput = {
   parameters?: Partial<GenerationParameters>;
 };
 
-export type DiagnosticIssueCode = "range-violation" | "voice-crossing" | "parallel-perfect";
+export type DiagnosticIssueCode =
+  | "range-violation"
+  | "voice-crossing"
+  | "parallel-perfect"
+  | "subject-identity-violation"
+  | "answer-plan-violation"
+  | "key-metadata-mismatch";
 
 export type DiagnosticIssue = {
   code: DiagnosticIssueCode;
@@ -109,16 +132,13 @@ export type GenerationDiagnostics = {
   noteCount: number;
   candidateEvaluations: number;
   stateTransitions: FugueState[];
-  subjectEntries: {
-    voice: Voice;
-    form: "subject" | "answer" | "subject-fragment";
-    state: FugueState;
-    startTick: number;
-    pitchClassOffset: number;
-  }[];
+  subjectEntries: PlannedEntry[];
   rangeViolations: number;
   voiceCrossings: number;
   parallelPerfects: number;
+  subjectIdentityViolations: number;
+  answerPlanViolations: number;
+  keyMetadataMismatches: number;
   issues: DiagnosticIssue[];
   warnings: string[];
 };

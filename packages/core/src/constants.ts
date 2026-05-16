@@ -48,3 +48,13 @@ export const PHASE_3_REPRESENTATIVE_SEEDS = [
   { seed: "dense-entry", category: "boundary" },
   { seed: "stretto-smoke", category: "fixed" },
 ] as const;
+
+export const PHASE_4_DIAGNOSTICS_PROFILE = {
+  rangeViolations: 0,
+  voiceCrossings: 0,
+  subjectIdentityViolations: 0,
+  answerPlanViolations: 0,
+  keyMetadataMismatches: 0,
+} as const;
+
+export const PHASE_4_REPRESENTATIVE_SEEDS = PHASE_3_REPRESENTATIVE_SEEDS;

@@ -6,10 +6,14 @@ export {
   PHASE_3_DIAGNOSTICS_PROFILE,
   PHASE_3_LENGTH_TICKS,
   PHASE_3_REPRESENTATIVE_SEEDS,
+  PHASE_4_DIAGNOSTICS_PROFILE,
+  PHASE_4_REPRESENTATIVE_SEEDS,
   TICKS_PER_QUARTER,
   VOICES,
 } from "./constants.js";
 export type {
+  AnswerKind,
+  EntryForm,
   FugueState,
   GenerationDiagnostics,
   GenerationInput,
@@ -19,6 +23,7 @@ export type {
   KeySignature,
   MetaEvent,
   NoteEvent,
+  PlannedEntry,
   ScoreEvent,
   TimeSignature,
   Voice,

@@ -6,6 +6,8 @@ import {
   PHASE_3_DIAGNOSTICS_PROFILE,
   PHASE_3_LENGTH_TICKS,
   PHASE_3_REPRESENTATIVE_SEEDS,
+  PHASE_4_DIAGNOSTICS_PROFILE,
+  PHASE_4_REPRESENTATIVE_SEEDS,
   TICKS_PER_QUARTER,
   VOICES,
 } from "./constants.js";
@@ -46,6 +48,9 @@ test("generateScore emits a tick-based phase-1 exposition", () => {
   );
   assert.equal(output.diagnostics.noteCount, notes.length);
   assert.equal(output.diagnostics.rangeViolations, 0);
+  assert.equal(output.diagnostics.subjectIdentityViolations, 0);
+  assert.equal(output.diagnostics.answerPlanViolations, 0);
+  assert.equal(output.diagnostics.keyMetadataMismatches, 0);
   assert.equal(countIssues(output.diagnostics.issues, "range-violation"), output.diagnostics.rangeViolations);
   assert.equal(countIssues(output.diagnostics.issues, "voice-crossing"), output.diagnostics.voiceCrossings);
   assert.equal(countIssues(output.diagnostics.issues, "parallel-perfect"), output.diagnostics.parallelPerfects);
@@ -64,14 +69,24 @@ test("generateScore exposes ordered subject and answer entries", () => {
   const output = generateScore({ seed: "bach-001", lengthTicks: 7680 });
 
   assert.deepEqual(
-    output.diagnostics.subjectEntries.slice(0, 4).map((entry) => [entry.voice, entry.form, entry.state, entry.startTick]),
+    output.diagnostics.subjectEntries
+      .slice(0, 4)
+      .map((entry) => [entry.voice, entry.form, entry.state, entry.startTick, entry.localKey.tonic, entry.answerKind]),
     [
-      ["alto", "subject", "exposition", 0],
-      ["soprano", "answer", "exposition", 1920],
-      ["tenor", "subject", "exposition", 3840],
-      ["bass", "answer", "exposition", 5760],
+      ["alto", "subject", "exposition", 0, output.diagnostics.subjectEntries[0]!.globalKey.tonic, undefined],
+      ["soprano", "answer", "exposition", 1920, output.diagnostics.subjectEntries[1]!.localKey.tonic, "tonal"],
+      ["tenor", "subject", "exposition", 3840, output.diagnostics.subjectEntries[2]!.globalKey.tonic, undefined],
+      ["bass", "answer", "exposition", 5760, output.diagnostics.subjectEntries[3]!.localKey.tonic, "tonal"],
     ],
   );
+  assert.deepEqual(
+    output.diagnostics.subjectEntries.slice(0, 4).map((entry) => entry.globalKey),
+    Array.from({ length: 4 }, () => output.diagnostics.subjectEntries[0]!.globalKey),
+  );
+  for (const entry of output.diagnostics.subjectEntries) {
+    assert.equal(entry.expectedDegreePattern.length, entry.actualPitchClassSequence.length);
+    assert.ok(entry.registerTarget > 0);
+  }
   assert.ok(output.diagnostics.generatedUntilTick >= 7680);
 });
 
@@ -151,9 +166,38 @@ test("generateScore validates representative phase-3 seeds", () => {
   }
 });
 
+test("generateScore validates representative phase-4 seeds", () => {
+  for (const { seed, category } of PHASE_4_REPRESENTATIVE_SEEDS) {
+    const output = generateScore({ seed, lengthTicks: PHASE_3_LENGTH_TICKS });
+
+    assert.ok(category === "fixed" || category === "boundary");
+    assert.equal(output.diagnostics.rangeViolations, PHASE_4_DIAGNOSTICS_PROFILE.rangeViolations);
+    assert.equal(output.diagnostics.voiceCrossings, PHASE_4_DIAGNOSTICS_PROFILE.voiceCrossings);
+    assert.equal(
+      output.diagnostics.subjectIdentityViolations,
+      PHASE_4_DIAGNOSTICS_PROFILE.subjectIdentityViolations,
+    );
+    assert.equal(output.diagnostics.answerPlanViolations, PHASE_4_DIAGNOSTICS_PROFILE.answerPlanViolations);
+    assert.equal(output.diagnostics.keyMetadataMismatches, PHASE_4_DIAGNOSTICS_PROFILE.keyMetadataMismatches);
+    assert.ok(
+      output.diagnostics.subjectEntries.some(
+        (entry) =>
+          entry.state === "subject-return" &&
+          entry.form === "subject" &&
+          entry.expectedDegreePattern.length === entry.actualPitchClassSequence.length,
+      ),
+    );
+    assert.ok(
+      output.diagnostics.subjectEntries
+        .filter((entry) => entry.form === "answer")
+        .every((entry) => entry.answerKind === "true" || entry.answerKind === "tonal"),
+    );
+  }
+});
+
 function countIssues(
-  issues: readonly { code: "range-violation" | "voice-crossing" | "parallel-perfect" }[],
-  code: "range-violation" | "voice-crossing" | "parallel-perfect",
+  issues: readonly { code: string }[],
+  code: string,
 ): number {
   return issues.filter((issue) => issue.code === code).length;
 }
