@@ -15,14 +15,15 @@ test("midi command writes a valid standard MIDI file", async () => {
     const bytes = await readFile(outputPath);
     const result = parseStandardMidiFile(bytes);
 
-    assert.equal(result.format, 0);
-    assert.equal(result.trackCount, 1);
+    assert.equal(result.format, 1);
+    assert.equal(result.trackCount, 5);
     assert.equal(result.division, 480);
-    assert.equal(result.endOfTrackCount, 1);
+    assert.equal(result.endOfTrackCount, 5);
     assert.ok(result.channelEventCount > 0);
     assert.ok(result.metaEventTypes.has(0x51));
     assert.ok(result.metaEventTypes.has(0x58));
     assert.ok(result.metaEventTypes.has(0x59));
+    assert.ok(result.metaEventTypes.has(0x03));
   } finally {
     await rm(directory, { force: true, recursive: true });
   }
