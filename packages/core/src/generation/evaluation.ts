@@ -177,6 +177,8 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
       modalCadenceHits: diagnostics.modalCadenceHits,
       tonalCadenceOveruseWarnings: diagnostics.tonalCadenceOveruseWarnings,
       entrySupportInstabilityCount: diagnostics.entrySupportInstabilityCount,
+      severeEntryIntervalCount: diagnostics.severeEntryIntervalCount,
+      unresolvedSevereEntryIntervalCount: diagnostics.unresolvedSevereEntryIntervalCount,
     },
   };
   const form = {

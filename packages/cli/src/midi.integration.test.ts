@@ -109,6 +109,18 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
               };
             };
           };
+          candidateEvaluation: {
+            featureVersion: number;
+            evaluationModelVersion: number;
+            entryExplanationCount: number;
+            voicePairExplanationCount: number;
+            sectionExplanationCount: number;
+            maxEntryInstabilityCount: number;
+            maxEntrySevereIntervalCount: number;
+            maxVoicePairUnisonOverlapCount: number;
+            maxVoicePairSharedRhythmOverlapCount: number;
+            maxSectionSoloTextureRisk: number;
+          };
         };
         phase59Gate: {
           passed: boolean;
@@ -153,7 +165,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       preferences: unknown[];
     };
 
-    assert.equal(summary.schemaVersion, 5);
+    assert.equal(summary.schemaVersion, 6);
     assert.equal(summary.lengthTicks, 960);
     assert.ok(summary.seeds.length > 1);
     assert.equal(listeningReview.schemaVersion, 1);
@@ -196,6 +208,16 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       assert.ok(entry.diagnosticsSummary.texture.pitchContourMotion.fourBeat.bassUpperContraryRatio >= 0);
       assert.ok(entry.diagnosticsSummary.texture.pitchContourMotion.eightBeat.bassUpperSameDirectionRatio >= 0);
       assert.ok(entry.diagnosticsSummary.texture.pitchContourMotion.eightBeat.bassUpperContraryRatio >= 0);
+      assert.ok(entry.diagnosticsSummary.candidateEvaluation.featureVersion >= 0);
+      assert.ok(entry.diagnosticsSummary.candidateEvaluation.evaluationModelVersion >= 0);
+      assert.ok(entry.diagnosticsSummary.candidateEvaluation.entryExplanationCount >= 0);
+      assert.ok(entry.diagnosticsSummary.candidateEvaluation.voicePairExplanationCount >= 0);
+      assert.ok(entry.diagnosticsSummary.candidateEvaluation.sectionExplanationCount >= 0);
+      assert.ok(entry.diagnosticsSummary.candidateEvaluation.maxEntryInstabilityCount >= 0);
+      assert.ok(entry.diagnosticsSummary.candidateEvaluation.maxEntrySevereIntervalCount >= 0);
+      assert.ok(entry.diagnosticsSummary.candidateEvaluation.maxVoicePairUnisonOverlapCount >= 0);
+      assert.ok(entry.diagnosticsSummary.candidateEvaluation.maxVoicePairSharedRhythmOverlapCount >= 0);
+      assert.ok(entry.diagnosticsSummary.candidateEvaluation.maxSectionSoloTextureRisk >= 0);
     }
     for (const entry of listeningReview.seeds) {
       assert.ok(files.includes(entry.diagnosticsFile));
