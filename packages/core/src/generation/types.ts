@@ -2,10 +2,13 @@ import type {
   CandidateEvaluation,
   DurationDistribution,
   EntrySupportInstabilitySummary,
+  EntrySupportSevereIntervalSummary,
   FugueState,
   GenerationOutput,
   HarmonicPlan,
   NoteEvent,
+  OrnamentPlacementReasons,
+  SoloTextureSummary,
 } from "../events.js";
 
 export type SubjectNote = {
@@ -73,11 +76,16 @@ export type TextureDiagnostics = {
   shortStrongBeatEntryNoteCount: number;
   entrySupportInstabilityCount: number;
   entrySupportInstabilityDetails: EntrySupportInstabilitySummary[];
+  severeEntryIntervalCount: number;
+  unresolvedSevereEntryIntervalCount: number;
+  entrySupportSevereIntervalDetails: EntrySupportSevereIntervalSummary[];
   durationDistribution: DurationDistribution;
   repeatedPitchRunCount: number;
   allVoiceSilenceGapCount: number;
+  soloTexture: SoloTextureSummary;
   ornamentCandidateCount: number;
   ornamentDensity: number;
+  ornamentPlacementReasons: OrnamentPlacementReasons;
 };
 
 export type ActivePitch = {

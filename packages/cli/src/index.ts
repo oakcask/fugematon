@@ -3,6 +3,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { GenerationDiagnostics } from "@fugematon/core";
 import {
+  evaluatePhase6Diagnostics,
   evaluatePhase59Diagnostics,
   evaluatePhase510Diagnostics,
   evaluatePhase511Diagnostics,
@@ -10,6 +11,7 @@ import {
   generateScore,
   PHASE_5_11_ROTATION_SEEDS,
   PHASE_5_REVIEW_SEEDS,
+  type Phase6GateResult,
   type Phase59GateResult,
   type Phase510GateResult,
   type Phase511GateResult,
@@ -68,6 +70,7 @@ async function writeReviewBundle(outDirectory: string, lengthTicks: number): Pro
       phase59Gate: Phase59GateResult;
       phase510Gate: Phase510GateResult;
       phase511Gate: Phase511GateResult;
+      phase6Gate: Phase6GateResult;
     }[],
   };
   const listeningReview = createListeningReview(lengthTicks);
@@ -90,6 +93,7 @@ async function writeReviewBundle(outDirectory: string, lengthTicks: number): Pro
       phase59Gate: evaluatePhase59Diagnostics(seed, output.diagnostics),
       phase510Gate: evaluatePhase510Diagnostics(seed, output.diagnostics),
       phase511Gate: evaluatePhase511Diagnostics(seed, output.diagnostics),
+      phase6Gate: evaluatePhase6Diagnostics(seed, output.diagnostics),
     });
     listeningReview.seeds.push(createListeningSeedReview(seed, category, diagnosticsFile, midiFile));
   }
@@ -109,6 +113,7 @@ type ReviewDiagnosticsSummary = {
   texture: {
     counterSubjectIdentityRetention: number;
     rhythmicIndependenceScore: number;
+    samePitchOverlapCount: number;
     unisonOverlapCount: number;
     sameDirectionMotionCount: number;
     sharedRhythmOverlapCount: number;
@@ -117,6 +122,9 @@ type ReviewDiagnosticsSummary = {
     maxEntrySupportInstabilityPerEntry: number;
     maxConsecutiveEntrySupportInstabilities: number;
     unresolvedEntrySupportInstabilityCount: number;
+    severeEntryIntervalCount: number;
+    unresolvedSevereEntryIntervalCount: number;
+    soloTexture: GenerationDiagnostics["soloTexture"];
   };
   melody: {
     leapRecoveryMisses: number;
@@ -130,6 +138,7 @@ type ReviewDiagnosticsSummary = {
   ornament: {
     ornamentCandidateCount: number;
     ornamentDensity: number;
+    placementReasons: GenerationDiagnostics["ornamentPlacementReasons"];
   };
 };
 
@@ -186,6 +195,7 @@ function summarizeDiagnostics(diagnostics: GenerationDiagnostics): ReviewDiagnos
     texture: {
       counterSubjectIdentityRetention: diagnostics.counterSubjectIdentityRetention,
       rhythmicIndependenceScore: diagnostics.rhythmicIndependenceScore,
+      samePitchOverlapCount: diagnostics.samePitchOverlapCount,
       unisonOverlapCount: diagnostics.unisonOverlapCount,
       sameDirectionMotionCount: diagnostics.sameDirectionMotionCount,
       sharedRhythmOverlapCount: diagnostics.sharedRhythmOverlapCount,
@@ -201,6 +211,9 @@ function summarizeDiagnostics(diagnostics: GenerationDiagnostics): ReviewDiagnos
         (sum, detail) => sum + detail.unresolvedInstabilityCount,
         0,
       ),
+      severeEntryIntervalCount: diagnostics.severeEntryIntervalCount,
+      unresolvedSevereEntryIntervalCount: diagnostics.unresolvedSevereEntryIntervalCount,
+      soloTexture: diagnostics.soloTexture,
     },
     melody: {
       leapRecoveryMisses: diagnostics.leapRecoveryMisses,
@@ -214,6 +227,7 @@ function summarizeDiagnostics(diagnostics: GenerationDiagnostics): ReviewDiagnos
     ornament: {
       ornamentCandidateCount: diagnostics.ornamentCandidateCount,
       ornamentDensity: diagnostics.ornamentDensity,
+      placementReasons: diagnostics.ornamentPlacementReasons,
     },
   };
 }

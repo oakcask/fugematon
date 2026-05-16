@@ -207,6 +207,30 @@ export type EntrySupportInstabilitySummary = {
   unresolvedInstabilityCount: number;
 };
 
+export type EntrySupportSevereIntervalSummary = {
+  voice: Voice;
+  form: EntryForm;
+  state: FugueState;
+  startTick: number;
+  severeIntervalCount: number;
+  unresolvedSevereIntervalCount: number;
+};
+
+export type SoloTextureSummary = {
+  soloRunCount: number;
+  unsupportedSoloRunCount: number;
+  abruptTextureDropCount: number;
+  soloVoiceImbalance: number;
+};
+
+export type OrnamentPlacementReasons = {
+  entryEnding: number;
+  cadenceApproach: number;
+  heldNote: number;
+  phraseBoundary: number;
+  total: number;
+};
+
 export type GenerationDiagnostics = {
   generatorVersion: number;
   seed: string;
@@ -240,11 +264,16 @@ export type GenerationDiagnostics = {
   shortStrongBeatEntryNoteCount: number;
   entrySupportInstabilityCount: number;
   entrySupportInstabilityDetails: EntrySupportInstabilitySummary[];
+  severeEntryIntervalCount: number;
+  unresolvedSevereEntryIntervalCount: number;
+  entrySupportSevereIntervalDetails: EntrySupportSevereIntervalSummary[];
   durationDistribution: DurationDistribution;
   repeatedPitchRunCount: number;
   allVoiceSilenceGapCount: number;
+  soloTexture: SoloTextureSummary;
   ornamentCandidateCount: number;
   ornamentDensity: number;
+  ornamentPlacementReasons: OrnamentPlacementReasons;
   fallbackPassageCount: number;
   melodicStagnationWarnings: number;
   leapRecoveryMisses: number;

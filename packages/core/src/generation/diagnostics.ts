@@ -3,9 +3,12 @@ import type {
   DiagnosticIssue,
   DurationDistribution,
   EntrySupportInstabilitySummary,
+  EntrySupportSevereIntervalSummary,
   HarmonicPlan,
   NoteEvent,
+  OrnamentPlacementReasons,
   PlannedEntry,
+  SoloTextureSummary,
   Voice,
 } from "../events.js";
 import { analyzeHarmonicPlans } from "./harmony-diagnostics.js";
@@ -46,11 +49,16 @@ export function analyzeScore(
   shortStrongBeatEntryNoteCount: number;
   entrySupportInstabilityCount: number;
   entrySupportInstabilityDetails: EntrySupportInstabilitySummary[];
+  severeEntryIntervalCount: number;
+  unresolvedSevereEntryIntervalCount: number;
+  entrySupportSevereIntervalDetails: EntrySupportSevereIntervalSummary[];
   durationDistribution: DurationDistribution;
   repeatedPitchRunCount: number;
   allVoiceSilenceGapCount: number;
+  soloTexture: SoloTextureSummary;
   ornamentCandidateCount: number;
   ornamentDensity: number;
+  ornamentPlacementReasons: OrnamentPlacementReasons;
   fallbackPassageCount: number;
   melodicStagnationWarnings: number;
   leapRecoveryMisses: number;
@@ -225,6 +233,7 @@ function analyzeTextureDiagnostics(
   const ornamentCandidateCount = countOrnamentCandidates(notes);
   const supportNoteCount = Math.max(1, supportNotes.length);
   const entrySupportInstabilityDetails = analyzeEntrySupportInstabilities(notes, subjectEntries);
+  const entrySupportSevereIntervalDetails = analyzeEntrySupportSevereIntervals(notes, subjectEntries);
 
   return {
     counterSubjectIdentityRetention: counterSubjectIdentityRetention(counterSubjectNotes, sectionPlans),
@@ -243,11 +252,22 @@ function analyzeTextureDiagnostics(
       0,
     ),
     entrySupportInstabilityDetails,
+    severeEntryIntervalCount: entrySupportSevereIntervalDetails.reduce(
+      (sum, detail) => sum + detail.severeIntervalCount,
+      0,
+    ),
+    unresolvedSevereEntryIntervalCount: entrySupportSevereIntervalDetails.reduce(
+      (sum, detail) => sum + detail.unresolvedSevereIntervalCount,
+      0,
+    ),
+    entrySupportSevereIntervalDetails,
     durationDistribution: durationDistribution(notes),
     repeatedPitchRunCount,
     allVoiceSilenceGapCount: countAllVoiceSilenceGaps(notes),
+    soloTexture: analyzeSoloTexture(notes, sectionPlans),
     ornamentCandidateCount,
     ornamentDensity: roundRatio(ornamentCandidateCount / supportNoteCount),
+    ornamentPlacementReasons: analyzeOrnamentPlacementReasons(notes, subjectEntries, sectionPlans),
   };
 }
 
@@ -501,12 +521,7 @@ function countAllVoiceSilenceGaps(notes: readonly NoteEvent[]): number {
 }
 
 function countOrnamentCandidates(notes: readonly NoteEvent[]): number {
-  return notes.filter(
-    (note) =>
-      (note.role === "counter-subject" || note.role === "free-counterpoint") &&
-      note.durationTicks >= TICKS_PER_QUARTER &&
-      note.startTick % TICKS_PER_QUARTER === 0,
-  ).length;
+  return ornamentCandidateNotes(notes).length;
 }
 
 function countShortStrongBeatEntryNotes(notes: readonly NoteEvent[]): number {
@@ -559,6 +574,37 @@ function analyzeEntrySupportInstabilities(
   });
 }
 
+function analyzeEntrySupportSevereIntervals(
+  notes: readonly NoteEvent[],
+  subjectEntries: readonly PlannedEntry[],
+): EntrySupportSevereIntervalSummary[] {
+  return subjectEntries.map((entry) => {
+    const ticks = entrySupportCheckpoints(notes, entry);
+    const severeTicks = ticks.filter((tick) => hasSevereEntryIntervalAt(notes, entry, tick));
+    let unresolvedSevereIntervalCount = 0;
+
+    for (const tick of severeTicks) {
+      const resolutionDeadlineTick = tick + TICKS_PER_QUARTER;
+      const resolvesBeforeDeadline = ticks.some(
+        (candidateTick) =>
+          candidateTick > tick && candidateTick <= resolutionDeadlineTick && !severeTicks.includes(candidateTick),
+      );
+      if (!resolvesBeforeDeadline) {
+        unresolvedSevereIntervalCount += 1;
+      }
+    }
+
+    return {
+      voice: entry.voice,
+      form: entry.form,
+      state: entry.state,
+      startTick: entry.startTick,
+      severeIntervalCount: severeTicks.length,
+      unresolvedSevereIntervalCount,
+    };
+  });
+}
+
 function entrySupportCheckpoints(notes: readonly NoteEvent[], entry: PlannedEntry): number[] {
   const entryWindowEndTick = entry.startTick + TICKS_PER_QUARTER * 2;
   return [
@@ -573,6 +619,14 @@ function entrySupportCheckpoints(notes: readonly NoteEvent[], entry: PlannedEntr
 }
 
 function hasEntrySupportInstabilityAt(notes: readonly NoteEvent[], entry: PlannedEntry, tick: number): boolean {
+  return entrySupportIntervalsAt(notes, entry, tick).some((intervalClass) => isEntrySupportInstability(intervalClass));
+}
+
+function hasSevereEntryIntervalAt(notes: readonly NoteEvent[], entry: PlannedEntry, tick: number): boolean {
+  return entrySupportIntervalsAt(notes, entry, tick).some((intervalClass) => isSevereEntryInterval(intervalClass));
+}
+
+function entrySupportIntervalsAt(notes: readonly NoteEvent[], entry: PlannedEntry, tick: number): number[] {
   const entryNote = notes.find(
     (note) =>
       note.voice === entry.voice &&
@@ -581,7 +635,7 @@ function hasEntrySupportInstabilityAt(notes: readonly NoteEvent[], entry: Planne
       isEntryRole(note.role),
   );
   if (entryNote === undefined) {
-    return false;
+    return [];
   }
 
   const supportNotes = notes.filter(
@@ -591,9 +645,7 @@ function hasEntrySupportInstabilityAt(notes: readonly NoteEvent[], entry: Planne
       tick < note.startTick + note.durationTicks &&
       (note.role === "counter-subject" || note.role === "free-counterpoint"),
   );
-  return supportNotes.some((supportNote) =>
-    isEntrySupportInstability(Math.abs(entryNote.pitch - supportNote.pitch) % 12),
-  );
+  return supportNotes.map((supportNote) => Math.abs(entryNote.pitch - supportNote.pitch) % 12);
 }
 
 function isEntrySupportInstability(intervalClass: number): boolean {
@@ -605,6 +657,153 @@ function isEntrySupportInstability(intervalClass: number): boolean {
     intervalClass === 10 ||
     intervalClass === 11
   );
+}
+
+function isSevereEntryInterval(intervalClass: number): boolean {
+  return intervalClass === 1 || intervalClass === 2 || intervalClass === 10 || intervalClass === 11;
+}
+
+function analyzeSoloTexture(notes: readonly NoteEvent[], sectionPlans: readonly HarmonicPlan[]): SoloTextureSummary {
+  const checkpoints = [...new Set(notes.flatMap((note) => [note.startTick, note.startTick + note.durationTicks]))].sort(
+    (left, right) => left - right,
+  );
+  const runs: {
+    voice: Voice;
+    startTick: number;
+    endTick: number;
+    previousActiveVoiceCount: number;
+  }[] = [];
+  let currentRun:
+    | {
+        voice: Voice;
+        startTick: number;
+        endTick: number;
+        previousActiveVoiceCount: number;
+      }
+    | undefined;
+  let previousActiveVoiceCount = 0;
+
+  for (let index = 0; index < checkpoints.length - 1; index += 1) {
+    const startTick = checkpoints[index]!;
+    const endTick = checkpoints[index + 1]!;
+    const activeVoices = activeVoicesDuring(notes, startTick, endTick);
+    if (activeVoices.length === 1) {
+      const voice = activeVoices[0]!;
+      if (currentRun?.voice === voice && currentRun.endTick === startTick) {
+        currentRun.endTick = endTick;
+      } else {
+        if (currentRun !== undefined) {
+          runs.push(currentRun);
+        }
+        currentRun = { voice, startTick, endTick, previousActiveVoiceCount };
+      }
+    } else if (currentRun !== undefined) {
+      runs.push(currentRun);
+      currentRun = undefined;
+    }
+    previousActiveVoiceCount = activeVoices.length;
+  }
+  if (currentRun !== undefined) {
+    runs.push(currentRun);
+  }
+
+  const longRuns = runs.filter((run) => run.endTick - run.startTick >= TICKS_PER_QUARTER);
+  const unsupportedRuns = longRuns.filter(
+    (run) => run.previousActiveVoiceCount >= 2 && !hasNearbyPhraseSupport(run.startTick, sectionPlans),
+  );
+  const abruptRuns = unsupportedRuns.filter((run) => run.previousActiveVoiceCount >= 3);
+  const runsByVoice = VOICE_ENTRY_ORDER.map((voice) => longRuns.filter((run) => run.voice === voice).length);
+
+  return {
+    soloRunCount: longRuns.length,
+    unsupportedSoloRunCount: unsupportedRuns.length,
+    abruptTextureDropCount: abruptRuns.length,
+    soloVoiceImbalance: Math.max(...runsByVoice) - Math.min(...runsByVoice),
+  };
+}
+
+function activeVoicesDuring(notes: readonly NoteEvent[], startTick: number, endTick: number): Voice[] {
+  return VOICE_ENTRY_ORDER.filter((voice) =>
+    notes.some(
+      (note) => note.voice === voice && note.startTick < endTick && startTick < note.startTick + note.durationTicks,
+    ),
+  );
+}
+
+function hasNearbyPhraseSupport(tick: number, sectionPlans: readonly HarmonicPlan[]): boolean {
+  return sectionPlans.some((plan) => {
+    const sectionEndTick = plan.startTick + plan.durationTicks;
+    const nearSectionBoundary =
+      Math.abs(tick - plan.startTick) <= TICKS_PER_QUARTER || Math.abs(tick - sectionEndTick) <= TICKS_PER_QUARTER;
+    const nearCadence = plan.anchors.some(
+      (anchor) => anchor.cadenceTarget && Math.abs(tick - anchor.tick) <= TICKS_PER_QUARTER,
+    );
+    return nearSectionBoundary || nearCadence;
+  });
+}
+
+function analyzeOrnamentPlacementReasons(
+  notes: readonly NoteEvent[],
+  subjectEntries: readonly PlannedEntry[],
+  sectionPlans: readonly HarmonicPlan[],
+): OrnamentPlacementReasons {
+  const reasons: OrnamentPlacementReasons = {
+    entryEnding: 0,
+    cadenceApproach: 0,
+    heldNote: 0,
+    phraseBoundary: 0,
+    total: 0,
+  };
+  const entryEndTicks = subjectEntries.map((entry) => entryEndTick(notes, entry)).filter((tick) => tick !== undefined);
+  const cadenceTicks = sectionPlans.flatMap((plan) =>
+    plan.anchors.filter((anchor) => anchor.cadenceTarget).map((anchor) => anchor.tick),
+  );
+
+  for (const note of ornamentCandidateNotes(notes)) {
+    let hasReason = false;
+    if (entryEndTicks.some((tick) => Math.abs(note.startTick - tick) <= TICKS_PER_QUARTER)) {
+      reasons.entryEnding += 1;
+      hasReason = true;
+    }
+    if (cadenceTicks.some((tick) => note.startTick <= tick && tick - note.startTick <= TICKS_PER_QUARTER)) {
+      reasons.cadenceApproach += 1;
+      hasReason = true;
+    }
+    if (note.durationTicks >= TICKS_PER_QUARTER * 2) {
+      reasons.heldNote += 1;
+      hasReason = true;
+    }
+    if (sectionPlans.some((plan) => Math.abs(note.startTick - plan.startTick) <= TICKS_PER_QUARTER)) {
+      reasons.phraseBoundary += 1;
+      hasReason = true;
+    }
+    if (hasReason) {
+      reasons.total += 1;
+    }
+  }
+
+  return reasons;
+}
+
+function ornamentCandidateNotes(notes: readonly NoteEvent[]): NoteEvent[] {
+  return notes.filter(
+    (note) =>
+      (note.role === "counter-subject" || note.role === "free-counterpoint") &&
+      note.durationTicks >= TICKS_PER_QUARTER &&
+      note.startTick % TICKS_PER_QUARTER === 0,
+  );
+}
+
+function entryEndTick(notes: readonly NoteEvent[], entry: PlannedEntry): number | undefined {
+  const entryNotes = notes
+    .filter((note) => note.voice === entry.voice && note.startTick >= entry.startTick && isEntryRole(note.role))
+    .sort(compareNoteEvents)
+    .slice(0, entry.expectedDegreePattern.length);
+  if (entryNotes.length === 0) {
+    return undefined;
+  }
+
+  return Math.max(...entryNotes.map((note) => note.startTick + note.durationTicks));
 }
 
 function isEntryRole(role: NoteEvent["role"]): boolean {

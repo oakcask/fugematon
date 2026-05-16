@@ -2,6 +2,7 @@ import {
   PHASE_5_9_DIAGNOSTICS_PROFILE,
   PHASE_5_10_DIAGNOSTICS_PROFILE,
   PHASE_5_11_DIAGNOSTICS_PROFILE,
+  PHASE_6_DIAGNOSTICS_PROFILE,
 } from "./constants.js";
 import type { GenerationDiagnostics } from "./events.js";
 
@@ -43,6 +44,22 @@ export type Phase510GateResult = {
 
 export type Phase511GateResult = Phase510GateResult & {
   followUps: Phase59GateFailure[];
+};
+
+export type Phase6GateResult = {
+  passed: boolean;
+  failures: Phase59GateFailure[];
+  metrics: Phase511GateResult["metrics"] & {
+    samePitchOverlapCount: number;
+    severeEntryIntervalCount: number;
+    unresolvedSevereEntryIntervalCount: number;
+    unsupportedSoloRunCount: number;
+    abruptTextureDropCount: number;
+    soloVoiceImbalance: number;
+    ornamentPlacementReasonCount: number;
+    expositionDurationTicks: number;
+    firstContinuationStartTick: number;
+  };
 };
 
 export type ManualListeningJudgement = "pass" | "needs-work" | "fail" | "not-reviewed";
@@ -285,6 +302,92 @@ export function evaluatePhase511Diagnostics(seed: string, diagnostics: Generatio
     passed: failures.length === 0,
     failures,
     followUps,
+    metrics,
+  };
+}
+
+export function evaluatePhase6Diagnostics(seed: string, diagnostics: GenerationDiagnostics): Phase6GateResult {
+  const phase511Gate = evaluatePhase511Diagnostics(seed, diagnostics);
+  const expositionPlan = diagnostics.sectionPlans.find((plan) => plan.state === "exposition");
+  const firstContinuationPlan = diagnostics.sectionPlans.find((plan) => plan.state !== "exposition");
+  const metrics = {
+    ...phase511Gate.metrics,
+    samePitchOverlapCount: diagnostics.samePitchOverlapCount,
+    severeEntryIntervalCount: diagnostics.severeEntryIntervalCount,
+    unresolvedSevereEntryIntervalCount: diagnostics.unresolvedSevereEntryIntervalCount,
+    unsupportedSoloRunCount: diagnostics.soloTexture.unsupportedSoloRunCount,
+    abruptTextureDropCount: diagnostics.soloTexture.abruptTextureDropCount,
+    soloVoiceImbalance: diagnostics.soloTexture.soloVoiceImbalance,
+    ornamentPlacementReasonCount: diagnostics.ornamentPlacementReasons.total,
+    expositionDurationTicks: expositionPlan?.durationTicks ?? 0,
+    firstContinuationStartTick: firstContinuationPlan?.startTick ?? 0,
+  };
+  const failures = [...phase511Gate.failures];
+
+  addMaximumFailure(
+    failures,
+    "leapRecoveryMisses",
+    metrics.leapRecoveryMisses,
+    PHASE_6_DIAGNOSTICS_PROFILE.maxLeapRecoveryMisses,
+  );
+  addMaximumFailure(
+    failures,
+    "samePitchOverlapCount",
+    metrics.samePitchOverlapCount,
+    PHASE_6_DIAGNOSTICS_PROFILE.maxSamePitchOverlapCount,
+  );
+  addMaximumFailure(
+    failures,
+    "severeEntryIntervalCount",
+    metrics.severeEntryIntervalCount,
+    PHASE_6_DIAGNOSTICS_PROFILE.maxSevereEntryIntervalCount,
+  );
+  addMaximumFailure(
+    failures,
+    "unresolvedSevereEntryIntervalCount",
+    metrics.unresolvedSevereEntryIntervalCount,
+    PHASE_6_DIAGNOSTICS_PROFILE.maxUnresolvedSevereEntryIntervalCount,
+  );
+  addMaximumFailure(
+    failures,
+    "unsupportedSoloRunCount",
+    metrics.unsupportedSoloRunCount,
+    PHASE_6_DIAGNOSTICS_PROFILE.maxUnsupportedSoloRunCount,
+  );
+  addMaximumFailure(
+    failures,
+    "abruptTextureDropCount",
+    metrics.abruptTextureDropCount,
+    PHASE_6_DIAGNOSTICS_PROFILE.maxAbruptTextureDropCount,
+  );
+  addMaximumFailure(
+    failures,
+    "soloVoiceImbalance",
+    metrics.soloVoiceImbalance,
+    PHASE_6_DIAGNOSTICS_PROFILE.maxSoloVoiceImbalance,
+  );
+  addMinimumFailure(
+    failures,
+    "ornamentPlacementReasonCount",
+    metrics.ornamentPlacementReasonCount,
+    PHASE_6_DIAGNOSTICS_PROFILE.minOrnamentPlacementReasonCount,
+  );
+  addMaximumFailure(
+    failures,
+    "expositionDurationTicks",
+    metrics.expositionDurationTicks,
+    PHASE_6_DIAGNOSTICS_PROFILE.maxExpositionDurationTicks,
+  );
+  addMaximumFailure(
+    failures,
+    "firstContinuationStartTick",
+    metrics.firstContinuationStartTick,
+    PHASE_6_DIAGNOSTICS_PROFILE.maxFirstContinuationStartTick,
+  );
+
+  return {
+    passed: failures.length === 0,
+    failures,
     metrics,
   };
 }
