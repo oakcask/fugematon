@@ -1,0 +1,4 @@
+interface:
+  display_name: "Music Theory Review"
+  short_description: "Review generated music against theory sources"
+  default_prompt: "Use $music-theory-review when reviewing Fugematon output, diagnostics, MIDI, or score events for musical quality, counterpoint, harmony, form, style, or literature-grounded theory issues."

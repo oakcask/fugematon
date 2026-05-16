@@ -21,3 +21,4 @@
 - Use `github-pr-operations` when creating, editing, or managing pull requests with GitHub CLI.
 - Use `ui-inspection` when browser-level Web UI validation is needed.
 - Use `dependency-review` before adding, choosing, upgrading, or approving third-party dependencies.
+- Use `music-theory-review` when reviewing generated music, diagnostics, MIDI, score events, music-quality gates, or phase plans for counterpoint, harmony, fugue form, style fit, or literature-grounded music-theory issues.

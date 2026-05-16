@@ -20,6 +20,7 @@ pnpm fugematon review --out .tmp/phase6-musical-review --ticks 129600
 * 旋律線はまだ歌える線になりきっていない。leap recovery miss は合計 415。`modal-answer`、`bright-answer`、`contrary-motion`、`modal-dorian` が境界 seed になる。
 * 対位法的独立が弱い。`restless-line`、`modal-answer`、`bright-answer` は rhythmic independence が下限付近にあり、shared rhythm overlap も上限付近に張り付く。
 * exact same-pitch unison は合計 293。`contrary-motion`、`fugue-smoke`、`lyrical-line`、`minor-entry` が目立ち、声部独立を損なう。
+* pitch contour の概形にも並行が残る。追加レビューでは、4 拍窓の bass と上声の同方向進行率が平均 0.555、22 seed 中 16 seed で 0.55 以上だった。詳細は [Phase 6 概形進行レビュー](phase-6-contour-motion-review.md) を参照する。
 * modal seed では counter-subject identity が薄い。`modal-cadence` と `dense-modal` が 0.573、`angular-answer` が 0.591、`modal-answer` が 0.608 だった。
 * solo texture は Phase 6 gate 内だが説得力は弱い。unsupported solo run と abrupt texture drop はどちらも合計 321 あり、`long-arc`、`dense-modal`、`contrary-answer`、`modal-cadence` が目立つ。
 * 形式は seed 間で固定的である。全 seed で exposition duration は 7680、first continuation start は 9120 だった。codetta、追唱、提示部後の呼吸はまだ seed variation になっていない。
@@ -30,7 +31,7 @@ pnpm fugematon review --out .tmp/phase6-musical-review --ticks 129600
 Phase 7 の前半は、評価説明力の前に実質的な音楽改善を扱う。
 
 1. entry 支持和声を改善する。entry ごとの structural note、root/third/fifth、avoid note role、解決先を候補選択へ入れる。境界 seed は `modal-cadence`、`lyrical-line`、`fugue-smoke`、`tight-stretto` とする。
-2. 旋律 contour を改善する。大跳躍後の反行・順次回収、局所 climax、声部別の歌いやすさを scoring に入れ、alto 偏重を優先して潰す。
+2. 旋律 contour を改善する。大跳躍後の反行・順次回収、局所 climax、声部別の歌いやすさに加え、4 拍窓と 8 拍窓で bass と上声が同じ概形へ流れ続ける箇所を scoring に入れ、alto 偏重と tenor-bass 並行を優先して潰す。
 3. exact same-pitch unison と rhythmic lockstep を強い回避対象にする。voice-pair と register placement を先に整理し、`contrary-motion`、`minor-entry`、`restless-line` を回帰 seed にする。
 4. episode と continuation planner を再編する。固定的な提示部後遷移をやめ、codetta、追唱、段階的 thinning、応答的な受け渡しを section plan の責務にする。
 5. その後で Phase 7 本来の評価説明力へ進む。dimension breakdown は、seed、section、voice、entry/cadence 単位で「なぜ音楽的に妥当か」を説明できるまで gate の中心に置かない。
