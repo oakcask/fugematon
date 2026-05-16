@@ -2,7 +2,14 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { GenerationDiagnostics } from "@fugematon/core";
-import { exportMidi, generateScore, PHASE_5_REVIEW_SEEDS } from "@fugematon/core";
+import {
+  evaluatePhase59Diagnostics,
+  exportMidi,
+  generateScore,
+  PHASE_5_REVIEW_SEEDS,
+  type Phase59GateResult,
+  phase59ManualListeningBlockers,
+} from "@fugematon/core";
 import { helpText, parseArgs } from "./args.js";
 
 export async function main(argv: readonly string[] = process.argv.slice(2)): Promise<void> {
@@ -53,6 +60,7 @@ async function writeReviewBundle(outDirectory: string, lengthTicks: number): Pro
       diagnosticsFile: string;
       midiFile: string;
       diagnosticsSummary: ReviewDiagnosticsSummary;
+      phase59Gate: Phase59GateResult;
     }[],
   };
   const listeningReview = createListeningReview(lengthTicks);
@@ -72,6 +80,7 @@ async function writeReviewBundle(outDirectory: string, lengthTicks: number): Pro
       diagnosticsFile,
       midiFile,
       diagnosticsSummary: summarizeDiagnostics(output.diagnostics),
+      phase59Gate: evaluatePhase59Diagnostics(seed, output.diagnostics),
     });
     listeningReview.seeds.push(createListeningSeedReview(seed, category, diagnosticsFile, midiFile));
   }
@@ -203,6 +212,7 @@ function createListeningReview(lengthTicks: number): ListeningReview {
       "fugue-smoke repeated pitches sound intentional or tied rather than mechanical.",
       "fugue-smoke ornaments have audible placement reasons near entries, cadences, or held notes.",
       "fugue-smoke has no unexplained all-voice silence gaps.",
+      "fugue-smoke first soprano answer avoids unstable seconds, unsupported fourths, and answer-root conflicts.",
     ],
     seeds: [],
   };
@@ -229,7 +239,7 @@ function createListeningSeedReview(
       longRunInterest: "not-reviewed",
     },
     notes: "",
-    blockers: [],
+    blockers: phase59ManualListeningBlockers(category, "not-reviewed"),
   };
 }
 
