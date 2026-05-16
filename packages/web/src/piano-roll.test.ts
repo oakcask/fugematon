@@ -16,6 +16,7 @@ test("computePianoRollLayout maps visible notes into canvas bounds", () => {
   assert.ok(layout.length > 0);
   assert.ok(layout.length < model.notes.length);
   assert.ok(layout.some((note) => note.entry?.form === "subject"));
+  assert.ok(layout.some((note) => note.entry?.answerKind === "tonal"));
   assert.ok(layout.every((note) => note.x >= 0 && note.x <= 960));
   assert.ok(layout.every((note) => note.y >= 0 && note.y <= 360));
   assert.ok(layout.every((note) => note.width >= 2));
