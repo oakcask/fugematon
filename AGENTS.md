@@ -5,6 +5,11 @@
 - Avoid absolute local paths, usernames, hostnames, machine names, local repository locations, private tokens, email addresses, and other personally identifying details.
 - Use generic placeholders or relative paths when such information is necessary for explanation.
 
+## Change Messages
+
+- Write all commit messages, PR titles, PR descriptions, changelog entries, and release notes authored by agents in English.
+- If source material, user requests, or generated drafts are in another language, translate the final change message into clear reviewer-facing English before publishing it.
+
 ## UI Inspection
 
 - When inspecting the Web UI in a browser, start the Vite development server with `pnpm web:dev`.

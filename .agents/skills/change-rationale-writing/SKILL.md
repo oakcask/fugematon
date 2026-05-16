@@ -76,6 +76,8 @@ Adapt headings to the repository's existing template. If a template asks for "Su
 
 ## Writing Style
 
+- Write commit bodies, pull request descriptions, merge request descriptions, changelog entries, and release notes in English.
+- If the source material or draft is in another language, translate the final published text into clear reviewer-facing English.
 - Be specific and concrete.
 - Tie risks to affected behavior, data, compatibility, or operations.
 - Mention implementation details only when they clarify the rationale, consequence, or review focus.
