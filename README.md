@@ -87,6 +87,14 @@ Open the local URL printed by Vite. The app lets you:
 * Press Stop to stop scheduled playback.
 * Watch the four-voice score and highlighted subject entries on the Canvas piano roll while it plays.
 
+Run the headless browser smoke inspection:
+
+```sh
+pnpm ui:inspect
+```
+
+The inspection starts the Vite development server, checks desktop and mobile Chromium viewports, captures screenshots, and fails on browser console errors.
+
 Create a production web build:
 
 ```sh
