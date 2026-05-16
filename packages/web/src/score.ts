@@ -1,4 +1,11 @@
-import type { GenerationOutput, MetaEvent, NoteEvent, ScoreEvent, Voice } from "@fugematon/core";
+import type { FugueState, GenerationOutput, MetaEvent, NoteEvent, ScoreEvent, Voice } from "@fugematon/core";
+
+export type PlaybackEntry = {
+  voice: Voice;
+  form: "subject" | "answer" | "subject-fragment";
+  state: FugueState;
+  startTick: number;
+};
 
 export type PlaybackNote = {
   voice: Voice;
@@ -8,6 +15,7 @@ export type PlaybackNote = {
   durationSecond: number;
   pitch: number;
   velocity: number;
+  entry?: PlaybackEntry;
 };
 
 export type PlaybackModel = {
@@ -16,6 +24,8 @@ export type PlaybackModel = {
   totalTicks: number;
   totalSeconds: number;
   notes: PlaybackNote[];
+  stateTransitions: FugueState[];
+  subjectEntries: PlaybackEntry[];
   pitchRange: {
     min: number;
     max: number;
@@ -29,6 +39,10 @@ export function createPlaybackModel(output: GenerationOutput): PlaybackModel {
   const bpm = readBpm(output.events) ?? DEFAULT_BPM;
   const ticksPerQuarter = readTicksPerQuarter(output.events) ?? DEFAULT_TICKS_PER_QUARTER;
   const totalTicks = readScoreEndTick(output.events) ?? output.diagnostics.generatedUntilTick;
+  const subjectEntries = output.diagnostics.subjectEntries.map((entry) => ({ ...entry }));
+  const subjectEntryByNoteStart = new Map(
+    subjectEntries.map((entry) => [entryKey(entry.voice, entry.startTick), entry]),
+  );
   const notes = output.events.filter(isNoteEvent).map((note) => {
     const startSecond = ticksToSeconds(note.startTick, bpm, ticksPerQuarter);
     const durationSecond = ticksToSeconds(note.durationTicks, bpm, ticksPerQuarter);
@@ -41,6 +55,7 @@ export function createPlaybackModel(output: GenerationOutput): PlaybackModel {
       durationSecond,
       pitch: note.pitch,
       velocity: note.velocity,
+      entry: subjectEntryByNoteStart.get(entryKey(note.voice, note.startTick)),
     };
   });
 
@@ -50,6 +65,8 @@ export function createPlaybackModel(output: GenerationOutput): PlaybackModel {
     totalTicks,
     totalSeconds: ticksToSeconds(totalTicks, bpm, ticksPerQuarter),
     notes,
+    stateTransitions: output.diagnostics.stateTransitions,
+    subjectEntries,
     pitchRange: computePitchRange(notes),
   };
 }
@@ -97,4 +114,8 @@ function findMetaEvent<TType extends MetaEvent["type"]>(
 
 function isNoteEvent(event: ScoreEvent): event is NoteEvent {
   return event.kind === "note";
+}
+
+function entryKey(voice: Voice, startTick: number): string {
+  return `${voice}:${startTick}`;
 }

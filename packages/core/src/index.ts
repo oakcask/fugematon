@@ -3,10 +3,14 @@ export {
   GENERATOR_VERSION,
   PHASE_1_DIAGNOSTICS_PROFILE,
   PHASE_1_REPRESENTATIVE_SEEDS,
+  PHASE_3_DIAGNOSTICS_PROFILE,
+  PHASE_3_LENGTH_TICKS,
+  PHASE_3_REPRESENTATIVE_SEEDS,
   TICKS_PER_QUARTER,
   VOICES,
 } from "./constants.js";
 export type {
+  FugueState,
   GenerationDiagnostics,
   GenerationInput,
   GenerationOutput,

@@ -1,11 +1,11 @@
-import { generateScore } from "@fugematon/core";
+import { generateScore, PHASE_3_LENGTH_TICKS } from "@fugematon/core";
 import "./style.css";
 import { ScorePlayer } from "./audio.js";
 import { drawPianoRoll } from "./piano-roll.js";
 import { createPlaybackModel, type PlaybackModel } from "./score.js";
 
 const DEFAULT_SEED = "fugue-smoke";
-const SCORE_LENGTH_TICKS = 7680;
+const SCORE_LENGTH_TICKS = PHASE_3_LENGTH_TICKS;
 
 type AppState = {
   seed: string;
@@ -21,7 +21,7 @@ app.innerHTML = `
     <div class="hero">
       <p class="eyebrow">seeded counterpoint machine</p>
       <h1>Fugematon</h1>
-      <p class="lede">Generate a deterministic four-voice exposition and prepare it for browser playback.</p>
+      <p class="lede">Generate deterministic four-voice fugue states for browser playback.</p>
     </div>
     <form class="control-card" id="seed-form">
       <label for="seed">Seed</label>
@@ -29,7 +29,7 @@ app.innerHTML = `
         <input id="seed" name="seed" autocomplete="off" spellcheck="false" />
         <button type="submit">Regenerate</button>
       </div>
-      <p class="hint">The same seed always produces the same Phase 1 score.</p>
+      <p class="hint">The same seed always produces the same Phase 3 score.</p>
     </form>
     <section class="score-card" aria-live="polite">
       <div>
@@ -47,6 +47,14 @@ app.innerHTML = `
       <div>
         <span class="metric-label">Pitch span</span>
         <strong id="pitch-span"></strong>
+      </div>
+      <div>
+        <span class="metric-label">States</span>
+        <strong id="states"></strong>
+      </div>
+      <div>
+        <span class="metric-label">Entries</span>
+        <strong id="entries"></strong>
       </div>
     </section>
     <section class="transport-card">
@@ -71,6 +79,8 @@ const tempo = requireElement(document.querySelector<HTMLElement>("#tempo"), "tem
 const duration = requireElement(document.querySelector<HTMLElement>("#duration"), "duration metric");
 const notes = requireElement(document.querySelector<HTMLElement>("#notes"), "notes metric");
 const pitchSpan = requireElement(document.querySelector<HTMLElement>("#pitch-span"), "pitch span metric");
+const states = requireElement(document.querySelector<HTMLElement>("#states"), "states metric");
+const entries = requireElement(document.querySelector<HTMLElement>("#entries"), "entries metric");
 const startButton = requireElement(document.querySelector<HTMLButtonElement>("#start"), "start button");
 const stopButton = requireElement(document.querySelector<HTMLButtonElement>("#stop"), "stop button");
 const transportStatus = requireElement(document.querySelector<HTMLElement>("#transport-status"), "transport status");
@@ -126,6 +136,8 @@ function render(nextState: AppState): void {
   duration.textContent = `${nextState.model.totalSeconds.toFixed(1)} s`;
   notes.textContent = `${nextState.model.notes.length}`;
   pitchSpan.textContent = `${nextState.model.pitchRange.min}-${nextState.model.pitchRange.max}`;
+  states.textContent = `${new Set(nextState.model.stateTransitions).size}`;
+  entries.textContent = `${nextState.model.subjectEntries.length}`;
 }
 
 async function startPlayback(): Promise<void> {
