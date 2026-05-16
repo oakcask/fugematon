@@ -123,6 +123,7 @@ jobs:
 
     env:
       REPO: ${{ github.repository }}
+      OLD_BASE_PR_NUMBER: ${{ github.event.pull_request.number }}
       OLD_BASE_REF: ${{ github.event.pull_request.head.ref }}
       OLD_BASE_SHA: ${{ github.event.pull_request.head.sha }}
       NEW_BASE_REF: ${{ github.event.pull_request.base.ref }}
@@ -171,11 +172,14 @@ jobs:
             status=skipped
           elif git fetch --no-tags origin \
             "+refs/heads/${NEW_BASE_REF}:refs/remotes/origin/${NEW_BASE_REF}" \
+            "+refs/pull/${OLD_BASE_PR_NUMBER}/head:refs/remotes/origin/old-base-pr/${OLD_BASE_PR_NUMBER}" \
             "+refs/heads/${HEAD_REF}:refs/remotes/origin/${HEAD_REF}" \
             && git switch --detach "origin/${HEAD_REF}"; then
-            if ! git merge-base --is-ancestor "$OLD_BASE_SHA" HEAD; then
+            if ! rebase_from="$(git merge-base "$OLD_BASE_SHA" HEAD)"; then
               status=skipped
-            elif git rebase --onto "origin/${NEW_BASE_REF}" "$OLD_BASE_SHA" HEAD; then
+            elif [[ "$rebase_from" == "$(git rev-parse HEAD)" ]]; then
+              status=skipped
+            elif git rebase --onto "origin/${NEW_BASE_REF}" "$rebase_from" HEAD; then
               if git push --force-with-lease=refs/heads/"${HEAD_REF}":refs/remotes/origin/"${HEAD_REF}" \
                 origin HEAD:refs/heads/"${HEAD_REF}" \
                 && gh pr edit "$PR_NUMBER" --repo "$REPO" --base "$NEW_BASE_REF"; then
