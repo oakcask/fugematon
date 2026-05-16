@@ -58,3 +58,22 @@ export const PHASE_4_DIAGNOSTICS_PROFILE = {
 } as const;
 
 export const PHASE_4_REPRESENTATIVE_SEEDS = PHASE_3_REPRESENTATIVE_SEEDS;
+
+export const PHASE_5_LENGTH_TICKS = TICKS_PER_QUARTER * 270;
+
+export const PHASE_5_REVIEW_SEEDS = [
+  { seed: "bach-001", category: "representative" },
+  { seed: "fugue-smoke", category: "representative" },
+  { seed: "minor-entry", category: "boundary" },
+  { seed: "wide-key", category: "boundary" },
+  { seed: "lyrical-line", category: "review" },
+  { seed: "modal-dorian", category: "review" },
+  { seed: "circle-fifths", category: "review" },
+  { seed: "close-imitation", category: "review" },
+  { seed: "sparse-cadence", category: "review" },
+  { seed: "bright-answer", category: "review" },
+  { seed: "dark-episode", category: "review" },
+  { seed: "ornament-test", category: "review" },
+  { seed: "long-arc", category: "review" },
+  { seed: "contrary-motion", category: "review" },
+] as const;
