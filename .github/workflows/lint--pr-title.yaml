@@ -15,5 +15,5 @@ jobs:
   validate:
     uses: ./.github/workflows/shared--conventional-commits.yaml
     with:
-      subjects: ${{ github.event.pull_request.title }}
-      label: PR title
+      payload: >-
+        {"label":"PR title","subjects":[${{ toJSON(github.event.pull_request.title) }}]}

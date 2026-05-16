@@ -3,13 +3,9 @@ name: shared / conventional commits
 on:
   workflow_call:
     inputs:
-      subjects:
+      payload:
         required: true
         type: string
-      label:
-        required: false
-        type: string
-        default: subject
 
 permissions:
   contents: read
@@ -17,30 +13,15 @@ permissions:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    container: openpolicyagent/conftest:latest
     steps:
-      - name: Validate Conventional Commits syntax
-        shell: bash
+      - uses: actions/checkout@v6
+      - name: Write Conventional Commits input
+        shell: sh
         env:
-          SUBJECTS: ${{ inputs.subjects }}
-          LABEL: ${{ inputs.label }}
+          CONVENTIONAL_COMMITS_PAYLOAD: ${{ inputs.payload }}
         run: |
-          set -euo pipefail
-
-          pattern='^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\([a-z0-9._-]+\))?!?: .+$'
-          failed=0
-
-          while IFS= read -r subject; do
-            if [[ -z "${subject}" ]]; then
-              continue
-            fi
-
-            if [[ ! "${subject}" =~ ${pattern} ]]; then
-              printf 'Invalid %s: %s\n' "${LABEL}" "${subject}"
-              failed=1
-            fi
-          done <<< "${SUBJECTS}"
-
-          if [[ "${failed}" -ne 0 ]]; then
-            printf '\n%s must follow Conventional Commits, for example: feat(cli): add dry-run option\n' "${LABEL}"
-            exit 1
-          fi
+          set -eu
+          printf '%s\n' "${CONVENTIONAL_COMMITS_PAYLOAD}" > conventional-commits.json
+      - name: Validate Conventional Commits syntax
+        run: conftest test -o github -p conftest/conventional-commits conventional-commits.json
