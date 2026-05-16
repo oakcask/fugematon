@@ -61,7 +61,7 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
 async function writeReviewBundle(outDirectory: string, lengthTicks: number): Promise<void> {
   await mkdir(outDirectory, { recursive: true });
   const summary = {
-    schemaVersion: 5,
+    schemaVersion: 6,
     lengthTicks,
     seeds: [] as {
       seed: string;
@@ -144,6 +144,19 @@ type ReviewDiagnosticsSummary = {
     ornamentCandidateCount: number;
     ornamentDensity: number;
     placementReasons: GenerationDiagnostics["ornamentPlacementReasons"];
+  };
+  candidateEvaluation: {
+    featureVersion: number;
+    evaluationModelVersion: number;
+    entryExplanationCount: number;
+    voicePairExplanationCount: number;
+    voiceExplanationCount: number;
+    sectionExplanationCount: number;
+    maxEntryInstabilityCount: number;
+    maxEntrySevereIntervalCount: number;
+    maxVoicePairUnisonOverlapCount: number;
+    maxVoicePairSharedRhythmOverlapCount: number;
+    maxSectionSoloTextureRisk: number;
   };
 };
 
@@ -235,6 +248,46 @@ function summarizeDiagnostics(diagnostics: GenerationDiagnostics): ReviewDiagnos
       ornamentDensity: diagnostics.ornamentDensity,
       placementReasons: diagnostics.ornamentPlacementReasons,
     },
+    candidateEvaluation: summarizeCandidateEvaluation(diagnostics),
+  };
+}
+
+function summarizeCandidateEvaluation(
+  diagnostics: GenerationDiagnostics,
+): ReviewDiagnosticsSummary["candidateEvaluation"] {
+  const selected = diagnostics.selectedCandidateEvaluations[0];
+  if (selected === undefined) {
+    return {
+      featureVersion: 0,
+      evaluationModelVersion: 0,
+      entryExplanationCount: 0,
+      voicePairExplanationCount: 0,
+      voiceExplanationCount: 0,
+      sectionExplanationCount: 0,
+      maxEntryInstabilityCount: 0,
+      maxEntrySevereIntervalCount: 0,
+      maxVoicePairUnisonOverlapCount: 0,
+      maxVoicePairSharedRhythmOverlapCount: 0,
+      maxSectionSoloTextureRisk: 0,
+    };
+  }
+
+  return {
+    featureVersion: selected.featureVersion,
+    evaluationModelVersion: selected.evaluationModelVersion,
+    entryExplanationCount: selected.explanations.entries.length,
+    voicePairExplanationCount: selected.explanations.voicePairs.length,
+    voiceExplanationCount: selected.explanations.voices.length,
+    sectionExplanationCount: selected.explanations.sections.length,
+    maxEntryInstabilityCount: maximum(selected.explanations.entries.map((entry) => entry.instabilityCount)),
+    maxEntrySevereIntervalCount: maximum(selected.explanations.entries.map((entry) => entry.severeIntervalCount)),
+    maxVoicePairUnisonOverlapCount: maximum(
+      selected.explanations.voicePairs.map((voicePair) => voicePair.unisonOverlapCount),
+    ),
+    maxVoicePairSharedRhythmOverlapCount: maximum(
+      selected.explanations.voicePairs.map((voicePair) => voicePair.sharedRhythmOverlapCount),
+    ),
+    maxSectionSoloTextureRisk: maximum(selected.explanations.sections.map((section) => section.soloTextureRisk)),
   };
 }
 
