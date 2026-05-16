@@ -636,6 +636,14 @@ test("generateScore reports phase-7 contour motion diagnostics", () => {
   assert.equal(eightBeat.bassUpperSameDirectionRatio + eightBeat.bassUpperContraryRatio, 1);
   assert.ok(fourBeat.outerVoiceSameDirectionRatio >= 0);
   assert.ok(fourBeat.outerVoiceContraryRatio >= 0);
+  assert.ok(output.diagnostics.selectedCandidateEvaluations.length > 0);
+  assert.ok(
+    "fourBeatBassUpperSameDirectionRatio" in
+      output.diagnostics.selectedCandidateEvaluations[0]!.dimensions.texture.features,
+  );
+  assert.ok(
+    "fourBeatBassUpperContraryRatio" in output.diagnostics.selectedCandidateEvaluations[0]!.dimensions.texture.features,
+  );
 });
 
 test("generateScore applies phase-7 contour gates across fixed and rotation seeds", () => {
