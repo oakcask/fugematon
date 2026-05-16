@@ -91,11 +91,19 @@ export type GenerationDiagnostics = {
   generatorVersion: number;
   seed: string;
   lengthTicks: number;
+  generatedUntilTick: number;
   eventCount: number;
   noteCount: number;
   stateTransitions: string[];
+  subjectEntries: {
+    voice: Voice;
+    form: "subject" | "answer";
+    startTick: number;
+    pitchClassOffset: number;
+  }[];
   rangeViolations: number;
   voiceCrossings: number;
+  parallelPerfects: number;
   warnings: string[];
 };
 

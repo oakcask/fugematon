@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { writeFile } from "node:fs/promises";
-import { generateScore } from "@fugematon/core";
+import { exportMidi, generateScore } from "@fugematon/core";
 import { helpText, parseArgs } from "./args.js";
 
 export async function main(argv: readonly string[] = process.argv.slice(2)): Promise<void> {
@@ -18,6 +18,11 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
 
   if (command.name === "diagnose") {
     console.log(`${JSON.stringify(output.diagnostics, null, 2)}\n`);
+    return;
+  }
+
+  if (command.name === "midi") {
+    await writeFile(command.out, exportMidi(output.events));
     return;
   }
 
