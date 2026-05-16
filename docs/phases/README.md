@@ -4,11 +4,12 @@
 
 ## 現在読むもの
 
+* [Phase 6](phase-6.md): 旋律線、entry 支持和声、装飾配置、solo texture の自動 gate と完了記録。
 * [Phase 5](phase-5.md): Phase 5 の短い索引。詳細本文は [phase-5-plan.md](phase-5-plan.md)。
-* [Phase 4](phase-4.md): 主題同一性、調性モデル、応答計画、entry plan の実装記録。
 
 ## 過去フェーズ
 
+* [Phase 4](phase-4.md): 主題同一性、調性モデル、応答計画、entry plan の実装記録。
 * [Phase 0](phase-0.md): core API、CLI、PRNG、時間モデル、決定性テスト。
 * [Phase 1](phase-1.md): 固定長4声 exposition、diagnostics、MIDI、代表 seed CI 検証。
 * [Phase 2](phase-2.md): ブラウザ再生、WebAudio、Canvas 2D ピアノロール、seed 再現。

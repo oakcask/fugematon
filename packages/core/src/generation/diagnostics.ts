@@ -709,7 +709,10 @@ function analyzeSoloTexture(notes: readonly NoteEvent[], sectionPlans: readonly 
 
   const longRuns = runs.filter((run) => run.endTick - run.startTick >= TICKS_PER_QUARTER);
   const unsupportedRuns = longRuns.filter(
-    (run) => run.previousActiveVoiceCount >= 2 && !hasNearbyPhraseSupport(run.startTick, sectionPlans),
+    (run) =>
+      run.previousActiveVoiceCount >= 2 &&
+      !hasNearbyPhraseSupport(run.startTick, sectionPlans) &&
+      !hasGradualThinningBefore(notes, run.voice, run.startTick),
   );
   const abruptRuns = unsupportedRuns.filter((run) => run.previousActiveVoiceCount >= 3);
   const runsByVoice = VOICE_ENTRY_ORDER.map((voice) => longRuns.filter((run) => run.voice === voice).length);
@@ -740,6 +743,16 @@ function hasNearbyPhraseSupport(tick: number, sectionPlans: readonly HarmonicPla
     );
     return nearSectionBoundary || nearCadence;
   });
+}
+
+function hasGradualThinningBefore(notes: readonly NoteEvent[], voice: Voice, tick: number): boolean {
+  const previousTick = tick - TICKS_PER_QUARTER / 2;
+  if (previousTick < 0) {
+    return false;
+  }
+
+  const previousActiveVoices = activeVoicesDuring(notes, previousTick, tick);
+  return previousActiveVoices.length === 2 && previousActiveVoices.includes(voice);
 }
 
 function analyzeOrnamentPlacementReasons(

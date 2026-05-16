@@ -1,4 +1,4 @@
-export const GENERATOR_VERSION = 1;
+export const GENERATOR_VERSION = 2;
 
 export const TICKS_PER_QUARTER = 480;
 
@@ -236,8 +236,8 @@ export const PHASE_6_DIAGNOSTICS_PROFILE = {
   maxSamePitchOverlapCount: 40,
   maxSevereEntryIntervalCount: 108,
   maxUnresolvedSevereEntryIntervalCount: 100,
-  maxUnsupportedSoloRunCount: 20,
-  maxAbruptTextureDropCount: 24,
+  maxUnsupportedSoloRunCount: 17,
+  maxAbruptTextureDropCount: 17,
   maxSoloVoiceImbalance: 30,
   minOrnamentPlacementReasonCount: 1,
   maxExpositionDurationTicks: TICKS_PER_QUARTER * 20,
