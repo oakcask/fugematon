@@ -107,6 +107,7 @@ export type GenerationDiagnostics = {
   generatedUntilTick: number;
   eventCount: number;
   noteCount: number;
+  candidateEvaluations: number;
   stateTransitions: FugueState[];
   subjectEntries: {
     voice: Voice;

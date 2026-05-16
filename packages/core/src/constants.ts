@@ -28,3 +28,23 @@ export const PHASE_1_REPRESENTATIVE_SEEDS = [
   { seed: "minor-entry", category: "boundary" },
   { seed: "wide-key", category: "boundary" },
 ] as const;
+
+export const PHASE_3_LENGTH_TICKS = TICKS_PER_QUARTER * 270;
+
+export const PHASE_3_DIAGNOSTICS_PROFILE = {
+  rangeViolations: 0,
+  voiceCrossings: 0,
+  maxParallelPerfectsPerMinute: 12,
+  minSubjectReturns: 2,
+  minStrettoEntries: 2,
+  maxGenerationMilliseconds: 1000,
+} as const;
+
+export const PHASE_3_REPRESENTATIVE_SEEDS = [
+  { seed: "bach-001", category: "fixed" },
+  { seed: "fugue-smoke", category: "fixed" },
+  { seed: "minor-entry", category: "boundary" },
+  { seed: "wide-key", category: "boundary" },
+  { seed: "dense-entry", category: "boundary" },
+  { seed: "stretto-smoke", category: "fixed" },
+] as const;

@@ -52,6 +52,12 @@ const VOICE_BASE_OCTAVES: Record<Voice, number> = {
   tenor: 48,
   bass: 28,
 };
+const VOICE_PREFERRED_MAX: Record<Voice, number> = {
+  soprano: 81,
+  alto: 70,
+  tenor: 59,
+  bass: 47,
+};
 const CONSONANT_OFFSETS: Record<Voice, number> = {
   soprano: 12,
   alto: 7,
@@ -61,7 +67,7 @@ const CONSONANT_OFFSETS: Record<Voice, number> = {
 const ENTRY_SPACING_TICKS = TICKS_PER_QUARTER * 4;
 const CONTINUATION_SECTION_TICKS = TICKS_PER_QUARTER * 8;
 const STRETTO_ENTRY_SPACING_TICKS = TICKS_PER_QUARTER * 2;
-const STATE_SEQUENCE: FugueState[] = ["exposition", "episode", "subject-return", "episode", "stretto-like"];
+const CONTINUATION_STATE_SEQUENCE: FugueState[] = ["episode", "subject-return", "episode", "stretto-like"];
 
 export function generateScore(input: GenerationInput): GenerationOutput {
   validateInput(input);
@@ -143,6 +149,7 @@ export function generateScore(input: GenerationInput): GenerationOutput {
       generatedUntilTick,
       eventCount: events.length,
       noteCount: score.notes.length,
+      candidateEvaluations: score.candidateEvaluations,
       stateTransitions: score.stateTransitions,
       subjectEntries: score.subjectEntries,
       rangeViolations: diagnostics.rangeViolations,
@@ -208,6 +215,7 @@ type Exposition = {
 };
 
 type FugueScore = Exposition & {
+  candidateEvaluations: number;
   stateTransitions: FugueState[];
   stateChanges: {
     tick: number;
@@ -245,16 +253,18 @@ function buildFugueScore(
   const subjectEntries = [...exposition.subjectEntries];
   const stateTransitions: FugueState[] = ["exposition"];
   const stateChanges: FugueScore["stateChanges"] = [];
+  let candidateEvaluations = 0;
   let sectionStartTick = exposition.endTick;
-  let stateIndex = 1;
+  let stateIndex = 0;
 
   while (sectionStartTick < lengthTicks) {
-    const state = STATE_SEQUENCE[stateIndex % STATE_SEQUENCE.length]!;
+    const state = CONTINUATION_STATE_SEQUENCE[stateIndex % CONTINUATION_STATE_SEQUENCE.length]!;
     stateTransitions.push(state);
     stateChanges.push({ tick: sectionStartTick, state });
-    const section = buildContinuationSection(subject, keySignature, state, sectionStartTick, rng);
-    notes.push(...section.notes);
-    subjectEntries.push(...section.subjectEntries);
+    const selection = chooseContinuationSection(subject, keySignature, state, sectionStartTick, rng, notes);
+    notes.push(...selection.section.notes);
+    subjectEntries.push(...selection.section.subjectEntries);
+    candidateEvaluations += selection.candidateCount;
     sectionStartTick += CONTINUATION_SECTION_TICKS;
     stateIndex += 1;
   }
@@ -264,6 +274,7 @@ function buildFugueScore(
   return {
     notes,
     subjectEntries,
+    candidateEvaluations,
     stateTransitions,
     stateChanges,
     endTick: Math.max(...notes.map((note) => note.startTick + note.durationTicks)),
@@ -302,65 +313,119 @@ function buildExposition(subject: readonly SubjectNote[], keySignature: KeySigna
   };
 }
 
-function buildContinuationSection(
+function chooseContinuationSection(
   subject: readonly SubjectNote[],
   keySignature: KeySignature,
   state: FugueState,
   startTick: number,
   rng: Xoshiro128StarStar,
-): Exposition {
+  previousNotes: readonly NoteEvent[],
+): { section: Exposition; candidateCount: number } {
+  const candidates = buildContinuationCandidates(subject, keySignature, state, startTick, rng);
+  let best = candidates[0]!;
+  let bestScore = scoreCandidate(previousNotes, best);
+
+  for (const candidate of candidates.slice(1)) {
+    const score = scoreCandidate(previousNotes, candidate);
+    if (score < bestScore) {
+      best = candidate;
+      bestScore = score;
+    }
+  }
+
+  return { section: best, candidateCount: candidates.length };
+}
+
+function buildContinuationCandidates(
+  subject: readonly SubjectNote[],
+  keySignature: KeySignature,
+  state: FugueState,
+  startTick: number,
+  rng: Xoshiro128StarStar,
+): Exposition[] {
   const notes: Exposition["notes"] = [];
-  const subjectEntries: Exposition["subjectEntries"] = [];
   const tonic = TONIC_PITCH_CLASSES.get(keySignature.tonic);
   if (tonic === undefined) {
     throw new Error(`unsupported tonic: ${keySignature.tonic}`);
   }
+  const candidates: Exposition[] = [];
 
   if (state === "episode") {
-    const voice = VOICE_ENTRY_ORDER[rng.nextInt(VOICE_ENTRY_ORDER.length)]!;
-    addSubjectEntry(notes, subjectEntries, subject.slice(0, 4), {
-      state,
-      voice,
-      form: "subject-fragment",
-      startTick,
-      tonic,
-      pitchClassOffset: choose(rng, [0, 5, 7] as const),
-    });
-    addSustainedCounterpoint(notes, voice, startTick, TICKS_PER_QUARTER * 2, tonic);
+    for (const voice of rng.shuffle(VOICE_ENTRY_ORDER)) {
+      for (const pitchClassOffset of rng.shuffle([0, 5, 7] as const)) {
+        candidates.push(
+          buildContinuationSection(subject.slice(0, 4), {
+            state,
+            voice,
+            form: "subject-fragment",
+            startTick,
+            tonic,
+            pitchClassOffset,
+            supportDurationTicks: TICKS_PER_QUARTER * 2,
+          }),
+        );
+      }
+    }
   } else if (state === "subject-return") {
-    const voice = VOICE_ENTRY_ORDER[rng.nextInt(VOICE_ENTRY_ORDER.length)]!;
-    addSubjectEntry(notes, subjectEntries, subject, {
-      state,
-      voice,
-      form: "subject",
-      startTick,
-      tonic,
-      pitchClassOffset: choose(rng, [0, 5, 7, 9] as const),
-    });
-    addSustainedCounterpoint(notes, voice, startTick, subjectDuration(subject), tonic);
+    for (const voice of rng.shuffle(VOICE_ENTRY_ORDER)) {
+      for (const pitchClassOffset of rng.shuffle([0, 5, 7, 9] as const)) {
+        candidates.push(
+          buildContinuationSection(subject, {
+            state,
+            voice,
+            form: "subject",
+            startTick,
+            tonic,
+            pitchClassOffset,
+            supportDurationTicks: subjectDuration(subject),
+          }),
+        );
+      }
+    }
   } else {
-    const firstVoiceIndex = rng.nextInt(VOICE_ENTRY_ORDER.length);
-    const firstVoice = VOICE_ENTRY_ORDER[firstVoiceIndex]!;
-    const secondVoice = VOICE_ENTRY_ORDER[(firstVoiceIndex + 2) % VOICE_ENTRY_ORDER.length]!;
-    addSubjectEntry(notes, subjectEntries, subject.slice(0, 6), {
-      state,
-      voice: firstVoice,
-      form: "subject",
-      startTick,
-      tonic,
-      pitchClassOffset: 0,
-    });
-    addSubjectEntry(notes, subjectEntries, subject.slice(0, 6), {
-      state,
-      voice: secondVoice,
-      form: "answer",
-      startTick: startTick + STRETTO_ENTRY_SPACING_TICKS,
-      tonic,
-      pitchClassOffset: 7,
-    });
-    addSustainedCounterpoint(notes, firstVoice, startTick, subjectDuration(subject), tonic);
+    for (const firstVoice of rng.shuffle(VOICE_ENTRY_ORDER)) {
+      for (const secondVoice of rng.shuffle(VOICE_ENTRY_ORDER.filter((voice) => voice !== firstVoice))) {
+        candidates.push(
+          buildStrettoSection(subject.slice(0, 6), {
+            state,
+            firstVoice,
+            secondVoice,
+            startTick,
+            tonic,
+          }),
+        );
+      }
+    }
   }
 
+  return candidates.length === 0
+    ? [
+        {
+          notes,
+          subjectEntries: [],
+          endTick: startTick,
+        },
+      ]
+    : candidates;
+}
+
+function buildContinuationSection(
+  subject: readonly SubjectNote[],
+  entry: {
+    state: FugueState;
+    voice: Voice;
+    form: "subject" | "answer" | "subject-fragment";
+    startTick: number;
+    tonic: number;
+    pitchClassOffset: number;
+    supportDurationTicks: number;
+  },
+): Exposition {
+  const notes: Exposition["notes"] = [];
+  const subjectEntries: Exposition["subjectEntries"] = [];
+
+  addSubjectEntry(notes, subjectEntries, subject, entry);
+  addSustainedCounterpoint(notes, entry.voice, entry.startTick, entry.supportDurationTicks, entry.tonic);
   notes.sort(compareNoteEvents);
 
   return {
@@ -368,6 +433,51 @@ function buildContinuationSection(
     subjectEntries,
     endTick: Math.max(...notes.map((note) => note.startTick + note.durationTicks)),
   };
+}
+
+function buildStrettoSection(
+  subject: readonly SubjectNote[],
+  entry: {
+    state: FugueState;
+    firstVoice: Voice;
+    secondVoice: Voice;
+    startTick: number;
+    tonic: number;
+  },
+): Exposition {
+  const notes: Exposition["notes"] = [];
+  const subjectEntries: Exposition["subjectEntries"] = [];
+
+  addSubjectEntry(notes, subjectEntries, subject, {
+    state: entry.state,
+    voice: entry.firstVoice,
+    form: "subject",
+    startTick: entry.startTick,
+    tonic: entry.tonic,
+    pitchClassOffset: 0,
+  });
+  addSubjectEntry(notes, subjectEntries, subject, {
+    state: entry.state,
+    voice: entry.secondVoice,
+    form: "answer",
+    startTick: entry.startTick + STRETTO_ENTRY_SPACING_TICKS,
+    tonic: entry.tonic,
+    pitchClassOffset: 7,
+  });
+  addSustainedCounterpoint(notes, entry.firstVoice, entry.startTick, subjectDuration(subject), entry.tonic);
+  notes.sort(compareNoteEvents);
+
+  return {
+    notes,
+    subjectEntries,
+    endTick: Math.max(...notes.map((note) => note.startTick + note.durationTicks)),
+  };
+}
+
+function scoreCandidate(previousNotes: readonly NoteEvent[], candidate: Exposition): number {
+  const diagnostics = analyzeExposition([...previousNotes, ...candidate.notes]);
+
+  return diagnostics.rangeViolations * 10_000 + diagnostics.voiceCrossings * 1_000 + diagnostics.parallelPerfects * 10;
 }
 
 function addSubjectEntry(
@@ -404,14 +514,6 @@ function addSubjectEntry(
       velocity: entry.form === "answer" ? 86 : 92,
     });
   }
-}
-
-function choose<T>(rng: Xoshiro128StarStar, values: readonly T[]): T {
-  if (values.length === 0) {
-    throw new Error("values must not be empty");
-  }
-
-  return values[rng.nextInt(values.length)]!;
 }
 
 function addSustainedCounterpoint(
@@ -470,6 +572,9 @@ function fitPitchToRange(pitch: number, voice: Voice): number {
     fitted += 12;
   }
   while (fitted > range.max) {
+    fitted -= 12;
+  }
+  while (fitted > VOICE_PREFERRED_MAX[voice] && fitted - 12 >= range.min) {
     fitted -= 12;
   }
   return fitted;
