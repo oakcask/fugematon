@@ -1,0 +1,26 @@
+name: workflow / actionlint
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/*.yaml
+
+permissions:
+  contents: read
+
+env:
+  # renovate: datasource=github-releases depName=rhysd/actionlint
+  ACTIONLINT_VERSION: "v1.7.12"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version: stable
+      - name: Install actionlint
+        run: go install github.com/rhysd/actionlint/cmd/actionlint@${ACTIONLINT_VERSION}
+      - name: Validate workflows
+        run: actionlint
