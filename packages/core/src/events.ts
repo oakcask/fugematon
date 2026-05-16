@@ -153,7 +153,10 @@ export type DiagnosticIssueCode =
   | "answer-plan-violation"
   | "key-metadata-mismatch"
   | "melodic-stagnation"
-  | "leap-recovery-miss";
+  | "leap-recovery-miss"
+  | "texture-independence-warning"
+  | "exposition-entry-density-warning"
+  | "silence-gap-warning";
 
 export type DiagnosticIssue = {
   code: DiagnosticIssueCode;
@@ -164,6 +167,36 @@ export type DiagnosticIssue = {
   message: string;
 };
 
+export type ScoreDimension = {
+  cost: number;
+  reward: number;
+  features: Record<string, number>;
+};
+
+export type CandidateEvaluation = {
+  totalCost: number;
+  hardFailures: DiagnosticIssueCode[];
+  dimensions: {
+    counterpoint: ScoreDimension;
+    melody: ScoreDimension;
+    texture: ScoreDimension;
+    subjectClarity: ScoreDimension;
+    harmony: ScoreDimension;
+    form: ScoreDimension;
+  };
+};
+
+export type DurationDistribution = {
+  whole: number;
+  half: number;
+  quarter: number;
+  eighth: number;
+  sixteenth: number;
+  dotted: number;
+  triplet: number;
+  other: number;
+};
+
 export type GenerationDiagnostics = {
   generatorVersion: number;
   seed: string;
@@ -172,6 +205,7 @@ export type GenerationDiagnostics = {
   eventCount: number;
   noteCount: number;
   candidateEvaluations: number;
+  selectedCandidateEvaluations: CandidateEvaluation[];
   stateTransitions: FugueState[];
   subjectEntries: PlannedEntry[];
   sectionPlans: HarmonicPlan[];
@@ -183,6 +217,21 @@ export type GenerationDiagnostics = {
   keyMetadataMismatches: number;
   counterSubjectCoverage: number;
   freeCounterpointCoverage: number;
+  counterSubjectIdentityRetention: number;
+  counterSubjectInvertibilityScore: number;
+  freeCounterpointContourScore: number;
+  rhythmicIndependenceScore: number;
+  supportTextureRepetitionScore: number;
+  expositionEntryStaggerScore: number;
+  samePitchOverlapCount: number;
+  unisonOverlapCount: number;
+  sameDirectionMotionCount: number;
+  sharedRhythmOverlapCount: number;
+  durationDistribution: DurationDistribution;
+  repeatedPitchRunCount: number;
+  allVoiceSilenceGapCount: number;
+  ornamentCandidateCount: number;
+  ornamentDensity: number;
   fallbackPassageCount: number;
   melodicStagnationWarnings: number;
   leapRecoveryMisses: number;

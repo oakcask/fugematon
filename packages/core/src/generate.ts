@@ -3,7 +3,9 @@ import type {
   AmbiguityIntent,
   AnswerKind,
   CadenceKind,
+  CandidateEvaluation,
   DiagnosticIssue,
+  DurationDistribution,
   EntryForm,
   FragmentTransform,
   FugueState,
@@ -162,6 +164,7 @@ export function generateScore(input: GenerationInput): GenerationOutput {
       eventCount: events.length,
       noteCount: score.notes.length,
       candidateEvaluations: score.candidateEvaluations,
+      selectedCandidateEvaluations: score.selectedCandidateEvaluations,
       stateTransitions: score.stateTransitions,
       subjectEntries: score.subjectEntries,
       sectionPlans: score.sectionPlans,
@@ -173,6 +176,21 @@ export function generateScore(input: GenerationInput): GenerationOutput {
       keyMetadataMismatches: diagnostics.keyMetadataMismatches,
       counterSubjectCoverage: diagnostics.counterSubjectCoverage,
       freeCounterpointCoverage: diagnostics.freeCounterpointCoverage,
+      counterSubjectIdentityRetention: diagnostics.counterSubjectIdentityRetention,
+      counterSubjectInvertibilityScore: diagnostics.counterSubjectInvertibilityScore,
+      freeCounterpointContourScore: diagnostics.freeCounterpointContourScore,
+      rhythmicIndependenceScore: diagnostics.rhythmicIndependenceScore,
+      supportTextureRepetitionScore: diagnostics.supportTextureRepetitionScore,
+      expositionEntryStaggerScore: diagnostics.expositionEntryStaggerScore,
+      samePitchOverlapCount: diagnostics.samePitchOverlapCount,
+      unisonOverlapCount: diagnostics.unisonOverlapCount,
+      sameDirectionMotionCount: diagnostics.sameDirectionMotionCount,
+      sharedRhythmOverlapCount: diagnostics.sharedRhythmOverlapCount,
+      durationDistribution: diagnostics.durationDistribution,
+      repeatedPitchRunCount: diagnostics.repeatedPitchRunCount,
+      allVoiceSilenceGapCount: diagnostics.allVoiceSilenceGapCount,
+      ornamentCandidateCount: diagnostics.ornamentCandidateCount,
+      ornamentDensity: diagnostics.ornamentDensity,
       fallbackPassageCount: diagnostics.fallbackPassageCount,
       melodicStagnationWarnings: diagnostics.melodicStagnationWarnings,
       leapRecoveryMisses: diagnostics.leapRecoveryMisses,
@@ -257,6 +275,7 @@ type Exposition = {
 
 type FugueScore = Exposition & {
   candidateEvaluations: number;
+  selectedCandidateEvaluations: CandidateEvaluation[];
   stateTransitions: FugueState[];
   stateChanges: {
     tick: number;
@@ -282,6 +301,24 @@ type HarmonicDiagnostics = {
   formRepetitionWarnings: number;
   episodeDirectionScore: number;
   strettoClarityScore: number;
+};
+
+type TextureDiagnostics = {
+  counterSubjectIdentityRetention: number;
+  counterSubjectInvertibilityScore: number;
+  freeCounterpointContourScore: number;
+  rhythmicIndependenceScore: number;
+  supportTextureRepetitionScore: number;
+  expositionEntryStaggerScore: number;
+  samePitchOverlapCount: number;
+  unisonOverlapCount: number;
+  sameDirectionMotionCount: number;
+  sharedRhythmOverlapCount: number;
+  durationDistribution: DurationDistribution;
+  repeatedPitchRunCount: number;
+  allVoiceSilenceGapCount: number;
+  ornamentCandidateCount: number;
+  ornamentDensity: number;
 };
 
 function buildSubject(rng: Xoshiro128StarStar, keySignature: KeySignature): SubjectNote[] {
@@ -318,6 +355,7 @@ function buildFugueScore(
   const sectionPlans = [...exposition.sectionPlans];
   const stateTransitions: FugueState[] = ["exposition"];
   const stateChanges: FugueScore["stateChanges"] = [];
+  const selectedCandidateEvaluations: CandidateEvaluation[] = [];
   let candidateEvaluations = 0;
   let sectionStartTick = exposition.endTick;
   let stateIndex = 0;
@@ -341,10 +379,12 @@ function buildFugueScore(
     subjectEntries.push(...selection.section.subjectEntries);
     sectionPlans.push(...selection.section.sectionPlans);
     candidateEvaluations += selection.candidateCount;
+    selectedCandidateEvaluations.push(selection.evaluation);
     sectionStartTick += selection.section.durationTicks;
     stateIndex += 1;
   }
 
+  fillAllVoiceSilenceGaps(notes, keySignature);
   notes.sort(compareNoteEvents);
 
   return {
@@ -352,6 +392,7 @@ function buildFugueScore(
     subjectEntries,
     sectionPlans,
     candidateEvaluations,
+    selectedCandidateEvaluations,
     stateTransitions,
     stateChanges,
     endTick: Math.max(...notes.map((note) => note.startTick + note.durationTicks)),
@@ -513,6 +554,7 @@ function buildExposition(subject: readonly SubjectNote[], keySignature: KeySigna
       startTick,
       durationTicks: ENTRY_SPACING_TICKS,
       localKey: form === "answer" ? transposeKey(keySignature, 7) : keySignature,
+      eligibleVoices: VOICE_ENTRY_ORDER.slice(0, entryIndex),
     });
   }
 
@@ -535,20 +577,20 @@ function chooseContinuationSection(
   sectionDurationTicks: number,
   rng: Xoshiro128StarStar,
   previousNotes: readonly NoteEvent[],
-): { section: Exposition; candidateCount: number } {
+): { section: Exposition; candidateCount: number; evaluation: CandidateEvaluation } {
   const candidates = buildContinuationCandidates(subject, keySignature, state, startTick, sectionDurationTicks, rng);
   let best = candidates[0]!;
-  let bestScore = scoreCandidate(previousNotes, best);
+  let bestEvaluation = evaluateCandidate(previousNotes, best);
 
   for (const candidate of candidates.slice(1)) {
-    const score = scoreCandidate(previousNotes, candidate);
-    if (score < bestScore) {
+    const evaluation = evaluateCandidate(previousNotes, candidate);
+    if (evaluation.totalCost < bestEvaluation.totalCost) {
       best = candidate;
-      bestScore = score;
+      bestEvaluation = evaluation;
     }
   }
 
-  return { section: best, candidateCount: candidates.length };
+  return { section: best, candidateCount: candidates.length, evaluation: bestEvaluation };
 }
 
 function buildContinuationCandidates(
@@ -676,6 +718,11 @@ function buildContinuationSection(
     durationTicks: entry.supportDurationTicks,
     localKey: entry.localKey,
   });
+  addContinuityCounterpoint(notes, {
+    startTick: entry.startTick + entry.supportDurationTicks,
+    durationTicks: Math.max(0, entry.sectionDurationTicks - entry.supportDurationTicks),
+    localKey: entry.targetKey,
+  });
   notes.sort(compareNoteEvents);
 
   return {
@@ -738,6 +785,11 @@ function buildStrettoSection(
     durationTicks: subjectDuration(subject),
     localKey: entry.globalKey,
   });
+  addContinuityCounterpoint(notes, {
+    startTick: entry.startTick + subjectDuration(subject),
+    durationTicks: Math.max(0, entry.sectionDurationTicks - subjectDuration(subject)),
+    localKey: transposeKey(entry.globalKey, 7),
+  });
   notes.sort(compareNoteEvents);
 
   return {
@@ -750,21 +802,132 @@ function buildStrettoSection(
 }
 
 function scoreCandidate(previousNotes: readonly NoteEvent[], candidate: Exposition): number {
+  return evaluateCandidate(previousNotes, candidate).totalCost;
+}
+
+function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate: Exposition): CandidateEvaluation {
+  const recentNotes = previousNotes.slice(-64);
   const diagnostics = analyzeScore(
-    [...previousNotes, ...candidate.notes],
+    [...recentNotes, ...candidate.notes],
     candidate.subjectEntries,
     candidate.sectionPlans,
   );
 
-  return (
-    diagnostics.rangeViolations * 10_000 +
-    diagnostics.voiceCrossings * 1_000 +
-    diagnostics.parallelPerfects * 10 +
-    diagnostics.leapRecoveryMisses * 25 +
-    diagnostics.melodicStagnationWarnings * 25 -
-    diagnostics.counterSubjectCoverage * 20 -
-    diagnostics.freeCounterpointCoverage * 10
-  );
+  const hardFailures = diagnostics.issues
+    .filter(
+      (issue) =>
+        issue.code === "range-violation" ||
+        issue.code === "voice-crossing" ||
+        issue.code === "subject-identity-violation" ||
+        issue.code === "answer-plan-violation" ||
+        issue.code === "key-metadata-mismatch",
+    )
+    .map((issue) => issue.code);
+  const counterpoint = {
+    cost: diagnostics.parallelPerfects * 10,
+    reward:
+      diagnostics.counterSubjectCoverage * 20 +
+      diagnostics.freeCounterpointCoverage * 10 +
+      diagnostics.counterSubjectInvertibilityScore * 8,
+    features: {
+      counterSubjectCoverage: diagnostics.counterSubjectCoverage,
+      freeCounterpointCoverage: diagnostics.freeCounterpointCoverage,
+      counterSubjectInvertibilityScore: diagnostics.counterSubjectInvertibilityScore,
+      parallelPerfects: diagnostics.parallelPerfects,
+    },
+  };
+  const melody = {
+    cost: diagnostics.leapRecoveryMisses * 35 + diagnostics.melodicStagnationWarnings * 25,
+    reward: diagnostics.freeCounterpointContourScore * 12 + diagnostics.ornamentDensity * 6,
+    features: {
+      leapRecoveryMisses: diagnostics.leapRecoveryMisses,
+      melodicStagnationWarnings: diagnostics.melodicStagnationWarnings,
+      freeCounterpointContourScore: diagnostics.freeCounterpointContourScore,
+      ornamentDensity: diagnostics.ornamentDensity,
+    },
+  };
+  const texture = {
+    cost:
+      diagnostics.samePitchOverlapCount * 4 +
+      diagnostics.unisonOverlapCount * 8 +
+      diagnostics.sameDirectionMotionCount * 3 +
+      diagnostics.sharedRhythmOverlapCount * 2 +
+      diagnostics.allVoiceSilenceGapCount * 25,
+    reward:
+      diagnostics.rhythmicIndependenceScore * 12 +
+      diagnostics.supportTextureRepetitionScore * 8 +
+      diagnostics.expositionEntryStaggerScore * 10,
+    features: {
+      rhythmicIndependenceScore: diagnostics.rhythmicIndependenceScore,
+      supportTextureRepetitionScore: diagnostics.supportTextureRepetitionScore,
+      expositionEntryStaggerScore: diagnostics.expositionEntryStaggerScore,
+      samePitchOverlapCount: diagnostics.samePitchOverlapCount,
+      sharedRhythmOverlapCount: diagnostics.sharedRhythmOverlapCount,
+      allVoiceSilenceGapCount: diagnostics.allVoiceSilenceGapCount,
+    },
+  };
+  const subjectClarity = {
+    cost: diagnostics.subjectIdentityViolations * 10_000 + diagnostics.answerPlanViolations * 1_000,
+    reward: diagnostics.counterSubjectIdentityRetention * 10,
+    features: {
+      subjectIdentityViolations: diagnostics.subjectIdentityViolations,
+      answerPlanViolations: diagnostics.answerPlanViolations,
+      counterSubjectIdentityRetention: diagnostics.counterSubjectIdentityRetention,
+    },
+  };
+  const harmony = {
+    cost:
+      diagnostics.unresolvedDissonanceCount * 100 +
+      diagnostics.strongBeatDissonanceCount * 50 +
+      diagnostics.predominantDirectionMisses * 30 +
+      diagnostics.unresolvedAmbiguityWarnings * 30,
+    reward:
+      diagnostics.controlledAmbiguityScore * 10 +
+      diagnostics.styleModulationFit * 8 +
+      diagnostics.harmonicFunctionMatches,
+    features: {
+      unresolvedDissonanceCount: diagnostics.unresolvedDissonanceCount,
+      predominantDirectionMisses: diagnostics.predominantDirectionMisses,
+      controlledAmbiguityScore: diagnostics.controlledAmbiguityScore,
+      styleModulationFit: diagnostics.styleModulationFit,
+    },
+  };
+  const form = {
+    cost: diagnostics.formRepetitionWarnings * 50,
+    reward: diagnostics.episodeDirectionScore * 10 + diagnostics.strettoClarityScore * 10,
+    features: {
+      formRepetitionWarnings: diagnostics.formRepetitionWarnings,
+      episodeDirectionScore: diagnostics.episodeDirectionScore,
+      strettoClarityScore: diagnostics.strettoClarityScore,
+    },
+  };
+  const totalCost =
+    hardFailures.length * 10_000 +
+    counterpoint.cost -
+    counterpoint.reward +
+    melody.cost -
+    melody.reward +
+    texture.cost -
+    texture.reward +
+    subjectClarity.cost -
+    subjectClarity.reward +
+    harmony.cost -
+    harmony.reward +
+    form.cost -
+    form.reward;
+
+  return {
+    totalCost: Math.round(totalCost * 1000) / 1000,
+    hardFailures,
+    dimensions: {
+      counterpoint,
+      melody,
+      texture,
+      subjectClarity,
+      harmony,
+      form,
+    },
+  };
 }
 
 function addSubjectEntry(
@@ -886,9 +1049,17 @@ function addCounterpointTexture(
     startTick: number;
     durationTicks: number;
     localKey: KeySignature;
+    eligibleVoices?: readonly Voice[];
   },
 ): void {
-  const counterSubjectVoice = chooseTextureVoice(notes, entry.enteringVoice, entry.startTick, entry.durationTicks);
+  const eligibleVoices = entry.eligibleVoices ?? VOICE_ENTRY_ORDER.filter((voice) => voice !== entry.enteringVoice);
+  const counterSubjectVoice = chooseTextureVoice(
+    notes,
+    entry.enteringVoice,
+    entry.startTick,
+    entry.durationTicks,
+    eligibleVoices,
+  );
   if (counterSubjectVoice !== undefined) {
     addPatternCounterpoint(notes, subject, {
       voice: counterSubjectVoice,
@@ -901,7 +1072,7 @@ function addCounterpointTexture(
     });
   }
 
-  for (const voice of VOICE_ENTRY_ORDER) {
+  for (const voice of eligibleVoices) {
     if (voice === entry.enteringVoice || voice === counterSubjectVoice) {
       continue;
     }
@@ -923,10 +1094,11 @@ function chooseTextureVoice(
   enteringVoice: Voice,
   startTick: number,
   durationTicks: number,
+  eligibleVoices: readonly Voice[],
 ): Voice | undefined {
   const startIndex = VOICE_ENTRY_ORDER.indexOf(enteringVoice);
   const candidates = [...VOICE_ENTRY_ORDER.slice(startIndex + 1), ...VOICE_ENTRY_ORDER.slice(0, startIndex)].filter(
-    (voice) => voice !== enteringVoice,
+    (voice) => voice !== enteringVoice && eligibleVoices.includes(voice),
   );
 
   return candidates.find((voice) => !hasOverlap(notes, voice, startTick, durationTicks));
@@ -956,17 +1128,138 @@ function addPatternCounterpoint(
     }
 
     const degree = pattern.degrees[index % pattern.degrees.length]!;
-    const pitchClass = scaleDegreePitchClass(degree, 0, pattern.localKey);
-    notes.push({
-      kind: "note",
-      voice: pattern.voice,
-      startTick,
-      durationTicks,
-      pitch: placePitchInRegister(pitchClass, pattern.voice, VOICE_REGISTER_TARGETS[pattern.voice]),
-      velocity: pattern.velocity,
-      role: pattern.role,
-    });
+    if (pattern.role === "free-counterpoint" && durationTicks >= TICKS_PER_QUARTER) {
+      const firstDurationTicks = Math.floor(durationTicks / 2);
+      addTextureNote(notes, pattern, degree, startTick, firstDurationTicks);
+      addTextureNote(
+        notes,
+        pattern,
+        pattern.degrees[(index + 1) % pattern.degrees.length]!,
+        startTick + firstDurationTicks,
+        durationTicks - firstDurationTicks,
+      );
+    } else {
+      addTextureNote(notes, pattern, degree, startTick, durationTicks);
+    }
     elapsedTicks += subjectNote.durationTicks;
+  }
+}
+
+function addTextureNote(
+  notes: Exposition["notes"],
+  pattern: {
+    voice: Voice;
+    localKey: KeySignature;
+    velocity: number;
+    role: NoteEvent["role"];
+  },
+  degree: number,
+  startTick: number,
+  durationTicks: number,
+): void {
+  const previous = notes
+    .filter((note) => note.voice === pattern.voice && note.startTick <= startTick)
+    .sort(compareNoteEvents)
+    .at(-1);
+  let pitchClass = scaleDegreePitchClass(degree, 0, pattern.localKey);
+  let pitch = placePitchInRegister(pitchClass, pattern.voice, VOICE_REGISTER_TARGETS[pattern.voice]);
+  if (previous?.pitch === pitch && pattern.role === "free-counterpoint") {
+    pitchClass = scaleDegreePitchClass(degree + 1, 0, pattern.localKey);
+    pitch = placePitchInRegister(pitchClass, pattern.voice, VOICE_REGISTER_TARGETS[pattern.voice]);
+  }
+  if (previous !== undefined && pattern.role === "free-counterpoint") {
+    pitch = fitPitchNearPrevious(pitchClass, pattern.voice, previous.pitch);
+  }
+  notes.push({
+    kind: "note",
+    voice: pattern.voice,
+    startTick,
+    durationTicks,
+    pitch,
+    velocity: pattern.velocity,
+    role: pattern.role,
+  });
+}
+
+function fitPitchNearPrevious(pitchClass: number, voice: Voice, previousPitch: number): number {
+  const range = VOICE_RANGES[voice];
+  const preferredMin = Math.max(range.min, VOICE_REGISTER_TARGETS[voice] - 6);
+  let pitch = placePitchInRegister(pitchClass, voice, VOICE_REGISTER_TARGETS[voice]);
+  while (pitch - previousPitch > 5 && pitch - 12 >= preferredMin) {
+    pitch -= 12;
+  }
+  while (previousPitch - pitch > 5 && pitch + 12 <= range.max) {
+    pitch += 12;
+  }
+  return pitch;
+}
+
+function addContinuityCounterpoint(
+  notes: Exposition["notes"],
+  plan: {
+    startTick: number;
+    durationTicks: number;
+    localKey: KeySignature;
+  },
+): void {
+  if (plan.durationTicks <= 0) {
+    return;
+  }
+
+  const voice = VOICE_ENTRY_ORDER.find(
+    (candidate) => !hasOverlap(notes, candidate, plan.startTick, plan.durationTicks),
+  );
+  if (voice === undefined) {
+    return;
+  }
+
+  const fillerSubject = FREE_COUNTERPOINT_DEGREES.map((scaleDegree, index) => ({
+    offsetTick: index * (TICKS_PER_QUARTER / 2),
+    durationTicks: TICKS_PER_QUARTER / 2,
+    scaleDegree,
+    accidental: 0,
+    importantTone: false,
+    melodicRole: melodicRoleForScaleDegree(scaleDegree),
+  }));
+  addPatternCounterpoint(notes, fillerSubject, {
+    voice,
+    startTick: plan.startTick,
+    maxDurationTicks: plan.durationTicks,
+    localKey: plan.localKey,
+    degrees: FREE_COUNTERPOINT_DEGREES,
+    velocity: 58,
+    role: "free-counterpoint",
+  });
+}
+
+function fillAllVoiceSilenceGaps(notes: Exposition["notes"], keySignature: KeySignature): void {
+  const checkpoints = [...new Set(notes.flatMap((note) => [note.startTick, note.startTick + note.durationTicks]))].sort(
+    (left, right) => left - right,
+  );
+  for (let index = 0; index < checkpoints.length - 1; index += 1) {
+    const startTick = checkpoints[index]!;
+    const endTick = checkpoints[index + 1]!;
+    if (endTick <= startTick) {
+      continue;
+    }
+    const hasActiveNote = notes.some(
+      (note) => note.startTick < endTick && startTick < note.startTick + note.durationTicks,
+    );
+    if (hasActiveNote) {
+      continue;
+    }
+    addTextureNote(
+      notes,
+      {
+        voice: VOICE_ENTRY_ORDER[index % VOICE_ENTRY_ORDER.length]!,
+        localKey: keySignature,
+        velocity: 54,
+        role: "free-counterpoint",
+      },
+      FREE_COUNTERPOINT_DEGREES[index % FREE_COUNTERPOINT_DEGREES.length]!,
+      startTick,
+      endTick - startTick,
+    );
   }
 }
 
@@ -1017,6 +1310,21 @@ function analyzeScore(
   keyMetadataMismatches: number;
   counterSubjectCoverage: number;
   freeCounterpointCoverage: number;
+  counterSubjectIdentityRetention: number;
+  counterSubjectInvertibilityScore: number;
+  freeCounterpointContourScore: number;
+  rhythmicIndependenceScore: number;
+  supportTextureRepetitionScore: number;
+  expositionEntryStaggerScore: number;
+  samePitchOverlapCount: number;
+  unisonOverlapCount: number;
+  sameDirectionMotionCount: number;
+  sharedRhythmOverlapCount: number;
+  durationDistribution: DurationDistribution;
+  repeatedPitchRunCount: number;
+  allVoiceSilenceGapCount: number;
+  ornamentCandidateCount: number;
+  ornamentDensity: number;
   fallbackPassageCount: number;
   melodicStagnationWarnings: number;
   leapRecoveryMisses: number;
@@ -1081,6 +1389,7 @@ function analyzeScore(
   const keyMetadataMismatches = countIssues(issues, "key-metadata-mismatch");
   const counterSubjectCoverage = textureCoverage(notes, "counter-subject");
   const freeCounterpointCoverage = textureCoverage(notes, "free-counterpoint");
+  const textureDiagnostics = analyzeTextureDiagnostics(notes, subjectEntries);
   const fallbackPassageCount = notes.filter((note) => note.role === "fallback").length;
   const melodicStagnationWarnings = countIssues(issues, "melodic-stagnation");
   const leapRecoveryMisses = countIssues(issues, "leap-recovery-miss");
@@ -1113,6 +1422,15 @@ function analyzeScore(
   if (leapRecoveryMisses > 0) {
     warnings.push("leap recovery misses detected");
   }
+  if (textureDiagnostics.expositionEntryStaggerScore < 1) {
+    warnings.push("exposition entry density warning detected");
+  }
+  if (textureDiagnostics.rhythmicIndependenceScore < 0.5) {
+    warnings.push("texture independence warning detected");
+  }
+  if (textureDiagnostics.allVoiceSilenceGapCount > 0) {
+    warnings.push("all-voice silence gaps detected");
+  }
   if (harmonicDiagnostics.formRepetitionWarnings > 0) {
     warnings.push("form repetition warnings detected");
   }
@@ -1126,6 +1444,7 @@ function analyzeScore(
     keyMetadataMismatches,
     counterSubjectCoverage,
     freeCounterpointCoverage,
+    ...textureDiagnostics,
     fallbackPassageCount,
     melodicStagnationWarnings,
     leapRecoveryMisses,
@@ -1158,6 +1477,282 @@ function textureCoverage(notes: readonly NoteEvent[], role: "counter-subject" | 
     0,
   );
   return roundRatio(coveredDuration / entryDuration);
+}
+
+function analyzeTextureDiagnostics(
+  notes: readonly NoteEvent[],
+  subjectEntries: readonly PlannedEntry[],
+): TextureDiagnostics {
+  const counterSubjectNotes = notes.filter((note) => note.role === "counter-subject").sort(compareNoteEvents);
+  const freeCounterpointNotes = notes.filter((note) => note.role === "free-counterpoint").sort(compareNoteEvents);
+  const supportNotes = [...counterSubjectNotes, ...freeCounterpointNotes].sort(compareNoteEvents);
+  const verticalStats = analyzeVerticalTexture(notes);
+  const repeatedPitchRunCount = countRepeatedPitchRuns(notes, 3);
+  const ornamentCandidateCount = countOrnamentCandidates(notes);
+  const supportNoteCount = Math.max(1, supportNotes.length);
+
+  return {
+    counterSubjectIdentityRetention: contourRetention(counterSubjectNotes, COUNTER_SUBJECT_DEGREES),
+    counterSubjectInvertibilityScore: invertibilityNearEntries(notes, subjectEntries),
+    freeCounterpointContourScore: contourVariety(freeCounterpointNotes),
+    rhythmicIndependenceScore: roundRatio(Math.max(0, 1 - verticalStats.sharedRhythmOverlapCount / supportNoteCount)),
+    supportTextureRepetitionScore: roundRatio(Math.max(0, 1 - repeatedPitchRunCount / supportNoteCount)),
+    expositionEntryStaggerScore: expositionEntryStaggerScore(notes),
+    samePitchOverlapCount: verticalStats.samePitchOverlapCount,
+    unisonOverlapCount: verticalStats.unisonOverlapCount,
+    sameDirectionMotionCount: verticalStats.sameDirectionMotionCount,
+    sharedRhythmOverlapCount: verticalStats.sharedRhythmOverlapCount,
+    durationDistribution: durationDistribution(notes),
+    repeatedPitchRunCount,
+    allVoiceSilenceGapCount: countAllVoiceSilenceGaps(notes),
+    ornamentCandidateCount,
+    ornamentDensity: roundRatio(ornamentCandidateCount / supportNoteCount),
+  };
+}
+
+function contourRetention(notes: readonly NoteEvent[], expectedDegrees: readonly number[]): number {
+  if (notes.length < 2 || expectedDegrees.length < 2) {
+    return notes.length === 0 ? 0 : 1;
+  }
+
+  const expectedDirections = expectedDegrees
+    .slice(1)
+    .map((degree, index) => Math.sign(degree - expectedDegrees[index]!));
+  let matches = 0;
+  let comparisons = 0;
+  for (let offset = 0; offset < notes.length; offset += expectedDegrees.length) {
+    const phrase = notes.slice(offset, offset + expectedDegrees.length);
+    for (let index = 1; index < phrase.length; index += 1) {
+      const actualDirection = Math.sign(phrase[index]!.pitch - phrase[index - 1]!.pitch);
+      const expectedDirection = expectedDirections[index - 1]!;
+      if (actualDirection === expectedDirection || actualDirection === 0) {
+        matches += 1;
+      }
+      comparisons += 1;
+    }
+  }
+
+  return roundRatio(matches / comparisons);
+}
+
+function invertibilityNearEntries(notes: readonly NoteEvent[], subjectEntries: readonly PlannedEntry[]): number {
+  const entryNotes = notes.filter((note) => isEntryRole(note.role));
+  if (entryNotes.length === 0) {
+    return 0;
+  }
+
+  let invertibleEntries = 0;
+  for (const entry of subjectEntries) {
+    const entryDuration = entryNotes
+      .filter((note) => note.voice === entry.voice && note.startTick >= entry.startTick)
+      .slice(0, entry.expectedDegreePattern.length)
+      .reduce((sum, note) => sum + note.durationTicks, 0);
+    const startTick = entry.startTick;
+    const endTick = entry.startTick + entryDuration;
+    const hasIndependentCounterSubject = notes.some(
+      (note) =>
+        note.role === "counter-subject" &&
+        note.voice !== entry.voice &&
+        note.startTick < endTick &&
+        startTick < note.startTick + note.durationTicks &&
+        !formsSustainedPerfectWithEntry(notes, note, entry.voice),
+    );
+    if (hasIndependentCounterSubject) {
+      invertibleEntries += 1;
+    }
+  }
+
+  return roundRatio(invertibleEntries / Math.max(1, subjectEntries.length));
+}
+
+function formsSustainedPerfectWithEntry(
+  notes: readonly NoteEvent[],
+  textureNote: NoteEvent,
+  entryVoice: Voice,
+): boolean {
+  const checkpoints = [textureNote.startTick, textureNote.startTick + Math.floor(textureNote.durationTicks / 2)];
+  return checkpoints.every((tick) => {
+    const entryNote = notes.find(
+      (note) =>
+        note.voice === entryVoice &&
+        isEntryRole(note.role) &&
+        note.startTick <= tick &&
+        tick < note.startTick + note.durationTicks,
+    );
+    return entryNote !== undefined && isPerfectInterval(Math.abs(entryNote.pitch - textureNote.pitch) % 12);
+  });
+}
+
+function contourVariety(notes: readonly NoteEvent[]): number {
+  if (notes.length === 0) {
+    return 0;
+  }
+
+  let variedVoices = 0;
+  for (const voice of VOICE_ENTRY_ORDER) {
+    const pitches = notes.filter((note) => note.voice === voice).map((note) => note.pitch);
+    if (pitches.length === 0) {
+      continue;
+    }
+    const uniquePitches = new Set(pitches).size;
+    const hasBothDirections =
+      pitches.some((pitch, index) => index > 0 && pitch > pitches[index - 1]!) &&
+      pitches.some((pitch, index) => index > 0 && pitch < pitches[index - 1]!);
+    if (uniquePitches >= 3 && hasBothDirections) {
+      variedVoices += 1;
+    }
+  }
+
+  return roundRatio(variedVoices / VOICE_ENTRY_ORDER.length);
+}
+
+function analyzeVerticalTexture(notes: readonly NoteEvent[]): {
+  samePitchOverlapCount: number;
+  unisonOverlapCount: number;
+  sameDirectionMotionCount: number;
+  sharedRhythmOverlapCount: number;
+} {
+  const checkpoints = [...new Set(notes.flatMap((note) => [note.startTick, note.startTick + note.durationTicks]))].sort(
+    (left, right) => left - right,
+  );
+  let samePitchOverlapCount = 0;
+  let unisonOverlapCount = 0;
+  let sharedRhythmOverlapCount = 0;
+  let sameDirectionMotionCount = 0;
+
+  for (const tick of checkpoints) {
+    const activeNotes = notes.filter((note) => note.startTick <= tick && tick < note.startTick + note.durationTicks);
+    for (let leftIndex = 0; leftIndex < activeNotes.length; leftIndex += 1) {
+      for (let rightIndex = leftIndex + 1; rightIndex < activeNotes.length; rightIndex += 1) {
+        const left = activeNotes[leftIndex]!;
+        const right = activeNotes[rightIndex]!;
+        if (left.pitch === right.pitch) {
+          samePitchOverlapCount += 1;
+        }
+        if (positiveModulo(left.pitch - right.pitch, 12) === 0) {
+          unisonOverlapCount += 1;
+        }
+        if (left.startTick === right.startTick && left.durationTicks === right.durationTicks) {
+          sharedRhythmOverlapCount += 1;
+        }
+      }
+    }
+  }
+
+  for (const tick of checkpoints) {
+    const moving = VOICE_ENTRY_ORDER.map((voice) => motionAt(notes, voice, tick)).filter((motion) => motion !== 0);
+    for (let leftIndex = 0; leftIndex < moving.length; leftIndex += 1) {
+      for (let rightIndex = leftIndex + 1; rightIndex < moving.length; rightIndex += 1) {
+        if (moving[leftIndex] === moving[rightIndex]) {
+          sameDirectionMotionCount += 1;
+        }
+      }
+    }
+  }
+
+  return { samePitchOverlapCount, unisonOverlapCount, sameDirectionMotionCount, sharedRhythmOverlapCount };
+}
+
+function motionAt(notes: readonly NoteEvent[], voice: Voice, tick: number): number {
+  const voiceNotes = notes.filter((note) => note.voice === voice).sort(compareNoteEvents);
+  const index = voiceNotes.findIndex((note) => note.startTick === tick);
+  if (index <= 0) {
+    return 0;
+  }
+  return Math.sign(voiceNotes[index]!.pitch - voiceNotes[index - 1]!.pitch);
+}
+
+function expositionEntryStaggerScore(notes: readonly NoteEvent[]): number {
+  const initialVoices = new Set(notes.filter((note) => note.startTick === 0).map((note) => note.voice)).size;
+  if (initialVoices === 0) {
+    return 0;
+  }
+  return roundRatio(Math.max(0, 1 - (initialVoices - 1) / (VOICE_ENTRY_ORDER.length - 1)));
+}
+
+function durationDistribution(notes: readonly NoteEvent[]): DurationDistribution {
+  const distribution: DurationDistribution = {
+    whole: 0,
+    half: 0,
+    quarter: 0,
+    eighth: 0,
+    sixteenth: 0,
+    dotted: 0,
+    triplet: 0,
+    other: 0,
+  };
+
+  for (const note of notes) {
+    if (note.durationTicks === TICKS_PER_QUARTER * 4) {
+      distribution.whole += 1;
+    } else if (note.durationTicks === TICKS_PER_QUARTER * 2) {
+      distribution.half += 1;
+    } else if (note.durationTicks === TICKS_PER_QUARTER) {
+      distribution.quarter += 1;
+    } else if (note.durationTicks === TICKS_PER_QUARTER / 2) {
+      distribution.eighth += 1;
+    } else if (note.durationTicks === TICKS_PER_QUARTER / 4) {
+      distribution.sixteenth += 1;
+    } else if (note.durationTicks % (TICKS_PER_QUARTER / 2) === TICKS_PER_QUARTER / 4) {
+      distribution.dotted += 1;
+    } else if (note.durationTicks % (TICKS_PER_QUARTER / 3) === 0) {
+      distribution.triplet += 1;
+    } else {
+      distribution.other += 1;
+    }
+  }
+
+  return distribution;
+}
+
+function countRepeatedPitchRuns(notes: readonly NoteEvent[], minimumRunLength: number): number {
+  let runs = 0;
+  for (const voice of VOICE_ENTRY_ORDER) {
+    const voiceNotes = notes.filter((note) => note.voice === voice).sort(compareNoteEvents);
+    let runStart = 0;
+    for (let index = 1; index <= voiceNotes.length; index += 1) {
+      const previous = voiceNotes[index - 1];
+      const current = voiceNotes[index];
+      if (previous !== undefined && current !== undefined && current.pitch === previous.pitch) {
+        continue;
+      }
+      if (index - runStart >= minimumRunLength) {
+        runs += 1;
+      }
+      runStart = index;
+    }
+  }
+  return runs;
+}
+
+function countAllVoiceSilenceGaps(notes: readonly NoteEvent[]): number {
+  const checkpoints = [...new Set(notes.flatMap((note) => [note.startTick, note.startTick + note.durationTicks]))].sort(
+    (left, right) => left - right,
+  );
+  let gaps = 0;
+  for (let index = 0; index < checkpoints.length - 1; index += 1) {
+    const startTick = checkpoints[index]!;
+    const endTick = checkpoints[index + 1]!;
+    if (endTick <= startTick) {
+      continue;
+    }
+    const hasActiveNote = notes.some(
+      (note) => note.startTick < endTick && startTick < note.startTick + note.durationTicks,
+    );
+    if (!hasActiveNote) {
+      gaps += 1;
+    }
+  }
+  return gaps;
+}
+
+function countOrnamentCandidates(notes: readonly NoteEvent[]): number {
+  return notes.filter(
+    (note) =>
+      (note.role === "counter-subject" || note.role === "free-counterpoint") &&
+      note.durationTicks >= TICKS_PER_QUARTER &&
+      note.startTick % TICKS_PER_QUARTER === 0,
+  ).length;
 }
 
 function analyzeHarmonicPlans(

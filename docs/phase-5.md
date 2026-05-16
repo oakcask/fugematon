@@ -305,6 +305,29 @@ type CandidateEvaluation = {
 * 候補評価を `CandidateEvaluation` として構造化し、counterpoint、melody、texture、subject clarity、harmony、form の dimension を diagnostics と共有する。
 * `scoreCandidate()` は構造化評価の `totalCost` を使う wrapper にし、既存の候補選択を保ちながら評価理由を追えるようにする。
 
+#### 実装記録
+
+Phase 5.6 は、既存の Phase 5 gate を保ったまま、候補選択と diagnostics の説明粒度を上げる変更として実装した。
+
+* `CandidateEvaluation` は `totalCost`、hard failure、counterpoint、melody、texture、subject clarity、harmony、form の dimension を持つ。
+* `scoreCandidate()` は構造化評価の `totalCost` を返す wrapper とし、候補選択の互換性を保っている。
+* diagnostics は counter-subject identity retention、invertibility、free counterpoint contour、rhythmic independence、support texture repetition、exposition entry stagger、同音高・ユニゾン・同方向進行・同一リズムの過密、音価分布、同音連打、全声部休止、装飾候補密度を記録する。
+* exposition 冒頭は、最初の主題 entry で全声部を同時に鳴らさず、既に entry 済みの声部だけが支えるようにした。
+* free counterpoint は主題と同じ音価列に固定せず、長い支え音を短い動きへ分割して rhythmic independence の材料を作る。
+* section 末尾の全声部休止は、free counterpoint の接続音で埋め、diagnostics 上の all-voice silence gap を 0 に保つ。
+* Phase 5.6 用の diagnostics profile を追加し、代表 seed で分解指標と構造化評価の存在を CI で確認する。
+
+#### 完了判定
+
+リポジトリ上の Phase 5.6 自動完了条件は満たしている。
+
+* leap recovery miss は候補評価の melody dimension で主要コストとして扱う。
+* counter-subject と free counterpoint は coverage だけでなく、identity、invertibility、contour、rhythmic independence、repetition に分解される。
+* exposition 冒頭の段階的 entry は `expositionEntryStaggerScore` で確認できる。
+* 同音高、ユニゾン、同方向進行、同一リズム、音価分布、同音連打、全声部休止、装飾候補密度は diagnostics に残る。
+* `CandidateEvaluation` の dimension 別 breakdown が review seed の選択済み候補として diagnostics に出る。
+* Phase 5 の既存 hard constraints と representative review seed gate は維持している。
+
 ### Phase 5.7: modal context と modal review seed
 
 * `KeyMode` に dorian、mixolydian、aeolian を追加する。

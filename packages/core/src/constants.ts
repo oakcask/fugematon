@@ -103,3 +103,14 @@ export const PHASE_5_DIAGNOSTICS_PROFILE = {
   minEpisodeDirectionScore: 0.8,
   minStrettoClarityScore: 0.8,
 } as const;
+
+export const PHASE_5_6_DIAGNOSTICS_PROFILE = {
+  minCounterSubjectIdentityRetention: 0.85,
+  minCounterSubjectInvertibilityScore: 0.6,
+  minFreeCounterpointContourScore: 0.5,
+  minRhythmicIndependenceScore: 0.05,
+  minSupportTextureRepetitionScore: 0.9,
+  minExpositionEntryStaggerScore: 1,
+  maxAllVoiceSilenceGapCount: 0,
+  minOrnamentDensity: 0.1,
+} as const;

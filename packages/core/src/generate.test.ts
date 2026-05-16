@@ -9,6 +9,7 @@ import {
   PHASE_4_DIAGNOSTICS_PROFILE,
   PHASE_4_REPRESENTATIVE_SEEDS,
   PHASE_5_DIAGNOSTICS_PROFILE,
+  PHASE_5_6_DIAGNOSTICS_PROFILE,
   PHASE_5_LENGTH_TICKS,
   PHASE_5_REVIEW_SEEDS,
   TICKS_PER_QUARTER,
@@ -185,12 +186,14 @@ test("generateScore validates representative phase-4 seeds", () => {
 
 test("generateScore reports phase-5 counterpoint texture metrics", () => {
   const output = generateScore({ seed: "lyrical-line", lengthTicks: PHASE_3_LENGTH_TICKS });
+  const totalMinutes = scoreMinutes(output.diagnostics.generatedUntilTick);
+  const maxLeapRecoveryMisses = Math.ceil(totalMinutes * PHASE_5_DIAGNOSTICS_PROFILE.maxLeapRecoveryMissesPerMinute);
 
   assert.ok(output.diagnostics.counterSubjectCoverage >= 0.5);
   assert.ok(output.diagnostics.freeCounterpointCoverage >= 0.5);
   assert.equal(output.diagnostics.fallbackPassageCount, 0);
   assert.equal(output.diagnostics.melodicStagnationWarnings, 0);
-  assert.ok(output.diagnostics.leapRecoveryMisses <= 12);
+  assert.ok(output.diagnostics.leapRecoveryMisses <= maxLeapRecoveryMisses);
   assert.ok(output.events.some((event) => event.kind === "note" && event.role === "counter-subject"));
   assert.ok(output.events.some((event) => event.kind === "note" && event.role === "free-counterpoint"));
 });
@@ -253,6 +256,45 @@ test("generateScore validates phase-5 quality gate seeds", () => {
   }
 
   assert.ok(signatures.size > 1);
+});
+
+test("generateScore reports phase-5.6 beauty and texture diagnostics", () => {
+  const output = generateScore({ seed: "fugue-smoke", lengthTicks: PHASE_5_LENGTH_TICKS });
+  const selectedEvaluation = output.diagnostics.selectedCandidateEvaluations[0];
+
+  assert.ok(selectedEvaluation !== undefined);
+  assert.ok(Number.isFinite(selectedEvaluation.totalCost));
+  assert.deepEqual(Object.keys(selectedEvaluation.dimensions), [
+    "counterpoint",
+    "melody",
+    "texture",
+    "subjectClarity",
+    "harmony",
+    "form",
+  ]);
+  assert.equal(
+    output.diagnostics.expositionEntryStaggerScore,
+    PHASE_5_6_DIAGNOSTICS_PROFILE.minExpositionEntryStaggerScore,
+  );
+  assert.ok(
+    output.diagnostics.counterSubjectIdentityRetention >=
+      PHASE_5_6_DIAGNOSTICS_PROFILE.minCounterSubjectIdentityRetention,
+  );
+  assert.ok(
+    output.diagnostics.counterSubjectInvertibilityScore >=
+      PHASE_5_6_DIAGNOSTICS_PROFILE.minCounterSubjectInvertibilityScore,
+  );
+  assert.ok(
+    output.diagnostics.freeCounterpointContourScore >= PHASE_5_6_DIAGNOSTICS_PROFILE.minFreeCounterpointContourScore,
+  );
+  assert.ok(output.diagnostics.rhythmicIndependenceScore >= PHASE_5_6_DIAGNOSTICS_PROFILE.minRhythmicIndependenceScore);
+  assert.ok(
+    output.diagnostics.supportTextureRepetitionScore >= PHASE_5_6_DIAGNOSTICS_PROFILE.minSupportTextureRepetitionScore,
+  );
+  assert.equal(output.diagnostics.allVoiceSilenceGapCount, PHASE_5_6_DIAGNOSTICS_PROFILE.maxAllVoiceSilenceGapCount);
+  assert.ok(output.diagnostics.ornamentDensity >= PHASE_5_6_DIAGNOSTICS_PROFILE.minOrnamentDensity);
+  assert.ok(output.diagnostics.durationDistribution.quarter > 0);
+  assert.ok(output.diagnostics.durationDistribution.eighth > 0);
 });
 
 function countIssues(issues: readonly { code: string }[], code: string): number {
