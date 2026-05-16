@@ -59,7 +59,7 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
 async function writeReviewBundle(outDirectory: string, lengthTicks: number): Promise<void> {
   await mkdir(outDirectory, { recursive: true });
   const summary = {
-    schemaVersion: 3,
+    schemaVersion: 4,
     lengthTicks,
     seeds: [] as {
       seed: string;
