@@ -39,6 +39,18 @@ common-practice harmony では、entry の structural notes は root、third、f
 
 現在の harmony dimension は多くの selected candidate で reward が満点付近になり、entrySupportInstabilityCount を feature に持っていても low-level な音程衝突の説明力が弱い。Phase 7 後半では entry/cadence 周辺の root、chord member、avoid note status、non-chord tone role、解決期限を dimension breakdown に出す。
 
+#### 2.1. 主題フレーズ型が entry 衝突を誘発している可能性
+
+追加で 22 seed の subject degree pattern と severe entry interval を集計した。`0-1-2-3-4-3-2-1`、つまり主音から順次上行して5度へ達し、そのまま順次下降する型は 12 seed に出現した。対象は `fugue-smoke`、`wide-key`、`lyrical-line`、`modal-dorian`、`circle-fifths`、`close-imitation`、`contrary-motion`、`tight-stretto`、`angular-answer`、`modal-cadence`、`contrary-answer`、`dense-modal` である。この型の severe entry interval は平均 100.0、未解決 severe entry interval は平均 78.5、entry あたり平均 2.35 だった。
+
+一方、隣接する比較対象として `0-2-1-3-4-3-2-1` 型は 10 seed に出現し、severe entry interval は平均 74.6、未解決 severe entry interval は平均 37.9、entry あたり平均 1.79 だった。これだけで因果を断定はできないが、`0-1-2-3-4-3-2-1` 型が多い seed ほど entry 周辺の m2/M2/m7/M7 が残りやすいという仮説は、現行 diagnostics と一致する。
+
+`fugue-smoke` の exposition では、アルト主題が `0-1-2-3-4-3-2-1`、ソプラノ応答が tonal answer により `0-1-2-3-3-3-2-1` になる。tick 1920 ではアルト Ab とソプラノ Bb が M2 を作り、tick 2400 ではアルト G とソプラノ C が P4、tick 2880 ではアルト F とソプラノ D が M6 を作る。最初の応答自体は現行 severe interval 集計では 0 だが、同じ上行5度型が後続 entry と continuation で反復されるため、`fugue-smoke` 全体では severe entry interval 108、未解決 100 まで増える。
+
+このため、解決策の優先順位は第一に主題フレーズ生成の見直しとする。現在の生成器は `0-1-2-3-4-3-2-1` を高確率で選び、別型も終盤 `3-4-3-2-1` を共有するため、5度到達後の下降が seed 横断で同型化している。Phase 7 後半では、主題候補を増やし、5度到達を structural climax として使う場合でも、応答開始時点の対旋律、保持音、反行、跳躍後回収、phrase boundary を同時に評価する。
+
+第二の案である「応答を属音開始に固定せず、3度や6度などの不完全協和から始める」ことは、style profile と entry plan の選択肢としては残す。ただし、これを先に一般解にすると、fugal answer の tonic-dominant 関係と主題認識性を弱める可能性がある。採用する場合は、true/tonal answer の代替ではなく、episode、stretto-like、modal seed、または hybrid/popular-tolerant profile での derived answer として扱い、entry start interval が不完全協和でも、後続の structural tone が local key と subject identity を説明できることを gate にする。
+
 ### 3. Modal seed の対主題認識性が薄い
 
 counter-subject identity retention の下位は `modal-cadence` 0.573、`dense-modal` 0.573、`angular-answer` 0.591、`modal-answer` 0.608、`modal-dorian` 0.627。modal color を入れた seed ほど対主題の輪郭が崩れやすい。
@@ -77,9 +89,11 @@ Phase 7 後半は、候補評価の説明力だけでなく、説明できた弱
 
 1. Refactor before scoring changes: `CandidateEvaluation` の feature extraction を entry、cadence、section、voice-pair の集計単位に分け、既存 Phase 6/7 gate を保つテストを先に追加する。
 2. Entry harmony: entry/cadence 周辺の chord role、avoid note、seconds/sevenths、解決期限を harmony dimension の cost/reward と diagnostics に出し、`modal-cadence`、`lyrical-line`、`fugue-smoke`、`tight-stretto`、`wide-key` を回帰 seed にする。entry harmony は、support voice の音高だけを縦に動かして severe interval を避ける変更としては扱わない。試行では severe entry interval と unison overlap は減ったが、leap recovery と modal counter-subject identity が悪化して Phase 7 gate を壊したため、entry interval、leap recovery、counter-subject identity、contour を同じ候補評価で同時最適化する。
-3. Voice independence: same-pitch unison、shared rhythm、rhythmic lockstep を voice-pair と section role ごとに抑え、`restless-line`、`sparse-cadence`、`modal-answer`、`bright-answer`、`minor-entry` を境界 seed にする。
-4. Modal counter-subject: modal seed の characteristic tone と対主題輪郭を両立させ、`modal-cadence`、`dense-modal`、`angular-answer`、`modal-answer`、`modal-dorian` を回帰 seed にする。
-5. Melody and phrase: leap recovery、local climax、phrase breathing、support voice singability を voice 単位で説明し、`modal-answer`、`bright-answer`、`contrary-motion`、`modal-dorian` を境界 seed にする。
-6. Form and long-run interest: episode/codetta/stretto preparation、段階的 thinning、register/density variation を section planner の責務にし、manual listening gate と pairwise preference を Phase 8 前の blocker として埋める。
+3. Subject phrase generation: `0-1-2-3-4-3-2-1` 型の過多と 5度到達後の同型下降を減らし、answer entry の支え声部が 2度/7度を作り続けない主題候補を選ぶ。`fugue-smoke`、`lyrical-line`、`modal-cadence`、`wide-key`、`tight-stretto`、`contrary-answer` を回帰 seed にする。
+4. Entry interval alternatives: 属音開始を緩める案は derived answer として限定的に検証し、3度/6度開始を許す場合でも subject identity、local key、後続 structural tone の説明を gate にする。
+5. Voice independence: same-pitch unison、shared rhythm、rhythmic lockstep を voice-pair と section role ごとに抑え、`restless-line`、`sparse-cadence`、`modal-answer`、`bright-answer`、`minor-entry` を境界 seed にする。
+6. Modal counter-subject: modal seed の characteristic tone と対主題輪郭を両立させ、`modal-cadence`、`dense-modal`、`angular-answer`、`modal-answer`、`modal-dorian` を回帰 seed にする。
+7. Melody and phrase: leap recovery、local climax、phrase breathing、support voice singability を voice 単位で説明し、`modal-answer`、`bright-answer`、`contrary-motion`、`modal-dorian` を境界 seed にする。
+8. Form and long-run interest: episode/codetta/stretto preparation、段階的 thinning、register/density variation を section planner の責務にし、manual listening gate と pairwise preference を Phase 8 前の blocker として埋める。
 
 Phase 8 は、代表 seed と境界 seed の manual listening judgement が `pass` になり、pairwise preference が少なくとも主要な改善前後比較を持つまで保留する。
