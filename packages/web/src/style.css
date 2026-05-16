@@ -91,7 +91,8 @@ h1 {
 }
 
 .control-card,
-.score-card {
+.score-card,
+.visualizer-card {
   border: 1px solid rgba(60, 43, 30, 0.15);
   border-radius: 1.6rem;
   box-shadow: 0 1.5rem 4rem rgba(63, 45, 28, 0.16);
@@ -172,6 +173,19 @@ h1 {
   flex-wrap: wrap;
   gap: 0.7rem;
   justify-content: flex-end;
+}
+
+.visualizer-card {
+  margin-top: 1rem;
+  padding: 0.8rem;
+  animation: rise 580ms ease-out 300ms both;
+}
+
+#piano-roll {
+  display: block;
+  width: 100%;
+  height: clamp(17rem, 48vw, 25rem);
+  border-radius: 1.1rem;
 }
 
 @keyframes rise {
