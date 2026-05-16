@@ -248,6 +248,9 @@ pnpm fugematon diagnose --seed bach-001 --ticks 7680
 * 生成所要時間にも上限を設け、リアルタイム生成に向けた性能劣化を検出する。
 * 人間が聴くための確認用に、MIDI エクスポートを用意する。
 * CI では、代表 seed から生成した MIDI を成果物として保存できるようにする。
+* 生成可能な ScoreEvent JSON や MIDI はリポジトリに fixture としてコミットしない。
+  * 手元確認では `pnpm samples:generate` などのスクリプトで必要時に生成する。
+  * CI では生成物を成果物として保存し、ソース管理には seed、パラメータ、診断閾値だけを置く。
 
 ## 代表 seed セット
 
@@ -261,9 +264,10 @@ pnpm fugematon diagnose --seed bach-001 --ticks 7680
 * 境界値 seed は、テンポ下限、テンポ上限、strictness 下限、strictness 上限、密度高め、密度低めなどを狙う。
 * ローテーション seed は、普段の固定集合では見落とす偏りを検出するために使う。
   * CI 実行ごとの完全な乱択にはしない。
-  * 週次または任意のタイミングで fixture を更新し、レビュー可能な差分として扱う。
+  * 週次または任意のタイミングで seed 定義を更新し、レビュー可能な差分として扱う。
 * PR では軽量 seed セットを走らせ、main では広い seed セットと MIDI 成果物生成を走らせる。
-* seed セットは JSON などの fixture として管理し、seed 文字列、期待する大まかな属性、適用する diagnostics profile を持たせる。
+* seed セットは JSON などの設定ファイルとして管理し、seed 文字列、期待する大まかな属性、適用する diagnostics profile を持たせる。
+* 代表 seed から得られる ScoreEvent JSON や MIDI は、必要時に再生成する派生物として扱う。
 
 ## MIDI エクスポート方針
 
