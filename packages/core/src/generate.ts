@@ -5,6 +5,7 @@ import {
   VOICE_RANGES,
 } from "./constants.js";
 import type {
+  DiagnosticIssue,
   GenerationInput,
   GenerationOutput,
   GenerationParameters,
@@ -137,6 +138,7 @@ export function generateScore(input: GenerationInput): GenerationOutput {
       rangeViolations: diagnostics.rangeViolations,
       voiceCrossings: diagnostics.voiceCrossings,
       parallelPerfects: diagnostics.parallelPerfects,
+      issues: diagnostics.issues,
       warnings: diagnostics.warnings,
     },
   };
@@ -316,30 +318,42 @@ function analyzeExposition(notes: readonly NoteEvent[]): {
   rangeViolations: number;
   voiceCrossings: number;
   parallelPerfects: number;
+  issues: DiagnosticIssue[];
   warnings: string[];
 } {
-  const rangeViolations = notes.filter((note) => {
+  const issues: DiagnosticIssue[] = [];
+
+  for (const note of notes) {
     const range = VOICE_RANGES[note.voice];
-    return note.pitch < range.min || note.pitch > range.max;
-  }).length;
+    if (note.pitch < range.min || note.pitch > range.max) {
+      issues.push({
+        code: "range-violation",
+        severity: "warning",
+        tick: note.startTick,
+        voices: [note.voice],
+        pitches: { [note.voice]: note.pitch },
+        message: `${note.voice} pitch ${note.pitch} is outside ${range.min}-${range.max}`,
+      });
+    }
+  }
+
   const checkpoints = [...new Set(notes.flatMap((note) => [note.startTick, note.startTick + note.durationTicks]))].sort(
     (left, right) => left - right,
   );
-  let voiceCrossings = 0;
-  let parallelPerfects = 0;
   let previousVerticality: Map<Voice, number> | undefined;
 
   for (const tick of checkpoints) {
     const active = activePitchesAt(notes, tick);
-    if (isVoiceCrossed(active)) {
-      voiceCrossings += 1;
-    }
+    issues.push(...findVoiceCrossings(active, tick));
     if (previousVerticality !== undefined) {
-      parallelPerfects += countParallelPerfects(previousVerticality, active);
+      issues.push(...findParallelPerfects(previousVerticality, active, tick));
     }
     previousVerticality = active;
   }
 
+  const rangeViolations = countIssues(issues, "range-violation");
+  const voiceCrossings = countIssues(issues, "voice-crossing");
+  const parallelPerfects = countIssues(issues, "parallel-perfect");
   const warnings: string[] = [];
   if (rangeViolations > 0) {
     warnings.push("range violations detected");
@@ -351,7 +365,7 @@ function analyzeExposition(notes: readonly NoteEvent[]): {
     warnings.push("parallel perfect intervals suspected");
   }
 
-  return { rangeViolations, voiceCrossings, parallelPerfects, warnings };
+  return { rangeViolations, voiceCrossings, parallelPerfects, issues, warnings };
 }
 
 function activePitchesAt(notes: readonly NoteEvent[], tick: number): Map<Voice, number> {
@@ -367,21 +381,40 @@ function activePitchesAt(notes: readonly NoteEvent[], tick: number): Map<Voice, 
   return active;
 }
 
-function isVoiceCrossed(active: Map<Voice, number>): boolean {
-  const soprano = active.get("soprano");
-  const alto = active.get("alto");
-  const tenor = active.get("tenor");
-  const bass = active.get("bass");
+function findVoiceCrossings(active: Map<Voice, number>, tick: number): DiagnosticIssue[] {
+  const adjacentPairs: [higher: Voice, lower: Voice][] = [
+    ["soprano", "alto"],
+    ["alto", "tenor"],
+    ["tenor", "bass"],
+  ];
+  const issues: DiagnosticIssue[] = [];
 
-  return (
-    (soprano !== undefined && alto !== undefined && soprano < alto) ||
-    (alto !== undefined && tenor !== undefined && alto < tenor) ||
-    (tenor !== undefined && bass !== undefined && tenor < bass)
-  );
+  for (const [higher, lower] of adjacentPairs) {
+    const higherPitch = active.get(higher);
+    const lowerPitch = active.get(lower);
+    if (higherPitch === undefined || lowerPitch === undefined || higherPitch >= lowerPitch) {
+      continue;
+    }
+
+    issues.push({
+      code: "voice-crossing",
+      severity: "warning",
+      tick,
+      voices: [higher, lower],
+      pitches: { [higher]: higherPitch, [lower]: lowerPitch },
+      message: `${higher} is below ${lower} at tick ${tick}`,
+    });
+  }
+
+  return issues;
 }
 
-function countParallelPerfects(previous: Map<Voice, number>, current: Map<Voice, number>): number {
-  let count = 0;
+function findParallelPerfects(
+  previous: Map<Voice, number>,
+  current: Map<Voice, number>,
+  tick: number,
+): DiagnosticIssue[] {
+  const issues: DiagnosticIssue[] = [];
   for (let leftIndex = 0; leftIndex < VOICE_ENTRY_ORDER.length; leftIndex += 1) {
     for (let rightIndex = leftIndex + 1; rightIndex < VOICE_ENTRY_ORDER.length; rightIndex += 1) {
       const left = VOICE_ENTRY_ORDER[leftIndex]!;
@@ -409,16 +442,27 @@ function countParallelPerfects(previous: Map<Voice, number>, current: Map<Voice,
         isPerfectInterval(previousInterval) &&
         isPerfectInterval(currentInterval)
       ) {
-        count += 1;
+        issues.push({
+          code: "parallel-perfect",
+          severity: "warning",
+          tick,
+          voices: [left, right],
+          pitches: { [left]: currentLeft, [right]: currentRight },
+          message: `${left} and ${right} move in parallel perfect interval at tick ${tick}`,
+        });
       }
     }
   }
 
-  return count;
+  return issues;
 }
 
 function isPerfectInterval(intervalClass: number): boolean {
   return intervalClass === 0 || intervalClass === 7;
+}
+
+function countIssues(issues: readonly DiagnosticIssue[], code: DiagnosticIssue["code"]): number {
+  return issues.filter((issue) => issue.code === code).length;
 }
 
 function compareNoteEvents(left: NoteEvent, right: NoteEvent): number {

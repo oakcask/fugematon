@@ -38,6 +38,9 @@ test("generateScore emits a tick-based phase-1 exposition", () => {
   );
   assert.equal(output.diagnostics.noteCount, notes.length);
   assert.equal(output.diagnostics.rangeViolations, 0);
+  assert.equal(countIssues(output.diagnostics.issues, "range-violation"), output.diagnostics.rangeViolations);
+  assert.equal(countIssues(output.diagnostics.issues, "voice-crossing"), output.diagnostics.voiceCrossings);
+  assert.equal(countIssues(output.diagnostics.issues, "parallel-perfect"), output.diagnostics.parallelPerfects);
 });
 
 test("generateScore validates reproducibility inputs", () => {
@@ -73,8 +76,22 @@ test("generateScore validates representative phase-1 seeds", () => {
     assert.equal(output.diagnostics.subjectEntries.length, 4);
     assert.deepEqual(new Set(notes.map((note) => note.voice)), new Set(VOICES));
     assert.equal(output.diagnostics.rangeViolations, 0);
+    assert.equal(countIssues(output.diagnostics.issues, "range-violation"), 0);
+    for (const issue of output.diagnostics.issues) {
+      assert.equal(issue.severity, "warning");
+      assert.ok(Number.isSafeInteger(issue.tick));
+      assert.ok(issue.voices.length > 0);
+      assert.ok(issue.message.length > 0);
+    }
   }
 });
+
+function countIssues(
+  issues: readonly { code: "range-violation" | "voice-crossing" | "parallel-perfect" }[],
+  code: "range-violation" | "voice-crossing" | "parallel-perfect",
+): number {
+  return issues.filter((issue) => issue.code === code).length;
+}
 
 function asMetaEvent(event: ScoreEvent | undefined): MetaEvent {
   assert.equal(event?.kind, "meta");
