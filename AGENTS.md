@@ -11,6 +11,17 @@
 - Use the docs index to choose only the relevant planning documents, such as `docs/technical-plan.md`, `docs/design.md`, and the current phase notes.
 - Before changing planned behavior or phase scope, check the relevant docs and keep the docs aligned with the code change.
 
+## Change Messages
+
+- Write all commit messages, PR titles, PR descriptions, changelog entries, and release notes authored by agents in English.
+- If source material, user requests, or generated drafts are in another language, translate the final change message into clear reviewer-facing English before publishing it.
+
+## UI Inspection
+
+- When inspecting the Web UI in a browser, start the Vite development server with `pnpm web:dev`.
+- Use the local URL printed by Vite for browser automation, screenshots, console checks, and responsive layout checks.
+- Run `pnpm ui:inspect` for the headless Playwright smoke inspection when browser-level validation is needed.
+
 ## Dependencies
 
 - Before adding a new dependency, prefer actively maintained projects with recent releases, responsive issue handling, and clear ownership.

@@ -31,6 +31,7 @@ Use this format:
 - Use `!` and a `BREAKING CHANGE:` footer when the change breaks public behavior or compatibility.
 - Keep the subject short, lower-case after the type when natural, and do not end it with a period.
 - Use an imperative description, for example `fix(parser): handle empty input`.
+- Write the full commit message and PR title in English, even when the user request, notes, or intermediate draft are in another language.
 
 ## Workflow
 
