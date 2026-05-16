@@ -5,6 +5,12 @@
 - Avoid absolute local paths, usernames, hostnames, machine names, local repository locations, private tokens, email addresses, and other personally identifying details.
 - Use generic placeholders or relative paths when such information is necessary for explanation.
 
+## Project Context
+
+- When looking for project plans, implementation phases, design rationale, or open work, start with `docs/README.md`.
+- Use the docs index to choose only the relevant planning documents, such as `docs/technical-plan.md`, `docs/design.md`, and the current phase notes.
+- Before changing planned behavior or phase scope, check the relevant docs and keep the docs aligned with the code change.
+
 ## Dependencies
 
 - Before adding a new dependency, prefer actively maintained projects with recent releases, responsive issue handling, and clear ownership.

@@ -39,6 +39,11 @@
 
 * 初期ビジュアライザは Canvas 2D のピアノロールとする。
 * 描画更新は requestAnimationFrame を使う。
+* 長尺 score を横幅全体へ常に圧縮しない。
+  * ピアノロールは、再生位置を中心にした固定秒数の表示窓を基本表示にする。
+  * 停止中や生成直後は冒頭 section を表示し、再生中は playhead に追従する。
+  * 表示窓外のノートは描画対象から外し、ノート幅と entry stroke が視認できる密度を保つ。
+  * 作品全体の長さは metric や将来の overview 表示で伝え、主表示の美しさと可読性を優先する。
 * 描画負荷が問題になった場合、OffscreenCanvas による Worker 描画を検討する。
 * 五線譜表示は後続課題とし、必要になった時点で専用ライブラリの採用を検討する。
 
@@ -133,11 +138,21 @@
   * 声部交差: 0
   * exposition、subject return、stretto-like section の主題 entry が、主調、属調、近親調の計画に沿って現れる。
   * 応答 entry は5度関係を維持しつつ、entry 周辺の持続的な完全8度や並達完全音程が主題の聴感を支配しない。
-  * modal seed では、local mode の特徴音が主題または episode に現れ、tonal cadence だけに回収されすぎない。
   * 並達5度・並達8度の疑い: 生成長に対する比率で上限を置く。
   * 不協和の未解決疑い: 生成長に対する比率で上限を置く。
   * 主題または主題断片の再出現: 状態ごとに最低回数を置く。
   * 生成所要時間: リアルタイム再生の先読み量を下回らない上限を置く。
+* Phase 4 以降の閾値：
+  * 主題同一性違反: 0
+    * 同じ form の subject entry は、想定した scale-degree pattern と一致する。
+    * voice base octave によって主題の開始度数や調性機能が変化しない。
+  * 応答計画違反: 0
+    * true answer または tonal answer のどちらとして生成したかを diagnostics に残す。
+    * answer の重要音が local key の計画に沿っている。
+  * key metadata mismatch: 0
+    * ScoreEvent の key-signature、entry plan の local key、実際の pitch class sequence が矛盾しない。
+  * cadence target miss: Phase 5 までは diagnostics 記録、Phase 5 完了時に代表 seed の上限を置く。
+  * modal seed では、local mode の特徴音が主題または episode に現れ、tonal cadence だけに回収されすぎない。
 * 閾値はコード内に散らさず、CI 用の diagnostics profile として管理する。
 * diagnostics の項目追加は互換的変更として扱うが、既存閾値の厳格化は generatorVersion とは別に CI 設定の変更として扱う。
 
@@ -146,15 +161,28 @@
 * exposition の基本形は、主題、5度上の応答、主題、5度上の応答とする。
   * 声部順は seed によって変えてよいが、entry ごとの form と移調関係は diagnostics で確認できるようにする。
   * 5度上または4度下の関係は、pitch class 差分だけではなく、local key と scale degree mapping で表現する。
+* 主題は、以下の情報を持つ抽象データとして扱う。
+  * rhythm pattern
+  * scale degree pattern
+  * melodic role
+  * important tones for answer correction
+  * allowed chromatic alterations
+* MIDI pitch は entry plan の最後に、voice と register から解決する。
+  * voice range fitting は octave placement だけを担当する。
+  * voice range fitting が scale degree や local key を変えてはならない。
 * Phase 1 の実装は固定の真応答でよい。
   * 応答は主題を5度移調したものとして生成する。
   * 現行実装では semitone offset による近似を許すが、後続フェーズではスケール度数ベースの表現へ置き換える。
   * 縦に鳴る完全8度や完全5度を完全には避けないが、声域違反と声部交差は 0 に保つ。
 * Phase 2 では生成ロジックを大きく変えず、可視化で主題と応答の entry を確認しやすくする。
-* Phase 3 では、候補生成とスコアリングに主題 entry plan を渡す。
+* Phase 3 では、候補生成とスコアリングに主題 entry plan の暫定形を渡す。
   * entry plan は、状態、開始 tick、声部、form、global key、local key、local mode、scale degree mapping、移調関係を持つ。
   * 候補は entry plan を満たすことを強く加点し、対位法違反を減点する。
   * 応答 entry 周辺では、5度関係の再認識性と、縦の完全8度・並達完全音程の抑制を別々に評価する。
+* Phase 4 では、entry plan を生成器の正規データ構造に昇格する。
+  * subject、answer、subject-fragment の生成は entry plan からのみ行う。
+  * 現行の voice base octave と semitone offset の組み合わせは、entry plan から MIDI pitch へ変換する薄い層へ縮小する。
+  * diagnostics は、entry plan、期待される scale-degree pattern、実際の pitch class sequence を比較する。
   * 真応答と調性応答を選べるようにし、主題の輪郭が tonic-dominant に強く依存する場合は調性応答を優先する。
 * subject return では、主調だけに戻すのではなく、近親調での主題再提示も許す。
   * 無限生成では、entry plan が単調にならないよう、声部、調性、密度を状態機械が選ぶ。
@@ -392,8 +420,11 @@ pnpm fugematon diagnose --seed bach-001 --ticks 7680
 * Phase 1: 固定長の4声 exposition、初期 diagnostics、MIDI エクスポート、代表 seed による CI 検証を実装する。
 * Phase 2: Vite ベースの Web UI、Start 操作、WebAudio 再生、Canvas 2D ピアノロール、seed 入力を実装する。
 * Phase 3: exposition -> episode -> subject return -> episode -> stretto-like section の状態機械と、数小節単位の候補生成・スコアリングを実装する。
-* Phase 4: リングバッファ履歴、巻き戻し replay、MVP 用スライダ、parameter-change メタイベントを実装する。
-* Phase 5: Dedicated Web Worker による生成探索の分離、生成期限、フォールバック候補を実装する。
+* Phase 3 UI follow-up: 長尺化した default score をピアノロール全体へ圧縮表示せず、固定秒数の追従 viewport と表示範囲計算テストを追加する。
+* Phase 4: 主題を scale degree ベースの抽象表現へ移し、entry plan、true answer、tonal answer、主題同一性 diagnostics を実装する。
+* Phase 5: counter-subject、自由対位、episode sequence、cadence plan、和声安定度スコアを実装する。
+* Phase 6: リングバッファ履歴、巻き戻し replay、MVP 用スライダ、parameter-change メタイベントを実装する。
+* Phase 7: Dedicated Web Worker による生成探索の分離、生成期限、フォールバック候補を実装する。
 
 ## 生成期限とフォールバック
 
@@ -423,10 +454,22 @@ pnpm fugematon diagnose --seed bach-001 --ticks 7680
   * subject return や stretto-like section で主題または主題断片が再出現する。
   * 明らかな禁則違反が許容閾値以下である。
   * 生成所要時間が上限を超えない。
+* Phase 4 以降の CI で確認する項目：
+  * 全 subject entry が同じ scale-degree pattern として検証できる。
+  * answer entry が true answer または tonal answer の計画に一致する。
+  * key-signature、local key、実際の pitch class sequence が矛盾しない。
+  * voice range fitting が主題の度数列を変化させない。
+  * 代表 seed の exposition と subject return で、主題同一性違反が 0 である。
+* Phase 5 以降の CI で確認する項目：
+  * counter-subject が主題と同時に鳴っても、声域違反、声部交差、未解決の強い不協和が閾値以下である。
+  * 強拍の和声安定度と cadence target miss が代表 seed の閾値内である。
+  * episode が次の local key または subject return へ向かう plan を持つ。
+* Phase 6 以降の CI で確認する項目：
   * parameter-change メタイベントは、次の状態遷移以降のイベントにのみ影響する。
 * Phase 2 以降の手動またはブラウザテストで確認する項目：
   * AudioContext はユーザー操作後に開始し、演奏が途切れず続く。
   * ブラウザが許す場合は、同一セッションや再訪問時に自動再開を試みる。
   * 自動再開に失敗した場合は、Start 操作で再開できる。
   * 巻き戻し後に、指定地点から再生し直せる。
+  * default seed の長尺 score でも、ピアノロールが作品全体を1画面に圧縮せず、表示窓内のノートと主題 entry が視認できる。
   * ビジュアライザが鑑賞体験として破綻していない。
