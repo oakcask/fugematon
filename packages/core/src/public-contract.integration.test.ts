@@ -133,7 +133,13 @@ test("public MIDI export is deterministic for generated score events", () => {
 });
 
 function assertCandidateEvaluation(evaluation: CandidateEvaluation): void {
+  assert.equal(evaluation.featureVersion, 1);
+  assert.equal(evaluation.evaluationModelVersion, 1);
   assert.ok(Number.isFinite(evaluation.totalCost));
+  assert.ok(evaluation.explanations.entries.length > 0);
+  assert.ok(evaluation.explanations.voicePairs.length > 0);
+  assert.ok(evaluation.explanations.voices.length > 0);
+  assert.ok(evaluation.explanations.sections.length > 0);
   assert.deepEqual(Object.keys(evaluation.dimensions), [
     "counterpoint",
     "melody",

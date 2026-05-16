@@ -1,4 +1,12 @@
-import type { CandidateEvaluation, NoteEvent } from "../events.js";
+import { TICKS_PER_QUARTER, VOICES } from "../constants.js";
+import type {
+  CandidateEvaluation,
+  CandidateEvaluationExplanations,
+  CandidateVoicePairExplanation,
+  NoteEvent,
+  PlannedEntry,
+  Voice,
+} from "../events.js";
 import { analyzeScore } from "./diagnostics.js";
 import type { Exposition } from "./types.js";
 
@@ -54,11 +62,9 @@ const EVALUATION_WEIGHTS = {
 
 export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate: Exposition): CandidateEvaluation {
   const recentNotes = previousNotes.slice(-64);
-  const diagnostics = analyzeScore(
-    [...recentNotes, ...candidate.notes],
-    candidate.subjectEntries,
-    candidate.sectionPlans,
-  );
+  const candidateNotes = [...recentNotes, ...candidate.notes];
+  const diagnostics = analyzeScore(candidateNotes, candidate.subjectEntries, candidate.sectionPlans);
+  const explanations = explainCandidateFeatures(candidateNotes, candidate, diagnostics);
 
   const hardFailures = diagnostics.issues
     .filter(
@@ -200,8 +206,11 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
     form.reward;
 
   return {
+    featureVersion: 1,
+    evaluationModelVersion: 1,
     totalCost: Math.round(totalCost * 1000) / 1000,
     hardFailures,
+    explanations,
     dimensions: {
       counterpoint,
       melody,
@@ -211,4 +220,195 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
       form,
     },
   };
+}
+
+function explainCandidateFeatures(
+  notes: readonly NoteEvent[],
+  candidate: Exposition,
+  diagnostics: ReturnType<typeof analyzeScore>,
+): CandidateEvaluationExplanations {
+  return {
+    entries: candidate.subjectEntries.map((entry) => {
+      const instability = diagnostics.entrySupportInstabilityDetails.find((detail) => sameEntry(detail, entry));
+      const severeInterval = diagnostics.entrySupportSevereIntervalDetails.find((detail) => sameEntry(detail, entry));
+      return {
+        voice: entry.voice,
+        form: entry.form,
+        state: entry.state,
+        startTick: entry.startTick,
+        instabilityCount: instability?.instabilityCount ?? 0,
+        severeIntervalCount: severeInterval?.severeIntervalCount ?? 0,
+        unresolvedSevereIntervalCount: severeInterval?.unresolvedSevereIntervalCount ?? 0,
+      };
+    }),
+    voicePairs: explainVoicePairs(notes),
+    voices: VOICES.map((voice) => ({
+      voice,
+      leapRecoveryMisses: countLeapRecoveryMisses(notes, voice),
+      repeatedPitchRunCount: countRepeatedPitchRuns(notes, voice),
+    })),
+    sections: candidate.sectionPlans.map((section) => ({
+      state: section.state,
+      startTick: section.startTick,
+      durationTicks: section.durationTicks,
+      cadenceKind: section.cadenceKind,
+      cadenceTargetCount: section.anchors.filter((anchor) => anchor.cadenceTarget).length,
+      soloTextureRisk: countSoloTextureSegments(notes, section.startTick, section.startTick + section.durationTicks),
+    })),
+  };
+}
+
+function sameEntry(
+  left: { voice: Voice; form: PlannedEntry["form"]; state: PlannedEntry["state"]; startTick: number },
+  right: PlannedEntry,
+): boolean {
+  return (
+    left.voice === right.voice &&
+    left.form === right.form &&
+    left.state === right.state &&
+    left.startTick === right.startTick
+  );
+}
+
+function explainVoicePairs(notes: readonly NoteEvent[]): CandidateVoicePairExplanation[] {
+  const checkpoints = noteCheckpoints(notes);
+  const pairs: CandidateVoicePairExplanation[] = [];
+
+  for (let leftIndex = 0; leftIndex < VOICES.length; leftIndex += 1) {
+    for (let rightIndex = leftIndex + 1; rightIndex < VOICES.length; rightIndex += 1) {
+      const leftVoice = VOICES[leftIndex]!;
+      const rightVoice = VOICES[rightIndex]!;
+      let samePitchOverlapCount = 0;
+      let unisonOverlapCount = 0;
+      let sharedRhythmOverlapCount = 0;
+      let sameDirectionMotionCount = 0;
+
+      for (const tick of checkpoints) {
+        const left = activeNoteAt(notes, leftVoice, tick);
+        const right = activeNoteAt(notes, rightVoice, tick);
+        if (left === undefined || right === undefined) {
+          continue;
+        }
+        if (left.pitch === right.pitch) {
+          samePitchOverlapCount += 1;
+        }
+        if (positiveModulo(left.pitch - right.pitch, 12) === 0) {
+          unisonOverlapCount += 1;
+        }
+        if (left.startTick === right.startTick && left.durationTicks === right.durationTicks) {
+          sharedRhythmOverlapCount += 1;
+        }
+      }
+
+      for (const tick of checkpoints) {
+        const leftMotion = motionAt(notes, leftVoice, tick);
+        const rightMotion = motionAt(notes, rightVoice, tick);
+        if (leftMotion !== 0 && leftMotion === rightMotion) {
+          sameDirectionMotionCount += 1;
+        }
+      }
+
+      pairs.push({
+        leftVoice,
+        rightVoice,
+        samePitchOverlapCount,
+        unisonOverlapCount,
+        sharedRhythmOverlapCount,
+        sameDirectionMotionCount,
+      });
+    }
+  }
+
+  return pairs;
+}
+
+function countLeapRecoveryMisses(notes: readonly NoteEvent[], voice: Voice): number {
+  const voiceNotes = notes.filter((note) => note.voice === voice).sort(compareNotes);
+  let misses = 0;
+
+  for (let index = 1; index < voiceNotes.length - 1; index += 1) {
+    const previous = voiceNotes[index - 1]!;
+    const current = voiceNotes[index]!;
+    const next = voiceNotes[index + 1]!;
+    const leap = current.pitch - previous.pitch;
+    const recovery = next.pitch - current.pitch;
+    if (Math.abs(leap) >= 7 && !(Math.sign(leap) !== Math.sign(recovery) && Math.abs(recovery) <= 2)) {
+      misses += 1;
+    }
+  }
+
+  return misses;
+}
+
+function countRepeatedPitchRuns(notes: readonly NoteEvent[], voice: Voice): number {
+  const voiceNotes = notes.filter((note) => note.voice === voice).sort(compareNotes);
+  let runs = 0;
+  let runStart = 0;
+
+  for (let index = 1; index <= voiceNotes.length; index += 1) {
+    const previous = voiceNotes[index - 1];
+    const current = voiceNotes[index];
+    if (previous !== undefined && current !== undefined && current.pitch === previous.pitch) {
+      continue;
+    }
+    if (index - runStart >= 3) {
+      runs += 1;
+    }
+    runStart = index;
+  }
+
+  return runs;
+}
+
+function countSoloTextureSegments(notes: readonly NoteEvent[], startTick: number, endTick: number): number {
+  const checkpoints = noteCheckpoints(notes).filter((tick) => tick >= startTick && tick <= endTick);
+  let segments = 0;
+
+  for (let index = 0; index < checkpoints.length - 1; index += 1) {
+    const segmentStart = checkpoints[index]!;
+    const segmentEnd = checkpoints[index + 1]!;
+    if (segmentEnd <= segmentStart) {
+      continue;
+    }
+    const activeVoices = VOICES.filter((voice) =>
+      notes.some(
+        (note) =>
+          note.voice === voice && note.startTick < segmentEnd && segmentStart < note.startTick + note.durationTicks,
+      ),
+    );
+    if (activeVoices.length === 1 && segmentEnd - segmentStart >= TICKS_PER_QUARTER / 2) {
+      segments += 1;
+    }
+  }
+
+  return segments;
+}
+
+function activeNoteAt(notes: readonly NoteEvent[], voice: Voice, tick: number): NoteEvent | undefined {
+  return notes.find(
+    (note) => note.voice === voice && note.startTick <= tick && tick < note.startTick + note.durationTicks,
+  );
+}
+
+function motionAt(notes: readonly NoteEvent[], voice: Voice, tick: number): number {
+  const voiceNotes = notes.filter((note) => note.voice === voice).sort(compareNotes);
+  const index = voiceNotes.findIndex((note) => note.startTick === tick);
+  if (index <= 0) {
+    return 0;
+  }
+  return Math.sign(voiceNotes[index]!.pitch - voiceNotes[index - 1]!.pitch);
+}
+
+function noteCheckpoints(notes: readonly NoteEvent[]): number[] {
+  return [...new Set(notes.flatMap((note) => [note.startTick, note.startTick + note.durationTicks]))].sort(
+    (left, right) => left - right,
+  );
+}
+
+function compareNotes(left: NoteEvent, right: NoteEvent): number {
+  return left.startTick - right.startTick || left.pitch - right.pitch;
+}
+
+function positiveModulo(value: number, divisor: number): number {
+  return ((value % divisor) + divisor) % divisor;
 }

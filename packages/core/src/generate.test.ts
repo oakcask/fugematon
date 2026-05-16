@@ -637,6 +637,10 @@ test("generateScore reports phase-7 contour motion diagnostics", () => {
   assert.ok(fourBeat.outerVoiceSameDirectionRatio >= 0);
   assert.ok(fourBeat.outerVoiceContraryRatio >= 0);
   assert.ok(output.diagnostics.selectedCandidateEvaluations.length > 0);
+  assert.equal(output.diagnostics.selectedCandidateEvaluations[0]!.featureVersion, 1);
+  assert.ok(output.diagnostics.selectedCandidateEvaluations[0]!.explanations.entries.length > 0);
+  assert.ok(output.diagnostics.selectedCandidateEvaluations[0]!.explanations.voicePairs.length > 0);
+  assert.ok(output.diagnostics.selectedCandidateEvaluations[0]!.explanations.sections.length > 0);
   assert.ok(
     "fourBeatBassUpperSameDirectionRatio" in
       output.diagnostics.selectedCandidateEvaluations[0]!.dimensions.texture.features,
@@ -707,6 +711,12 @@ test("generateScore keeps phase-7 late-quality regression seeds explainable befo
     assert.deepEqual(gate.failures, []);
     assert.equal(gate.passed, true);
     assert.ok(selectedEvaluation !== undefined);
+    assert.equal(selectedEvaluation.featureVersion, 1);
+    assert.equal(selectedEvaluation.evaluationModelVersion, 1);
+    assert.ok(selectedEvaluation.explanations.entries.some((entry) => entry.instabilityCount > 0));
+    assert.ok(selectedEvaluation.explanations.voicePairs.some((pair) => pair.unisonOverlapCount > 0));
+    assert.ok(selectedEvaluation.explanations.voices.some((voice) => voice.leapRecoveryMisses >= 0));
+    assert.ok(selectedEvaluation.explanations.sections.some((section) => section.cadenceTargetCount > 0));
     assert.ok(output.diagnostics.entrySupportInstabilityDetails.length > 0);
     assert.ok(output.diagnostics.entrySupportSevereIntervalDetails.length > 0);
     assert.equal(
