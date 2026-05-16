@@ -37,6 +37,8 @@ export class ScorePlayer {
   private readonly master: GainNode;
   private readonly activeSources = new Set<OscillatorNode>();
   private readonly activeGains = new Set<GainNode>();
+  private startedAtSecond: number | undefined;
+  private durationSecond = 0;
 
   constructor(context = new AudioContext()) {
     this.context = context;
@@ -50,9 +52,23 @@ export class ScorePlayer {
     this.stop();
 
     const startAtSecond = this.context.currentTime + START_DELAY_SECONDS;
+    this.startedAtSecond = startAtSecond;
+    this.durationSecond = model.totalSeconds;
     for (const scheduled of createScheduledNotes(model, startAtSecond)) {
       this.scheduleOrganNote(scheduled);
     }
+  }
+
+  get playbackSecond(): number {
+    if (this.startedAtSecond === undefined) {
+      return 0;
+    }
+
+    return Math.min(this.durationSecond, Math.max(0, this.context.currentTime - this.startedAtSecond));
+  }
+
+  get isPlaying(): boolean {
+    return this.startedAtSecond !== undefined && this.context.currentTime < this.startedAtSecond + this.durationSecond;
   }
 
   stop(): void {
@@ -71,6 +87,8 @@ export class ScorePlayer {
 
     this.activeSources.clear();
     this.activeGains.clear();
+    this.startedAtSecond = undefined;
+    this.durationSecond = 0;
   }
 
   private scheduleOrganNote(scheduled: ScheduledNote): void {

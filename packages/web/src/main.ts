@@ -1,6 +1,7 @@
 import { generateScore } from "@fugematon/core";
 import "./style.css";
 import { ScorePlayer } from "./audio.js";
+import { drawPianoRoll } from "./piano-roll.js";
 import { createPlaybackModel, type PlaybackModel } from "./score.js";
 
 const DEFAULT_SEED = "fugue-smoke";
@@ -58,6 +59,9 @@ app.innerHTML = `
         <button type="button" class="secondary" id="stop">Stop</button>
       </div>
     </section>
+    <section class="visualizer-card" aria-label="Piano roll visualization">
+      <canvas id="piano-roll"></canvas>
+    </section>
   </section>
 `;
 
@@ -70,11 +74,14 @@ const pitchSpan = requireElement(document.querySelector<HTMLElement>("#pitch-spa
 const startButton = requireElement(document.querySelector<HTMLButtonElement>("#start"), "start button");
 const stopButton = requireElement(document.querySelector<HTMLButtonElement>("#stop"), "stop button");
 const transportStatus = requireElement(document.querySelector<HTMLElement>("#transport-status"), "transport status");
+const pianoRoll = requireElement(document.querySelector<HTMLCanvasElement>("#piano-roll"), "piano roll");
 
 seedInput.value = state.seed;
 render(state);
+drawPianoRoll(pianoRoll, state.model, 0);
 
 let player: ScorePlayer | undefined;
+let animationFrame: number | undefined;
 
 seedForm.addEventListener("submit", (event) => {
   event.preventDefault();
@@ -85,8 +92,10 @@ seedForm.addEventListener("submit", (event) => {
   }
 
   player?.stop();
+  cancelVisualizerLoop();
   state = createState(nextSeed);
   render(state);
+  drawPianoRoll(pianoRoll, state.model, 0);
   transportStatus.textContent = "Ready";
 });
 
@@ -96,7 +105,13 @@ startButton.addEventListener("click", () => {
 
 stopButton.addEventListener("click", () => {
   player?.stop();
+  cancelVisualizerLoop();
+  drawPianoRoll(pianoRoll, state.model, 0);
   transportStatus.textContent = "Stopped";
+});
+
+window.addEventListener("resize", () => {
+  drawPianoRoll(pianoRoll, state.model, player?.playbackSecond ?? 0);
 });
 
 function createState(seed: string): AppState {
@@ -121,10 +136,37 @@ async function startPlayback(): Promise<void> {
     player ??= new ScorePlayer();
     await player.play(state.model);
     transportStatus.textContent = `Playing ${state.seed}`;
+    startVisualizerLoop();
   } catch (error) {
     transportStatus.textContent = error instanceof Error ? error.message : "Playback failed";
   } finally {
     startButton.disabled = false;
+  }
+}
+
+function startVisualizerLoop(): void {
+  cancelVisualizerLoop();
+
+  const drawFrame = () => {
+    const playbackSecond = player?.playbackSecond ?? 0;
+    drawPianoRoll(pianoRoll, state.model, playbackSecond);
+
+    if (player?.isPlaying) {
+      animationFrame = window.requestAnimationFrame(drawFrame);
+      return;
+    }
+
+    animationFrame = undefined;
+    transportStatus.textContent = "Complete";
+  };
+
+  animationFrame = window.requestAnimationFrame(drawFrame);
+}
+
+function cancelVisualizerLoop(): void {
+  if (animationFrame !== undefined) {
+    window.cancelAnimationFrame(animationFrame);
+    animationFrame = undefined;
   }
 }
 
