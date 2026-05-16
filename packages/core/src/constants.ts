@@ -78,6 +78,17 @@ export const PHASE_5_REVIEW_SEEDS = [
   { seed: "contrary-motion", category: "review" },
 ] as const;
 
+export const PHASE_5_11_ROTATION_SEEDS = [
+  { seed: "restless-line", category: "rotation" },
+  { seed: "tight-stretto", category: "rotation" },
+  { seed: "quiet-cadence", category: "rotation" },
+  { seed: "angular-answer", category: "rotation" },
+  { seed: "modal-answer", category: "rotation" },
+  { seed: "modal-cadence", category: "rotation" },
+  { seed: "contrary-answer", category: "adversarial" },
+  { seed: "dense-modal", category: "adversarial" },
+] as const;
+
 export const PHASE_5_DIAGNOSTICS_PROFILE = {
   rangeViolations: 0,
   voiceCrossings: 0,
@@ -174,6 +185,45 @@ export const PHASE_5_10_DIAGNOSTICS_PROFILE = {
     "close-imitation": {
       maxShortStrongBeatEntryNoteCount: 30,
       maxSharedRhythmOverlapCount: 810,
+    },
+  },
+} as const;
+
+export const PHASE_5_11_DIAGNOSTICS_PROFILE = {
+  minCounterSubjectIdentityRetention: 0.573,
+  minRhythmicIndependenceScore: 0.079,
+  maxUnisonOverlapCount: 762,
+  maxSameDirectionMotionCount: 814,
+  maxSharedRhythmOverlapCount: 906,
+  maxLeapRecoveryMisses: 33,
+  maxShortStrongBeatEntryNoteCount: 33,
+  maxEntrySupportInstabilityCount: 160,
+  minSelectedCandidateEvaluationCount: 1,
+  followUpMargin: 0,
+  modalRotationSeeds: {
+    "angular-answer": {
+      minCounterSubjectIdentityRetention: 0.573,
+      maxSameDirectionMotionCount: 814,
+      maxLeapRecoveryMisses: 33,
+      minModalContextCount: 1,
+    },
+    "modal-answer": {
+      minCounterSubjectIdentityRetention: 0.573,
+      maxSameDirectionMotionCount: 814,
+      maxLeapRecoveryMisses: 33,
+      minModalContextCount: 1,
+    },
+    "modal-cadence": {
+      minCounterSubjectIdentityRetention: 0.573,
+      maxSameDirectionMotionCount: 814,
+      maxLeapRecoveryMisses: 33,
+      minModalContextCount: 1,
+    },
+    "dense-modal": {
+      minCounterSubjectIdentityRetention: 0.573,
+      maxSameDirectionMotionCount: 814,
+      maxLeapRecoveryMisses: 33,
+      minModalContextCount: 1,
     },
   },
 } as const;

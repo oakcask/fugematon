@@ -1,4 +1,8 @@
-import { PHASE_5_9_DIAGNOSTICS_PROFILE, PHASE_5_10_DIAGNOSTICS_PROFILE } from "./constants.js";
+import {
+  PHASE_5_9_DIAGNOSTICS_PROFILE,
+  PHASE_5_10_DIAGNOSTICS_PROFILE,
+  PHASE_5_11_DIAGNOSTICS_PROFILE,
+} from "./constants.js";
 import type { GenerationDiagnostics } from "./events.js";
 
 export type Phase59GateFailure = {
@@ -32,6 +36,10 @@ export type Phase510GateResult = {
     shortStrongBeatEntryNoteCount: number;
     entrySupportInstabilityCount: number;
   };
+};
+
+export type Phase511GateResult = Phase510GateResult & {
+  followUps: Phase59GateFailure[];
 };
 
 export type ManualListeningJudgement = "pass" | "needs-work" | "fail" | "not-reviewed";
@@ -179,6 +187,77 @@ export function evaluatePhase510Diagnostics(seed: string, diagnostics: Generatio
   };
 }
 
+export function evaluatePhase511Diagnostics(seed: string, diagnostics: GenerationDiagnostics): Phase511GateResult {
+  const phase510Gate = evaluatePhase510Diagnostics(seed, diagnostics);
+  const failures: Phase59GateFailure[] = [];
+  const followUps: Phase59GateFailure[] = [];
+  const { metrics } = phase510Gate;
+
+  addMinimumFailure(
+    failures,
+    "counterSubjectIdentityRetention",
+    metrics.counterSubjectIdentityRetention,
+    PHASE_5_11_DIAGNOSTICS_PROFILE.minCounterSubjectIdentityRetention,
+  );
+  addMinimumFailure(
+    failures,
+    "rhythmicIndependenceScore",
+    metrics.rhythmicIndependenceScore,
+    PHASE_5_11_DIAGNOSTICS_PROFILE.minRhythmicIndependenceScore,
+  );
+  addMaximumFailure(
+    failures,
+    "unisonOverlapCount",
+    metrics.unisonOverlapCount,
+    PHASE_5_11_DIAGNOSTICS_PROFILE.maxUnisonOverlapCount,
+  );
+  addMaximumFailure(
+    failures,
+    "sameDirectionMotionCount",
+    metrics.sameDirectionMotionCount,
+    PHASE_5_11_DIAGNOSTICS_PROFILE.maxSameDirectionMotionCount,
+  );
+  addMaximumFailure(
+    failures,
+    "sharedRhythmOverlapCount",
+    metrics.sharedRhythmOverlapCount,
+    PHASE_5_11_DIAGNOSTICS_PROFILE.maxSharedRhythmOverlapCount,
+  );
+  addMaximumFailure(
+    failures,
+    "leapRecoveryMisses",
+    metrics.leapRecoveryMisses,
+    PHASE_5_11_DIAGNOSTICS_PROFILE.maxLeapRecoveryMisses,
+  );
+  addMaximumFailure(
+    failures,
+    "shortStrongBeatEntryNoteCount",
+    metrics.shortStrongBeatEntryNoteCount,
+    PHASE_5_11_DIAGNOSTICS_PROFILE.maxShortStrongBeatEntryNoteCount,
+  );
+  addMaximumFailure(
+    failures,
+    "entrySupportInstabilityCount",
+    metrics.entrySupportInstabilityCount,
+    PHASE_5_11_DIAGNOSTICS_PROFILE.maxEntrySupportInstabilityCount,
+  );
+  addMinimumFailure(
+    failures,
+    "selectedCandidateEvaluationCount",
+    metrics.selectedCandidateEvaluationCount,
+    PHASE_5_11_DIAGNOSTICS_PROFILE.minSelectedCandidateEvaluationCount,
+  );
+  addPhase511ModalRotationFailures(failures, seed, diagnostics);
+  addPhase511FollowUps(followUps, seed, diagnostics, metrics);
+
+  return {
+    passed: failures.length === 0,
+    failures,
+    followUps,
+    metrics,
+  };
+}
+
 export function phase59ManualListeningBlockers(category: string, judgement: ManualListeningJudgement): string[] {
   if ((category === "representative" || category === "boundary") && judgement !== "pass") {
     return ["manual listening judgement must be pass before Phase 6"];
@@ -298,6 +377,104 @@ function addPhase510BoundaryFailures(
   }
 }
 
+function addPhase511ModalRotationFailures(
+  failures: Phase59GateFailure[],
+  seed: string,
+  diagnostics: GenerationDiagnostics,
+): void {
+  const profile =
+    PHASE_5_11_DIAGNOSTICS_PROFILE.modalRotationSeeds[
+      seed as keyof typeof PHASE_5_11_DIAGNOSTICS_PROFILE.modalRotationSeeds
+    ];
+
+  if (profile === undefined) {
+    return;
+  }
+
+  addMinimumFailure(
+    failures,
+    `${seed}.counterSubjectIdentityRetention`,
+    diagnostics.counterSubjectIdentityRetention,
+    profile.minCounterSubjectIdentityRetention,
+  );
+  addMaximumFailure(
+    failures,
+    `${seed}.sameDirectionMotionCount`,
+    diagnostics.sameDirectionMotionCount,
+    profile.maxSameDirectionMotionCount,
+  );
+  addMaximumFailure(
+    failures,
+    `${seed}.leapRecoveryMisses`,
+    diagnostics.leapRecoveryMisses,
+    profile.maxLeapRecoveryMisses,
+  );
+  addMinimumFailure(failures, `${seed}.modalContextCount`, diagnostics.modalContextCount, profile.minModalContextCount);
+}
+
+function addPhase511FollowUps(
+  followUps: Phase59GateFailure[],
+  seed: string,
+  diagnostics: GenerationDiagnostics,
+  metrics: Phase510GateResult["metrics"],
+): void {
+  addMinimumMarginFollowUp(
+    followUps,
+    `${seed}.counterSubjectIdentityRetention`,
+    metrics.counterSubjectIdentityRetention,
+    PHASE_5_11_DIAGNOSTICS_PROFILE.minCounterSubjectIdentityRetention,
+  );
+  addMinimumMarginFollowUp(
+    followUps,
+    `${seed}.rhythmicIndependenceScore`,
+    metrics.rhythmicIndependenceScore,
+    PHASE_5_11_DIAGNOSTICS_PROFILE.minRhythmicIndependenceScore,
+  );
+  addMaximumMarginFollowUp(
+    followUps,
+    `${seed}.unisonOverlapCount`,
+    metrics.unisonOverlapCount,
+    PHASE_5_11_DIAGNOSTICS_PROFILE.maxUnisonOverlapCount,
+  );
+  addMaximumMarginFollowUp(
+    followUps,
+    `${seed}.sameDirectionMotionCount`,
+    metrics.sameDirectionMotionCount,
+    PHASE_5_11_DIAGNOSTICS_PROFILE.maxSameDirectionMotionCount,
+  );
+  addMaximumMarginFollowUp(
+    followUps,
+    `${seed}.sharedRhythmOverlapCount`,
+    metrics.sharedRhythmOverlapCount,
+    PHASE_5_11_DIAGNOSTICS_PROFILE.maxSharedRhythmOverlapCount,
+  );
+  addMaximumMarginFollowUp(
+    followUps,
+    `${seed}.leapRecoveryMisses`,
+    metrics.leapRecoveryMisses,
+    PHASE_5_11_DIAGNOSTICS_PROFILE.maxLeapRecoveryMisses,
+  );
+  addMaximumMarginFollowUp(
+    followUps,
+    `${seed}.entrySupportInstabilityCount`,
+    metrics.entrySupportInstabilityCount,
+    PHASE_5_11_DIAGNOSTICS_PROFILE.maxEntrySupportInstabilityCount,
+  );
+
+  const modalProfile =
+    PHASE_5_11_DIAGNOSTICS_PROFILE.modalRotationSeeds[
+      seed as keyof typeof PHASE_5_11_DIAGNOSTICS_PROFILE.modalRotationSeeds
+    ];
+  if (modalProfile !== undefined) {
+    addMinimumMarginFollowUp(
+      followUps,
+      `${seed}.modalContextCount`,
+      diagnostics.modalContextCount,
+      modalProfile.minModalContextCount,
+    );
+  }
+}
+
 function addMinimumFailure(failures: Phase59GateFailure[], metric: string, actual: number, expected: number): void {
   if (actual < expected) {
     failures.push({ metric, actual, expected: `>= ${expected}` });
@@ -307,6 +484,28 @@ function addMinimumFailure(failures: Phase59GateFailure[], metric: string, actua
 function addMaximumFailure(failures: Phase59GateFailure[], metric: string, actual: number, expected: number): void {
   if (actual > expected) {
     failures.push({ metric, actual, expected: `<= ${expected}` });
+  }
+}
+
+function addMinimumMarginFollowUp(
+  followUps: Phase59GateFailure[],
+  metric: string,
+  actual: number,
+  expected: number,
+): void {
+  if (actual - expected <= PHASE_5_11_DIAGNOSTICS_PROFILE.followUpMargin) {
+    followUps.push({ metric, actual, expected: `> ${expected}` });
+  }
+}
+
+function addMaximumMarginFollowUp(
+  followUps: Phase59GateFailure[],
+  metric: string,
+  actual: number,
+  expected: number,
+): void {
+  if (expected - actual <= PHASE_5_11_DIAGNOSTICS_PROFILE.followUpMargin) {
+    followUps.push({ metric, actual, expected: `< ${expected}` });
   }
 }
 
