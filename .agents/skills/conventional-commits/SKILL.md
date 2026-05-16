@@ -21,7 +21,8 @@ Use this format:
 [optional footer(s)]
 ```
 
-- Use common types such as `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, or `revert`.
+- Use common types such as `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `chore`, or `revert`.
+- Use `chore` for CI-related changes, including workflow, pipeline, and automation updates.
 - Add a scope when it makes the affected area clearer, for example `fix(auth): handle expired tokens`.
 - Use `!` and a `BREAKING CHANGE:` footer when the change breaks public behavior or compatibility.
 - Keep the subject short, lower-case after the type when natural, and do not end it with a period.
