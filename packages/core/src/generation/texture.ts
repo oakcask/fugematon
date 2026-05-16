@@ -15,6 +15,16 @@ import {
 } from "./shared.js";
 import type { Exposition, SubjectNote } from "./types.js";
 
+export type ContinuityCounterpointInput = {
+  startTick: number;
+  durationTicks: number;
+  localKey: KeySignature;
+};
+
+export type ContinuityTexturePlan = ContinuityCounterpointInput & {
+  voices: Voice[];
+};
+
 export function addCounterpointTexture(
   notes: Exposition["notes"],
   subject: readonly SubjectNote[],
@@ -168,25 +178,36 @@ export function fitPitchNearPrevious(pitchClass: number, voice: Voice, previousP
   return pitch;
 }
 
-export function addContinuityCounterpoint(
-  notes: Exposition["notes"],
-  plan: {
-    startTick: number;
-    durationTicks: number;
-    localKey: KeySignature;
-  },
-): void {
-  if (plan.durationTicks <= 0) {
+export function addContinuityCounterpoint(notes: Exposition["notes"], input: ContinuityCounterpointInput): void {
+  const plan = buildContinuityTexturePlan(notes, input);
+  if (plan.voices.length === 0) {
     return;
+  }
+
+  for (const voice of plan.voices) {
+    addContinuityLine(notes, voice, plan);
+  }
+}
+
+export function buildContinuityTexturePlan(
+  notes: readonly NoteEvent[],
+  input: ContinuityCounterpointInput,
+): ContinuityTexturePlan {
+  if (input.durationTicks <= 0) {
+    return { ...input, voices: [] };
   }
 
   const voice = VOICE_ENTRY_ORDER.find(
-    (candidate) => !hasOverlap(notes, candidate, plan.startTick, plan.durationTicks),
+    (candidate) => !hasOverlap(notes, candidate, input.startTick, input.durationTicks),
   );
-  if (voice === undefined) {
-    return;
-  }
 
+  return {
+    ...input,
+    voices: voice === undefined ? [] : [voice],
+  };
+}
+
+function addContinuityLine(notes: Exposition["notes"], voice: Voice, plan: ContinuityCounterpointInput): void {
   const degrees = freeCounterpointDegreesForMode(plan.localKey.mode);
   const fillerSubject = degrees.map((scaleDegree, index) => ({
     offsetTick: index * (TICKS_PER_QUARTER / 2),
