@@ -26,6 +26,7 @@ export type {
   CadenceKind,
   CandidateEvaluation,
   EntryForm,
+  EntrySupportInstabilitySummary,
   FragmentTransform,
   FugueState,
   GenerationDiagnostics,

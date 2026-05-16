@@ -198,6 +198,9 @@ export const PHASE_5_11_DIAGNOSTICS_PROFILE = {
   maxLeapRecoveryMisses: 33,
   maxShortStrongBeatEntryNoteCount: 33,
   maxEntrySupportInstabilityCount: 160,
+  maxEntrySupportInstabilityPerEntry: 4,
+  maxConsecutiveEntrySupportInstabilities: 4,
+  maxUnresolvedEntrySupportInstabilityCount: 160,
   minSelectedCandidateEvaluationCount: 1,
   followUpMargin: 0,
   modalRotationSeeds: {

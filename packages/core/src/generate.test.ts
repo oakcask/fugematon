@@ -541,6 +541,18 @@ test("generateScore applies phase-5.11 margin gates across fixed and rotation se
     assert.ok(
       gate.metrics.entrySupportInstabilityCount <= PHASE_5_11_DIAGNOSTICS_PROFILE.maxEntrySupportInstabilityCount,
     );
+    assert.ok(
+      gate.metrics.maxEntrySupportInstabilityPerEntry <=
+        PHASE_5_11_DIAGNOSTICS_PROFILE.maxEntrySupportInstabilityPerEntry,
+    );
+    assert.ok(
+      gate.metrics.maxConsecutiveEntrySupportInstabilities <=
+        PHASE_5_11_DIAGNOSTICS_PROFILE.maxConsecutiveEntrySupportInstabilities,
+    );
+    assert.ok(
+      gate.metrics.unresolvedEntrySupportInstabilityCount <=
+        PHASE_5_11_DIAGNOSTICS_PROFILE.maxUnresolvedEntrySupportInstabilityCount,
+    );
   }
 });
 

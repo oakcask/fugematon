@@ -111,6 +111,7 @@ export function generateScore(input: GenerationInput): GenerationOutput {
       sharedRhythmOverlapCount: diagnostics.sharedRhythmOverlapCount,
       shortStrongBeatEntryNoteCount: diagnostics.shortStrongBeatEntryNoteCount,
       entrySupportInstabilityCount: diagnostics.entrySupportInstabilityCount,
+      entrySupportInstabilityDetails: diagnostics.entrySupportInstabilityDetails,
       durationDistribution: diagnostics.durationDistribution,
       repeatedPitchRunCount: diagnostics.repeatedPitchRunCount,
       allVoiceSilenceGapCount: diagnostics.allVoiceSilenceGapCount,

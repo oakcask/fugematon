@@ -5,11 +5,14 @@ import type { GenerationDiagnostics } from "@fugematon/core";
 import {
   evaluatePhase59Diagnostics,
   evaluatePhase510Diagnostics,
+  evaluatePhase511Diagnostics,
   exportMidi,
   generateScore,
+  PHASE_5_11_ROTATION_SEEDS,
   PHASE_5_REVIEW_SEEDS,
   type Phase59GateResult,
   type Phase510GateResult,
+  type Phase511GateResult,
   phase59ManualListeningBlockers,
 } from "@fugematon/core";
 import { helpText, parseArgs } from "./args.js";
@@ -54,7 +57,7 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
 async function writeReviewBundle(outDirectory: string, lengthTicks: number): Promise<void> {
   await mkdir(outDirectory, { recursive: true });
   const summary = {
-    schemaVersion: 2,
+    schemaVersion: 3,
     lengthTicks,
     seeds: [] as {
       seed: string;
@@ -64,12 +67,13 @@ async function writeReviewBundle(outDirectory: string, lengthTicks: number): Pro
       diagnosticsSummary: ReviewDiagnosticsSummary;
       phase59Gate: Phase59GateResult;
       phase510Gate: Phase510GateResult;
+      phase511Gate: Phase511GateResult;
     }[],
   };
   const listeningReview = createListeningReview(lengthTicks);
   const pairwisePreferences = createPairwisePreferences(lengthTicks);
 
-  for (const { seed, category } of PHASE_5_REVIEW_SEEDS) {
+  for (const { seed, category } of [...PHASE_5_REVIEW_SEEDS, ...PHASE_5_11_ROTATION_SEEDS]) {
     const output = generateScore({ seed, lengthTicks });
     const safeSeed = seed.replaceAll(/[^a-z0-9-]/gi, "-");
     const diagnosticsFile = `${safeSeed}.diagnostics.json`;
@@ -85,6 +89,7 @@ async function writeReviewBundle(outDirectory: string, lengthTicks: number): Pro
       diagnosticsSummary: summarizeDiagnostics(output.diagnostics),
       phase59Gate: evaluatePhase59Diagnostics(seed, output.diagnostics),
       phase510Gate: evaluatePhase510Diagnostics(seed, output.diagnostics),
+      phase511Gate: evaluatePhase511Diagnostics(seed, output.diagnostics),
     });
     listeningReview.seeds.push(createListeningSeedReview(seed, category, diagnosticsFile, midiFile));
   }
@@ -109,6 +114,9 @@ type ReviewDiagnosticsSummary = {
     sharedRhythmOverlapCount: number;
     shortStrongBeatEntryNoteCount: number;
     entrySupportInstabilityCount: number;
+    maxEntrySupportInstabilityPerEntry: number;
+    maxConsecutiveEntrySupportInstabilities: number;
+    unresolvedEntrySupportInstabilityCount: number;
   };
   melody: {
     leapRecoveryMisses: number;
@@ -183,6 +191,16 @@ function summarizeDiagnostics(diagnostics: GenerationDiagnostics): ReviewDiagnos
       sharedRhythmOverlapCount: diagnostics.sharedRhythmOverlapCount,
       shortStrongBeatEntryNoteCount: diagnostics.shortStrongBeatEntryNoteCount,
       entrySupportInstabilityCount: diagnostics.entrySupportInstabilityCount,
+      maxEntrySupportInstabilityPerEntry: maximum(
+        diagnostics.entrySupportInstabilityDetails.map((detail) => detail.instabilityCount),
+      ),
+      maxConsecutiveEntrySupportInstabilities: maximum(
+        diagnostics.entrySupportInstabilityDetails.map((detail) => detail.maxConsecutiveInstabilities),
+      ),
+      unresolvedEntrySupportInstabilityCount: diagnostics.entrySupportInstabilityDetails.reduce(
+        (sum, detail) => sum + detail.unresolvedInstabilityCount,
+        0,
+      ),
     },
     melody: {
       leapRecoveryMisses: diagnostics.leapRecoveryMisses,
@@ -198,6 +216,14 @@ function summarizeDiagnostics(diagnostics: GenerationDiagnostics): ReviewDiagnos
       ornamentDensity: diagnostics.ornamentDensity,
     },
   };
+}
+
+function maximum(values: readonly number[]): number {
+  if (values.length === 0) {
+    return 0;
+  }
+
+  return Math.max(...values);
 }
 
 function createListeningReview(lengthTicks: number): ListeningReview {
