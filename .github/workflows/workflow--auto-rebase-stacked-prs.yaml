@@ -1,0 +1,208 @@
+name: workflow / auto rebase stacked PRs
+
+on:
+  pull_request_target:
+    types:
+      - closed
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: auto-rebase-stacked-prs-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  find_dependent_prs:
+    name: Find dependent PRs
+    if: >-
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    outputs:
+      count: ${{ steps.dependent-prs.outputs.count }}
+      dependent_prs_json: ${{ steps.dependent-prs.outputs.dependent_prs_json }}
+
+    env:
+      REPO: ${{ github.repository }}
+      OLD_BASE_REF: ${{ github.event.pull_request.head.ref }}
+      AUTO_REBASE_LABEL: auto-rebase
+      MANUAL_REBASE_LABEL: needs-manual-rebase
+
+    steps:
+      - name: Ensure labels exist
+        uses: actions/github-script@373c709c69115d41ff229c7e5df9f8788daa9553 # v9
+        env:
+          AUTO_REBASE_LABEL: ${{ env.AUTO_REBASE_LABEL }}
+          MANUAL_REBASE_LABEL: ${{ env.MANUAL_REBASE_LABEL }}
+        with:
+          script: |
+            const labels = [
+              {
+                name: process.env.AUTO_REBASE_LABEL,
+                color: '0E8A16',
+                description: 'Allow automatic rebase when a stacked PR base is merged',
+              },
+              {
+                name: process.env.MANUAL_REBASE_LABEL,
+                color: 'B60205',
+                description: 'Automatic rebase failed or was skipped',
+              },
+            ];
+
+            for (const label of labels) {
+              try {
+                await github.rest.issues.createLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  ...label,
+                });
+              } catch (error) {
+                if (error.status !== 422) {
+                  throw error;
+                }
+              }
+            }
+
+      - name: Find dependent PRs
+        id: dependent-prs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          gh pr list \
+            --repo "$REPO" \
+            --state open \
+            --base "$OLD_BASE_REF" \
+            --label "$AUTO_REBASE_LABEL" \
+            --json number,headRefName,headRepository,isDraft \
+            --jq '
+              [
+                .[]
+                | select(.isDraft == false)
+                | select(.headRepository.nameWithOwner == env.REPO)
+              ]
+            ' > dependent-prs.json
+
+          count="$(jq 'length' dependent-prs.json)"
+          echo "count=$count" >> "$GITHUB_OUTPUT"
+          {
+            echo 'dependent_prs_json<<EOF'
+            cat dependent-prs.json
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+
+  rebase-dependent-prs:
+    name: Rebase PR #${{ matrix.pr.number }}
+    needs: find_dependent_prs
+    if: needs.find_dependent_prs.outputs.count != '0'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        pr: ${{ fromJSON(needs.find_dependent_prs.outputs.dependent_prs_json) }}
+
+    env:
+      REPO: ${{ github.repository }}
+      OLD_BASE_REF: ${{ github.event.pull_request.head.ref }}
+      OLD_BASE_SHA: ${{ github.event.pull_request.head.sha }}
+      NEW_BASE_REF: ${{ github.event.pull_request.base.ref }}
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      AUTO_REBASE_LABEL: auto-rebase
+      MANUAL_REBASE_LABEL: needs-manual-rebase
+
+    steps:
+      - name: Generate app token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3
+        with:
+          client-id: ${{ secrets.TOKEN_GEN_CLIENT_ID }}
+          private-key: ${{ secrets.TOKEN_GEN_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: Checkout with app token
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          fetch-depth: 0
+          path: rebase-work
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Rebase dependent PRs
+        id: rebase
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          PR_NUMBER: ${{ matrix.pr.number }}
+          HEAD_REF: ${{ matrix.pr.headRefName }}
+        run: |
+          set -uo pipefail
+
+          cd rebase-work
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          status=failed
+          echo "Rebasing PR #${PR_NUMBER}: ${HEAD_REF}"
+
+          encoded_head_ref="$(jq -rn --arg ref "$HEAD_REF" '$ref | @uri')"
+
+          if ! protected="$(gh api "repos/${REPO}/branches/${encoded_head_ref}" --jq '.protected')"; then
+            status=skipped
+          elif [[ "$HEAD_REF" == "$DEFAULT_BRANCH" || "$HEAD_REF" == "$NEW_BASE_REF" || "$protected" == "true" ]]; then
+            status=skipped
+          elif git fetch --no-tags origin \
+            "+refs/heads/${NEW_BASE_REF}:refs/remotes/origin/${NEW_BASE_REF}" \
+            "+refs/heads/${HEAD_REF}:refs/remotes/origin/${HEAD_REF}" \
+            && git switch --detach "origin/${HEAD_REF}"; then
+            if ! git merge-base --is-ancestor "$OLD_BASE_SHA" HEAD; then
+              status=skipped
+            elif git rebase --onto "origin/${NEW_BASE_REF}" "$OLD_BASE_SHA" HEAD; then
+              if git push --force-with-lease=refs/heads/"${HEAD_REF}":refs/remotes/origin/"${HEAD_REF}" \
+                origin HEAD:refs/heads/"${HEAD_REF}" \
+                && gh pr edit "$PR_NUMBER" --repo "$REPO" --base "$NEW_BASE_REF"; then
+                status=rebased
+              fi
+            else
+              git rebase --abort || true
+            fi
+          fi
+
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+
+      - name: Update PR labels
+        uses: actions/github-script@373c709c69115d41ff229c7e5df9f8788daa9553 # v9
+        env:
+          MANUAL_REBASE_LABEL: ${{ env.MANUAL_REBASE_LABEL }}
+          PR_NUMBER: ${{ matrix.pr.number }}
+          REBASE_STATUS: ${{ steps.rebase.outputs.status }}
+        with:
+          script: |
+            const manualLabel = process.env.MANUAL_REBASE_LABEL;
+            const issue_number = Number(process.env.PR_NUMBER);
+            const status = process.env.REBASE_STATUS;
+
+            if (status === 'rebased') {
+              try {
+                await github.rest.issues.removeLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number,
+                  name: manualLabel,
+                });
+              } catch (error) {
+                if (error.status !== 404) {
+                  throw error;
+                }
+              }
+              return;
+            }
+
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number,
+              labels: [manualLabel],
+            });

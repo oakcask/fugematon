@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - .github/workflows/*.yaml
+      - .github/workflows/*.yml
 
 permissions:
   contents: read
