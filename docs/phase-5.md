@@ -211,7 +211,7 @@ Phase 5 の自動品質ゲートは、review bundle、counterpoint texture、har
 
 手動聴取は review bundle が生成する MIDI を対象に継続する。Phase 5 の CI gate は、手動聴取で見つかった退屈さや違和感を後続の rubric と閾値に反映できる形にしている。
 
-Phase 6 の履歴、巻き戻し、操作パラメータへ進む前に、Phase 5.6、Phase 5.7、Phase 5.8 を追加する。さらに、評価関数の説明可能性と学習済みパラメータの導入可否を Phase 5.9、Phase 5.10 として扱う。
+Phase 6 の履歴、巻き戻し、操作パラメータへ進む前に、Phase 5.6、Phase 5.7、Phase 5.8 を追加する。Phase 5.7 後の再レビューで、声部独立、旋律線、リズム対位法、美しさ diagnostics の説明力がまだ弱いと分かったため、Phase 5.9-5.12 を追加してから Phase 6 へ進む。
 
 ## 評価関数と学習済みパラメータの計画
 
@@ -276,9 +276,11 @@ type CandidateEvaluation = {
 1. Phase 5.6 で `CandidateEvaluation` と dimension 別 scoring を導入し、既存 `scoreCandidate()` を wrapper 化する。
 2. Phase 5.6 の texture diagnostics を、候補評価の feature extraction と共通化する。
 3. Phase 5.8 の manual listening gate で、seed ごとに「良い候補」「悪い候補」「判断不能」を記録できる形式を追加する。
-4. Phase 5.9 として、手調整の `EvaluationWeights` を外部定義し、review bundle に scoring breakdown を出す。
-5. Phase 5.10 として、offline の pairwise ranking から learned weights を生成し、manual weights と learned weights の A/B review を行う。
-6. Phase 6 の操作パラメータは、評価器の feature と weight が説明可能になってから、次の状態遷移以降に反映する。
+4. Phase 5.9 として、review seed 全体に美しさ gate を広げ、modal seed や ornament seed の劣化を代表 seed だけで見逃さないようにする。
+5. Phase 5.10 として、声部独立とリズム対位法を改善し、unison、同方向進行、同一リズムの過密を候補選択で避ける。
+6. Phase 5.11 として、旋律線、跳躍回収、フレーズ境界、装飾配置を整える。
+7. Phase 5.12 として、手調整の `EvaluationWeights`、pairwise preference、必要に応じた learned weights の A/B review を扱う。
+8. Phase 6 の操作パラメータは、美しさ gate と評価器の feature/weight が説明可能になってから、次の状態遷移以降に反映する。
 
 ### 調査した参考文献
 
@@ -334,29 +336,69 @@ Phase 5.6 は、既存の Phase 5 gate を保ったまま、候補選択と diag
 * modal seed は実際に modal context を生成することを diagnostics で確認する。
 * mode の特徴音、modal cadence、tonal cadence への寄りすぎを指標化する。
 
+#### 実装記録
+
+Phase 5.7 は、review seed 名だけが modal で実体は minor だった問題を修正し、modal context を生成結果と diagnostics の両方で確認できるようにした。
+
+* `KeyMode` に dorian、mixolydian、aeolian を追加した。
+* `modal-dorian` は dorian mode の key signature、entry plan、section plan を生成する。
+* modal mode の counterpoint は特徴音を含む degree pattern を使い、modal context が実音にも現れるようにした。
+* modal section は modal cadence として扱い、tonal cadence への寄りすぎを diagnostics で warning 化できる。
+* diagnostics に modal context count、modal characteristic tone hits、modal cadence hits、tonal cadence overuse warnings を追加した。
+* MIDI key signature は dorian と mixolydian を relative major、aeolian を relative minor として書き出す。
+
+#### 完了判定
+
+リポジトリ上の Phase 5.7 自動完了条件は満たしている。
+
+* `modal-dorian` の key signature と section plan が dorian mode になる。
+* modal context、特徴音、modal cadence は diagnostics 上で確認できる。
+* tonal cadence への寄りすぎは representative modal seed の gate で 0 warning を維持する。
+* Phase 5.6 までの hard constraints と review seed gate は維持している。
+
 ### Phase 5.8: 聴取 gate
 
-* review bundle ごとに手動聴取メモを残す形式を決める。
-* 主題の記憶しやすさ、非 entry 声部の歌いやすさ、episode の推進力、stretto の緊張感、長時間の退屈さを seed ごとに記録する。
+Phase 5.7 後の複数 seed review では、hard constraints は安定したが、声部独立、旋律線、リズム対位法、装飾の意味付け、美しさ diagnostics の説明力がまだ弱いと分かった。詳細は `phase-5-8-quality-review.md` を参照する。
+
+* review bundle ごとに diagnostics summary、MIDI、手動聴取メモ、seed 別判定を残す形式を固定する。
+* 主題の記憶しやすさ、counter-subject の再認識性、非 entry 声部の歌いやすさ、episode の推進力、stretto の緊張感、長時間の退屈さを seed ごとに記録する。
 * `fugue-smoke` を回帰確認 seed として扱い、冒頭 entry、声部独立、リズム多様性、同音連打、装飾音、全休止区間を聴取で確認する。
-* 自動 gate を通過しても、聴取で退屈または機械的と判断した seed は Phase 6 へ進む条件を満たさない。
+* 自動 diagnostics が通っても、聴取で退屈、機械的、声部が独立して聞こえないと判断した seed は Phase 6 へ進めない。
 * 後続の learned aesthetic score の教師データにできるよう、候補または生成結果の pairwise preference を保存できる形式を検討する。
 
-### Phase 5.9: 評価重みの外部化
+### Phase 5.9: review seed 全体の美しさ gate
+
+* Phase 5.6/5.7 の分解指標を、単一代表 seed だけでなく review seed 全体に適用する。
+* modal seed、close imitation seed、ornament seed、sparse cadence seed を、それぞれ専用の境界条件として扱う。
+* counter-subject identity retention、rhythmic independence、unison overlap、same direction motion、shared rhythm overlap、leap recovery miss、selected candidate の melody cost と texture cost に review seed 全体の閾値を置く。
+* `episodeDirectionScore`、`strettoClarityScore`、`styleModulationFit`、`controlledAmbiguityScore`、`freeCounterpointContourScore` が全 seed で満点に張り付く場合は、section 単位の説明が出るまで Phase 通過条件にしない。
+* Phase 5.8 の手動聴取で問題になった seed は、次回 review bundle でも同じ観点を回帰確認する。
+
+### Phase 5.10: 声部独立とリズム対位法
+
+* counter-subject と free counterpoint に、主題と異なるリズム型、反行、保持と動きの交替、休符の受け渡しを持たせる。
+* unison overlap、same direction motion、shared rhythm overlap を候補選択の主要コストへ引き上げる。
+* entry 周辺と stretto-like section では、完全協和の過密と同一リズムの重なりを通常 section より厳しく扱う。
+* 音価分布を style profile と section role に結び付け、`ornament-test` が装飾密度だけでなく装飾の配置理由を diagnostics で説明できるようにする。
+
+### Phase 5.11: 旋律線とフレーズ整形
+
+* 大跳躍後の反行、順次回収、局所的な山と谷、長期 contour を候補生成と scoring に入れる。
+* 意図しない同音連打は tie または装飾的反復へ変換する。
+* cadence 前、entry 終端、長い保持音の前後に、trill、mordent、turn、passing tone、neighbor tone を style profile に応じて配置する。
+* subject return や cadence target の前後に、聴感上の呼吸と緊張解決が分かる phrase boundary を置く。
+
+### Phase 5.12: 評価重みと pairwise preference
 
 * 手調整の `EvaluationWeights` を source code 内の散在した係数から分離し、feature version と evaluation model version を持つ小さな定義として管理する。
 * review bundle は、total cost だけでなく dimension 別の score breakdown を出力する。
 * hard constraint、rule-based soft score、learned aesthetic score の寄与を別々に表示し、どの重みが候補選択を支配したか確認できるようにする。
-
-### Phase 5.10: 事前学習済み評価パラメータ
-
-* offline training で pairwise preference から soft score の重みを学習する。
-* 初期モデルは線形重みまたは説明可能な小型モデルに限定し、runtime に外部 API、非決定的推論、大型モデルを入れない。
-* learned weights は manual weights と A/B review し、代表 seed で hard constraints、manual listening gate、long score diagnostics を同時に満たす場合だけ既定値候補にする。
+* offline training で pairwise preference から soft score の重みを学習する場合、初期モデルは線形重みまたは説明可能な小型モデルに限定し、runtime に外部 API、非決定的推論、大型モデルを入れない。
+* learned weights は hard constraints と manual listening gate を上書きできない。採用前に manual weights と A/B review し、代表 seed の diagnostics と聴取 gate を同時に満たすことを確認する。
 * 学習済み重みを採用して ScoreEvent 列が変わる場合は、`generatorVersion` を更新する。
 
 ## 対象外
 
-* 操作パラメータの UI は Phase 5.8 の聴取 gate と Phase 5.9 の評価内訳整備後、Phase 6 で扱う。
+* 操作パラメータの UI は Phase 5.8-5.12 の美しさ gate、声部独立、旋律線、評価内訳整備後、Phase 6 で扱う。
 * 生成探索の Worker 化は Phase 7 で扱う。
 * 五線譜表示は別途必要性が固まってから扱う。

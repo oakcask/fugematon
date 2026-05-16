@@ -154,12 +154,18 @@ function encodeTimeSignature(signature: TimeSignature): [number, number, number,
 
 function encodeKeySignature(signature: KeySignature): [number, number] {
   const fifths = KEY_SIGNATURES.get(relativeMajorTonic(signature)) ?? 0;
-  return [fifths & 0xff, signature.mode === "minor" ? 1 : 0];
+  return [fifths & 0xff, signature.mode === "minor" || signature.mode === "aeolian" ? 1 : 0];
 }
 
 function relativeMajorTonic(signature: KeySignature): string {
   if (signature.mode === "major") {
     return signature.tonic;
+  }
+  if (signature.mode === "dorian") {
+    return transposeTonicName(signature.tonic, -2);
+  }
+  if (signature.mode === "mixolydian") {
+    return transposeTonicName(signature.tonic, 5);
   }
 
   return (
@@ -181,6 +187,29 @@ function relativeMajorTonic(signature: KeySignature): string {
       ["Ab", "Cb"],
     ]).get(signature.tonic) ?? "C"
   );
+}
+
+function transposeTonicName(tonic: string, semitones: number): string {
+  const pitchClasses = new Map<string, number>([
+    ["C", 0],
+    ["D", 2],
+    ["E", 4],
+    ["F", 5],
+    ["G", 7],
+    ["A", 9],
+    ["B", 11],
+    ["Bb", 10],
+    ["Eb", 3],
+    ["Ab", 8],
+    ["Db", 1],
+    ["F#", 6],
+  ]);
+  const names = new Map<number, string>([...pitchClasses.entries()].map(([name, pitchClass]) => [pitchClass, name]));
+  const pitchClass = pitchClasses.get(tonic);
+  if (pitchClass === undefined) {
+    return "C";
+  }
+  return names.get((((pitchClass + semitones) % 12) + 12) % 12) ?? "C";
 }
 
 function variableLengthQuantity(value: number): number[] {

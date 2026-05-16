@@ -114,3 +114,10 @@ export const PHASE_5_6_DIAGNOSTICS_PROFILE = {
   maxAllVoiceSilenceGapCount: 0,
   minOrnamentDensity: 0.1,
 } as const;
+
+export const PHASE_5_7_DIAGNOSTICS_PROFILE = {
+  minModalContextCount: 1,
+  minModalCharacteristicToneHits: 1,
+  minModalCadenceHits: 1,
+  maxTonalCadenceOveruseWarnings: 0,
+} as const;
