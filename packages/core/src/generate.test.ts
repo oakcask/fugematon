@@ -180,6 +180,18 @@ test("generateScore validates representative phase-4 seeds", () => {
   }
 });
 
+test("generateScore reports phase-5 counterpoint texture metrics", () => {
+  const output = generateScore({ seed: "lyrical-line", lengthTicks: PHASE_3_LENGTH_TICKS });
+
+  assert.ok(output.diagnostics.counterSubjectCoverage >= 0.5);
+  assert.ok(output.diagnostics.freeCounterpointCoverage >= 0.5);
+  assert.equal(output.diagnostics.fallbackPassageCount, 0);
+  assert.equal(output.diagnostics.melodicStagnationWarnings, 0);
+  assert.ok(output.diagnostics.leapRecoveryMisses <= 12);
+  assert.ok(output.events.some((event) => event.kind === "note" && event.role === "counter-subject"));
+  assert.ok(output.events.some((event) => event.kind === "note" && event.role === "free-counterpoint"));
+});
+
 function countIssues(issues: readonly { code: string }[], code: string): number {
   return issues.filter((issue) => issue.code === code).length;
 }
