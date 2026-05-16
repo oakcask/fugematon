@@ -216,7 +216,7 @@ export type CandidateEvaluationExplanations = {
 
 export type CandidateEvaluation = {
   featureVersion: 1;
-  evaluationModelVersion: 1;
+  evaluationModelVersion: 1 | 2;
   totalCost: number;
   hardFailures: DiagnosticIssueCode[];
   explanations: CandidateEvaluationExplanations;

@@ -12,7 +12,7 @@ pnpm fugematon review --out samples/phase-musical-review --ticks 129600
 
 生成 bundle は schema version 6、22 seed、129600 ticks で、全 seed の Phase 6 gate と Phase 7 gate は pass した。`listening-review.json` は全 seed が `not-reviewed`、`pairwise-preferences.json` は空のため、今回の美的判断は diagnostics と MIDI bundle の構造 evidence に基づく暫定レビューである。
 
-schema version 6 では、selected candidate evaluation が `featureVersion`、`evaluationModelVersion`、entry、voice-pair、voice、section 単位の explanations を持つ。これは Phase 7 後半の観察基盤としては前進だが、下記の blocker は解消していない。特に `fugue-smoke` の最初の selected candidate では、harmony dimension が entry support instability 3、severe entry interval 3、unresolved severe entry interval 3 を feature に持ちながら cost 0/reward 22 になっており、現行 breakdown は「なぜその濁りを許したか」を音楽的に説明できていない。
+schema version 6 では、selected candidate evaluation が `featureVersion`、`evaluationModelVersion`、entry、voice-pair、voice、section 単位の explanations を持つ。これは Phase 7 後半の観察基盤としては前進だが、下記の blocker は解消していない。最初の entry harmony scoring では `fugue-smoke` の selected candidate が entry support instability 3、severe entry interval 3、unresolved severe entry interval 3 を harmony cost に入れるようになったが、entry 周辺の severe seconds/sevenths は score 全体ではまだ高く、現行 breakdown は「なぜその濁りを許したか」を十分に説明できていない。
 
 ## 文献ベースライン
 
