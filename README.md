@@ -85,7 +85,7 @@ Open the local URL printed by Vite. The app lets you:
 * Play a Phase 3 score with exposition, episode, subject return, and stretto-like states.
 * Press Start to begin WebAudio playback after the required browser user gesture.
 * Press Stop to stop scheduled playback.
-* Watch the four-voice score and highlighted subject entries on the Canvas piano roll while it plays.
+* Watch a fixed-window Canvas piano roll that follows playback and keeps highlighted subject entries readable.
 
 Run the headless browser smoke inspection:
 

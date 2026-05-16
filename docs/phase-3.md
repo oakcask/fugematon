@@ -45,21 +45,21 @@ Phase 3 の完了条件は、構造 MVP としては満たしている。
 
 ## 既知の UI 制約
 
-現行 Web UI のピアノロールは、生成済み score の全 duration を canvas 横幅に正規化している。Phase 3 の default seed は約 166 秒の長尺 score になるため、`fugue-smoke` の初期表示では作品全体が1画面に圧縮され、ノート形状と主題 entry の視認性が落ちる。
+Phase 3 UI follow-up 前の Web UI は、生成済み score の全 duration を canvas 横幅に正規化していた。Phase 3 の default seed は約 166 秒の長尺 score になるため、`fugue-smoke` の初期表示では作品全体が1画面に圧縮され、ノート形状と主題 entry の視認性が落ちていた。
 
-この問題は音楽生成の意味論とは独立した表示設計の不足である。Phase 4 の音楽モデル修正に入る前の UI follow-up として、以下を先に直す。
+この問題は音楽生成の意味論とは独立した表示設計の不足である。Phase 4 の音楽モデル修正に入る前の UI follow-up として、以下を修正した。
 
 * ピアノロールの主表示は、作品全体ではなく固定秒数の viewport を描画する。
 * 初期表示は冒頭 section を見せ、再生中は playhead 周辺へ追従する。
 * viewport 外のノートは描画対象から外し、主題、応答、主題断片の stroke が潰れない密度を保つ。
 * total duration は metric として残し、全体俯瞰は必要になった時点で overview として主表示から分離する。
-* `fugue-smoke` の default score で、初期表示と再生中表示のどちらもノート幅が視認できることをテストまたは手動確認の条件にする。
+* `fugue-smoke` の default score で、初期表示と再生中表示のどちらもノート幅が視認できることを layout test と UI inspection の確認対象にする。
 
-## 改訂後の後続計画
+## Phase 3 UI follow-up 完了記録
 
-Phase 3 UI follow-up では、長尺 score の表示範囲を修正する。
+Phase 3 UI follow-up では、長尺 score の表示範囲を修正した。
 
-* `computePianoRollLayout` に表示窓の start/end second を渡せるようにする。
+* `computePianoRollLayout` に表示窓の start/end second を渡せる。
 * `drawPianoRoll` は停止中に冒頭 viewport、再生中に playhead 追従 viewport を使う。
 * beat grid、playhead、現在秒表示は viewport 座標で描画する。
 * layout test では、長尺 score 全体ではなく viewport 内の note だけが canvas bounds に入ることを検証する。
