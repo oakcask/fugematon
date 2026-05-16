@@ -1,11 +1,14 @@
-import type { FugueState, GenerationOutput, MetaEvent, NoteEvent, ScoreEvent, Voice } from "@fugematon/core";
+import type {
+  FugueState,
+  GenerationOutput,
+  MetaEvent,
+  NoteEvent,
+  PlannedEntry,
+  ScoreEvent,
+  Voice,
+} from "@fugematon/core";
 
-export type PlaybackEntry = {
-  voice: Voice;
-  form: "subject" | "answer" | "subject-fragment";
-  state: FugueState;
-  startTick: number;
-};
+export type PlaybackEntry = PlannedEntry;
 
 export type PlaybackNote = {
   voice: Voice;

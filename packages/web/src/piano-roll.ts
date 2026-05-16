@@ -118,7 +118,9 @@ export function drawPianoRoll(
       context.globalAlpha = 0.94;
       context.strokeStyle = ENTRY_STROKES[note.entry.form];
       context.lineWidth = note.entry.state === "stretto-like" ? 3 : 2;
+      context.setLineDash(note.entry.answerKind === "tonal" ? [5, 3] : []);
       context.stroke();
+      context.setLineDash([]);
     }
   }
 

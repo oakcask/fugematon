@@ -29,7 +29,7 @@ app.innerHTML = `
         <input id="seed" name="seed" autocomplete="off" spellcheck="false" />
         <button type="submit">Regenerate</button>
       </div>
-      <p class="hint">The same seed always produces the same Phase 3 score.</p>
+      <p class="hint">The same seed always produces the same Phase 4 score.</p>
     </form>
     <section class="score-card" aria-live="polite">
       <div>
