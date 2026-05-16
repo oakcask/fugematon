@@ -24,6 +24,6 @@ Phase 6 のリポジトリ上の自動完了条件は満たしている。
 
 ## 持ち越し
 
-Phase 6 は自動 gate の固定と、solo texture の説明可能性を扱う。候補評価の重みを dimension ごとに説明し、follow-up の理由を seed、section、voice、entry/cadence 周辺の単位で出す作業は Phase 7 で扱う。
+Phase 6 後の音楽美レビューでは、自動 gate は全 seed で通過したが、entry 支持和声、旋律 contour、exact same-pitch unison、rhythmic lockstep、solo texture、形式の固定性がまだ十分ではないと判断した。詳細は [../reviews/phase-6-quality-review.md](../reviews/phase-6-quality-review.md) を参照する。
 
-手動聴取で見つかった旋律線、装飾、phrase boundary の違和感は、Phase 7 の評価説明力と pairwise preference の入力にする。
+Phase 7 の前半では、評価説明力の前に entry 支持和声、旋律 contour、voice-pair/register placement、episode/continuation planner を改善する。候補評価の重みを dimension ごとに説明し、follow-up の理由を seed、section、voice、entry/cadence 周辺の単位で出す作業は、その後の Phase 7 後半で扱う。
