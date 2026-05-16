@@ -1,0 +1,17 @@
+{
+  "name": "@fugematon/cli",
+  "version": "0.0.0",
+  "type": "module",
+  "bin": {
+    "fugematon": "./dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "dependencies": {
+    "@fugematon/core": "workspace:*"
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "test": "node --test dist/**/*.test.js"
+  }
+}
