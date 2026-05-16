@@ -155,13 +155,14 @@
   * modal seed では、local mode の特徴音が主題または episode に現れ、tonal cadence だけに回収されすぎない。
 * Phase 5 は音楽的品質ゲートとして扱う。
   * hard constraints だけでなく、counter-subject coverage、free counterpoint coverage、melodic stagnation、leap recovery、leading tone resolution、dominant resolution、predominant direction、cadence target hit、harmonic function match、episode direction、stretto clarity を diagnostics または soft score に持たせる。
+  * `samePitchOverlapCount` は `unisonOverlapCount` と分けて扱う。同じ MIDI pitch を複数パートが同時に鳴らす exact unison は、明示的な doubling、終止、短い経過的重なりなどで説明できない限り、同じ楽器の texture では禁則寄りの制約にする。
   * tonal context では導音から主音への解決と predominant -> dominant -> tonic の進行を強く評価し、cadence 周辺では未解決を品質ゲートの対象にする。
   * deceptive motion、evaded cadence、pivot harmony、modulatory motion は、後続の harmonic anchor へ到達する場合に管理された曖昧さとして加点する。
   * 曖昧な解決が複数 section にわたって回収されない場合は unresolved ambiguity warning として扱う。
   * 同主調への転調、parallel major/minor shift、借用和音的な色彩変化は style profile に応じて評価し、strict-classical では控えめ、hybrid または popular-tolerant では表情変化として許容する。
   * modal context では古典的な導音解決を常に強制せず、mode の特徴音と modal cadence の説得力を別指標で扱う。
   * 複数 seed の note 数、entry 数、状態遷移列が不自然に同型になり続ける場合は form repetition warning として扱う。
-  * Phase 6 の操作パラメータは、Phase 5.9-5.12 の代表 seed と境界 seed が美しさ gate を通過してから増やす。
+  * Phase 8 の操作パラメータは、Phase 6-7 の代表 seed と境界 seed が美しさ gate と manual listening gate を通過してから増やす。
 * 閾値はコード内に散らさず、CI 用の diagnostics profile として管理する。
 * diagnostics の項目追加は互換的変更として扱うが、既存閾値の厳格化は generatorVersion とは別に CI 設定の変更として扱う。
 
@@ -477,14 +478,14 @@ pnpm fugematon diagnose --seed bach-001 --ticks 7680
 * Phase 5: 音楽的品質ゲートとして、レビュー harness、counter-subject、自由対位、旋律美 scoring、HarmonicPlan、VoiceLeadingObligation、episode sequence、cadence plan、stretto clarity、和声安定度スコアを実装する。
 * Phase 5.6: Phase 5 review bundle で見つかった大跳躍回収、texture 指標の粗さ、満点に張り付く美しさ diagnostics を修正する。`fugue-smoke` で確認した冒頭4声同時発音、同音高・同方向進行の過多、リズム語彙不足、同音連打、装飾音不足、全声部休止を diagnostics と scoring に入れる。
 * Phase 5.7: dorian、mixolydian、aeolian などの modal context を実装し、modal review seed が実際に旋法として生成されることを diagnostics で確認する。
-* Phase 5.8: review bundle の手動聴取 gate と聴取メモ rubric を固定し、自動 diagnostics だけで Phase 6 へ進まないようにする。`fugue-smoke` は回帰確認 seed として、冒頭 entry、声部独立、音価の多様性、装飾、休符の扱い、アルト主題後の最初のソプラノ応唱が作る和声的濁りを確認する。
-* Phase 5.9: Phase 5.6/5.7 の分解指標を review seed 全体へ広げ、counter-subject identity、rhythmic independence、unison、同方向進行、同一リズム、leap recovery、selected candidate の melody cost と texture cost に美しさ gate を置く。`fugue-smoke` では、アルト主題後の最初のソプラノ応唱が支え声部と不安定な 2 度衝突、応唱 local key の root と scale 外音の衝突、解決感の弱い 4 度構成を作らないことを回帰確認する。manual listening judgement が `pass` でない代表 seed と境界 seed は Phase 6 前の blocker として扱う。
+* Phase 5.8: review bundle の手動聴取 gate と聴取メモ rubric を固定し、自動 diagnostics だけで操作機能フェーズへ進まないようにする。`fugue-smoke` は回帰確認 seed として、冒頭 entry、声部独立、音価の多様性、装飾、休符の扱い、アルト主題後の最初のソプラノ応唱が作る和声的濁りを確認する。
+* Phase 5.9: Phase 5.6/5.7 の分解指標を review seed 全体へ広げ、counter-subject identity、rhythmic independence、unison、同方向進行、同一リズム、leap recovery、selected candidate の melody cost と texture cost に美しさ gate を置く。`fugue-smoke` では、アルト主題後の最初のソプラノ応唱が支え声部と不安定な 2 度衝突、応唱 local key の root と scale 外音の衝突、解決感の弱い 4 度構成を作らないことを回帰確認する。manual listening judgement が `pass` でない代表 seed と境界 seed は操作機能フェーズ前の blocker として扱う。
 * Phase 5.10: 声部独立とリズム対位法を改善する。counter-subject と free counterpoint に主題と異なるリズム型、反行、保持と動きの交替を持たせる。主題生成では、強拍上の structural note、短い note の配置、保持や tie による accent 支持、短い強拍 note の解決先を評価し、`fugue-smoke` のアルト主題が提示時点でリズム感を失わないことを確認する。entry 周辺と stretto-like section の完全協和過密、応唱と支える声部の 2 度衝突、root や structural note 周辺の不安定な 4 度/5 度構成、解決を伴わない avoid note を厳しく扱う。modal seed では、mode の特徴音と counter-subject の再認識性を同時に保つ。
-* Phase 5.11: rotation seed と adversarial seed の小集合を review bundle と CI gate に追加し、固定 seed の pass だけでなく閾値からの margin、modal rotation seed の counter-subject identity、entry support instability の局所最大・連続発生・解決期限未達を確認する。
-* Phase 5.12: 旋律線、entry 支持和声、装飾、フレーズ整形を改善する。大跳躍後の回収、局所的な山と谷、同音連打の tie 化または装飾化、cadence 前後の装飾、phrase boundary を扱い、装飾の配置理由を diagnostics に残す。entry support instability は合計だけでなく、structural note、root、third、fifth、avoid note status、解決期限を entry 単位で説明する。
-* Phase 5.13: 候補評価を hard constraint、rule-based soft score、learned aesthetic score に分け、`CandidateEvaluation` の dimension 別 breakdown、feature version、evaluation model version、pairwise preference、必要に応じた learned weights の A/B review を扱う。harmony dimension は root、chord member、avoid note status、non-chord tone role、解決期限を entry/cadence 周辺で説明する。`phase511Gate.followUps` は seed、section、voice、entry/cadence 周辺の単位で理由を出す。満点に張り付く dimension は、section 単位の説明が出るまで Phase 通過条件にしない。
-* Phase 6: Phase 5.9-5.12 の美しさ gate、声部独立、旋律線、評価内訳整備後に、リングバッファ履歴、巻き戻し replay、MVP 用スライダ、parameter-change メタイベントを実装する。
-* Phase 7: Dedicated Web Worker による生成探索の分離、生成期限、フォールバック候補を実装する。
+* Phase 5.11: rotation seed と adversarial seed の小集合を review bundle と CI gate に追加し、固定 seed の pass だけでなく閾値からの margin、modal rotation seed の counter-subject identity、entry support instability の局所最大・連続発生・解決期限未達を確認する。Phase 5 はここで完了とし、残る音楽的改善は Phase 6 以降へ移す。
+* Phase 6: 旋律線、entry 支持和声、装飾、フレーズ整形を改善する。大跳躍後の回収、局所的な山と谷、同音連打の tie 化または装飾化、cadence 前後の装飾、phrase boundary を扱い、装飾の配置理由を diagnostics に残す。entry support instability は合計だけでなく、structural note、root、third、fifth、avoid note status、解決期限を entry 単位で説明する。entry 周辺の m2、M2、m7、M7 は severe seconds/sevenths として別集計し、テンションノート、掛留、経過音、刺繍音、導音などの役割と解決先を説明できない場合は採用回避に近い強いコストとして扱う。3 パート休止による solo texture は、cadence、phrase boundary、応答的な受け渡し、または段階的な thinning によって説明できる場合だけ許容し、unsupported solo run、abrupt texture drop、solo voice imbalance を diagnostics に出す。
+* Phase 7: 候補評価を hard constraint、rule-based soft score、learned aesthetic score に分け、`CandidateEvaluation` の dimension 別 breakdown、feature version、evaluation model version、pairwise preference、必要に応じた learned weights の A/B review を扱う。harmony dimension は root、chord member、avoid note status、non-chord tone role、解決期限を entry/cadence 周辺で説明する。texture density が下がる箇所では、なぜ 1 声だけが残り、他の 3 パートが休むのかを section、phrase、cadence の文脈で説明する。`phase511Gate.followUps` は seed、section、voice、entry/cadence 周辺の単位で理由を出す。満点に張り付く dimension は、section 単位の説明が出るまで Phase 通過条件にしない。
+* Phase 8: Phase 6-7 の美しさ gate、声部独立、旋律線、評価内訳整備後に、リングバッファ履歴、巻き戻し replay、MVP 用スライダ、parameter-change メタイベントを実装する。
+* Phase 9: Dedicated Web Worker による生成探索の分離、生成期限、フォールバック候補を実装する。
 
 ## 生成期限とフォールバック
 
@@ -536,7 +537,7 @@ pnpm fugematon diagnose --seed bach-001 --ticks 7680
   * learned aesthetic score を使う場合も、hard constraint failure を採用候補に戻さない。
   * feature version と evaluation model version が diagnostics に記録され、重み変更で ScoreEvent 列が変わる場合は generatorVersion を更新する。
   * 手動聴取用 MIDI と diagnostics summary を再生成できる。
-* Phase 6 以降の CI で確認する項目：
+* Phase 8 以降の CI で確認する項目：
   * parameter-change メタイベントは、次の状態遷移以降のイベントにのみ影響する。
 * Phase 2 以降の手動またはブラウザテストで確認する項目：
   * AudioContext はユーザー操作後に開始し、演奏が途切れず続く。

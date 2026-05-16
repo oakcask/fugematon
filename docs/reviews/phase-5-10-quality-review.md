@@ -89,7 +89,7 @@ Phase 5.11 以降では、固定 seed の絶対上限だけでなく、entry ご
 
 ### 5. 旋律線の問題は Phase 5.10 後も残っている
 
-固定 review seed の leap recovery miss は 13-30 件、追加 rotation seed では `modal-answer` が 33 件だった。Phase 5.10 は声部独立と entry 周辺を扱ったため、旋律線の実質改善はまだ Phase 5.12 へ残っている。
+固定 review seed の leap recovery miss は 13-30 件、追加 rotation seed では `modal-answer` が 33 件だった。Phase 5.10 は声部独立と entry 周辺を扱ったため、旋律線の実質改善は現行計画の Phase 6 へ残っている。
 
 特に `bright-answer`、`contrary-motion`、`modal-dorian`、`modal-answer` は、大跳躍が回収されない箇所を境界 seed として扱う必要がある。非 entry 声部が歌える線にならない限り、同時音が clean でも音楽的美しさの核心を満たさない。
 
@@ -97,15 +97,15 @@ Phase 5.11 以降では、固定 seed の絶対上限だけでなく、entry ご
 
 `fugue-smoke`、`modal-dorian`、`long-arc`、`ornament-test` を確認すると、selected candidate の `subjectClarity`、`harmony`、`form` cost は全件 0 だった。`episodeDirectionScore`、`strettoClarityScore`、`controlledAmbiguityScore`、`styleModulationFit`、`freeCounterpointContourScore` も満点に張り付き続けている。
 
-この状態では、Phase 5.10 gate が通っても、選ばれた候補がなぜ音楽的に良いのかを十分に説明できない。Phase 5.13 では、満点の理由と低評価の理由を section、entry、voice、cadence の単位で出すまで、これらの dimension を Phase 完了条件の中心に置かない。
+この状態では、Phase 5.10 gate が通っても、選ばれた候補がなぜ音楽的に良いのかを十分に説明できない。現行計画では Phase 7 で、満点の理由と低評価の理由を section、entry、voice、cadence の単位で出すまで、これらの dimension を Phase 完了条件の中心に置かない。
 
 ### 7. manual listening gate は依然として blocker である
 
-review bundle の `listening-review.json` では、代表 seed と境界 seed の judgement は `not-reviewed` のままである。自動 diagnostics が pass しても、`bach-001`、`fugue-smoke`、`minor-entry`、`wide-key` は manual listening judgement が `pass` になるまで Phase 6 前の blocker として扱う。
+review bundle の `listening-review.json` では、代表 seed と境界 seed の judgement は `not-reviewed` のままである。自動 diagnostics が pass しても、`bach-001`、`fugue-smoke`、`minor-entry`、`wide-key` は manual listening judgement が `pass` になるまで操作機能フェーズ前の blocker として扱う。
 
 ## 計画への反映
 
-Phase 6 の履歴、巻き戻し、操作パラメータは、以下の Phase 5.11-5.13 が通るまで開始しない。
+現行計画では、Phase 5 は Phase 5.11 で完了し、残る音楽的改善は Phase 6 以降へ移す。履歴、巻き戻し、操作パラメータは Phase 8 で扱い、以下の Phase 5.11、Phase 6、Phase 7 が通るまで開始しない。
 
 ### Phase 5.11: rotation seed と margin gate
 
@@ -113,9 +113,9 @@ Phase 6 の履歴、巻き戻し、操作パラメータは、以下の Phase 5.
 * 固定 seed の pass だけでなく、閾値からの margin を記録する。上限または下限に一致する seed は pass でも follow-up 対象にする。
 * modal 系 rotation seed は、modal context count だけでなく counter-subject identity retention、same direction motion、leap recovery miss を個別 gate にする。
 * entry support instability は score 全体の合計だけでなく、entry ごとの局所最大、連続発生、解決期限を診断する。
-* manual listening judgement が `pass` でない代表 seed と境界 seed は、Phase 6 前の blocker として CI または review summary 上で明示する。
+* manual listening judgement が `pass` でない代表 seed と境界 seed は、操作機能フェーズ前の blocker として CI または review summary 上で明示する。
 
-### Phase 5.12: 旋律線、装飾、フレーズ整形
+### Phase 6: 旋律線、装飾、フレーズ整形
 
 * 大跳躍後の反行、順次回収、局所的な山と谷、長期 contour を候補生成と scoring に入れる。
 * 意図しない同音連打は tie または装飾的反復へ変換する。
@@ -123,7 +123,7 @@ Phase 6 の履歴、巻き戻し、操作パラメータは、以下の Phase 5.
 * `ornament-test` と `ornament-cadence` は、装飾密度ではなく装飾の配置理由を diagnostics で説明できる境界 seed にする。
 * `bright-answer`、`contrary-motion`、`modal-answer` は leap recovery の境界 seed として扱う。
 
-### Phase 5.13: 評価重みと preference の説明可能化
+### Phase 7: 評価重みと preference の説明可能化
 
 * `EvaluationWeights` は feature version と evaluation model version を持つ外部定義にする。
 * review bundle は total cost だけでなく、dimension 別の cost/reward、低評価理由、満点理由を出す。
