@@ -4,10 +4,12 @@ import { join } from "node:path";
 import type { GenerationDiagnostics } from "@fugematon/core";
 import {
   evaluatePhase59Diagnostics,
+  evaluatePhase510Diagnostics,
   exportMidi,
   generateScore,
   PHASE_5_REVIEW_SEEDS,
   type Phase59GateResult,
+  type Phase510GateResult,
   phase59ManualListeningBlockers,
 } from "@fugematon/core";
 import { helpText, parseArgs } from "./args.js";
@@ -61,6 +63,7 @@ async function writeReviewBundle(outDirectory: string, lengthTicks: number): Pro
       midiFile: string;
       diagnosticsSummary: ReviewDiagnosticsSummary;
       phase59Gate: Phase59GateResult;
+      phase510Gate: Phase510GateResult;
     }[],
   };
   const listeningReview = createListeningReview(lengthTicks);
@@ -81,6 +84,7 @@ async function writeReviewBundle(outDirectory: string, lengthTicks: number): Pro
       midiFile,
       diagnosticsSummary: summarizeDiagnostics(output.diagnostics),
       phase59Gate: evaluatePhase59Diagnostics(seed, output.diagnostics),
+      phase510Gate: evaluatePhase510Diagnostics(seed, output.diagnostics),
     });
     listeningReview.seeds.push(createListeningSeedReview(seed, category, diagnosticsFile, midiFile));
   }
@@ -103,6 +107,8 @@ type ReviewDiagnosticsSummary = {
     unisonOverlapCount: number;
     sameDirectionMotionCount: number;
     sharedRhythmOverlapCount: number;
+    shortStrongBeatEntryNoteCount: number;
+    entrySupportInstabilityCount: number;
   };
   melody: {
     leapRecoveryMisses: number;
@@ -175,6 +181,8 @@ function summarizeDiagnostics(diagnostics: GenerationDiagnostics): ReviewDiagnos
       unisonOverlapCount: diagnostics.unisonOverlapCount,
       sameDirectionMotionCount: diagnostics.sameDirectionMotionCount,
       sharedRhythmOverlapCount: diagnostics.sharedRhythmOverlapCount,
+      shortStrongBeatEntryNoteCount: diagnostics.shortStrongBeatEntryNoteCount,
+      entrySupportInstabilityCount: diagnostics.entrySupportInstabilityCount,
     },
     melody: {
       leapRecoveryMisses: diagnostics.leapRecoveryMisses,

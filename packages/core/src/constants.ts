@@ -154,3 +154,26 @@ export const PHASE_5_9_DIAGNOSTICS_PROFILE = {
     },
   },
 } as const;
+
+export const PHASE_5_10_DIAGNOSTICS_PROFILE = {
+  minRhythmicIndependenceScore: 0.08,
+  maxUnisonOverlapCount: 762,
+  maxSameDirectionMotionCount: 661,
+  maxSharedRhythmOverlapCount: 906,
+  maxShortStrongBeatEntryNoteCount: 33,
+  maxEntrySupportInstabilityCount: 146,
+  boundarySeeds: {
+    "fugue-smoke": {
+      maxShortStrongBeatEntryNoteCount: 19,
+      maxEntrySupportInstabilityCount: 146,
+    },
+    "modal-dorian": {
+      minCounterSubjectIdentityRetention: 0.58,
+      maxEntrySupportInstabilityCount: 124,
+    },
+    "close-imitation": {
+      maxShortStrongBeatEntryNoteCount: 30,
+      maxSharedRhythmOverlapCount: 810,
+    },
+  },
+} as const;
