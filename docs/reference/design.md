@@ -82,7 +82,8 @@
 * Phase 7 前半では、Phase 6 後レビューで見つかった pitch contour の概形並行を diagnostics と candidate scoring に入れる。
 * 4 拍窓と 8 拍窓で bass と上声が同じ方向へ流れ続ける偏りを観察し、反行または斜行が増える候補を texture dimension で優先する。
 * Phase 7 後半では、candidate evaluation の dimension breakdown を、seed、section、voice、entry/cadence 周辺の単位で説明できるようにする。
-* 成功条件は「Phase 6 gate を維持したまま、概形進行が review bundle と CI で確認でき、評価内訳が次の音楽改善を説明できること」とする。
+* Phase 7 後半は説明だけで完了しない。entry harmony、voice independence、modal counter-subject、melody/phrase、episode/codetta/stretto preparation の弱点を、feature extraction の整理と既存 gate のテスト強化後に実際の生成改善へ反映する。
+* 成功条件は「Phase 6 gate を維持したまま、概形進行が review bundle と CI で確認でき、評価内訳が次の音楽改善を説明し、代表 seed と境界 seed の手動聴取 gate が pass に近づくこと」とする。
 
 ### Phase 8: 履歴、巻き戻し、操作パラメータ
 
