@@ -28,6 +28,8 @@ export function analyzeScore(
   unisonOverlapCount: number;
   sameDirectionMotionCount: number;
   sharedRhythmOverlapCount: number;
+  shortStrongBeatEntryNoteCount: number;
+  entrySupportInstabilityCount: number;
   durationDistribution: DurationDistribution;
   repeatedPitchRunCount: number;
   allVoiceSilenceGapCount: number;
@@ -217,6 +219,8 @@ function analyzeTextureDiagnostics(
     unisonOverlapCount: verticalStats.unisonOverlapCount,
     sameDirectionMotionCount: verticalStats.sameDirectionMotionCount,
     sharedRhythmOverlapCount: verticalStats.sharedRhythmOverlapCount,
+    shortStrongBeatEntryNoteCount: countShortStrongBeatEntryNotes(notes),
+    entrySupportInstabilityCount: countEntrySupportInstabilities(notes, subjectEntries),
     durationDistribution: durationDistribution(notes),
     repeatedPitchRunCount,
     allVoiceSilenceGapCount: countAllVoiceSilenceGaps(notes),
@@ -468,6 +472,77 @@ function countOrnamentCandidates(notes: readonly NoteEvent[]): number {
       note.durationTicks >= TICKS_PER_QUARTER &&
       note.startTick % TICKS_PER_QUARTER === 0,
   ).length;
+}
+
+function countShortStrongBeatEntryNotes(notes: readonly NoteEvent[]): number {
+  return notes.filter(
+    (note) =>
+      isEntryRole(note.role) &&
+      note.durationTicks <= TICKS_PER_QUARTER / 2 &&
+      note.startTick % (TICKS_PER_QUARTER * 2) === 0,
+  ).length;
+}
+
+function countEntrySupportInstabilities(notes: readonly NoteEvent[], subjectEntries: readonly PlannedEntry[]): number {
+  let instabilities = 0;
+
+  for (const entry of subjectEntries) {
+    const entryWindowEndTick = entry.startTick + TICKS_PER_QUARTER * 2;
+    const checkpoints = [
+      ...new Set(
+        notes
+          .filter(
+            (note) => note.startTick < entryWindowEndTick && entry.startTick < note.startTick + note.durationTicks,
+          )
+          .flatMap((note) => [note.startTick, note.startTick + note.durationTicks]),
+      ),
+    ].sort((left, right) => left - right);
+
+    for (const tick of checkpoints) {
+      if (tick < entry.startTick || tick >= entryWindowEndTick || tick % (TICKS_PER_QUARTER / 2) !== 0) {
+        continue;
+      }
+
+      const entryNote = notes.find(
+        (note) =>
+          note.voice === entry.voice &&
+          note.startTick <= tick &&
+          tick < note.startTick + note.durationTicks &&
+          isEntryRole(note.role),
+      );
+      if (entryNote === undefined) {
+        continue;
+      }
+
+      const supportNotes = notes.filter(
+        (note) =>
+          note.voice !== entry.voice &&
+          note.startTick <= tick &&
+          tick < note.startTick + note.durationTicks &&
+          (note.role === "counter-subject" || note.role === "free-counterpoint"),
+      );
+      if (
+        supportNotes.some((supportNote) =>
+          isEntrySupportInstability(Math.abs(entryNote.pitch - supportNote.pitch) % 12),
+        )
+      ) {
+        instabilities += 1;
+      }
+    }
+  }
+
+  return instabilities;
+}
+
+function isEntrySupportInstability(intervalClass: number): boolean {
+  return (
+    intervalClass === 1 ||
+    intervalClass === 2 ||
+    intervalClass === 5 ||
+    intervalClass === 6 ||
+    intervalClass === 10 ||
+    intervalClass === 11
+  );
 }
 
 function isEntryRole(role: NoteEvent["role"]): boolean {

@@ -227,6 +227,8 @@ export type GenerationDiagnostics = {
   unisonOverlapCount: number;
   sameDirectionMotionCount: number;
   sharedRhythmOverlapCount: number;
+  shortStrongBeatEntryNoteCount: number;
+  entrySupportInstabilityCount: number;
   durationDistribution: DurationDistribution;
   repeatedPitchRunCount: number;
   allVoiceSilenceGapCount: number;

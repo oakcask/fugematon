@@ -59,7 +59,11 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
       supportTextureRepetitionScore: diagnostics.supportTextureRepetitionScore,
       expositionEntryStaggerScore: diagnostics.expositionEntryStaggerScore,
       samePitchOverlapCount: diagnostics.samePitchOverlapCount,
+      unisonOverlapCount: diagnostics.unisonOverlapCount,
+      sameDirectionMotionCount: diagnostics.sameDirectionMotionCount,
       sharedRhythmOverlapCount: diagnostics.sharedRhythmOverlapCount,
+      shortStrongBeatEntryNoteCount: diagnostics.shortStrongBeatEntryNoteCount,
+      entrySupportInstabilityCount: diagnostics.entrySupportInstabilityCount,
       allVoiceSilenceGapCount: diagnostics.allVoiceSilenceGapCount,
     },
   };
@@ -91,6 +95,7 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
       modalCharacteristicToneHits: diagnostics.modalCharacteristicToneHits,
       modalCadenceHits: diagnostics.modalCadenceHits,
       tonalCadenceOveruseWarnings: diagnostics.tonalCadenceOveruseWarnings,
+      entrySupportInstabilityCount: diagnostics.entrySupportInstabilityCount,
     },
   };
   const form = {
