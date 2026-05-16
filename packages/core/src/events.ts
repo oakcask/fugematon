@@ -87,6 +87,17 @@ export type GenerationInput = {
   parameters?: Partial<GenerationParameters>;
 };
 
+export type DiagnosticIssueCode = "range-violation" | "voice-crossing" | "parallel-perfect";
+
+export type DiagnosticIssue = {
+  code: DiagnosticIssueCode;
+  severity: "warning";
+  tick: number;
+  voices: Voice[];
+  pitches: Partial<Record<Voice, number>>;
+  message: string;
+};
+
 export type GenerationDiagnostics = {
   generatorVersion: number;
   seed: string;
@@ -104,6 +115,7 @@ export type GenerationDiagnostics = {
   rangeViolations: number;
   voiceCrossings: number;
   parallelPerfects: number;
+  issues: DiagnosticIssue[];
   warnings: string[];
 };
 
