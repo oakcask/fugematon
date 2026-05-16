@@ -17,12 +17,18 @@ import {
   PHASE_5_DIAGNOSTICS_PROFILE,
   PHASE_5_LENGTH_TICKS,
   PHASE_5_REVIEW_SEEDS,
+  PHASE_6_DIAGNOSTICS_PROFILE,
   TICKS_PER_QUARTER,
   VOICES,
 } from "./constants.js";
 import type { MetaEvent, NoteEvent, ScoreEvent } from "./events.js";
 import { generateScore } from "./generate.js";
-import { evaluatePhase59Diagnostics, evaluatePhase510Diagnostics, evaluatePhase511Diagnostics } from "./review-gate.js";
+import {
+  evaluatePhase6Diagnostics,
+  evaluatePhase59Diagnostics,
+  evaluatePhase510Diagnostics,
+  evaluatePhase511Diagnostics,
+} from "./review-gate.js";
 
 test("generateScore is deterministic for identical input", () => {
   const input = {
@@ -564,6 +570,55 @@ test("generateScore applies phase-5.11 modal rotation seed gates", () => {
     assert.ok(output.diagnostics.sameDirectionMotionCount <= profile.maxSameDirectionMotionCount);
     assert.ok(output.diagnostics.leapRecoveryMisses <= profile.maxLeapRecoveryMisses);
     assert.ok(output.diagnostics.modalContextCount >= profile.minModalContextCount);
+  }
+});
+
+test("generateScore reports phase-6 melody, entry, ornament, and solo diagnostics", () => {
+  const output = generateScore({ seed: "fugue-smoke", lengthTicks: PHASE_5_LENGTH_TICKS });
+  const firstContinuationStartTick = output.diagnostics.sectionPlans.find(
+    (plan) => plan.state !== "exposition",
+  )?.startTick;
+
+  assert.ok(output.diagnostics.severeEntryIntervalCount > 0);
+  assert.ok(output.diagnostics.unresolvedSevereEntryIntervalCount > 0);
+  assert.equal(
+    output.diagnostics.severeEntryIntervalCount,
+    output.diagnostics.entrySupportSevereIntervalDetails.reduce((sum, detail) => sum + detail.severeIntervalCount, 0),
+  );
+  assert.ok(output.diagnostics.soloTexture.soloRunCount > 0);
+  assert.ok(output.diagnostics.soloTexture.unsupportedSoloRunCount >= 0);
+  assert.ok(output.diagnostics.soloTexture.abruptTextureDropCount >= 0);
+  assert.ok(output.diagnostics.soloTexture.soloVoiceImbalance >= 0);
+  assert.ok(output.diagnostics.ornamentPlacementReasons.total > 0);
+  assert.ok(output.diagnostics.ornamentPlacementReasons.cadenceApproach > 0);
+  assert.ok(
+    (output.diagnostics.sectionPlans[0]?.durationTicks ?? 0) <= PHASE_6_DIAGNOSTICS_PROFILE.maxExpositionDurationTicks,
+  );
+  assert.ok((firstContinuationStartTick ?? 0) <= PHASE_6_DIAGNOSTICS_PROFILE.maxFirstContinuationStartTick);
+});
+
+test("generateScore applies phase-6 observation gate across fixed and rotation seeds", () => {
+  const seeds = [...PHASE_5_REVIEW_SEEDS, ...PHASE_5_11_ROTATION_SEEDS];
+
+  for (const { seed } of seeds) {
+    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
+    const gate = evaluatePhase6Diagnostics(seed, output.diagnostics);
+
+    assert.deepEqual(gate.failures, []);
+    assert.equal(gate.passed, true);
+    assert.ok(gate.metrics.leapRecoveryMisses <= PHASE_6_DIAGNOSTICS_PROFILE.maxLeapRecoveryMisses);
+    assert.ok(gate.metrics.samePitchOverlapCount <= PHASE_6_DIAGNOSTICS_PROFILE.maxSamePitchOverlapCount);
+    assert.ok(gate.metrics.severeEntryIntervalCount <= PHASE_6_DIAGNOSTICS_PROFILE.maxSevereEntryIntervalCount);
+    assert.ok(
+      gate.metrics.unresolvedSevereEntryIntervalCount <=
+        PHASE_6_DIAGNOSTICS_PROFILE.maxUnresolvedSevereEntryIntervalCount,
+    );
+    assert.ok(gate.metrics.unsupportedSoloRunCount <= PHASE_6_DIAGNOSTICS_PROFILE.maxUnsupportedSoloRunCount);
+    assert.ok(gate.metrics.abruptTextureDropCount <= PHASE_6_DIAGNOSTICS_PROFILE.maxAbruptTextureDropCount);
+    assert.ok(gate.metrics.soloVoiceImbalance <= PHASE_6_DIAGNOSTICS_PROFILE.maxSoloVoiceImbalance);
+    assert.ok(gate.metrics.ornamentPlacementReasonCount >= PHASE_6_DIAGNOSTICS_PROFILE.minOrnamentPlacementReasonCount);
+    assert.ok(gate.metrics.expositionDurationTicks <= PHASE_6_DIAGNOSTICS_PROFILE.maxExpositionDurationTicks);
+    assert.ok(gate.metrics.firstContinuationStartTick <= PHASE_6_DIAGNOSTICS_PROFILE.maxFirstContinuationStartTick);
   }
 });
 

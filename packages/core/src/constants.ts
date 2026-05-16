@@ -230,3 +230,16 @@ export const PHASE_5_11_DIAGNOSTICS_PROFILE = {
     },
   },
 } as const;
+
+export const PHASE_6_DIAGNOSTICS_PROFILE = {
+  maxLeapRecoveryMisses: 33,
+  maxSamePitchOverlapCount: 40,
+  maxSevereEntryIntervalCount: 108,
+  maxUnresolvedSevereEntryIntervalCount: 100,
+  maxUnsupportedSoloRunCount: 20,
+  maxAbruptTextureDropCount: 24,
+  maxSoloVoiceImbalance: 30,
+  minOrnamentPlacementReasonCount: 1,
+  maxExpositionDurationTicks: TICKS_PER_QUARTER * 20,
+  maxFirstContinuationStartTick: TICKS_PER_QUARTER * 20,
+} as const;

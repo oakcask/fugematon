@@ -17,6 +17,7 @@ export {
   PHASE_5_DIAGNOSTICS_PROFILE,
   PHASE_5_LENGTH_TICKS,
   PHASE_5_REVIEW_SEEDS,
+  PHASE_6_DIAGNOSTICS_PROFILE,
   TICKS_PER_QUARTER,
   VOICES,
 } from "./constants.js";
@@ -27,6 +28,7 @@ export type {
   CandidateEvaluation,
   EntryForm,
   EntrySupportInstabilitySummary,
+  EntrySupportSevereIntervalSummary,
   FragmentTransform,
   FugueState,
   GenerationDiagnostics,
@@ -41,10 +43,12 @@ export type {
   MetaEvent,
   NoteEvent,
   NoteRole,
+  OrnamentPlacementReasons,
   PlannedEntry,
   ScoreDimension,
   ScoreEvent,
   SequencePattern,
+  SoloTextureSummary,
   StyleProfile,
   TimeSignature,
   Voice,
@@ -54,12 +58,14 @@ export { exportMidi } from "./midi.js";
 export { seedToUint32State, Xoshiro128StarStar } from "./prng.js";
 export type {
   ManualListeningJudgement,
+  Phase6GateResult,
   Phase59GateFailure,
   Phase59GateResult,
   Phase510GateResult,
   Phase511GateResult,
 } from "./review-gate.js";
 export {
+  evaluatePhase6Diagnostics,
   evaluatePhase59Diagnostics,
   evaluatePhase510Diagnostics,
   evaluatePhase511Diagnostics,
