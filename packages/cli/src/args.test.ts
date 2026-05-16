@@ -22,9 +22,19 @@ test("parseArgs parses diagnose command", () => {
   });
 });
 
+test("parseArgs parses midi command", () => {
+  assert.deepEqual(parseArgs(["midi", "--seed", "bach-001", "--ticks", "7680", "--out", "score.mid"]), {
+    name: "midi",
+    seed: "bach-001",
+    lengthTicks: 7680,
+    out: "score.mid",
+  });
+});
+
 test("parseArgs rejects invalid arguments", () => {
   assert.throws(() => parseArgs(["missing"]), /unknown command/);
   assert.throws(() => parseArgs(["generate", "--seed", "bach-001"]), /missing --ticks/);
+  assert.throws(() => parseArgs(["midi", "--seed", "bach-001", "--ticks", "960"]), /missing --out/);
   assert.throws(
     () => parseArgs(["generate", "--seed", "bach-001", "--ticks", "0"]),
     /--ticks/,

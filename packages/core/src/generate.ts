@@ -2,6 +2,7 @@ import {
   DEFAULT_GENERATION_PARAMETERS,
   GENERATOR_VERSION,
   TICKS_PER_QUARTER,
+  VOICE_RANGES,
 } from "./constants.js";
 import type {
   GenerationInput,
@@ -9,12 +10,53 @@ import type {
   GenerationParameters,
   KeyMode,
   KeySignature,
+  NoteEvent,
   ScoreEvent,
   TimeSignature,
+  Voice,
 } from "./events.js";
 import { Xoshiro128StarStar } from "./prng.js";
 
 const TONICS = ["C", "D", "E", "F", "G", "A", "B", "Bb", "Eb", "Ab", "Db", "F#"] as const;
+const TONIC_PITCH_CLASSES = new Map<string, number>([
+  ["C", 0],
+  ["D", 2],
+  ["E", 4],
+  ["F", 5],
+  ["G", 7],
+  ["A", 9],
+  ["B", 11],
+  ["Bb", 10],
+  ["Eb", 3],
+  ["Ab", 8],
+  ["Db", 1],
+  ["F#", 6],
+]);
+const SUBJECT_DURATIONS = [
+  TICKS_PER_QUARTER,
+  TICKS_PER_QUARTER,
+  TICKS_PER_QUARTER / 2,
+  TICKS_PER_QUARTER / 2,
+  TICKS_PER_QUARTER,
+  TICKS_PER_QUARTER,
+  TICKS_PER_QUARTER,
+  TICKS_PER_QUARTER,
+] as const;
+const SUBJECT_DEGREES = [0, 2, 4, 5, 7, 5, 4, 2] as const;
+const VOICE_ENTRY_ORDER: Voice[] = ["alto", "soprano", "tenor", "bass"];
+const VOICE_BASE_OCTAVES: Record<Voice, number> = {
+  soprano: 60,
+  alto: 55,
+  tenor: 48,
+  bass: 28,
+};
+const CONSONANT_OFFSETS: Record<Voice, number> = {
+  soprano: 12,
+  alto: 7,
+  tenor: -5,
+  bass: -12,
+};
+const ENTRY_SPACING_TICKS = TICKS_PER_QUARTER * 4;
 
 export function generateScore(input: GenerationInput): GenerationOutput {
   validateInput(input);
@@ -24,6 +66,10 @@ export function generateScore(input: GenerationInput): GenerationOutput {
   const keySignature = chooseKeySignature(rng);
   const timeSignature = chooseTimeSignature(rng);
   const bpm = chooseTempo(rng);
+  const subject = buildSubject(rng, keySignature);
+  const exposition = buildExposition(subject, keySignature);
+  const diagnostics = analyzeExposition(exposition.notes);
+  const generatedUntilTick = Math.max(input.lengthTicks, exposition.endTick);
 
   const events: ScoreEvent[] = [
     {
@@ -66,13 +112,14 @@ export function generateScore(input: GenerationInput): GenerationOutput {
       kind: "meta",
       type: "state-change",
       tick: 0,
-      payload: { state: "phase-0" },
+      payload: { state: "exposition" },
     },
+    ...exposition.notes,
     {
       kind: "meta",
       type: "score-end",
-      tick: input.lengthTicks,
-      payload: { lengthTicks: input.lengthTicks },
+      tick: generatedUntilTick,
+      payload: { lengthTicks: generatedUntilTick },
     },
   ];
 
@@ -82,12 +129,15 @@ export function generateScore(input: GenerationInput): GenerationOutput {
       generatorVersion: GENERATOR_VERSION,
       seed: input.seed,
       lengthTicks: input.lengthTicks,
+      generatedUntilTick,
       eventCount: events.length,
-      noteCount: 0,
-      stateTransitions: ["phase-0"],
-      rangeViolations: 0,
-      voiceCrossings: 0,
-      warnings: [],
+      noteCount: exposition.notes.length,
+      stateTransitions: ["exposition"],
+      subjectEntries: exposition.subjectEntries,
+      rangeViolations: diagnostics.rangeViolations,
+      voiceCrossings: diagnostics.voiceCrossings,
+      parallelPerfects: diagnostics.parallelPerfects,
+      warnings: diagnostics.warnings,
     },
   };
 }
@@ -131,6 +181,252 @@ function chooseTimeSignature(rng: Xoshiro128StarStar): TimeSignature {
 
 function chooseTempo(rng: Xoshiro128StarStar): number {
   return rng.nextIntRange(66, 108);
+}
+
+type SubjectNote = {
+  offsetTick: number;
+  durationTicks: number;
+  degree: number;
+};
+
+type Exposition = {
+  notes: NoteEvent[];
+  subjectEntries: GenerationOutput["diagnostics"]["subjectEntries"];
+  endTick: number;
+};
+
+function buildSubject(rng: Xoshiro128StarStar, keySignature: KeySignature): SubjectNote[] {
+  const shape = rng.chooseWeighted<readonly number[]>([
+    { value: SUBJECT_DEGREES, weight: 3 },
+    { value: [0, 2, 3, 5, 7, 5, 3, 2] as const, weight: keySignature.mode === "minor" ? 3 : 1 },
+    { value: [0, 4, 2, 5, 7, 5, 4, 2] as const, weight: 2 },
+  ]);
+
+  let offsetTick = 0;
+  return shape.map((degree, index) => {
+    const note = {
+      offsetTick,
+      durationTicks: SUBJECT_DURATIONS[index]!,
+      degree,
+    };
+    offsetTick += note.durationTicks;
+    return note;
+  });
+}
+
+function buildExposition(subject: readonly SubjectNote[], keySignature: KeySignature): Exposition {
+  const notes: Exposition["notes"] = [];
+  const subjectEntries: Exposition["subjectEntries"] = [];
+  const tonic = TONIC_PITCH_CLASSES.get(keySignature.tonic);
+  if (tonic === undefined) {
+    throw new Error(`unsupported tonic: ${keySignature.tonic}`);
+  }
+
+  for (const [entryIndex, voice] of VOICE_ENTRY_ORDER.entries()) {
+    const form = entryIndex % 2 === 0 ? "subject" : "answer";
+    const startTick = entryIndex * ENTRY_SPACING_TICKS;
+    const pitchClassOffset = form === "answer" ? 7 : 0;
+    subjectEntries.push({ voice, form, startTick, pitchClassOffset });
+
+    for (const note of subject) {
+      notes.push({
+        kind: "note",
+        voice,
+        startTick: startTick + note.offsetTick,
+        durationTicks: note.durationTicks,
+        pitch: fitPitchToRange(VOICE_BASE_OCTAVES[voice] + tonic + pitchClassOffset + note.degree, voice),
+        velocity: form === "subject" ? 92 : 86,
+      });
+    }
+
+    addSustainedCounterpoint(notes, voice, startTick, subjectDuration(subject), tonic);
+  }
+
+  notes.sort(compareNoteEvents);
+
+  return {
+    notes,
+    subjectEntries,
+    endTick: Math.max(...notes.map((note) => note.startTick + note.durationTicks)),
+  };
+}
+
+function addSustainedCounterpoint(
+  notes: Exposition["notes"],
+  enteringVoice: Voice,
+  entryStartTick: number,
+  entryDurationTicks: number,
+  tonicPitchClass: number,
+): void {
+  const supportDuration = TICKS_PER_QUARTER * 2;
+  for (const voice of VOICE_ENTRY_ORDER) {
+    if (voice === enteringVoice) {
+      continue;
+    }
+
+    const startTick = entryStartTick + TICKS_PER_QUARTER;
+    if (startTick >= entryStartTick + entryDurationTicks) {
+      continue;
+    }
+    if (hasOverlap(notes, voice, startTick, supportDuration)) {
+      continue;
+    }
+
+    notes.push({
+      kind: "note",
+      voice,
+      startTick,
+      durationTicks: supportDuration,
+      pitch: fitPitchToRange(VOICE_BASE_OCTAVES[voice] + tonicPitchClass + CONSONANT_OFFSETS[voice], voice),
+      velocity: 56,
+    });
+  }
+}
+
+function subjectDuration(subject: readonly SubjectNote[]): number {
+  return subject.reduce((duration, note) => duration + note.durationTicks, 0);
+}
+
+function hasOverlap(
+  notes: readonly NoteEvent[],
+  voice: Voice,
+  startTick: number,
+  durationTicks: number,
+): boolean {
+  const endTick = startTick + durationTicks;
+  return notes.some(
+    (note) =>
+      note.voice === voice && note.startTick < endTick && startTick < note.startTick + note.durationTicks,
+  );
+}
+
+function fitPitchToRange(pitch: number, voice: Voice): number {
+  const range = VOICE_RANGES[voice];
+  let fitted = pitch;
+  while (fitted < range.min) {
+    fitted += 12;
+  }
+  while (fitted > range.max) {
+    fitted -= 12;
+  }
+  return fitted;
+}
+
+function analyzeExposition(notes: readonly NoteEvent[]): {
+  rangeViolations: number;
+  voiceCrossings: number;
+  parallelPerfects: number;
+  warnings: string[];
+} {
+  const rangeViolations = notes.filter((note) => {
+    const range = VOICE_RANGES[note.voice];
+    return note.pitch < range.min || note.pitch > range.max;
+  }).length;
+  const checkpoints = [...new Set(notes.flatMap((note) => [note.startTick, note.startTick + note.durationTicks]))].sort(
+    (left, right) => left - right,
+  );
+  let voiceCrossings = 0;
+  let parallelPerfects = 0;
+  let previousVerticality: Map<Voice, number> | undefined;
+
+  for (const tick of checkpoints) {
+    const active = activePitchesAt(notes, tick);
+    if (isVoiceCrossed(active)) {
+      voiceCrossings += 1;
+    }
+    if (previousVerticality !== undefined) {
+      parallelPerfects += countParallelPerfects(previousVerticality, active);
+    }
+    previousVerticality = active;
+  }
+
+  const warnings: string[] = [];
+  if (rangeViolations > 0) {
+    warnings.push("range violations detected");
+  }
+  if (voiceCrossings > 0) {
+    warnings.push("voice crossings detected");
+  }
+  if (parallelPerfects > 0) {
+    warnings.push("parallel perfect intervals suspected");
+  }
+
+  return { rangeViolations, voiceCrossings, parallelPerfects, warnings };
+}
+
+function activePitchesAt(notes: readonly NoteEvent[], tick: number): Map<Voice, number> {
+  const active = new Map<Voice, number>();
+  for (const voice of VOICE_ENTRY_ORDER) {
+    const note = notes
+      .filter((candidate) => candidate.voice === voice)
+      .find((candidate) => candidate.startTick <= tick && tick < candidate.startTick + candidate.durationTicks);
+    if (note !== undefined) {
+      active.set(voice, note.pitch);
+    }
+  }
+  return active;
+}
+
+function isVoiceCrossed(active: Map<Voice, number>): boolean {
+  const soprano = active.get("soprano");
+  const alto = active.get("alto");
+  const tenor = active.get("tenor");
+  const bass = active.get("bass");
+
+  return (
+    (soprano !== undefined && alto !== undefined && soprano < alto) ||
+    (alto !== undefined && tenor !== undefined && alto < tenor) ||
+    (tenor !== undefined && bass !== undefined && tenor < bass)
+  );
+}
+
+function countParallelPerfects(previous: Map<Voice, number>, current: Map<Voice, number>): number {
+  let count = 0;
+  for (let leftIndex = 0; leftIndex < VOICE_ENTRY_ORDER.length; leftIndex += 1) {
+    for (let rightIndex = leftIndex + 1; rightIndex < VOICE_ENTRY_ORDER.length; rightIndex += 1) {
+      const left = VOICE_ENTRY_ORDER[leftIndex]!;
+      const right = VOICE_ENTRY_ORDER[rightIndex]!;
+      const previousLeft = previous.get(left);
+      const previousRight = previous.get(right);
+      const currentLeft = current.get(left);
+      const currentRight = current.get(right);
+      if (
+        previousLeft === undefined ||
+        previousRight === undefined ||
+        currentLeft === undefined ||
+        currentRight === undefined
+      ) {
+        continue;
+      }
+
+      const previousInterval = Math.abs(previousLeft - previousRight) % 12;
+      const currentInterval = Math.abs(currentLeft - currentRight) % 12;
+      const leftMotion = Math.sign(currentLeft - previousLeft);
+      const rightMotion = Math.sign(currentRight - previousRight);
+      if (
+        leftMotion !== 0 &&
+        leftMotion === rightMotion &&
+        isPerfectInterval(previousInterval) &&
+        isPerfectInterval(currentInterval)
+      ) {
+        count += 1;
+      }
+    }
+  }
+
+  return count;
+}
+
+function isPerfectInterval(intervalClass: number): boolean {
+  return intervalClass === 0 || intervalClass === 7;
+}
+
+function compareNoteEvents(left: NoteEvent, right: NoteEvent): number {
+  if (left.startTick !== right.startTick) {
+    return left.startTick - right.startTick;
+  }
+
+  return left.voice.localeCompare(right.voice);
 }
 
 function validateInput(input: GenerationInput): void {

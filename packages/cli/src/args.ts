@@ -11,6 +11,12 @@ export type CliCommand =
       lengthTicks: number;
     }
   | {
+      name: "midi";
+      seed: string;
+      lengthTicks: number;
+      out: string;
+    }
+  | {
       name: "help";
     };
 
@@ -21,7 +27,7 @@ export function parseArgs(argv: readonly string[]): CliCommand {
     return { name: "help" };
   }
 
-  if (command !== "generate" && command !== "diagnose") {
+  if (command !== "generate" && command !== "diagnose" && command !== "midi") {
     throw new Error(`unknown command: ${command}`);
   }
 
@@ -37,6 +43,10 @@ export function parseArgs(argv: readonly string[]): CliCommand {
     return { name: "diagnose", seed, lengthTicks };
   }
 
+  if (command === "midi") {
+    return { name: "midi", seed, lengthTicks, out: requiredOption(options, "out") };
+  }
+
   return {
     name: "generate",
     seed,
@@ -50,6 +60,7 @@ export function helpText(): string {
     "Usage:",
     "  fugematon generate --seed <seed> --ticks <lengthTicks> [--out <file>]",
     "  fugematon diagnose --seed <seed> --ticks <lengthTicks>",
+    "  fugematon midi --seed <seed> --ticks <lengthTicks> --out <file>",
   ].join("\n");
 }
 
