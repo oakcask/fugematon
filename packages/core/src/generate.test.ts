@@ -64,6 +64,44 @@ test("generateScore validates reproducibility inputs", () => {
   assert.throws(() => generateScore({ seed: "x", lengthTicks: 960, parameters: { strictness: 2 } }), /strictness/);
 });
 
+test("generateScore keeps public event and diagnostics counts aligned", () => {
+  const output = generateScore({
+    seed: "event-contract",
+    lengthTicks: PHASE_5_LENGTH_TICKS,
+    parameters: { density: 0.25, subjectPresence: 1 },
+  });
+  const notes = output.events.filter((event): event is NoteEvent => event.kind === "note");
+  const stateChanges = output.events.filter(
+    (event): event is Extract<MetaEvent, { type: "state-change" }> =>
+      event.kind === "meta" && event.type === "state-change",
+  );
+  const parameterChange = output.events.find(
+    (event): event is Extract<MetaEvent, { type: "parameter-change" }> =>
+      event.kind === "meta" && event.type === "parameter-change",
+  );
+
+  assert.equal(output.diagnostics.eventCount, output.events.length);
+  assert.equal(output.diagnostics.noteCount, notes.length);
+  assert.deepEqual(
+    stateChanges.map((event) => event.payload.state),
+    output.diagnostics.stateTransitions,
+  );
+  assert.equal(parameterChange?.payload.parameters.strictness, 0.8);
+  assert.equal(parameterChange?.payload.parameters.density, 0.25);
+  assert.equal(parameterChange?.payload.parameters.subjectPresence, 1);
+
+  for (const note of notes) {
+    assert.ok(Number.isSafeInteger(note.startTick));
+    assert.ok(Number.isSafeInteger(note.durationTicks));
+    assert.ok(note.startTick >= 0);
+    assert.ok(note.durationTicks > 0);
+    assert.ok(note.startTick + note.durationTicks <= output.diagnostics.generatedUntilTick);
+    assert.ok(VOICES.includes(note.voice));
+    assert.ok(note.pitch >= 0 && note.pitch <= 127);
+    assert.ok(note.velocity >= 0 && note.velocity <= 127);
+  }
+});
+
 test("generateScore exposes ordered subject and answer entries", () => {
   const output = generateScore({ seed: "bach-001", lengthTicks: 7680 });
 
@@ -111,6 +149,38 @@ test("generateScore extends long scores with phase-3 fugue states", () => {
     output.diagnostics.stateTransitions,
   );
   assert.ok(output.diagnostics.candidateEvaluations > 0);
+});
+
+test("generateScore emits section plans with bounded harmonic anchors", () => {
+  const output = generateScore({ seed: "section-plan-contract", lengthTicks: PHASE_5_LENGTH_TICKS });
+  const continuationPlans = output.diagnostics.sectionPlans.filter((plan) => plan.state !== "exposition");
+
+  assert.deepEqual(
+    output.diagnostics.sectionPlans.map((plan) => plan.state),
+    output.diagnostics.stateTransitions,
+  );
+  assert.equal(output.diagnostics.sectionPlans[0]?.startTick, 0);
+  assert.ok(continuationPlans.length > 0);
+
+  for (const plan of output.diagnostics.sectionPlans) {
+    assert.ok(plan.durationTicks > 0);
+    assert.ok(plan.startTick >= 0);
+    assert.equal(plan.anchors[0]?.tick, plan.startTick);
+    assert.equal(plan.anchors[0]?.function, "tonic");
+    assert.ok(plan.anchors.some((anchor) => anchor.cadenceTarget));
+
+    const anchorTicks = plan.anchors.map((anchor) => anchor.tick);
+    assert.deepEqual(
+      anchorTicks,
+      [...anchorTicks].sort((left, right) => left - right),
+    );
+
+    for (const anchor of plan.anchors) {
+      assert.ok(anchor.tick >= plan.startTick);
+      assert.ok(anchor.tick <= plan.startTick + plan.durationTicks);
+      assert.equal(anchor.localKey.mode, plan.localKey.mode);
+    }
+  }
 });
 
 test("generateScore validates representative phase-1 seeds", () => {
@@ -259,6 +329,31 @@ test("generateScore validates phase-5 quality gate seeds", () => {
   assert.ok(signatures.size > 1);
 });
 
+test("generateScore keeps planned entries tied to emitted entry notes", () => {
+  const output = generateScore({ seed: "entry-contract", lengthTicks: PHASE_5_LENGTH_TICKS });
+  const notes = output.events.filter((event): event is NoteEvent => event.kind === "note");
+
+  assert.ok(output.diagnostics.subjectEntries.length > 4);
+
+  for (const entry of output.diagnostics.subjectEntries) {
+    const entryNotes = notes
+      .filter(
+        (note) =>
+          note.voice === entry.voice &&
+          note.role === entry.form &&
+          note.startTick >= entry.startTick &&
+          note.startTick < entry.startTick + TICKS_PER_QUARTER * 8,
+      )
+      .slice(0, entry.expectedDegreePattern.length);
+
+    assert.equal(entryNotes.length, entry.expectedDegreePattern.length);
+    assert.deepEqual(
+      entryNotes.map((note) => positiveModulo(note.pitch, 12)),
+      entry.actualPitchClassSequence,
+    );
+  }
+});
+
 test("generateScore reports phase-5.6 beauty and texture diagnostics", () => {
   const output = generateScore({ seed: "fugue-smoke", lengthTicks: PHASE_5_LENGTH_TICKS });
   const selectedEvaluation = output.diagnostics.selectedCandidateEvaluations[0];
@@ -336,4 +431,8 @@ function asMetaEvent(event: ScoreEvent | undefined): MetaEvent {
 
 function scoreMinutes(ticks: number): number {
   return ticks / (TICKS_PER_QUARTER * 90);
+}
+
+function positiveModulo(value: number, divisor: number): number {
+  return ((value % divisor) + divisor) % divisor;
 }
