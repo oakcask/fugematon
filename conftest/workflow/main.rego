@@ -7,7 +7,7 @@ workflow_name_parts(name) := parts if {
   parts := split(name, " / ")
 }
 
-workflow_file_segment(part) := replace(part, " ", "-")
+workflow_file_segment(part) := lower(replace(part, " ", "-"))
 
 default workflow_file_name := ""
 
