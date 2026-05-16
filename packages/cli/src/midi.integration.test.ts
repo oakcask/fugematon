@@ -79,15 +79,69 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
 
     const files = await readdir(directory);
     const summary = JSON.parse(await readFile(join(directory, "summary.json"), "utf8")) as {
+      schemaVersion: number;
       lengthTicks: number;
-      seeds: { seed: string; diagnosticsFile: string; midiFile: string }[];
+      seeds: {
+        seed: string;
+        diagnosticsFile: string;
+        midiFile: string;
+        diagnosticsSummary: {
+          hardConstraintFailures: number;
+          texture: {
+            rhythmicIndependenceScore: number;
+          };
+        };
+      }[];
+    };
+    const listeningReview = JSON.parse(await readFile(join(directory, "listening-review.json"), "utf8")) as {
+      schemaVersion: number;
+      lengthTicks: number;
+      regressionChecks: string[];
+      seeds: {
+        seed: string;
+        diagnosticsFile: string;
+        midiFile: string;
+        judgement: string;
+        criteria: Record<string, string>;
+        notes: string;
+        blockers: string[];
+      }[];
+    };
+    const pairwisePreferences = JSON.parse(await readFile(join(directory, "pairwise-preferences.json"), "utf8")) as {
+      schemaVersion: number;
+      lengthTicks: number;
+      preferences: unknown[];
     };
 
+    assert.equal(summary.schemaVersion, 2);
     assert.equal(summary.lengthTicks, 960);
     assert.ok(summary.seeds.length > 1);
+    assert.equal(listeningReview.schemaVersion, 1);
+    assert.equal(listeningReview.lengthTicks, 960);
+    assert.ok(listeningReview.regressionChecks.some((check) => check.includes("fugue-smoke")));
+    assert.deepEqual(pairwisePreferences, {
+      schemaVersion: 1,
+      lengthTicks: 960,
+      instructions:
+        "Add seed pairs when listening produces a clear preference. These records are candidates for future aesthetic scoring weights and do not override hard constraints.",
+      preferences: [],
+    });
     for (const entry of summary.seeds) {
       assert.ok(files.includes(entry.diagnosticsFile));
       assert.ok(files.includes(entry.midiFile));
+      assert.ok(!entry.diagnosticsFile.includes(directory));
+      assert.ok(!entry.midiFile.includes(directory));
+      assert.ok(entry.diagnosticsSummary.hardConstraintFailures >= 0);
+      assert.ok(entry.diagnosticsSummary.texture.rhythmicIndependenceScore >= 0);
+      assert.ok(entry.diagnosticsSummary.texture.rhythmicIndependenceScore <= 1);
+    }
+    for (const entry of listeningReview.seeds) {
+      assert.ok(files.includes(entry.diagnosticsFile));
+      assert.ok(files.includes(entry.midiFile));
+      assert.equal(entry.judgement, "not-reviewed");
+      assert.equal(entry.criteria.subjectMemorability, "not-reviewed");
+      assert.equal(entry.notes, "");
+      assert.deepEqual(entry.blockers, []);
       assert.ok(!entry.diagnosticsFile.includes(directory));
       assert.ok(!entry.midiFile.includes(directory));
     }
