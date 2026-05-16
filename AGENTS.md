@@ -23,3 +23,5 @@
 - Use `ui-inspection` when browser-level Web UI validation is needed.
 - Use `dependency-review` before adding, choosing, upgrading, or approving third-party dependencies.
 - Use `music-theory-review` when reviewing generated music, diagnostics, MIDI, score events, music-quality gates, or phase plans for counterpoint, harmony, fugue form, style fit, or literature-grounded music-theory issues.
+- Use `bibliography-fetch` when finding references, citations, source lists, papers, books, standards, URLs, or source verification for research, writing, documentation, or literature reviews.
+- Use `bibliography-cache` when creating, updating, inspecting, normalizing, or validating cached bibliography records for references, citations, search results, source metadata, and access dates.
