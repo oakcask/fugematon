@@ -477,11 +477,11 @@ pnpm fugematon diagnose --seed bach-001 --ticks 7680
 * Phase 5: 音楽的品質ゲートとして、レビュー harness、counter-subject、自由対位、旋律美 scoring、HarmonicPlan、VoiceLeadingObligation、episode sequence、cadence plan、stretto clarity、和声安定度スコアを実装する。
 * Phase 5.6: Phase 5 review bundle で見つかった大跳躍回収、texture 指標の粗さ、満点に張り付く美しさ diagnostics を修正する。`fugue-smoke` で確認した冒頭4声同時発音、同音高・同方向進行の過多、リズム語彙不足、同音連打、装飾音不足、全声部休止を diagnostics と scoring に入れる。
 * Phase 5.7: dorian、mixolydian、aeolian などの modal context を実装し、modal review seed が実際に旋法として生成されることを diagnostics で確認する。
-* Phase 5.8: review bundle の手動聴取 gate と聴取メモ rubric を固定し、自動 diagnostics だけで Phase 6 へ進まないようにする。`fugue-smoke` は回帰確認 seed として、冒頭 entry、声部独立、音価の多様性、装飾、休符の扱いを確認する。
-* Phase 5.9: Phase 5.6/5.7 の分解指標を review seed 全体へ広げ、counter-subject identity、rhythmic independence、unison、同方向進行、同一リズム、leap recovery、selected candidate の melody cost と texture cost に美しさ gate を置く。manual listening judgement が `pass` でない代表 seed と境界 seed は Phase 6 前の blocker として扱う。
-* Phase 5.10: 声部独立とリズム対位法を改善する。counter-subject と free counterpoint に主題と異なるリズム型、反行、保持と動きの交替を持たせ、entry 周辺と stretto-like section の完全協和過密を厳しく扱う。modal seed では、mode の特徴音と counter-subject の再認識性を同時に保つ。
+* Phase 5.8: review bundle の手動聴取 gate と聴取メモ rubric を固定し、自動 diagnostics だけで Phase 6 へ進まないようにする。`fugue-smoke` は回帰確認 seed として、冒頭 entry、声部独立、音価の多様性、装飾、休符の扱い、アルト主題後の最初のソプラノ応唱が作る和声的濁りを確認する。
+* Phase 5.9: Phase 5.6/5.7 の分解指標を review seed 全体へ広げ、counter-subject identity、rhythmic independence、unison、同方向進行、同一リズム、leap recovery、selected candidate の melody cost と texture cost に美しさ gate を置く。`fugue-smoke` では、アルト主題後の最初のソプラノ応唱が支え声部と不安定な 2 度衝突、応唱 local key の root と scale 外音の衝突、解決感の弱い 4 度構成を作らないことを回帰確認する。manual listening judgement が `pass` でない代表 seed と境界 seed は Phase 6 前の blocker として扱う。
+* Phase 5.10: 声部独立とリズム対位法を改善する。counter-subject と free counterpoint に主題と異なるリズム型、反行、保持と動きの交替を持たせる。主題生成では、強拍上の structural note、短い note の配置、保持や tie による accent 支持、短い強拍 note の解決先を評価し、`fugue-smoke` のアルト主題が提示時点でリズム感を失わないことを確認する。entry 周辺と stretto-like section の完全協和過密、応唱と支える声部の 2 度衝突、root や structural note 周辺の不安定な 4 度/5 度構成、解決を伴わない avoid note を厳しく扱う。modal seed では、mode の特徴音と counter-subject の再認識性を同時に保つ。
 * Phase 5.11: 旋律線、装飾、フレーズ整形を改善する。大跳躍後の回収、局所的な山と谷、同音連打の tie 化または装飾化、cadence 前後の装飾、phrase boundary を扱い、装飾の配置理由を diagnostics に残す。
-* Phase 5.12: 候補評価を hard constraint、rule-based soft score、learned aesthetic score に分け、`CandidateEvaluation` の dimension 別 breakdown、feature version、evaluation model version、pairwise preference、必要に応じた learned weights の A/B review を扱う。満点に張り付く dimension は、section 単位の説明が出るまで Phase 通過条件にしない。
+* Phase 5.12: 候補評価を hard constraint、rule-based soft score、learned aesthetic score に分け、`CandidateEvaluation` の dimension 別 breakdown、feature version、evaluation model version、pairwise preference、必要に応じた learned weights の A/B review を扱う。harmony dimension は root、chord member、avoid note status、non-chord tone role、解決期限を entry/cadence 周辺で説明する。満点に張り付く dimension は、section 単位の説明が出るまで Phase 通過条件にしない。
 * Phase 6: Phase 5.9-5.12 の美しさ gate、声部独立、旋律線、評価内訳整備後に、リングバッファ履歴、巻き戻し replay、MVP 用スライダ、parameter-change メタイベントを実装する。
 * Phase 7: Dedicated Web Worker による生成探索の分離、生成期限、フォールバック候補を実装する。
 
