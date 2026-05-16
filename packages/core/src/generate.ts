@@ -109,6 +109,8 @@ export function generateScore(input: GenerationInput): GenerationOutput {
       unisonOverlapCount: diagnostics.unisonOverlapCount,
       sameDirectionMotionCount: diagnostics.sameDirectionMotionCount,
       sharedRhythmOverlapCount: diagnostics.sharedRhythmOverlapCount,
+      shortStrongBeatEntryNoteCount: diagnostics.shortStrongBeatEntryNoteCount,
+      entrySupportInstabilityCount: diagnostics.entrySupportInstabilityCount,
       durationDistribution: diagnostics.durationDistribution,
       repeatedPitchRunCount: diagnostics.repeatedPitchRunCount,
       allVoiceSilenceGapCount: diagnostics.allVoiceSilenceGapCount,

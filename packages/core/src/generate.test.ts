@@ -482,6 +482,19 @@ test("generateScore applies phase-5.9 boundary seed gates", () => {
   }
 });
 
+test("generateScore exposes phase-5.10 rhythm and entry support diagnostics", () => {
+  const output = generateScore({ seed: "fugue-smoke", lengthTicks: PHASE_5_LENGTH_TICKS });
+  const selectedEvaluation = output.diagnostics.selectedCandidateEvaluations[0];
+
+  assert.ok(output.diagnostics.shortStrongBeatEntryNoteCount > 0);
+  assert.ok(output.diagnostics.entrySupportInstabilityCount > 0);
+  assert.ok(selectedEvaluation !== undefined);
+  assert.ok("unisonOverlapCount" in selectedEvaluation.dimensions.texture.features);
+  assert.ok("sameDirectionMotionCount" in selectedEvaluation.dimensions.texture.features);
+  assert.ok("shortStrongBeatEntryNoteCount" in selectedEvaluation.dimensions.texture.features);
+  assert.ok("entrySupportInstabilityCount" in selectedEvaluation.dimensions.harmony.features);
+});
+
 function countIssues(issues: readonly { code: string }[], code: string): number {
   return issues.filter((issue) => issue.code === code).length;
 }
