@@ -78,11 +78,10 @@ jobs:
             --state open \
             --base "$OLD_BASE_REF" \
             --label "$AUTO_REBASE_LABEL" \
-            --json number,headRefName,headRepository,isDraft \
+            --json number,headRefName,headRepository \
             --jq '
               [
                 .[]
-                | select(.isDraft == false)
                 | select(.headRepository.nameWithOwner == env.REPO)
               ]
             ' > dependent-prs-by-base.json
@@ -91,11 +90,10 @@ jobs:
             --repo "$REPO" \
             --state open \
             --label "$AUTO_REBASE_LABEL" \
-            --json number,headRefName,headRepository,isDraft \
+            --json number,headRefName,headRepository \
             --jq '
               [
                 .[]
-                | select(.isDraft == false)
                 | select(.headRepository.nameWithOwner == env.REPO)
               ]
             ' > dependent-prs-by-label.json
