@@ -200,7 +200,7 @@ Phase 5 の自動品質ゲートは、review bundle、counterpoint texture、har
 
 ## 完了判定
 
-リポジトリ上の Phase 5 自動完了条件は満たしている。
+リポジトリ上の Phase 5 自動完了条件は満たしている。ただし、Phase 5 review bundle の再レビューでは、音楽的美しさを Phase 6 の前提にするには追加の品質フェーズが必要だと判断した。詳細は `phase-5-quality-review.md` を参照する。
 
 * 代表 seed と追加 review seed の diagnostics/MIDI を一括生成できる。
 * 代表 seed で声域違反、声部交差、主題同一性違反、応答計画違反、key metadata mismatch は 0 を維持する。
@@ -211,8 +211,129 @@ Phase 5 の自動品質ゲートは、review bundle、counterpoint texture、har
 
 手動聴取は review bundle が生成する MIDI を対象に継続する。Phase 5 の CI gate は、手動聴取で見つかった退屈さや違和感を後続の rubric と閾値に反映できる形にしている。
 
+Phase 6 の履歴、巻き戻し、操作パラメータへ進む前に、Phase 5.6、Phase 5.7、Phase 5.8 を追加する。さらに、評価関数の説明可能性と学習済みパラメータの導入可否を Phase 5.9、Phase 5.10 として扱う。
+
+## 評価関数と学習済みパラメータの計画
+
+Phase 5.6 以降では、候補スコアリングを単一の加算ペナルティから、説明可能な多軸評価へ移行する。これは、現在の `scoreCandidate()` が hard constraints、旋律品質、texture coverage を単一 cost に畳み込んでおり、どの音楽的観点が候補選択を支配したか追いにくいためである。
+
+調査した関連研究から、以下の方針を採用する。
+
+* Yang and Lerch, "On the evaluation of generative models in music" は、生成音楽を人間レベルの創造性として一括採点するのではなく、domain knowledge に基づく複数特徴量で絶対・相対評価する方針を示している。Fugematon でも score を単一の美しさ値へ潰さず、counterpoint、melody、texture、subject clarity、harmony、form を分ける。
+* Lerch et al., "Survey on the Evaluation of Generative Models in Music" は、出力評価とシステム利用評価、主観評価と客観評価を分ける必要を整理している。Fugematon では runtime scoring、diagnostics、manual listening gate を別責務として扱う。
+* Komosinski and Szachewicz, "Automatic species counterpoint composition by means of the dominance relation" は、重み付き加算だけでは評価基準間の衝突が失われる問題を扱っている。Fugematon では total cost は候補選択用に残すが、各 dimension の内訳を diagnostics に残し、将来的には non-dominated candidate の比較も検討する。
+* Fang et al., "Bach or Mock?" は、Bach 風 chorale に対する解釈可能な grading function を提案している。Fugematon では、事前学習済み要素を入れる場合も、まず特徴量と重みが読める小さな評価器に限定する。
+* DeepBach と Markov Constraints は、学習済みまたは統計的な style model と、ユーザーまたは構造上の constraints を併用できる設計を示している。Fugematon では hard constraints と主題 entry plan は学習済み重みに上書きさせない。
+
+### Runtime 評価器の境界
+
+生成ループ内で使う評価器は、次の三層に分ける。
+
+1. hard constraint gate
+   * 声域違反、声部交差、主題同一性違反、応答計画違反、key metadata mismatch、明確な未解決不協和などを扱う。
+   * ここは手書きルールを正とし、学習済み重みで許可しない。
+2. rule-based soft score
+   * leap recovery、melodic stagnation、同音連打、unison pressure、same-motion pressure、rhythmic independence、entry density、episode direction、stretto clarity などを扱う。
+   * 既存 diagnostics と同じ feature extraction を使い、候補選択にも使う。
+3. learned aesthetic score
+   * 手書き特徴量ベクトルに対する小さな重み付き評価器として扱う。
+   * 初期形は JSON 化された線形重み、またはそれと同程度に説明可能な小型モデルに限定する。
+   * 実行時に外部 API や大型モデルを呼ばない。生成結果の再現性、ブラウザ実行、CI 実行を優先する。
+
+内部型は、単一 number ではなく、候補選択用の `totalCost` と説明用の dimension を分ける。
+
+```ts
+type CandidateEvaluation = {
+  totalCost: number;
+  hardFailures: EvaluationFailure[];
+  dimensions: {
+    counterpoint: ScoreDimension;
+    melody: ScoreDimension;
+    texture: ScoreDimension;
+    subjectClarity: ScoreDimension;
+    harmony: ScoreDimension;
+    form: ScoreDimension;
+    learnedAesthetic?: ScoreDimension;
+  };
+};
+```
+
+`scoreCandidate()` は当面 `evaluateCandidate(...).totalCost` を返す薄い wrapper にし、既存の候補選択アルゴリズムを大きく変えずに評価内訳を導入する。
+
+### 学習済みパラメータの扱い
+
+学習済みパラメータを導入する場合は、生成器本体に訓練処理を入れない。runtime は固定された評価モデルを読み、offline training は別ツールまたは後続 package で行う。
+
+* `featureVersion` を導入し、特徴量定義が変わった場合は学習済み重みとの互換性を切る。
+* `evaluationModelVersion` を diagnostics に記録し、review bundle で manual weights と learned weights を比較できるようにする。
+* `generatorVersion` は、学習済み重みの変更で ScoreEvent 列が変わる場合に更新対象とする。
+* 学習済み重みは、hard constraint を打ち消せない。候補が hard failure を持つ場合は、learned aesthetic score が高くても採用しない。
+* 最初の学習対象は、manual listening gate の pairwise preference と review seed の diagnostics とする。人間が「より良い」と選んだ候補ペアから、soft score の重みを調整する。
+* Bach chorale や counterpoint corpus は参照特徴量分布の比較には使えるが、Fugematon の fugue output に直接「Bach らしさ」を強制しない。目的は模倣ではなく、長時間聴けるフーガ的構造の改善である。
+
+### 実装順序
+
+1. Phase 5.6 で `CandidateEvaluation` と dimension 別 scoring を導入し、既存 `scoreCandidate()` を wrapper 化する。
+2. Phase 5.6 の texture diagnostics を、候補評価の feature extraction と共通化する。
+3. Phase 5.8 の manual listening gate で、seed ごとに「良い候補」「悪い候補」「判断不能」を記録できる形式を追加する。
+4. Phase 5.9 として、手調整の `EvaluationWeights` を外部定義し、review bundle に scoring breakdown を出す。
+5. Phase 5.10 として、offline の pairwise ranking から learned weights を生成し、manual weights と learned weights の A/B review を行う。
+6. Phase 6 の操作パラメータは、評価器の feature と weight が説明可能になってから、次の状態遷移以降に反映する。
+
+### 調査した参考文献
+
+* Li-Chia Yang and Alexander Lerch, ["On the evaluation of generative models in music"](https://musicinformatics.gatech.edu/project/on-the-evaluation-of-generative-models-in-music/).
+* Alexander Lerch et al., ["Survey on the Evaluation of Generative Models in Music"](https://arxiv.org/abs/2506.05104).
+* Maciej Komosinski and Piotr Szachewicz, ["Automatic species counterpoint composition by means of the dominance relation"](https://doi.org/10.1080/17459737.2014.935816).
+* Alexander Fang et al., ["Bach or Mock? A Grading Function for Chorales in the Style of J.S. Bach"](https://arxiv.org/abs/2006.13329).
+* Gaetan Hadjeres, Francois Pachet, and Frank Nielsen, ["DeepBach: a Steerable Model for Bach Chorales Generation"](https://arxiv.org/abs/1612.01010).
+* Francois Pachet and Pierre Roy, ["Markov constraints: steerable generation of Markov sequences"](https://doi.org/10.1007/s10601-010-9101-4).
+
+## Phase 5 追加品質フェーズ
+
+### Phase 5.6: 美しさ diagnostics の分解
+
+* leap recovery miss を候補 scoring の主要重みに昇格する。
+* counter-subject と free counterpoint の coverage を、identity、invertibility、contour、rhythmic independence、repetition に分解する。
+* exposition 冒頭で4声が同時に鳴り始める候補を避け、主題 entry と応答 entry が段階的に重なることを diagnostics で確認する。
+* 同音高、ユニゾン、同方向進行、同一リズムが複数声部に過密に出る箇所を検出し、声部独立を弱める texture として減点する。
+* 音価分布を diagnostics に追加し、全音符、2分音符、4分音符、8分音符、16分音符、付点、3連符を style profile と section の役割に応じて扱えるようにする。
+* 意図のない同音連打を検出し、保持として聞かせるべき場合は tie へ統合する。
+* cadence 前、entry 終端、長い保持音の前後に、trill、mordent、turn などの装飾音候補を追加する。
+* 全声部が同時に停止する無音区間を検出し、構造上必要な休止でない場合は品質問題として扱う。
+* episode direction、stretto clarity、style modulation fit、controlled ambiguity が全 seed で満点になり続ける場合は、section 単位で満点の理由を説明できる diagnostics にする。
+* 候補評価を `CandidateEvaluation` として構造化し、counterpoint、melody、texture、subject clarity、harmony、form の dimension を diagnostics と共有する。
+* `scoreCandidate()` は構造化評価の `totalCost` を使う wrapper にし、既存の候補選択を保ちながら評価理由を追えるようにする。
+
+### Phase 5.7: modal context と modal review seed
+
+* `KeyMode` に dorian、mixolydian、aeolian を追加する。
+* modal seed は実際に modal context を生成することを diagnostics で確認する。
+* mode の特徴音、modal cadence、tonal cadence への寄りすぎを指標化する。
+
+### Phase 5.8: 聴取 gate
+
+* review bundle ごとに手動聴取メモを残す形式を決める。
+* 主題の記憶しやすさ、非 entry 声部の歌いやすさ、episode の推進力、stretto の緊張感、長時間の退屈さを seed ごとに記録する。
+* `fugue-smoke` を回帰確認 seed として扱い、冒頭 entry、声部独立、リズム多様性、同音連打、装飾音、全休止区間を聴取で確認する。
+* 自動 gate を通過しても、聴取で退屈または機械的と判断した seed は Phase 6 へ進む条件を満たさない。
+* 後続の learned aesthetic score の教師データにできるよう、候補または生成結果の pairwise preference を保存できる形式を検討する。
+
+### Phase 5.9: 評価重みの外部化
+
+* 手調整の `EvaluationWeights` を source code 内の散在した係数から分離し、feature version と evaluation model version を持つ小さな定義として管理する。
+* review bundle は、total cost だけでなく dimension 別の score breakdown を出力する。
+* hard constraint、rule-based soft score、learned aesthetic score の寄与を別々に表示し、どの重みが候補選択を支配したか確認できるようにする。
+
+### Phase 5.10: 事前学習済み評価パラメータ
+
+* offline training で pairwise preference から soft score の重みを学習する。
+* 初期モデルは線形重みまたは説明可能な小型モデルに限定し、runtime に外部 API、非決定的推論、大型モデルを入れない。
+* learned weights は manual weights と A/B review し、代表 seed で hard constraints、manual listening gate、long score diagnostics を同時に満たす場合だけ既定値候補にする。
+* 学習済み重みを採用して ScoreEvent 列が変わる場合は、`generatorVersion` を更新する。
+
 ## 対象外
 
-* 操作パラメータの UI は Phase 5.5 の品質ゲート通過後、Phase 6 で扱う。
+* 操作パラメータの UI は Phase 5.8 の聴取 gate と Phase 5.9 の評価内訳整備後、Phase 6 で扱う。
 * 生成探索の Worker 化は Phase 7 で扱う。
 * 五線譜表示は別途必要性が固まってから扱う。
