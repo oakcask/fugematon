@@ -55,6 +55,7 @@ Use templates or documentation when:
 - Use `AGENTS.md` plus CI when the agent needs to remember the rule and the repository can enforce it.
 - Use a skill plus CI when the agent needs a task-specific procedure and the result needs deterministic validation.
 - Use `AGENTS.md` plus a skill when a broad principle has a specialized implementation workflow.
+- Prefer `AGENTS.md` plus a skill for judgment-heavy rules that must shape default behavior but also need a repeatable deep-review workflow, such as third-party dependency selection and security review.
 - Use documentation plus templates when the guardrail is primarily about human coordination.
 
 ## Implementation Rules
