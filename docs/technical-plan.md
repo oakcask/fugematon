@@ -420,7 +420,7 @@ pnpm fugematon diagnose --seed bach-001 --ticks 7680
 * Phase 1: 固定長の4声 exposition、初期 diagnostics、MIDI エクスポート、代表 seed による CI 検証を実装する。
 * Phase 2: Vite ベースの Web UI、Start 操作、WebAudio 再生、Canvas 2D ピアノロール、seed 入力を実装する。
 * Phase 3: exposition -> episode -> subject return -> episode -> stretto-like section の状態機械と、数小節単位の候補生成・スコアリングを実装する。
-* Phase 3 UI follow-up: 長尺化した default score をピアノロール全体へ圧縮表示せず、固定秒数の追従 viewport と表示範囲計算テストを追加する。
+* Phase 3 UI follow-up: 長尺化した default score をピアノロール全体へ圧縮表示せず、固定秒数の追従 viewport と表示範囲計算テストを追加した。
 * Phase 4: 主題を scale degree ベースの抽象表現へ移し、entry plan、true answer、tonal answer、主題同一性 diagnostics を実装する。
 * Phase 5: counter-subject、自由対位、episode sequence、cadence plan、和声安定度スコアを実装する。
 * Phase 6: リングバッファ履歴、巻き戻し replay、MVP 用スライダ、parameter-change メタイベントを実装する。
