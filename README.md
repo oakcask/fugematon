@@ -98,7 +98,7 @@ The inspection starts the Vite development server, checks desktop and mobile Chr
 Create a production web build:
 
 ```sh
-pnpm --filter @fugematon/web build
+pnpm build
 ```
 
 ## Project Layout

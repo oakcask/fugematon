@@ -615,14 +615,11 @@ function chooseContinuationSection(
   const candidates = buildContinuationCandidates(subject, keySignature, state, startTick, sectionDurationTicks, rng);
   let best = candidates[0]!;
   let bestEvaluation = evaluateCandidate(previousNotes, best);
-  let bestCost = bestEvaluation.totalCost;
 
   for (const candidate of candidates.slice(1)) {
-    const candidateCost = scoreCandidate(previousNotes, candidate);
-    if (candidateCost < bestCost) {
+    const evaluation = evaluateCandidate(previousNotes, candidate);
+    if (evaluation.totalCost < bestEvaluation.totalCost) {
       best = candidate;
-      bestCost = candidateCost;
-      const evaluation = evaluateCandidate(previousNotes, candidate);
       bestEvaluation = evaluation;
     }
   }
@@ -843,10 +840,6 @@ function cadenceKindForSection(state: FugueState, targetKey: KeySignature): Cade
     return "modal";
   }
   return state === "episode" ? "modulatory" : "authentic";
-}
-
-function scoreCandidate(previousNotes: readonly NoteEvent[], candidate: Exposition): number {
-  return evaluateCandidate(previousNotes, candidate).totalCost;
 }
 
 function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate: Exposition): CandidateEvaluation {

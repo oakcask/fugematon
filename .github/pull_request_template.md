@@ -28,4 +28,6 @@ State any uncertainty plainly instead of overstating confidence.
 <!--
 List the tests, manual checks, logs, screenshots, or other evidence used to reduce risk.
 Use "Not run" with a short reason when verification was skipped.
+Avoid GitHub mention syntax here unless deliberately notifying a user or team. Prefer root scripts,
+package paths, or escaped scoped package names when listing commands.
 -->

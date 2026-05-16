@@ -22,9 +22,14 @@ for (const viewport of VIEWPORTS) {
     await page.goto("/");
 
     await expect(page.getByRole("heading", { name: "Fugematon" })).toBeVisible();
-    await expect(page.getByLabel("Seed")).toHaveValue("fugue-smoke");
+    const seedInput = page.getByLabel("Seed");
+    await expect(seedInput).toHaveValue("fugue-smoke");
+    await expect(page.getByRole("button", { name: "Random seed" })).toBeVisible();
     await expect(page.getByText("Tempo")).toBeVisible();
     await expect(page.getByRole("button", { name: "Start" })).toBeVisible();
+
+    await page.getByRole("button", { name: "Random seed" }).click();
+    await expect(seedInput).toHaveValue(/^seed-[0-9a-z]{7}-[0-9a-z]{7}$/);
 
     const pianoRoll = page.locator("#piano-roll");
     await expect(pianoRoll).toBeVisible();
