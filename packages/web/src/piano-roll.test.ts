@@ -1,11 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { generateScore, PHASE_3_LENGTH_TICKS } from "@fugematon/core";
-import {
-  DEFAULT_VIEWPORT_SECONDS,
-  computePianoRollLayout,
-  computePianoRollViewport,
-} from "./piano-roll.js";
+import { computePianoRollLayout, computePianoRollViewport, DEFAULT_VIEWPORT_SECONDS } from "./piano-roll.js";
 import { createPlaybackModel } from "./score.js";
 
 test("computePianoRollLayout maps visible notes into canvas bounds", () => {

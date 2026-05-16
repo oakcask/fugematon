@@ -12,12 +12,7 @@ export class Xoshiro128StarStar {
   #s3: number;
 
   constructor(state: readonly [number, number, number, number]) {
-    const [s0, s1, s2, s3] = state.map((part) => part >>> 0) as [
-      number,
-      number,
-      number,
-      number,
-    ];
+    const [s0, s1, s2, s3] = state.map((part) => part >>> 0) as [number, number, number, number];
 
     if ((s0 | s1 | s2 | s3) === 0) {
       throw new Error("xoshiro128** state must not be all zero");
@@ -108,12 +103,7 @@ export class Xoshiro128StarStar {
 }
 
 export function seedToUint32State(seed: string): [number, number, number, number] {
-  const state: [number, number, number, number] = [
-    0x811c9dc5,
-    0x9e3779b9,
-    0x85ebca6b,
-    0xc2b2ae35,
-  ];
+  const state: [number, number, number, number] = [0x811c9dc5, 0x9e3779b9, 0x85ebca6b, 0xc2b2ae35];
 
   const normalized = seed.length === 0 ? "\0" : seed;
   for (let i = 0; i < normalized.length; i += 1) {

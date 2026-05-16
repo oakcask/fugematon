@@ -86,11 +86,7 @@ export function computePianoRollLayout(
   });
 }
 
-export function drawPianoRoll(
-  canvas: HTMLCanvasElement,
-  model: PlaybackModel,
-  playbackSecond: number,
-): void {
+export function drawPianoRoll(canvas: HTMLCanvasElement, model: PlaybackModel, playbackSecond: number): void {
   const context = canvas.getContext("2d");
   if (context === null) {
     return;
@@ -149,8 +145,7 @@ function drawBackground(
   const firstBeatSecond = Math.ceil(viewport.startSecond / beatSeconds) * beatSeconds;
   const viewportDuration = Math.max(1, viewport.endSecond - viewport.startSecond);
   for (let second = firstBeatSecond; second <= viewport.endSecond; second += beatSeconds) {
-    const x =
-      LEFT_GUTTER + ((second - viewport.startSecond) / viewportDuration) * (width - LEFT_GUTTER - RIGHT_GUTTER);
+    const x = LEFT_GUTTER + ((second - viewport.startSecond) / viewportDuration) * (width - LEFT_GUTTER - RIGHT_GUTTER);
     context.beginPath();
     context.moveTo(x, TOP_GUTTER);
     context.lineTo(x, height - BOTTOM_GUTTER);

@@ -1,9 +1,4 @@
-import {
-  DEFAULT_GENERATION_PARAMETERS,
-  GENERATOR_VERSION,
-  TICKS_PER_QUARTER,
-  VOICE_RANGES,
-} from "./constants.js";
+import { DEFAULT_GENERATION_PARAMETERS, GENERATOR_VERSION, TICKS_PER_QUARTER, VOICE_RANGES } from "./constants.js";
 import type {
   AnswerKind,
   DiagnosticIssue,
@@ -174,9 +169,7 @@ export function generateScore(input: GenerationInput): GenerationOutput {
   };
 }
 
-export function normalizeParameters(
-  parameters: Partial<GenerationParameters> | undefined,
-): GenerationParameters {
+export function normalizeParameters(parameters: Partial<GenerationParameters> | undefined): GenerationParameters {
   const merged = {
     ...DEFAULT_GENERATION_PARAMETERS,
     ...parameters,
@@ -437,7 +430,13 @@ function buildContinuationSection(
   const subjectEntries: Exposition["subjectEntries"] = [];
 
   addSubjectEntry(notes, subjectEntries, subject, entry);
-  addSustainedCounterpoint(notes, entry.voice, entry.startTick, entry.supportDurationTicks, tonicPitchClass(entry.localKey));
+  addSustainedCounterpoint(
+    notes,
+    entry.voice,
+    entry.startTick,
+    entry.supportDurationTicks,
+    tonicPitchClass(entry.localKey),
+  );
   notes.sort(compareNoteEvents);
 
   return {
@@ -477,7 +476,13 @@ function buildStrettoSection(
     localKey: transposeKey(entry.globalKey, 7),
     answerKind: chooseAnswerKind(subject),
   });
-  addSustainedCounterpoint(notes, entry.firstVoice, entry.startTick, subjectDuration(subject), tonicPitchClass(entry.globalKey));
+  addSustainedCounterpoint(
+    notes,
+    entry.firstVoice,
+    entry.startTick,
+    subjectDuration(subject),
+    tonicPitchClass(entry.globalKey),
+  );
   notes.sort(compareNoteEvents);
 
   return {
@@ -643,16 +648,10 @@ function subjectDuration(subject: readonly SubjectNote[]): number {
   return subject.reduce((duration, note) => duration + note.durationTicks, 0);
 }
 
-function hasOverlap(
-  notes: readonly NoteEvent[],
-  voice: Voice,
-  startTick: number,
-  durationTicks: number,
-): boolean {
+function hasOverlap(notes: readonly NoteEvent[], voice: Voice, startTick: number, durationTicks: number): boolean {
   const endTick = startTick + durationTicks;
   return notes.some(
-    (note) =>
-      note.voice === voice && note.startTick < endTick && startTick < note.startTick + note.durationTicks,
+    (note) => note.voice === voice && note.startTick < endTick && startTick < note.startTick + note.durationTicks,
   );
 }
 
@@ -679,7 +678,10 @@ function placePitchInRegister(pitchClass: number, voice: Voice, registerTarget: 
   return fitted;
 }
 
-function analyzeScore(notes: readonly NoteEvent[], subjectEntries: readonly PlannedEntry[]): {
+function analyzeScore(
+  notes: readonly NoteEvent[],
+  subjectEntries: readonly PlannedEntry[],
+): {
   rangeViolations: number;
   voiceCrossings: number;
   parallelPerfects: number;

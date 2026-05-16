@@ -1,4 +1,4 @@
-import { TICKS_PER_QUARTER, VOICES } from "./constants.js";
+import type { TICKS_PER_QUARTER, VOICES } from "./constants.js";
 
 export type Voice = (typeof VOICES)[number];
 

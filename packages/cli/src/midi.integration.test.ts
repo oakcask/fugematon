@@ -176,12 +176,7 @@ class MidiCursor {
   }
 
   readUint32(): number {
-    return (
-      (this.readUint8() << 24) |
-      (this.readUint8() << 16) |
-      (this.readUint8() << 8) |
-      this.readUint8()
-    ) >>> 0;
+    return ((this.readUint8() << 24) | (this.readUint8() << 16) | (this.readUint8() << 8) | this.readUint8()) >>> 0;
   }
 
   readVariableLengthQuantity(limit: number): number {

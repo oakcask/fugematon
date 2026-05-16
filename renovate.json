@@ -1,17 +1,10 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:recommended",
-    "customManagers:githubActionsVersions",
-    "helpers:pinGitHubActionDigests"
-  ],
+  "extends": ["config:recommended", "customManagers:githubActionsVersions", "helpers:pinGitHubActionDigests"],
   "prConcurrentLimit": 1,
   "packageRules": [
     {
-      "matchUpdateTypes": [
-        "patch",
-        "minor"
-      ],
+      "matchUpdateTypes": ["patch", "minor"],
       "matchCurrentAge": "> 5 days",
       "automerge": true
     }
