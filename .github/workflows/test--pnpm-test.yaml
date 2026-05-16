@@ -2,9 +2,21 @@ name: test / pnpm test
 
 on:
   pull_request:
+    paths:
+      - package.json
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - tsconfig.json
+      - packages/**
   push:
     branches:
       - main
+    paths:
+      - package.json
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - tsconfig.json
+      - packages/**
 
 permissions:
   contents: read
