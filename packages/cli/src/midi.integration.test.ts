@@ -98,6 +98,16 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
               unsupportedSoloRunCount: number;
               abruptTextureDropCount: number;
             };
+            pitchContourMotion: {
+              fourBeat: {
+                bassUpperSameDirectionRatio: number;
+                bassUpperContraryRatio: number;
+              };
+              eightBeat: {
+                bassUpperSameDirectionRatio: number;
+                bassUpperContraryRatio: number;
+              };
+            };
           };
         };
         phase59Gate: {
@@ -114,6 +124,10 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
           followUps: unknown[];
         };
         phase6Gate: {
+          passed: boolean;
+          failures: unknown[];
+        };
+        phase7Gate: {
           passed: boolean;
           failures: unknown[];
         };
@@ -139,7 +153,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       preferences: unknown[];
     };
 
-    assert.equal(summary.schemaVersion, 4);
+    assert.equal(summary.schemaVersion, 5);
     assert.equal(summary.lengthTicks, 960);
     assert.ok(summary.seeds.length > 1);
     assert.equal(listeningReview.schemaVersion, 1);
@@ -169,6 +183,8 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       assert.ok(Array.isArray(entry.phase511Gate.followUps));
       assert.equal(typeof entry.phase6Gate.passed, "boolean");
       assert.ok(Array.isArray(entry.phase6Gate.failures));
+      assert.equal(typeof entry.phase7Gate.passed, "boolean");
+      assert.ok(Array.isArray(entry.phase7Gate.failures));
       assert.ok(entry.diagnosticsSummary.texture.maxEntrySupportInstabilityPerEntry >= 0);
       assert.ok(entry.diagnosticsSummary.texture.maxConsecutiveEntrySupportInstabilities >= 0);
       assert.ok(entry.diagnosticsSummary.texture.unresolvedEntrySupportInstabilityCount >= 0);
@@ -176,6 +192,10 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       assert.ok(entry.diagnosticsSummary.texture.unresolvedSevereEntryIntervalCount >= 0);
       assert.ok(entry.diagnosticsSummary.texture.soloTexture.unsupportedSoloRunCount >= 0);
       assert.ok(entry.diagnosticsSummary.texture.soloTexture.abruptTextureDropCount >= 0);
+      assert.ok(entry.diagnosticsSummary.texture.pitchContourMotion.fourBeat.bassUpperSameDirectionRatio >= 0);
+      assert.ok(entry.diagnosticsSummary.texture.pitchContourMotion.fourBeat.bassUpperContraryRatio >= 0);
+      assert.ok(entry.diagnosticsSummary.texture.pitchContourMotion.eightBeat.bassUpperSameDirectionRatio >= 0);
+      assert.ok(entry.diagnosticsSummary.texture.pitchContourMotion.eightBeat.bassUpperContraryRatio >= 0);
     }
     for (const entry of listeningReview.seeds) {
       assert.ok(files.includes(entry.diagnosticsFile));

@@ -119,6 +119,7 @@ export function generateScore(input: GenerationInput): GenerationOutput {
       repeatedPitchRunCount: diagnostics.repeatedPitchRunCount,
       allVoiceSilenceGapCount: diagnostics.allVoiceSilenceGapCount,
       soloTexture: diagnostics.soloTexture,
+      pitchContourMotion: diagnostics.pitchContourMotion,
       ornamentCandidateCount: diagnostics.ornamentCandidateCount,
       ornamentDensity: diagnostics.ornamentDensity,
       ornamentPlacementReasons: diagnostics.ornamentPlacementReasons,

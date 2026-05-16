@@ -243,3 +243,13 @@ export const PHASE_6_DIAGNOSTICS_PROFILE = {
   maxExpositionDurationTicks: TICKS_PER_QUARTER * 20,
   maxFirstContinuationStartTick: TICKS_PER_QUARTER * 20,
 } as const;
+
+export const PHASE_7_DIAGNOSTICS_PROFILE = {
+  maxFourBeatBassUpperSameDirectionRatio: 0.724,
+  minFourBeatBassUpperContraryRatio: 0.276,
+  maxEightBeatBassUpperSameDirectionRatio: 0.65,
+  minEightBeatBassUpperContraryRatio: 0.35,
+  maxFourBeatOuterVoiceSameDirectionRatio: 0.75,
+  minFourBeatOuterVoiceContraryRatio: 0.25,
+  minContourComparisonCount: 1,
+} as const;

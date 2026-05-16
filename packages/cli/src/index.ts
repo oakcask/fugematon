@@ -4,6 +4,7 @@ import { join } from "node:path";
 import type { GenerationDiagnostics } from "@fugematon/core";
 import {
   evaluatePhase6Diagnostics,
+  evaluatePhase7Diagnostics,
   evaluatePhase59Diagnostics,
   evaluatePhase510Diagnostics,
   evaluatePhase511Diagnostics,
@@ -12,6 +13,7 @@ import {
   PHASE_5_11_ROTATION_SEEDS,
   PHASE_5_REVIEW_SEEDS,
   type Phase6GateResult,
+  type Phase7GateResult,
   type Phase59GateResult,
   type Phase510GateResult,
   type Phase511GateResult,
@@ -59,7 +61,7 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
 async function writeReviewBundle(outDirectory: string, lengthTicks: number): Promise<void> {
   await mkdir(outDirectory, { recursive: true });
   const summary = {
-    schemaVersion: 4,
+    schemaVersion: 5,
     lengthTicks,
     seeds: [] as {
       seed: string;
@@ -71,6 +73,7 @@ async function writeReviewBundle(outDirectory: string, lengthTicks: number): Pro
       phase510Gate: Phase510GateResult;
       phase511Gate: Phase511GateResult;
       phase6Gate: Phase6GateResult;
+      phase7Gate: Phase7GateResult;
     }[],
   };
   const listeningReview = createListeningReview(lengthTicks);
@@ -94,6 +97,7 @@ async function writeReviewBundle(outDirectory: string, lengthTicks: number): Pro
       phase510Gate: evaluatePhase510Diagnostics(seed, output.diagnostics),
       phase511Gate: evaluatePhase511Diagnostics(seed, output.diagnostics),
       phase6Gate: evaluatePhase6Diagnostics(seed, output.diagnostics),
+      phase7Gate: evaluatePhase7Diagnostics(seed, output.diagnostics),
     });
     listeningReview.seeds.push(createListeningSeedReview(seed, category, diagnosticsFile, midiFile));
   }
@@ -125,6 +129,7 @@ type ReviewDiagnosticsSummary = {
     severeEntryIntervalCount: number;
     unresolvedSevereEntryIntervalCount: number;
     soloTexture: GenerationDiagnostics["soloTexture"];
+    pitchContourMotion: GenerationDiagnostics["pitchContourMotion"];
   };
   melody: {
     leapRecoveryMisses: number;
@@ -214,6 +219,7 @@ function summarizeDiagnostics(diagnostics: GenerationDiagnostics): ReviewDiagnos
       severeEntryIntervalCount: diagnostics.severeEntryIntervalCount,
       unresolvedSevereEntryIntervalCount: diagnostics.unresolvedSevereEntryIntervalCount,
       soloTexture: diagnostics.soloTexture,
+      pitchContourMotion: diagnostics.pitchContourMotion,
     },
     melody: {
       leapRecoveryMisses: diagnostics.leapRecoveryMisses,

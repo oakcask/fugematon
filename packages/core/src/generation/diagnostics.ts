@@ -7,6 +7,8 @@ import type {
   HarmonicPlan,
   NoteEvent,
   OrnamentPlacementReasons,
+  PitchContourMotionSummary,
+  PitchContourWindowSummary,
   PlannedEntry,
   SoloTextureSummary,
   Voice,
@@ -56,6 +58,7 @@ export function analyzeScore(
   repeatedPitchRunCount: number;
   allVoiceSilenceGapCount: number;
   soloTexture: SoloTextureSummary;
+  pitchContourMotion: PitchContourMotionSummary;
   ornamentCandidateCount: number;
   ornamentDensity: number;
   ornamentPlacementReasons: OrnamentPlacementReasons;
@@ -265,6 +268,7 @@ function analyzeTextureDiagnostics(
     repeatedPitchRunCount,
     allVoiceSilenceGapCount: countAllVoiceSilenceGaps(notes),
     soloTexture: analyzeSoloTexture(notes, sectionPlans),
+    pitchContourMotion: analyzePitchContourMotion(notes),
     ornamentCandidateCount,
     ornamentDensity: roundRatio(ornamentCandidateCount / supportNoteCount),
     ornamentPlacementReasons: analyzeOrnamentPlacementReasons(notes, subjectEntries, sectionPlans),
@@ -723,6 +727,80 @@ function analyzeSoloTexture(notes: readonly NoteEvent[], sectionPlans: readonly 
     abruptTextureDropCount: abruptRuns.length,
     soloVoiceImbalance: Math.max(...runsByVoice) - Math.min(...runsByVoice),
   };
+}
+
+function analyzePitchContourMotion(notes: readonly NoteEvent[]): PitchContourMotionSummary {
+  return {
+    fourBeat: analyzePitchContourWindow(notes, TICKS_PER_QUARTER * 4),
+    eightBeat: analyzePitchContourWindow(notes, TICKS_PER_QUARTER * 8),
+  };
+}
+
+function analyzePitchContourWindow(notes: readonly NoteEvent[], windowTicks: number): PitchContourWindowSummary {
+  const endTick = Math.max(0, ...notes.map((note) => note.startTick + note.durationTicks));
+  let bassUpperSameDirectionCount = 0;
+  let bassUpperContraryCount = 0;
+  let bassUpperComparisonCount = 0;
+  let outerVoiceSameDirectionCount = 0;
+  let outerVoiceContraryCount = 0;
+  let outerVoiceComparisonCount = 0;
+
+  for (let startTick = 0; startTick + windowTicks <= endTick; startTick += TICKS_PER_QUARTER) {
+    const endWindowTick = startTick + windowTicks;
+    const bassDirection = voiceWindowDirection(notes, "bass", startTick, endWindowTick);
+    if (bassDirection === 0) {
+      continue;
+    }
+
+    for (const upperVoice of ["soprano", "alto", "tenor"] as const) {
+      const upperDirection = voiceWindowDirection(notes, upperVoice, startTick, endWindowTick);
+      if (upperDirection === 0) {
+        continue;
+      }
+      bassUpperComparisonCount += 1;
+      if (upperDirection === bassDirection) {
+        bassUpperSameDirectionCount += 1;
+      } else {
+        bassUpperContraryCount += 1;
+      }
+    }
+
+    const sopranoDirection = voiceWindowDirection(notes, "soprano", startTick, endWindowTick);
+    if (sopranoDirection !== 0) {
+      outerVoiceComparisonCount += 1;
+      if (sopranoDirection === bassDirection) {
+        outerVoiceSameDirectionCount += 1;
+      } else {
+        outerVoiceContraryCount += 1;
+      }
+    }
+  }
+
+  return {
+    windowTicks,
+    bassUpperComparisonCount,
+    bassUpperSameDirectionRatio: roundRatio(bassUpperSameDirectionCount / Math.max(1, bassUpperComparisonCount)),
+    bassUpperContraryRatio: roundRatio(bassUpperContraryCount / Math.max(1, bassUpperComparisonCount)),
+    outerVoiceComparisonCount,
+    outerVoiceSameDirectionRatio: roundRatio(outerVoiceSameDirectionCount / Math.max(1, outerVoiceComparisonCount)),
+    outerVoiceContraryRatio: roundRatio(outerVoiceContraryCount / Math.max(1, outerVoiceComparisonCount)),
+  };
+}
+
+function voiceWindowDirection(notes: readonly NoteEvent[], voice: Voice, startTick: number, endTick: number): number {
+  const startPitch = activePitchForVoiceAt(notes, voice, startTick);
+  const endPitch = activePitchForVoiceAt(notes, voice, endTick - 1);
+  if (startPitch === undefined || endPitch === undefined) {
+    return 0;
+  }
+
+  return Math.sign(endPitch - startPitch);
+}
+
+function activePitchForVoiceAt(notes: readonly NoteEvent[], voice: Voice, tick: number): number | undefined {
+  return notes.find(
+    (note) => note.voice === voice && note.startTick <= tick && tick < note.startTick + note.durationTicks,
+  )?.pitch;
 }
 
 function activeVoicesDuring(notes: readonly NoteEvent[], startTick: number, endTick: number): Voice[] {
