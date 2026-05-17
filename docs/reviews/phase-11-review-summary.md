@@ -134,10 +134,30 @@ Project response: register planner は候補 pool を増やす方向では有効
 
 Remaining listening gap: 今回も automatic diagnostics と generated MIDI bundle の作成までで、通し聴取と before/after pairwise preference は未実施である。selected output の音符差分は意図的に出していないため、採用判断ではなく candidate pool evidence として扱う。
 
+### 9. Section grammar alternatives を oracle pool に追加した
+
+生成 bundle:
+
+```sh
+pnpm fugematon review-ab --out samples/phase11-section-grammar-candidates-ab --ticks 129600 --baseline-label phase11-oracle-selection --baseline-model phase10-oracle-selection --variant-label phase11-section-grammar-candidates --variant-model phase10-section-local-planner
+```
+
+対象 seed: 22 seed 全体。代表例は `bach-001`、境界は `minor-entry`、rotation は `modal-cadence`、adversarial は `dense-modal`。
+
+Phase 10 section-local planner の candidate pool に、現在の planned state とは別の `episode`、`subject-return`、`stretto-like` を試す section grammar alternatives を追加した。これらは oracle/pool evidence 用の候補として pool に入るが、selected output は既存の guarded Phase 10 candidates までに制限する。あわせて candidate pool oracle の `section-grammar-repetition` は、選択済み state ではなく candidate 自身の section state で history risk を測るようにした。
+
+22 seed 合計では hard constraints は 0 のまま維持された。candidate count は 9092 から 26416、viable candidate count は 896 から 2178 に増えた。`section-grammar-repetition` の generator-needed rate は 1.000 から 0.942、selection-only upper-bound reduction rate は 0.000 から 0.063 へ動いた。代表 seed では `bach-001` が 1.000 から 0.870、`dense-modal` が 1.000 から 0.833 へ下がった一方、`minor-entry` と `modal-cadence` は 1.000 のままだった。
+
+Theory basis: フーガの長尺 form は、episode、codetta、stretto preparation、cadence extension、restatement の配置で方向感を作る。現在の候補 pool に別 state の section を混ぜるだけでも oracle 上の上限は少し動くが、長距離構文そのものを計画していないため、多くの seed では周期的な state pattern の反復が残る。
+
+Project response: section grammar alternatives は candidate generation 不足の切り分けには有効だったが、Phase 11 の採用 baseline にはまだ届かない。次の work は、現在 section だけの別 state 候補ではなく、前 section の cadence strength、density、entry plan、local key distance を使った state transition planner と、codetta/cadence extension などの明示的な長距離構文を候補化する。
+
+Remaining listening gap: 今回も automatic diagnostics と generated MIDI bundle の作成までで、通し聴取と before/after pairwise preference は未実施である。selected output の音符差分は意図的に出していないため、採用判断ではなく candidate pool evidence として扱う。
+
 ## Remaining Gaps
 
 * MIDI の通し聴取と before/after pairwise preference は未実施。
 * `metricalHarmony` は time signature ごとの強拍分類をまだ持たない暫定 summary である。weak beat non-chord-tone resolution は次 strong beat までの stepwise chord-tone arrival に限るため、掛留の準備、anticipation、escape tone、longer preparation/resolution はまだ区別しない。
 * Candidate pool oracle の Phase 11 blocker family は出るが、selection-only upper bound はほとんどの blocker で低く、generator-needed rate が高い。
-* section grammar repetition は register-blended section-local candidates では改善せず、generator-needed rate 1.000 のまま残る。
-* review summary 追加 PR は生成音そのもの、candidate scoring、gate threshold を変えていない。follow-up diagnostics PR は selected candidate feature を増やし、register candidate PR は oracle pool を増やしたが、selected output と gate threshold は変えていない。
+* section grammar repetition は section grammar alternatives で generator-needed rate が 1.000 から 0.942 へ下がったが、まだ大半が generator/planner-needed として残る。
+* review summary 追加 PR は生成音そのもの、candidate scoring、gate threshold を変えていない。follow-up diagnostics PR は selected candidate feature を増やし、register / section grammar candidate PR は oracle pool を増やしたが、selected output と gate threshold は変えていない。

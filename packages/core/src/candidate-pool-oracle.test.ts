@@ -158,10 +158,62 @@ test("candidate pool oracle reports phase-11 blocker families and upper-bound ev
   assert.equal(bassRootSupport?.selectionOnlyUpperBoundRiskReduction, 3);
 });
 
+test("candidate pool oracle scores section grammar history by candidate state", () => {
+  const selected = candidateEvaluation({
+    entryRisk: 0,
+    leapRecoveryMisses: 0,
+    counterSubjectIdentityRetention: 0.8,
+    sectionState: "stretto-like",
+    phase11: {
+      sectionGrammarRisk: 2,
+    },
+  });
+  const alternativeState = candidateEvaluation({
+    entryRisk: 0,
+    leapRecoveryMisses: 0,
+    counterSubjectIdentityRetention: 0.8,
+    sectionState: "subject-return",
+    phase11: {
+      sectionGrammarRisk: 2,
+    },
+  });
+
+  const summary = summarizeCandidatePoolOracleSections([
+    classifyCandidatePoolOracleSection({
+      state: "stretto-like",
+      startTick: 9600,
+      durationTicks: 3840,
+      evaluations: [selected, alternativeState],
+      selectedCandidateIndex: 0,
+      stateHistory: [
+        "exposition",
+        "episode",
+        "subject-return",
+        "episode",
+        "stretto-like",
+        "episode",
+        "subject-return",
+        "episode",
+        "stretto-like",
+      ],
+    }),
+  ]);
+  const sectionGrammar = summary.blockerClassifications.find(
+    (blocker) => blocker.blocker === "section-grammar-repetition",
+  );
+
+  assert.equal(sectionGrammar?.classification, "selection-model");
+  assert.equal(sectionGrammar?.selectedRiskTotal, 3);
+  assert.equal(sectionGrammar?.bestViableRiskTotal, 2);
+  assert.equal(sectionGrammar?.selectionOnlyUpperBoundRiskReduction, 1);
+  assert.equal(sectionGrammar?.generatorNeededRate, 0);
+});
+
 function candidateEvaluation(input: {
   entryRisk: number;
   leapRecoveryMisses: number;
   counterSubjectIdentityRetention: number;
+  sectionState?: CandidateEvaluation["explanations"]["sections"][number]["state"];
   hardFailures?: CandidateEvaluation["hardFailures"];
   totalCost?: number;
   phase11?: {
@@ -212,7 +264,7 @@ function candidateEvaluation(input: {
       ],
       sections: [
         {
-          state: "subject-return",
+          state: input.sectionState ?? "subject-return",
           startTick: 9600,
           durationTicks: 3840,
           cadenceKind: "authentic",

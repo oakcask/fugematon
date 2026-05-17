@@ -1085,6 +1085,30 @@ test("generateScore adds register-blended section-local planner alternatives", (
   );
 });
 
+test("generateScore adds section grammar alternatives to the oracle pool", () => {
+  const seed = "dense-modal";
+  const baseline = generateScore({
+    seed,
+    lengthTicks: PHASE_5_LENGTH_TICKS,
+    selectionModel: "phase10-oracle-selection",
+  });
+  const variant = generateScore({
+    seed,
+    lengthTicks: PHASE_5_LENGTH_TICKS,
+    selectionModel: "phase10-section-local-planner",
+  });
+  const baselineGrammar = requireOracleBlocker(baseline.diagnostics.candidatePoolOracle, "section-grammar-repetition");
+  const variantGrammar = requireOracleBlocker(variant.diagnostics.candidatePoolOracle, "section-grammar-repetition");
+
+  assert.ok(
+    variant.diagnostics.candidatePoolOracle.candidateCount > baseline.diagnostics.candidatePoolOracle.candidateCount,
+  );
+  assert.ok(variantGrammar.generatorNeededRate < baselineGrammar.generatorNeededRate);
+  assert.ok(
+    variantGrammar.selectionOnlyUpperBoundRiskReductionRate > baselineGrammar.selectionOnlyUpperBoundRiskReductionRate,
+  );
+});
+
 test("generateScore nudges non-modal stepwise pattern fixation without modal guardrail regressions", () => {
   const blockerSeeds = [
     ["fugue-smoke", 0.72, 5, 566, 25],

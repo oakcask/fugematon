@@ -453,6 +453,7 @@ export function buildContinuationCandidates(
   const candidates: Exposition[] = [];
   const sectionLocalPlannerCandidates: Exposition[] = [];
   const registerPlannerCandidates: Exposition[] = [];
+  const sectionGrammarCandidates: Exposition[] = [];
   const includeSectionLocalPlannerCandidates = selectionModel === "phase10-section-local-planner";
 
   if (state === "episode") {
@@ -533,8 +534,15 @@ export function buildContinuationCandidates(
     }
   }
 
+  if (includeSectionLocalPlannerCandidates) {
+    sectionGrammarCandidates.push(
+      ...buildSectionGrammarOracleCandidates(subject, keySignature, state, startTick, sectionDurationTicks),
+    );
+  }
+
   candidates.push(...sectionLocalPlannerCandidates);
   candidates.push(...registerPlannerCandidates);
+  candidates.push(...sectionGrammarCandidates);
 
   return candidates.length === 0
     ? [
@@ -547,6 +555,141 @@ export function buildContinuationCandidates(
         },
       ]
     : candidates;
+}
+
+function buildSectionGrammarOracleCandidates(
+  subject: readonly SubjectNote[],
+  keySignature: KeySignature,
+  selectedState: FugueState,
+  startTick: number,
+  sectionDurationTicks: number,
+): Exposition[] {
+  const candidates: Exposition[] = [];
+  const candidateStates = (["episode", "subject-return", "stretto-like"] as const).filter(
+    (state) => state !== selectedState,
+  );
+
+  for (const state of candidateStates) {
+    if (state === "episode") {
+      candidates.push(...buildEpisodeGrammarOracleCandidates(subject, keySignature, startTick, sectionDurationTicks));
+    } else if (state === "subject-return") {
+      candidates.push(
+        ...buildSubjectReturnGrammarOracleCandidates(subject, keySignature, startTick, sectionDurationTicks),
+      );
+    } else {
+      candidates.push(...buildStrettoGrammarOracleCandidates(subject, keySignature, startTick, sectionDurationTicks));
+    }
+  }
+
+  return candidates;
+}
+
+function buildEpisodeGrammarOracleCandidates(
+  subject: readonly SubjectNote[],
+  keySignature: KeySignature,
+  startTick: number,
+  sectionDurationTicks: number,
+): Exposition[] {
+  return [
+    buildContinuationSection(subject.slice(0, 4), {
+      state: "episode",
+      voice: "alto",
+      form: "subject-fragment",
+      startTick,
+      globalKey: keySignature,
+      localKey: transposeKey(keySignature, 5),
+      targetKey: transposeKey(keySignature, 5),
+      supportDurationTicks: Math.min(sectionDurationTicks, subjectDuration(subject.slice(0, 4))),
+      sectionDurationTicks,
+      styleProfile: "hybrid",
+      sequencePattern: "circle-fifths",
+      fragmentTransform: "contrary-motion",
+      continuityVoiceCount: 2,
+      continuityVoiceOrder: registerBlendedContinuityVoiceOrder("alto"),
+    }),
+    buildContinuationSection(subject.slice(0, 4), {
+      state: "episode",
+      voice: "tenor",
+      form: "subject-fragment",
+      startTick,
+      globalKey: keySignature,
+      localKey: transposeKey(keySignature, 7),
+      targetKey: transposeKey(keySignature, 7),
+      supportDurationTicks: Math.min(sectionDurationTicks, subjectDuration(subject.slice(0, 4))),
+      sectionDurationTicks,
+      styleProfile: "strict-classical",
+      sequencePattern: "descending-step",
+      fragmentTransform: "sequence",
+      continuityVoiceCount: 2,
+      continuityVoiceOrder: registerBlendedContinuityVoiceOrder("tenor"),
+    }),
+  ];
+}
+
+function buildSubjectReturnGrammarOracleCandidates(
+  subject: readonly SubjectNote[],
+  keySignature: KeySignature,
+  startTick: number,
+  sectionDurationTicks: number,
+): Exposition[] {
+  return [
+    buildContinuationSection(subject, {
+      state: "subject-return",
+      voice: "alto",
+      form: "subject",
+      startTick,
+      globalKey: keySignature,
+      localKey: keySignature,
+      targetKey: keySignature,
+      supportDurationTicks: subjectDuration(subject),
+      sectionDurationTicks,
+      styleProfile: "strict-classical",
+      continuityVoiceCount: 2,
+      continuityVoiceOrder: registerBlendedContinuityVoiceOrder("alto"),
+    }),
+    buildContinuationSection(subject, {
+      state: "subject-return",
+      voice: "tenor",
+      form: "subject",
+      startTick,
+      globalKey: keySignature,
+      localKey: transposeKey(keySignature, 7),
+      targetKey: transposeKey(keySignature, 7),
+      supportDurationTicks: subjectDuration(subject),
+      sectionDurationTicks,
+      styleProfile: "hybrid",
+      continuityVoiceCount: 2,
+      continuityVoiceOrder: registerBlendedContinuityVoiceOrder("tenor"),
+    }),
+  ];
+}
+
+function buildStrettoGrammarOracleCandidates(
+  subject: readonly SubjectNote[],
+  keySignature: KeySignature,
+  startTick: number,
+  sectionDurationTicks: number,
+): Exposition[] {
+  return [
+    buildStrettoSection(subject.slice(0, 6), {
+      state: "stretto-like",
+      firstVoice: "alto",
+      secondVoice: "soprano",
+      startTick,
+      globalKey: keySignature,
+      sectionDurationTicks,
+      styleProfile: "hybrid",
+    }),
+    buildStrettoSection(subject.slice(0, 6), {
+      state: "stretto-like",
+      firstVoice: "tenor",
+      secondVoice: "alto",
+      startTick,
+      globalKey: keySignature,
+      sectionDurationTicks,
+      styleProfile: "strict-classical",
+    }),
+  ];
 }
 
 function registerBlendedContinuityVoiceOrder(entryVoice: Voice): readonly Voice[] {
