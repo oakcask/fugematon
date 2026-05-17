@@ -347,12 +347,25 @@ export function freeCounterpointDegreesForMode(mode: KeyMode): readonly number[]
 }
 
 const FIFTH_CLIMB_ENTRY_COUNTER_SUBJECT_DEGREES = [4, 3, 4, 1, 2, 0, 1, 0] as const;
+const STEPWISE_FIFTH_CLIMB_ENTRY_COUNTER_SUBJECT_DEGREES = [4, 1, 3, 1, 2, 0, 1, 0] as const;
 
 function entryCounterSubjectDegrees(subject: readonly SubjectNote[], mode: KeyMode): readonly number[] {
   if (isModalMode(mode)) {
     return MODAL_COUNTER_SUBJECT_DEGREES;
   }
+  if (hasStepwiseFifthClimb(subject)) {
+    return STEPWISE_FIFTH_CLIMB_ENTRY_COUNTER_SUBJECT_DEGREES;
+  }
   return hasUpperNeighborFifthClimb(subject) ? FIFTH_CLIMB_ENTRY_COUNTER_SUBJECT_DEGREES : COUNTER_SUBJECT_DEGREES;
+}
+
+function hasStepwiseFifthClimb(subject: readonly SubjectNote[]): boolean {
+  return (
+    subject
+      .slice(0, 8)
+      .map((note) => note.scaleDegree)
+      .join("-") === "0-1-2-3-4-3-2-1"
+  );
 }
 
 function hasUpperNeighborFifthClimb(subject: readonly SubjectNote[]): boolean {
