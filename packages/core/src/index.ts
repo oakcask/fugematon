@@ -63,6 +63,27 @@ export { generateScore, normalizeParameters } from "./generate.js";
 export { exportMidi } from "./midi.js";
 export { seedToUint32State, Xoshiro128StarStar } from "./prng.js";
 export type {
+  NormalizedReferenceMetrics,
+  ReferenceDiagnosticsAggregate,
+  ReferenceDiagnosticsComparison,
+  ReferenceDiagnosticsProfile,
+  ReferenceMetricAxis,
+  ReferenceMetricBand,
+  ReferenceMetricComparison,
+  ReferenceMetricNormalizer,
+  ReferenceProfileIngestionPlan,
+  ReferenceProfileSummary,
+  ReferenceSourceFormat,
+  ReferenceSourceMetadata,
+} from "./reference-diagnostics.js";
+export {
+  compareDiagnosticsToReferenceProfile,
+  normalizeDiagnosticsForReference,
+  PHASE_7_REFERENCE_DIAGNOSTICS_PROFILE,
+  summarizeReferenceDiagnosticsComparisons,
+  summarizeReferenceProfile,
+} from "./reference-diagnostics.js";
+export type {
   ManualListeningJudgement,
   Phase6GateResult,
   Phase7GateResult,

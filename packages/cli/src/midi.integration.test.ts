@@ -81,6 +81,31 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
     const summary = JSON.parse(await readFile(join(directory, "summary.json"), "utf8")) as {
       schemaVersion: number;
       lengthTicks: number;
+      referenceDiagnostics: {
+        profile: {
+          profileId: string;
+          sources: {
+            sourceId: string;
+            sourceFormat: string;
+            scoreFileRedistributed: boolean;
+          }[];
+          ingestionPlan: {
+            supportedFormats: string[];
+          };
+          metricAxes: string[];
+        };
+        seedCount: number;
+        axes: {
+          axis: string;
+          normalizer: string;
+          referenceMin: number;
+          referenceMax: number;
+          averageValue: number;
+          outsideReferenceSeedCount: number;
+        }[];
+        outsideReferenceSeedCount: number;
+        maxDistance: number;
+      };
       seeds: {
         seed: string;
         diagnosticsFile: string;
@@ -159,6 +184,26 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
             sectionSoloTextureRiskWarningThreshold: number;
           };
         };
+        referenceComparison: {
+          profileId: string;
+          seed: string;
+          normalizers: {
+            scoreQuarterNotes: number;
+            estimatedActiveVoicePairQuarterNotes: number;
+            subjectEntryCount: number;
+            sectionCount: number;
+          };
+          metrics: {
+            axis: string;
+            normalizer: string;
+            referenceMin: number;
+            referenceMax: number;
+            value: number;
+            status: string;
+          }[];
+          outsideReferenceCount: number;
+          reviewStatus: string;
+        };
         phase59Gate: {
           passed: boolean;
           failures: unknown[];
@@ -202,9 +247,18 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       preferences: unknown[];
     };
 
-    assert.equal(summary.schemaVersion, 8);
+    assert.equal(summary.schemaVersion, 9);
     assert.equal(summary.lengthTicks, 9600);
     assert.ok(summary.seeds.length > 1);
+    assert.equal(summary.referenceDiagnostics.profile.profileId, "phase-7-fugue-reference-profile");
+    assert.equal(summary.referenceDiagnostics.profile.sources[0]?.sourceFormat, "profile-fixture");
+    assert.equal(summary.referenceDiagnostics.profile.sources[0]?.scoreFileRedistributed, false);
+    assert.ok(summary.referenceDiagnostics.profile.ingestionPlan.supportedFormats.includes("musicxml"));
+    assert.ok(summary.referenceDiagnostics.profile.ingestionPlan.supportedFormats.includes("humdrum"));
+    assert.ok(summary.referenceDiagnostics.profile.metricAxes.includes("sharedRhythmOverlapPerVoicePairQuarter"));
+    assert.equal(summary.referenceDiagnostics.seedCount, summary.seeds.length);
+    assert.ok(summary.referenceDiagnostics.axes.length > 1);
+    assert.ok(summary.referenceDiagnostics.maxDistance >= 0);
     assert.equal(listeningReview.schemaVersion, 1);
     assert.equal(listeningReview.lengthTicks, 9600);
     assert.ok(listeningReview.regressionChecks.some((check) => check.includes("fugue-smoke")));
@@ -221,6 +275,35 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       assert.ok(!entry.diagnosticsFile.includes(directory));
       assert.ok(!entry.midiFile.includes(directory));
       assert.ok(entry.diagnosticsSummary.hardConstraintFailures >= 0);
+      assert.equal(entry.referenceComparison.profileId, "phase-7-fugue-reference-profile");
+      assert.equal(entry.referenceComparison.seed, entry.seed);
+      assert.ok(entry.referenceComparison.normalizers.scoreQuarterNotes > 0);
+      assert.ok(entry.referenceComparison.normalizers.estimatedActiveVoicePairQuarterNotes > 0);
+      assert.ok(entry.referenceComparison.normalizers.subjectEntryCount > 0);
+      assert.ok(entry.referenceComparison.normalizers.sectionCount > 0);
+      assert.ok(
+        entry.referenceComparison.metrics.some(
+          (metric) =>
+            metric.axis === "sharedRhythmOverlapPerVoicePairQuarter" &&
+            metric.normalizer === "estimated-active-voice-pair-quarter-notes" &&
+            metric.referenceMax > 0 &&
+            metric.value >= 0,
+        ),
+      );
+      assert.ok(
+        entry.referenceComparison.metrics.some(
+          (metric) =>
+            metric.axis === "freeCounterpointStepwiseRunRatio" &&
+            metric.normalizer === "already-normalized" &&
+            metric.referenceMin > 0 &&
+            metric.referenceMax > metric.referenceMin,
+        ),
+      );
+      assert.ok(entry.referenceComparison.outsideReferenceCount >= 0);
+      assert.ok(
+        entry.referenceComparison.reviewStatus === "within-reference-profile" ||
+          entry.referenceComparison.reviewStatus === "reference-review-required",
+      );
       assert.ok(entry.diagnosticsSummary.texture.rhythmicIndependenceScore >= 0);
       assert.ok(entry.diagnosticsSummary.texture.rhythmicIndependenceScore <= 1);
       assert.equal(typeof entry.phase59Gate.passed, "boolean");

@@ -3,6 +3,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { FugueState, GenerationDiagnostics } from "@fugematon/core";
 import {
+  compareDiagnosticsToReferenceProfile,
   evaluatePhase6Diagnostics,
   evaluatePhase7Diagnostics,
   evaluatePhase59Diagnostics,
@@ -18,6 +19,9 @@ import {
   type Phase510GateResult,
   type Phase511GateResult,
   phase59ManualListeningBlockers,
+  type ReferenceDiagnosticsAggregate,
+  type ReferenceDiagnosticsComparison,
+  summarizeReferenceDiagnosticsComparisons,
 } from "@fugematon/core";
 import { helpText, parseArgs } from "./args.js";
 
@@ -60,22 +64,8 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
 
 async function writeReviewBundle(outDirectory: string, lengthTicks: number): Promise<void> {
   await mkdir(outDirectory, { recursive: true });
-  const summary = {
-    schemaVersion: 8,
-    lengthTicks,
-    seeds: [] as {
-      seed: string;
-      category: string;
-      diagnosticsFile: string;
-      midiFile: string;
-      diagnosticsSummary: ReviewDiagnosticsSummary;
-      phase59Gate: Phase59GateResult;
-      phase510Gate: Phase510GateResult;
-      phase511Gate: Phase511GateResult;
-      phase6Gate: Phase6GateResult;
-      phase7Gate: Phase7GateResult;
-    }[],
-  };
+  const summarySeeds: ReviewSummarySeed[] = [];
+  const referenceComparisons: ReferenceDiagnosticsComparison[] = [];
   const listeningReview = createListeningReview(lengthTicks);
   const pairwisePreferences = createPairwisePreferences(lengthTicks);
 
@@ -87,12 +77,15 @@ async function writeReviewBundle(outDirectory: string, lengthTicks: number): Pro
 
     await writeFile(join(outDirectory, diagnosticsFile), `${JSON.stringify(output.diagnostics, null, 2)}\n`, "utf8");
     await writeFile(join(outDirectory, midiFile), exportMidi(output.events));
-    summary.seeds.push({
+    const referenceComparison = compareDiagnosticsToReferenceProfile(output.diagnostics);
+    referenceComparisons.push(referenceComparison);
+    summarySeeds.push({
       seed,
       category,
       diagnosticsFile,
       midiFile,
       diagnosticsSummary: summarizeDiagnostics(output.diagnostics),
+      referenceComparison,
       phase59Gate: evaluatePhase59Diagnostics(seed, output.diagnostics),
       phase510Gate: evaluatePhase510Diagnostics(seed, output.diagnostics),
       phase511Gate: evaluatePhase511Diagnostics(seed, output.diagnostics),
@@ -102,6 +95,13 @@ async function writeReviewBundle(outDirectory: string, lengthTicks: number): Pro
     listeningReview.seeds.push(createListeningSeedReview(seed, category, diagnosticsFile, midiFile));
   }
 
+  const summary: ReviewSummary = {
+    schemaVersion: 9,
+    lengthTicks,
+    referenceDiagnostics: summarizeReferenceDiagnosticsComparisons(referenceComparisons),
+    seeds: summarySeeds,
+  };
+
   await writeFile(join(outDirectory, "summary.json"), `${JSON.stringify(summary, null, 2)}\n`, "utf8");
   await writeFile(join(outDirectory, "listening-review.json"), `${JSON.stringify(listeningReview, null, 2)}\n`, "utf8");
   await writeFile(
@@ -110,6 +110,27 @@ async function writeReviewBundle(outDirectory: string, lengthTicks: number): Pro
     "utf8",
   );
 }
+
+type ReviewSummary = {
+  schemaVersion: 9;
+  lengthTicks: number;
+  referenceDiagnostics: ReferenceDiagnosticsAggregate;
+  seeds: ReviewSummarySeed[];
+};
+
+type ReviewSummarySeed = {
+  seed: string;
+  category: string;
+  diagnosticsFile: string;
+  midiFile: string;
+  diagnosticsSummary: ReviewDiagnosticsSummary;
+  referenceComparison: ReferenceDiagnosticsComparison;
+  phase59Gate: Phase59GateResult;
+  phase510Gate: Phase510GateResult;
+  phase511Gate: Phase511GateResult;
+  phase6Gate: Phase6GateResult;
+  phase7Gate: Phase7GateResult;
+};
 
 type ReviewDiagnosticsSummary = {
   hardConstraintFailures: number;

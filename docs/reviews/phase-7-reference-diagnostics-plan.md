@@ -43,6 +43,28 @@ CI は三層に分ける。
 
 Phase 7 完了条件は、参照作品から diagnostics を生成し、Fugematon 22 seed と比較でき、代表的な blocker について selection problem か generator problem かを切り分け、少なくとも一つの section-local planner 改善が pairwise preference で現行より勝つことに変更する。
 
+## PR1 完了範囲
+
+最初の stacked PR では、参照 score ingestion と scoring 変更へ進む前の coverage/refactor を完了した。
+
+* `phase-7-fugue-reference-profile` を code-side fixture として追加した。これは metadata-only の初期 profile であり、score file は再配布しない。source id、source format、license policy、import date、MusicXML/Humdrum ingestion の extension point を持つ。
+* 既存 `GenerationDiagnostics` から reference-relative metrics を作る normalizer を追加した。shared rhythm、unison、same-pitch overlap は推定 active voice-pair quarter duration、entry interval は subject entry 数、leap recovery と repeated degree pattern は score length、solo texture は section 数で割る。
+* review bundle summary を schema version 9 に上げ、top-level `referenceDiagnostics` と seed ごとの `referenceComparison` を出す。22 seed の比較は review 用 evidence であり、この PR では fail gate にしない。
+* tests は review summary に reference profile と comparison が出ること、shared rhythm / unison / stepwise motion がゼロ要求ではなく正規化された metric として比較されることを固定する。
+
+この PR では生成挙動、candidate scoring、threshold、manual listening judgement は変えない。
+
+## 残り作業
+
+次の PR 以降で、実 score ingestion と reference profile の実測化を進める。
+
+* MusicXML/Humdrum score を source metadata と license 確認つきで取り込み、`ScoreEvent` 相当へ正規化する。
+* active voice-pair duration、entry annotation または subject match、section/cadence metadata を import path から実測する。
+* Bach fugue、chorale、modal/early reference を別 profile として分け、metadata-only fixture の暫定 band を percentile profile へ置き換える。
+* reference-relative result を最初は `review-required` として扱い、CI hard fail とは分離する。
+* blocker seed の candidate pool oracle を作り、selection problem か generator/section planner problem かを切り分ける。
+* section-local planner 改善は pairwise listening で現行より勝つことを確認してから Phase 7 完了候補にする。
+
 ## 参照
 
 * music21 corpus documentation: https://music21.org/music21docs/moduleReference/moduleCorpus.html
