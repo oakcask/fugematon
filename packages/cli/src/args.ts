@@ -1,3 +1,5 @@
+import type { SelectionModel } from "@fugematon/core";
+
 export type CliCommand =
   | {
       name: "generate";
@@ -27,6 +29,8 @@ export type CliCommand =
       out: string;
       baselineLabel: string;
       variantLabel: string;
+      baselineModel: SelectionModel;
+      variantModel: SelectionModel;
     }
   | {
       name: "help";
@@ -64,6 +68,8 @@ export function parseArgs(argv: readonly string[]): CliCommand {
         out: requiredOption(options, "out"),
         baselineLabel: options.get("baseline-label") ?? "baseline",
         variantLabel: options.get("variant-label") ?? "variant",
+        baselineModel: parseSelectionModel(options.get("baseline-model") ?? "baseline", "baseline-model"),
+        variantModel: parseSelectionModel(options.get("variant-model") ?? "phase10-oracle-selection", "variant-model"),
       };
     }
     return { name: "review", lengthTicks, out: requiredOption(options, "out") };
@@ -99,8 +105,16 @@ export function helpText(): string {
     "  fugematon diagnose --seed <seed> --ticks <lengthTicks>",
     "  fugematon midi --seed <seed> --ticks <lengthTicks> --out <file>",
     "  fugematon review --out <directory> [--ticks <lengthTicks>]",
-    "  fugematon review-ab --out <directory> [--ticks <lengthTicks>] [--baseline-label <label>] [--variant-label <label>]",
+    "  fugematon review-ab --out <directory> [--ticks <lengthTicks>] [--baseline-label <label>] [--variant-label <label>] [--baseline-model baseline|phase10-oracle-selection] [--variant-model baseline|phase10-oracle-selection]",
   ].join("\n");
+}
+
+function parseSelectionModel(value: string, optionName: string): SelectionModel {
+  if (value === "baseline" || value === "phase10-oracle-selection") {
+    return value;
+  }
+
+  throw new Error(`--${optionName} must be baseline or phase10-oracle-selection`);
 }
 
 function parseOptions(args: readonly string[]): Map<string, string> {

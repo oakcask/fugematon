@@ -49,6 +49,8 @@ test("parseArgs parses review-ab command", () => {
       "current",
       "--variant-label",
       "candidate",
+      "--variant-model",
+      "phase10-oracle-selection",
     ]),
     {
       name: "review-ab",
@@ -56,6 +58,8 @@ test("parseArgs parses review-ab command", () => {
       out: "phase10-review",
       baselineLabel: "current",
       variantLabel: "candidate",
+      baselineModel: "baseline",
+      variantModel: "phase10-oracle-selection",
     },
   );
   assert.deepEqual(parseArgs(["review-ab", "--out", "phase10-review"]), {
@@ -64,6 +68,8 @@ test("parseArgs parses review-ab command", () => {
     out: "phase10-review",
     baselineLabel: "baseline",
     variantLabel: "variant",
+    baselineModel: "baseline",
+    variantModel: "phase10-oracle-selection",
   });
 });
 
@@ -71,6 +77,7 @@ test("helpText includes the Phase 10 A/B review command", () => {
   assert.match(helpText(), /fugematon review-ab --out <directory>/);
   assert.match(helpText(), /--baseline-label <label>/);
   assert.match(helpText(), /--variant-label <label>/);
+  assert.match(helpText(), /--variant-model baseline\|phase10-oracle-selection/);
 });
 
 test("parseArgs rejects invalid arguments", () => {
@@ -81,5 +88,9 @@ test("parseArgs rejects invalid arguments", () => {
   assert.throws(() => parseArgs(["review", "--ticks", "960"]), /missing --out/);
   assert.throws(() => parseArgs(["review-ab", "--ticks", "0", "--out", "review"]), /--ticks/);
   assert.throws(() => parseArgs(["review-ab", "--ticks", "960"]), /missing --out/);
+  assert.throws(
+    () => parseArgs(["review-ab", "--ticks", "960", "--out", "review", "--variant-model", "unknown"]),
+    /--variant-model/,
+  );
   assert.throws(() => parseArgs(["generate", "--seed", "bach-001", "--ticks", "0"]), /--ticks/);
 });

@@ -55,6 +55,7 @@ export type {
   PlannedEntry,
   ScoreDimension,
   ScoreEvent,
+  SelectionModel,
   SequencePattern,
   SoloTextureSummary,
   StepwisePatternRoleSummary,

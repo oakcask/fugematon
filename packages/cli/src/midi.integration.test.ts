@@ -81,6 +81,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
     const summary = JSON.parse(await readFile(join(directory, "summary.json"), "utf8")) as {
       schemaVersion: number;
       lengthTicks: number;
+      selectionModel: string;
       referenceDiagnostics: {
         profile: {
           profileId: string;
@@ -299,6 +300,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
 
     assert.equal(summary.schemaVersion, 11);
     assert.equal(summary.lengthTicks, 9600);
+    assert.equal(summary.selectionModel, "baseline");
     assert.ok(summary.seeds.length > 1);
     assert.equal(summary.referenceDiagnostics.profile.profileId, "phase-7-fugue-reference-profile");
     assert.equal(summary.referenceDiagnostics.profile.sources[0]?.sourceFormat, "profile-fixture");
@@ -567,8 +569,8 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
     const comparison = JSON.parse(await readFile(join(directory, "comparison-summary.json"), "utf8")) as {
       schemaVersion: number;
       lengthTicks: number;
-      baseline: { label: string; directory: string; summaryFile: string };
-      variant: { label: string; directory: string; summaryFile: string };
+      baseline: { label: string; directory: string; summaryFile: string; selectionModel: string };
+      variant: { label: string; directory: string; summaryFile: string; selectionModel: string };
       seeds: {
         seed: string;
         category: string;
@@ -630,11 +632,13 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
       label: "current",
       directory: "baseline",
       summaryFile: "baseline/summary.json",
+      selectionModel: "baseline",
     });
     assert.deepEqual(comparison.variant, {
       label: "candidate",
       directory: "variant",
       summaryFile: "variant/summary.json",
+      selectionModel: "phase10-oracle-selection",
     });
     assert.ok(comparison.seeds.length > 1);
     for (const entry of comparison.seeds) {

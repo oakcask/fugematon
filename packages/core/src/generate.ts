@@ -15,7 +15,7 @@ export function generateScore(input: GenerationInput): GenerationOutput {
   const timeSignature = chooseTimeSignature(rng);
   const bpm = chooseTempo(rng);
   const subject = buildSubject(rng, keySignature);
-  const score = buildFugueScore(subject, keySignature, input.lengthTicks, rng);
+  const score = buildFugueScore(subject, keySignature, input.lengthTicks, rng, input.selectionModel ?? "baseline");
   const diagnostics = analyzeScore(score.notes, score.subjectEntries, score.sectionPlans);
   const generatedUntilTick = Math.max(input.lengthTicks, score.endTick);
 

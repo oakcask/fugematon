@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import type { CandidatePoolOracleSummary, FugueState, GenerationDiagnostics } from "@fugematon/core";
+import type { CandidatePoolOracleSummary, FugueState, GenerationDiagnostics, SelectionModel } from "@fugematon/core";
 import {
   compareDiagnosticsToReferenceProfile,
   evaluatePhase6Diagnostics,
@@ -41,7 +41,14 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
   }
 
   if (command.name === "review-ab") {
-    await writeAbReviewBundle(command.out, command.lengthTicks, command.baselineLabel, command.variantLabel);
+    await writeAbReviewBundle(
+      command.out,
+      command.lengthTicks,
+      command.baselineLabel,
+      command.variantLabel,
+      command.baselineModel,
+      command.variantModel,
+    );
     return;
   }
 
@@ -69,7 +76,11 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
   await writeFile(command.out, json, "utf8");
 }
 
-async function writeReviewBundle(outDirectory: string, lengthTicks: number): Promise<ReviewSummary> {
+async function writeReviewBundle(
+  outDirectory: string,
+  lengthTicks: number,
+  selectionModel: SelectionModel = "baseline",
+): Promise<ReviewSummary> {
   await mkdir(outDirectory, { recursive: true });
   const summarySeeds: ReviewSummarySeed[] = [];
   const referenceComparisons: ReferenceDiagnosticsComparison[] = [];
@@ -77,7 +88,7 @@ async function writeReviewBundle(outDirectory: string, lengthTicks: number): Pro
   const pairwisePreferences = createPairwisePreferences(lengthTicks);
 
   for (const { seed, category } of [...PHASE_5_REVIEW_SEEDS, ...PHASE_5_11_ROTATION_SEEDS]) {
-    const output = generateScore({ seed, lengthTicks });
+    const output = generateScore({ seed, lengthTicks, selectionModel });
     const safeSeed = seed.replaceAll(/[^a-z0-9-]/gi, "-");
     const diagnosticsFile = `${safeSeed}.diagnostics.json`;
     const midiFile = `${safeSeed}.mid`;
@@ -109,6 +120,7 @@ async function writeReviewBundle(outDirectory: string, lengthTicks: number): Pro
   const summary: ReviewSummary = {
     schemaVersion: 11,
     lengthTicks,
+    selectionModel,
     referenceDiagnostics: summarizeReferenceDiagnosticsComparisons(referenceComparisons),
     seeds: summarySeeds,
   };
@@ -129,13 +141,15 @@ async function writeAbReviewBundle(
   lengthTicks: number,
   baselineLabel: string,
   variantLabel: string,
+  baselineModel: SelectionModel,
+  variantModel: SelectionModel,
 ): Promise<void> {
   const baselineDirectory = join(outDirectory, "baseline");
   const variantDirectory = join(outDirectory, "variant");
   await mkdir(outDirectory, { recursive: true });
 
-  const baselineSummary = await writeReviewBundle(baselineDirectory, lengthTicks);
-  const variantSummary = await writeReviewBundle(variantDirectory, lengthTicks);
+  const baselineSummary = await writeReviewBundle(baselineDirectory, lengthTicks, baselineModel);
+  const variantSummary = await writeReviewBundle(variantDirectory, lengthTicks, variantModel);
   const comparison = compareReviewSummaries({
     lengthTicks,
     baselineLabel,
@@ -150,6 +164,7 @@ async function writeAbReviewBundle(
 type ReviewSummary = {
   schemaVersion: 11;
   lengthTicks: number;
+  selectionModel: SelectionModel;
   referenceDiagnostics: ReferenceDiagnosticsAggregate;
   seeds: ReviewSummarySeed[];
 };
@@ -181,6 +196,7 @@ type ReviewBundleSide = {
   label: string;
   directory: "baseline" | "variant";
   summaryFile: string;
+  selectionModel: SelectionModel;
 };
 
 type AbReviewSeedComparison = {
@@ -347,11 +363,13 @@ function compareReviewSummaries({
       label: baselineLabel,
       directory: "baseline",
       summaryFile: "baseline/summary.json",
+      selectionModel: baselineSummary.selectionModel,
     },
     variant: {
       label: variantLabel,
       directory: "variant",
       summaryFile: "variant/summary.json",
+      selectionModel: variantSummary.selectionModel,
     },
     seeds: baselineSummary.seeds.map((baselineSeed) => {
       const variantSeed = findSummarySeed(variantSummary.seeds, baselineSeed.seed);

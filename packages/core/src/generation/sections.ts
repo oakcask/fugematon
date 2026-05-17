@@ -9,6 +9,7 @@ import type {
   HarmonicPlan,
   KeySignature,
   NoteEvent,
+  SelectionModel,
   SequencePattern,
   StyleProfile,
   Voice,
@@ -40,6 +41,7 @@ export function buildFugueScore(
   keySignature: KeySignature,
   lengthTicks: number,
   rng: Xoshiro128StarStar,
+  selectionModel: SelectionModel = "baseline",
 ): FugueScore {
   const exposition = buildExposition(subject, keySignature);
   const notes = [...exposition.notes];
@@ -75,6 +77,7 @@ export function buildFugueScore(
       sectionDurationTicks,
       rng,
       notes,
+      selectionModel,
     );
     notes.push(...selection.section.notes);
     subjectEntries.push(...selection.section.subjectEntries);
@@ -238,6 +241,7 @@ export function chooseContinuationSection(
   sectionDurationTicks: number,
   rng: Xoshiro128StarStar,
   previousNotes: readonly NoteEvent[],
+  selectionModel: SelectionModel = "baseline",
 ): {
   section: Exposition;
   candidateCount: number;
@@ -249,7 +253,7 @@ export function chooseContinuationSection(
   let bestIndex = 0;
 
   for (const [index, evaluation] of evaluations.entries()) {
-    if (evaluation.totalCost < evaluations[bestIndex]!.totalCost) {
+    if (selectionScore(evaluation, selectionModel) < selectionScore(evaluations[bestIndex]!, selectionModel)) {
       bestIndex = index;
     }
   }
@@ -266,6 +270,54 @@ export function chooseContinuationSection(
       selectedCandidateIndex: bestIndex,
     }),
   };
+}
+
+function selectionScore(evaluation: CandidateEvaluation, selectionModel: SelectionModel): number {
+  if (selectionModel === "baseline") {
+    return evaluation.totalCost;
+  }
+
+  return evaluation.totalCost + phase10OracleSelectionRiskAdjustment(evaluation);
+}
+
+function phase10OracleSelectionRiskAdjustment(evaluation: CandidateEvaluation): number {
+  if (evaluation.hardFailures.length > 0) {
+    return 0;
+  }
+  if (evaluation.dimensions.harmony.features.modalContextCount > 0) {
+    return 0;
+  }
+
+  return (
+    entryHarmonySelectionRiskAdjustment(evaluation) +
+    stepwiseFixationSelectionRiskAdjustment(evaluation) +
+    voicePairLockstepSelectionRiskAdjustment(evaluation) +
+    melodyPreservationRiskAdjustment(evaluation)
+  );
+}
+
+function entryHarmonySelectionRiskAdjustment(evaluation: CandidateEvaluation): number {
+  const { entrySupportInstabilityCount, severeEntryIntervalCount, unresolvedSevereEntryIntervalCount } =
+    evaluation.dimensions.harmony.features;
+
+  return entrySupportInstabilityCount * 1.5 + severeEntryIntervalCount * 3 + unresolvedSevereEntryIntervalCount * 5;
+}
+
+function stepwiseFixationSelectionRiskAdjustment(evaluation: CandidateEvaluation): number {
+  const { selectedFreeCounterpointStepwiseFixationCost, freeCounterpointRepeatedDegreePatternCount } =
+    evaluation.dimensions.melody.features;
+
+  return selectedFreeCounterpointStepwiseFixationCost * 1.5 + freeCounterpointRepeatedDegreePatternCount * 0.01;
+}
+
+function voicePairLockstepSelectionRiskAdjustment(evaluation: CandidateEvaluation): number {
+  const { selectedVoicePairLockstepSelectionCost, samePitchOverlapCount } = evaluation.dimensions.texture.features;
+
+  return selectedVoicePairLockstepSelectionCost * 1.5 + samePitchOverlapCount * 2;
+}
+
+function melodyPreservationRiskAdjustment(evaluation: CandidateEvaluation): number {
+  return evaluation.dimensions.melody.features.leapRecoveryMisses * 20;
 }
 
 export function buildContinuationCandidates(
