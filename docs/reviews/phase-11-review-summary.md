@@ -201,6 +201,14 @@ Project response: 次の Phase 11 work は、単一 metric の penalty 追加で
 
 Project response: Phase 11-5 は、history-aware selected-output planner の採用ではなく、次の planner 設計の evidence として閉じる。次は 2-4 section の phrase unit、cadence plan、density arc、entry plan、local key distance、subject family rotation、functional thinning annotation、support voice formula を同時に持つ candidates を作る。
 
+### 11. Short alternating phrase cycle guard を selected output に追加した
+
+Phase 11-5 の採用前 blocker だった `fugue-smoke` の短い cycle 悪化を回帰防止するため、history-aware planner が `A > B > A > B` 型の 4-section phrase を作る候補を high-risk として避ける guard を追加した。これは full multi-section phrase planner ではなく、local state swap が既知の悪化へ進むことを止める限定的な変更である。
+
+Focused seed check では、`fugue-smoke` の variant top pattern が `episode > stretto-like > episode > stretto-like` 13 回から、baseline と同じ `episode > stretto-like > episode > subject-return` 系 7 回へ戻った。`bach-001`、`modal-cadence`、`dense-modal` は most repeated pattern 7 から 6 への improvement を維持し、`minor-entry` は control case として変化しなかった。`fugue-smoke` の leap recovery misses と counter-subject identity retention も baseline 同等へ戻った。
+
+Project response: この guard は Phase 11-6 の完了ではない。次の work は引き続き 2-4 section phrase unit、cadence plan、density arc、entry plan、local key distance、subject family rotation を同時に候補化し、functional thinning と support voice formula を phrase-level に接続する。
+
 ## Remaining Gaps
 
 * MIDI の通し聴取と before/after pairwise preference は未実施。
