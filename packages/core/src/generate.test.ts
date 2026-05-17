@@ -878,6 +878,13 @@ test("generateScore exposes phase-11 review summary signals", () => {
     assert.ok(summary.functionalThinning.nonCadentialRunCount >= 0);
     assert.ok(summary.functionalThinning.oneVoiceRunCount >= 0);
     assert.ok(summary.functionalThinning.twoVoiceRunCount >= 0);
+    assert.equal(
+      summary.functionalThinning.annotatedRunCount + summary.functionalThinning.unsupportedRunCount,
+      summary.functionalThinning.nonCadentialRunCount,
+    );
+    assert.ok(summary.functionalThinning.entryPreparationRunCount >= 0);
+    assert.ok(summary.functionalThinning.cadentialPreparationRunCount >= 0);
+    assert.ok(summary.functionalThinning.pedalRunCount >= 0);
     assert.ok(summary.metricalHarmony.strongBeatCheckpointCount > 0);
     assert.ok(summary.metricalHarmony.weakBeatCheckpointCount > 0);
     assert.equal(output.diagnostics.strongBeatDissonanceCount, output.diagnostics.harmonicFunctionMismatches);

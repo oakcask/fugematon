@@ -209,6 +209,14 @@ Focused seed check では、`fugue-smoke` の variant top pattern が `episode >
 
 Project response: この guard は Phase 11-6 の完了ではない。次の work は引き続き 2-4 section phrase unit、cadence plan、density arc、entry plan、local key distance、subject family rotation を同時に候補化し、functional thinning と support voice formula を phrase-level に接続する。
 
+### 12. Functional thinning に役割別 annotation を追加した
+
+`phase11Review.functionalThinning` は、non-cadential long run を active voice count だけで数えるのではなく、entry preparation、cadential preparation、echo、pedal、suspension preparation、unsupported に分類する count を持つようになった。これは Phase 11-7 の前提であり、休符や thinning を「声部が減った」ではなく「何の機能として減ったか」で比較するための diagnostics shape である。
+
+Focused seed check では、`bach-001` が non-cadential run 20 件のうち annotated 18 / unsupported 2、`fugue-smoke` が 15 件のうち 13 / 2、`minor-entry` が 14 件のうち 12 / 2、`modal-cadence` が 19 件のうち 16 / 3、`dense-modal` が 20 件のうち 18 / 2 だった。現時点の annotation は多くを entry/cadential preparation として説明する一方、unsupported run は各 focused seed に残る。
+
+Project response: この PR は diagnostics annotation までで止める。次の generator work は、phrase unit が thinning role を先に持ち、support voice formula が entry preparation、cadential preparation、pedal、suspension preparation を生成時に選べるようにする。
+
 ## Remaining Gaps
 
 * MIDI の通し聴取と before/after pairwise preference は未実施。

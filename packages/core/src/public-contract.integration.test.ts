@@ -95,6 +95,7 @@ test("public diagnostics expose finite candidate score dimensions", () => {
   assert.equal(output.diagnostics.phase11Review.adjacentVoiceIntervals.length, 3);
   assert.equal(output.diagnostics.phase11Review.registerSpans.length, VOICES.length);
   assert.ok(output.diagnostics.phase11Review.entryPatternFamilies.length > 0);
+  assert.ok(output.diagnostics.phase11Review.functionalThinning.unsupportedRunCount >= 0);
   assert.ok(output.diagnostics.phase11Review.metricalHarmony.strongBeatCheckpointCount > 0);
 
   for (const issue of output.diagnostics.issues) {
