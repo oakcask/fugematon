@@ -61,7 +61,7 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
 async function writeReviewBundle(outDirectory: string, lengthTicks: number): Promise<void> {
   await mkdir(outDirectory, { recursive: true });
   const summary = {
-    schemaVersion: 7,
+    schemaVersion: 8,
     lengthTicks,
     seeds: [] as {
       seed: string;
@@ -130,6 +130,7 @@ type ReviewDiagnosticsSummary = {
     unresolvedSevereEntryIntervalCount: number;
     soloTexture: GenerationDiagnostics["soloTexture"];
     pitchContourMotion: GenerationDiagnostics["pitchContourMotion"];
+    stepwisePattern: GenerationDiagnostics["stepwisePattern"];
   };
   melody: {
     leapRecoveryMisses: number;
@@ -248,6 +249,7 @@ function summarizeDiagnostics(diagnostics: GenerationDiagnostics): ReviewDiagnos
       unresolvedSevereEntryIntervalCount: diagnostics.unresolvedSevereEntryIntervalCount,
       soloTexture: diagnostics.soloTexture,
       pitchContourMotion: diagnostics.pitchContourMotion,
+      stepwisePattern: diagnostics.stepwisePattern,
     },
     melody: {
       leapRecoveryMisses: diagnostics.leapRecoveryMisses,

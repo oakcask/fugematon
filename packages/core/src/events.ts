@@ -215,7 +215,7 @@ export type CandidateEvaluationExplanations = {
 };
 
 export type CandidateEvaluation = {
-  featureVersion: 1;
+  featureVersion: 1 | 2;
   evaluationModelVersion: 1 | 2 | 3 | 4 | 5 | 6;
   totalCost: number;
   hardFailures: DiagnosticIssueCode[];
@@ -290,6 +290,30 @@ export type PitchContourMotionSummary = {
   eightBeat: PitchContourWindowSummary;
 };
 
+export type StepwisePatternRoleSummary = {
+  role: NoteRole;
+  noteCount: number;
+  intervalCount: number;
+  stepwiseRunRatio: number;
+  ascendingStepRatio: number;
+  descendingStepRatio: number;
+  maxMonotoneStepRun: number;
+  repeatedDegreePatternCount: number;
+  rolePatternEntropy: number;
+};
+
+export type StepwisePatternSectionSummary = StepwisePatternRoleSummary & {
+  state: FugueState;
+  startTick: number;
+  durationTicks: number;
+};
+
+export type StepwisePatternSummary = {
+  degreePatternLength: number;
+  roles: StepwisePatternRoleSummary[];
+  sections: StepwisePatternSectionSummary[];
+};
+
 export type GenerationDiagnostics = {
   generatorVersion: number;
   seed: string;
@@ -331,6 +355,7 @@ export type GenerationDiagnostics = {
   allVoiceSilenceGapCount: number;
   soloTexture: SoloTextureSummary;
   pitchContourMotion: PitchContourMotionSummary;
+  stepwisePattern: StepwisePatternSummary;
   ornamentCandidateCount: number;
   ornamentDensity: number;
   ornamentPlacementReasons: OrnamentPlacementReasons;

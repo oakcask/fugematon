@@ -22,7 +22,7 @@ import {
   TICKS_PER_QUARTER,
   VOICES,
 } from "./constants.js";
-import type { MetaEvent, NoteEvent, ScoreEvent } from "./events.js";
+import type { MetaEvent, NoteEvent, NoteRole, ScoreEvent, StepwisePatternRoleSummary } from "./events.js";
 import { generateScore } from "./generate.js";
 import {
   evaluatePhase6Diagnostics,
@@ -637,7 +637,7 @@ test("generateScore reports phase-7 contour motion diagnostics", () => {
   assert.ok(fourBeat.outerVoiceSameDirectionRatio >= 0);
   assert.ok(fourBeat.outerVoiceContraryRatio >= 0);
   assert.ok(output.diagnostics.selectedCandidateEvaluations.length > 0);
-  assert.equal(output.diagnostics.selectedCandidateEvaluations[0]!.featureVersion, 1);
+  assert.equal(output.diagnostics.selectedCandidateEvaluations[0]!.featureVersion, 2);
   assert.ok(output.diagnostics.selectedCandidateEvaluations[0]!.explanations.entries.length > 0);
   assert.ok(output.diagnostics.selectedCandidateEvaluations[0]!.explanations.voicePairs.length > 0);
   assert.ok(output.diagnostics.selectedCandidateEvaluations[0]!.explanations.sections.length > 0);
@@ -648,6 +648,77 @@ test("generateScore reports phase-7 contour motion diagnostics", () => {
   assert.ok(
     "fourBeatBassUpperContraryRatio" in output.diagnostics.selectedCandidateEvaluations[0]!.dimensions.texture.features,
   );
+});
+
+test("generateScore reports role and section stepwise pattern diagnostics", () => {
+  const output = generateScore({ seed: "fugue-smoke", lengthTicks: PHASE_5_LENGTH_TICKS });
+  const roles = new Set(output.diagnostics.stepwisePattern.roles.map((summary) => summary.role));
+  const freeCounterpoint = stepwisePatternRole(output.diagnostics.stepwisePattern.roles, "free-counterpoint");
+  const counterSubject = stepwisePatternRole(output.diagnostics.stepwisePattern.roles, "counter-subject");
+  const selectedEvaluation = requireSelectedCandidateEvaluation(output.diagnostics.selectedCandidateEvaluations);
+
+  assert.equal(output.diagnostics.stepwisePattern.degreePatternLength, 4);
+  assert.ok(roles.has("subject"));
+  assert.ok(roles.has("answer"));
+  assert.ok(roles.has("subject-fragment"));
+  assert.ok(roles.has("counter-subject"));
+  assert.ok(roles.has("free-counterpoint"));
+  assert.ok(output.diagnostics.stepwisePattern.sections.length >= output.diagnostics.sectionPlans.length * 5);
+  assert.ok(output.diagnostics.stepwisePattern.sections.some((section) => section.state === "episode"));
+  assert.ok(freeCounterpoint.noteCount > 0);
+  assert.ok(freeCounterpoint.intervalCount > 0);
+  assert.ok(freeCounterpoint.stepwiseRunRatio > 0);
+  assert.ok(freeCounterpoint.ascendingStepRatio > 0);
+  assert.ok(freeCounterpoint.descendingStepRatio > 0);
+  assert.ok(freeCounterpoint.maxMonotoneStepRun > 1);
+  assert.ok(freeCounterpoint.repeatedDegreePatternCount > 0);
+  assert.ok(freeCounterpoint.rolePatternEntropy >= 0);
+  assert.ok(counterSubject.noteCount > 0);
+  assert.ok(selectedEvaluation.dimensions.melody.features.freeCounterpointStepwiseRunRatio > 0);
+  assert.ok(selectedEvaluation.dimensions.melody.features.freeCounterpointMaxMonotoneStepRun > 0);
+  assert.ok(selectedEvaluation.dimensions.melody.features.freeCounterpointRepeatedDegreePatternCount >= 0);
+  assert.ok(selectedEvaluation.dimensions.melody.features.freeCounterpointRolePatternEntropy >= 0);
+  assert.ok("maxRoleMonotoneStepRun" in selectedEvaluation.dimensions.texture.features);
+  assert.ok("repeatedRoleDegreePatternCount" in selectedEvaluation.dimensions.texture.features);
+});
+
+test("generateScore keeps stepwise pattern evidence across phase-7 review seeds without gate regressions", () => {
+  const seeds = [...PHASE_5_REVIEW_SEEDS, ...PHASE_5_11_ROTATION_SEEDS];
+
+  for (const { seed } of seeds) {
+    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
+    const gate6 = evaluatePhase6Diagnostics(seed, output.diagnostics);
+    const gate7 = evaluatePhase7Diagnostics(seed, output.diagnostics);
+    const freeCounterpoint = stepwisePatternRole(output.diagnostics.stepwisePattern.roles, "free-counterpoint");
+
+    assert.deepEqual(gate6.failures, []);
+    assert.deepEqual(gate7.failures, []);
+    assert.equal(gate6.passed, true);
+    assert.equal(gate7.passed, true);
+    assert.ok(freeCounterpoint.noteCount > 0);
+    assert.ok(freeCounterpoint.stepwiseRunRatio >= 0);
+    assert.ok(freeCounterpoint.stepwiseRunRatio <= 1);
+    assert.ok(freeCounterpoint.ascendingStepRatio >= 0);
+    assert.ok(freeCounterpoint.descendingStepRatio >= 0);
+    assert.ok(freeCounterpoint.maxMonotoneStepRun >= 0);
+    assert.ok(freeCounterpoint.repeatedDegreePatternCount >= 0);
+    assert.ok(Number.isFinite(freeCounterpoint.rolePatternEntropy));
+  }
+});
+
+test("generateScore catches free-counterpoint contour false positives with stepwise evidence", () => {
+  const blockerSeeds = ["fugue-smoke", "lyrical-line", "contrary-answer", "bright-answer", "modal-answer"] as const;
+
+  for (const seed of blockerSeeds) {
+    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
+    const freeCounterpoint = stepwisePatternRole(output.diagnostics.stepwisePattern.roles, "free-counterpoint");
+
+    assert.equal(output.diagnostics.freeCounterpointContourScore, 1);
+    assert.ok(freeCounterpoint.ascendingStepRatio > 0);
+    assert.ok(freeCounterpoint.descendingStepRatio > 0);
+    assert.ok(freeCounterpoint.maxMonotoneStepRun >= 3);
+    assert.ok(freeCounterpoint.repeatedDegreePatternCount > 0);
+  }
 });
 
 test("generateScore applies phase-7 contour gates across fixed and rotation seeds", () => {
@@ -981,7 +1052,7 @@ function requireSelectedCandidateEvaluation(
   const selectedEvaluation = selectedCandidateEvaluations[0];
 
   assert.ok(selectedEvaluation !== undefined);
-  assert.equal(selectedEvaluation.featureVersion, 1);
+  assert.equal(selectedEvaluation.featureVersion, 2);
   assert.equal(selectedEvaluation.evaluationModelVersion, 6);
   assert.ok(selectedEvaluation.explanations.entries.length > 0);
   assert.ok(selectedEvaluation.explanations.voicePairs.length > 0);
@@ -989,6 +1060,15 @@ function requireSelectedCandidateEvaluation(
   assert.ok(selectedEvaluation.explanations.sections.length > 0);
 
   return selectedEvaluation;
+}
+
+function stepwisePatternRole(
+  summaries: readonly StepwisePatternRoleSummary[],
+  role: NoteRole,
+): StepwisePatternRoleSummary {
+  const summary = summaries.find((candidate) => candidate.role === role);
+  assert.ok(summary !== undefined);
+  return summary;
 }
 
 function maximum(values: readonly number[]): number {

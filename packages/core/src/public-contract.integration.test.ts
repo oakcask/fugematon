@@ -86,6 +86,9 @@ test("public diagnostics expose finite candidate score dimensions", () => {
   assert.equal(output.diagnostics.subjectIdentityViolations, PHASE_5_DIAGNOSTICS_PROFILE.subjectIdentityViolations);
   assert.equal(output.diagnostics.answerPlanViolations, PHASE_5_DIAGNOSTICS_PROFILE.answerPlanViolations);
   assert.equal(output.diagnostics.keyMetadataMismatches, PHASE_5_DIAGNOSTICS_PROFILE.keyMetadataMismatches);
+  assert.equal(output.diagnostics.stepwisePattern.degreePatternLength, 4);
+  assert.ok(output.diagnostics.stepwisePattern.roles.length > 0);
+  assert.ok(output.diagnostics.stepwisePattern.sections.length > 0);
 
   for (const issue of output.diagnostics.issues) {
     assert.equal(issue.severity, "warning");
@@ -133,7 +136,7 @@ test("public MIDI export is deterministic for generated score events", () => {
 });
 
 function assertCandidateEvaluation(evaluation: CandidateEvaluation): void {
-  assert.equal(evaluation.featureVersion, 1);
+  assert.equal(evaluation.featureVersion, 2);
   assert.equal(evaluation.evaluationModelVersion, 6);
   assert.ok(Number.isFinite(evaluation.totalCost));
   assert.ok(evaluation.explanations.entries.length > 0);

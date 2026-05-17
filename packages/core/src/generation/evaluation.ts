@@ -1,4 +1,4 @@
-import type { CandidateEvaluation, NoteEvent } from "../events.js";
+import type { CandidateEvaluation, NoteEvent, NoteRole, StepwisePatternSummary } from "../events.js";
 import {
   buildPhase7CandidateRiskContexts,
   explainCandidateRiskContexts,
@@ -112,6 +112,14 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
       leapRecoveryMisses: diagnostics.leapRecoveryMisses,
       melodicStagnationWarnings: diagnostics.melodicStagnationWarnings,
       freeCounterpointContourScore: diagnostics.freeCounterpointContourScore,
+      freeCounterpointStepwiseRunRatio: roleStepwisePattern(diagnostics.stepwisePattern, "free-counterpoint")
+        .stepwiseRunRatio,
+      freeCounterpointMaxMonotoneStepRun: roleStepwisePattern(diagnostics.stepwisePattern, "free-counterpoint")
+        .maxMonotoneStepRun,
+      freeCounterpointRepeatedDegreePatternCount: roleStepwisePattern(diagnostics.stepwisePattern, "free-counterpoint")
+        .repeatedDegreePatternCount,
+      freeCounterpointRolePatternEntropy: roleStepwisePattern(diagnostics.stepwisePattern, "free-counterpoint")
+        .rolePatternEntropy,
       ornamentDensity: diagnostics.ornamentDensity,
     },
   };
@@ -157,6 +165,11 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
       fourBeatOuterVoiceSameDirectionRatio: diagnostics.pitchContourMotion.fourBeat.outerVoiceSameDirectionRatio,
       fourBeatOuterVoiceContraryRatio: diagnostics.pitchContourMotion.fourBeat.outerVoiceContraryRatio,
       sharedRhythmOverlapCount: diagnostics.sharedRhythmOverlapCount,
+      maxRoleMonotoneStepRun: Math.max(...diagnostics.stepwisePattern.roles.map((role) => role.maxMonotoneStepRun)),
+      repeatedRoleDegreePatternCount: diagnostics.stepwisePattern.roles.reduce(
+        (sum, role) => sum + role.repeatedDegreePatternCount,
+        0,
+      ),
       selectedVoiceIndependenceSelectionCost: voiceIndependenceSelectionCost,
       shortStrongBeatEntryNoteCount: diagnostics.shortStrongBeatEntryNoteCount,
       entrySupportInstabilityCount: diagnostics.entrySupportInstabilityCount,
@@ -240,7 +253,7 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
     form.reward;
 
   return {
-    featureVersion: 1,
+    featureVersion: 2,
     evaluationModelVersion: 6,
     totalCost: Math.round(totalCost * 1000) / 1000,
     hardFailures,
@@ -254,6 +267,22 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
       form,
     },
   };
+}
+
+function roleStepwisePattern(stepwisePattern: StepwisePatternSummary, role: NoteRole) {
+  return (
+    stepwisePattern.roles.find((summary) => summary.role === role) ?? {
+      role,
+      noteCount: 0,
+      intervalCount: 0,
+      stepwiseRunRatio: 0,
+      ascendingStepRatio: 0,
+      descendingStepRatio: 0,
+      maxMonotoneStepRun: 0,
+      repeatedDegreePatternCount: 0,
+      rolePatternEntropy: 0,
+    }
+  );
 }
 
 function modalCounterSubjectIdentitySelectionReward(

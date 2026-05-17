@@ -5,16 +5,20 @@ import type {
   EntrySupportInstabilitySummary,
   EntrySupportSevereIntervalSummary,
   HarmonicPlan,
+  KeySignature,
   NoteEvent,
+  NoteRole,
   OrnamentPlacementReasons,
   PitchContourMotionSummary,
   PitchContourWindowSummary,
   PlannedEntry,
   SoloTextureSummary,
+  StepwisePatternRoleSummary,
+  StepwisePatternSummary,
   Voice,
 } from "../events.js";
 import { analyzeHarmonicPlans } from "./harmony-diagnostics.js";
-import { isModalMode } from "./key.js";
+import { isModalMode, tonicPitchClass } from "./key.js";
 import { scaleDegreePitchClass } from "./pitch.js";
 import {
   COUNTER_SUBJECT_DEGREES,
@@ -59,6 +63,7 @@ export function analyzeScore(
   allVoiceSilenceGapCount: number;
   soloTexture: SoloTextureSummary;
   pitchContourMotion: PitchContourMotionSummary;
+  stepwisePattern: StepwisePatternSummary;
   ornamentCandidateCount: number;
   ornamentDensity: number;
   ornamentPlacementReasons: OrnamentPlacementReasons;
@@ -269,6 +274,7 @@ function analyzeTextureDiagnostics(
     allVoiceSilenceGapCount: countAllVoiceSilenceGaps(notes),
     soloTexture: analyzeSoloTexture(notes, sectionPlans),
     pitchContourMotion: analyzePitchContourMotion(notes),
+    stepwisePattern: analyzeStepwisePattern(notes, sectionPlans),
     ornamentCandidateCount,
     ornamentDensity: roundRatio(ornamentCandidateCount / supportNoteCount),
     ornamentPlacementReasons: analyzeOrnamentPlacementReasons(notes, subjectEntries, sectionPlans),
@@ -801,6 +807,179 @@ function activePitchForVoiceAt(notes: readonly NoteEvent[], voice: Voice, tick: 
   return notes.find(
     (note) => note.voice === voice && note.startTick <= tick && tick < note.startTick + note.durationTicks,
   )?.pitch;
+}
+
+const STEPWISE_PATTERN_DEGREE_LENGTH = 4;
+const STEPWISE_PATTERN_ROLES: readonly NoteRole[] = [
+  "subject",
+  "answer",
+  "subject-fragment",
+  "counter-subject",
+  "free-counterpoint",
+];
+
+function analyzeStepwisePattern(
+  notes: readonly NoteEvent[],
+  sectionPlans: readonly HarmonicPlan[],
+): StepwisePatternSummary {
+  const roles = stepwisePatternRoles(notes);
+  return {
+    degreePatternLength: STEPWISE_PATTERN_DEGREE_LENGTH,
+    roles: roles.map((role) => summarizeStepwisePatternRole(role, notes, sectionPlans)),
+    sections: sectionPlans.flatMap((plan) =>
+      stepwisePatternRoles(
+        notes.filter(
+          (note) => note.startTick >= plan.startTick && note.startTick < plan.startTick + plan.durationTicks,
+        ),
+      ).map((role) => ({
+        ...summarizeStepwisePatternRole(
+          role,
+          notes.filter(
+            (note) =>
+              note.startTick >= plan.startTick &&
+              note.startTick < plan.startTick + plan.durationTicks &&
+              note.role === role,
+          ),
+          [plan],
+        ),
+        state: plan.state,
+        startTick: plan.startTick,
+        durationTicks: plan.durationTicks,
+      })),
+    ),
+  };
+}
+
+function stepwisePatternRoles(notes: readonly NoteEvent[]): NoteRole[] {
+  const roles = [...STEPWISE_PATTERN_ROLES];
+  if (notes.some((note) => note.role === "fallback")) {
+    roles.push("fallback");
+  }
+  return roles;
+}
+
+function summarizeStepwisePatternRole(
+  role: NoteRole,
+  notes: readonly NoteEvent[],
+  sectionPlans: readonly HarmonicPlan[],
+): StepwisePatternRoleSummary {
+  const roleNotes = notes.filter((note) => note.role === role).sort(compareNoteEvents);
+  const noteGroups = VOICE_ENTRY_ORDER.map((voice) => roleNotes.filter((note) => note.voice === voice));
+  let intervalCount = 0;
+  let stepCount = 0;
+  let ascendingStepCount = 0;
+  let descendingStepCount = 0;
+  let maxMonotoneStepRun = 0;
+  const degreePatternCounts = new Map<string, number>();
+
+  for (const group of noteGroups) {
+    let currentDirection = 0;
+    let currentMonotoneStepRun = 0;
+    const degreeProxies = group.map((note) => degreeProxyForNote(note, sectionPlans));
+
+    for (let index = 1; index < group.length; index += 1) {
+      const previous = group[index - 1]!;
+      const current = group[index]!;
+      const interval = current.pitch - previous.pitch;
+      if (interval === 0) {
+        currentDirection = 0;
+        currentMonotoneStepRun = 0;
+        intervalCount += 1;
+        continue;
+      }
+
+      intervalCount += 1;
+      const direction = Math.sign(interval);
+      if (Math.abs(interval) <= 2) {
+        stepCount += 1;
+        if (direction > 0) {
+          ascendingStepCount += 1;
+        } else {
+          descendingStepCount += 1;
+        }
+        currentMonotoneStepRun = direction === currentDirection ? currentMonotoneStepRun + 1 : 1;
+        currentDirection = direction;
+        maxMonotoneStepRun = Math.max(maxMonotoneStepRun, currentMonotoneStepRun);
+      } else {
+        currentDirection = 0;
+        currentMonotoneStepRun = 0;
+      }
+    }
+
+    for (let index = 0; index <= degreeProxies.length - STEPWISE_PATTERN_DEGREE_LENGTH; index += 1) {
+      const pattern = degreeProxies.slice(index, index + STEPWISE_PATTERN_DEGREE_LENGTH).join(",");
+      degreePatternCounts.set(pattern, (degreePatternCounts.get(pattern) ?? 0) + 1);
+    }
+  }
+
+  return {
+    role,
+    noteCount: roleNotes.length,
+    intervalCount,
+    stepwiseRunRatio: roundRatio(stepCount / Math.max(1, intervalCount)),
+    ascendingStepRatio: roundRatio(ascendingStepCount / Math.max(1, stepCount)),
+    descendingStepRatio: roundRatio(descendingStepCount / Math.max(1, stepCount)),
+    maxMonotoneStepRun,
+    repeatedDegreePatternCount: [...degreePatternCounts.values()].reduce(
+      (sum, count) => sum + Math.max(0, count - 1),
+      0,
+    ),
+    rolePatternEntropy: roundRatio(normalizedPatternEntropy([...degreePatternCounts.values()])),
+  };
+}
+
+function degreeProxyForNote(note: NoteEvent, sectionPlans: readonly HarmonicPlan[]): number {
+  const key = keyForTick(note.startTick, sectionPlans);
+  if (key === undefined) {
+    return note.pitch;
+  }
+
+  const tonicPitch = tonicPitchClass(key);
+  const chromaticDistance = note.pitch - tonicPitch;
+  const degreeOctave = Math.floor(chromaticDistance / 12);
+  const pitchClass = positiveModulo(note.pitch, 12);
+  let bestScaleDegree = 0;
+  let bestDistance = Number.POSITIVE_INFINITY;
+
+  for (let scaleDegree = 0; scaleDegree < 7; scaleDegree += 1) {
+    const scalePitchClass = scaleDegreePitchClass(scaleDegree, 0, key);
+    const distance = Math.min(
+      positiveModulo(pitchClass - scalePitchClass, 12),
+      positiveModulo(scalePitchClass - pitchClass, 12),
+    );
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      bestScaleDegree = scaleDegree;
+    }
+  }
+
+  return degreeOctave * 7 + bestScaleDegree;
+}
+
+function keyForTick(tick: number, sectionPlans: readonly HarmonicPlan[]): KeySignature | undefined {
+  const containingPlan = sectionPlans.find(
+    (plan) => tick >= plan.startTick && tick < plan.startTick + plan.durationTicks,
+  );
+  if (containingPlan !== undefined) {
+    return containingPlan.localKey;
+  }
+
+  return sectionPlans
+    .filter((plan) => plan.startTick <= tick)
+    .sort((left, right) => right.startTick - left.startTick)[0]?.localKey;
+}
+
+function normalizedPatternEntropy(patternCounts: readonly number[]): number {
+  const total = patternCounts.reduce((sum, count) => sum + count, 0);
+  if (total === 0 || patternCounts.length <= 1) {
+    return 0;
+  }
+
+  const entropy = patternCounts.reduce((sum, count) => {
+    const probability = count / total;
+    return sum - probability * Math.log2(probability);
+  }, 0);
+  return entropy / Math.log2(patternCounts.length);
 }
 
 function activeVoicesDuring(notes: readonly NoteEvent[], startTick: number, endTick: number): Voice[] {
