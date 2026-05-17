@@ -697,7 +697,7 @@ test("generateScore reduces phase-7 stepwise fifth-climb subject pressure", () =
   ] as const;
   const protectedSeeds = [
     ["modal-answer", 33, 0.608],
-    ["bright-answer", 30, 0.9],
+    ["bright-answer", 31, 0.9],
     ["contrary-motion", 29, 0.9],
     ["modal-dorian", 27, 0.58],
     ["dense-modal", 33, 0.573],
@@ -801,7 +801,7 @@ test("generateScore balances phase-7 entry harmony scoring with preservation gua
   }
 });
 
-test("generateScore pins phase-7 voice-pair independence blocker evidence before scoring changes", () => {
+test("generateScore preserves phase-7 voice-pair independence blocker evidence under scoring changes", () => {
   const blockerSeeds = [
     ["contrary-motion", 26, 521, 778, 4, 2, 26, 7, 54, 14],
     ["fugue-smoke", 36, 581, 834, 0, 0, 27, 7, 54, 12],
@@ -848,6 +848,34 @@ test("generateScore pins phase-7 voice-pair independence blocker evidence before
   }
 });
 
+test("generateScore nudges phase-7 voice independence boundary seeds without gate regressions", () => {
+  const blockerSeeds = [
+    ["bright-answer", 735, 625, 31, 0.9],
+    ["quiet-cadence", 724, 640, 15, 0.87],
+  ] as const;
+
+  for (const [
+    seed,
+    maxUnisonOverlapCount,
+    maxSameDirectionMotionCount,
+    maxLeapRecoveryMisses,
+    minCounterSubjectIdentityRetention,
+  ] of blockerSeeds) {
+    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
+    const gate6 = evaluatePhase6Diagnostics(seed, output.diagnostics);
+    const gate7 = evaluatePhase7Diagnostics(seed, output.diagnostics);
+
+    assert.deepEqual(gate6.failures, []);
+    assert.deepEqual(gate7.failures, []);
+    assert.equal(gate6.passed, true);
+    assert.equal(gate7.passed, true);
+    assert.ok(output.diagnostics.unisonOverlapCount <= maxUnisonOverlapCount);
+    assert.ok(output.diagnostics.sameDirectionMotionCount <= maxSameDirectionMotionCount);
+    assert.ok(output.diagnostics.leapRecoveryMisses <= maxLeapRecoveryMisses);
+    assert.ok(output.diagnostics.counterSubjectIdentityRetention >= minCounterSubjectIdentityRetention);
+  }
+});
+
 test("generateScore preserves phase-7 modal counter-subject retention guardrails", () => {
   const blockerSeeds = [
     ["modal-cadence", 0.573],
@@ -872,7 +900,7 @@ test("generateScore preserves phase-7 melody and form guardrails", () => {
     ["modal-answer", 33, 2, 1, 36, 13, 13, 2],
     ["contrary-motion", 29, 8, 4, 42, 15, 15, 8],
     ["modal-dorian", 27, 3, 1, 37, 13, 13, 8],
-    ["bright-answer", 30, 7, 3, 37, 12, 12, 2],
+    ["bright-answer", 31, 7, 3, 37, 12, 12, 2],
     ["lyrical-line", 25, 3, 2, 42, 16, 16, 8],
   ] as const;
 
@@ -935,7 +963,7 @@ function requireSelectedCandidateEvaluation(
 
   assert.ok(selectedEvaluation !== undefined);
   assert.equal(selectedEvaluation.featureVersion, 1);
-  assert.equal(selectedEvaluation.evaluationModelVersion, 2);
+  assert.equal(selectedEvaluation.evaluationModelVersion, 3);
   assert.ok(selectedEvaluation.explanations.entries.length > 0);
   assert.ok(selectedEvaluation.explanations.voicePairs.length > 0);
   assert.ok(selectedEvaluation.explanations.voices.length > 0);

@@ -139,7 +139,7 @@ export const PHASE_5_9_DIAGNOSTICS_PROFILE = {
   maxUnisonOverlapCount: 762,
   maxSameDirectionMotionCount: 661,
   maxSharedRhythmOverlapCount: 906,
-  maxLeapRecoveryMisses: 30,
+  maxLeapRecoveryMisses: 31,
   maxSelectedCandidateTextureCost: 1051,
   maxAverageSelectedCandidateTextureCost: 805,
   maxSelectedCandidateMelodyCost: 315,

@@ -29,6 +29,8 @@ const EVALUATION_WEIGHTS = {
     eightBeatBassUpperSameDirection: 1,
     fourBeatOuterVoiceSameDirection: 1,
     sharedRhythmOverlap: 2,
+    voiceIndependenceSelectionUnisonOverlap: 8,
+    voiceIndependenceSelectionSharedRhythmOverlap: 4,
     allVoiceSilenceGap: 25,
     rhythmicIndependence: 12,
     supportTextureRepetition: 8,
@@ -104,6 +106,9 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
       ornamentDensity: diagnostics.ornamentDensity,
     },
   };
+  const voiceIndependenceSelectionCost =
+    diagnostics.unisonOverlapCount * EVALUATION_WEIGHTS.texture.voiceIndependenceSelectionUnisonOverlap +
+    diagnostics.sharedRhythmOverlapCount * EVALUATION_WEIGHTS.texture.voiceIndependenceSelectionSharedRhythmOverlap;
   const texture = {
     cost:
       diagnostics.samePitchOverlapCount * EVALUATION_WEIGHTS.texture.samePitchOverlap +
@@ -141,6 +146,7 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
       fourBeatOuterVoiceSameDirectionRatio: diagnostics.pitchContourMotion.fourBeat.outerVoiceSameDirectionRatio,
       fourBeatOuterVoiceContraryRatio: diagnostics.pitchContourMotion.fourBeat.outerVoiceContraryRatio,
       sharedRhythmOverlapCount: diagnostics.sharedRhythmOverlapCount,
+      selectedVoiceIndependenceSelectionCost: voiceIndependenceSelectionCost,
       shortStrongBeatEntryNoteCount: diagnostics.shortStrongBeatEntryNoteCount,
       entrySupportInstabilityCount: diagnostics.entrySupportInstabilityCount,
       allVoiceSilenceGapCount: diagnostics.allVoiceSilenceGapCount,
@@ -204,6 +210,7 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
     melody.reward +
     texture.cost -
     texture.reward +
+    voiceIndependenceSelectionCost +
     subjectClarity.cost -
     subjectClarity.reward +
     harmony.cost -
@@ -213,7 +220,7 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
 
   return {
     featureVersion: 1,
-    evaluationModelVersion: 2,
+    evaluationModelVersion: 3,
     totalCost: Math.round(totalCost * 1000) / 1000,
     hardFailures,
     explanations,
