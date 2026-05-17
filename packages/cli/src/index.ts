@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import type { GenerationDiagnostics } from "@fugematon/core";
+import type { FugueState, GenerationDiagnostics } from "@fugematon/core";
 import {
   evaluatePhase6Diagnostics,
   evaluatePhase7Diagnostics,
@@ -61,7 +61,7 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
 async function writeReviewBundle(outDirectory: string, lengthTicks: number): Promise<void> {
   await mkdir(outDirectory, { recursive: true });
   const summary = {
-    schemaVersion: 6,
+    schemaVersion: 7,
     lengthTicks,
     seeds: [] as {
       seed: string;
@@ -139,6 +139,12 @@ type ReviewDiagnosticsSummary = {
     sectionCount: number;
     stateTransitions: GenerationDiagnostics["stateTransitions"];
     allVoiceSilenceGapCount: number;
+    longRunRepetition: {
+      continuationPatternWindowSize: number;
+      mostRepeatedContinuationPattern: FugueState[];
+      mostRepeatedContinuationPatternCount: number;
+      uniqueContinuationPatternCount: number;
+    };
   };
   ornament: {
     ornamentCandidateCount: number;
@@ -148,6 +154,7 @@ type ReviewDiagnosticsSummary = {
   candidateEvaluation: {
     featureVersion: number;
     evaluationModelVersion: number;
+    selectedCandidateEvaluationCount: number;
     entryExplanationCount: number;
     voicePairExplanationCount: number;
     voiceExplanationCount: number;
@@ -157,8 +164,16 @@ type ReviewDiagnosticsSummary = {
     maxVoicePairUnisonOverlapCount: number;
     maxVoicePairSharedRhythmOverlapCount: number;
     maxSectionSoloTextureRisk: number;
+    totalSectionExplanationCount: number;
+    maxSelectedSectionSoloTextureRisk: number;
+    averageSelectedSectionSoloTextureRisk: number;
+    highSelectedSectionSoloTextureRiskCount: number;
+    sectionSoloTextureRiskWarningThreshold: number;
   };
 };
+
+const LONG_RUN_FORM_PATTERN_WINDOW_SIZE = 4;
+const SECTION_SOLO_TEXTURE_RISK_WARNING_THRESHOLD = 6;
 
 type ListeningCriterion =
   | "subjectMemorability"
@@ -242,6 +257,7 @@ function summarizeDiagnostics(diagnostics: GenerationDiagnostics): ReviewDiagnos
       sectionCount: diagnostics.sectionPlans.length,
       stateTransitions: diagnostics.stateTransitions,
       allVoiceSilenceGapCount: diagnostics.allVoiceSilenceGapCount,
+      longRunRepetition: summarizeLongRunRepetition(diagnostics.stateTransitions),
     },
     ornament: {
       ornamentCandidateCount: diagnostics.ornamentCandidateCount,
@@ -260,6 +276,7 @@ function summarizeCandidateEvaluation(
     return {
       featureVersion: 0,
       evaluationModelVersion: 0,
+      selectedCandidateEvaluationCount: 0,
       entryExplanationCount: 0,
       voicePairExplanationCount: 0,
       voiceExplanationCount: 0,
@@ -269,12 +286,21 @@ function summarizeCandidateEvaluation(
       maxVoicePairUnisonOverlapCount: 0,
       maxVoicePairSharedRhythmOverlapCount: 0,
       maxSectionSoloTextureRisk: 0,
+      totalSectionExplanationCount: 0,
+      maxSelectedSectionSoloTextureRisk: 0,
+      averageSelectedSectionSoloTextureRisk: 0,
+      highSelectedSectionSoloTextureRiskCount: 0,
+      sectionSoloTextureRiskWarningThreshold: SECTION_SOLO_TEXTURE_RISK_WARNING_THRESHOLD,
     };
   }
+  const selectedSections = diagnostics.selectedCandidateEvaluations.flatMap(
+    (evaluation) => evaluation.explanations.sections,
+  );
 
   return {
     featureVersion: selected.featureVersion,
     evaluationModelVersion: selected.evaluationModelVersion,
+    selectedCandidateEvaluationCount: diagnostics.selectedCandidateEvaluations.length,
     entryExplanationCount: selected.explanations.entries.length,
     voicePairExplanationCount: selected.explanations.voicePairs.length,
     voiceExplanationCount: selected.explanations.voices.length,
@@ -288,6 +314,41 @@ function summarizeCandidateEvaluation(
       selected.explanations.voicePairs.map((voicePair) => voicePair.sharedRhythmOverlapCount),
     ),
     maxSectionSoloTextureRisk: maximum(selected.explanations.sections.map((section) => section.soloTextureRisk)),
+    totalSectionExplanationCount: selectedSections.length,
+    maxSelectedSectionSoloTextureRisk: maximum(selectedSections.map((section) => section.soloTextureRisk)),
+    averageSelectedSectionSoloTextureRisk: roundRatio(
+      average(selectedSections.map((section) => section.soloTextureRisk)),
+    ),
+    highSelectedSectionSoloTextureRiskCount: selectedSections.filter(
+      (section) => section.soloTextureRisk >= SECTION_SOLO_TEXTURE_RISK_WARNING_THRESHOLD,
+    ).length,
+    sectionSoloTextureRiskWarningThreshold: SECTION_SOLO_TEXTURE_RISK_WARNING_THRESHOLD,
+  };
+}
+
+function summarizeLongRunRepetition(
+  stateTransitions: readonly FugueState[],
+): ReviewDiagnosticsSummary["form"]["longRunRepetition"] {
+  const continuationStates = stateTransitions.filter((state) => state !== "exposition");
+  const patternCounts = new Map<string, { pattern: FugueState[]; count: number }>();
+
+  for (let index = 0; index <= continuationStates.length - LONG_RUN_FORM_PATTERN_WINDOW_SIZE; index += 1) {
+    const pattern = continuationStates.slice(index, index + LONG_RUN_FORM_PATTERN_WINDOW_SIZE);
+    const key = pattern.join("|");
+    const current = patternCounts.get(key);
+    patternCounts.set(key, { pattern, count: (current?.count ?? 0) + 1 });
+  }
+
+  const mostRepeated = [...patternCounts.values()].reduce<{ pattern: FugueState[]; count: number }>(
+    (best, current) => (current.count > best.count ? current : best),
+    { pattern: [], count: 0 },
+  );
+
+  return {
+    continuationPatternWindowSize: LONG_RUN_FORM_PATTERN_WINDOW_SIZE,
+    mostRepeatedContinuationPattern: mostRepeated.pattern,
+    mostRepeatedContinuationPatternCount: mostRepeated.count,
+    uniqueContinuationPatternCount: patternCounts.size,
   };
 }
 
@@ -297,6 +358,18 @@ function maximum(values: readonly number[]): number {
   }
 
   return Math.max(...values);
+}
+
+function average(values: readonly number[]): number {
+  if (values.length === 0) {
+    return 0;
+  }
+
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
+function roundRatio(value: number): number {
+  return Math.round(value * 1000) / 1000;
 }
 
 function createListeningReview(lengthTicks: number): ListeningReview {
