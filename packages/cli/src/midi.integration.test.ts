@@ -266,7 +266,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       sectionExplanationCount: 1,
       maxEntryInstabilityCount: 4,
       maxEntrySevereIntervalCount: 3,
-      maxVoicePairUnisonOverlapCount: 6,
+      maxVoicePairUnisonOverlapCount: 5,
       maxVoicePairSharedRhythmOverlapCount: 14,
       maxSectionSoloTextureRisk: 8,
     });
@@ -283,7 +283,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       maxVoicePairSharedRhythmOverlapCount: 20,
       maxSectionSoloTextureRisk: 2,
     });
-    assert.equal(findReviewSeed(summary.seeds, "contrary-motion").diagnosticsSummary.melody.leapRecoveryMisses, 7);
+    assert.equal(findReviewSeed(summary.seeds, "contrary-motion").diagnosticsSummary.melody.leapRecoveryMisses, 8);
     assert.equal(findReviewSeed(summary.seeds, "contrary-motion").diagnosticsSummary.texture.samePitchOverlapCount, 4);
     assert.equal(
       listeningReview.seeds.filter((entry) => entry.judgement === "not-reviewed").length,

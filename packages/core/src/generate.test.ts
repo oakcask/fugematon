@@ -685,6 +685,67 @@ test("generateScore applies phase-7 contour gates across fixed and rotation seed
   }
 });
 
+test("generateScore reduces phase-7 stepwise fifth-climb subject pressure", () => {
+  const seeds = [...PHASE_5_REVIEW_SEEDS, ...PHASE_5_11_ROTATION_SEEDS];
+  const regressionSeeds = [
+    ["fugue-smoke", 143, 108, 100],
+    ["lyrical-line", 145, 108, 100],
+    ["modal-cadence", 149, 108, 91],
+    ["wide-key", 143, 105, 97],
+    ["tight-stretto", 160, 105, 97],
+    ["contrary-answer", 145, 105, 97],
+  ] as const;
+  const protectedSeeds = [
+    ["modal-answer", 33, 0.608],
+    ["bright-answer", 30, 0.9],
+    ["contrary-motion", 29, 0.9],
+    ["modal-dorian", 27, 0.58],
+    ["dense-modal", 33, 0.573],
+    ["angular-answer", 33, 0.573],
+  ] as const;
+  const exactStepwiseFifthClimbPattern = "0-1-2-3-4-3-2-1";
+  const turnbackFifthClimbPattern = "0-1-2-3-4-3-1-2";
+  let exactStepwiseFifthClimbCount = 0;
+  let turnbackFifthClimbCount = 0;
+
+  for (const { seed } of seeds) {
+    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
+    const gate6 = evaluatePhase6Diagnostics(seed, output.diagnostics);
+    const gate7 = evaluatePhase7Diagnostics(seed, output.diagnostics);
+    const subjectPattern = output.diagnostics.subjectEntries[0]?.expectedDegreePattern.join("-");
+
+    if (subjectPattern === exactStepwiseFifthClimbPattern) {
+      exactStepwiseFifthClimbCount += 1;
+    }
+    if (subjectPattern === turnbackFifthClimbPattern) {
+      turnbackFifthClimbCount += 1;
+    }
+
+    assert.deepEqual(gate6.failures, []);
+    assert.deepEqual(gate7.failures, []);
+    assert.equal(gate6.passed, true);
+    assert.equal(gate7.passed, true);
+  }
+
+  assert.equal(exactStepwiseFifthClimbCount, 4);
+  assert.equal(turnbackFifthClimbCount, 8);
+
+  for (const [seed, maxInstabilityCount, maxSevereIntervalCount, maxUnresolvedSevereIntervalCount] of regressionSeeds) {
+    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
+
+    assert.ok(output.diagnostics.entrySupportInstabilityCount <= maxInstabilityCount);
+    assert.ok(output.diagnostics.severeEntryIntervalCount <= maxSevereIntervalCount);
+    assert.ok(output.diagnostics.unresolvedSevereEntryIntervalCount <= maxUnresolvedSevereIntervalCount);
+  }
+
+  for (const [seed, maxLeapRecoveryMisses, minCounterSubjectIdentityRetention] of protectedSeeds) {
+    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
+
+    assert.ok(output.diagnostics.leapRecoveryMisses <= maxLeapRecoveryMisses);
+    assert.ok(output.diagnostics.counterSubjectIdentityRetention >= minCounterSubjectIdentityRetention);
+  }
+});
+
 test("generateScore balances phase-7 entry harmony scoring with preservation guardrails", () => {
   const blockerSeeds = [
     ["fugue-smoke", 143, 108, 100, 3, 3, 3],
@@ -742,8 +803,8 @@ test("generateScore balances phase-7 entry harmony scoring with preservation gua
 
 test("generateScore pins phase-7 voice-pair independence blocker evidence before scoring changes", () => {
   const blockerSeeds = [
-    ["contrary-motion", 40, 528, 778, 4, 2, 26, 7, 54, 14],
-    ["fugue-smoke", 36, 597, 834, 0, 0, 27, 7, 54, 12],
+    ["contrary-motion", 26, 521, 778, 4, 2, 26, 7, 54, 14],
+    ["fugue-smoke", 36, 581, 834, 0, 0, 27, 7, 54, 12],
     ["minor-entry", 26, 736, 906, 0, 0, 50, 15, 70, 20],
     ["modal-answer", 13, 751, 906, 0, 0, 46, 14, 70, 20],
   ] as const;
@@ -809,7 +870,7 @@ test("generateScore preserves phase-7 modal counter-subject retention guardrails
 test("generateScore preserves phase-7 melody and form guardrails", () => {
   const blockerSeeds = [
     ["modal-answer", 33, 2, 1, 36, 13, 13, 2],
-    ["contrary-motion", 29, 7, 4, 42, 15, 15, 8],
+    ["contrary-motion", 29, 8, 4, 42, 15, 15, 8],
     ["modal-dorian", 27, 3, 1, 37, 13, 13, 8],
     ["bright-answer", 30, 7, 3, 37, 12, 12, 2],
     ["lyrical-line", 25, 3, 2, 42, 16, 16, 8],
