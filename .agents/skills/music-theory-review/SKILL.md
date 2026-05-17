@@ -13,11 +13,12 @@ Make music-theory review reproducible enough that an agent can find problems, co
 
 1. Start from `docs/README.md`, then open only the relevant phase, reference, and review docs.
 2. Identify the concrete musical concern: counterpoint, harmony, fugue form, melody, rhythm, texture, style fit, listening fatigue, or diagnostics coverage.
-3. Do a literature pass before making strong theory claims. Use Fux/species counterpoint as the default counterpoint baseline, then check broader classical, jazz, and popular-music sources when the issue touches harmony, rhythm, form, phrase design, texture, or style.
-4. Generate or inspect evidence across the relevant review seeds. Prefer existing review bundles and diagnostics when they answer the question; otherwise regenerate a temporary bundle or derive focused metrics from ScoreEvent data.
-5. When a symptom repeats across seeds, test whether it comes from a generator pattern, not only from the local diagnostics. Compare subject degree patterns, answer transforms, entry spacing, role assignments, section states, voice/register placement, and support-texture formulas against the affected metrics.
-6. Separate findings into source-backed rules, project policy, and inference from generated artifacts.
-7. Update docs when the review changes phase scope, gate rationale, diagnostics priorities, seed selection, or music-quality expectations.
+3. For any change to a music-quality gate, diagnostics threshold, generator model, candidate scoring model, evaluation weights, or section/planner model, review generated scores across several relevant seeds before finalizing, without waiting for human listening. Treat the review as agent-side musical judgement that approximates a human first pass, while explicitly recording any remaining listening gaps.
+4. Do a literature pass before making strong theory claims. Use Fux/species counterpoint as the default counterpoint baseline, then check broader classical, jazz, and popular-music sources when the issue touches harmony, rhythm, form, phrase design, texture, or style.
+5. Generate or inspect evidence across the relevant review seeds. Prefer existing review bundles and diagnostics when they answer the question; otherwise regenerate a bundle under `samples/<review-name>` or derive focused metrics from ScoreEvent data.
+6. When a symptom repeats across seeds, test whether it comes from a generator pattern, not only from the local diagnostics. Compare subject degree patterns, answer transforms, entry spacing, role assignments, section states, voice/register placement, and support-texture formulas against the affected metrics.
+7. Separate findings into source-backed rules, project policy, and inference from generated artifacts.
+8. Update docs when the review changes phase scope, gate rationale, diagnostics priorities, seed selection, or music-quality expectations.
 
 ## Literature Rules
 
@@ -33,6 +34,8 @@ Use [references/literature-map.md](references/literature-map.md) to choose sourc
 ## Evidence Rules
 
 Review more than one seed unless the user explicitly asks for a single seed. Include fixed review seeds, boundary seeds, rotation seeds, and adversarial seeds when the concern can generalize.
+
+When the review is attached to a gate or model change, pick a small but relevant seed set that covers the changed behavior: at least one representative seed, any known boundary seeds for the affected metric or musical concern, and rotation or adversarial seeds when the change could overfit the fixed set. If time or compute prevents a broad pass, review the highest-risk subset and record the missing seed classes.
 
 For each finding, record:
 
