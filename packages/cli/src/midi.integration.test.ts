@@ -113,9 +113,18 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
           melody: {
             leapRecoveryMisses: number;
           };
+          form: {
+            longRunRepetition: {
+              continuationPatternWindowSize: number;
+              mostRepeatedContinuationPattern: string[];
+              mostRepeatedContinuationPatternCount: number;
+              uniqueContinuationPatternCount: number;
+            };
+          };
           candidateEvaluation: {
             featureVersion: number;
             evaluationModelVersion: number;
+            selectedCandidateEvaluationCount: number;
             entryExplanationCount: number;
             voicePairExplanationCount: number;
             voiceExplanationCount: number;
@@ -125,6 +134,11 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
             maxVoicePairUnisonOverlapCount: number;
             maxVoicePairSharedRhythmOverlapCount: number;
             maxSectionSoloTextureRisk: number;
+            totalSectionExplanationCount: number;
+            maxSelectedSectionSoloTextureRisk: number;
+            averageSelectedSectionSoloTextureRisk: number;
+            highSelectedSectionSoloTextureRiskCount: number;
+            sectionSoloTextureRiskWarningThreshold: number;
           };
         };
         phase59Gate: {
@@ -170,7 +184,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       preferences: unknown[];
     };
 
-    assert.equal(summary.schemaVersion, 6);
+    assert.equal(summary.schemaVersion, 7);
     assert.equal(summary.lengthTicks, 9600);
     assert.ok(summary.seeds.length > 1);
     assert.equal(listeningReview.schemaVersion, 1);
@@ -213,8 +227,12 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       assert.ok(entry.diagnosticsSummary.texture.pitchContourMotion.fourBeat.bassUpperContraryRatio >= 0);
       assert.ok(entry.diagnosticsSummary.texture.pitchContourMotion.eightBeat.bassUpperSameDirectionRatio >= 0);
       assert.ok(entry.diagnosticsSummary.texture.pitchContourMotion.eightBeat.bassUpperContraryRatio >= 0);
+      assert.equal(entry.diagnosticsSummary.form.longRunRepetition.continuationPatternWindowSize, 4);
+      assert.ok(entry.diagnosticsSummary.form.longRunRepetition.mostRepeatedContinuationPatternCount >= 0);
+      assert.ok(entry.diagnosticsSummary.form.longRunRepetition.uniqueContinuationPatternCount >= 0);
       assert.ok(entry.diagnosticsSummary.candidateEvaluation.featureVersion >= 0);
       assert.ok(entry.diagnosticsSummary.candidateEvaluation.evaluationModelVersion >= 0);
+      assert.ok(entry.diagnosticsSummary.candidateEvaluation.selectedCandidateEvaluationCount >= 0);
       assert.ok(entry.diagnosticsSummary.candidateEvaluation.entryExplanationCount >= 0);
       assert.ok(entry.diagnosticsSummary.candidateEvaluation.voicePairExplanationCount >= 0);
       assert.ok(entry.diagnosticsSummary.candidateEvaluation.voiceExplanationCount >= 0);
@@ -224,6 +242,11 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       assert.ok(entry.diagnosticsSummary.candidateEvaluation.maxVoicePairUnisonOverlapCount >= 0);
       assert.ok(entry.diagnosticsSummary.candidateEvaluation.maxVoicePairSharedRhythmOverlapCount >= 0);
       assert.ok(entry.diagnosticsSummary.candidateEvaluation.maxSectionSoloTextureRisk >= 0);
+      assert.ok(entry.diagnosticsSummary.candidateEvaluation.totalSectionExplanationCount >= 0);
+      assert.ok(entry.diagnosticsSummary.candidateEvaluation.maxSelectedSectionSoloTextureRisk >= 0);
+      assert.ok(entry.diagnosticsSummary.candidateEvaluation.averageSelectedSectionSoloTextureRisk >= 0);
+      assert.ok(entry.diagnosticsSummary.candidateEvaluation.highSelectedSectionSoloTextureRiskCount >= 0);
+      assert.equal(entry.diagnosticsSummary.candidateEvaluation.sectionSoloTextureRiskWarningThreshold, 6);
     }
     for (const entry of listeningReview.seeds) {
       assert.ok(files.includes(entry.diagnosticsFile));
@@ -247,6 +270,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
     assert.deepEqual(findReviewSeed(summary.seeds, "fugue-smoke").diagnosticsSummary.candidateEvaluation, {
       featureVersion: 1,
       evaluationModelVersion: 4,
+      selectedCandidateEvaluationCount: 1,
       entryExplanationCount: 1,
       voicePairExplanationCount: 6,
       voiceExplanationCount: 4,
@@ -256,10 +280,16 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       maxVoicePairUnisonOverlapCount: 7,
       maxVoicePairSharedRhythmOverlapCount: 12,
       maxSectionSoloTextureRisk: 8,
+      totalSectionExplanationCount: 1,
+      maxSelectedSectionSoloTextureRisk: 8,
+      averageSelectedSectionSoloTextureRisk: 8,
+      highSelectedSectionSoloTextureRiskCount: 1,
+      sectionSoloTextureRiskWarningThreshold: 6,
     });
     assert.deepEqual(findReviewSeed(summary.seeds, "modal-cadence").diagnosticsSummary.candidateEvaluation, {
       featureVersion: 1,
       evaluationModelVersion: 4,
+      selectedCandidateEvaluationCount: 1,
       entryExplanationCount: 1,
       voicePairExplanationCount: 6,
       voiceExplanationCount: 4,
@@ -269,10 +299,16 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       maxVoicePairUnisonOverlapCount: 5,
       maxVoicePairSharedRhythmOverlapCount: 14,
       maxSectionSoloTextureRisk: 8,
+      totalSectionExplanationCount: 1,
+      maxSelectedSectionSoloTextureRisk: 8,
+      averageSelectedSectionSoloTextureRisk: 8,
+      highSelectedSectionSoloTextureRiskCount: 1,
+      sectionSoloTextureRiskWarningThreshold: 6,
     });
     assert.deepEqual(findReviewSeed(summary.seeds, "modal-answer").diagnosticsSummary.candidateEvaluation, {
       featureVersion: 1,
       evaluationModelVersion: 4,
+      selectedCandidateEvaluationCount: 1,
       entryExplanationCount: 1,
       voicePairExplanationCount: 6,
       voiceExplanationCount: 4,
@@ -282,6 +318,17 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       maxVoicePairUnisonOverlapCount: 14,
       maxVoicePairSharedRhythmOverlapCount: 20,
       maxSectionSoloTextureRisk: 2,
+      totalSectionExplanationCount: 1,
+      maxSelectedSectionSoloTextureRisk: 2,
+      averageSelectedSectionSoloTextureRisk: 2,
+      highSelectedSectionSoloTextureRiskCount: 0,
+      sectionSoloTextureRiskWarningThreshold: 6,
+    });
+    assert.deepEqual(findReviewSeed(summary.seeds, "fugue-smoke").diagnosticsSummary.form.longRunRepetition, {
+      continuationPatternWindowSize: 4,
+      mostRepeatedContinuationPattern: [],
+      mostRepeatedContinuationPatternCount: 0,
+      uniqueContinuationPatternCount: 0,
     });
     assert.equal(findReviewSeed(summary.seeds, "contrary-motion").diagnosticsSummary.melody.leapRecoveryMisses, 8);
     assert.equal(findReviewSeed(summary.seeds, "contrary-motion").diagnosticsSummary.texture.samePitchOverlapCount, 4);
