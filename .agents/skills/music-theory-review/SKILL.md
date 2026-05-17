@@ -37,6 +37,10 @@ Review more than one seed unless the user explicitly asks for a single seed. Inc
 
 When the review is attached to a gate or model change, pick a small but relevant seed set that covers the changed behavior: at least one representative seed, any known boundary seeds for the affected metric or musical concern, and rotation or adversarial seeds when the change could overfit the fixed set. If time or compute prevents a broad pass, review the highest-risk subset and record the missing seed classes.
 
+When generating review bundles for verification, write `pnpm fugematon review --out` output under `samples/<review-name>` so generated JSON and MIDI files match existing ignore rules. Do not use unignored temporary directories for review output.
+
+For generation-quality changes, do not preserve old regression-test expected values only because they are already fixed. If review bundles, diagnostics, and music-theory review across relevant seeds show that the generated music improved, update regression-test expectations to the new quality baseline. Record affected seeds, tradeoffs, and any remaining regressions in the relevant phase or review doc.
+
 For each finding, record:
 
 * the musical symptom;

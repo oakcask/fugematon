@@ -64,6 +64,7 @@ Use templates or documentation when:
 
 - Keep policy text short and concrete.
 - Before expanding `AGENTS.md`, check whether the content is a task-specific procedure that belongs in a skill.
+- When editing `AGENTS.md`, also audit the touched section for existing task-specific procedures, command recipes, checklists, troubleshooting flows, or long rationale. Move those details into the relevant skill, or create a focused skill when no suitable one exists, and replace the AGENTS entry with a short always-on rule or skill discovery link.
 - Do not duplicate the same long rule across multiple files; put the principle in one place and enforcement in another when needed.
 - Avoid environment-specific or personal information in examples, generated files, comments, tests, logs, and commit messages.
 - Reuse existing CI jobs, scripts, lint tools, and repository naming conventions when practical.
