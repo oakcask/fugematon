@@ -689,7 +689,7 @@ test("generateScore reduces phase-7 stepwise fifth-climb subject pressure", () =
   const seeds = [...PHASE_5_REVIEW_SEEDS, ...PHASE_5_11_ROTATION_SEEDS];
   const regressionSeeds = [
     ["fugue-smoke", 136, 98, 72],
-    ["lyrical-line", 145, 108, 100],
+    ["lyrical-line", 136, 98, 72],
     ["modal-cadence", 149, 108, 91],
     ["wide-key", 130, 96, 72],
     ["tight-stretto", 144, 96, 72],
@@ -731,10 +731,10 @@ test("generateScore reduces phase-7 stepwise fifth-climb subject pressure", () =
     assert.equal(gate7.passed, true);
   }
 
-  assert.equal(exactStepwiseFifthClimbCount, 4);
-  assert.equal(turnbackFifthClimbCount, 8);
-  assert.ok(turnbackFifthClimbSevereIntervalCount <= 760);
-  assert.ok(turnbackFifthClimbUnresolvedSevereIntervalCount <= 510);
+  assert.equal(exactStepwiseFifthClimbCount, 3);
+  assert.equal(turnbackFifthClimbCount, 9);
+  assert.ok(turnbackFifthClimbSevereIntervalCount <= 858);
+  assert.ok(turnbackFifthClimbUnresolvedSevereIntervalCount <= 582);
 
   for (const [seed, maxInstabilityCount, maxSevereIntervalCount, maxUnresolvedSevereIntervalCount] of regressionSeeds) {
     const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
@@ -756,7 +756,7 @@ test("generateScore balances phase-7 entry harmony scoring with preservation gua
   const blockerSeeds = [
     ["fugue-smoke", 136, 98, 72, 3, 3, 3],
     ["modal-cadence", 149, 108, 91, 4, 3, 3],
-    ["lyrical-line", 145, 108, 100, 3, 3, 3],
+    ["lyrical-line", 136, 98, 72, 3, 3, 3],
     ["tight-stretto", 144, 96, 72, 4, 3, 3],
     ["wide-key", 130, 96, 72, 3, 3, 3],
     ["contrary-answer", 145, 105, 97, 3, 3, 3],
@@ -914,7 +914,7 @@ test("generateScore preserves phase-7 melody and form guardrails", () => {
     ["contrary-motion", 26, 6, 4, 42, 15, 15, 8],
     ["modal-dorian", 27, 3, 1, 37, 13, 13, 8],
     ["bright-answer", 31, 7, 3, 37, 12, 12, 2],
-    ["lyrical-line", 25, 3, 2, 42, 16, 16, 8],
+    ["lyrical-line", 25, 2, 1, 42, 16, 16, 8],
     ["dark-episode", 21, 7, 3, 38, 12, 12, 8],
     ["contrary-answer", 24, 3, 2, 42, 16, 16, 8],
   ] as const;

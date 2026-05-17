@@ -10,7 +10,7 @@ const SUBJECT_THIRD_LEAP_DEGREES = [0, 2, 1, 3, 4, 3, 2, 1] as const;
 export function buildSubject(rng: Xoshiro128StarStar, keySignature: KeySignature): SubjectNote[] {
   const shape = rng.chooseWeighted<readonly number[]>([
     { value: SUBJECT_TURNBACK_DEGREES, weight: 3 },
-    { value: SUBJECT_DEGREES, weight: keySignature.mode === "minor" ? 3 : 1 },
+    { value: SUBJECT_DEGREES, weight: stepwiseFifthClimbWeight(keySignature) },
     { value: SUBJECT_THIRD_LEAP_DEGREES, weight: 2 },
   ]);
 
@@ -27,4 +27,14 @@ export function buildSubject(rng: Xoshiro128StarStar, keySignature: KeySignature
     offsetTick += note.durationTicks;
     return note;
   });
+}
+
+function stepwiseFifthClimbWeight(keySignature: KeySignature): number {
+  if (keySignature.mode === "minor") {
+    return 3;
+  }
+  if (keySignature.mode === "major") {
+    return 0.25;
+  }
+  return 1;
 }

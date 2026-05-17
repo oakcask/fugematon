@@ -122,3 +122,11 @@ section solo texture risk を form cost に加える小実験は棄却した。P
 保護 seed では `modal-answer`、`bright-answer`、`contrary-motion`、`modal-dorian`、`dense-modal`、`angular-answer` が Phase 6/7 gate 内に残った。全 22 seed の `leapRecoveryMisses` 合計は 418 から 409 へ下がり、`counterSubjectIdentityRetention` の下限は `modal-cadence` の 0.573 のまま維持した。
 
 5度順次上行 prefix 全体、つまり `0-1-2-3-4-3-2-1` 型にも同じ support shaping を広げる案は棄却した。強い variant では `lyrical-line` と `contrary-answer` の severe entry interval は大きく下がったが、両 seed の `leapRecoveryMisses` が Phase 6/7 gate 付近まで悪化した。滑らかな variant でも `contrary-answer` の `leapRecoveryMisses` が 34 になり、Phase 6 gate を壊した。今後 `0-1-2-3-4-3-2-1` 型を直す場合は、entry support degree だけでなく、answer-local support voice の leap recovery を同時に候補選択へ入れる。
+
+## Phase 7 major subject tail shaping
+
+`lyrical-line` と `contrary-answer` は `0-1-2-3-4-3-2-1` 型の主題末尾を維持しており、entry 冒頭の 2 度/7 度衝突が高止まりしていた。`modal-cadence` はすでに `0-1-2-3-4-3-1-2` 型だが、modal counter-subject と free support が作る entry-local collision が残るため、今回は modal pattern には触れない。
+
+採用した小変更では、major key に限って `0-1-2-3-4-3-2-1` 型の主題 weight をさらに下げた。minor と modal seed は従来 weight を保ち、modal identity と minor subject shape の既存 margin を使わない。これにより `lyrical-line` は `0-1-2-3-4-3-1-2` 型へ移り、entry support instability は 145 から 136、severe entry interval は 108 から 98、未解決 severe entry interval は 100 から 72 へ下がった。leap recovery misses も 25 から 19 へ下がり、Phase 6/7 gate と #82 の `fugue-smoke`、`wide-key`、`tight-stretto`、`circle-fifths`、`contrary-motion` の entry 改善は維持した。`modal-cadence` と `contrary-answer` は今回の採用案では変わらず、次の entry harmony work の対象として残す。
+
+major key の weight をさらに下げ、`contrary-answer` を `0-2-1-3-4-3-2-1` 型へ移す案は棄却した。この実験では `contrary-answer` の severe entry interval は 105 から 72、未解決 severe entry interval は 97 から 32 へ下がったが、`leapRecoveryMisses` が 39 まで悪化して Phase 6/7 gate を壊した。`0-1-2-3-4-3-2-1` 型へ #82 と同じ support shaping を広げる案も再確認したが、`lyrical-line` は 99/75、`contrary-answer` は 97/75 まで改善する一方で、`contrary-answer` の `leapRecoveryMisses` が 32 まで悪化した。今後 `contrary-answer` を直す場合は、subject shape 変更か support degree 変更だけではなく、answer-local support voice の leap recovery を同時に守る候補選択が必要になる。
