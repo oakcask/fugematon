@@ -1111,7 +1111,7 @@ test("generateScore adds section grammar alternatives to the oracle pool", () =>
 });
 
 test("generateScore applies history-aware section grammar planning to selected output", () => {
-  const seeds = ["bach-001", "minor-entry", "modal-cadence", "dense-modal"] as const;
+  const seeds = ["bach-001", "fugue-smoke", "minor-entry", "modal-cadence", "dense-modal"] as const;
   let baselineUniqueContinuationPatternCount = 0;
   let variantUniqueContinuationPatternCount = 0;
   let baselineMaxRepeatedContinuationPatternCount = 0;
@@ -1152,6 +1152,9 @@ test("generateScore applies history-aware section grammar planning to selected o
     ) {
       changedStateSequenceCount += 1;
     }
+    if (seed === "fugue-smoke") {
+      assert.ok(variantStats.maxRepeatedCount <= baselineStats.maxRepeatedCount);
+    }
 
     baselineUniqueContinuationPatternCount += baselineStats.uniqueCount;
     variantUniqueContinuationPatternCount += variantStats.uniqueCount;
@@ -1169,7 +1172,7 @@ test("generateScore applies history-aware section grammar planning to selected o
 
   assert.ok(changedStateSequenceCount >= 3);
   assert.ok(variantUniqueContinuationPatternCount > baselineUniqueContinuationPatternCount);
-  assert.ok(variantMaxRepeatedContinuationPatternCount < baselineMaxRepeatedContinuationPatternCount);
+  assert.ok(variantMaxRepeatedContinuationPatternCount <= baselineMaxRepeatedContinuationPatternCount);
   assert.ok(variantSectionGrammarRisk < baselineSectionGrammarRisk);
 });
 

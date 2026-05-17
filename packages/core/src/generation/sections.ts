@@ -181,7 +181,10 @@ function historyAwareStateScore(input: {
     score += 8;
   }
   if (input.state === input.stateHistory.at(-2)) {
-    score += 30;
+    score += 100;
+  }
+  if (createsShortAlternatingPhrase(history)) {
+    score += 1000;
   }
 
   if (
@@ -230,6 +233,16 @@ function latestContinuationPatternRepeatCount(stateHistory: readonly FugueState[
   }
 
   return count;
+}
+
+function createsShortAlternatingPhrase(stateHistory: readonly FugueState[]): boolean {
+  const continuationStates = stateHistory.filter((state) => state !== "exposition");
+  if (continuationStates.length < 4) {
+    return false;
+  }
+
+  const [first, second, third, fourth] = continuationStates.slice(-4);
+  return first === third && second === fourth && first !== second;
 }
 
 function averageActiveVoiceDensity(notes: readonly NoteEvent[], startTick: number, durationTicks: number): number {
@@ -457,6 +470,18 @@ export function chooseContinuationSection(
     }
   }
 
+  bestIndex = avoidShortAlternatingPhraseSelection({
+    candidates,
+    evaluations,
+    bestIndex,
+    baselineCandidateCount,
+    selectableCandidateCount,
+    sectionGrammarCandidateStart,
+    baselineEvaluation,
+    historyContext,
+    selectionModel,
+  });
+
   const selectedState = candidates[bestIndex]!.sectionPlans[0]?.state ?? state;
   return {
     section: candidates[bestIndex]!,
@@ -471,6 +496,62 @@ export function chooseContinuationSection(
       stateHistory: [...stateHistory.slice(0, -1), selectedState],
     }),
   };
+}
+
+function avoidShortAlternatingPhraseSelection(input: {
+  candidates: readonly Exposition[];
+  evaluations: readonly CandidateEvaluation[];
+  bestIndex: number;
+  baselineCandidateCount: number;
+  selectableCandidateCount: number;
+  sectionGrammarCandidateStart: number;
+  baselineEvaluation: CandidateEvaluation;
+  historyContext: HistoryAwareSelectionContext;
+  selectionModel: SelectionModel;
+}): number {
+  if (input.selectionModel !== "phase10-section-local-planner") {
+    return input.bestIndex;
+  }
+
+  const selectedState = input.candidates[input.bestIndex]?.sectionPlans[0]?.state ?? input.historyContext.plannedState;
+  if (!createsShortAlternatingPhrase([...input.historyContext.previousStateHistory, selectedState])) {
+    return input.bestIndex;
+  }
+
+  let fallbackIndex = input.bestIndex;
+  let fallbackScore = Number.POSITIVE_INFINITY;
+
+  for (const [index, evaluation] of input.evaluations.entries()) {
+    const isSectionLocalCandidate = index >= input.baselineCandidateCount;
+    const isSectionGrammarCandidate = index >= input.sectionGrammarCandidateStart;
+    if (index >= input.selectableCandidateCount && !isSectionGrammarCandidate) {
+      continue;
+    }
+    if (evaluation.hardFailures.length > 0) {
+      continue;
+    }
+    if (
+      isSectionLocalCandidate &&
+      !preservesSectionLocalGuardrails(evaluation, input.baselineEvaluation, isSectionGrammarCandidate)
+    ) {
+      continue;
+    }
+
+    const candidateState = input.candidates[index]?.sectionPlans[0]?.state ?? input.historyContext.plannedState;
+    if (createsShortAlternatingPhrase([...input.historyContext.previousStateHistory, candidateState])) {
+      continue;
+    }
+
+    const candidateScore = isSectionLocalCandidate
+      ? selectionScore(evaluation, input.selectionModel)
+      : selectionScore(evaluation, "phase10-oracle-selection");
+    if (candidateScore < fallbackScore) {
+      fallbackIndex = index;
+      fallbackScore = candidateScore;
+    }
+  }
+
+  return fallbackIndex;
 }
 
 function baselineContinuationCandidateCount(state: FugueState): number {
