@@ -112,3 +112,13 @@ long-run form と section texture は、generator を大きく変えずに revie
 section solo texture risk を form cost に加える小実験は棄却した。Phase 6/7 gate は保てたが、129600 tick review で `maxSelectedSectionSoloTextureRisk` は 8 のまま、risk 6 以上の selected section も 321 件のままで改善しなかった。候補ごとの weight 調整だけでは、continuity が同じ 1 声 filler shape に寄る構造を変えられないため、今後は section planner に codetta、段階的 thinning、stretto preparation、episode から次 entry へ向かう複数声部 continuity を追加する。
 
 `listening-review.json` は 22 seed すべてが `not-reviewed`、`pairwise-preferences.json` は空のままにする。これらは committed source artifact ではなく review command が再生成する template なので、manual listening judgement と pairwise preference は実際の聴取 pass でだけ埋める。
+
+## Phase 7 upper-neighbor entry support shaping
+
+5度へ順次上行して `0-1-2-3-4-3-1-2` へ折り返す主題型では、非 modal entry の counter-subject support を entry 冒頭だけ 2度/7度から外れる段階的な支えへ寄せた。主題、answer plan、free counterpoint pattern、modal counter-subject pattern は変えず、candidate evaluation model 5 ではこの主題型の selected subject-return candidate に 8拍 bass-upper contour の小さな selection guard も加えた。entry 支えを改善する代わりに Phase 7 contour margin を使い切らないためである。
+
+採用した変更では 22 seed すべてが Phase 6/7 gate を pass した。schema version 7 review bundle では severe entry interval 合計が 1956 から 1909、未解決 severe entry interval 合計が 1342 から 1211、entry support instability 合計が 2728 から 2674 へ下がった。`0-1-2-3-4-3-1-2` 型の 8 seed 合計では severe entry interval が 807 から 760、未解決 severe entry interval が 641 から 510 へ下がった。主な改善 seed は `fugue-smoke` 108/100 から 98/72、`wide-key` 105/97 から 96/72、`tight-stretto` 105/97 から 96/72、`contrary-motion` 102/94 から 93/69 で、`circle-fifths` も 104/97 から 94/69 へ下がった。`dense-modal` は modal counter-subject を保つため severe/unresolved は 92/43 のまま、leap recovery は 6 のまま維持した。
+
+保護 seed では `modal-answer`、`bright-answer`、`contrary-motion`、`modal-dorian`、`dense-modal`、`angular-answer` が Phase 6/7 gate 内に残った。全 22 seed の `leapRecoveryMisses` 合計は 418 から 409 へ下がり、`counterSubjectIdentityRetention` の下限は `modal-cadence` の 0.573 のまま維持した。
+
+5度順次上行 prefix 全体、つまり `0-1-2-3-4-3-2-1` 型にも同じ support shaping を広げる案は棄却した。強い variant では `lyrical-line` と `contrary-answer` の severe entry interval は大きく下がったが、両 seed の `leapRecoveryMisses` が Phase 6/7 gate 付近まで悪化した。滑らかな variant でも `contrary-answer` の `leapRecoveryMisses` が 34 になり、Phase 6 gate を壊した。今後 `0-1-2-3-4-3-2-1` 型を直す場合は、entry support degree だけでなく、answer-local support voice の leap recovery を同時に候補選択へ入れる。
