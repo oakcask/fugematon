@@ -239,3 +239,13 @@ review bundle summary は schema version 10 として、seed ごとの `diagnost
 relative guard、absolute Phase 6/7 ceiling guard、stretto-like 限定の順に候補を狭めたが、gate を完全に保つ設定では selected section solo texture risk が PR2 baseline と同じ risk 6 以上 317 件、total risk 3188 に戻り、before/after pairwise preference を支える改善が残らなかった。このため PR3 では planner change を採用しない。Phase 7 は完了しておらず、Phase 8 へ進む blocker は継続する。
 
 今後の section-local planner は、2 声目を足すだけではなく、active voice-pair の exact pitch/unison、support voice の開始音と held duration、leap recovery、modal identity、outer-voice contour を候補生成時点で同時に評価する必要がある。candidate pool oracle は selection/generator 責務の切り分けには有効だったが、PR3 の結果から、solo texture 改善は local solo risk だけを優先する候補追加としては採用できない。
+
+### PR4 completion path blocker
+
+4 本目の確認では、PR2 の oracle と PR3 の blocker 記録を前提に、staged thinning を繰り返さず、既存 candidate pool の reference-relative selection だけで Phase 7 完了へ進めるかを調べた。manual listening は実施しておらず、判断は diagnostics-backed audit に限る。
+
+baseline の 22 seed は Phase 6/7 gate をすべて pass した。oracle では section-solo-texture が全 seed で `generator-or-section-planner` に分類され、risk を下げる viable existing-pool candidate は 0 件だった。entry-harmony は `bright-answer` の 1 section だけが `selection-model` で、form/solo-risk の tie-break は 5、10、25、50、100、200 の total-cost margin すべてで candidate を変更しなかった。
+
+reference-relative tie-break の小実験では、lockstep 優先と combined risk 優先は 22 seed 中 1 seed の Phase 6/7 gate を壊した。entry 優先は 25 以上の margin で 1 section だけ変わり、合計 severe entry interval は 1859 から 1857、unresolved severe entry interval は 1084 から 1078 へ下がったが、selected section solo texture risk は 317 件のままだった。stepwise 優先は gate を保ち、合計 leap recovery miss を 407 から 393-396 へ下げたが、same-pitch/unison は少し悪化し、shared rhythm 18536 と high solo risk 317 は動かなかった。
+
+このため、既存 pool の reference-relative selection tie-break だけでは Phase 7 完了条件を満たせない。Phase 7 は、実 score ingestion と percentile profile、section-local candidate 生成、manual pairwise listening evidence がそろうまで blocked のままとする。次の実装候補は、既存 pool の重み追加ではなく、support voice の pitch class、octave、onset、duration、voice-pair lockstep、leap recovery、modal identity、outer-voice contour を同時に guard する section-local candidate 生成に限る。
