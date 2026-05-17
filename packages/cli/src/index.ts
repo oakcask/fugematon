@@ -5,6 +5,7 @@ import type { CandidatePoolOracleSummary, FugueState, GenerationDiagnostics } fr
 import {
   compareDiagnosticsToReferenceProfile,
   evaluatePhase6Diagnostics,
+  evaluatePhase7BGatePolicy,
   evaluatePhase7Diagnostics,
   evaluatePhase59Diagnostics,
   evaluatePhase510Diagnostics,
@@ -14,6 +15,7 @@ import {
   PHASE_5_11_ROTATION_SEEDS,
   PHASE_5_REVIEW_SEEDS,
   type Phase6GateResult,
+  type Phase7BGatePolicyResult,
   type Phase7GateResult,
   type Phase59GateResult,
   type Phase510GateResult,
@@ -91,12 +93,16 @@ async function writeReviewBundle(outDirectory: string, lengthTicks: number): Pro
       phase511Gate: evaluatePhase511Diagnostics(seed, output.diagnostics),
       phase6Gate: evaluatePhase6Diagnostics(seed, output.diagnostics),
       phase7Gate: evaluatePhase7Diagnostics(seed, output.diagnostics),
+      phase7BGate: evaluatePhase7BGatePolicy(seed, output.diagnostics, {
+        manualListeningCategory: category,
+        manualListeningJudgement: "not-reviewed",
+      }),
     });
     listeningReview.seeds.push(createListeningSeedReview(seed, category, diagnosticsFile, midiFile));
   }
 
   const summary: ReviewSummary = {
-    schemaVersion: 10,
+    schemaVersion: 11,
     lengthTicks,
     referenceDiagnostics: summarizeReferenceDiagnosticsComparisons(referenceComparisons),
     seeds: summarySeeds,
@@ -112,7 +118,7 @@ async function writeReviewBundle(outDirectory: string, lengthTicks: number): Pro
 }
 
 type ReviewSummary = {
-  schemaVersion: 10;
+  schemaVersion: 11;
   lengthTicks: number;
   referenceDiagnostics: ReferenceDiagnosticsAggregate;
   seeds: ReviewSummarySeed[];
@@ -130,6 +136,7 @@ type ReviewSummarySeed = {
   phase511Gate: Phase511GateResult;
   phase6Gate: Phase6GateResult;
   phase7Gate: Phase7GateResult;
+  phase7BGate: Phase7BGatePolicyResult;
 };
 
 type ReviewDiagnosticsSummary = {

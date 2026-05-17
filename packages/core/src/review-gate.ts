@@ -80,6 +80,41 @@ export type Phase7GateResult = {
 
 export type ManualListeningJudgement = "pass" | "needs-work" | "fail" | "not-reviewed";
 
+export type ReviewGatePolicyClassification = "hard-failure" | "review-required" | "warning" | "manual";
+
+export type ReviewGateFindingSource = "diagnostics" | "legacy-phase-gate" | "diagnostics-warning" | "manual-listening";
+
+export type ClassifiedReviewGateFinding = Phase59GateFailure & {
+  policy: ReviewGatePolicyClassification;
+  source: ReviewGateFindingSource;
+};
+
+export type Phase7BPolicyOptions = {
+  manualListeningCategory?: string;
+  manualListeningJudgement?: ManualListeningJudgement;
+};
+
+export type Phase7BGatePolicyResult = {
+  policy: {
+    schemaVersion: 1;
+    phase: "phase-7B";
+  };
+  passed: boolean;
+  hardConstraintPassed: boolean;
+  phase8Ready: boolean;
+  findings: ClassifiedReviewGateFinding[];
+  hardFailures: ClassifiedReviewGateFinding[];
+  reviewSignals: ClassifiedReviewGateFinding[];
+  warnings: ClassifiedReviewGateFinding[];
+  manual: ClassifiedReviewGateFinding[];
+  metrics: Phase7GateResult["metrics"] & {
+    hardFailureCount: number;
+    hardConstraintFailureCount: number;
+    diagnosticsWarningCount: number;
+  };
+  legacyPhase7Gate: Phase7GateResult;
+};
+
 export function evaluatePhase59Diagnostics(seed: string, diagnostics: GenerationDiagnostics): Phase59GateResult {
   const textureCosts = diagnostics.selectedCandidateEvaluations.map((evaluation) => evaluation.dimensions.texture.cost);
   const melodyCosts = diagnostics.selectedCandidateEvaluations.map((evaluation) => evaluation.dimensions.melody.cost);
@@ -488,6 +523,46 @@ export function phase59ManualListeningBlockers(category: string, judgement: Manu
   return [];
 }
 
+export function evaluatePhase7BGatePolicy(
+  seed: string,
+  diagnostics: GenerationDiagnostics,
+  options: Phase7BPolicyOptions = {},
+): Phase7BGatePolicyResult {
+  const legacyPhase7Gate = evaluatePhase7Diagnostics(seed, diagnostics);
+  const diagnosticHardFailures = classifyHardConstraintFailures(diagnostics);
+  const classifiedLegacyFindings = legacyPhase7Gate.failures.map(classifyLegacyGateFailure);
+  const diagnosticsWarnings = classifyDiagnosticsWarnings(diagnostics);
+  const manual = classifyManualListening(options.manualListeningCategory, options.manualListeningJudgement);
+  const findings = [...diagnosticHardFailures, ...classifiedLegacyFindings, ...diagnosticsWarnings, ...manual];
+  const hardFailures = findings.filter((finding) => finding.policy === "hard-failure");
+  const reviewSignals = findings.filter((finding) => finding.policy === "review-required");
+  const warnings = findings.filter((finding) => finding.policy === "warning");
+  const hardConstraintPassed = diagnosticHardFailures.length === 0;
+  const phase8Ready = hardFailures.length === 0;
+
+  return {
+    policy: {
+      schemaVersion: 1,
+      phase: "phase-7B",
+    },
+    passed: phase8Ready,
+    hardConstraintPassed,
+    phase8Ready,
+    findings,
+    hardFailures,
+    reviewSignals,
+    warnings,
+    manual,
+    metrics: {
+      ...legacyPhase7Gate.metrics,
+      hardFailureCount: hardFailures.length,
+      hardConstraintFailureCount: diagnosticHardFailures.length,
+      diagnosticsWarningCount: diagnostics.warnings.length,
+    },
+    legacyPhase7Gate,
+  };
+}
+
 function addBoundaryFailures(
   failures: Phase59GateFailure[],
   seed: string,
@@ -747,6 +822,116 @@ function addMaximumMarginFollowUp(
   if (expected - actual <= PHASE_5_11_DIAGNOSTICS_PROFILE.followUpMargin) {
     followUps.push({ metric, actual, expected: `< ${expected}` });
   }
+}
+
+const PHASE_7B_REVIEW_SIGNAL_METRICS = new Set([
+  "counterSubjectIdentityRetention",
+  "rhythmicIndependenceScore",
+  "unisonOverlapCount",
+  "samePitchOverlapCount",
+  "sameDirectionMotionCount",
+  "sharedRhythmOverlapCount",
+  "leapRecoveryMisses",
+  "maxSelectedCandidateTextureCost",
+  "averageSelectedCandidateTextureCost",
+  "maxSelectedCandidateMelodyCost",
+  "averageSelectedCandidateMelodyCost",
+  "shortStrongBeatEntryNoteCount",
+  "entrySupportInstabilityCount",
+  "maxEntrySupportInstabilityPerEntry",
+  "maxConsecutiveEntrySupportInstabilities",
+  "unresolvedEntrySupportInstabilityCount",
+  "severeEntryIntervalCount",
+  "unresolvedSevereEntryIntervalCount",
+  "unsupportedSoloRunCount",
+  "abruptTextureDropCount",
+  "soloVoiceImbalance",
+  "fourBeatBassUpperSameDirectionRatio",
+  "fourBeatBassUpperContraryRatio",
+  "eightBeatBassUpperSameDirectionRatio",
+  "eightBeatBassUpperContraryRatio",
+  "fourBeatOuterVoiceSameDirectionRatio",
+  "fourBeatOuterVoiceContraryRatio",
+  "modalContextCount",
+  "modalCharacteristicToneHits",
+  "modalCadenceHits",
+]);
+
+const PHASE_7B_SCHEMA_SHAPE_METRICS = new Set([
+  "selectedCandidateEvaluationCount",
+  "fourBeatBassUpperComparisonCount",
+  "eightBeatBassUpperComparisonCount",
+]);
+
+function classifyHardConstraintFailures(diagnostics: GenerationDiagnostics): ClassifiedReviewGateFinding[] {
+  return [
+    ...hardConstraintFailure("rangeViolations", diagnostics.rangeViolations),
+    ...hardConstraintFailure("voiceCrossings", diagnostics.voiceCrossings),
+    ...hardConstraintFailure("subjectIdentityViolations", diagnostics.subjectIdentityViolations),
+    ...hardConstraintFailure("answerPlanViolations", diagnostics.answerPlanViolations),
+    ...hardConstraintFailure("keyMetadataMismatches", diagnostics.keyMetadataMismatches),
+    ...hardConstraintFailure("unresolvedDissonanceCount", diagnostics.unresolvedDissonanceCount),
+    ...hardConstraintFailure("allVoiceSilenceGapCount", diagnostics.allVoiceSilenceGapCount),
+  ];
+}
+
+function hardConstraintFailure(metric: string, actual: number): ClassifiedReviewGateFinding[] {
+  if (actual === 0) {
+    return [];
+  }
+
+  return [{ metric, actual, expected: "0", policy: "hard-failure", source: "diagnostics" }];
+}
+
+function classifyLegacyGateFailure(failure: Phase59GateFailure): ClassifiedReviewGateFinding {
+  const metric = metricName(failure.metric);
+  if (PHASE_7B_REVIEW_SIGNAL_METRICS.has(metric)) {
+    return { ...failure, policy: "review-required", source: "legacy-phase-gate" };
+  }
+  if (PHASE_7B_SCHEMA_SHAPE_METRICS.has(metric)) {
+    return { ...failure, policy: "hard-failure", source: "legacy-phase-gate" };
+  }
+
+  return { ...failure, policy: "warning", source: "legacy-phase-gate" };
+}
+
+function classifyDiagnosticsWarnings(diagnostics: GenerationDiagnostics): ClassifiedReviewGateFinding[] {
+  return [
+    ...diagnostics.warnings.map((warning, index) => ({
+      metric: `warnings.${index}`,
+      actual: warning,
+      expected: "review",
+      policy: "warning" as const,
+      source: "diagnostics-warning" as const,
+    })),
+  ];
+}
+
+function classifyManualListening(
+  category: string | undefined,
+  judgement: ManualListeningJudgement | undefined,
+): ClassifiedReviewGateFinding[] {
+  if (category === undefined || judgement === undefined) {
+    return [];
+  }
+  const blockers = phase59ManualListeningBlockers(category, judgement);
+  if (blockers.length === 0) {
+    return [];
+  }
+
+  return [
+    {
+      metric: "manualListeningJudgement",
+      actual: judgement,
+      expected: blockers.join("; "),
+      policy: "manual",
+      source: "manual-listening",
+    },
+  ];
+}
+
+function metricName(metric: string): string {
+  return metric.slice(metric.lastIndexOf(".") + 1);
 }
 
 function average(values: readonly number[]): number {

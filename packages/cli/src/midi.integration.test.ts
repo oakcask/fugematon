@@ -252,6 +252,29 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
           passed: boolean;
           failures: unknown[];
         };
+        phase7BGate: {
+          policy: {
+            schemaVersion: number;
+            phase: string;
+          };
+          passed: boolean;
+          hardConstraintPassed: boolean;
+          phase8Ready: boolean;
+          findings: { policy: string; source: string }[];
+          hardFailures: { policy: string; source: string }[];
+          reviewSignals: { policy: string; source: string }[];
+          warnings: { policy: string; source: string }[];
+          manual: { policy: string; source: string }[];
+          metrics: {
+            hardFailureCount: number;
+            hardConstraintFailureCount: number;
+            diagnosticsWarningCount: number;
+          };
+          legacyPhase7Gate: {
+            passed: boolean;
+            failures: unknown[];
+          };
+        };
       }[];
     };
     const listeningReview = JSON.parse(await readFile(join(directory, "listening-review.json"), "utf8")) as {
@@ -274,7 +297,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       preferences: unknown[];
     };
 
-    assert.equal(summary.schemaVersion, 10);
+    assert.equal(summary.schemaVersion, 11);
     assert.equal(summary.lengthTicks, 9600);
     assert.ok(summary.seeds.length > 1);
     assert.equal(summary.referenceDiagnostics.profile.profileId, "phase-7-fugue-reference-profile");
@@ -344,6 +367,21 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       assert.ok(Array.isArray(entry.phase6Gate.failures));
       assert.equal(typeof entry.phase7Gate.passed, "boolean");
       assert.ok(Array.isArray(entry.phase7Gate.failures));
+      assert.equal(entry.phase7BGate.policy.schemaVersion, 1);
+      assert.equal(entry.phase7BGate.policy.phase, "phase-7B");
+      assert.equal(typeof entry.phase7BGate.passed, "boolean");
+      assert.equal(typeof entry.phase7BGate.hardConstraintPassed, "boolean");
+      assert.equal(typeof entry.phase7BGate.phase8Ready, "boolean");
+      assert.ok(Array.isArray(entry.phase7BGate.findings));
+      assert.ok(entry.phase7BGate.hardFailures.every((finding) => finding.policy === "hard-failure"));
+      assert.ok(entry.phase7BGate.reviewSignals.every((finding) => finding.policy === "review-required"));
+      assert.ok(entry.phase7BGate.warnings.every((finding) => finding.policy === "warning"));
+      assert.ok(entry.phase7BGate.manual.every((finding) => finding.policy === "manual"));
+      assert.ok(entry.phase7BGate.metrics.hardFailureCount >= 0);
+      assert.ok(entry.phase7BGate.metrics.hardConstraintFailureCount >= 0);
+      assert.ok(entry.phase7BGate.metrics.diagnosticsWarningCount >= 0);
+      assert.equal(entry.phase7BGate.legacyPhase7Gate.passed, entry.phase7Gate.passed);
+      assert.deepEqual(entry.phase7BGate.legacyPhase7Gate.failures, entry.phase7Gate.failures);
       assert.ok(entry.diagnosticsSummary.texture.maxEntrySupportInstabilityPerEntry >= 0);
       assert.ok(entry.diagnosticsSummary.texture.maxConsecutiveEntrySupportInstabilities >= 0);
       assert.ok(entry.diagnosticsSummary.texture.unresolvedEntrySupportInstabilityCount >= 0);
