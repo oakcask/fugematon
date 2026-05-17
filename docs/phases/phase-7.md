@@ -249,3 +249,11 @@ baseline の 22 seed は Phase 6/7 gate をすべて pass した。oracle では
 reference-relative tie-break の小実験では、lockstep 優先と combined risk 優先は 22 seed 中 1 seed の Phase 6/7 gate を壊した。entry 優先は 25 以上の margin で 1 section だけ変わり、合計 severe entry interval は 1859 から 1857、unresolved severe entry interval は 1084 から 1078 へ下がったが、selected section solo texture risk は 317 件のままだった。stepwise 優先は gate を保ち、合計 leap recovery miss を 407 から 393-396 へ下げたが、same-pitch/unison は少し悪化し、shared rhythm 18536 と high solo risk 317 は動かなかった。
 
 このため、既存 pool の reference-relative selection tie-break だけでは Phase 7 完了条件を満たせない。Phase 7 は、実 score ingestion と percentile profile、section-local candidate 生成、manual pairwise listening evidence がそろうまで blocked のままとする。次の実装候補は、既存 pool の重み追加ではなく、support voice の pitch class、octave、onset、duration、voice-pair lockstep、leap recovery、modal identity、outer-voice contour を同時に guard する section-local candidate 生成に限る。
+
+### Phase 7+ gate reorg
+
+PR3/PR4 の blocker audit により、旧 Phase 7 完了条件は Phase 8 の操作機能を過度に止めることが分かった。absolute Phase 6/7 gate を完全維持すると section-local planner 改善が baseline へ戻り、gate を緩めずに採用できる before/after preference evidence は残らなかった。一方で、unison、shared rhythm、stepwise motion、entry-local seconds/sevenths、solo texture は文脈依存の音楽現象であり、単体の absolute ceiling を Phase completion blocker にし続けると、音楽的な tradeoff を評価できない。
+
+このため Phase 7A は reference diagnostics、candidate pool oracle、rejected experiment 記録までの diagnostics reset として完了扱いにする。Phase 7B では gate policy を hard constraint、review signal、manual preference へ分ける。range、voice crossing、subject identity、answer plan、determinism、schema compatibility は hard constraint として残し、rhythmic independence、unison、same-pitch、severe entry interval、leap recovery、solo texture、stepwise fixation、long-run repetition、contour ratio は review signal へ降格する。
+
+Phase 8 は Phase 7B の gate policy reset 後に開始する。manual listening と pairwise preference は廃止しないが、全 seed pass を Phase 8 開始条件にはしない。section-local planner 改善、reference corpus ingestion、percentile profile、manual pairwise preference は Phase 10 quality lane へ移し、Phase 8/9 の操作・安定化と並行して進める。詳細は [Phase 7+ 再編計画](phase-7-plus-reorg.md) を参照する。

@@ -4,6 +4,7 @@
 
 ## 現在読むもの
 
+* [Phase 7+ 再編計画](phase-7-plus-reorg.md): Phase 7 の absolute gate blocker を受け、gate 緩和・review signal 化・Phase 8 以降の進め方を確認する。
 * [Phase 7](phase-7.md): 概形進行 diagnostics、candidate scoring、review schema version 5、Phase 7 前半の完了記録。
 * [Phase 6](phase-6.md): 旋律線、entry 支持和声、装飾配置、solo texture の自動 gate と完了記録。
 * [Phase 5](phase-5.md): Phase 5 の短い索引。詳細本文は [phase-5-plan.md](phase-5-plan.md)。
@@ -18,6 +19,7 @@
 
 ## 読む判断
 
+* Phase 7 以降の open work、gate 方針、Phase 8 開始条件を見る場合は [Phase 7+ 再編計画](phase-7-plus-reorg.md) を先に読む。
 * 実装対象の Phase が分かっている場合は、その Phase だけ読む。
 * Phase 5 の品質根拠が必要な場合は、本文中のリンクから該当レビューへ進む。
 * Phase scope を変更する場合は、[../reference/technical-plan.md](../reference/technical-plan.md) も確認する。

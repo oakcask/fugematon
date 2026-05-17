@@ -85,17 +85,18 @@
 * Phase 7 後半では、absolute metric の重み調整だけで音楽的な心地よさを完了判定しない。Bach fugue などの参照作品から同じ diagnostics を生成し、Fugematon seed を reference profile と比較する。
 * reference profile は、voice-pair independence、entry-local consonance/dissonance、phrase contour、subject/counter-subject recurrence、section density transition、cadence approach、long-run repetition を別々の分布として持つ。Bach でも出る unison、shared rhythm、stepwise motion はゼロ要求にせず、曲長、active voice-pair duration、entry 数で正規化する。
 * Candidate evaluation は hard constraint、reference-relative soft gate、manual listening preference を分ける。learned aesthetic score を導入する場合も、参照分布からの外れ方を説明できる feature として扱い、range、voice crossing、subject identity、answer plan などの hard failure を採用候補に戻さない。
-* Phase 7 後半は説明だけで完了しない。reference diagnostics によって、entry harmony、voice independence、modal counter-subject、melody/phrase、episode/codetta/stretto preparation、stepwise pattern fixation の弱点が selection problem なのか generator problem なのかを切り分け、section-local planner の改善へ進む。
-* 成功条件は「Phase 6 gate を維持したまま、参照作品 diagnostics と Fugematon 22 seed を比較でき、代表 blocker の candidate pool oracle が selection/generator の責務を分け、少なくとも一つの section-local 改善が pairwise preference で現行より勝つこと」とする。
+* Phase 7 後半の実験では、absolute Phase 6/7 gate の完全維持が section-local planner 改善を戻してしまうことを確認した。このため Phase 7 以降は、range、voice crossing、subject identity、answer plan、determinism、schema compatibility を hard constraint として残し、rhythmic independence、unison、same-pitch、entry-local severe interval、leap recovery、solo texture、stepwise fixation、long-run repetition は review signal へ降格する。
+* Phase 7A の成功条件は「reference diagnostics と candidate pool oracle により、absolute metric gate では音楽美を完了判定できないことを説明し、rejected experiments と blocker を記録すること」とする。Phase 7A は音楽美の完成ではなく、gate policy reset のための diagnostics phase とする。
+* Phase 7B の成功条件は「review gate を hard constraint、review signal、manual preference に分け、Phase 8 が hard constraints と再現性を保ったまま開始できること」とする。manual listening と pairwise preference は廃止せず、Phase completion blocker ではなく quality lane の採否 evidence として残す。
 
 ### Phase 8: 履歴、巻き戻し、操作パラメータ
 
-* Phase 8 は Phase 6-7 の美しさ gate と聴取 gate 通過後に開始する。
+* Phase 8 は Phase 7B の gate policy reset 後に開始する。Phase 6-7 の美しさ metric と聴取 gate の完全 pass は開始条件にしない。
 * 生成済みイベントをメモリ上のリングバッファに保存する。
 * 保存済み範囲内では event replay により巻き戻して再生し直せるようにする。
 * strictness、density、subjectPresence などの MVP 用スライダを追加する。
 * パラメータ変更は即時に生成済みノートへ反映せず、次の状態遷移から有効にし、parameter-change メタイベントとして履歴に記録する。
-* 成功条件は「一定時間だけ巻き戻せ、変更したパラメータが以後の生成に反映されること」とする。
+* 成功条件は「一定時間だけ巻き戻せ、変更したパラメータが以後の生成に反映され、操作前後の hard constraint と review signal を比較できること」とする。
 
 ### Phase 9: Worker 化と安定化
 
