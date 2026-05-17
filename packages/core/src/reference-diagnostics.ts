@@ -3,14 +3,24 @@ import type { GenerationDiagnostics } from "./events.js";
 
 export type ReferenceSourceFormat = "profile-fixture" | "musicxml" | "humdrum";
 
+export type ReferenceManifestFormat = "metadata-only" | "musicxml" | "humdrum";
+
+export type ReferenceRedistributionPolicy = "redistributable" | "metadata-only" | "local-import-only";
+
+export type ReferenceProfileFamily = "fugue-reference";
+
 export type ReferenceSourceMetadata = {
   sourceId: string;
   composer: string;
   title: string;
+  edition: string;
   sourceFormat: ReferenceSourceFormat;
   license: string;
   importedAt: string;
+  redistributionPolicy: ReferenceRedistributionPolicy;
   scoreFileRedistributed: boolean;
+  profileFamily: ReferenceProfileFamily;
+  normalizerAxes: readonly ReferenceNormalizerAxis[];
   notes: string;
 };
 
@@ -44,6 +54,32 @@ export type ReferenceMetricBand = {
   description: string;
 };
 
+export type ReferenceNormalizerAxis = {
+  axis: ReferenceMetricAxis;
+  normalizer: ReferenceMetricNormalizer;
+};
+
+export type ReferenceManifestRecord = {
+  sourceId: string;
+  composer: string;
+  title: string;
+  edition: string;
+  license: string;
+  importedAt: string;
+  format: ReferenceManifestFormat;
+  redistributionPolicy: ReferenceRedistributionPolicy;
+  profileFamily: ReferenceProfileFamily;
+  scoreFileRedistributed: boolean;
+  normalizerAxes: readonly ReferenceNormalizerAxis[];
+  sourceLocation?: string;
+  notes?: string;
+};
+
+export type ReferenceCorpusManifest = {
+  schemaVersion: 1;
+  records: readonly ReferenceManifestRecord[];
+};
+
 export type ReferenceProfileIngestionPlan = {
   supportedFormats: readonly Extract<ReferenceSourceFormat, "musicxml" | "humdrum">[];
   scoreEventMapping: readonly string[];
@@ -56,6 +92,7 @@ export type ReferenceDiagnosticsProfile = {
   styleFamily: "fugue-reference";
   createdAt: string;
   sourcePolicy: string;
+  importManifest: ReferenceCorpusManifest;
   sources: readonly ReferenceSourceMetadata[];
   ingestionPlan: ReferenceProfileIngestionPlan;
   metrics: readonly ReferenceMetricBand[];
@@ -91,9 +128,23 @@ export type ReferenceProfileSummary = {
   version: number;
   styleFamily: ReferenceDiagnosticsProfile["styleFamily"];
   sourcePolicy: string;
+  importManifest: ReferenceCorpusManifest;
   sources: readonly ReferenceSourceMetadata[];
   ingestionPlan: ReferenceProfileIngestionPlan;
   metricAxes: ReferenceMetricAxis[];
+};
+
+export type NormalizedReferenceDiagnosticAxis = ReferenceNormalizerAxis & {
+  value: number;
+};
+
+export type NormalizedReferenceDiagnostics = {
+  sourceId: string;
+  profileFamily: ReferenceProfileFamily;
+  format: ReferenceManifestFormat;
+  redistributionPolicy: ReferenceRedistributionPolicy;
+  normalizers: ReferenceDiagnosticsComparison["normalizers"];
+  axes: readonly NormalizedReferenceDiagnosticAxis[];
 };
 
 export type ReferenceDiagnosticsAggregate = {
@@ -116,26 +167,84 @@ export type ReferenceDiagnosticsAggregate = {
 
 const VOICE_PAIR_COUNT = (VOICES.length * (VOICES.length - 1)) / 2;
 
+const REFERENCE_METRIC_NORMALIZERS = {
+  sharedRhythmOverlapPerVoicePairQuarter: "estimated-active-voice-pair-quarter-notes",
+  unisonOverlapPerVoicePairQuarter: "estimated-active-voice-pair-quarter-notes",
+  samePitchOverlapPerVoicePairQuarter: "estimated-active-voice-pair-quarter-notes",
+  severeEntryIntervalPerEntry: "subject-entry-count",
+  unresolvedSevereEntryIntervalPerEntry: "subject-entry-count",
+  leapRecoveryMissesPerQuarter: "score-quarter-notes",
+  freeCounterpointStepwiseRunRatio: "already-normalized",
+  freeCounterpointRepeatedDegreePatternsPerQuarter: "score-quarter-notes",
+  unsupportedSoloRunsPerSection: "section-count",
+  abruptTextureDropsPerSection: "section-count",
+} as const satisfies Record<ReferenceMetricAxis, ReferenceMetricNormalizer>;
+
+const REFERENCE_METRIC_AXES = Object.keys(REFERENCE_METRIC_NORMALIZERS) as ReferenceMetricAxis[];
+const REFERENCE_NORMALIZERS = [
+  "score-quarter-notes",
+  "estimated-active-voice-pair-quarter-notes",
+  "subject-entry-count",
+  "section-count",
+  "already-normalized",
+] as const satisfies ReferenceMetricNormalizer[];
+const REFERENCE_MANIFEST_FORMATS = [
+  "metadata-only",
+  "musicxml",
+  "humdrum",
+] as const satisfies ReferenceManifestFormat[];
+const REFERENCE_REDISTRIBUTION_POLICIES = [
+  "redistributable",
+  "metadata-only",
+  "local-import-only",
+] as const satisfies ReferenceRedistributionPolicy[];
+
+export const PHASE_10_REFERENCE_CORPUS_MANIFEST: ReferenceCorpusManifest = {
+  schemaVersion: 1,
+  records: [
+    {
+      sourceId: "bach-wtc-fugue-reference-fixture",
+      composer: "J. S. Bach",
+      title: "Well-Tempered Clavier fugue reference fixture",
+      edition: "metadata-only profile fixture",
+      license: "metadata-only profile fixture; verify source score license before importing",
+      importedAt: "2026-05-17",
+      format: "metadata-only",
+      redistributionPolicy: "metadata-only",
+      profileFamily: "fugue-reference",
+      scoreFileRedistributed: false,
+      normalizerAxes: REFERENCE_METRIC_AXES.map((axis) => ({
+        axis,
+        normalizer: REFERENCE_METRIC_NORMALIZERS[axis],
+      })),
+      notes:
+        "Placeholder profile for first reviewable reference-relative diagnostics. Replace with MusicXML or Humdrum-derived percentile bands after score ingestion lands.",
+    },
+  ],
+};
+
 export const PHASE_7_REFERENCE_DIAGNOSTICS_PROFILE: ReferenceDiagnosticsProfile = {
   profileId: "phase-7-fugue-reference-profile",
   version: 1,
   styleFamily: "fugue-reference",
   createdAt: "2026-05-17",
   sourcePolicy:
-    "Metadata-only seed profile. Score files are not redistributed; each MusicXML or Humdrum import must verify license metadata before becoming source data.",
-  sources: [
-    {
-      sourceId: "bach-wtc-fugue-reference-fixture",
-      composer: "J. S. Bach",
-      title: "Well-Tempered Clavier fugue reference fixture",
-      sourceFormat: "profile-fixture",
-      license: "metadata-only profile fixture; verify source score license before importing",
-      importedAt: "2026-05-17",
-      scoreFileRedistributed: false,
-      notes:
-        "Placeholder profile for first reviewable reference-relative diagnostics. Replace with MusicXML or Humdrum-derived percentile bands after score ingestion lands.",
-    },
-  ],
+    "Metadata-only manifest profile. Score files are not redistributed; each MusicXML or Humdrum import must verify license metadata before becoming source data.",
+  importManifest: PHASE_10_REFERENCE_CORPUS_MANIFEST,
+  sources: PHASE_10_REFERENCE_CORPUS_MANIFEST.records.map((record) => ({
+    sourceId: record.sourceId,
+    composer: record.composer,
+    title: record.title,
+    edition: record.edition,
+    sourceFormat: record.format === "metadata-only" ? "profile-fixture" : record.format,
+    license: record.license,
+    importedAt: record.importedAt,
+    redistributionPolicy: record.redistributionPolicy,
+    scoreFileRedistributed: record.scoreFileRedistributed,
+    profileFamily: record.profileFamily,
+    normalizerAxes: record.normalizerAxes,
+    notes: record.notes ?? "",
+  })),
   ingestionPlan: {
     supportedFormats: ["musicxml", "humdrum"],
     scoreEventMapping: [
@@ -262,9 +371,72 @@ export function summarizeReferenceProfile(
     version: profile.version,
     styleFamily: profile.styleFamily,
     sourcePolicy: profile.sourcePolicy,
+    importManifest: profile.importManifest,
     sources: profile.sources,
     ingestionPlan: profile.ingestionPlan,
     metricAxes: profile.metrics.map((metric) => metric.axis),
+  };
+}
+
+export function parseReferenceCorpusManifest(input: unknown): ReferenceCorpusManifest {
+  if (!isRecord(input)) {
+    throw new Error("reference corpus manifest must be an object");
+  }
+  if (input.schemaVersion !== 1) {
+    throw new Error("reference corpus manifest schemaVersion must be 1");
+  }
+  if (!Array.isArray(input.records)) {
+    throw new Error("reference corpus manifest records must be an array");
+  }
+  return {
+    schemaVersion: 1,
+    records: input.records.map(validateReferenceManifestRecord),
+  };
+}
+
+export function validateReferenceManifestRecord(input: unknown): ReferenceManifestRecord {
+  if (!isRecord(input)) {
+    throw new Error("reference manifest record must be an object");
+  }
+  const sourceId = requireNonEmptyString(input, "sourceId");
+  const composer = requireNonEmptyString(input, "composer");
+  const title = requireNonEmptyString(input, "title");
+  const edition = requireNonEmptyString(input, "edition");
+  const license = requireNonEmptyString(input, "license");
+  const importedAt = requireImportDate(input.importedAt);
+  const format = requireEnumValue(input.format, REFERENCE_MANIFEST_FORMATS, "format");
+  const redistributionPolicy = requireEnumValue(
+    input.redistributionPolicy,
+    REFERENCE_REDISTRIBUTION_POLICIES,
+    "redistributionPolicy",
+  );
+  const profileFamily = requireEnumValue(input.profileFamily, ["fugue-reference"] as const, "profileFamily");
+  const scoreFileRedistributed = input.scoreFileRedistributed === true;
+  const normalizerAxes = requireNormalizerAxes(input.normalizerAxes);
+  const sourceLocation = optionalRelativeLocation(input.sourceLocation);
+  const notes = optionalNonEmptyString(input.notes, "notes");
+
+  if (format === "metadata-only" && redistributionPolicy !== "metadata-only") {
+    throw new Error("metadata-only manifest records must use redistributionPolicy metadata-only");
+  }
+  if (redistributionPolicy !== "redistributable" && scoreFileRedistributed) {
+    throw new Error("manifest records with metadata-only or local-import-only policy cannot redistribute score files");
+  }
+
+  return {
+    sourceId,
+    composer,
+    title,
+    edition,
+    license,
+    importedAt,
+    format,
+    redistributionPolicy,
+    profileFamily,
+    scoreFileRedistributed,
+    normalizerAxes,
+    ...(sourceLocation === undefined ? {} : { sourceLocation }),
+    ...(notes === undefined ? {} : { notes }),
   };
 }
 
@@ -297,6 +469,24 @@ export function normalizeDiagnosticsForReference(diagnostics: GenerationDiagnost
     abruptTextureDropsPerSection: roundMetric(
       diagnostics.soloTexture.abruptTextureDropCount / normalizers.sectionCount,
     ),
+  };
+}
+
+export function createNormalizedReferenceDiagnostics(
+  manifestRecord: ReferenceManifestRecord,
+  diagnostics: GenerationDiagnostics,
+): NormalizedReferenceDiagnostics {
+  const values = normalizeDiagnosticsForReference(diagnostics);
+  return {
+    sourceId: manifestRecord.sourceId,
+    profileFamily: manifestRecord.profileFamily,
+    format: manifestRecord.format,
+    redistributionPolicy: manifestRecord.redistributionPolicy,
+    normalizers: referenceNormalizers(diagnostics),
+    axes: manifestRecord.normalizerAxes.map((axis) => ({
+      ...axis,
+      value: values[axis.axis],
+    })),
   };
 }
 
@@ -402,6 +592,80 @@ function requireMetricComparison(
     throw new Error(`missing reference metric comparison for ${axis}`);
   }
   return comparison;
+}
+
+function requireNormalizerAxes(input: unknown): ReferenceNormalizerAxis[] {
+  if (!Array.isArray(input) || input.length === 0) {
+    throw new Error("reference manifest normalizerAxes must be a non-empty array");
+  }
+  const seen = new Set<ReferenceMetricAxis>();
+  return input.map((candidate, index) => {
+    if (!isRecord(candidate)) {
+      throw new Error(`reference manifest normalizerAxes[${index}] must be an object`);
+    }
+    const axis = requireEnumValue(candidate.axis, REFERENCE_METRIC_AXES, `normalizerAxes[${index}].axis`);
+    const normalizer = requireEnumValue(
+      candidate.normalizer,
+      REFERENCE_NORMALIZERS,
+      `normalizerAxes[${index}].normalizer`,
+    );
+    if (seen.has(axis)) {
+      throw new Error(`reference manifest normalizerAxes contains duplicate axis ${axis}`);
+    }
+    seen.add(axis);
+    const expected = REFERENCE_METRIC_NORMALIZERS[axis];
+    if (normalizer !== expected) {
+      throw new Error(`reference manifest axis ${axis} must use normalizer ${expected}`);
+    }
+    return { axis, normalizer };
+  });
+}
+
+function requireNonEmptyString(input: Record<string, unknown>, field: string): string {
+  const value = input[field];
+  if (typeof value !== "string" || value.trim().length === 0) {
+    throw new Error(`reference manifest ${field} must be a non-empty string`);
+  }
+  return value;
+}
+
+function optionalNonEmptyString(input: unknown, field: string): string | undefined {
+  if (input === undefined) {
+    return undefined;
+  }
+  if (typeof input !== "string" || input.trim().length === 0) {
+    throw new Error(`reference manifest ${field} must be a non-empty string when provided`);
+  }
+  return input;
+}
+
+function optionalRelativeLocation(input: unknown): string | undefined {
+  const value = optionalNonEmptyString(input, "sourceLocation");
+  if (value === undefined) {
+    return undefined;
+  }
+  if (value.startsWith("/") || value.startsWith("~/") || /^[A-Za-z]:[\\/]/.test(value)) {
+    throw new Error("reference manifest sourceLocation must be relative");
+  }
+  return value;
+}
+
+function requireImportDate(input: unknown): string {
+  if (typeof input !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(input)) {
+    throw new Error("reference manifest importedAt must use YYYY-MM-DD");
+  }
+  return input;
+}
+
+function requireEnumValue<const Value extends string>(input: unknown, allowed: readonly Value[], field: string): Value {
+  if (typeof input !== "string" || !allowed.includes(input as Value)) {
+    throw new Error(`reference manifest ${field} must be one of ${allowed.join(", ")}`);
+  }
+  return input as Value;
+}
+
+function isRecord(input: unknown): input is Record<string, unknown> {
+  return typeof input === "object" && input !== null && !Array.isArray(input);
 }
 
 function maximum(values: readonly number[]): number {
