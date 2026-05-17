@@ -27,6 +27,11 @@ export type {
   AnswerKind,
   CadenceKind,
   CandidateEvaluation,
+  CandidatePoolOracleBlocker,
+  CandidatePoolOracleBlockerSummary,
+  CandidatePoolOracleClassification,
+  CandidatePoolOracleRepresentative,
+  CandidatePoolOracleSummary,
   EntryForm,
   EntrySupportInstabilitySummary,
   EntrySupportSevereIntervalSummary,
@@ -78,6 +83,7 @@ export type {
 } from "./reference-diagnostics.js";
 export {
   compareDiagnosticsToReferenceProfile,
+  compareReferenceMetricValue,
   normalizeDiagnosticsForReference,
   PHASE_7_REFERENCE_DIAGNOSTICS_PROFILE,
   summarizeReferenceDiagnosticsComparisons,

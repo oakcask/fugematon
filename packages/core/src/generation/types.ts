@@ -1,5 +1,6 @@
 import type {
   CandidateEvaluation,
+  CandidatePoolOracleSummary,
   DurationDistribution,
   EntrySupportInstabilitySummary,
   EntrySupportSevereIntervalSummary,
@@ -33,6 +34,7 @@ export type Exposition = {
 export type FugueScore = Exposition & {
   candidateEvaluations: number;
   selectedCandidateEvaluations: CandidateEvaluation[];
+  candidatePoolOracle: CandidatePoolOracleSummary;
   stateTransitions: FugueState[];
   stateChanges: {
     tick: number;

@@ -88,6 +88,7 @@ export function generateScore(input: GenerationInput): GenerationOutput {
       noteCount: score.notes.length,
       candidateEvaluations: score.candidateEvaluations,
       selectedCandidateEvaluations: score.selectedCandidateEvaluations,
+      candidatePoolOracle: score.candidatePoolOracle,
       stateTransitions: score.stateTransitions,
       subjectEntries: score.subjectEntries,
       sectionPlans: score.sectionPlans,

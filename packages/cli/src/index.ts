@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import type { FugueState, GenerationDiagnostics } from "@fugematon/core";
+import type { CandidatePoolOracleSummary, FugueState, GenerationDiagnostics } from "@fugematon/core";
 import {
   compareDiagnosticsToReferenceProfile,
   evaluatePhase6Diagnostics,
@@ -96,7 +96,7 @@ async function writeReviewBundle(outDirectory: string, lengthTicks: number): Pro
   }
 
   const summary: ReviewSummary = {
-    schemaVersion: 9,
+    schemaVersion: 10,
     lengthTicks,
     referenceDiagnostics: summarizeReferenceDiagnosticsComparisons(referenceComparisons),
     seeds: summarySeeds,
@@ -112,7 +112,7 @@ async function writeReviewBundle(outDirectory: string, lengthTicks: number): Pro
 }
 
 type ReviewSummary = {
-  schemaVersion: 9;
+  schemaVersion: 10;
   lengthTicks: number;
   referenceDiagnostics: ReferenceDiagnosticsAggregate;
   seeds: ReviewSummarySeed[];
@@ -192,6 +192,7 @@ type ReviewDiagnosticsSummary = {
     highSelectedSectionSoloTextureRiskCount: number;
     sectionSoloTextureRiskWarningThreshold: number;
   };
+  candidatePoolOracle: CandidatePoolOracleSummary;
 };
 
 const LONG_RUN_FORM_PATTERN_WINDOW_SIZE = 4;
@@ -288,6 +289,7 @@ function summarizeDiagnostics(diagnostics: GenerationDiagnostics): ReviewDiagnos
       placementReasons: diagnostics.ornamentPlacementReasons,
     },
     candidateEvaluation: summarizeCandidateEvaluation(diagnostics),
+    candidatePoolOracle: diagnostics.candidatePoolOracle,
   };
 }
 

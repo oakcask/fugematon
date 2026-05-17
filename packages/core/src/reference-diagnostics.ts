@@ -307,17 +307,10 @@ export function compareDiagnosticsToReferenceProfile(
   const values = normalizeDiagnosticsForReference(diagnostics);
   const metrics = profile.metrics.map<ReferenceMetricComparison>((metric) => {
     const value = values[metric.axis];
-    const status =
-      value < metric.referenceMin
-        ? "below-reference"
-        : value > metric.referenceMax
-          ? "above-reference"
-          : "within-reference";
     return {
       ...metric,
       value,
-      status,
-      distance: referenceDistance(value, metric.referenceMin, metric.referenceMax),
+      ...compareReferenceMetricValue(metric, value),
     };
   });
   const maxDistance = roundMetric(maximum(metrics.map((metric) => metric.distance)));
@@ -333,6 +326,23 @@ export function compareDiagnosticsToReferenceProfile(
     outsideReferenceCount,
     maxDistance,
     reviewStatus: outsideReferenceCount === 0 ? "within-reference-profile" : "reference-review-required",
+  };
+}
+
+export function compareReferenceMetricValue(
+  metric: Pick<ReferenceMetricBand, "referenceMin" | "referenceMax">,
+  value: number,
+): Pick<ReferenceMetricComparison, "status" | "distance"> {
+  const status =
+    value < metric.referenceMin
+      ? "below-reference"
+      : value > metric.referenceMax
+        ? "above-reference"
+        : "within-reference";
+
+  return {
+    status,
+    distance: referenceDistance(value, metric.referenceMin, metric.referenceMax),
   };
 }
 

@@ -790,6 +790,37 @@ test("generateScore compares phase-7 diagnostics to normalized reference profile
   assert.ok(comparison.metrics.every((metric) => Number.isFinite(metric.value)));
 });
 
+test("generateScore exposes phase-7 candidate pool oracle classifications", () => {
+  const output = generateScore({ seed: "fugue-smoke", lengthTicks: PHASE_5_LENGTH_TICKS });
+  const oracle = output.diagnostics.candidatePoolOracle;
+  const classifications = new Set(oracle.blockerClassifications.map((blocker) => blocker.classification));
+
+  assert.equal(oracle.schemaVersion, 1);
+  assert.ok(oracle.sectionCount > 0);
+  assert.ok(oracle.candidateCount >= oracle.sectionCount);
+  assert.ok(oracle.viableCandidateCount > 0);
+  assert.ok(oracle.hardFailureRejectedCandidateCount >= 0);
+  assert.ok(oracle.blockerClassifications.length > 0);
+  assert.ok(classifications.has("selection-model") || classifications.has("generator-or-section-planner"));
+
+  for (const blocker of oracle.blockerClassifications) {
+    assert.ok(blocker.referenceAxes.length > 0);
+    assert.ok(blocker.observedSectionCount > 0);
+    assert.equal(
+      blocker.observedSectionCount,
+      blocker.selectionModelSectionCount + blocker.generatorOrSectionPlannerSectionCount,
+    );
+    assert.ok(blocker.selectedRiskMax >= blocker.bestViableRiskMin);
+    assert.ok(blocker.representative.candidateCount > 0);
+    assert.ok(blocker.representative.viableCandidateCount > 0);
+    assert.ok(
+      blocker.representative.selectedReferenceStatus === "within-reference" ||
+        blocker.representative.selectedReferenceStatus === "below-reference" ||
+        blocker.representative.selectedReferenceStatus === "above-reference",
+    );
+  }
+});
+
 test("generateScore nudges non-modal stepwise pattern fixation without modal guardrail regressions", () => {
   const blockerSeeds = [
     ["fugue-smoke", 0.72, 5, 566, 25],
