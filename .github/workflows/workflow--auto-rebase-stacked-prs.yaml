@@ -180,20 +180,36 @@ jobs:
             old_base_tip="origin/old-base-pr/${OLD_BASE_PR_NUMBER}"
             if ! rebase_from="$(git merge-base "$old_base_tip" HEAD)"; then
               status=skipped
-            elif git merge-base --is-ancestor "$rebase_from" "origin/${NEW_BASE_REF}"; then
-              status=skipped
-            elif [[ "$rebase_from" == "$(git merge-base "origin/${NEW_BASE_REF}" HEAD)" ]]; then
-              status=skipped
-            elif [[ "$rebase_from" == "$(git rev-parse HEAD)" ]]; then
-              status=skipped
-            elif git rebase --onto "origin/${NEW_BASE_REF}" "$rebase_from" HEAD; then
-              if git push --force-with-lease=refs/heads/"${HEAD_REF}":refs/remotes/origin/"${HEAD_REF}" \
-                origin HEAD:refs/heads/"${HEAD_REF}" \
-                && gh pr edit "$PR_NUMBER" --repo "$REPO" --base "$NEW_BASE_REF"; then
-                status=rebased
-              fi
             else
-              git rebase --abort || true
+              if current_base_from="$(git merge-base "origin/${NEW_BASE_REF}" HEAD)" \
+                && [[ "$rebase_from" == "$current_base_from" ]]; then
+                first_unmerged_commit="$(
+                  git cherry -v "origin/${NEW_BASE_REF}" HEAD \
+                    | awk '$1 == "+" { print $2; exit }'
+                )"
+                if [[ -z "$first_unmerged_commit" ]]; then
+                  status=skipped
+                else
+                  rebase_from="$(git rev-parse "${first_unmerged_commit}^")"
+                  echo "Old base no longer shares stacked commits; rebasing from ${rebase_from}."
+                fi
+              fi
+
+              if [[ "$status" == "failed" ]]; then
+                if git merge-base --is-ancestor "$rebase_from" "origin/${NEW_BASE_REF}"; then
+                  status=skipped
+                elif [[ "$rebase_from" == "$(git rev-parse HEAD)" ]]; then
+                  status=skipped
+                elif git rebase --onto "origin/${NEW_BASE_REF}" "$rebase_from" HEAD; then
+                  if git push --force-with-lease=refs/heads/"${HEAD_REF}":refs/remotes/origin/"${HEAD_REF}" \
+                    origin HEAD:refs/heads/"${HEAD_REF}" \
+                    && gh pr edit "$PR_NUMBER" --repo "$REPO" --base "$NEW_BASE_REF"; then
+                    status=rebased
+                  fi
+                else
+                  git rebase --abort || true
+                fi
+              fi
             fi
           fi
 
