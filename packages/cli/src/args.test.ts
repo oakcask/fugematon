@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { parseArgs } from "./args.js";
+import { helpText, parseArgs } from "./args.js";
 
 test("parseArgs parses generate command", () => {
   assert.deepEqual(parseArgs(["generate", "--seed", "bach-001", "--ticks", "7680", "--out", "score.json"]), {
@@ -37,11 +37,49 @@ test("parseArgs parses review command", () => {
   assert.equal(parseArgs(["review", "--out", "review"]).name, "review");
 });
 
+test("parseArgs parses review-ab command", () => {
+  assert.deepEqual(
+    parseArgs([
+      "review-ab",
+      "--ticks",
+      "960",
+      "--out",
+      "phase10-review",
+      "--baseline-label",
+      "current",
+      "--variant-label",
+      "candidate",
+    ]),
+    {
+      name: "review-ab",
+      lengthTicks: 960,
+      out: "phase10-review",
+      baselineLabel: "current",
+      variantLabel: "candidate",
+    },
+  );
+  assert.deepEqual(parseArgs(["review-ab", "--out", "phase10-review"]), {
+    name: "review-ab",
+    lengthTicks: 129600,
+    out: "phase10-review",
+    baselineLabel: "baseline",
+    variantLabel: "variant",
+  });
+});
+
+test("helpText includes the Phase 10 A/B review command", () => {
+  assert.match(helpText(), /fugematon review-ab --out <directory>/);
+  assert.match(helpText(), /--baseline-label <label>/);
+  assert.match(helpText(), /--variant-label <label>/);
+});
+
 test("parseArgs rejects invalid arguments", () => {
   assert.throws(() => parseArgs(["missing"]), /unknown command/);
   assert.throws(() => parseArgs(["generate", "--seed", "bach-001"]), /missing --ticks/);
   assert.throws(() => parseArgs(["midi", "--seed", "bach-001", "--ticks", "960"]), /missing --out/);
   assert.throws(() => parseArgs(["review", "--ticks", "0", "--out", "review"]), /--ticks/);
   assert.throws(() => parseArgs(["review", "--ticks", "960"]), /missing --out/);
+  assert.throws(() => parseArgs(["review-ab", "--ticks", "0", "--out", "review"]), /--ticks/);
+  assert.throws(() => parseArgs(["review-ab", "--ticks", "960"]), /missing --out/);
   assert.throws(() => parseArgs(["generate", "--seed", "bach-001", "--ticks", "0"]), /--ticks/);
 });

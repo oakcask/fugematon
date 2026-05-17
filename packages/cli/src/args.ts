@@ -22,6 +22,13 @@ export type CliCommand =
       out: string;
     }
   | {
+      name: "review-ab";
+      lengthTicks: number;
+      out: string;
+      baselineLabel: string;
+      variantLabel: string;
+    }
+  | {
       name: "help";
     };
 
@@ -34,15 +41,30 @@ export function parseArgs(argv: readonly string[]): CliCommand {
     return { name: "help" };
   }
 
-  if (command !== "generate" && command !== "diagnose" && command !== "midi" && command !== "review") {
+  if (
+    command !== "generate" &&
+    command !== "diagnose" &&
+    command !== "midi" &&
+    command !== "review" &&
+    command !== "review-ab"
+  ) {
     throw new Error(`unknown command: ${command}`);
   }
 
   const options = parseOptions(rest);
-  if (command === "review") {
+  if (command === "review" || command === "review-ab") {
     const lengthTicks = Number(options.get("ticks") ?? options.get("lengthTicks") ?? DEFAULT_REVIEW_TICKS);
     if (!Number.isSafeInteger(lengthTicks) || lengthTicks <= 0) {
       throw new Error("--ticks must be a positive safe integer");
+    }
+    if (command === "review-ab") {
+      return {
+        name: "review-ab",
+        lengthTicks,
+        out: requiredOption(options, "out"),
+        baselineLabel: options.get("baseline-label") ?? "baseline",
+        variantLabel: options.get("variant-label") ?? "variant",
+      };
     }
     return { name: "review", lengthTicks, out: requiredOption(options, "out") };
   }
@@ -77,6 +99,7 @@ export function helpText(): string {
     "  fugematon diagnose --seed <seed> --ticks <lengthTicks>",
     "  fugematon midi --seed <seed> --ticks <lengthTicks> --out <file>",
     "  fugematon review --out <directory> [--ticks <lengthTicks>]",
+    "  fugematon review-ab --out <directory> [--ticks <lengthTicks>] [--baseline-label <label>] [--variant-label <label>]",
   ].join("\n");
 }
 

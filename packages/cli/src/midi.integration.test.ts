@@ -547,6 +547,153 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
   }
 });
 
+test("review-ab command writes baseline, variant, and comparison summaries", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "fugematon-review-ab-"));
+  try {
+    await main([
+      "review-ab",
+      "--ticks",
+      "960",
+      "--out",
+      directory,
+      "--baseline-label",
+      "current",
+      "--variant-label",
+      "candidate",
+    ]);
+
+    const baselineFiles = await readdir(join(directory, "baseline"));
+    const variantFiles = await readdir(join(directory, "variant"));
+    const comparison = JSON.parse(await readFile(join(directory, "comparison-summary.json"), "utf8")) as {
+      schemaVersion: number;
+      lengthTicks: number;
+      baseline: { label: string; directory: string; summaryFile: string };
+      variant: { label: string; directory: string; summaryFile: string };
+      seeds: {
+        seed: string;
+        category: string;
+        baseline: {
+          diagnosticsSummary: {
+            hardConstraintFailures: number;
+            candidatePoolOracle: { schemaVersion: number; viableCandidateCount: number };
+          };
+          referenceComparison: { reviewStatus: string; outsideReferenceCount: number };
+          candidatePoolOracle: { schemaVersion: number; viableCandidateCount: number };
+          phase7BGate: {
+            phase8Ready: boolean;
+            hardFailureCount: number;
+            hardFailures: unknown[];
+            reviewSignalCount: number;
+            reviewSignals: unknown[];
+          };
+        };
+        variant: {
+          diagnosticsSummary: {
+            hardConstraintFailures: number;
+            candidatePoolOracle: { schemaVersion: number; viableCandidateCount: number };
+          };
+          referenceComparison: { reviewStatus: string; outsideReferenceCount: number };
+          candidatePoolOracle: { schemaVersion: number; viableCandidateCount: number };
+          phase7BGate: {
+            phase8Ready: boolean;
+            hardFailureCount: number;
+            hardFailures: unknown[];
+            reviewSignalCount: number;
+            reviewSignals: unknown[];
+          };
+        };
+        deltas: {
+          hardConstraintFailures: number;
+          referenceOutsideCount: number;
+          candidatePoolViableCandidates: number;
+          phase7BHardFailures: number;
+          phase7BReviewSignals: number;
+          phase8ReadyChanged: boolean;
+        };
+        improvements: string[];
+        regressions: string[];
+        tradeoffs: string[];
+        manualListeningGap: {
+          baselineJudgement: string;
+          variantJudgement: string;
+          unlistened: boolean;
+          note: string;
+        };
+      }[];
+    };
+
+    assert.ok(baselineFiles.includes("summary.json"));
+    assert.ok(variantFiles.includes("summary.json"));
+    assert.equal(comparison.schemaVersion, 1);
+    assert.equal(comparison.lengthTicks, 960);
+    assert.deepEqual(comparison.baseline, {
+      label: "current",
+      directory: "baseline",
+      summaryFile: "baseline/summary.json",
+    });
+    assert.deepEqual(comparison.variant, {
+      label: "candidate",
+      directory: "variant",
+      summaryFile: "variant/summary.json",
+    });
+    assert.ok(comparison.seeds.length > 1);
+    for (const entry of comparison.seeds) {
+      assert.notEqual(entry.seed, "");
+      assert.notEqual(entry.category, "");
+      assert.ok(entry.baseline.diagnosticsSummary.hardConstraintFailures >= 0);
+      assert.ok(entry.variant.diagnosticsSummary.hardConstraintFailures >= 0);
+      assert.equal(entry.baseline.candidatePoolOracle.schemaVersion, 1);
+      assert.equal(entry.variant.candidatePoolOracle.schemaVersion, 1);
+      assert.deepEqual(entry.baseline.candidatePoolOracle, entry.baseline.diagnosticsSummary.candidatePoolOracle);
+      assert.deepEqual(entry.variant.candidatePoolOracle, entry.variant.diagnosticsSummary.candidatePoolOracle);
+      assert.equal(typeof entry.baseline.phase7BGate.phase8Ready, "boolean");
+      assert.equal(typeof entry.variant.phase7BGate.phase8Ready, "boolean");
+      assert.ok(entry.baseline.phase7BGate.hardFailureCount >= 0);
+      assert.ok(entry.variant.phase7BGate.hardFailureCount >= 0);
+      assert.ok(Array.isArray(entry.baseline.phase7BGate.hardFailures));
+      assert.ok(Array.isArray(entry.variant.phase7BGate.hardFailures));
+      assert.equal(entry.baseline.phase7BGate.reviewSignalCount, entry.baseline.phase7BGate.reviewSignals.length);
+      assert.equal(entry.variant.phase7BGate.reviewSignalCount, entry.variant.phase7BGate.reviewSignals.length);
+      assert.equal(
+        entry.deltas.hardConstraintFailures,
+        entry.variant.diagnosticsSummary.hardConstraintFailures -
+          entry.baseline.diagnosticsSummary.hardConstraintFailures,
+      );
+      assert.equal(
+        entry.deltas.referenceOutsideCount,
+        entry.variant.referenceComparison.outsideReferenceCount -
+          entry.baseline.referenceComparison.outsideReferenceCount,
+      );
+      assert.equal(
+        entry.deltas.candidatePoolViableCandidates,
+        entry.variant.candidatePoolOracle.viableCandidateCount -
+          entry.baseline.candidatePoolOracle.viableCandidateCount,
+      );
+      assert.equal(
+        entry.deltas.phase7BHardFailures,
+        entry.variant.phase7BGate.hardFailureCount - entry.baseline.phase7BGate.hardFailureCount,
+      );
+      assert.equal(
+        entry.deltas.phase7BReviewSignals,
+        entry.variant.phase7BGate.reviewSignalCount - entry.baseline.phase7BGate.reviewSignalCount,
+      );
+      assert.equal(
+        entry.deltas.phase8ReadyChanged,
+        entry.variant.phase7BGate.phase8Ready !== entry.baseline.phase7BGate.phase8Ready,
+      );
+      assert.ok(Array.isArray(entry.improvements));
+      assert.ok(Array.isArray(entry.regressions));
+      assert.ok(entry.tradeoffs.length > 0);
+      assert.equal(entry.manualListeningGap.baselineJudgement, "not-reviewed");
+      assert.equal(entry.manualListeningGap.variantJudgement, "not-reviewed");
+      assert.equal(entry.manualListeningGap.unlistened, true);
+      assert.match(entry.manualListeningGap.note, /manual listening/);
+    }
+  } finally {
+    await rm(directory, { force: true, recursive: true });
+  }
+});
+
 test("commands reject invalid arguments before writing output", async () => {
   await assert.rejects(() => main(["generate", "--seed", "bach-001", "--ticks", "0"]), /--ticks/);
   await assert.rejects(() => main(["midi", "--seed", "bach-001", "--ticks", "960"]), /missing --out/);
