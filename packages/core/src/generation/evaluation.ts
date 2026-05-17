@@ -34,6 +34,7 @@ const EVALUATION_WEIGHTS = {
     sharedRhythmOverlap: 2,
     voiceIndependenceSelectionUnisonOverlap: 8,
     voiceIndependenceSelectionSharedRhythmOverlap: 4,
+    voicePairLockstepSelectionSamePitchOverlap: 4,
     allVoiceSilenceGap: 25,
     rhythmicIndependence: 12,
     supportTextureRepetition: 8,
@@ -134,6 +135,7 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
   const voiceIndependenceSelectionCost =
     diagnostics.unisonOverlapCount * EVALUATION_WEIGHTS.texture.voiceIndependenceSelectionUnisonOverlap +
     diagnostics.sharedRhythmOverlapCount * EVALUATION_WEIGHTS.texture.voiceIndependenceSelectionSharedRhythmOverlap;
+  const voicePairLockstepSelectionCost = scoreVoicePairLockstepRisk(riskContexts, diagnostics.modalContextCount);
   const texture = {
     cost:
       diagnostics.samePitchOverlapCount * EVALUATION_WEIGHTS.texture.samePitchOverlap +
@@ -179,6 +181,7 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
         0,
       ),
       selectedVoiceIndependenceSelectionCost: voiceIndependenceSelectionCost,
+      selectedVoicePairLockstepSelectionCost: voicePairLockstepSelectionCost,
       shortStrongBeatEntryNoteCount: diagnostics.shortStrongBeatEntryNoteCount,
       entrySupportInstabilityCount: diagnostics.entrySupportInstabilityCount,
       allVoiceSilenceGapCount: diagnostics.allVoiceSilenceGapCount,
@@ -253,6 +256,7 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
     texture.cost -
     texture.reward +
     voiceIndependenceSelectionCost +
+    voicePairLockstepSelectionCost +
     subjectClarity.cost -
     subjectClarity.reward +
     harmony.cost -
@@ -262,7 +266,7 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
 
   return {
     featureVersion: 2,
-    evaluationModelVersion: 7,
+    evaluationModelVersion: 8,
     totalCost: Math.round(totalCost * 1000) / 1000,
     hardFailures,
     explanations,
@@ -275,6 +279,18 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
       form,
     },
   };
+}
+
+function scoreVoicePairLockstepRisk(contexts: Phase7CandidateRiskContexts, modalContextCount: number): number {
+  if (modalContextCount > 0 || contexts.subjectIdentity.counterSubjectIdentityRetention < 0.65) {
+    return 0;
+  }
+
+  return contexts.voicePairIndependence.voicePairs.reduce(
+    (sum, pair) =>
+      sum + pair.samePitchOverlapCount * EVALUATION_WEIGHTS.texture.voicePairLockstepSelectionSamePitchOverlap,
+    0,
+  );
 }
 
 function roleStepwisePattern(stepwisePattern: StepwisePatternSummary, role: NoteRole) {

@@ -103,6 +103,10 @@ schema version 7 の evidence では、most repeated 4-section continuation patt
 
 selected section solo texture risk 6 以上の section は 317 件へ下がったが、最大 risk 8 は残る。これは長尺疲労の軽減であり、episode 後半の 1 声 filler 問題を解消したとは扱わない。`close-imitation` は shared rhythm overlap と short strong-beat entry note の境界値が少し上がったため、次の voice-independence work では form variation を戻さずに shared rhythm と entry density の余裕を作る。
 
+次の voice-independence guard では、非 modal candidate に限って exact same-pitch voice-pair overlap を candidate evaluation model 8 の小さな selection cost にした。これは shared-rhythm rewrite ではなく、すでに schema version 8 の voice-pair explanations で観察できる exact pitch lockstep だけを少し避ける guardrail である。`quiet-cadence` の same-pitch overlap は 9 から 7 へ下がったが、`restless-line`、`sparse-cadence`、`bright-answer`、`minor-entry`、`modal-answer` の shared rhythm と unison は大きく動かなかった。したがって Phase 7 の voice-independence blocker は継続する。
+
+広い修正は棄却した。voice-pair の unison/shared-rhythm/same-direction を同時に強めると `modal-answer` の exact same-pitch は下がったが、leap recovery または same-direction gate が崩れ、`dense-modal` の counter-subject identity も 0.561 まで落ちた。entry support の free-counterpoint を一括で遅らせる案は shared rhythm を下げたものの rhythmic independence score を 0.05 前後または 0 に落とし、`bright-answer` と `minor-entry` の leap recovery を壊した。active pitch の octave 回避も `bright-answer` の exact same-pitch overlap を 26 へ悪化させた。これらは Fux/species counterpoint の声部独立という目的に反し、単一の lockstep 指標だけを下げるために旋律線、modal identity、contour を犠牲にするため、今後は section-local candidate で同時評価する。
+
 continuity に 2 声目を足す実験は、selected section solo texture risk を max 2-4 まで下げた一方で、`fugue-smoke`、`sparse-cadence`、`bright-answer`、`ornament-test` の leap recovery、`angular-answer` と `modal-cadence` の counter-subject identity、`dense-modal` の outer-voice contour を壊したため採用しない。次の solo texture 改善は、second support voice の開始音と voice-pair unison、leap recovery、modal identity、outer-voice contour を同じ section-local guard で扱う。
 
 Bach/fugue and common-practice form の観点では、episode は filler ではなく、次の entry、local key、cadence、stretto の緊張へ向かう必要がある。popular-music 的な loop tolerance を採る場合でも、長尺では texture density、register、rhythm pattern の変化が必要である。
