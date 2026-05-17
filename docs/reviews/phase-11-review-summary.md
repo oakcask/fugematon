@@ -112,9 +112,32 @@ Project response: この PR では音符の pitch selection と selection behavi
 
 Remaining listening gap: 今回も automatic diagnostics と generated MIDI bundle の作成までで、通し聴取と before/after pairwise preference は未実施である。baseline と variant は同じ `phase10-section-local-planner` で、音符差分ではなく intent metadata と diagnostics shape の確認として扱う。
 
+### 8. Register-blended section-local candidates を oracle pool に追加した
+
+生成 bundle:
+
+```sh
+pnpm fugematon review-ab --out samples/phase11-section-register-candidates-ab --ticks 129600 --baseline-label phase11-oracle-selection --baseline-model phase10-oracle-selection --variant-label phase11-section-register-candidates --variant-model phase10-section-local-planner
+```
+
+対象 seed: 22 seed 全体。代表例は `bach-001`、境界は `minor-entry`、rotation は `modal-cadence`、adversarial は `dense-modal`。
+
+Phase 10 section-local planner の candidate pool に、continuity support voice order を entry voice ごとに変える register-blended alternatives を追加した。これらは oracle/pool evidence 用の候補として pool に入るが、selected output は既存の guarded Phase 10 candidates までに制限する。つまり、この PR は score selection を変えず、Phase 11 blocker に対して「候補 pool を増やすと selection-only upper bound が動くか」を測る。
+
+22 seed 合計では hard constraints は 0 のまま維持された。candidate count は 9092 から 23676、viable candidate count は 896 から 2131 に増えた。`register-blending` の generator-needed rate は 0.889 から 0.781、selection-only upper-bound reduction rate は 0.013 から 0.018 へ動いた。`functional-thinning` は generator-needed rate が 1.000 から 0.693、reduction rate が 0.000 から 0.028 へ動いた。`metrical-harmony` と `bass-root-support` も小さく改善したが、`section-grammar-repetition` は 1.000 のまま残った。
+
+代表 seed では `bach-001` の candidate count が 392 から 1008、viable が 38 から 100 に増え、`functional-thinning` の generator-needed rate は 1.000 から 0.633 へ下がった。`minor-entry` は `register-blending` 1.000 から 0.813、`functional-thinning` 1.000 から 0.750 へ下がった。`dense-modal` は `metrical-harmony` 1.000 から 0.742、`bass-root-support` 0.903 から 0.613 へ下がったが、`functional-thinning` は 1.000 のままだった。
+
+Theory basis: 同一鍵盤 texture では、continuity support を常に同じ register order で足すと、隣接声部の離れすぎと非機能的 thinning が固定されやすい。声部独立を守りながら候補 pool に異なる register placement を入れることは、実際の選択前に generator-needed blocker が candidate generation 不足なのか ranking 不足なのかを切り分ける助けになる。
+
+Project response: register planner は候補 pool を増やす方向では有効だったが、selected output に採用するには melody、entry harmony、voice independence、modal severe interval の guardrail と同時に見る必要がある。section grammar repetition は候補 voice order では改善しないため、次の work は state transition、episode/codetta/stretto preparation/cadence extension の長距離構文候補を増やす。
+
+Remaining listening gap: 今回も automatic diagnostics と generated MIDI bundle の作成までで、通し聴取と before/after pairwise preference は未実施である。selected output の音符差分は意図的に出していないため、採用判断ではなく candidate pool evidence として扱う。
+
 ## Remaining Gaps
 
 * MIDI の通し聴取と before/after pairwise preference は未実施。
 * `metricalHarmony` は time signature ごとの強拍分類をまだ持たない暫定 summary である。weak beat non-chord-tone resolution は次 strong beat までの stepwise chord-tone arrival に限るため、掛留の準備、anticipation、escape tone、longer preparation/resolution はまだ区別しない。
 * Candidate pool oracle の Phase 11 blocker family は出るが、selection-only upper bound はほとんどの blocker で低く、generator-needed rate が高い。
-* review summary 追加 PR は生成音そのもの、candidate scoring、gate threshold を変えていない。follow-up diagnostics PR は selected candidate feature を増やしたが、selection behavior と gate threshold は変えていない。
+* section grammar repetition は register-blended section-local candidates では改善せず、generator-needed rate 1.000 のまま残る。
+* review summary 追加 PR は生成音そのもの、candidate scoring、gate threshold を変えていない。follow-up diagnostics PR は selected candidate feature を増やし、register candidate PR は oracle pool を増やしたが、selected output と gate threshold は変えていない。

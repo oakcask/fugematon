@@ -23,6 +23,7 @@ import {
   VOICES,
 } from "./constants.js";
 import type {
+  CandidatePoolOracleBlocker,
   MetaEvent,
   NoteEvent,
   NoteRole,
@@ -1046,6 +1047,44 @@ test("generateScore adds guarded phase-10 section-local planner candidates", () 
   assert.ok(variantSoloTextureRisk < baselineSoloTextureRisk);
 });
 
+test("generateScore adds register-blended section-local planner alternatives", () => {
+  const seed = "dense-modal";
+  const baseline = generateScore({
+    seed,
+    lengthTicks: PHASE_5_LENGTH_TICKS,
+    selectionModel: "phase10-oracle-selection",
+  });
+  const variant = generateScore({
+    seed,
+    lengthTicks: PHASE_5_LENGTH_TICKS,
+    selectionModel: "phase10-section-local-planner",
+  });
+  const baselineGate = evaluatePhase7BGatePolicy(seed, baseline.diagnostics);
+  const variantGate = evaluatePhase7BGatePolicy(seed, variant.diagnostics);
+
+  assert.equal(baselineGate.phase8Ready, true);
+  assert.equal(variantGate.phase8Ready, true);
+  assert.ok(
+    variant.diagnostics.candidatePoolOracle.candidateCount > baseline.diagnostics.candidatePoolOracle.candidateCount,
+  );
+  assert.ok(
+    variant.diagnostics.candidatePoolOracle.viableCandidateCount >
+      baseline.diagnostics.candidatePoolOracle.viableCandidateCount,
+  );
+  assert.ok(
+    requireOracleBlocker(variant.diagnostics.candidatePoolOracle, "register-blending").generatorNeededRate <
+      requireOracleBlocker(baseline.diagnostics.candidatePoolOracle, "register-blending").generatorNeededRate,
+  );
+  assert.ok(
+    requireOracleBlocker(variant.diagnostics.candidatePoolOracle, "metrical-harmony").generatorNeededRate <
+      requireOracleBlocker(baseline.diagnostics.candidatePoolOracle, "metrical-harmony").generatorNeededRate,
+  );
+  assert.ok(
+    requireOracleBlocker(variant.diagnostics.candidatePoolOracle, "bass-root-support").generatorNeededRate <
+      requireOracleBlocker(baseline.diagnostics.candidatePoolOracle, "bass-root-support").generatorNeededRate,
+  );
+});
+
 test("generateScore nudges non-modal stepwise pattern fixation without modal guardrail regressions", () => {
   const blockerSeeds = [
     ["fugue-smoke", 0.72, 5, 566, 25],
@@ -1530,6 +1569,15 @@ function assertPhase10CandidatePoolOracleShape(
         blocker.representative.bestViableReferenceStatus === "above-reference",
     );
   }
+}
+
+function requireOracleBlocker(
+  oracle: ReturnType<typeof generateScore>["diagnostics"]["candidatePoolOracle"],
+  blocker: CandidatePoolOracleBlocker,
+) {
+  const summary = oracle.blockerClassifications.find((candidate) => candidate.blocker === blocker);
+  assert.ok(summary !== undefined);
+  return summary;
 }
 
 function stepwisePatternRole(
