@@ -71,6 +71,10 @@ export function addCounterpointTexture(
       role: "free-counterpoint",
     });
   }
+
+  if (entry.eligibleVoices !== undefined) {
+    repairTextureVoiceCrossings(notes, entry.startTick, entry.durationTicks);
+  }
 }
 
 export function chooseTextureVoice(
@@ -151,7 +155,7 @@ export function addTextureNote(
     pitchClass = scaleDegreePitchClass(degree + 1, 0, pattern.localKey);
     pitch = placePitchInRegister(pitchClass, pattern.voice, VOICE_REGISTER_TARGETS[pattern.voice]);
   }
-  if (previous !== undefined && pattern.role === "free-counterpoint") {
+  if (previous !== undefined && (pattern.role === "free-counterpoint" || pattern.role === "counter-subject")) {
     pitch = fitPitchNearPrevious(pitchClass, pattern.voice, previous.pitch);
   }
   notes.push({
@@ -176,6 +180,81 @@ export function fitPitchNearPrevious(pitchClass: number, voice: Voice, previousP
     pitch += 12;
   }
   return pitch;
+}
+
+function repairTextureVoiceCrossings(notes: Exposition["notes"], startTick: number, durationTicks: number): void {
+  const endTick = startTick + durationTicks;
+  const checkpoints = [
+    ...new Set(notes.flatMap((note) => [note.startTick, note.startTick + note.durationTicks])),
+  ].filter((tick) => startTick <= tick && tick < endTick);
+  const adjacentPairs: readonly (readonly [higher: Voice, lower: Voice])[] = [
+    ["soprano", "alto"],
+    ["alto", "tenor"],
+    ["tenor", "bass"],
+  ];
+
+  for (const tick of checkpoints) {
+    for (const [higher, lower] of adjacentPairs) {
+      const higherNote = activeNoteAt(notes, higher, tick);
+      const lowerNote = activeNoteAt(notes, lower, tick);
+      if (
+        higherNote === undefined ||
+        lowerNote === undefined ||
+        higherNote.pitch >= lowerNote.pitch ||
+        !isTextureRole(higherNote.role) ||
+        !isTextureRole(lowerNote.role)
+      ) {
+        continue;
+      }
+
+      if (canMoveDownWithoutCrossing(notes, lowerNote, lowerNote.pitch - 12)) {
+        lowerNote.pitch -= 12;
+      } else if (canMoveUpWithoutCrossing(notes, higherNote, higherNote.pitch + 12)) {
+        higherNote.pitch += 12;
+      }
+    }
+  }
+}
+
+function activeNoteAt(notes: readonly NoteEvent[], voice: Voice, tick: number): NoteEvent | undefined {
+  return notes.find(
+    (note) => note.voice === voice && note.startTick <= tick && tick < note.startTick + note.durationTicks,
+  );
+}
+
+function canMoveDownWithoutCrossing(notes: readonly NoteEvent[], note: NoteEvent, pitch: number): boolean {
+  return pitch >= VOICE_RANGES[note.voice].min && keepsAdjacentVoiceOrder(notes, note, pitch);
+}
+
+function canMoveUpWithoutCrossing(notes: readonly NoteEvent[], note: NoteEvent, pitch: number): boolean {
+  return pitch <= VOICE_RANGES[note.voice].max && keepsAdjacentVoiceOrder(notes, note, pitch);
+}
+
+function keepsAdjacentVoiceOrder(notes: readonly NoteEvent[], note: NoteEvent, pitch: number): boolean {
+  const endTick = note.startTick + note.durationTicks;
+  const checkpoints = [
+    note.startTick,
+    ...notes
+      .flatMap((candidate) => [candidate.startTick, candidate.startTick + candidate.durationTicks])
+      .filter((tick) => note.startTick < tick && tick < endTick),
+  ];
+
+  return checkpoints.every((tick) => {
+    const soprano = note.voice === "soprano" ? pitch : activeNoteAt(notes, "soprano", tick)?.pitch;
+    const alto = note.voice === "alto" ? pitch : activeNoteAt(notes, "alto", tick)?.pitch;
+    const tenor = note.voice === "tenor" ? pitch : activeNoteAt(notes, "tenor", tick)?.pitch;
+    const bass = note.voice === "bass" ? pitch : activeNoteAt(notes, "bass", tick)?.pitch;
+
+    return (
+      (soprano === undefined || alto === undefined || soprano >= alto) &&
+      (alto === undefined || tenor === undefined || alto >= tenor) &&
+      (tenor === undefined || bass === undefined || tenor >= bass)
+    );
+  });
+}
+
+function isTextureRole(role: NoteEvent["role"] | undefined): boolean {
+  return role === "counter-subject" || role === "free-counterpoint";
 }
 
 export function addContinuityCounterpoint(notes: Exposition["notes"], input: ContinuityCounterpointInput): void {
