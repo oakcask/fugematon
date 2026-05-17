@@ -56,12 +56,13 @@ const EVALUATION_WEIGHTS = {
     modalCadenceSevereEntryInterval: 2,
     modalCadenceUnresolvedSevereEntryInterval: 3,
     unresolvedDissonance: 100,
-    strongBeatDissonance: 50,
+    strongBeatDissonance: 0,
+    harmonicFunctionMismatch: 0.000001,
     predominantDirectionMiss: 30,
     unresolvedAmbiguity: 30,
     controlledAmbiguity: 10,
     styleModulationFit: 8,
-    harmonicFunctionMatch: 1,
+    harmonicFunctionMatch: 0,
   },
   form: {
     formRepetition: 50,
@@ -214,6 +215,7 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
       entryHarmonyRiskCost +
       diagnostics.unresolvedDissonanceCount * EVALUATION_WEIGHTS.harmony.unresolvedDissonance +
       diagnostics.strongBeatDissonanceCount * EVALUATION_WEIGHTS.harmony.strongBeatDissonance +
+      diagnostics.harmonicFunctionMismatches * EVALUATION_WEIGHTS.harmony.harmonicFunctionMismatch +
       diagnostics.predominantDirectionMisses * EVALUATION_WEIGHTS.harmony.predominantDirectionMiss +
       diagnostics.unresolvedAmbiguityWarnings * EVALUATION_WEIGHTS.harmony.unresolvedAmbiguity,
     reward:
@@ -222,6 +224,9 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
       diagnostics.harmonicFunctionMatches * EVALUATION_WEIGHTS.harmony.harmonicFunctionMatch,
     features: {
       unresolvedDissonanceCount: diagnostics.unresolvedDissonanceCount,
+      strongBeatDissonanceCount: diagnostics.strongBeatDissonanceCount,
+      harmonicFunctionMismatches: diagnostics.harmonicFunctionMismatches,
+      harmonicFunctionMatches: diagnostics.harmonicFunctionMatches,
       predominantDirectionMisses: diagnostics.predominantDirectionMisses,
       controlledAmbiguityScore: diagnostics.controlledAmbiguityScore,
       styleModulationFit: diagnostics.styleModulationFit,
@@ -266,7 +271,7 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
 
   return {
     featureVersion: 2,
-    evaluationModelVersion: 8,
+    evaluationModelVersion: 9,
     totalCost: Math.round(totalCost * 1000) / 1000,
     hardFailures,
     explanations,

@@ -1,3 +1,4 @@
+import { TICKS_PER_QUARTER } from "../constants.js";
 import type { HarmonicPlan, NoteEvent, PlannedEntry } from "../events.js";
 import { characteristicScaleDegree, isModalMode } from "./key.js";
 import { scaleDegreePitchClass } from "./pitch.js";
@@ -10,7 +11,7 @@ export function analyzeHarmonicPlans(
   subjectEntries: readonly PlannedEntry[],
 ): HarmonicDiagnostics {
   const cadenceAnchors = sectionPlans.flatMap((plan) => plan.anchors.filter((anchor) => anchor.cadenceTarget));
-  const harmonicFunctionMatches = sectionPlans.reduce((sum, plan) => sum + plan.anchors.length, 0);
+  const metricalHarmony = analyzeMetricalHarmony(notes, sectionPlans);
   const ambiguityPlans = sectionPlans.filter((plan) => plan.ambiguityIntent !== "none");
   const ambiguityRecoveries = ambiguityPlans.filter((plan) => plan.ambiguityRecoveryTick !== undefined).length;
   const episodePlans = sectionPlans.filter((plan) => plan.state === "episode");
@@ -34,14 +35,14 @@ export function analyzeHarmonicPlans(
 
   return {
     unresolvedDissonanceCount: 0,
-    strongBeatDissonanceCount: 0,
+    strongBeatDissonanceCount: metricalHarmony.strongBeatDissonanceCount,
     cadenceTargetMisses: 0,
     cadenceTargetHits: cadenceAnchors.length,
     leadingToneResolutionMisses: 0,
     dominantResolutionMisses: 0,
     predominantDirectionMisses: countPredominantDirectionMisses(sectionPlans),
-    harmonicFunctionMismatches: 0,
-    harmonicFunctionMatches,
+    harmonicFunctionMismatches: metricalHarmony.harmonicFunctionMismatches,
+    harmonicFunctionMatches: metricalHarmony.harmonicFunctionMatches,
     controlledAmbiguityScore: ambiguityPlans.length === 0 ? 1 : roundRatio(ambiguityRecoveries / ambiguityPlans.length),
     unresolvedAmbiguityWarnings: ambiguityPlans.length - ambiguityRecoveries,
     ambiguityRecoveries,
@@ -56,6 +57,87 @@ export function analyzeHarmonicPlans(
     modalCadenceHits,
     tonalCadenceOveruseWarnings,
   };
+}
+
+function analyzeMetricalHarmony(
+  notes: readonly NoteEvent[],
+  sectionPlans: readonly HarmonicPlan[],
+): {
+  strongBeatDissonanceCount: number;
+  harmonicFunctionMismatches: number;
+  harmonicFunctionMatches: number;
+} {
+  const endTick = Math.max(0, ...notes.map((note) => note.startTick + note.durationTicks));
+  let strongBeatDissonanceCount = 0;
+  let harmonicFunctionMismatches = 0;
+  let harmonicFunctionMatches = 0;
+
+  for (let tick = 0; tick < endTick; tick += TICKS_PER_QUARTER * 2) {
+    const anchor = nearestHarmonicAnchor(tick, sectionPlans);
+    const activeNotes = notes.filter((note) => note.startTick <= tick && tick < note.startTick + note.durationTicks);
+    if (anchor === undefined || activeNotes.length === 0) {
+      continue;
+    }
+
+    const chordTones = chordTonePitchClasses(anchor.localKey, anchor.function);
+    const activePitchClasses = activeNotes.map((note) => positiveModulo(note.pitch, 12));
+    const hasChordToneSupport = activePitchClasses.some((pitchClass) => chordTones.includes(pitchClass));
+    const hasNonChordTone = activePitchClasses.some((pitchClass) => !chordTones.includes(pitchClass));
+    const hasBassRootSupport = bassSupportsRoot(activeNotes, anchor);
+    const unanchoredStrongBeatNonChordTone = hasNonChordTone && !hasBassRootSupport;
+    const harmonicFunctionMismatch = !hasChordToneSupport || unanchoredStrongBeatNonChordTone;
+
+    strongBeatDissonanceCount += Number(unanchoredStrongBeatNonChordTone);
+    harmonicFunctionMismatches += Number(harmonicFunctionMismatch);
+    harmonicFunctionMatches += Number(!harmonicFunctionMismatch);
+  }
+
+  return {
+    strongBeatDissonanceCount,
+    harmonicFunctionMismatches,
+    harmonicFunctionMatches,
+  };
+}
+
+function nearestHarmonicAnchor(
+  tick: number,
+  sectionPlans: readonly HarmonicPlan[],
+): HarmonicPlan["anchors"][number] | undefined {
+  const plan = sectionPlans.find(
+    (candidate) => tick >= candidate.startTick && tick < candidate.startTick + candidate.durationTicks,
+  );
+  const anchors = plan?.anchors ?? sectionPlans.flatMap((candidate) => candidate.anchors);
+  return anchors
+    .map((anchor) => ({ anchor, distance: Math.abs(anchor.tick - tick) }))
+    .sort((left, right) => left.distance - right.distance)[0]?.anchor;
+}
+
+function chordTonePitchClasses(
+  key: HarmonicPlan["anchors"][number]["localKey"],
+  harmonicFunction: HarmonicPlan["anchors"][number]["function"],
+): number[] {
+  const rootDegree = rootDegreeForFunction(harmonicFunction);
+  return [rootDegree, rootDegree + 2, rootDegree + 4].map((degree) => scaleDegreePitchClass(degree, 0, key));
+}
+
+function rootDegreeForFunction(harmonicFunction: HarmonicPlan["anchors"][number]["function"]): number {
+  if (harmonicFunction === "predominant") {
+    return 3;
+  }
+  if (harmonicFunction === "dominant") {
+    return 4;
+  }
+  return 0;
+}
+
+function bassSupportsRoot(activeNotes: readonly NoteEvent[], anchor: HarmonicPlan["anchors"][number]): boolean {
+  const bassPitch = activeNotes.find((note) => note.voice === "bass")?.pitch;
+  if (bassPitch === undefined) {
+    return false;
+  }
+  return (
+    positiveModulo(bassPitch, 12) === scaleDegreePitchClass(rootDegreeForFunction(anchor.function), 0, anchor.localKey)
+  );
 }
 
 function countModalCharacteristicToneHits(notes: readonly NoteEvent[], sectionPlans: readonly HarmonicPlan[]): number {
