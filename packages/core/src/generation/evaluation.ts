@@ -49,6 +49,9 @@ const EVALUATION_WEIGHTS = {
     entryInstability: 1,
     severeEntryInterval: 1,
     unresolvedSevereEntryInterval: 2,
+    modalCadenceEntryInstability: 1,
+    modalCadenceSevereEntryInterval: 2,
+    modalCadenceUnresolvedSevereEntryInterval: 3,
     unresolvedDissonance: 100,
     strongBeatDissonance: 50,
     predominantDirectionMiss: 30,
@@ -180,7 +183,8 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
       ),
     },
   };
-  const entryHarmonyRiskCost = scoreBalancedEntryHarmonyRisk(riskContexts);
+  const modalCadenceEntrySupportRiskCost = scoreModalCadenceEntrySupportRisk(candidate, riskContexts);
+  const entryHarmonyRiskCost = scoreBalancedEntryHarmonyRisk(riskContexts) + modalCadenceEntrySupportRiskCost;
   const harmony = {
     cost:
       entryHarmonyRiskCost +
@@ -205,6 +209,7 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
       severeEntryIntervalCount: diagnostics.severeEntryIntervalCount,
       unresolvedSevereEntryIntervalCount: diagnostics.unresolvedSevereEntryIntervalCount,
       selectedEntryHarmonyRiskCost: entryHarmonyRiskCost,
+      selectedModalCadenceEntrySupportRiskCost: modalCadenceEntrySupportRiskCost,
     },
   };
   const form = {
@@ -236,7 +241,7 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
 
   return {
     featureVersion: 1,
-    evaluationModelVersion: 5,
+    evaluationModelVersion: 6,
     totalCost: Math.round(totalCost * 1000) / 1000,
     hardFailures,
     explanations,
@@ -269,6 +274,21 @@ function scoreBalancedEntryHarmonyRisk(contexts: Phase7CandidateRiskContexts): n
       entry.instabilityCount * EVALUATION_WEIGHTS.harmony.entryInstability +
       entry.severeIntervalCount * EVALUATION_WEIGHTS.harmony.severeEntryInterval +
       entry.unresolvedSevereIntervalCount * EVALUATION_WEIGHTS.harmony.unresolvedSevereEntryInterval,
+    0,
+  );
+}
+
+function scoreModalCadenceEntrySupportRisk(candidate: Exposition, contexts: Phase7CandidateRiskContexts): number {
+  if (!candidate.sectionPlans.some((section) => section.cadenceKind === "modal")) {
+    return 0;
+  }
+
+  return contexts.entryIntervalSupport.entries.reduce(
+    (sum, entry) =>
+      sum +
+      entry.instabilityCount * EVALUATION_WEIGHTS.harmony.modalCadenceEntryInstability +
+      entry.severeIntervalCount * EVALUATION_WEIGHTS.harmony.modalCadenceSevereEntryInterval +
+      entry.unresolvedSevereIntervalCount * EVALUATION_WEIGHTS.harmony.modalCadenceUnresolvedSevereEntryInterval,
     0,
   );
 }
