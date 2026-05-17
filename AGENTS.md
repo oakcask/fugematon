@@ -14,6 +14,7 @@
 - Before changing planned behavior or phase scope, check the relevant docs and keep the docs aligned with the code change.
 - When a rejected implementation, failed experiment, or decision not to proceed changes future work, record the lesson in the relevant phase, review, or reference doc before finalizing. Include the observed tradeoff, affected metrics or seeds when available, and the planning constraint it creates.
 - When generating review bundles for verification, write `pnpm fugematon review --out` under `samples/<review-name>` so generated JSON and MIDI files match existing ignore rules. Do not use unignored temporary directories such as `.tmp` for review output.
+- For generation-quality changes, do not preserve old regression-test expected values just because they are already fixed. If review bundles, diagnostics, and music-beauty review across relevant seeds show that the generated music improved, update regression-test expectations to the new quality baseline. Record affected seeds, tradeoffs, and any remaining regressions in the relevant phase or review doc.
 
 ## Task-Specific Skills
 
