@@ -678,6 +678,7 @@ test("generateScore reports role and section stepwise pattern diagnostics", () =
   assert.ok(selectedEvaluation.dimensions.melody.features.freeCounterpointMaxMonotoneStepRun > 0);
   assert.ok(selectedEvaluation.dimensions.melody.features.freeCounterpointRepeatedDegreePatternCount >= 0);
   assert.ok(selectedEvaluation.dimensions.melody.features.freeCounterpointRolePatternEntropy >= 0);
+  assert.ok(selectedEvaluation.dimensions.melody.features.selectedFreeCounterpointStepwiseFixationCost >= 0);
   assert.ok("maxRoleMonotoneStepRun" in selectedEvaluation.dimensions.texture.features);
   assert.ok("repeatedRoleDegreePatternCount" in selectedEvaluation.dimensions.texture.features);
 });
@@ -718,6 +719,52 @@ test("generateScore catches free-counterpoint contour false positives with stepw
     assert.ok(freeCounterpoint.descendingStepRatio > 0);
     assert.ok(freeCounterpoint.maxMonotoneStepRun >= 3);
     assert.ok(freeCounterpoint.repeatedDegreePatternCount > 0);
+  }
+});
+
+test("generateScore nudges non-modal stepwise pattern fixation without modal guardrail regressions", () => {
+  const blockerSeeds = [
+    ["fugue-smoke", 0.715, 5, 566, 23],
+    ["lyrical-line", 0.703, 4, 589, 16],
+    ["contrary-answer", 0.73, 4, 527, 31],
+  ] as const;
+
+  for (const [
+    seed,
+    maxStepwiseRunRatio,
+    maxMonotoneStepRun,
+    maxRepeatedDegreePatternCount,
+    maxLeapRecoveryMisses,
+  ] of blockerSeeds) {
+    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
+    const gate6 = evaluatePhase6Diagnostics(seed, output.diagnostics);
+    const gate7 = evaluatePhase7Diagnostics(seed, output.diagnostics);
+    const freeCounterpoint = stepwisePatternRole(output.diagnostics.stepwisePattern.roles, "free-counterpoint");
+    const selectedEvaluation = requireSelectedCandidateEvaluation(output.diagnostics.selectedCandidateEvaluations);
+
+    assert.deepEqual(gate6.failures, []);
+    assert.deepEqual(gate7.failures, []);
+    assert.equal(gate6.passed, true);
+    assert.equal(gate7.passed, true);
+    assert.ok(freeCounterpoint.stepwiseRunRatio <= maxStepwiseRunRatio);
+    assert.ok(freeCounterpoint.maxMonotoneStepRun <= maxMonotoneStepRun);
+    assert.ok(freeCounterpoint.repeatedDegreePatternCount <= maxRepeatedDegreePatternCount);
+    assert.ok(output.diagnostics.leapRecoveryMisses <= maxLeapRecoveryMisses);
+    assert.ok(selectedEvaluation.dimensions.melody.features.selectedFreeCounterpointStepwiseFixationCost > 0);
+  }
+
+  for (const seed of ["modal-dorian", "modal-answer"] as const) {
+    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
+    const gate6 = evaluatePhase6Diagnostics(seed, output.diagnostics);
+    const gate7 = evaluatePhase7Diagnostics(seed, output.diagnostics);
+    const selectedEvaluation = requireSelectedCandidateEvaluation(output.diagnostics.selectedCandidateEvaluations);
+
+    assert.deepEqual(gate6.failures, []);
+    assert.deepEqual(gate7.failures, []);
+    assert.equal(gate6.passed, true);
+    assert.equal(gate7.passed, true);
+    assert.equal(selectedEvaluation.dimensions.melody.features.selectedFreeCounterpointStepwiseFixationCost, 0);
+    assert.ok(output.diagnostics.counterSubjectIdentityRetention >= 0.627);
   }
 });
 
@@ -764,7 +811,7 @@ test("generateScore reduces phase-7 stepwise fifth-climb subject pressure", () =
     ["modal-cadence", 149, 101, 70],
     ["wide-key", 130, 96, 72],
     ["tight-stretto", 144, 96, 72],
-    ["contrary-answer", 136, 96, 72],
+    ["contrary-answer", 137, 96, 72],
   ] as const;
   const protectedSeeds = [
     ["modal-answer", 33, 0.608],
@@ -830,7 +877,7 @@ test("generateScore balances phase-7 entry harmony scoring with preservation gua
     ["lyrical-line", 136, 98, 72, 3, 3, 3],
     ["tight-stretto", 144, 96, 72, 4, 3, 3],
     ["wide-key", 130, 96, 72, 3, 3, 3],
-    ["contrary-answer", 136, 96, 72, 3, 3, 3],
+    ["contrary-answer", 137, 96, 72, 3, 3, 3],
   ] as const;
 
   for (const [
@@ -885,7 +932,7 @@ test("generateScore balances phase-7 entry harmony scoring with preservation gua
 test("generateScore preserves phase-7 voice-pair independence blocker evidence under scoring changes", () => {
   const blockerSeeds = [
     ["contrary-motion", 25, 521, 778, 3, 2, 26, 7, 54, 14],
-    ["fugue-smoke", 37, 581, 834, 0, 0, 27, 7, 54, 12],
+    ["fugue-smoke", 33, 581, 834, 0, 0, 27, 7, 54, 12],
     ["minor-entry", 26, 736, 906, 0, 0, 50, 15, 70, 20],
     ["modal-answer", 13, 751, 906, 0, 0, 46, 14, 70, 20],
   ] as const;
@@ -932,7 +979,7 @@ test("generateScore preserves phase-7 voice-pair independence blocker evidence u
 test("generateScore nudges phase-7 voice independence boundary seeds without gate regressions", () => {
   const blockerSeeds = [
     ["bright-answer", 735, 625, 31, 0.9],
-    ["quiet-cadence", 724, 640, 15, 0.87],
+    ["quiet-cadence", 726, 649, 15, 0.87],
   ] as const;
 
   for (const [
@@ -991,7 +1038,7 @@ test("generateScore preserves phase-7 melody and form guardrails", () => {
     ["bright-answer", 31, 7, 3, 37, 12, 12, 2],
     ["lyrical-line", 25, 2, 1, 42, 16, 16, 8],
     ["dark-episode", 21, 7, 3, 38, 12, 12, 8],
-    ["contrary-answer", 24, 3, 2, 42, 16, 16, 8],
+    ["contrary-answer", 31, 3, 2, 42, 16, 16, 8],
   ] as const;
 
   for (const [
@@ -1053,7 +1100,7 @@ function requireSelectedCandidateEvaluation(
 
   assert.ok(selectedEvaluation !== undefined);
   assert.equal(selectedEvaluation.featureVersion, 2);
-  assert.equal(selectedEvaluation.evaluationModelVersion, 6);
+  assert.equal(selectedEvaluation.evaluationModelVersion, 7);
   assert.ok(selectedEvaluation.explanations.entries.length > 0);
   assert.ok(selectedEvaluation.explanations.voicePairs.length > 0);
   assert.ok(selectedEvaluation.explanations.voices.length > 0);

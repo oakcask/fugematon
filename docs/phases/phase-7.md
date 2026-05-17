@@ -168,3 +168,11 @@ scoring 変更の前に、role/section 別の stepwise pattern evidence を diag
 review bundle summary は schema version 8 として `diagnosticsSummary.texture.stepwisePattern` を持つ。`CandidateEvaluation.featureVersion` は 2 になり、selected candidate の melody/texture features は free counterpoint の stepwise ratio、最大単調 run、反復 degree pattern、role pattern entropy と role 横断の最大 run/反復 count を参照できる。ただしこの PR では stepwise 指標を scoring weight に入れず、生成挙動を変えない evidence coverage として扱う。
 
 テストでは固定 review seed、rotation seed、adversarial seed 全体で Phase 6/7 gate が pass すること、`freeCounterpointContourScore` が 1 でも上下両方向だけでは長い単調 step run と反復 degree pattern を隠せないことを確認する。Phase 7 は依然として未完了であり、次の PR はこの evidence を使って、順次進行を全面禁止せずに固定 filler 化だけを抑える scoring または generator 変更を小さく検証する。
+
+## Phase 7 stepwise pattern scoring
+
+stepwise pattern scoring の小変更では、candidate evaluation model 7 として、非 modal candidate に限って `free-counterpoint` の `stepwiseRunRatio` と `maxMonotoneStepRun` を軽い melody cost に入れた。順次進行そのものは禁じず、`freeCounterpointContourScore` が上下両方向だけで満点になる候補のうち、長い単調 run を持つものを少し下げる。modal candidate は counter-subject identity の余裕が薄いため今回の cost から外し、modal pattern は専用の entry/identity/contour 同時評価で扱う。
+
+採用した重みでは、固定 seed、rotation seed、adversarial seed 22 件すべてが Phase 6/7 gate を pass した。非 modal blocker seed では、`fugue-smoke` の `free-counterpoint` stepwise ratio が 0.718 から 0.715、`lyrical-line` が 0.719 から 0.703 へ下がった。`contrary-answer` は `maxMonotoneStepRun` が 5 から 4、`repeatedDegreePatternCount` が 533 から 527 へ下がった。`lyrical-line` の `leapRecoveryMisses` は 19 から 16 へ下がったが、`fugue-smoke` は 20 から 23、`contrary-answer` は 24 から 31 へ上がったため、今回の scoring は Phase 6/7 gate 内の小さな候補選択調整に留め、強い stepwise penalty にはしない。
+
+continuity filler の degree pattern を直接変える案は棄却した。この実験では 22 seed 平均の `free-counterpoint` stepwise ratio は 0.746 から 0.687 へ大きく下がったが、`sparse-cadence` と `restless-line` の `unisonOverlapCount` が 768 になり、`ornament-test` の `leapRecoveryMisses` が 46、`angular-answer` の `counterSubjectIdentityRetention` が 0.571 まで悪化して Phase 6/7 gate を壊した。今後 continuity filler pattern を変える場合は、stepwise ratio だけでなく unison overlap、leap recovery、modal counter-subject identity を同じ候補または section-local guard で同時に守る。

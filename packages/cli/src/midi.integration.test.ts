@@ -293,7 +293,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
     }
     assert.deepEqual(findReviewSeed(summary.seeds, "fugue-smoke").diagnosticsSummary.candidateEvaluation, {
       featureVersion: 2,
-      evaluationModelVersion: 6,
+      evaluationModelVersion: 7,
       selectedCandidateEvaluationCount: 1,
       entryExplanationCount: 1,
       voicePairExplanationCount: 6,
@@ -312,7 +312,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
     });
     assert.deepEqual(findReviewSeed(summary.seeds, "modal-cadence").diagnosticsSummary.candidateEvaluation, {
       featureVersion: 2,
-      evaluationModelVersion: 6,
+      evaluationModelVersion: 7,
       selectedCandidateEvaluationCount: 1,
       entryExplanationCount: 1,
       voicePairExplanationCount: 6,
@@ -331,7 +331,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
     });
     assert.deepEqual(findReviewSeed(summary.seeds, "modal-answer").diagnosticsSummary.candidateEvaluation, {
       featureVersion: 2,
-      evaluationModelVersion: 6,
+      evaluationModelVersion: 7,
       selectedCandidateEvaluationCount: 1,
       entryExplanationCount: 1,
       voicePairExplanationCount: 6,
