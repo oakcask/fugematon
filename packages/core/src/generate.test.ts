@@ -905,10 +905,12 @@ test("generateScore preserves phase-7 modal counter-subject retention guardrails
 test("generateScore preserves phase-7 melody and form guardrails", () => {
   const blockerSeeds = [
     ["modal-answer", 33, 2, 1, 36, 13, 13, 2],
-    ["contrary-motion", 29, 8, 4, 42, 15, 15, 8],
+    ["contrary-motion", 26, 8, 4, 42, 15, 15, 8],
     ["modal-dorian", 27, 3, 1, 37, 13, 13, 8],
     ["bright-answer", 31, 7, 3, 37, 12, 12, 2],
     ["lyrical-line", 25, 3, 2, 42, 16, 16, 8],
+    ["dark-episode", 21, 7, 3, 38, 12, 12, 8],
+    ["contrary-answer", 24, 3, 2, 42, 16, 16, 8],
   ] as const;
 
   for (const [

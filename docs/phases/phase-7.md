@@ -92,3 +92,11 @@ modal counter-subject の小変更では、候補評価の model 4 selection adj
 より強い modal identity reward は棄却した。重みをさらに上げると `modal-answer` の selected candidate identity は上がったが、`modal-dorian` の `counterSubjectIdentityRetention` が 0.604 まで下がり、`leapRecoveryMisses` も 33 まで増えて余裕を使い切った。今後 modal identity selection を強める場合は、単一 reward ではなく、modal-dorian の leap recovery と counter-subject identity を同時に gate する。
 
 modal counter-subject pattern を通常の対主題輪郭へ近づけ、末尾だけ modal characteristic tone にする案も棄却した。この実験では `modal-answer`、`dense-modal`、`angular-answer` の identity は大きく上がったが、`modal-cadence` の `leapRecoveryMisses` が 46、severe entry interval が 125、unresolved severe entry interval が 124 まで悪化し、`modal-dorian` も severe entry interval 115、unresolved severe entry interval 102 で Phase 6/7 gate を壊した。別の stepwise tail variant では `modal-cadence` の leap recovery は 35 に留まり、`modal-dorian` の 4拍 outer-voice same-direction ratio が 0.928 まで悪化した。modal pattern の変更は、identity metric だけでなく entry harmony、leap recovery、outer-voice contour を同時に守れる場合に限る。
+
+## Phase 7 melody and phrase recovery
+
+melody/phrase の小変更では、counter-subject の pitch-class pattern は変えず、free-counterpoint と同じく直前の同一声部音に近い octave へ配置する。対主題の scale-degree identity と modal characteristic tone は保ちつつ、支え声部が octave placement だけで不要な跳躍を作る箇所を減らすためである。
+
+採用した変更では 22 seed すべてが Phase 6/7 gate を pass し、`leapRecoveryMisses` 合計は 426 から 418 へ下がった。境界 seed では `dark-episode` が 23 から 21、`bach-001` が 20 から 18、`quiet-cadence` が 15 から 13、`long-arc` が 25 から 23 へ下がった。`modal-answer` は 32、`bright-answer` は 31、`contrary-motion` は 26、`modal-dorian` は 25、`contrary-answer` は 24 を維持し、entry support instability、severe entry interval、unresolved severe entry interval、Phase 7 contour gate は既存上限内に残った。
+
+候補評価の model 5 として、voice phrase context の最大 leap recovery miss と repeated pitch run を selection cost に加える案は棄却した。小さい重みでも `contrary-answer` の `leapRecoveryMisses` が 34 まで増えて Phase 6/7 gate を壊し、`fugue-smoke` の entry support instability も 143 から 145-148 へ悪化した。今後の phrase breathing scoring は、既存 candidate 全体へ汎用 cost を足すのではなく、entry risk、support role、modal identity、contour を同じ候補説明で同時に守れる局所条件に限る。
