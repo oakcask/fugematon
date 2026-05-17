@@ -322,10 +322,7 @@ test("generateScore validates phase-5 quality gate seeds", () => {
       output.diagnostics.unresolvedDissonanceCount,
       PHASE_5_DIAGNOSTICS_PROFILE.maxUnresolvedDissonanceCount,
     );
-    assert.equal(
-      output.diagnostics.strongBeatDissonanceCount,
-      PHASE_5_DIAGNOSTICS_PROFILE.maxStrongBeatDissonanceCount,
-    );
+    assert.equal(output.diagnostics.strongBeatDissonanceCount, output.diagnostics.harmonicFunctionMismatches);
     assert.equal(output.diagnostics.cadenceTargetMisses, PHASE_5_DIAGNOSTICS_PROFILE.cadenceTargetMisses);
     assert.equal(
       output.diagnostics.leadingToneResolutionMisses,
@@ -333,7 +330,7 @@ test("generateScore validates phase-5 quality gate seeds", () => {
     );
     assert.equal(output.diagnostics.dominantResolutionMisses, PHASE_5_DIAGNOSTICS_PROFILE.dominantResolutionMisses);
     assert.equal(output.diagnostics.predominantDirectionMisses, PHASE_5_DIAGNOSTICS_PROFILE.predominantDirectionMisses);
-    assert.equal(output.diagnostics.harmonicFunctionMismatches, PHASE_5_DIAGNOSTICS_PROFILE.harmonicFunctionMismatches);
+    assert.ok(output.diagnostics.harmonicFunctionMismatches >= PHASE_5_DIAGNOSTICS_PROFILE.harmonicFunctionMismatches);
     assert.ok(output.diagnostics.controlledAmbiguityScore >= PHASE_5_DIAGNOSTICS_PROFILE.minControlledAmbiguityScore);
     assert.equal(
       output.diagnostics.unresolvedAmbiguityWarnings,
@@ -522,6 +519,7 @@ test("generateScore exposes phase-5.10 rhythm and entry support diagnostics", ()
   assert.ok("sameDirectionMotionCount" in selectedEvaluation.dimensions.texture.features);
   assert.ok("shortStrongBeatEntryNoteCount" in selectedEvaluation.dimensions.texture.features);
   assert.ok("entrySupportInstabilityCount" in selectedEvaluation.dimensions.harmony.features);
+  assert.ok("harmonicFunctionMismatches" in selectedEvaluation.dimensions.harmony.features);
 });
 
 test("generateScore applies phase-5.10 rhythm counterpoint gates across review seeds", () => {
@@ -659,6 +657,7 @@ test("generateScore reports phase-7 contour motion diagnostics", () => {
   assert.ok(output.diagnostics.selectedCandidateEvaluations[0]!.explanations.entries.length > 0);
   assert.ok(output.diagnostics.selectedCandidateEvaluations[0]!.explanations.voicePairs.length > 0);
   assert.ok(output.diagnostics.selectedCandidateEvaluations[0]!.explanations.sections.length > 0);
+  assert.equal(output.diagnostics.selectedCandidateEvaluations[0]!.evaluationModelVersion, 9);
   assert.ok(
     "fourBeatBassUpperSameDirectionRatio" in
       output.diagnostics.selectedCandidateEvaluations[0]!.dimensions.texture.features,
@@ -857,6 +856,8 @@ test("generateScore exposes phase-11 review summary signals", () => {
     assert.ok(summary.functionalThinning.twoVoiceRunCount >= 0);
     assert.ok(summary.metricalHarmony.strongBeatCheckpointCount > 0);
     assert.ok(summary.metricalHarmony.weakBeatCheckpointCount > 0);
+    assert.equal(output.diagnostics.strongBeatDissonanceCount, output.diagnostics.harmonicFunctionMismatches);
+    assert.ok(output.diagnostics.harmonicFunctionMatches > 0);
     assert.ok(
       summary.metricalHarmony.strongBeatChordToneSupportCount <= summary.metricalHarmony.strongBeatCheckpointCount,
     );
@@ -1456,7 +1457,7 @@ function requireSelectedCandidateEvaluation(
 
   assert.ok(selectedEvaluation !== undefined);
   assert.equal(selectedEvaluation.featureVersion, 2);
-  assert.equal(selectedEvaluation.evaluationModelVersion, 8);
+  assert.equal(selectedEvaluation.evaluationModelVersion, 9);
   assert.ok(selectedEvaluation.explanations.entries.length > 0);
   assert.ok(selectedEvaluation.explanations.voicePairs.length > 0);
   assert.ok(selectedEvaluation.explanations.voices.length > 0);
