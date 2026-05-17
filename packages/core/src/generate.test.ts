@@ -724,9 +724,9 @@ test("generateScore catches free-counterpoint contour false positives with stepw
 
 test("generateScore nudges non-modal stepwise pattern fixation without modal guardrail regressions", () => {
   const blockerSeeds = [
-    ["fugue-smoke", 0.715, 5, 566, 23],
-    ["lyrical-line", 0.703, 4, 589, 16],
-    ["contrary-answer", 0.73, 4, 527, 31],
+    ["fugue-smoke", 0.72, 5, 566, 25],
+    ["lyrical-line", 0.71, 4, 589, 16],
+    ["contrary-answer", 0.731, 4, 537, 31],
   ] as const;
 
   for (const [
@@ -766,6 +766,41 @@ test("generateScore nudges non-modal stepwise pattern fixation without modal gua
     assert.equal(selectedEvaluation.dimensions.melody.features.selectedFreeCounterpointStepwiseFixationCost, 0);
     assert.ok(output.diagnostics.counterSubjectIdentityRetention >= 0.627);
   }
+});
+
+test("generateScore rotates long-run continuation patterns without gate regressions", () => {
+  const seeds = [...PHASE_5_REVIEW_SEEDS, ...PHASE_5_11_ROTATION_SEEDS];
+  let highSelectedSectionSoloTextureRiskCount = 0;
+  let uniqueContinuationPatternCount = 0;
+  let maxRepeatedContinuationPatternCount = 0;
+
+  for (const { seed } of seeds) {
+    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
+    const gate6 = evaluatePhase6Diagnostics(seed, output.diagnostics);
+    const gate7 = evaluatePhase7Diagnostics(seed, output.diagnostics);
+    const selectedSectionRisks = output.diagnostics.selectedCandidateEvaluations.flatMap((evaluation) =>
+      evaluation.explanations.sections.map((section) => section.soloTextureRisk),
+    );
+    const continuationPatternStats = summarizeContinuationPatterns(output.diagnostics.stateTransitions);
+
+    assert.deepEqual(gate6.failures, []);
+    assert.deepEqual(gate7.failures, []);
+    assert.equal(gate6.passed, true);
+    assert.equal(gate7.passed, true);
+    assert.ok(continuationPatternStats.uniqueCount >= 4);
+    assert.ok(continuationPatternStats.maxRepeatedCount <= 7);
+
+    highSelectedSectionSoloTextureRiskCount += selectedSectionRisks.filter((risk) => risk >= 6).length;
+    uniqueContinuationPatternCount += continuationPatternStats.uniqueCount;
+    maxRepeatedContinuationPatternCount = Math.max(
+      maxRepeatedContinuationPatternCount,
+      continuationPatternStats.maxRepeatedCount,
+    );
+  }
+
+  assert.ok(highSelectedSectionSoloTextureRiskCount <= 317);
+  assert.ok(uniqueContinuationPatternCount >= 112);
+  assert.ok(maxRepeatedContinuationPatternCount <= 7);
 });
 
 test("generateScore applies phase-7 contour gates across fixed and rotation seeds", () => {
@@ -931,8 +966,8 @@ test("generateScore balances phase-7 entry harmony scoring with preservation gua
 
 test("generateScore preserves phase-7 voice-pair independence blocker evidence under scoring changes", () => {
   const blockerSeeds = [
-    ["contrary-motion", 25, 521, 778, 3, 2, 26, 7, 54, 14],
-    ["fugue-smoke", 33, 581, 834, 0, 0, 27, 7, 54, 12],
+    ["contrary-motion", 24, 539, 790, 3, 2, 26, 7, 54, 14],
+    ["fugue-smoke", 30, 581, 834, 0, 0, 27, 7, 54, 12],
     ["minor-entry", 26, 736, 906, 0, 0, 50, 15, 70, 20],
     ["modal-answer", 13, 751, 906, 0, 0, 46, 14, 70, 20],
   ] as const;
@@ -1087,6 +1122,24 @@ function asMetaEvent(event: ScoreEvent | undefined): MetaEvent {
 
 function scoreMinutes(ticks: number): number {
   return ticks / (TICKS_PER_QUARTER * 90);
+}
+
+function summarizeContinuationPatterns(stateTransitions: readonly string[]): {
+  uniqueCount: number;
+  maxRepeatedCount: number;
+} {
+  const windowSize = 4;
+  const continuationStates = stateTransitions.filter((state) => state !== "exposition");
+  const counts = new Map<string, number>();
+  for (let index = 0; index <= continuationStates.length - windowSize; index += 1) {
+    const key = continuationStates.slice(index, index + windowSize).join("|");
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+
+  return {
+    uniqueCount: counts.size,
+    maxRepeatedCount: maximum([...counts.values()]),
+  };
 }
 
 function positiveModulo(value: number, divisor: number): number {
