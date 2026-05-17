@@ -834,6 +834,51 @@ test("generateScore exposes phase-7 candidate pool oracle classifications", () =
   }
 });
 
+test("generateScore exposes phase-11 review summary signals", () => {
+  const reviewSeeds = ["bach-001", "minor-entry", "modal-cadence", "dense-modal"] as const;
+
+  for (const seed of reviewSeeds) {
+    const output = generateScore({
+      seed,
+      lengthTicks: PHASE_5_LENGTH_TICKS,
+      selectionModel: "phase10-section-local-planner",
+    });
+    const summary = output.diagnostics.phase11Review;
+
+    assert.equal(summary.schemaVersion, 1);
+    assert.equal(summary.adjacentVoiceIntervals.length, 3);
+    assert.equal(summary.registerSpans.length, VOICES.length);
+    assert.equal(summary.stateGrammarRepetition.patternLength, 4);
+    assert.ok(summary.stateGrammarRepetition.uniquePatternCount >= 0);
+    assert.ok(summary.stateGrammarRepetition.mostRepeatedPatternCount >= 0);
+    assert.ok(summary.entryPatternFamilies.length > 0);
+    assert.ok(summary.functionalThinning.nonCadentialRunCount >= 0);
+    assert.ok(summary.functionalThinning.oneVoiceRunCount >= 0);
+    assert.ok(summary.functionalThinning.twoVoiceRunCount >= 0);
+    assert.ok(summary.metricalHarmony.strongBeatCheckpointCount > 0);
+    assert.ok(summary.metricalHarmony.weakBeatCheckpointCount > 0);
+    assert.ok(
+      summary.metricalHarmony.strongBeatChordToneSupportCount <= summary.metricalHarmony.strongBeatCheckpointCount,
+    );
+    assert.ok(
+      summary.metricalHarmony.strongBeatBassRootSupportCount <= summary.metricalHarmony.strongBeatCheckpointCount,
+    );
+
+    for (const interval of summary.adjacentVoiceIntervals) {
+      assert.ok(interval.checkpointCount > 0);
+      assert.ok(interval.medianSemitones >= 0);
+      assert.ok(interval.seventyFifthPercentileSemitones >= interval.medianSemitones);
+      assert.ok(interval.overOctaveCount >= 0);
+    }
+
+    for (const span of summary.registerSpans) {
+      assert.ok(span.noteCount > 0);
+      assert.ok(span.maxPitch >= span.minPitch);
+      assert.equal(span.spanSemitones, span.maxPitch - span.minPitch);
+    }
+  }
+});
+
 test("generateScore can compare the phase-10 oracle selection model against baseline", () => {
   const baseline = generateScore({ seed: "bach-001", lengthTicks: PHASE_5_LENGTH_TICKS });
   const variant = generateScore({

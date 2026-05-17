@@ -9,6 +9,7 @@ import type {
   HarmonicPlan,
   NoteEvent,
   OrnamentPlacementReasons,
+  Phase11ReviewSummary,
   PitchContourMotionSummary,
   SoloTextureSummary,
   StepwisePatternSummary,
@@ -89,6 +90,7 @@ export type TextureDiagnostics = {
   soloTexture: SoloTextureSummary;
   pitchContourMotion: PitchContourMotionSummary;
   stepwisePattern: StepwisePatternSummary;
+  phase11Review: Phase11ReviewSummary;
   ornamentCandidateCount: number;
   ornamentDensity: number;
   ornamentPlacementReasons: OrnamentPlacementReasons;

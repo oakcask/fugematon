@@ -9,6 +9,7 @@ import type {
   NoteEvent,
   NoteRole,
   OrnamentPlacementReasons,
+  Phase11ReviewSummary,
   PitchContourMotionSummary,
   PitchContourWindowSummary,
   PlannedEntry,
@@ -64,6 +65,7 @@ export function analyzeScore(
   soloTexture: SoloTextureSummary;
   pitchContourMotion: PitchContourMotionSummary;
   stepwisePattern: StepwisePatternSummary;
+  phase11Review: Phase11ReviewSummary;
   ornamentCandidateCount: number;
   ornamentDensity: number;
   ornamentPlacementReasons: OrnamentPlacementReasons;
@@ -275,10 +277,320 @@ function analyzeTextureDiagnostics(
     soloTexture: analyzeSoloTexture(notes, sectionPlans),
     pitchContourMotion: analyzePitchContourMotion(notes),
     stepwisePattern: analyzeStepwisePattern(notes, sectionPlans),
+    phase11Review: analyzePhase11ReviewSummary(notes, subjectEntries, sectionPlans),
     ornamentCandidateCount,
     ornamentDensity: roundRatio(ornamentCandidateCount / supportNoteCount),
     ornamentPlacementReasons: analyzeOrnamentPlacementReasons(notes, subjectEntries, sectionPlans),
   };
+}
+
+const PHASE_11_STATE_PATTERN_LENGTH = 4;
+const PHASE_11_ADJACENT_VOICE_PAIRS: readonly [higherVoice: Voice, lowerVoice: Voice][] = [
+  ["soprano", "alto"],
+  ["alto", "tenor"],
+  ["tenor", "bass"],
+] as const;
+
+function analyzePhase11ReviewSummary(
+  notes: readonly NoteEvent[],
+  subjectEntries: readonly PlannedEntry[],
+  sectionPlans: readonly HarmonicPlan[],
+): Phase11ReviewSummary {
+  const verticalities = halfBeatVerticalities(notes);
+  return {
+    schemaVersion: 1,
+    adjacentVoiceIntervals: summarizeAdjacentVoiceIntervals(verticalities),
+    registerSpans: summarizeRegisterSpans(notes),
+    functionalThinning: summarizeFunctionalThinning(verticalities, sectionPlans),
+    stateGrammarRepetition: summarizeStateGrammarRepetition(sectionPlans),
+    entryPatternFamilies: summarizeEntryPatternFamilies(subjectEntries),
+    metricalHarmony: summarizeMetricalHarmony(verticalities, sectionPlans),
+  };
+}
+
+function summarizeAdjacentVoiceIntervals(
+  verticalities: readonly Phase11Verticality[],
+): Phase11ReviewSummary["adjacentVoiceIntervals"] {
+  return PHASE_11_ADJACENT_VOICE_PAIRS.map(([higherVoice, lowerVoice]) => {
+    const intervals = verticalities.flatMap((verticality) => {
+      const higherPitch = verticality.active.get(higherVoice)?.pitch;
+      const lowerPitch = verticality.active.get(lowerVoice)?.pitch;
+      return higherPitch === undefined || lowerPitch === undefined ? [] : [Math.abs(higherPitch - lowerPitch)];
+    });
+
+    return {
+      higherVoice,
+      lowerVoice,
+      checkpointCount: intervals.length,
+      medianSemitones: percentile(intervals, 0.5),
+      seventyFifthPercentileSemitones: percentile(intervals, 0.75),
+      overOctaveCount: intervals.filter((interval) => interval > 12).length,
+    };
+  });
+}
+
+function summarizeRegisterSpans(notes: readonly NoteEvent[]): Phase11ReviewSummary["registerSpans"] {
+  return VOICE_ENTRY_ORDER.map((voice) => {
+    const voiceNotes = notes.filter((note) => note.voice === voice);
+    const pitches = voiceNotes.map((note) => note.pitch);
+    const minPitch = minimum(pitches);
+    const maxPitch = maximum(pitches);
+    return {
+      voice,
+      noteCount: voiceNotes.length,
+      minPitch,
+      maxPitch,
+      spanSemitones: Math.max(0, maxPitch - minPitch),
+    };
+  });
+}
+
+function summarizeFunctionalThinning(
+  verticalities: readonly Phase11Verticality[],
+  sectionPlans: readonly HarmonicPlan[],
+): Phase11ReviewSummary["functionalThinning"] {
+  const runs: { activeVoiceCount: number; startTick: number; endTick: number }[] = [];
+  let currentRun: { activeVoiceCount: number; startTick: number; endTick: number } | undefined;
+
+  for (let index = 0; index < verticalities.length - 1; index += 1) {
+    const startTick = verticalities[index]!.tick;
+    const endTick = verticalities[index + 1]!.tick;
+    const activeVoiceCount = verticalities[index]!.active.size;
+    const isFunctionalThinSegment =
+      activeVoiceCount > 0 &&
+      activeVoiceCount <= 2 &&
+      !isNearCadenceTarget(startTick, sectionPlans) &&
+      !isNearCadenceTarget(endTick, sectionPlans);
+
+    if (isFunctionalThinSegment) {
+      if (currentRun?.activeVoiceCount === activeVoiceCount && currentRun.endTick === startTick) {
+        currentRun.endTick = endTick;
+      } else {
+        if (currentRun !== undefined) {
+          runs.push(currentRun);
+        }
+        currentRun = { activeVoiceCount, startTick, endTick };
+      }
+    } else if (currentRun !== undefined) {
+      runs.push(currentRun);
+      currentRun = undefined;
+    }
+  }
+  if (currentRun !== undefined) {
+    runs.push(currentRun);
+  }
+
+  const longRuns = runs.filter((run) => run.endTick - run.startTick >= TICKS_PER_QUARTER);
+  return {
+    nonCadentialRunCount: longRuns.length,
+    oneVoiceRunCount: longRuns.filter((run) => run.activeVoiceCount === 1).length,
+    twoVoiceRunCount: longRuns.filter((run) => run.activeVoiceCount === 2).length,
+    totalDurationTicks: longRuns.reduce((sum, run) => sum + run.endTick - run.startTick, 0),
+    maxDurationTicks: maximum(longRuns.map((run) => run.endTick - run.startTick)),
+  };
+}
+
+function summarizeStateGrammarRepetition(
+  sectionPlans: readonly HarmonicPlan[],
+): Phase11ReviewSummary["stateGrammarRepetition"] {
+  const states = sectionPlans.filter((plan) => plan.state !== "exposition").map((plan) => plan.state);
+  const patterns = countPatterns(states, PHASE_11_STATE_PATTERN_LENGTH);
+  const topPatterns = [...patterns.entries()]
+    .map(([pattern, count]) => ({ pattern: pattern.split(">") as HarmonicPlan["state"][], count }))
+    .sort((left, right) => right.count - left.count || left.pattern.join(">").localeCompare(right.pattern.join(">")))
+    .slice(0, 3);
+
+  return {
+    patternLength: PHASE_11_STATE_PATTERN_LENGTH,
+    uniquePatternCount: patterns.size,
+    mostRepeatedPatternCount: maximum(topPatterns.map((pattern) => pattern.count)),
+    topPatterns,
+  };
+}
+
+function summarizeEntryPatternFamilies(
+  subjectEntries: readonly PlannedEntry[],
+): Phase11ReviewSummary["entryPatternFamilies"] {
+  const counts = new Map<string, { form: PlannedEntry["form"]; pattern: number[]; count: number }>();
+  for (const entry of subjectEntries) {
+    const pattern = [...entry.expectedDegreePattern];
+    const key = `${entry.form}:${pattern.join("-")}`;
+    const current = counts.get(key);
+    if (current === undefined) {
+      counts.set(key, { form: entry.form, pattern, count: 1 });
+    } else {
+      current.count += 1;
+    }
+  }
+
+  return [...counts.values()].sort(
+    (left, right) =>
+      right.count - left.count ||
+      left.form.localeCompare(right.form) ||
+      left.pattern.join("-").localeCompare(right.pattern.join("-")),
+  );
+}
+
+function summarizeMetricalHarmony(
+  verticalities: readonly Phase11Verticality[],
+  sectionPlans: readonly HarmonicPlan[],
+): Phase11ReviewSummary["metricalHarmony"] {
+  let strongBeatCheckpointCount = 0;
+  let strongBeatChordToneSupportCount = 0;
+  let strongBeatChordToneMismatchCount = 0;
+  let strongBeatBassRootSupportCount = 0;
+  let weakBeatCheckpointCount = 0;
+  let weakBeatChordToneMismatchCount = 0;
+
+  for (const { tick, active } of verticalities) {
+    if (tick % TICKS_PER_QUARTER !== 0) {
+      continue;
+    }
+    const anchor = nearestHarmonicAnchor(tick, sectionPlans);
+    if (anchor === undefined || active.size === 0) {
+      continue;
+    }
+
+    const chordTones = chordTonePitchClasses(anchor.localKey, anchor.function);
+    const activePitchClasses = [...active.values()].map((note) => positiveModulo(note.pitch, 12));
+    const hasChordTone = activePitchClasses.some((pitchClass) => chordTones.includes(pitchClass));
+    const hasMismatch = activePitchClasses.some((pitchClass) => !chordTones.includes(pitchClass));
+    const isStrongBeat = tick % (TICKS_PER_QUARTER * 2) === 0;
+
+    if (isStrongBeat) {
+      strongBeatCheckpointCount += 1;
+      strongBeatChordToneSupportCount += Number(hasChordTone);
+      strongBeatChordToneMismatchCount += Number(hasMismatch);
+      strongBeatBassRootSupportCount += Number(
+        active.get("bass")?.pitch !== undefined && bassSupportsRoot(active, anchor),
+      );
+    } else {
+      weakBeatCheckpointCount += 1;
+      weakBeatChordToneMismatchCount += Number(hasMismatch);
+    }
+  }
+
+  return {
+    strongBeatCheckpointCount,
+    strongBeatChordToneSupportCount,
+    strongBeatChordToneMismatchCount,
+    strongBeatBassRootSupportCount,
+    weakBeatCheckpointCount,
+    weakBeatChordToneMismatchCount,
+  };
+}
+
+type Phase11Verticality = {
+  tick: number;
+  active: ActiveVerticality;
+};
+
+function halfBeatVerticalities(notes: readonly NoteEvent[]): Phase11Verticality[] {
+  const endTick = Math.max(0, ...notes.map((note) => note.startTick + note.durationTicks));
+  const notesByVoice = Object.fromEntries(
+    VOICE_ENTRY_ORDER.map((voice) => [voice, notes.filter((note) => note.voice === voice).sort(compareNoteEvents)]),
+  ) as Record<Voice, NoteEvent[]>;
+  const indexes: Record<Voice, number> = {
+    soprano: 0,
+    alto: 0,
+    tenor: 0,
+    bass: 0,
+  };
+  const verticalities: Phase11Verticality[] = [];
+
+  for (let tick = 0; tick < endTick; tick += TICKS_PER_QUARTER / 2) {
+    const active: ActiveVerticality = new Map();
+    for (const voice of VOICE_ENTRY_ORDER) {
+      const voiceNotes = notesByVoice[voice];
+      while (
+        indexes[voice] < voiceNotes.length &&
+        voiceNotes[indexes[voice]]!.startTick + voiceNotes[indexes[voice]]!.durationTicks <= tick
+      ) {
+        indexes[voice] += 1;
+      }
+
+      const note = voiceNotes[indexes[voice]];
+      if (note !== undefined && note.startTick <= tick && tick < note.startTick + note.durationTicks) {
+        active.set(voice, { pitch: note.pitch, role: note.role });
+      }
+    }
+    verticalities.push({ tick, active });
+  }
+
+  return verticalities;
+}
+
+function isNearCadenceTarget(tick: number, sectionPlans: readonly HarmonicPlan[]): boolean {
+  return sectionPlans.some((plan) =>
+    plan.anchors.some((anchor) => anchor.cadenceTarget && Math.abs(anchor.tick - tick) <= TICKS_PER_QUARTER),
+  );
+}
+
+function nearestHarmonicAnchor(
+  tick: number,
+  sectionPlans: readonly HarmonicPlan[],
+): HarmonicPlan["anchors"][number] | undefined {
+  const plan = sectionPlans.find(
+    (candidate) => tick >= candidate.startTick && tick < candidate.startTick + candidate.durationTicks,
+  );
+  const anchors = plan?.anchors ?? sectionPlans.flatMap((candidate) => candidate.anchors);
+  return anchors
+    .map((anchor) => ({ anchor, distance: Math.abs(anchor.tick - tick) }))
+    .sort((left, right) => left.distance - right.distance)[0]?.anchor;
+}
+
+function chordTonePitchClasses(
+  key: KeySignature,
+  harmonicFunction: HarmonicPlan["anchors"][number]["function"],
+): number[] {
+  const rootDegree = rootDegreeForFunction(harmonicFunction);
+  return [rootDegree, rootDegree + 2, rootDegree + 4].map((degree) => scaleDegreePitchClass(degree, 0, key));
+}
+
+function rootDegreeForFunction(harmonicFunction: HarmonicPlan["anchors"][number]["function"]): number {
+  if (harmonicFunction === "predominant") {
+    return 3;
+  }
+  if (harmonicFunction === "dominant") {
+    return 4;
+  }
+  return 0;
+}
+
+function bassSupportsRoot(active: ActiveVerticality, anchor: HarmonicPlan["anchors"][number]): boolean {
+  const bassPitch = active.get("bass")?.pitch;
+  if (bassPitch === undefined) {
+    return false;
+  }
+  return (
+    positiveModulo(bassPitch, 12) === scaleDegreePitchClass(rootDegreeForFunction(anchor.function), 0, anchor.localKey)
+  );
+}
+
+function countPatterns<T extends string>(values: readonly T[], size: number): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (let index = 0; index + size <= values.length; index += 1) {
+    const pattern = values.slice(index, index + size).join(">");
+    counts.set(pattern, (counts.get(pattern) ?? 0) + 1);
+  }
+  return counts;
+}
+
+function minimum(values: readonly number[]): number {
+  return values.length === 0 ? 0 : Math.min(...values);
+}
+
+function maximum(values: readonly number[]): number {
+  return values.length === 0 ? 0 : Math.max(...values);
+}
+
+function percentile(values: readonly number[], quantile: number): number {
+  if (values.length === 0) {
+    return 0;
+  }
+  const sorted = [...values].sort((left, right) => left - right);
+  const index = Math.min(sorted.length - 1, Math.max(0, Math.floor((sorted.length - 1) * quantile)));
+  return sorted[index]!;
 }
 
 function counterSubjectIdentityRetention(

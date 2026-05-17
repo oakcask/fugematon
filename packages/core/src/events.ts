@@ -362,6 +362,66 @@ export type StepwisePatternSummary = {
   sections: StepwisePatternSectionSummary[];
 };
 
+export type Phase11AdjacentVoiceIntervalSummary = {
+  higherVoice: Voice;
+  lowerVoice: Voice;
+  checkpointCount: number;
+  medianSemitones: number;
+  seventyFifthPercentileSemitones: number;
+  overOctaveCount: number;
+};
+
+export type Phase11RegisterSpanSummary = {
+  voice: Voice;
+  noteCount: number;
+  minPitch: number;
+  maxPitch: number;
+  spanSemitones: number;
+};
+
+export type Phase11FunctionalThinningSummary = {
+  nonCadentialRunCount: number;
+  oneVoiceRunCount: number;
+  twoVoiceRunCount: number;
+  totalDurationTicks: number;
+  maxDurationTicks: number;
+};
+
+export type Phase11StatePatternSummary = {
+  pattern: FugueState[];
+  count: number;
+};
+
+export type Phase11EntryPatternFamilySummary = {
+  form: EntryForm;
+  pattern: number[];
+  count: number;
+};
+
+export type Phase11MetricalHarmonySummary = {
+  strongBeatCheckpointCount: number;
+  strongBeatChordToneSupportCount: number;
+  strongBeatChordToneMismatchCount: number;
+  strongBeatBassRootSupportCount: number;
+  weakBeatCheckpointCount: number;
+  weakBeatChordToneMismatchCount: number;
+};
+
+export type Phase11ReviewSummary = {
+  schemaVersion: 1;
+  adjacentVoiceIntervals: Phase11AdjacentVoiceIntervalSummary[];
+  registerSpans: Phase11RegisterSpanSummary[];
+  functionalThinning: Phase11FunctionalThinningSummary;
+  stateGrammarRepetition: {
+    patternLength: number;
+    uniquePatternCount: number;
+    mostRepeatedPatternCount: number;
+    topPatterns: Phase11StatePatternSummary[];
+  };
+  entryPatternFamilies: Phase11EntryPatternFamilySummary[];
+  metricalHarmony: Phase11MetricalHarmonySummary;
+};
+
 export type GenerationDiagnostics = {
   generatorVersion: number;
   seed: string;
@@ -405,6 +465,7 @@ export type GenerationDiagnostics = {
   soloTexture: SoloTextureSummary;
   pitchContourMotion: PitchContourMotionSummary;
   stepwisePattern: StepwisePatternSummary;
+  phase11Review: Phase11ReviewSummary;
   ornamentCandidateCount: number;
   ornamentDensity: number;
   ornamentPlacementReasons: OrnamentPlacementReasons;
