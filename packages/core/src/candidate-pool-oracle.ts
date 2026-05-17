@@ -182,7 +182,8 @@ export function classifyCandidatePoolOracleSection(input: {
     hardFailureRejectedCandidateCount,
     blockers: BLOCKER_SPECS.flatMap((spec) => {
       const selectedRisk = roundOracleRisk(
-        spec.selectedRisk(selected, context) + phase11SectionGrammarHistoryRisk(spec.blocker, context.stateHistory),
+        spec.selectedRisk(selected, context) +
+          phase11SectionGrammarHistoryRisk(spec.blocker, context.stateHistory, candidateSectionState(selected)),
       );
       if (selectedRisk <= 0) {
         return [];
@@ -193,7 +194,11 @@ export function classifyCandidatePoolOracleSection(input: {
           viable[index]
             ? roundOracleRisk(
                 spec.selectedRisk(evaluation, context) +
-                  phase11SectionGrammarHistoryRisk(spec.blocker, context.stateHistory),
+                  phase11SectionGrammarHistoryRisk(
+                    spec.blocker,
+                    context.stateHistory,
+                    candidateSectionState(evaluation),
+                  ),
               )
             : undefined,
         )
@@ -342,15 +347,24 @@ function feature(
   return evaluation.dimensions[dimension].features[name] ?? 0;
 }
 
+function candidateSectionState(evaluation: CandidateEvaluation): FugueState | undefined {
+  return evaluation.explanations.sections[0]?.state;
+}
+
 function phase11SectionGrammarHistoryRisk(
   blocker: CandidatePoolOracleBlocker,
   stateHistory: readonly FugueState[],
+  candidateState: FugueState | undefined,
 ): number {
   if (blocker !== "section-grammar-repetition") {
     return 0;
   }
 
-  const continuationStates = stateHistory.filter((state) => state !== "exposition");
+  const candidateStateHistory =
+    candidateState === undefined || stateHistory.length === 0
+      ? stateHistory
+      : [...stateHistory.slice(0, -1), candidateState];
+  const continuationStates = candidateStateHistory.filter((state) => state !== "exposition");
   const windowSize = 4;
   if (continuationStates.length < windowSize * 2) {
     return 0;
