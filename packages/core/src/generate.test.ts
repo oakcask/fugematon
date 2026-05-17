@@ -1011,14 +1011,16 @@ test("generateScore preserves phase-7 voice-pair independence blocker evidence u
   }
 });
 
-test("generateScore nudges phase-7 voice independence boundary seeds without gate regressions", () => {
+test("generateScore guards phase-7 exact pitch lockstep without gate regressions", () => {
   const blockerSeeds = [
-    ["bright-answer", 735, 625, 31, 0.9],
-    ["quiet-cadence", 726, 649, 15, 0.87],
+    ["bright-answer", 8, 735, 625, 31, 0.9],
+    ["quiet-cadence", 7, 728, 655, 15, 0.87],
+    ["modal-answer", 13, 751, 814, 33, 0.573],
   ] as const;
 
   for (const [
     seed,
+    maxSamePitchOverlapCount,
     maxUnisonOverlapCount,
     maxSameDirectionMotionCount,
     maxLeapRecoveryMisses,
@@ -1032,6 +1034,7 @@ test("generateScore nudges phase-7 voice independence boundary seeds without gat
     assert.deepEqual(gate7.failures, []);
     assert.equal(gate6.passed, true);
     assert.equal(gate7.passed, true);
+    assert.ok(output.diagnostics.samePitchOverlapCount <= maxSamePitchOverlapCount);
     assert.ok(output.diagnostics.unisonOverlapCount <= maxUnisonOverlapCount);
     assert.ok(output.diagnostics.sameDirectionMotionCount <= maxSameDirectionMotionCount);
     assert.ok(output.diagnostics.leapRecoveryMisses <= maxLeapRecoveryMisses);
@@ -1153,7 +1156,7 @@ function requireSelectedCandidateEvaluation(
 
   assert.ok(selectedEvaluation !== undefined);
   assert.equal(selectedEvaluation.featureVersion, 2);
-  assert.equal(selectedEvaluation.evaluationModelVersion, 7);
+  assert.equal(selectedEvaluation.evaluationModelVersion, 8);
   assert.ok(selectedEvaluation.explanations.entries.length > 0);
   assert.ok(selectedEvaluation.explanations.voicePairs.length > 0);
   assert.ok(selectedEvaluation.explanations.voices.length > 0);
