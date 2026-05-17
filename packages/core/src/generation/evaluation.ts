@@ -18,6 +18,8 @@ const EVALUATION_WEIGHTS = {
   melody: {
     leapRecoveryMiss: 35,
     melodicStagnation: 25,
+    freeCounterpointStepwiseRunRatio: 8,
+    freeCounterpointMonotoneStepRun: 2,
     freeCounterpointContour: 12,
     ornamentDensity: 6,
   },
@@ -101,10 +103,19 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
       parallelPerfects: diagnostics.parallelPerfects,
     },
   };
+  const freeCounterpointStepwise = roleStepwisePattern(diagnostics.stepwisePattern, "free-counterpoint");
+  const freeCounterpointStepwiseFixationCost =
+    diagnostics.modalContextCount > 0
+      ? 0
+      : Math.max(0, freeCounterpointStepwise.stepwiseRunRatio - 0.7) *
+          EVALUATION_WEIGHTS.melody.freeCounterpointStepwiseRunRatio +
+        Math.max(0, freeCounterpointStepwise.maxMonotoneStepRun - 3) *
+          EVALUATION_WEIGHTS.melody.freeCounterpointMonotoneStepRun;
   const melody = {
     cost:
       diagnostics.leapRecoveryMisses * EVALUATION_WEIGHTS.melody.leapRecoveryMiss +
-      diagnostics.melodicStagnationWarnings * EVALUATION_WEIGHTS.melody.melodicStagnation,
+      diagnostics.melodicStagnationWarnings * EVALUATION_WEIGHTS.melody.melodicStagnation +
+      freeCounterpointStepwiseFixationCost,
     reward:
       diagnostics.freeCounterpointContourScore * EVALUATION_WEIGHTS.melody.freeCounterpointContour +
       diagnostics.ornamentDensity * EVALUATION_WEIGHTS.melody.ornamentDensity,
@@ -112,14 +123,11 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
       leapRecoveryMisses: diagnostics.leapRecoveryMisses,
       melodicStagnationWarnings: diagnostics.melodicStagnationWarnings,
       freeCounterpointContourScore: diagnostics.freeCounterpointContourScore,
-      freeCounterpointStepwiseRunRatio: roleStepwisePattern(diagnostics.stepwisePattern, "free-counterpoint")
-        .stepwiseRunRatio,
-      freeCounterpointMaxMonotoneStepRun: roleStepwisePattern(diagnostics.stepwisePattern, "free-counterpoint")
-        .maxMonotoneStepRun,
-      freeCounterpointRepeatedDegreePatternCount: roleStepwisePattern(diagnostics.stepwisePattern, "free-counterpoint")
-        .repeatedDegreePatternCount,
-      freeCounterpointRolePatternEntropy: roleStepwisePattern(diagnostics.stepwisePattern, "free-counterpoint")
-        .rolePatternEntropy,
+      freeCounterpointStepwiseRunRatio: freeCounterpointStepwise.stepwiseRunRatio,
+      freeCounterpointMaxMonotoneStepRun: freeCounterpointStepwise.maxMonotoneStepRun,
+      freeCounterpointRepeatedDegreePatternCount: freeCounterpointStepwise.repeatedDegreePatternCount,
+      freeCounterpointRolePatternEntropy: freeCounterpointStepwise.rolePatternEntropy,
+      selectedFreeCounterpointStepwiseFixationCost: freeCounterpointStepwiseFixationCost,
       ornamentDensity: diagnostics.ornamentDensity,
     },
   };
@@ -254,7 +262,7 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
 
   return {
     featureVersion: 2,
-    evaluationModelVersion: 6,
+    evaluationModelVersion: 7,
     totalCost: Math.round(totalCost * 1000) / 1000,
     hardFailures,
     explanations,
