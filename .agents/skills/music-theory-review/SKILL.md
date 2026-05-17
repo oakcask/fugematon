@@ -41,6 +41,8 @@ When generating review bundles for verification, write `pnpm fugematon review --
 
 For generation-quality changes, do not preserve old regression-test expected values only because they are already fixed. If review bundles, diagnostics, and music-theory review across relevant seeds show that the generated music improved, update regression-test expectations to the new quality baseline. Record affected seeds, tradeoffs, and any remaining regressions in the relevant phase or review doc.
 
+When metrics regress, do not stop at "the metric got worse." For each meaningful regression, identify the concrete musical symptom it implies, the affected seed and representative section or location when available, the improvement it was traded against, and whether the response should be a generator change, scoring change, diagnostic change, docs note, or manual-listening follow-up. If a regression is accepted, explain why the musical tradeoff is acceptable; if it blocks adoption, explain what musical failure it represents.
+
 For each finding, record:
 
 * the musical symptom;
