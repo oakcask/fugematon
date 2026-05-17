@@ -101,6 +101,14 @@ Music theory review: Fux/species counterpoint and Bach/common-practice fugue sou
 
 Tradeoffs and gaps: this is intentionally not a complete solo texture fix. The max selected section solo texture risk remains 8 for most seeds, and non-modal representative / boundary seeds keep their selected output unchanged. Manual listening and pairwise preference are still not performed; the evidence is diagnostics-backed and should be treated as adoption support for this narrow model slice, not as proof that the resulting MIDI wins a human preference test. Remaining Phase 10 work includes broader section-local candidates for non-modal episode/codetta/stretto preparation, pairwise preference notes, and real reference percentile profiles from imported scores.
 
+### Pairwise preference lane
+
+The final small Phase 10 lane keeps pairwise preference as an explicit review artifact instead of implying that automatic diagnostics completed the listening work. `review-ab` now writes a top-level `pairwise-preferences.json` beside `comparison-summary.json`. The template records the baseline and variant labels, selection models, seed/category, compared MIDI paths, compared diagnostics paths, preferred side, criteria, reason, and manual-listening status for each before/after seed comparison.
+
+The generated template remains unreviewed by default: `preferredSide` is `not-reviewed`, all criteria are `not-reviewed`, the reason is empty, and each comparison carries an explicit manual-listening gap. The regular `review` bundle also keeps its pairwise preference template empty and unreviewed. This makes the review artifact ready for future human pairwise listening without fabricating a preference or treating diagnostics-only evidence as a completed listening pass.
+
+Evidence for this lane is test coverage of the review bundle and A/B review output shape. The remaining gap is unchanged: actual human listening has still not been performed, so Phase 10 model adoption still needs manual pairwise notes before treating before/after MIDI as preference evidence.
+
 ## Deferred Operational Lane
 
 Phase 8/9 は削除しない。Phase 10 で generator quality、reference profile、model adoption evidence が安定した後に戻る。
