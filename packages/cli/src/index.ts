@@ -40,6 +40,11 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
     return;
   }
 
+  if (command.name === "review-ab") {
+    await writeAbReviewBundle(command.out, command.lengthTicks, command.baselineLabel, command.variantLabel);
+    return;
+  }
+
   const output = generateScore({
     seed: command.seed,
     lengthTicks: command.lengthTicks,
@@ -64,7 +69,7 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
   await writeFile(command.out, json, "utf8");
 }
 
-async function writeReviewBundle(outDirectory: string, lengthTicks: number): Promise<void> {
+async function writeReviewBundle(outDirectory: string, lengthTicks: number): Promise<ReviewSummary> {
   await mkdir(outDirectory, { recursive: true });
   const summarySeeds: ReviewSummarySeed[] = [];
   const referenceComparisons: ReferenceDiagnosticsComparison[] = [];
@@ -115,6 +120,31 @@ async function writeReviewBundle(outDirectory: string, lengthTicks: number): Pro
     `${JSON.stringify(pairwisePreferences, null, 2)}\n`,
     "utf8",
   );
+
+  return summary;
+}
+
+async function writeAbReviewBundle(
+  outDirectory: string,
+  lengthTicks: number,
+  baselineLabel: string,
+  variantLabel: string,
+): Promise<void> {
+  const baselineDirectory = join(outDirectory, "baseline");
+  const variantDirectory = join(outDirectory, "variant");
+  await mkdir(outDirectory, { recursive: true });
+
+  const baselineSummary = await writeReviewBundle(baselineDirectory, lengthTicks);
+  const variantSummary = await writeReviewBundle(variantDirectory, lengthTicks);
+  const comparison = compareReviewSummaries({
+    lengthTicks,
+    baselineLabel,
+    variantLabel,
+    baselineSummary,
+    variantSummary,
+  });
+
+  await writeFile(join(outDirectory, "comparison-summary.json"), `${JSON.stringify(comparison, null, 2)}\n`, "utf8");
 }
 
 type ReviewSummary = {
@@ -137,6 +167,59 @@ type ReviewSummarySeed = {
   phase6Gate: Phase6GateResult;
   phase7Gate: Phase7GateResult;
   phase7BGate: Phase7BGatePolicyResult;
+};
+
+type AbReviewComparisonSummary = {
+  schemaVersion: 1;
+  lengthTicks: number;
+  baseline: ReviewBundleSide;
+  variant: ReviewBundleSide;
+  seeds: AbReviewSeedComparison[];
+};
+
+type ReviewBundleSide = {
+  label: string;
+  directory: "baseline" | "variant";
+  summaryFile: string;
+};
+
+type AbReviewSeedComparison = {
+  seed: string;
+  category: string;
+  baseline: ReviewSeedComparisonSnapshot;
+  variant: ReviewSeedComparisonSnapshot;
+  deltas: ReviewSeedComparisonDeltas;
+  improvements: string[];
+  regressions: string[];
+  tradeoffs: string[];
+  manualListeningGap: {
+    baselineJudgement: "not-reviewed";
+    variantJudgement: "not-reviewed";
+    unlistened: true;
+    note: string;
+  };
+};
+
+type ReviewSeedComparisonSnapshot = {
+  diagnosticsSummary: ReviewDiagnosticsSummary;
+  referenceComparison: ReferenceDiagnosticsComparison;
+  candidatePoolOracle: CandidatePoolOracleSummary;
+  phase7BGate: {
+    phase8Ready: boolean;
+    hardFailureCount: number;
+    hardFailures: Phase7BGatePolicyResult["hardFailures"];
+    reviewSignalCount: number;
+    reviewSignals: Phase7BGatePolicyResult["reviewSignals"];
+  };
+};
+
+type ReviewSeedComparisonDeltas = {
+  hardConstraintFailures: number;
+  referenceOutsideCount: number;
+  candidatePoolViableCandidates: number;
+  phase7BHardFailures: number;
+  phase7BReviewSignals: number;
+  phase8ReadyChanged: boolean;
 };
 
 type ReviewDiagnosticsSummary = {
@@ -243,6 +326,169 @@ type PairwisePreferences = {
     reason: string;
   }[];
 };
+
+function compareReviewSummaries({
+  lengthTicks,
+  baselineLabel,
+  variantLabel,
+  baselineSummary,
+  variantSummary,
+}: {
+  lengthTicks: number;
+  baselineLabel: string;
+  variantLabel: string;
+  baselineSummary: ReviewSummary;
+  variantSummary: ReviewSummary;
+}): AbReviewComparisonSummary {
+  return {
+    schemaVersion: 1,
+    lengthTicks,
+    baseline: {
+      label: baselineLabel,
+      directory: "baseline",
+      summaryFile: "baseline/summary.json",
+    },
+    variant: {
+      label: variantLabel,
+      directory: "variant",
+      summaryFile: "variant/summary.json",
+    },
+    seeds: baselineSummary.seeds.map((baselineSeed) => {
+      const variantSeed = findSummarySeed(variantSummary.seeds, baselineSeed.seed);
+      return compareReviewSeed(baselineSeed, variantSeed);
+    }),
+  };
+}
+
+function compareReviewSeed(baselineSeed: ReviewSummarySeed, variantSeed: ReviewSummarySeed): AbReviewSeedComparison {
+  const baseline = createReviewSeedSnapshot(baselineSeed);
+  const variant = createReviewSeedSnapshot(variantSeed);
+  const deltas: ReviewSeedComparisonDeltas = {
+    hardConstraintFailures:
+      variant.diagnosticsSummary.hardConstraintFailures - baseline.diagnosticsSummary.hardConstraintFailures,
+    referenceOutsideCount:
+      variant.referenceComparison.outsideReferenceCount - baseline.referenceComparison.outsideReferenceCount,
+    candidatePoolViableCandidates:
+      variant.candidatePoolOracle.viableCandidateCount - baseline.candidatePoolOracle.viableCandidateCount,
+    phase7BHardFailures: variant.phase7BGate.hardFailureCount - baseline.phase7BGate.hardFailureCount,
+    phase7BReviewSignals: variant.phase7BGate.reviewSignalCount - baseline.phase7BGate.reviewSignalCount,
+    phase8ReadyChanged: variant.phase7BGate.phase8Ready !== baseline.phase7BGate.phase8Ready,
+  };
+
+  return {
+    seed: baselineSeed.seed,
+    category: baselineSeed.category,
+    baseline,
+    variant,
+    deltas,
+    improvements: describeImprovements(baseline, variant, deltas),
+    regressions: describeRegressions(baseline, variant, deltas),
+    tradeoffs: describeTradeoffs(baseline, variant, deltas),
+    manualListeningGap: {
+      baselineJudgement: "not-reviewed",
+      variantJudgement: "not-reviewed",
+      unlistened: true,
+      note: "Automatic diagnostics do not replace manual listening or pairwise preference for model adoption.",
+    },
+  };
+}
+
+function createReviewSeedSnapshot(seed: ReviewSummarySeed): ReviewSeedComparisonSnapshot {
+  return {
+    diagnosticsSummary: seed.diagnosticsSummary,
+    referenceComparison: seed.referenceComparison,
+    candidatePoolOracle: seed.diagnosticsSummary.candidatePoolOracle,
+    phase7BGate: {
+      phase8Ready: seed.phase7BGate.phase8Ready,
+      hardFailureCount: seed.phase7BGate.metrics.hardFailureCount,
+      hardFailures: seed.phase7BGate.hardFailures,
+      reviewSignalCount: seed.phase7BGate.reviewSignals.length,
+      reviewSignals: seed.phase7BGate.reviewSignals,
+    },
+  };
+}
+
+function describeImprovements(
+  baseline: ReviewSeedComparisonSnapshot,
+  variant: ReviewSeedComparisonSnapshot,
+  deltas: ReviewSeedComparisonDeltas,
+): string[] {
+  const improvements: string[] = [];
+  if (deltas.hardConstraintFailures < 0) {
+    improvements.push("hard constraint failures decreased");
+  }
+  if (deltas.phase7BHardFailures < 0) {
+    improvements.push("Phase 7B hard failures decreased");
+  }
+  if (!baseline.phase7BGate.phase8Ready && variant.phase7BGate.phase8Ready) {
+    improvements.push("Phase 8 readiness recovered");
+  }
+  if (deltas.referenceOutsideCount < 0) {
+    improvements.push("reference comparison has fewer outside-profile axes");
+  }
+  if (deltas.phase7BReviewSignals < 0) {
+    improvements.push("review-required signal count decreased");
+  }
+  if (deltas.candidatePoolViableCandidates > 0) {
+    improvements.push("candidate pool has more viable alternatives");
+  }
+
+  return improvements;
+}
+
+function describeRegressions(
+  baseline: ReviewSeedComparisonSnapshot,
+  variant: ReviewSeedComparisonSnapshot,
+  deltas: ReviewSeedComparisonDeltas,
+): string[] {
+  const regressions: string[] = [];
+  if (deltas.hardConstraintFailures > 0) {
+    regressions.push("hard constraint failures increased");
+  }
+  if (deltas.phase7BHardFailures > 0) {
+    regressions.push("Phase 7B hard failures increased");
+  }
+  if (baseline.phase7BGate.phase8Ready && !variant.phase7BGate.phase8Ready) {
+    regressions.push("Phase 8 readiness was lost");
+  }
+  if (deltas.referenceOutsideCount > 0) {
+    regressions.push("reference comparison has more outside-profile axes");
+  }
+  if (deltas.phase7BReviewSignals > 0) {
+    regressions.push("review-required signal count increased");
+  }
+  if (deltas.candidatePoolViableCandidates < 0) {
+    regressions.push("candidate pool has fewer viable alternatives");
+  }
+
+  return regressions;
+}
+
+function describeTradeoffs(
+  baseline: ReviewSeedComparisonSnapshot,
+  variant: ReviewSeedComparisonSnapshot,
+  deltas: ReviewSeedComparisonDeltas,
+): string[] {
+  const hasImprovement = describeImprovements(baseline, variant, deltas).length > 0;
+  const hasRegression = describeRegressions(baseline, variant, deltas).length > 0;
+  if (hasImprovement && hasRegression) {
+    return ["automatic diagnostics show both improvements and regressions; review the seed before adoption"];
+  }
+  if (!hasImprovement && !hasRegression) {
+    return ["no automatic diagnostic difference; manual listening remains the adoption gap"];
+  }
+
+  return [];
+}
+
+function findSummarySeed(seeds: readonly ReviewSummarySeed[], seed: string): ReviewSummarySeed {
+  const entry = seeds.find((candidate) => candidate.seed === seed);
+  if (entry === undefined) {
+    throw new Error(`variant review summary is missing seed: ${seed}`);
+  }
+
+  return entry;
+}
 
 function summarizeDiagnostics(diagnostics: GenerationDiagnostics): ReviewDiagnosticsSummary {
   return {
