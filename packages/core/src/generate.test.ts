@@ -690,7 +690,7 @@ test("generateScore reduces phase-7 stepwise fifth-climb subject pressure", () =
   const regressionSeeds = [
     ["fugue-smoke", 136, 98, 72],
     ["lyrical-line", 136, 98, 72],
-    ["modal-cadence", 149, 108, 91],
+    ["modal-cadence", 149, 101, 70],
     ["wide-key", 130, 96, 72],
     ["tight-stretto", 144, 96, 72],
     ["contrary-answer", 145, 105, 97],
@@ -755,7 +755,7 @@ test("generateScore reduces phase-7 stepwise fifth-climb subject pressure", () =
 test("generateScore balances phase-7 entry harmony scoring with preservation guardrails", () => {
   const blockerSeeds = [
     ["fugue-smoke", 136, 98, 72, 3, 3, 3],
-    ["modal-cadence", 149, 108, 91, 4, 3, 3],
+    ["modal-cadence", 149, 101, 70, 4, 3, 3],
     ["lyrical-line", 136, 98, 72, 3, 3, 3],
     ["tight-stretto", 144, 96, 72, 4, 3, 3],
     ["wide-key", 130, 96, 72, 3, 3, 3],
@@ -790,6 +790,10 @@ test("generateScore balances phase-7 entry harmony scoring with preservation gua
     );
     assert.ok(selectedEvaluation.dimensions.harmony.cost > 0);
     assert.ok(selectedEvaluation.dimensions.harmony.features.selectedEntryHarmonyRiskCost > 0);
+    assert.equal(
+      selectedEvaluation.dimensions.harmony.features.selectedModalCadenceEntrySupportRiskCost,
+      seed === "modal-cadence" ? 19 : 0,
+    );
     assert.equal(selectedEvaluation.dimensions.harmony.features.entrySupportInstabilityCount, selectedInstabilityCount);
     assert.equal(selectedEvaluation.dimensions.harmony.features.severeEntryIntervalCount, selectedSevereIntervalCount);
     assert.equal(
@@ -884,7 +888,7 @@ test("generateScore nudges phase-7 voice independence boundary seeds without gat
 
 test("generateScore preserves phase-7 modal counter-subject retention guardrails", () => {
   const blockerSeeds = [
-    ["modal-cadence", 0.573],
+    ["modal-cadence", 0.58],
     ["dense-modal", 0.586],
     ["angular-answer", 0.591],
     ["modal-answer", 0.631],
@@ -978,7 +982,7 @@ function requireSelectedCandidateEvaluation(
 
   assert.ok(selectedEvaluation !== undefined);
   assert.equal(selectedEvaluation.featureVersion, 1);
-  assert.equal(selectedEvaluation.evaluationModelVersion, 5);
+  assert.equal(selectedEvaluation.evaluationModelVersion, 6);
   assert.ok(selectedEvaluation.explanations.entries.length > 0);
   assert.ok(selectedEvaluation.explanations.voicePairs.length > 0);
   assert.ok(selectedEvaluation.explanations.voices.length > 0);
