@@ -98,13 +98,15 @@ const BLOCKER_SPECS: readonly BlockerSpec[] = [
       "strongBeatDissonanceCount",
       "harmonicFunctionMismatches",
       "strongBeatChordToneMismatchCount",
-      "weakBeatChordToneMismatchCount",
+      "strongBeatStructuralIntentMismatchCount",
+      "weakBeatUnresolvedNonChordToneCount",
     ],
     selectedRisk: (evaluation) =>
       feature(evaluation, "harmony", "strongBeatDissonanceCount") +
       feature(evaluation, "harmony", "harmonicFunctionMismatches") +
       feature(evaluation, "harmony", "strongBeatChordToneMismatchCount") +
-      feature(evaluation, "harmony", "weakBeatChordToneMismatchCount") * 0.25,
+      feature(evaluation, "harmony", "strongBeatStructuralIntentMismatchCount") +
+      feature(evaluation, "harmony", "weakBeatUnresolvedNonChordToneCount") * 0.25,
   },
   {
     blocker: "bass-root-support",
@@ -269,7 +271,7 @@ export function summarizeCandidatePoolOracleSections(
   });
 
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     sectionCount: sections.length,
     candidateCount: sections.reduce((sum, section) => sum + section.candidateCount, 0),
     viableCandidateCount: sections.reduce((sum, section) => sum + section.viableCandidateCount, 0),

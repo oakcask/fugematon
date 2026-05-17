@@ -18,6 +18,7 @@ import type {
   StepwisePatternSummary,
   Voice,
 } from "../events.js";
+import { chordTonePitchClasses, nearestHarmonicAnchor, rootDegreeForFunction } from "./harmony.js";
 import { analyzeHarmonicPlans } from "./harmony-diagnostics.js";
 import { isModalMode, tonicPitchClass } from "./key.js";
 import { scaleDegreePitchClass } from "./pitch.js";
@@ -28,7 +29,7 @@ import {
   positiveModulo,
   VOICE_ENTRY_ORDER,
 } from "./shared.js";
-import type { ActiveVerticality, TextureDiagnostics } from "./types.js";
+import type { ActivePitch, ActiveVerticality, TextureDiagnostics } from "./types.js";
 
 export function analyzeScore(
   notes: readonly NoteEvent[],
@@ -304,7 +305,7 @@ function analyzePhase11ReviewSummary(
     functionalThinning: summarizeFunctionalThinning(verticalities, sectionPlans),
     stateGrammarRepetition: summarizeStateGrammarRepetition(sectionPlans),
     entryPatternFamilies: summarizeEntryPatternFamilies(subjectEntries),
-    metricalHarmony: summarizeMetricalHarmony(verticalities, sectionPlans),
+    metricalHarmony: summarizeMetricalHarmony(notes, verticalities, sectionPlans),
   };
 }
 
@@ -432,6 +433,7 @@ function summarizeEntryPatternFamilies(
 }
 
 function summarizeMetricalHarmony(
+  notes: readonly NoteEvent[],
   verticalities: readonly Phase11Verticality[],
   sectionPlans: readonly HarmonicPlan[],
 ): Phase11ReviewSummary["metricalHarmony"] {
@@ -439,8 +441,13 @@ function summarizeMetricalHarmony(
   let strongBeatChordToneSupportCount = 0;
   let strongBeatChordToneMismatchCount = 0;
   let strongBeatBassRootSupportCount = 0;
+  let strongBeatStructuralIntentCount = 0;
+  let strongBeatStructuralIntentMismatchCount = 0;
   let weakBeatCheckpointCount = 0;
   let weakBeatChordToneMismatchCount = 0;
+  let weakBeatNonChordToneIntentCount = 0;
+  let weakBeatResolvedNonChordToneCount = 0;
+  let weakBeatUnresolvedNonChordToneCount = 0;
 
   for (const { tick, active } of verticalities) {
     if (tick % TICKS_PER_QUARTER !== 0) {
@@ -464,9 +471,36 @@ function summarizeMetricalHarmony(
       strongBeatBassRootSupportCount += Number(
         active.get("bass")?.pitch !== undefined && bassSupportsRoot(active, anchor),
       );
+      for (const activeNote of active.values()) {
+        if (
+          activeNote.metricalHarmonyIntent !== "structural-chord-tone" &&
+          activeNote.metricalHarmonyIntent !== "structural-root-support"
+        ) {
+          continue;
+        }
+        strongBeatStructuralIntentCount += 1;
+        strongBeatStructuralIntentMismatchCount += Number(!chordTones.includes(positiveModulo(activeNote.pitch, 12)));
+      }
     } else {
       weakBeatCheckpointCount += 1;
       weakBeatChordToneMismatchCount += Number(hasMismatch);
+      for (const [voice, activeNote] of active.entries()) {
+        if (
+          activeNote.metricalHarmonyIntent !== "weak-passing-tone" &&
+          activeNote.metricalHarmonyIntent !== "weak-neighbor-tone"
+        ) {
+          continue;
+        }
+        if (chordTones.includes(positiveModulo(activeNote.pitch, 12))) {
+          continue;
+        }
+        weakBeatNonChordToneIntentCount += 1;
+        if (weakBeatNonChordToneResolves(notes, voice, activeNote, tick, sectionPlans)) {
+          weakBeatResolvedNonChordToneCount += 1;
+        } else {
+          weakBeatUnresolvedNonChordToneCount += 1;
+        }
+      }
     }
   }
 
@@ -475,8 +509,13 @@ function summarizeMetricalHarmony(
     strongBeatChordToneSupportCount,
     strongBeatChordToneMismatchCount,
     strongBeatBassRootSupportCount,
+    strongBeatStructuralIntentCount,
+    strongBeatStructuralIntentMismatchCount,
     weakBeatCheckpointCount,
     weakBeatChordToneMismatchCount,
+    weakBeatNonChordToneIntentCount,
+    weakBeatResolvedNonChordToneCount,
+    weakBeatUnresolvedNonChordToneCount,
   };
 }
 
@@ -511,7 +550,13 @@ function halfBeatVerticalities(notes: readonly NoteEvent[]): Phase11Verticality[
 
       const note = voiceNotes[indexes[voice]];
       if (note !== undefined && note.startTick <= tick && tick < note.startTick + note.durationTicks) {
-        active.set(voice, { pitch: note.pitch, role: note.role });
+        active.set(voice, {
+          pitch: note.pitch,
+          role: note.role,
+          metricalHarmonyIntent: note.metricalHarmonyIntent,
+          startTick: note.startTick,
+          durationTicks: note.durationTicks,
+        });
       }
     }
     verticalities.push({ tick, active });
@@ -520,41 +565,38 @@ function halfBeatVerticalities(notes: readonly NoteEvent[]): Phase11Verticality[
   return verticalities;
 }
 
+function weakBeatNonChordToneResolves(
+  notes: readonly NoteEvent[],
+  voice: Voice,
+  activeNote: ActivePitch,
+  tick: number,
+  sectionPlans: readonly HarmonicPlan[],
+): boolean {
+  const nextStrongBeat = tick + TICKS_PER_QUARTER;
+  const nextAnchor = nearestHarmonicAnchor(nextStrongBeat, sectionPlans);
+  const nextNote = notes
+    .filter(
+      (note) =>
+        note.voice === voice &&
+        note.startTick >= activeNote.startTick + activeNote.durationTicks &&
+        note.startTick <= nextStrongBeat,
+    )
+    .sort(compareNoteEvents)[0];
+  if (nextAnchor === undefined || nextNote === undefined) {
+    return false;
+  }
+
+  const resolvesByStep = Math.abs(nextNote.pitch - activeNote.pitch) <= 2;
+  const resolvesToChordTone = chordTonePitchClasses(nextAnchor.localKey, nextAnchor.function).includes(
+    positiveModulo(nextNote.pitch, 12),
+  );
+  return resolvesByStep && resolvesToChordTone;
+}
+
 function isNearCadenceTarget(tick: number, sectionPlans: readonly HarmonicPlan[]): boolean {
   return sectionPlans.some((plan) =>
     plan.anchors.some((anchor) => anchor.cadenceTarget && Math.abs(anchor.tick - tick) <= TICKS_PER_QUARTER),
   );
-}
-
-function nearestHarmonicAnchor(
-  tick: number,
-  sectionPlans: readonly HarmonicPlan[],
-): HarmonicPlan["anchors"][number] | undefined {
-  const plan = sectionPlans.find(
-    (candidate) => tick >= candidate.startTick && tick < candidate.startTick + candidate.durationTicks,
-  );
-  const anchors = plan?.anchors ?? sectionPlans.flatMap((candidate) => candidate.anchors);
-  return anchors
-    .map((anchor) => ({ anchor, distance: Math.abs(anchor.tick - tick) }))
-    .sort((left, right) => left.distance - right.distance)[0]?.anchor;
-}
-
-function chordTonePitchClasses(
-  key: KeySignature,
-  harmonicFunction: HarmonicPlan["anchors"][number]["function"],
-): number[] {
-  const rootDegree = rootDegreeForFunction(harmonicFunction);
-  return [rootDegree, rootDegree + 2, rootDegree + 4].map((degree) => scaleDegreePitchClass(degree, 0, key));
-}
-
-function rootDegreeForFunction(harmonicFunction: HarmonicPlan["anchors"][number]["function"]): number {
-  if (harmonicFunction === "predominant") {
-    return 3;
-  }
-  if (harmonicFunction === "dominant") {
-    return 4;
-  }
-  return 0;
 }
 
 function bassSupportsRoot(active: ActiveVerticality, anchor: HarmonicPlan["anchors"][number]): boolean {
@@ -1516,7 +1558,13 @@ function activePitchesAt(notes: readonly NoteEvent[], tick: number): ActiveVerti
       .filter((candidate) => candidate.voice === voice)
       .find((candidate) => candidate.startTick <= tick && tick < candidate.startTick + candidate.durationTicks);
     if (note !== undefined) {
-      active.set(voice, { pitch: note.pitch, role: note.role });
+      active.set(voice, {
+        pitch: note.pitch,
+        role: note.role,
+        metricalHarmonyIntent: note.metricalHarmonyIntent,
+        startTick: note.startTick,
+        durationTicks: note.durationTicks,
+      });
     }
   }
   return active;

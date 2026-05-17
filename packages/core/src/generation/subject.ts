@@ -1,3 +1,4 @@
+import { TICKS_PER_QUARTER } from "../constants.js";
 import type { KeySignature } from "../events.js";
 import type { Xoshiro128StarStar } from "../prng.js";
 import { melodicRoleForScaleDegree } from "./pitch.js";
@@ -23,10 +24,31 @@ export function buildSubject(rng: Xoshiro128StarStar, keySignature: KeySignature
       accidental: 0,
       importantTone: scaleDegree === 0 || scaleDegree === 4 || index === shape.length - 1,
       melodicRole: melodicRoleForScaleDegree(scaleDegree),
+      metricalHarmonyIntent: subjectMetricalHarmonyIntent(offsetTick, scaleDegree, index, shape),
     };
     offsetTick += note.durationTicks;
     return note;
   });
+}
+
+function subjectMetricalHarmonyIntent(
+  offsetTick: number,
+  scaleDegree: number,
+  index: number,
+  shape: readonly number[],
+): SubjectNote["metricalHarmonyIntent"] {
+  if (offsetTick % (TICKS_PER_QUARTER * 2) === 0) {
+    return scaleDegree === 0 ? "structural-root-support" : "structural-chord-tone";
+  }
+  if (offsetTick % TICKS_PER_QUARTER === 0) {
+    const previous = shape[index - 1];
+    const next = shape[index + 1];
+    if (previous !== undefined && next !== undefined && previous === next) {
+      return "weak-neighbor-tone";
+    }
+    return "weak-passing-tone";
+  }
+  return "offbeat-motion";
 }
 
 function stepwiseFifthClimbWeight(keySignature: KeySignature): number {
