@@ -17,6 +17,14 @@
 - When changing a music-quality gate, diagnostics threshold, generator model, candidate scoring model, evaluation weights, or section/planner model, generate scores for several relevant seeds and run a music-theory review without waiting for human listening. Treat this as agent-side evidence that approximates human musical judgement. Include representative, boundary, rotation, or adversarial seeds as appropriate, and record the reviewed seeds, musical findings, affected metrics, tradeoffs, and remaining human-listening gaps in the relevant phase or review doc.
 - For generation-quality changes, do not preserve old regression-test expected values just because they are already fixed. If review bundles, diagnostics, and music-beauty review across relevant seeds show that the generated music improved, update regression-test expectations to the new quality baseline. Record affected seeds, tradeoffs, and any remaining regressions in the relevant phase or review doc.
 
+## Code Changes
+
+- When changing code, proactively make small, nearby refactors that improve progressive disclosure and reduce how much context future agents must read.
+- Prefer refactors that co-locate highly related data, types, tests, and helpers; extract named helpers or modules that hide incidental complexity behind a small interface; and split long files only when it improves discovery or task-focused reading.
+- For PR-sized work, put meaningful behavior-preserving refactors in a prerequisite stacked PR before the feature, fix, or scoring change they prepare. Keep the main PR focused on the intended behavior change; only trivial same-line cleanup should stay in that main PR.
+- Keep these refactors behavior-preserving unless the task explicitly changes behavior, and keep them within the touched ownership boundary. Do not start broad architectural rewrites while doing a feature or bug fix.
+- If a refactor changes a public contract, generated output shape, or planned behavior, update the relevant tests and docs in the same change.
+
 ## Task-Specific Skills
 
 - Use `docs-progressive-disclosure` when creating, reorganizing, splitting, merging, or maintaining documentation structure.
