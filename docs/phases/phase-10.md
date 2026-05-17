@@ -77,6 +77,14 @@ pnpm fugematon review-ab --out samples/phase10-selection-model-update --ticks 12
 
 22 seed すべてで hard constraint failure、reference outside count、Phase 7B hard failure count、review signal count、`phase7BGate.phase8Ready` は baseline と同じだった。candidate pool viable candidate count は `bach-001` +2、`fugue-smoke` +2、`lyrical-line` +2、`circle-fifths` +3、`sparse-cadence` +2、`bright-answer` +1、`dark-episode` +3、`long-arc` +7、`quiet-cadence` +5、`contrary-answer` +1。`close-imitation` は -7、`ornament-test` は -2 で、既存候補の選択だけでは一部 seed の viable alternative margin を減らす tradeoff が残る。manual listening と pairwise preference は未実施のため、この variant は adoption candidate ではなく、次の reference manifest と section-local planner slice が比較するための evidence baseline とする。
 
+### Reference corpus manifest slice
+
+Reference corpus ingestion は、外部 score file を同梱せず、`PHASE_10_REFERENCE_CORPUS_MANIFEST` の structured JSON shape と validator で metadata-only/local-import source を扱う最小 slice に進めた。manifest record は source id、composer/title、edition、license、import date、format、redistribution policy、profile family、normalizer axes を固定し、`metadata-only` と `local-import-only` は score file redistributed を拒否する。
+
+normalized diagnostics は manifest の axes から `createNormalizedReferenceDiagnostics` で source id、profile family、format、redistribution policy、normalizers、axis value の envelope を作る。今回の evidence は `pnpm test` で、manifest validation、redistribution policy、axis/normalizer mismatch、generated diagnostics からの normalized axis output を確認した。`pnpm lint` も通す。
+
+残る gap: MusicXML/Humdrum の実 parser、reference score からの event mapping、subject entry detection、active voice-pair duration の実測、percentile reference profile derivation は未完了である。現時点の profile band は metadata fixture のままで、model 採否に使う実 corpus profile ではない。
+
 ## Deferred Operational Lane
 
 Phase 8/9 は削除しない。Phase 10 で generator quality、reference profile、model adoption evidence が安定した後に戻る。
