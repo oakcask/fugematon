@@ -2,7 +2,7 @@
 
 Phase 10 は、操作機能より音楽美を優先して進めた品質基盤フェーズである。Phase 7B により Phase 8 は hard constraints と再現性の面では開始可能になったが、プロダクト判断として Phase 8/9 は deferred operational lane に送り、先に reference corpus、oracle、pairwise preference、section-local planner を整えた。
 
-Status: complete. 現在の実装対象は Phase 8 に戻る。Phase 10 後も、実 reference corpus ingestion、より広い section-local planner、manual pairwise listening、learned aesthetic score は継続 quality lane として残る。
+Status: complete. Phase 10 後の譜面レビューにより、現在の実装対象は Phase 8 ではなく [Phase 11](phase-11.md) の品質モデル再設計へ移す。Phase 10 後も、実 reference corpus ingestion、より広い section-local planner、manual pairwise listening、learned aesthetic score は継続 quality lane として残る。
 
 ## 目的
 
@@ -130,9 +130,10 @@ Phase 10 は以下の evidence により完了扱いにする。
 
 ## Deferred Operational Lane
 
-Phase 8/9 は削除しない。Phase 10 で generator quality、reference profile、model adoption evidence の基盤を固定したため、現在の実装対象は Phase 8 に戻る。
+Phase 8/9 は削除しない。ただし Phase 10 後の譜面レビューで、音域分離、進行反復、終止感のない thinning、強拍/弱拍を意識しない和声設計が blocker と確認された。このため現在の実装対象は Phase 8 ではなく Phase 11 に移す。
 
+* Phase 11: harmonic rhythm、subject family、section grammar、register planning、functional texture thinning を、破壊的変更も含めて再設計する。
 * Phase 8: ring buffer replay、rewind、MVP sliders、parameter-change meta event。
 * Phase 9: Dedicated Web Worker、deadline、best-so-far fallback。
 
-Phase 8/9 へ戻った後も、Phase 10 の evidence baseline が hard constraints、determinism、schema compatibility、reference diagnostics summary、candidate-pool oracle shape を維持していることを守る。
+Phase 8/9 へ戻る条件は、Phase 11 で採用する品質 baseline が hard constraints、determinism、schema compatibility、reference diagnostics summary、candidate-pool oracle shape を維持し、Phase 10 譜面レビューの blocker を譜面 evidence と人間レビューで改善できることである。

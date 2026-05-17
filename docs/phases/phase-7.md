@@ -260,4 +260,4 @@ Phase 7B は gate policy reset として完了した。review bundle summary は
 
 Phase 8 は Phase 7B の gate policy reset 後に開始できる。manual listening と pairwise preference は廃止しないが、全 seed pass を Phase 8 開始条件にはしない。開始条件は hard constraints、determinism、schema compatibility、reference diagnostics summary、candidate-pool oracle shape が通ることである。
 
-ただし現在の優先順位は、操作機能より音楽美を高める品質基盤である。section-local planner 改善、reference corpus ingestion、percentile profile、manual pairwise preference は Phase 10 として先に進め、Phase 8/9 は deferred operational lane に送る。Phase 10 の model update は、Phase 8 の開始条件だった hard constraints、determinism、schema compatibility、reference diagnostics summary、candidate-pool oracle shape を壊さないことを compatibility baseline とする。詳細は [Phase 7+ 再編計画](phase-7-plus-reorg.md) と [Phase 10](phase-10.md) を参照する。
+その後、section-local planner 改善、reference corpus ingestion、percentile profile、manual pairwise preference は Phase 10 として先に進め、Phase 8/9 は deferred operational lane に送った。Phase 10 後の譜面レビューでは、音域分離、進行反復、終止感のない thinning、強拍/弱拍を意識しない和声設計が無限再生前の blocker と確認されたため、現在は Phase 11 の品質モデル再設計を先に扱う。詳細は [Phase 7+ 再編計画](phase-7-plus-reorg.md)、[Phase 10](phase-10.md)、[Phase 11](phase-11.md) を参照する。

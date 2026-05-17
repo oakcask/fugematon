@@ -99,7 +99,7 @@
 
 ### Phase 8: 履歴、巻き戻し、操作パラメータ
 
-* Phase 8 は Phase 10 の品質基盤後に戻る deferred operational lane とする。Phase 6-7 の美しさ metric と聴取 gate の完全 pass は開始条件にしないが、操作 UI が音楽的な退屈さを隠す設計にならないよう、先に generator quality と model adoption evidence を進める。
+* Phase 8 は Phase 11 の品質モデル再設計後に戻る deferred operational lane とする。Phase 6-7 の美しさ metric と聴取 gate の完全 pass は開始条件にしないが、操作 UI が音楽的な退屈さを隠す設計にならないよう、先に generator quality と model adoption evidence を進める。
 * 生成済みイベントをメモリ上のリングバッファに保存する。
 * 保存済み範囲内では event replay により巻き戻して再生し直せるようにする。
 * strictness、density、subjectPresence などの MVP 用スライダを追加する。
@@ -113,6 +113,14 @@
 * AudioWorklet は、標準 WebAudio ノードでは音声処理が不足した場合に導入する。
 * OffscreenCanvas、SharedWorker、Service Worker は必要性が明確になってから検討する。
 * 成功条件は「生成、描画、再生が分離され、長時間動作しても操作感と音声が安定すること」とする。
+
+### Phase 11: quality model rebuild before operations
+
+* Phase 10 後の譜面レビューで、音域分離、進行反復、終止感のない thinning、強拍/弱拍を意識しない和声設計が無限再生前の blocker と確認された。
+* Phase 11 では、harmonic rhythm、subject family、section grammar、register planning、functional texture thinning を、破壊的変更も含めて再設計する。
+* Phase 11 の oracle は、既存候補の selection で直る blocker と、candidate generation または section-local planner を変える必要がある blocker を分類する。`selection-model` は scoring、tie-break、Pareto guard、説明可能な小型 ranking model の探索対象にし、`generator-or-section-planner` は weight tuning で押し切らない。
+* learned aesthetic score は Phase 11 の default model にはしない。offline の oracle distillation と manual pairwise preference から説明可能な feature weight を検証する探索 lane に留め、hard constraints、determinism、schema compatibility を上書きしない。
+* Phase 8/9 は、Phase 11 の品質 baseline が譜面 evidence と人間レビューで改善を示すまで開始しない。
 
 ## 内部表現
 
