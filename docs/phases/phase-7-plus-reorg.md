@@ -56,7 +56,7 @@ Phase 7A は音楽美の完成を意味しない。これは「absolute metric g
 
 ### Phase 7B: gate policy reset
 
-次に、CI gate を hard constraint と review signal に分ける。
+CI gate を hard constraint と review signal に分ける。
 
 実装順:
 
@@ -65,9 +65,21 @@ Phase 7A は音楽美の完成を意味しない。これは「absolute metric g
 3. tests は hard constraint が失敗すること、review signal が summary に残ること、Phase 8 branch が hard constraints だけで検証できることを確認する。
 4. docs に、どの metric が hard failure ではなくなったかを明示する。
 
+完了記録:
+
+* `evaluatePhase7BGatePolicy` は review gate finding を `hard-failure`、`review-required`、`warning`、`manual` に分類する。既存の `evaluatePhase59Diagnostics`、`evaluatePhase510Diagnostics`、`evaluatePhase511Diagnostics`、`evaluatePhase6Diagnostics`、`evaluatePhase7Diagnostics` は互換用の legacy gate として残す。
+* review bundle summary は schema version 11 として既存の `phase7Gate` に加えて `phase7BGate` を出す。`phase7BGate` は `hardFailures`、`reviewSignals`、`warnings`、`manual`、`hardConstraintPassed`、`phase8Ready`、legacy Phase 7 gate を含む。
+* hard failure として残るものは range violation、voice crossing、subject identity violation、answer plan violation、key metadata mismatch、unresolved dissonance、all-voice silence gap、schema shape に必要な selected candidate / contour comparison count である。
+* review signal へ降格したものは counter-subject identity retention、rhythmic independence、unison overlap、same-pitch overlap、same-direction motion、shared rhythm overlap、leap recovery misses、selected candidate melody/texture cost、entry support instability、severe / unresolved severe entry interval、solo texture、bass-upper / outer-voice contour ratio、modal context / characteristic tone / modal cadence evidence である。stepwise pattern fixation、free-counterpoint contour、long-run form repetition、candidate-pool oracle は summary evidence として残し、単独の absolute count では Phase 8 blocker にしない。
+* Phase 8 は hard constraints、generator determinism、review bundle schema compatibility、reference diagnostics summary、candidate-pool oracle shape が通る状態で開始できる。manual listening と pairwise preference は quality lane evidence として残り、全 seed の musical beauty pass は開始条件にしない。
+
+観測した tradeoff:
+
+* absolute Phase 6/7 metric gate を hard blocker のまま維持すると、section-local planner や scoring の改善候補が baseline へ戻り、solo texture や reference-relative evidence の改善を採用しにくい。Phase 7B 以降はこれらの metric を review evidence として比較し、hard constraint を壊した変更だけを操作機能開始前の blocker にする。
+
 ### Phase 8: 操作機能 MVP
 
-Phase 8 は Phase 7B の hard constraint policy が入った後に開始する。美しさ gate の完全 pass は開始条件にしない。
+Phase 8 は Phase 7B の hard constraint policy が入った後に開始できる。美しさ gate の完全 pass は開始条件にしない。
 
 完了条件:
 
@@ -113,7 +125,5 @@ Fux 的な対位法、Bach fugue、common-practice harmony は引き続き判断
 
 ## 次の PR 候補
 
-1. `review-gate` の分類を hard/review/manual に分け、Phase 6/7 の美しさ metric を review signal へ降格する。
-2. Phase 8 の branch を開始し、operation MVP の hard constraint test を追加する。
-3. reference corpus ingestion は Phase 8/9 と並行する quality lane として進める。
-
+1. Phase 8 の branch を開始し、operation MVP の hard constraint test を追加する。
+2. reference corpus ingestion は Phase 8/9 と並行する quality lane として進める。
