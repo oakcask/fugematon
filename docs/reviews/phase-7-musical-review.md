@@ -1,5 +1,7 @@
 # Phase 7 音楽美レビュー
 
+最新の Phase 7+ 再編では、このレビューで確認した blocker を Phase 8 の開始条件ではなく quality lane の review signal として扱う。manual listening と pairwise preference は廃止せず、Phase 10 以降の section-local planner 採否 evidence として残す。現在の進め方は [Phase 7+ 再編計画](../phases/phase-7-plus-reorg.md) を参照する。
+
 Phase 7 前半の contour gate 実装後に、固定 review seed、rotation seed、adversarial seed 22 件を再生成し、音楽的美しさ、対位法、フーガ技法、和声、長尺聴取の観点で再レビューした。さらに schema version 6 の candidate evaluation explanations と schema version 7 の form/section texture evidence を追加後にも同じ bundle を再確認した。schema version 8 の stepwise pattern evidence は、ここで確認した blocker を次の scoring/generator 変更前に観察可能にするための coverage として扱う。
 
 Phase 7 gate は全 seed で pass した。ただし、これは pitch contour の概形進行を観察・抑制できるようになったことを示すに留まり、楽曲として十分に美しいことは示さない。手動聴取 gate と pairwise preference はまだ未入力であり、Phase 8 の操作機能へ進む前に Phase 7 後半をさらに音楽品質改善へ寄せる。

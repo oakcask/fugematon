@@ -6,6 +6,7 @@
 
 ## 優先
 
+* [Phase 7+ 再編計画](../phases/phase-7-plus-reorg.md): Phase 7 blocker 後の gate 緩和、review signal 化、Phase 8 以降の進め方。
 * [Phase 7 参照作品 diagnostics 計画](phase-7-reference-diagnostics-plan.md): CI metric が音楽的心地よさを十分に表せない問題を、Bach fugue などの参照作品 diagnostics と reference-relative gate へ再構成する計画。
 * [Phase 7 音楽美レビュー](phase-7-musical-review.md): Phase 7 gate 後の seed 横断レビューと、Phase 7 後半を音楽改善へ再編する根拠。
 * [Phase 7 実装メモ](../phases/phase-7.md): 概形進行 diagnostics、candidate scoring、schema version 5 review bundle、Phase 7 前半の完了記録。
