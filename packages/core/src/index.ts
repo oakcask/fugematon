@@ -69,26 +69,38 @@ export { generateScore, normalizeParameters } from "./generate.js";
 export { exportMidi } from "./midi.js";
 export { seedToUint32State, Xoshiro128StarStar } from "./prng.js";
 export type {
+  NormalizedReferenceDiagnosticAxis,
+  NormalizedReferenceDiagnostics,
   NormalizedReferenceMetrics,
+  ReferenceCorpusManifest,
   ReferenceDiagnosticsAggregate,
   ReferenceDiagnosticsComparison,
   ReferenceDiagnosticsProfile,
+  ReferenceManifestFormat,
+  ReferenceManifestRecord,
   ReferenceMetricAxis,
   ReferenceMetricBand,
   ReferenceMetricComparison,
   ReferenceMetricNormalizer,
+  ReferenceNormalizerAxis,
+  ReferenceProfileFamily,
   ReferenceProfileIngestionPlan,
   ReferenceProfileSummary,
+  ReferenceRedistributionPolicy,
   ReferenceSourceFormat,
   ReferenceSourceMetadata,
 } from "./reference-diagnostics.js";
 export {
   compareDiagnosticsToReferenceProfile,
   compareReferenceMetricValue,
+  createNormalizedReferenceDiagnostics,
   normalizeDiagnosticsForReference,
   PHASE_7_REFERENCE_DIAGNOSTICS_PROFILE,
+  PHASE_10_REFERENCE_CORPUS_MANIFEST,
+  parseReferenceCorpusManifest,
   summarizeReferenceDiagnosticsComparisons,
   summarizeReferenceProfile,
+  validateReferenceManifestRecord,
 } from "./reference-diagnostics.js";
 export type {
   ClassifiedReviewGateFinding,
