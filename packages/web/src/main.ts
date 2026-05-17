@@ -38,6 +38,10 @@ app.innerHTML = `
         <strong id="tempo"></strong>
       </div>
       <div>
+        <span class="metric-label">Meter</span>
+        <strong id="meter"></strong>
+      </div>
+      <div>
         <span class="metric-label">Duration</span>
         <strong id="duration"></strong>
       </div>
@@ -81,6 +85,7 @@ const randomSeedButton = requireElement(
   "random seed button",
 );
 const tempo = requireElement(document.querySelector<HTMLElement>("#tempo"), "tempo metric");
+const meter = requireElement(document.querySelector<HTMLElement>("#meter"), "meter metric");
 const duration = requireElement(document.querySelector<HTMLElement>("#duration"), "duration metric");
 const notes = requireElement(document.querySelector<HTMLElement>("#notes"), "notes metric");
 const pitchSpan = requireElement(document.querySelector<HTMLElement>("#pitch-span"), "pitch span metric");
@@ -153,11 +158,12 @@ function createState(seed: string): AppState {
 
 function render(nextState: AppState): void {
   tempo.textContent = `${nextState.model.bpm} bpm`;
+  meter.textContent = formatTimeSignature(nextState.model.timeSignature);
   duration.textContent = `${nextState.model.totalSeconds.toFixed(1)} s / ${formatBarBeatDuration(
     nextState.model.totalTicks,
     nextState.model.timeSignature,
     nextState.model.ticksPerQuarter,
-  )} / ${formatTimeSignature(nextState.model.timeSignature)}`;
+  )}`;
   notes.textContent = `${nextState.model.notes.length}`;
   pitchSpan.textContent = `${nextState.model.pitchRange.min}-${nextState.model.pitchRange.max}`;
   states.textContent = `${new Set(nextState.model.stateTransitions).size}`;
