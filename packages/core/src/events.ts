@@ -139,10 +139,13 @@ export type GenerationParameters = {
   subjectPresence: number;
 };
 
+export type SelectionModel = "baseline" | "phase10-oracle-selection";
+
 export type GenerationInput = {
   seed: string;
   lengthTicks: number;
   parameters?: Partial<GenerationParameters>;
+  selectionModel?: SelectionModel;
 };
 
 export type DiagnosticIssueCode =

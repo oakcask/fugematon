@@ -821,6 +821,28 @@ test("generateScore exposes phase-7 candidate pool oracle classifications", () =
   }
 });
 
+test("generateScore can compare the phase-10 oracle selection model against baseline", () => {
+  const baseline = generateScore({ seed: "bach-001", lengthTicks: PHASE_5_LENGTH_TICKS });
+  const variant = generateScore({
+    seed: "bach-001",
+    lengthTicks: PHASE_5_LENGTH_TICKS,
+    selectionModel: "phase10-oracle-selection",
+  });
+  const baselineGate = evaluatePhase6Diagnostics("bach-001", baseline.diagnostics);
+  const variantGate = evaluatePhase6Diagnostics("bach-001", variant.diagnostics);
+
+  assert.deepEqual(baselineGate.failures, []);
+  assert.deepEqual(variantGate.failures, []);
+  assert.equal(variant.diagnostics.rangeViolations, baseline.diagnostics.rangeViolations);
+  assert.equal(variant.diagnostics.voiceCrossings, baseline.diagnostics.voiceCrossings);
+  assert.equal(variant.diagnostics.subjectIdentityViolations, baseline.diagnostics.subjectIdentityViolations);
+  assert.equal(variant.diagnostics.answerPlanViolations, baseline.diagnostics.answerPlanViolations);
+  assert.ok(
+    variant.diagnostics.candidatePoolOracle.viableCandidateCount >=
+      baseline.diagnostics.candidatePoolOracle.viableCandidateCount,
+  );
+});
+
 test("generateScore nudges non-modal stepwise pattern fixation without modal guardrail regressions", () => {
   const blockerSeeds = [
     ["fugue-smoke", 0.72, 5, 566, 25],

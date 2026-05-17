@@ -59,6 +59,24 @@ Phase 10 の model update は、以下を満たす場合に採用候補にする
 4. reference profile を実 score ingestion へ進める前に、metadata-only fixture と同じ axes で import manifest と normalized diagnostics の shape を固定する。
 5. 代表 seed と境界 seed の pairwise preference template を、before/after 比較に使える形へ更新する。
 
+## Implementation Notes
+
+### A/B review harness
+
+`review-ab` は baseline と variant の review bundle を同じ seed set で生成し、`comparison-summary.json` に seed ごとの diagnostics summary、reference comparison、candidate pool oracle、Phase 7B hard/review/manual policy、manual listening gap を残す。baseline と variant が同じ model の場合は差分なしの comparison として扱い、後続の model update が同じ shape へ evidence を追加する。
+
+### Oracle selection model slice
+
+`phase10-oracle-selection` は、既存 candidate pool 内で `selection-model` と分類される blocker だけを対象にした小さな selection model variant である。raw `totalCost` へ直接条件を足し続けないよう、entry harmony、free-counterpoint stepwise fixation、voice-pair lockstep、leap recovery preservation の risk adjustment を selection score helper に分けた。
+
+検証 bundle:
+
+```sh
+pnpm fugematon review-ab --out samples/phase10-selection-model-update --ticks 129600 --baseline-label baseline --variant-label phase10-oracle-selection --variant-model phase10-oracle-selection
+```
+
+22 seed すべてで hard constraint failure、reference outside count、Phase 7B hard failure count、review signal count、`phase7BGate.phase8Ready` は baseline と同じだった。candidate pool viable candidate count は `bach-001` +2、`fugue-smoke` +2、`lyrical-line` +2、`circle-fifths` +3、`sparse-cadence` +2、`bright-answer` +1、`dark-episode` +3、`long-arc` +7、`quiet-cadence` +5、`contrary-answer` +1。`close-imitation` は -7、`ornament-test` は -2 で、既存候補の選択だけでは一部 seed の viable alternative margin を減らす tradeoff が残る。manual listening と pairwise preference は未実施のため、この variant は adoption candidate ではなく、次の reference manifest と section-local planner slice が比較するための evidence baseline とする。
+
 ## Deferred Operational Lane
 
 Phase 8/9 は削除しない。Phase 10 で generator quality、reference profile、model adoption evidence が安定した後に戻る。
