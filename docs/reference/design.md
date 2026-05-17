@@ -89,9 +89,17 @@
 * Phase 7A の成功条件は「reference diagnostics と candidate pool oracle により、absolute metric gate では音楽美を完了判定できないことを説明し、rejected experiments と blocker を記録すること」とする。Phase 7A は音楽美の完成ではなく、gate policy reset のための diagnostics phase とする。
 * Phase 7B の成功条件は「review gate を hard constraint、review signal、manual preference に分け、Phase 8 が hard constraints と再現性を保ったまま開始できること」とする。manual listening と pairwise preference は廃止せず、Phase completion blocker ではなく quality lane の採否 evidence として残す。
 
+### Phase 10: quality foundation first
+
+* Phase 7B により Phase 8 は開始可能になったが、現在は操作機能より音楽美を優先する。
+* Phase 10 では、reference corpus、candidate pool oracle、A/B review、pairwise preference、section-local planner を使い、生成器そのものの品質を上げる。
+* oracle が `selection-model` と分類する blocker は scoring、tie-break、weight、Pareto guard で扱う。
+* oracle が `generator-or-section-planner` と分類する blocker は、weight tuning ではなく candidate generation または section-local planner で扱う。
+* 成功条件は「model update が hard constraints、determinism、schema compatibility、reference diagnostics summary、candidate-pool oracle shape を維持しつつ、代表 seed と境界 seed の review evidence で音楽的改善を説明できること」とする。
+
 ### Phase 8: 履歴、巻き戻し、操作パラメータ
 
-* Phase 8 は Phase 7B の gate policy reset 後に開始する。Phase 6-7 の美しさ metric と聴取 gate の完全 pass は開始条件にしない。
+* Phase 8 は Phase 10 の品質基盤後に戻る deferred operational lane とする。Phase 6-7 の美しさ metric と聴取 gate の完全 pass は開始条件にしないが、操作 UI が音楽的な退屈さを隠す設計にならないよう、先に generator quality と model adoption evidence を進める。
 * 生成済みイベントをメモリ上のリングバッファに保存する。
 * 保存済み範囲内では event replay により巻き戻して再生し直せるようにする。
 * strictness、density、subjectPresence などの MVP 用スライダを追加する。
@@ -100,6 +108,7 @@
 
 ### Phase 9: Worker 化と安定化
 
+* Phase 9 は Phase 8 後に戻る deferred operational lane とする。
 * 生成探索を Dedicated Web Worker に移し、メインスレッドの描画と操作を安定させる。
 * AudioWorklet は、標準 WebAudio ノードでは音声処理が不足した場合に導入する。
 * OffscreenCanvas、SharedWorker、Service Worker は必要性が明確になってから検討する。
