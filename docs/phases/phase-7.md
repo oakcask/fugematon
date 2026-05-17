@@ -140,3 +140,11 @@ major key の weight をさらに下げ、`contrary-answer` を `0-2-1-3-4-3-2-1
 modal free support pattern を `[0, 3, 3, 2, 5, 4, 3, 2]` へ広く変える案は棄却した。この実験では `modal-cadence` の severe entry interval は 22、未解決 severe entry interval は 21 まで下がったが、`modal-dorian` の `leapRecoveryMisses` が 66、`angular-answer` が 56、`modal-answer` が 61、`modal-cadence` が 41 まで悪化し、`modal-dorian` の counter-subject identity も 0.515 へ落ちた。`dense-modal` は 4拍 bass-upper contour が Phase 7 gate を外れた。今後 modal support pattern を変える場合は、entry interval だけでなく、modal identity、leap recovery、contour を同時に守る局所条件が必要になる。
 
 modal severe interval の追加 weight をさらに強くする案も棄却した。`modal-cadence` は 146/98/61 まで改善したが、8拍 bass-upper same-direction ratio が 0.665 になり Phase 7 gate を壊した。今後 `modal-cadence` をさらに下げる場合は、強い vertical cost だけで選ばせず、modal cadence approach と bass-upper contour を同じ候補説明で扱う。
+
+## Phase 7 contrary-answer entry support
+
+`contrary-answer` は `0-1-2-3-4-3-2-1` 型の主題を残したまま、entry 周辺の 2度/7度衝突が 145/105/97 に高止まりしていた。主題型を `0-2-1-3-4-3-2-1` へ移す案や #82 の support shaping を広げる案は大跳躍回収の余裕を使い切ったため、今回は exact stepwise fifth-climb の非 modal counter-subject pattern だけを局所的に変え、上部隣接型、modal pattern、candidate scoring weight は変えない。
+
+採用した pattern は、既存の冒頭 `[4, 2, 3, 1]` が応唱 local key の第2音と entry 第2音で 2度を作りやすい箇所を `[4, 1, 3, 1]` へ寄せる。`contrary-answer` は entry support instability が 145 から 136、severe entry interval が 105 から 96、未解決 severe entry interval が 97 から 72 へ下がり、`leapRecoveryMisses` は 24 のまま維持した。Phase 6/7 gate と `fugue-smoke`、`wide-key`、`tight-stretto`、`circle-fifths`、`contrary-motion`、`lyrical-line`、`modal-cadence` の既存改善も維持した。modal identity seed は modal counter-subject path を使うため、`modal-answer`、`modal-dorian`、`dense-modal`、`angular-answer` の counter-subject identity と contour guardrail は従来の範囲内に残った。
+
+exact stepwise fifth-climb に追加 entry-risk scoring を入れる案は棄却した。prefix 全体へ severe/unresolved cost と voice leap recovery guard を足すと、`contrary-answer` の entry support は 144/105/97 でほぼ改善せず、`leapRecoveryMisses` が 32 まで悪化した。今後 `contrary-answer` をさらに下げる場合は、縦方向 cost を強めるのではなく、section/entry planner が support voice と answer-local leap recovery を同時に候補化する必要がある。

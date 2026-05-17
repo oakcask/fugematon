@@ -693,7 +693,7 @@ test("generateScore reduces phase-7 stepwise fifth-climb subject pressure", () =
     ["modal-cadence", 149, 101, 70],
     ["wide-key", 130, 96, 72],
     ["tight-stretto", 144, 96, 72],
-    ["contrary-answer", 145, 105, 97],
+    ["contrary-answer", 136, 96, 72],
   ] as const;
   const protectedSeeds = [
     ["modal-answer", 33, 0.608],
@@ -759,7 +759,7 @@ test("generateScore balances phase-7 entry harmony scoring with preservation gua
     ["lyrical-line", 136, 98, 72, 3, 3, 3],
     ["tight-stretto", 144, 96, 72, 4, 3, 3],
     ["wide-key", 130, 96, 72, 3, 3, 3],
-    ["contrary-answer", 145, 105, 97, 3, 3, 3],
+    ["contrary-answer", 136, 96, 72, 3, 3, 3],
   ] as const;
 
   for (const [
