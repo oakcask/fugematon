@@ -454,7 +454,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       assert.ok(entry.diagnosticsSummary.candidateEvaluation.averageSelectedSectionSoloTextureRisk >= 0);
       assert.ok(entry.diagnosticsSummary.candidateEvaluation.highSelectedSectionSoloTextureRiskCount >= 0);
       assert.equal(entry.diagnosticsSummary.candidateEvaluation.sectionSoloTextureRiskWarningThreshold, 6);
-      assert.equal(entry.diagnosticsSummary.candidatePoolOracle.schemaVersion, 2);
+      assert.equal(entry.diagnosticsSummary.candidatePoolOracle.schemaVersion, 3);
       assert.ok(entry.diagnosticsSummary.candidatePoolOracle.sectionCount >= 0);
       assert.ok(
         entry.diagnosticsSummary.candidatePoolOracle.candidateCount >=
@@ -532,8 +532,8 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       assert.ok(!entry.midiFile.includes(directory));
     }
     assert.deepEqual(findReviewSeed(summary.seeds, "fugue-smoke").diagnosticsSummary.candidateEvaluation, {
-      featureVersion: 3,
-      evaluationModelVersion: 9,
+      featureVersion: 4,
+      evaluationModelVersion: 10,
       selectedCandidateEvaluationCount: 1,
       entryExplanationCount: 1,
       voicePairExplanationCount: 6,
@@ -551,8 +551,8 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       sectionSoloTextureRiskWarningThreshold: 6,
     });
     assert.deepEqual(findReviewSeed(summary.seeds, "modal-cadence").diagnosticsSummary.candidateEvaluation, {
-      featureVersion: 3,
-      evaluationModelVersion: 9,
+      featureVersion: 4,
+      evaluationModelVersion: 10,
       selectedCandidateEvaluationCount: 1,
       entryExplanationCount: 1,
       voicePairExplanationCount: 6,
@@ -570,8 +570,8 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       sectionSoloTextureRiskWarningThreshold: 6,
     });
     assert.deepEqual(findReviewSeed(summary.seeds, "modal-answer").diagnosticsSummary.candidateEvaluation, {
-      featureVersion: 3,
-      evaluationModelVersion: 9,
+      featureVersion: 4,
+      evaluationModelVersion: 10,
       selectedCandidateEvaluationCount: 1,
       entryExplanationCount: 1,
       voicePairExplanationCount: 6,
@@ -743,8 +743,8 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
       assert.notEqual(entry.category, "");
       assert.ok(entry.baseline.diagnosticsSummary.hardConstraintFailures >= 0);
       assert.ok(entry.variant.diagnosticsSummary.hardConstraintFailures >= 0);
-      assert.equal(entry.baseline.candidatePoolOracle.schemaVersion, 2);
-      assert.equal(entry.variant.candidatePoolOracle.schemaVersion, 2);
+      assert.equal(entry.baseline.candidatePoolOracle.schemaVersion, 3);
+      assert.equal(entry.variant.candidatePoolOracle.schemaVersion, 3);
       assert.deepEqual(entry.baseline.candidatePoolOracle, entry.baseline.diagnosticsSummary.candidatePoolOracle);
       assert.deepEqual(entry.variant.candidatePoolOracle, entry.variant.diagnosticsSummary.candidatePoolOracle);
       assert.equal(typeof entry.baseline.phase7BGate.phase8Ready, "boolean");

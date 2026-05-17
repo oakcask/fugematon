@@ -1,5 +1,6 @@
 import { TICKS_PER_QUARTER, VOICE_RANGES } from "../constants.js";
-import type { KeyMode, KeySignature, NoteEvent, Voice } from "../events.js";
+import type { HarmonicPlan, KeyMode, KeySignature, MetricalHarmonyIntent, NoteEvent, Voice } from "../events.js";
+import { metricalHarmonyIntentForDegree } from "./harmony.js";
 import { isModalMode } from "./key.js";
 import { melodicRoleForScaleDegree, scaleDegreePitchClass } from "./pitch.js";
 import {
@@ -19,6 +20,7 @@ export type ContinuityCounterpointInput = {
   startTick: number;
   durationTicks: number;
   localKey: KeySignature;
+  harmonicPlan?: HarmonicPlan;
   maxVoiceCount?: number;
 };
 
@@ -35,6 +37,7 @@ export function addCounterpointTexture(
     durationTicks: number;
     localKey: KeySignature;
     eligibleVoices?: readonly Voice[];
+    harmonicPlan?: HarmonicPlan;
   },
 ): void {
   const eligibleVoices = entry.eligibleVoices ?? VOICE_ENTRY_ORDER.filter((voice) => voice !== entry.enteringVoice);
@@ -54,6 +57,7 @@ export function addCounterpointTexture(
       degrees: entryCounterSubjectDegrees(subject, entry.localKey.mode),
       velocity: 70,
       role: "counter-subject",
+      harmonicPlan: entry.harmonicPlan,
     });
   }
 
@@ -70,6 +74,7 @@ export function addCounterpointTexture(
       degrees: freeCounterpointDegreesForMode(entry.localKey.mode),
       velocity: 62,
       role: "free-counterpoint",
+      harmonicPlan: entry.harmonicPlan,
     });
   }
 
@@ -104,6 +109,7 @@ export function addPatternCounterpoint(
     degrees: readonly number[];
     velocity: number;
     role: NoteEvent["role"];
+    harmonicPlan?: HarmonicPlan;
   },
 ): void {
   let elapsedTicks = 0;
@@ -141,6 +147,8 @@ export function addTextureNote(
     localKey: KeySignature;
     velocity: number;
     role: NoteEvent["role"];
+    harmonicPlan?: HarmonicPlan;
+    metricalHarmonyIntent?: MetricalHarmonyIntent;
   },
   degree: number,
   startTick: number,
@@ -167,6 +175,14 @@ export function addTextureNote(
     pitch,
     velocity: pattern.velocity,
     role: pattern.role,
+    metricalHarmonyIntent:
+      pattern.metricalHarmonyIntent ??
+      metricalHarmonyIntentForDegree({
+        degree,
+        tick: startTick,
+        voice: pattern.voice,
+        harmonicPlan: pattern.harmonicPlan,
+      }),
   });
 }
 
@@ -312,6 +328,7 @@ function addContinuityLine(
     accidental: 0,
     importantTone: false,
     melodicRole: melodicRoleForScaleDegree(scaleDegree),
+    metricalHarmonyIntent: "weak-passing-tone" as const,
   }));
   addPatternCounterpoint(notes, fillerSubject, {
     voice,
@@ -321,6 +338,7 @@ function addContinuityLine(
     degrees,
     velocity: lineIndex === 0 ? 58 : 52,
     role: "free-counterpoint",
+    harmonicPlan: plan.harmonicPlan,
   });
 }
 
@@ -353,6 +371,7 @@ function addStaggeredContinuitySupport(
         localKey: plan.localKey,
         velocity: 50,
         role: "free-counterpoint",
+        harmonicPlan: plan.harmonicPlan,
       },
       degrees[index % degrees.length]!,
       startTick + elapsedTicks,

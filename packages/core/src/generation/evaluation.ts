@@ -59,6 +59,8 @@ const EVALUATION_WEIGHTS = {
     unresolvedDissonance: 100,
     strongBeatDissonance: 0,
     harmonicFunctionMismatch: 0.000001,
+    strongBeatStructuralIntentMismatch: 0.000001,
+    weakBeatUnresolvedNonChordTone: 0.000001,
     predominantDirectionMiss: 30,
     unresolvedAmbiguity: 30,
     controlledAmbiguity: 10,
@@ -234,6 +236,10 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
       diagnostics.unresolvedDissonanceCount * EVALUATION_WEIGHTS.harmony.unresolvedDissonance +
       diagnostics.strongBeatDissonanceCount * EVALUATION_WEIGHTS.harmony.strongBeatDissonance +
       diagnostics.harmonicFunctionMismatches * EVALUATION_WEIGHTS.harmony.harmonicFunctionMismatch +
+      diagnostics.phase11Review.metricalHarmony.strongBeatStructuralIntentMismatchCount *
+        EVALUATION_WEIGHTS.harmony.strongBeatStructuralIntentMismatch +
+      diagnostics.phase11Review.metricalHarmony.weakBeatUnresolvedNonChordToneCount *
+        EVALUATION_WEIGHTS.harmony.weakBeatUnresolvedNonChordTone +
       diagnostics.predominantDirectionMisses * EVALUATION_WEIGHTS.harmony.predominantDirectionMiss +
       diagnostics.unresolvedAmbiguityWarnings * EVALUATION_WEIGHTS.harmony.unresolvedAmbiguity,
     reward:
@@ -254,7 +260,14 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
         diagnostics.phase11Review.metricalHarmony.strongBeatCheckpointCount -
           diagnostics.phase11Review.metricalHarmony.strongBeatBassRootSupportCount,
       ),
+      strongBeatStructuralIntentCount: diagnostics.phase11Review.metricalHarmony.strongBeatStructuralIntentCount,
+      strongBeatStructuralIntentMismatchCount:
+        diagnostics.phase11Review.metricalHarmony.strongBeatStructuralIntentMismatchCount,
       weakBeatChordToneMismatchCount: diagnostics.phase11Review.metricalHarmony.weakBeatChordToneMismatchCount,
+      weakBeatNonChordToneIntentCount: diagnostics.phase11Review.metricalHarmony.weakBeatNonChordToneIntentCount,
+      weakBeatResolvedNonChordToneCount: diagnostics.phase11Review.metricalHarmony.weakBeatResolvedNonChordToneCount,
+      weakBeatUnresolvedNonChordToneCount:
+        diagnostics.phase11Review.metricalHarmony.weakBeatUnresolvedNonChordToneCount,
       predominantDirectionMisses: diagnostics.predominantDirectionMisses,
       controlledAmbiguityScore: diagnostics.controlledAmbiguityScore,
       styleModulationFit: diagnostics.styleModulationFit,
@@ -302,8 +315,8 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
     form.reward;
 
   return {
-    featureVersion: 3,
-    evaluationModelVersion: 9,
+    featureVersion: 4,
+    evaluationModelVersion: 10,
     totalCost: Math.round(totalCost * 1000) / 1000,
     hardFailures,
     explanations,

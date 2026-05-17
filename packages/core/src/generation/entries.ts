@@ -1,4 +1,19 @@
-import type { AnswerKind, EntryForm, FugueState, KeySignature, NoteEvent, PlannedEntry, Voice } from "../events.js";
+import type {
+  AnswerKind,
+  EntryForm,
+  FugueState,
+  HarmonicPlan,
+  KeySignature,
+  NoteEvent,
+  PlannedEntry,
+  Voice,
+} from "../events.js";
+import {
+  beatStrengthAtTick,
+  chordTonePitchClasses,
+  metricalHarmonyIntentForDegree,
+  nearestHarmonicAnchor,
+} from "./harmony.js";
 import { pitchClassForSubjectNote } from "./pitch.js";
 import { placePitchInRegister, VOICE_REGISTER_TARGETS } from "./shared.js";
 import type { Exposition, SubjectNote } from "./types.js";
@@ -15,6 +30,7 @@ export function addSubjectEntry(
     globalKey: KeySignature;
     localKey: KeySignature;
     answerKind?: AnswerKind;
+    harmonicPlan?: HarmonicPlan;
   },
 ): void {
   const plannedSubject = applyEntryPlanToSubject(subject, entry.form, entry.answerKind);
@@ -29,6 +45,26 @@ export function addSubjectEntry(
     registerTarget: VOICE_REGISTER_TARGETS[entry.voice],
     expectedDegreePattern: plannedSubject.map((note) => note.scaleDegree),
     actualPitchClassSequence: plannedSubject.map((note) => pitchClassForSubjectNote(note, entry.localKey)),
+    metricalIntentPattern: plannedSubject.map((note) => {
+      const tick = entry.startTick + note.offsetTick;
+      const anchor = entry.harmonicPlan === undefined ? undefined : nearestHarmonicAnchor(tick, [entry.harmonicPlan]);
+      const chordTones = anchor === undefined ? [] : chordTonePitchClasses(anchor.localKey, anchor.function);
+      const pitchClass = pitchClassForSubjectNote(note, entry.localKey);
+      return {
+        offsetTick: note.offsetTick,
+        beatStrength: beatStrengthAtTick(tick),
+        scaleDegree: note.scaleDegree,
+        harmonicFunction: anchor?.function ?? "tonic",
+        intent: metricalHarmonyIntentForDegree({
+          degree: note.scaleDegree,
+          tick,
+          voice: entry.voice,
+          harmonicPlan: entry.harmonicPlan,
+          fallbackIntent: note.metricalHarmonyIntent,
+        }),
+        chordTone: chordTones.includes(pitchClass),
+      };
+    }),
   };
   subjectEntries.push(plannedEntry);
 
@@ -42,6 +78,13 @@ export function addSubjectEntry(
       pitch: placePitchInRegister(pitchClass, entry.voice, plannedEntry.registerTarget),
       velocity: entry.form === "answer" ? 86 : 92,
       role: entry.form,
+      metricalHarmonyIntent: metricalHarmonyIntentForDegree({
+        degree: note.scaleDegree,
+        tick: entry.startTick + note.offsetTick,
+        voice: entry.voice,
+        harmonicPlan: entry.harmonicPlan,
+        fallbackIntent: note.metricalHarmonyIntent,
+      }),
     });
   }
 }

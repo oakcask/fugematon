@@ -205,6 +205,7 @@ export function buildExposition(subject: readonly SubjectNote[], keySignature: K
   for (const [entryIndex, voice] of VOICE_ENTRY_ORDER.entries()) {
     const form = entryIndex % 2 === 0 ? "subject" : "answer";
     const startTick = entryIndex * ENTRY_SPACING_TICKS;
+    const harmonicPlan = sectionPlans[0]!;
     addSubjectEntry(notes, subjectEntries, subject, {
       state: "exposition",
       voice,
@@ -213,6 +214,7 @@ export function buildExposition(subject: readonly SubjectNote[], keySignature: K
       globalKey: keySignature,
       localKey: form === "answer" ? transposeKey(keySignature, 7) : keySignature,
       answerKind: form === "answer" ? chooseAnswerKind(subject) : undefined,
+      harmonicPlan,
     });
     addCounterpointTexture(notes, subject, {
       enteringVoice: voice,
@@ -220,6 +222,7 @@ export function buildExposition(subject: readonly SubjectNote[], keySignature: K
       durationTicks: ENTRY_SPACING_TICKS,
       localKey: form === "answer" ? transposeKey(keySignature, 7) : keySignature,
       eligibleVoices: VOICE_ENTRY_ORDER.slice(0, entryIndex),
+      harmonicPlan,
     });
   }
 
@@ -552,17 +555,21 @@ export function buildContinuationSection(
     }),
   ];
 
-  addSubjectEntry(notes, subjectEntries, subject, entry);
+  const harmonicPlan = sectionPlans[0]!;
+
+  addSubjectEntry(notes, subjectEntries, subject, { ...entry, harmonicPlan });
   addCounterpointTexture(notes, subject, {
     enteringVoice: entry.voice,
     startTick: entry.startTick,
     durationTicks: entry.supportDurationTicks,
     localKey: entry.localKey,
+    harmonicPlan,
   });
   addContinuityCounterpoint(notes, {
     startTick: entry.startTick + entry.supportDurationTicks,
     durationTicks: Math.max(0, entry.sectionDurationTicks - entry.supportDurationTicks),
     localKey: entry.targetKey,
+    harmonicPlan,
     maxVoiceCount: entry.continuityVoiceCount,
   });
   notes.sort(compareNoteEvents);
@@ -604,6 +611,8 @@ export function buildStrettoSection(
     }),
   ];
 
+  const harmonicPlan = sectionPlans[0]!;
+
   addSubjectEntry(notes, subjectEntries, subject, {
     state: entry.state,
     voice: entry.firstVoice,
@@ -611,6 +620,7 @@ export function buildStrettoSection(
     startTick: entry.startTick,
     globalKey: entry.globalKey,
     localKey: entry.globalKey,
+    harmonicPlan,
   });
   addSubjectEntry(notes, subjectEntries, subject, {
     state: entry.state,
@@ -620,17 +630,20 @@ export function buildStrettoSection(
     globalKey: entry.globalKey,
     localKey: transposeKey(entry.globalKey, 7),
     answerKind: chooseAnswerKind(subject),
+    harmonicPlan,
   });
   addCounterpointTexture(notes, subject, {
     enteringVoice: entry.firstVoice,
     startTick: entry.startTick,
     durationTicks: subjectDuration(subject),
     localKey: entry.globalKey,
+    harmonicPlan,
   });
   addContinuityCounterpoint(notes, {
     startTick: entry.startTick + subjectDuration(subject),
     durationTicks: Math.max(0, entry.sectionDurationTicks - subjectDuration(subject)),
     localKey: transposeKey(entry.globalKey, 7),
+    harmonicPlan,
   });
   notes.sort(compareNoteEvents);
 

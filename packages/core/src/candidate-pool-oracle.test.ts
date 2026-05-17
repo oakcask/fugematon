@@ -148,7 +148,7 @@ test("candidate pool oracle reports phase-11 blocker families and upper-bound ev
   );
   const bassRootSupport = summary.blockerClassifications.find((blocker) => blocker.blocker === "bass-root-support");
 
-  assert.equal(summary.schemaVersion, 2);
+  assert.equal(summary.schemaVersion, 3);
   assert.equal(phase11Blockers.length, 5);
   assert.ok(phase11Blockers.every((blocker) => blocker.classification === "selection-model"));
   assert.ok(phase11Blockers.every((blocker) => blocker.selectionOnlyUpperBoundRiskReduction > 0));

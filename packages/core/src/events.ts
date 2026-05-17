@@ -4,6 +4,17 @@ export type Voice = (typeof VOICES)[number];
 
 export type NoteRole = "subject" | "answer" | "subject-fragment" | "counter-subject" | "free-counterpoint" | "fallback";
 
+export type BeatStrength = "strong" | "weak" | "offbeat";
+
+export type MetricalHarmonyIntent =
+  | "structural-chord-tone"
+  | "structural-root-support"
+  | "strong-non-chord-tone"
+  | "weak-passing-tone"
+  | "weak-neighbor-tone"
+  | "weak-chord-tone"
+  | "offbeat-motion";
+
 export type NoteEvent = {
   kind: "note";
   voice: Voice;
@@ -12,6 +23,7 @@ export type NoteEvent = {
   pitch: number;
   velocity: number;
   role?: NoteRole;
+  metricalHarmonyIntent?: MetricalHarmonyIntent;
 };
 
 export type TimeSignature = {
@@ -79,6 +91,16 @@ export type PlannedEntry = {
   registerTarget: number;
   expectedDegreePattern: number[];
   actualPitchClassSequence: number[];
+  metricalIntentPattern: PlannedEntryMetricalIntent[];
+};
+
+export type PlannedEntryMetricalIntent = {
+  offsetTick: number;
+  beatStrength: BeatStrength;
+  scaleDegree: number;
+  harmonicFunction: HarmonicFunction;
+  intent: MetricalHarmonyIntent;
+  chordTone: boolean;
 };
 
 export type MetaEvent =
@@ -218,8 +240,8 @@ export type CandidateEvaluationExplanations = {
 };
 
 export type CandidateEvaluation = {
-  featureVersion: 1 | 2 | 3;
-  evaluationModelVersion: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+  featureVersion: 1 | 2 | 3 | 4;
+  evaluationModelVersion: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
   totalCost: number;
   hardFailures: DiagnosticIssueCode[];
   explanations: CandidateEvaluationExplanations;
@@ -280,7 +302,7 @@ export type CandidatePoolOracleBlockerSummary = {
 };
 
 export type CandidatePoolOracleSummary = {
-  schemaVersion: 2;
+  schemaVersion: 2 | 3;
   sectionCount: number;
   candidateCount: number;
   viableCandidateCount: number;
@@ -413,8 +435,13 @@ export type Phase11MetricalHarmonySummary = {
   strongBeatChordToneSupportCount: number;
   strongBeatChordToneMismatchCount: number;
   strongBeatBassRootSupportCount: number;
+  strongBeatStructuralIntentCount: number;
+  strongBeatStructuralIntentMismatchCount: number;
   weakBeatCheckpointCount: number;
   weakBeatChordToneMismatchCount: number;
+  weakBeatNonChordToneIntentCount: number;
+  weakBeatResolvedNonChordToneCount: number;
+  weakBeatUnresolvedNonChordToneCount: number;
 };
 
 export type Phase11ReviewSummary = {

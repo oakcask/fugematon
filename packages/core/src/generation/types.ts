@@ -7,6 +7,7 @@ import type {
   FugueState,
   GenerationOutput,
   HarmonicPlan,
+  MetricalHarmonyIntent,
   NoteEvent,
   OrnamentPlacementReasons,
   Phase11ReviewSummary,
@@ -22,6 +23,7 @@ export type SubjectNote = {
   accidental: number;
   importantTone: boolean;
   melodicRole: "tonic" | "passing" | "predominant" | "dominant";
+  metricalHarmonyIntent: MetricalHarmonyIntent;
 };
 
 export type Exposition = {
@@ -99,6 +101,9 @@ export type TextureDiagnostics = {
 export type ActivePitch = {
   pitch: number;
   role: NoteEvent["role"];
+  metricalHarmonyIntent?: MetricalHarmonyIntent;
+  startTick: number;
+  durationTicks: number;
 };
 
 export type ActiveVerticality = Map<import("../events.js").Voice, ActivePitch>;

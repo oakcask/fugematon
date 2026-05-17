@@ -90,9 +90,31 @@ Project response: Phase 11 の次の実装は、oracle が `generator-or-section
 
 Remaining listening gap: 今回も automatic diagnostics と generated MIDI bundle の作成までで、通し聴取と before/after pairwise preference は未実施である。baseline と variant は同じ `phase10-section-local-planner` で、音符差分ではなく oracle shape と responsibility classification の確認として扱う。
 
+### 7. HarmonicPlan 由来の metrical harmony intent を候補に持たせた
+
+生成 bundle:
+
+```sh
+pnpm fugematon review-ab --out samples/phase11-metrical-harmony-intent --ticks 129600 --baseline-label phase11-oracle-blocker-families --baseline-model phase10-section-local-planner --variant-label phase11-metrical-harmony-intent --variant-model phase10-section-local-planner
+```
+
+対象 seed: 22 seed 全体。代表例は `bach-001`、境界は `minor-entry`、rotation は `modal-cadence`、adversarial は `dense-modal`。
+
+NoteEvent と PlannedEntry は、HarmonicPlan の anchor と拍節位置から `structural-chord-tone`、`structural-root-support`、`strong-non-chord-tone`、`weak-passing-tone`、`weak-neighbor-tone`、`weak-chord-tone`、`offbeat-motion` を持つ。Candidate evaluation feature version 4 は、strong beat structural intent mismatch と weak beat non-chord-tone resolution を harmony features に出す。Candidate pool oracle schema version 3 は、`metrical-harmony` blocker に intent mismatch と unresolved weak-beat non-chord-tone を含める。
+
+22 seed 合計では hard constraints は 0 のまま維持された。strong beat structural intent は 3666 notes、そのうち mismatch は 490 で mismatch rate 0.134 だった。weak beat non-chord-tone intent は 3264 notes、そのうち resolved は 1065、unresolved は 2199 で unresolved rate 0.674 だった。代表 seed では `bach-001` が strong mismatch 22/178、weak unresolved 98/129、`minor-entry` が 28/185 と 112/142、`modal-cadence` が 9/118 と 98/180、`dense-modal` が 12/95 と 89/204 だった。
+
+Oracle evidence は、intent を候補へ持たせても既存 pool 内の選択だけでは大きく直らないことを示す。22 seed 合計で `metrical-harmony` の generator-needed rate は 0.921、selection-only upper-bound reduction rate は 0.016 だった。`bass-root-support` は generator-needed rate 0.943、reduction rate 0.008 のままである。
+
+Rejected experiment: strong beat structural intent に合わせて support-line pitch degree を広く chord tone/root へ寄せる実験は採用しない。初期実験では counter-subject identity retention、same-direction motion、leap recovery、outer-voice contour、section-local unison overlap、entry support instability、modal severe interval の既存 guardrail が同時に悪化した。これは metrical harmony を pitch alignment の単独 rule で押すと、Phase 7/10 の melody、voice independence、entry harmony の制約を壊すことを示す。
+
+Project response: この PR では音符の pitch selection と selection behavior は変えず、HarmonicPlan 由来の intent と diagnostics feature を候補に持たせるところで止める。次の generator work は、strong beat だけを後付け補正するのではなく、subject family、support voice formula、weak beat non-chord-tone resolution、bass/root support を同時に候補化し、oracle の generator-needed rate と既存 guardrail を見ながら採用する。
+
+Remaining listening gap: 今回も automatic diagnostics と generated MIDI bundle の作成までで、通し聴取と before/after pairwise preference は未実施である。baseline と variant は同じ `phase10-section-local-planner` で、音符差分ではなく intent metadata と diagnostics shape の確認として扱う。
+
 ## Remaining Gaps
 
 * MIDI の通し聴取と before/after pairwise preference は未実施。
-* `metricalHarmony` は time signature ごとの強拍分類や non-chord-tone role をまだ持たない暫定 summary である。`harmonicFunctionMismatches` も preparation/resolution role までは見ていない。
+* `metricalHarmony` は time signature ごとの強拍分類をまだ持たない暫定 summary である。weak beat non-chord-tone resolution は次 strong beat までの stepwise chord-tone arrival に限るため、掛留の準備、anticipation、escape tone、longer preparation/resolution はまだ区別しない。
 * Candidate pool oracle の Phase 11 blocker family は出るが、selection-only upper bound はほとんどの blocker で低く、generator-needed rate が高い。
 * review summary 追加 PR は生成音そのもの、candidate scoring、gate threshold を変えていない。follow-up diagnostics PR は selected candidate feature を増やしたが、selection behavior と gate threshold は変えていない。

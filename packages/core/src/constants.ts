@@ -1,4 +1,4 @@
-export const GENERATOR_VERSION = 2;
+export const GENERATOR_VERSION = 3;
 
 export const TICKS_PER_QUARTER = 480;
 

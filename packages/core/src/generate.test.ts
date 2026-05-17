@@ -653,11 +653,11 @@ test("generateScore reports phase-7 contour motion diagnostics", () => {
   assert.ok(fourBeat.outerVoiceSameDirectionRatio >= 0);
   assert.ok(fourBeat.outerVoiceContraryRatio >= 0);
   assert.ok(output.diagnostics.selectedCandidateEvaluations.length > 0);
-  assert.equal(output.diagnostics.selectedCandidateEvaluations[0]!.featureVersion, 3);
+  assert.equal(output.diagnostics.selectedCandidateEvaluations[0]!.featureVersion, 4);
   assert.ok(output.diagnostics.selectedCandidateEvaluations[0]!.explanations.entries.length > 0);
   assert.ok(output.diagnostics.selectedCandidateEvaluations[0]!.explanations.voicePairs.length > 0);
   assert.ok(output.diagnostics.selectedCandidateEvaluations[0]!.explanations.sections.length > 0);
-  assert.equal(output.diagnostics.selectedCandidateEvaluations[0]!.evaluationModelVersion, 9);
+  assert.equal(output.diagnostics.selectedCandidateEvaluations[0]!.evaluationModelVersion, 10);
   assert.ok(
     "fourBeatBassUpperSameDirectionRatio" in
       output.diagnostics.selectedCandidateEvaluations[0]!.dimensions.texture.features,
@@ -807,7 +807,7 @@ test("generateScore exposes phase-7 candidate pool oracle classifications", () =
   const oracle = output.diagnostics.candidatePoolOracle;
   const classifications = new Set(oracle.blockerClassifications.map((blocker) => blocker.classification));
 
-  assert.equal(oracle.schemaVersion, 2);
+  assert.equal(oracle.schemaVersion, 3);
   assert.ok(oracle.sectionCount > 0);
   assert.ok(oracle.candidateCount >= oracle.sectionCount);
   assert.ok(oracle.viableCandidateCount > 0);
@@ -1479,8 +1479,8 @@ function requireSelectedCandidateEvaluation(
   const selectedEvaluation = selectedCandidateEvaluations[0];
 
   assert.ok(selectedEvaluation !== undefined);
-  assert.equal(selectedEvaluation.featureVersion, 3);
-  assert.equal(selectedEvaluation.evaluationModelVersion, 9);
+  assert.equal(selectedEvaluation.featureVersion, 4);
+  assert.equal(selectedEvaluation.evaluationModelVersion, 10);
   assert.ok(selectedEvaluation.explanations.entries.length > 0);
   assert.ok(selectedEvaluation.explanations.voicePairs.length > 0);
   assert.ok(selectedEvaluation.explanations.voices.length > 0);
@@ -1492,7 +1492,7 @@ function requireSelectedCandidateEvaluation(
 function assertPhase10CandidatePoolOracleShape(
   oracle: ReturnType<typeof generateScore>["diagnostics"]["candidatePoolOracle"],
 ) {
-  assert.equal(oracle.schemaVersion, 2);
+  assert.equal(oracle.schemaVersion, 3);
   assert.ok(oracle.sectionCount > 0);
   assert.ok(oracle.candidateCount >= oracle.sectionCount);
   assert.ok(oracle.viableCandidateCount >= 0);
