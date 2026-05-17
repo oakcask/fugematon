@@ -2,6 +2,7 @@ import { classifyCandidatePoolOracleSection, summarizeCandidatePoolOracleSection
 import { TICKS_PER_QUARTER } from "../constants.js";
 import type {
   AnswerKind,
+  CadenceKind,
   CandidateEvaluation,
   EntryForm,
   FragmentTransform,
@@ -18,7 +19,7 @@ import type { Xoshiro128StarStar } from "../prng.js";
 import { addSubjectEntry, chooseAnswerKind } from "./entries.js";
 import { evaluateCandidate } from "./evaluation.js";
 import { buildHarmonicPlan, cadenceKindForSection } from "./harmony.js";
-import { isModalMode, transposeKey } from "./key.js";
+import { isModalMode, tonicPitchClass, transposeKey } from "./key.js";
 import {
   compareNoteEvents,
   ENTRY_SPACING_TICKS,
@@ -67,8 +68,6 @@ export function buildFugueScore(
     );
     const state = statePattern[stateIndex]!;
     const sectionDurationTicks = chooseContinuationSectionTicks(state, rng);
-    stateTransitions.push(state);
-    stateChanges.push({ tick: sectionStartTick, state });
     const selection = chooseContinuationSection(
       subject,
       keySignature,
@@ -78,8 +77,12 @@ export function buildFugueScore(
       rng,
       notes,
       selectionModel,
-      stateTransitions,
+      [...stateTransitions, state],
+      sectionPlans,
     );
+    const selectedState = selection.section.sectionPlans[0]?.state ?? state;
+    stateTransitions.push(selectedState);
+    stateChanges.push({ tick: sectionStartTick, state: selectedState });
     notes.push(...selection.section.notes);
     subjectEntries.push(...selection.section.subjectEntries);
     sectionPlans.push(...selection.section.sectionPlans);
@@ -128,6 +131,134 @@ function continuationPatternForCycle(
   return CONTINUATION_STATE_PATTERNS[
     (primaryPatternIndex + Math.floor(cycleIndex / 7)) % CONTINUATION_STATE_PATTERNS.length
   ]!;
+}
+
+type HistoryAwareSelectionContext = {
+  enabled: boolean;
+  previousStateHistory: readonly FugueState[];
+  plannedState: FugueState;
+  previousCadenceKind?: CadenceKind;
+  previousDensity: number;
+  keyDistance: number;
+};
+
+function buildHistoryAwareSelectionContext(
+  stateHistory: readonly FugueState[],
+  previousSectionPlans: readonly HarmonicPlan[],
+  previousNotes: readonly NoteEvent[],
+  keySignature: KeySignature,
+): HistoryAwareSelectionContext {
+  const plannedState = stateHistory.at(-1) ?? "episode";
+  const previousStateHistory = stateHistory.slice(0, -1);
+  const previousPlan = previousSectionPlans.at(-1);
+  const previousDensity =
+    previousPlan === undefined
+      ? 0
+      : averageActiveVoiceDensity(previousNotes, previousPlan.startTick, previousPlan.durationTicks);
+
+  return {
+    enabled: latestContinuationPatternRepeatCount(stateHistory) > 1,
+    previousStateHistory,
+    plannedState,
+    previousCadenceKind: previousPlan?.cadenceKind,
+    previousDensity,
+    keyDistance: previousPlan === undefined ? 0 : localKeyDistance(keySignature, previousPlan.targetKey),
+  };
+}
+
+function historyAwareStateScore(input: {
+  state: FugueState;
+  stateHistory: readonly FugueState[];
+  previousCadenceKind?: CadenceKind;
+  previousDensity: number;
+  keyDistance: number;
+}): number {
+  const history = [...input.stateHistory, input.state];
+  const previousState = input.stateHistory.at(-1);
+  let score = latestContinuationPatternRepeatCount(history) * 20;
+
+  if (input.state === previousState) {
+    score += 8;
+  }
+  if (input.state === input.stateHistory.at(-2)) {
+    score += 30;
+  }
+
+  if (
+    input.previousCadenceKind === "authentic" ||
+    input.previousCadenceKind === "modal" ||
+    input.previousCadenceKind === "deceptive"
+  ) {
+    score += input.state === "episode" ? -2 : 0;
+  } else if (input.previousCadenceKind === "half" || input.previousCadenceKind === "evaded") {
+    score += input.state === "subject-return" ? -2 : 0;
+  } else if (input.previousCadenceKind === "modulatory") {
+    score += input.state === "stretto-like" ? 1 : 0;
+  }
+
+  if (input.previousDensity >= 3.2) {
+    score += input.state === "episode" ? -1.5 : 0;
+    score += input.state === "stretto-like" ? 2 : 0;
+  } else if (input.previousDensity > 0 && input.previousDensity <= 2.25) {
+    score += input.state === "subject-return" ? -1.5 : 0;
+    score += input.state === "episode" ? 1 : 0;
+  }
+
+  if (input.keyDistance >= 5) {
+    score += input.state === "subject-return" ? -1.5 : 0;
+    score += input.state === "stretto-like" ? 1 : 0;
+  } else if (input.keyDistance <= 2) {
+    score += input.state === "episode" ? -0.5 : 0;
+  }
+
+  return score + continuationStateTieBreak(input.state);
+}
+
+function latestContinuationPatternRepeatCount(stateHistory: readonly FugueState[]): number {
+  const continuationStates = stateHistory.filter((state) => state !== "exposition");
+  const windowSize = 4;
+  if (continuationStates.length < windowSize * 2) {
+    return continuationStates.length >= windowSize ? 1 : 0;
+  }
+
+  const latestPattern = continuationStates.slice(-windowSize).join(">");
+  let count = 0;
+  for (let index = 0; index + windowSize <= continuationStates.length; index += 1) {
+    if (continuationStates.slice(index, index + windowSize).join(">") === latestPattern) {
+      count += 1;
+    }
+  }
+
+  return count;
+}
+
+function averageActiveVoiceDensity(notes: readonly NoteEvent[], startTick: number, durationTicks: number): number {
+  if (durationTicks <= 0) {
+    return 0;
+  }
+
+  const activeVoiceTicks = notes.reduce((sum, note) => {
+    const noteEndTick = note.startTick + note.durationTicks;
+    const overlapTicks = Math.min(noteEndTick, startTick + durationTicks) - Math.max(note.startTick, startTick);
+    return sum + Math.max(0, overlapTicks);
+  }, 0);
+
+  return activeVoiceTicks / durationTicks;
+}
+
+function localKeyDistance(globalKey: KeySignature, localKey: KeySignature): number {
+  const rawDistance = Math.abs(tonicPitchClass(globalKey) - tonicPitchClass(localKey));
+  return Math.min(rawDistance, 12 - rawDistance);
+}
+
+function continuationStateTieBreak(state: FugueState): number {
+  if (state === "episode") {
+    return 0;
+  }
+  if (state === "subject-return") {
+    return 0.1;
+  }
+  return 0.2;
 }
 
 export function chooseContinuationSectionTicks(state: FugueState, rng: Xoshiro128StarStar): number {
@@ -247,6 +378,7 @@ export function chooseContinuationSection(
   previousNotes: readonly NoteEvent[],
   selectionModel: SelectionModel = "baseline",
   stateHistory: readonly FugueState[] = [state],
+  previousSectionPlans: readonly HarmonicPlan[] = [],
 ): {
   section: Exposition;
   candidateCount: number;
@@ -269,48 +401,74 @@ export function chooseContinuationSection(
     selectionModel === "phase10-section-local-planner"
       ? phase10SelectableContinuationCandidateCount(state)
       : candidates.length;
+  const sectionGrammarCandidateStart =
+    selectionModel === "phase10-section-local-planner"
+      ? phase10SectionGrammarCandidateStartIndex(state)
+      : candidates.length;
   let bestIndex = bestContinuationCandidateIndex(
     evaluations.slice(0, baselineCandidateCount),
     selectionModel === "phase10-section-local-planner" ? "phase10-oracle-selection" : selectionModel,
   );
   const baselineEvaluation = evaluations[bestIndex]!;
+  const historyContext = buildHistoryAwareSelectionContext(
+    stateHistory,
+    previousSectionPlans,
+    previousNotes,
+    keySignature,
+  );
 
   for (const [index, evaluation] of evaluations.entries()) {
     const isSectionLocalCandidate =
       selectionModel === "phase10-section-local-planner" && index >= baselineCandidateCount;
+    const isSectionGrammarCandidate =
+      selectionModel === "phase10-section-local-planner" && index >= sectionGrammarCandidateStart;
     if (
       selectionModel === "phase10-section-local-planner" &&
-      (!isSectionLocalCandidate || index >= selectableCandidateCount)
+      (!isSectionLocalCandidate || (index >= selectableCandidateCount && !isSectionGrammarCandidate))
     ) {
       continue;
     }
-    if (isSectionLocalCandidate && !preservesSectionLocalGuardrails(evaluation, baselineEvaluation)) {
+    if (
+      isSectionLocalCandidate &&
+      !preservesSectionLocalGuardrails(evaluation, baselineEvaluation, isSectionGrammarCandidate)
+    ) {
       continue;
     }
 
-    const candidateScore = isSectionLocalCandidate
-      ? selectionScore(evaluation, selectionModel)
-      : selectionScore(evaluation, selectionModel);
+    const candidateScore =
+      selectionScore(evaluation, selectionModel) +
+      (selectionModel === "phase10-section-local-planner"
+        ? sectionGrammarPlannerSelectionRiskAdjustment(evaluation, historyContext, isSectionGrammarCandidate)
+        : 0);
     const bestScore =
       selectionModel === "phase10-section-local-planner" && bestIndex < baselineCandidateCount
-        ? selectionScore(evaluations[bestIndex]!, "phase10-oracle-selection")
-        : selectionScore(evaluations[bestIndex]!, selectionModel);
+        ? selectionScore(evaluations[bestIndex]!, "phase10-oracle-selection") +
+          sectionGrammarPlannerSelectionRiskAdjustment(evaluations[bestIndex]!, historyContext, false)
+        : selectionScore(evaluations[bestIndex]!, selectionModel) +
+          (selectionModel === "phase10-section-local-planner"
+            ? sectionGrammarPlannerSelectionRiskAdjustment(
+                evaluations[bestIndex]!,
+                historyContext,
+                bestIndex >= sectionGrammarCandidateStart,
+              )
+            : 0);
     if (candidateScore < bestScore) {
       bestIndex = index;
     }
   }
 
+  const selectedState = candidates[bestIndex]!.sectionPlans[0]?.state ?? state;
   return {
     section: candidates[bestIndex]!,
     candidateCount: candidates.length,
     evaluation: evaluations[bestIndex]!,
     oracleSection: classifyCandidatePoolOracleSection({
-      state,
+      state: selectedState,
       startTick,
       durationTicks: sectionDurationTicks,
       evaluations,
       selectedCandidateIndex: bestIndex,
-      stateHistory,
+      stateHistory: [...stateHistory.slice(0, -1), selectedState],
     }),
   };
 }
@@ -331,6 +489,14 @@ function phase10SelectableContinuationCandidateCount(state: FugueState): number 
   }
 
   return baselineContinuationCandidateCount(state) * 2;
+}
+
+function phase10SectionGrammarCandidateStartIndex(state: FugueState): number {
+  if (state === "stretto-like") {
+    return baselineContinuationCandidateCount(state);
+  }
+
+  return baselineContinuationCandidateCount(state) * 3;
 }
 
 function selectionScore(evaluation: CandidateEvaluation, selectionModel: SelectionModel): number {
@@ -399,6 +565,27 @@ function sectionLocalPlannerSelectionRiskAdjustment(
   return -soloTextureRisk * 12;
 }
 
+function sectionGrammarPlannerSelectionRiskAdjustment(
+  evaluation: CandidateEvaluation,
+  context: HistoryAwareSelectionContext,
+  isSectionGrammarCandidate: boolean,
+): number {
+  if (!context.enabled || evaluation.hardFailures.length > 0) {
+    return 0;
+  }
+
+  const state = evaluation.explanations.sections[0]?.state ?? context.plannedState;
+  const score = historyAwareStateScore({
+    state,
+    stateHistory: context.previousStateHistory,
+    previousCadenceKind: context.previousCadenceKind,
+    previousDensity: context.previousDensity,
+    keyDistance: context.keyDistance,
+  });
+
+  return score * 80 + (isSectionGrammarCandidate ? -4 : 0);
+}
+
 function bestContinuationCandidateIndex(
   evaluations: readonly CandidateEvaluation[],
   selectionModel: SelectionModel,
@@ -415,6 +602,7 @@ function bestContinuationCandidateIndex(
 function preservesSectionLocalGuardrails(
   evaluation: CandidateEvaluation,
   baselineEvaluation: CandidateEvaluation,
+  allowNeutralSoloTexture = false,
 ): boolean {
   const evaluationTexture = evaluation.dimensions.texture.features;
   const baselineTexture = baselineEvaluation.dimensions.texture.features;
@@ -425,7 +613,8 @@ function preservesSectionLocalGuardrails(
 
   return (
     evaluation.hardFailures.length === 0 &&
-    selectedSectionSoloTextureRisk(evaluation) <= selectedSectionSoloTextureRisk(baselineEvaluation) - 4 &&
+    selectedSectionSoloTextureRisk(evaluation) <=
+      selectedSectionSoloTextureRisk(baselineEvaluation) - (allowNeutralSoloTexture ? 0 : 4) &&
     evaluationTexture.samePitchOverlapCount <= baselineTexture.samePitchOverlapCount &&
     evaluationTexture.unisonOverlapCount <= baselineTexture.unisonOverlapCount &&
     evaluationTexture.sharedRhythmOverlapCount <= baselineTexture.sharedRhythmOverlapCount &&
