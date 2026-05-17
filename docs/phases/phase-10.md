@@ -1,6 +1,8 @@
 # Phase 10: Quality Foundation First
 
-Phase 10 は、操作機能より音楽美を優先して進める品質基盤フェーズである。Phase 7B により Phase 8 は hard constraints と再現性の面では開始可能になったが、プロダクト判断として Phase 8/9 は deferred operational lane に送り、先に reference corpus、oracle、pairwise preference、section-local planner を整える。
+Phase 10 は、操作機能より音楽美を優先して進めた品質基盤フェーズである。Phase 7B により Phase 8 は hard constraints と再現性の面では開始可能になったが、プロダクト判断として Phase 8/9 は deferred operational lane に送り、先に reference corpus、oracle、pairwise preference、section-local planner を整えた。
+
+Status: complete. 現在の実装対象は Phase 8 に戻る。Phase 10 後も、実 reference corpus ingestion、より広い section-local planner、manual pairwise listening、learned aesthetic score は継続 quality lane として残る。
 
 ## 目的
 
@@ -109,11 +111,28 @@ The generated template remains unreviewed by default: `preferredSide` is `not-re
 
 Evidence for this lane is test coverage of the review bundle and A/B review output shape. The remaining gap is unchanged: actual human listening has still not been performed, so Phase 10 model adoption still needs manual pairwise notes before treating before/after MIDI as preference evidence.
 
+## Completion Record
+
+Phase 10 は以下の evidence により完了扱いにする。
+
+* A/B review harness: `review-ab` は baseline と variant の diagnostics summary、reference comparison、candidate pool oracle、Phase 7B hard/review policy、manual listening gap、pairwise preference template を比較できる。
+* Selection-model blockers: `phase10-oracle-selection` は entry harmony、stepwise fixation、voice-pair lockstep、leap recovery preservation の scoring / tie-break / guard 候補を opt-in selection model として残した。採用判断は default generator への即時昇格ではなく、後続の before/after evidence baseline として扱う。
+* Generator-or-section-planner blockers: `phase10-section-local-planner` は solo texture / density transition へ section-local candidate generation を追加し、weight tuning だけで解決したことにしない。採用範囲は `modal-cadence` と `dense-modal` の selected output 改善に限定される。
+* Compatibility subset: representative `bach-001`、boundary `minor-entry`、rotation `modal-cadence`、adversarial `dense-modal` で baseline、`phase10-oracle-selection`、`phase10-section-local-planner` が hard constraints、Phase 7B readiness、deterministic diagnostics、candidate evaluation schema versions、reference diagnostics summary、candidate-pool oracle shape を維持することを tests で固定した。
+* Manual listening gap: `pairwise-preferences.json` は before/after の器を持つが、`preferredSide` は `not-reviewed` のまま残す。manual listening と pairwise preference は Phase 10 completion blocker ではなく、Phase 8 以降も model adoption evidence として継続する。
+
+残る quality lane gap:
+
+* MusicXML/Humdrum の実 parser、reference score event mapping、subject entry detection、active voice-pair duration の実測、percentile profile derivation は未完了。
+* section-local planner は非 modal representative / boundary seed の selected output を広く改善していない。
+* before/after MIDI の human pairwise preference は未入力であり、自動 diagnostics だけでは default model adoption を完了扱いにしない。
+* learned aesthetic score は feature と manual preference evidence が揃うまで exploratory 扱いにする。
+
 ## Deferred Operational Lane
 
-Phase 8/9 は削除しない。Phase 10 で generator quality、reference profile、model adoption evidence が安定した後に戻る。
+Phase 8/9 は削除しない。Phase 10 で generator quality、reference profile、model adoption evidence の基盤を固定したため、現在の実装対象は Phase 8 に戻る。
 
 * Phase 8: ring buffer replay、rewind、MVP sliders、parameter-change meta event。
 * Phase 9: Dedicated Web Worker、deadline、best-so-far fallback。
 
-Phase 8/9 に戻る条件は、Phase 10 の採用済み model update が hard constraints、determinism、schema compatibility、reference diagnostics summary、candidate-pool oracle shape を維持していることである。
+Phase 8/9 へ戻った後も、Phase 10 の evidence baseline が hard constraints、determinism、schema compatibility、reference diagnostics summary、candidate-pool oracle shape を維持していることを守る。
