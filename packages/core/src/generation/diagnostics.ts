@@ -350,8 +350,8 @@ function summarizeFunctionalThinning(
   verticalities: readonly Phase11Verticality[],
   sectionPlans: readonly HarmonicPlan[],
 ): Phase11ReviewSummary["functionalThinning"] {
-  const runs: { activeVoiceCount: number; startTick: number; endTick: number }[] = [];
-  let currentRun: { activeVoiceCount: number; startTick: number; endTick: number } | undefined;
+  const runs: { activeVoiceCount: number; startTick: number; endTick: number; voices: Set<Voice> }[] = [];
+  let currentRun: { activeVoiceCount: number; startTick: number; endTick: number; voices: Set<Voice> } | undefined;
 
   for (let index = 0; index < verticalities.length - 1; index += 1) {
     const startTick = verticalities[index]!.tick;
@@ -366,11 +366,14 @@ function summarizeFunctionalThinning(
     if (isFunctionalThinSegment) {
       if (currentRun?.activeVoiceCount === activeVoiceCount && currentRun.endTick === startTick) {
         currentRun.endTick = endTick;
+        for (const voice of verticalities[index]!.active.keys()) {
+          currentRun.voices.add(voice);
+        }
       } else {
         if (currentRun !== undefined) {
           runs.push(currentRun);
         }
-        currentRun = { activeVoiceCount, startTick, endTick };
+        currentRun = { activeVoiceCount, startTick, endTick, voices: new Set(verticalities[index]!.active.keys()) };
       }
     } else if (currentRun !== undefined) {
       runs.push(currentRun);
@@ -382,13 +385,52 @@ function summarizeFunctionalThinning(
   }
 
   const longRuns = runs.filter((run) => run.endTick - run.startTick >= TICKS_PER_QUARTER);
+  const roles = longRuns.map((run) => functionalThinningRole(run, sectionPlans));
   return {
     nonCadentialRunCount: longRuns.length,
     oneVoiceRunCount: longRuns.filter((run) => run.activeVoiceCount === 1).length,
     twoVoiceRunCount: longRuns.filter((run) => run.activeVoiceCount === 2).length,
+    annotatedRunCount: roles.filter((role) => role !== "unsupported").length,
+    unsupportedRunCount: roles.filter((role) => role === "unsupported").length,
+    entryPreparationRunCount: roles.filter((role) => role === "entry-preparation").length,
+    cadentialPreparationRunCount: roles.filter((role) => role === "cadential-preparation").length,
+    echoRunCount: roles.filter((role) => role === "echo").length,
+    pedalRunCount: roles.filter((role) => role === "pedal").length,
+    suspensionPreparationRunCount: roles.filter((role) => role === "suspension-preparation").length,
     totalDurationTicks: longRuns.reduce((sum, run) => sum + run.endTick - run.startTick, 0),
     maxDurationTicks: maximum(longRuns.map((run) => run.endTick - run.startTick)),
   };
+}
+
+function functionalThinningRole(
+  run: { startTick: number; endTick: number; voices: ReadonlySet<Voice> },
+  sectionPlans: readonly HarmonicPlan[],
+): "entry-preparation" | "cadential-preparation" | "echo" | "pedal" | "suspension-preparation" | "unsupported" {
+  const containingPlan = sectionPlans.find(
+    (plan) => plan.startTick <= run.startTick && run.startTick < plan.startTick + plan.durationTicks,
+  );
+  if (containingPlan === undefined) {
+    return "unsupported";
+  }
+
+  const sectionEndTick = containingPlan.startTick + containingPlan.durationTicks;
+  const nearestCadenceTarget = containingPlan.anchors.find((anchor) => anchor.cadenceTarget);
+  if (run.startTick - containingPlan.startTick <= TICKS_PER_QUARTER) {
+    return "entry-preparation";
+  }
+  if (
+    sectionEndTick - run.endTick <= TICKS_PER_QUARTER * 2 ||
+    (nearestCadenceTarget !== undefined &&
+      run.startTick <= nearestCadenceTarget.tick &&
+      nearestCadenceTarget.tick - run.endTick <= TICKS_PER_QUARTER * 2)
+  ) {
+    return "cadential-preparation";
+  }
+  if (run.voices.has("bass")) {
+    return "pedal";
+  }
+
+  return "unsupported";
 }
 
 function summarizeStateGrammarRepetition(

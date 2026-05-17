@@ -415,6 +415,13 @@ export type Phase11FunctionalThinningSummary = {
   nonCadentialRunCount: number;
   oneVoiceRunCount: number;
   twoVoiceRunCount: number;
+  annotatedRunCount: number;
+  unsupportedRunCount: number;
+  entryPreparationRunCount: number;
+  cadentialPreparationRunCount: number;
+  echoRunCount: number;
+  pedalRunCount: number;
+  suspensionPreparationRunCount: number;
   totalDurationTicks: number;
   maxDurationTicks: number;
 };
