@@ -1,5 +1,9 @@
 import type { CandidateEvaluation, NoteEvent } from "../events.js";
-import { buildPhase7CandidateRiskContexts, explainCandidateRiskContexts } from "./candidate-risk-contexts.js";
+import {
+  buildPhase7CandidateRiskContexts,
+  explainCandidateRiskContexts,
+  type Phase7CandidateRiskContexts,
+} from "./candidate-risk-contexts.js";
 import { analyzeScore } from "./diagnostics.js";
 import type { Exposition } from "./types.js";
 
@@ -35,9 +39,12 @@ const EVALUATION_WEIGHTS = {
   subjectClarity: {
     subjectIdentityViolation: 10_000,
     answerPlanViolation: 1_000,
-    counterSubjectIdentityRetention: 10,
+    counterSubjectIdentityRetention: 30,
   },
   harmony: {
+    entryInstability: 1,
+    severeEntryInterval: 1,
+    unresolvedSevereEntryInterval: 2,
     unresolvedDissonance: 100,
     strongBeatDissonance: 50,
     predominantDirectionMiss: 30,
@@ -151,8 +158,10 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
       counterSubjectIdentityRetention: diagnostics.counterSubjectIdentityRetention,
     },
   };
+  const entryHarmonyRiskCost = scoreBalancedEntryHarmonyRisk(riskContexts);
   const harmony = {
     cost:
+      entryHarmonyRiskCost +
       diagnostics.unresolvedDissonanceCount * EVALUATION_WEIGHTS.harmony.unresolvedDissonance +
       diagnostics.strongBeatDissonanceCount * EVALUATION_WEIGHTS.harmony.strongBeatDissonance +
       diagnostics.predominantDirectionMisses * EVALUATION_WEIGHTS.harmony.predominantDirectionMiss +
@@ -173,6 +182,7 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
       entrySupportInstabilityCount: diagnostics.entrySupportInstabilityCount,
       severeEntryIntervalCount: diagnostics.severeEntryIntervalCount,
       unresolvedSevereEntryIntervalCount: diagnostics.unresolvedSevereEntryIntervalCount,
+      selectedEntryHarmonyRiskCost: entryHarmonyRiskCost,
     },
   };
   const form = {
@@ -203,7 +213,7 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
 
   return {
     featureVersion: 1,
-    evaluationModelVersion: 1,
+    evaluationModelVersion: 2,
     totalCost: Math.round(totalCost * 1000) / 1000,
     hardFailures,
     explanations,
@@ -216,4 +226,15 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
       form,
     },
   };
+}
+
+function scoreBalancedEntryHarmonyRisk(contexts: Phase7CandidateRiskContexts): number {
+  return contexts.entryIntervalSupport.entries.reduce(
+    (sum, entry) =>
+      sum +
+      entry.instabilityCount * EVALUATION_WEIGHTS.harmony.entryInstability +
+      entry.severeIntervalCount * EVALUATION_WEIGHTS.harmony.severeEntryInterval +
+      entry.unresolvedSevereIntervalCount * EVALUATION_WEIGHTS.harmony.unresolvedSevereEntryInterval,
+    0,
+  );
 }

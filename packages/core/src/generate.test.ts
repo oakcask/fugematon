@@ -685,13 +685,14 @@ test("generateScore applies phase-7 contour gates across fixed and rotation seed
   }
 });
 
-test("generateScore pins phase-7 entry harmony blocker evidence before scoring changes", () => {
+test("generateScore balances phase-7 entry harmony scoring with preservation guardrails", () => {
   const blockerSeeds = [
-    ["fugue-smoke", 145, 108, 100, 3, 3, 3],
+    ["fugue-smoke", 143, 108, 100, 3, 3, 3],
     ["modal-cadence", 149, 108, 91, 4, 3, 3],
     ["lyrical-line", 145, 108, 100, 3, 3, 3],
     ["tight-stretto", 160, 105, 97, 4, 3, 3],
     ["wide-key", 143, 105, 97, 3, 3, 3],
+    ["contrary-answer", 145, 105, 97, 3, 3, 3],
   ] as const;
 
   for (const [
@@ -709,9 +710,9 @@ test("generateScore pins phase-7 entry harmony blocker evidence before scoring c
 
     assert.deepEqual(gate.failures, []);
     assert.equal(gate.passed, true);
-    assert.equal(output.diagnostics.entrySupportInstabilityCount, instabilityCount);
-    assert.equal(output.diagnostics.severeEntryIntervalCount, severeIntervalCount);
-    assert.equal(output.diagnostics.unresolvedSevereEntryIntervalCount, unresolvedSevereIntervalCount);
+    assert.ok(output.diagnostics.entrySupportInstabilityCount <= instabilityCount);
+    assert.ok(output.diagnostics.severeEntryIntervalCount <= severeIntervalCount);
+    assert.ok(output.diagnostics.unresolvedSevereEntryIntervalCount <= unresolvedSevereIntervalCount);
     assert.equal(
       output.diagnostics.entrySupportInstabilityCount,
       output.diagnostics.entrySupportInstabilityDetails.reduce((sum, detail) => sum + detail.instabilityCount, 0),
@@ -720,7 +721,8 @@ test("generateScore pins phase-7 entry harmony blocker evidence before scoring c
       output.diagnostics.severeEntryIntervalCount,
       output.diagnostics.entrySupportSevereIntervalDetails.reduce((sum, detail) => sum + detail.severeIntervalCount, 0),
     );
-    assert.equal(selectedEvaluation.dimensions.harmony.cost, 0);
+    assert.ok(selectedEvaluation.dimensions.harmony.cost > 0);
+    assert.ok(selectedEvaluation.dimensions.harmony.features.selectedEntryHarmonyRiskCost > 0);
     assert.equal(selectedEvaluation.dimensions.harmony.features.entrySupportInstabilityCount, selectedInstabilityCount);
     assert.equal(selectedEvaluation.dimensions.harmony.features.severeEntryIntervalCount, selectedSevereIntervalCount);
     assert.equal(
@@ -741,9 +743,9 @@ test("generateScore pins phase-7 entry harmony blocker evidence before scoring c
 test("generateScore pins phase-7 voice-pair independence blocker evidence before scoring changes", () => {
   const blockerSeeds = [
     ["contrary-motion", 40, 528, 778, 4, 2, 26, 7, 54, 14],
-    ["fugue-smoke", 33, 597, 834, 0, 0, 27, 7, 54, 12],
+    ["fugue-smoke", 36, 597, 834, 0, 0, 27, 7, 54, 12],
     ["minor-entry", 26, 736, 906, 0, 0, 50, 15, 70, 20],
-    ["modal-answer", 11, 751, 906, 0, 0, 46, 14, 70, 20],
+    ["modal-answer", 13, 751, 906, 0, 0, 46, 14, 70, 20],
   ] as const;
 
   for (const [
@@ -785,7 +787,7 @@ test("generateScore pins phase-7 voice-pair independence blocker evidence before
   }
 });
 
-test("generateScore pins phase-7 modal counter-subject retention blocker seeds", () => {
+test("generateScore preserves phase-7 modal counter-subject retention guardrails", () => {
   const blockerSeeds = [
     ["modal-cadence", 0.573],
     ["dense-modal", 0.573],
@@ -798,20 +800,19 @@ test("generateScore pins phase-7 modal counter-subject retention blocker seeds",
     const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
     const selectedEvaluation = requireSelectedCandidateEvaluation(output.diagnostics.selectedCandidateEvaluations);
 
-    assert.equal(roundMetric(output.diagnostics.counterSubjectIdentityRetention), counterSubjectIdentityRetention);
+    assert.ok(roundMetric(output.diagnostics.counterSubjectIdentityRetention) >= counterSubjectIdentityRetention);
     assert.ok(output.diagnostics.modalContextCount > 0);
     assert.ok("counterSubjectIdentityRetention" in selectedEvaluation.dimensions.subjectClarity.features);
-    assert.equal(selectedEvaluation.featureVersion, 1);
-    assert.equal(selectedEvaluation.evaluationModelVersion, 1);
   }
 });
 
-test("generateScore pins phase-7 melody and form blocker evidence before scoring changes", () => {
+test("generateScore preserves phase-7 melody and form guardrails", () => {
   const blockerSeeds = [
     ["modal-answer", 33, 2, 1, 36, 13, 13, 2],
     ["contrary-motion", 29, 7, 4, 42, 15, 15, 8],
     ["modal-dorian", 27, 3, 1, 37, 13, 13, 8],
-    ["lyrical-line", 22, 3, 2, 42, 16, 16, 8],
+    ["bright-answer", 30, 7, 3, 37, 12, 12, 2],
+    ["lyrical-line", 25, 3, 2, 42, 16, 16, 8],
   ] as const;
 
   for (const [
@@ -827,15 +828,15 @@ test("generateScore pins phase-7 melody and form blocker evidence before scoring
     const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
     const selectedEvaluation = requireSelectedCandidateEvaluation(output.diagnostics.selectedCandidateEvaluations);
 
-    assert.equal(output.diagnostics.leapRecoveryMisses, leapRecoveryMisses);
+    assert.ok(output.diagnostics.leapRecoveryMisses <= leapRecoveryMisses);
     assert.equal(selectedEvaluation.dimensions.melody.features.leapRecoveryMisses, selectedMelodyLeapRecoveryMisses);
     assert.equal(
       maximum(selectedEvaluation.explanations.voices.map((voice) => voice.leapRecoveryMisses)),
       selectedVoiceLeapRecoveryMisses,
     );
-    assert.equal(output.diagnostics.soloTexture.soloRunCount, soloRunCount);
-    assert.equal(output.diagnostics.soloTexture.unsupportedSoloRunCount, unsupportedSoloRunCount);
-    assert.equal(output.diagnostics.soloTexture.abruptTextureDropCount, abruptTextureDropCount);
+    assert.ok(output.diagnostics.soloTexture.soloRunCount <= soloRunCount);
+    assert.ok(output.diagnostics.soloTexture.unsupportedSoloRunCount <= unsupportedSoloRunCount);
+    assert.ok(output.diagnostics.soloTexture.abruptTextureDropCount <= abruptTextureDropCount);
     assert.equal(
       maximum(selectedEvaluation.explanations.sections.map((section) => section.soloTextureRisk)),
       selectedSectionSoloTextureRisk,
@@ -873,7 +874,7 @@ function requireSelectedCandidateEvaluation(
 
   assert.ok(selectedEvaluation !== undefined);
   assert.equal(selectedEvaluation.featureVersion, 1);
-  assert.equal(selectedEvaluation.evaluationModelVersion, 1);
+  assert.equal(selectedEvaluation.evaluationModelVersion, 2);
   assert.ok(selectedEvaluation.explanations.entries.length > 0);
   assert.ok(selectedEvaluation.explanations.voicePairs.length > 0);
   assert.ok(selectedEvaluation.explanations.voices.length > 0);
