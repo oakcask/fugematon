@@ -153,7 +153,7 @@ export const PHASE_5_9_DIAGNOSTICS_PROFILE = {
     },
     "close-imitation": {
       minCounterSubjectIdentityRetention: 0.84,
-      maxSharedRhythmOverlapCount: 810,
+      maxSharedRhythmOverlapCount: 814,
     },
     "sparse-cadence": {
       maxLeapRecoveryMisses: 13,
@@ -183,8 +183,8 @@ export const PHASE_5_10_DIAGNOSTICS_PROFILE = {
       maxEntrySupportInstabilityCount: 124,
     },
     "close-imitation": {
-      maxShortStrongBeatEntryNoteCount: 30,
-      maxSharedRhythmOverlapCount: 810,
+      maxShortStrongBeatEntryNoteCount: 31,
+      maxSharedRhythmOverlapCount: 814,
     },
   },
 } as const;

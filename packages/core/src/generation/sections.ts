@@ -16,7 +16,7 @@ import type { Xoshiro128StarStar } from "../prng.js";
 import { addSubjectEntry, chooseAnswerKind } from "./entries.js";
 import { evaluateCandidate } from "./evaluation.js";
 import { buildHarmonicPlan, cadenceKindForSection } from "./harmony.js";
-import { transposeKey } from "./key.js";
+import { isModalMode, transposeKey } from "./key.js";
 import {
   compareNoteEvents,
   ENTRY_SPACING_TICKS,
@@ -49,11 +49,19 @@ export function buildFugueScore(
   const selectedCandidateEvaluations: CandidateEvaluation[] = [];
   let candidateEvaluations = 0;
   let sectionStartTick = exposition.endTick;
-  let stateIndex = 0;
   const continuationPattern = chooseContinuationStatePattern(rng);
+  const continuationPatternIndex = CONTINUATION_STATE_PATTERNS.indexOf(continuationPattern);
+  let continuationCycleIndex = 0;
+  let stateIndex = 0;
 
   while (sectionStartTick < lengthTicks) {
-    const state = continuationPattern[stateIndex % continuationPattern.length]!;
+    const statePattern = continuationPatternForCycle(
+      continuationPattern,
+      continuationPatternIndex,
+      continuationCycleIndex,
+      isModalMode(keySignature.mode),
+    );
+    const state = statePattern[stateIndex]!;
     const sectionDurationTicks = chooseContinuationSectionTicks(state, rng);
     stateTransitions.push(state);
     stateChanges.push({ tick: sectionStartTick, state });
@@ -73,6 +81,10 @@ export function buildFugueScore(
     selectedCandidateEvaluations.push(selection.evaluation);
     sectionStartTick += selection.section.durationTicks;
     stateIndex += 1;
+    if (stateIndex >= statePattern.length) {
+      stateIndex = 0;
+      continuationCycleIndex += 1;
+    }
   }
 
   fillAllVoiceSilenceGaps(notes, keySignature);
@@ -93,6 +105,21 @@ export function buildFugueScore(
 
 export function chooseContinuationStatePattern(rng: Xoshiro128StarStar): readonly FugueState[] {
   return CONTINUATION_STATE_PATTERNS[rng.nextInt(CONTINUATION_STATE_PATTERNS.length)]!;
+}
+
+function continuationPatternForCycle(
+  primaryPattern: readonly FugueState[],
+  primaryPatternIndex: number,
+  cycleIndex: number,
+  preservePrimaryPattern: boolean,
+): readonly FugueState[] {
+  if (preservePrimaryPattern || cycleIndex === 0 || cycleIndex % 7 !== 0) {
+    return primaryPattern;
+  }
+
+  return CONTINUATION_STATE_PATTERNS[
+    (primaryPatternIndex + Math.floor(cycleIndex / 7)) % CONTINUATION_STATE_PATTERNS.length
+  ]!;
 }
 
 export function chooseContinuationSectionTicks(state: FugueState, rng: Xoshiro128StarStar): number {
