@@ -85,6 +85,30 @@ normalized diagnostics は manifest の axes から `createNormalizedReferenceDi
 
 残る gap: MusicXML/Humdrum の実 parser、reference score からの event mapping、subject entry detection、active voice-pair duration の実測、percentile reference profile derivation は未完了である。現時点の profile band は metadata fixture のままで、model 採否に使う実 corpus profile ではない。
 
+### Section-local planner slice
+
+`phase10-section-local-planner` は、`generator-or-section-planner` に分類される solo texture / density transition blocker へ進む最小の opt-in model である。既存 section 候補に加えて、continuity 後半へ staggered second support line を持つ section-local 候補を追加する。単純な 2 声追加で PR3 の unison、same-pitch、leap recovery、modal identity、outer-voice contour 悪化を再発させないよう、候補選択時には selected baseline candidate に対して high solo texture risk を十分に下げ、exact same-pitch、unison、shared rhythm、leap recovery、counter-subject identity、outer-voice contour を悪化させない候補だけを採用する。baseline と `phase10-oracle-selection` の挙動、review bundle schema、reference diagnostics summary、candidate-pool oracle shape は互換のまま残す。
+
+検証 bundle:
+
+```sh
+pnpm fugematon review-ab --out samples/phase10-section-local-planner --ticks 129600 --baseline-label phase10-oracle-selection --baseline-model phase10-oracle-selection --variant-label phase10-section-local-planner --variant-model phase10-section-local-planner
+```
+
+full 22 seed で review-ab を生成した。`phase7BGate.phase8Ready`、hard constraint failure、reference outside count、Phase 7B hard failure、review signal count は全 seed で baseline と同じだった。candidate pool viable candidate count は全 seed で +28 になり、oracle shape は維持された。selected output が変わった seed は `modal-cadence` と `dense-modal` に限られる。selected section solo texture risk 6 以上は full 22 seed 合計で 317 から 298、selected section solo texture risk 合計は 3188 から 3098 へ下がった。`modal-cadence` は high selected section solo texture risk が 16 から 10、leap recovery miss が 14 から 12 へ下がり、same-pitch 17、unison 576、shared rhythm 810、counter-subject identity 0.580、4拍 outer-voice same-direction 0 は維持された。`dense-modal` は high selected section solo texture risk が 16 から 3、max selected section solo texture risk が 8 から 6、leap recovery miss が 6 から 2、counter-subject identity が 0.586 から 0.618、4拍 outer-voice same-direction が 0.708 から 0.688 へ改善し、same-pitch 0、unison 585、shared rhythm 810 は維持された。
+
+Music theory review: Fux/species counterpoint and Bach/common-practice fugue source families support treating the new line as a subordinate support voice rather than a parallel filler voice: it is staggered, lower velocity, and selected only when it avoids exact unison and lockstep while reducing unsupported solo texture. Modal / early-music source-family concerns are kept as guardrails rather than hard style claims: modal counter-subject identity must not fall, and the only adopted selected changes are modal seeds where identity is preserved or improved. Popular-music texture source-family reasoning supports density-transition review as long-run listener-fatigue evidence rather than a zero-solo absolute rule.
+
+Tradeoffs and gaps: this is intentionally not a complete solo texture fix. The max selected section solo texture risk remains 8 for most seeds, and non-modal representative / boundary seeds keep their selected output unchanged. Manual listening and pairwise preference are still not performed; the evidence is diagnostics-backed and should be treated as adoption support for this narrow model slice, not as proof that the resulting MIDI wins a human preference test. Remaining Phase 10 work includes broader section-local candidates for non-modal episode/codetta/stretto preparation, pairwise preference notes, and real reference percentile profiles from imported scores.
+
+### Pairwise preference lane
+
+The final small Phase 10 lane keeps pairwise preference as an explicit review artifact instead of implying that automatic diagnostics completed the listening work. `review-ab` now writes a top-level `pairwise-preferences.json` beside `comparison-summary.json`. The template records the baseline and variant labels, selection models, seed/category, compared MIDI paths, compared diagnostics paths, preferred side, criteria, reason, and manual-listening status for each before/after seed comparison.
+
+The generated template remains unreviewed by default: `preferredSide` is `not-reviewed`, all criteria are `not-reviewed`, the reason is empty, and each comparison carries an explicit manual-listening gap. The regular `review` bundle also keeps its pairwise preference template empty and unreviewed. This makes the review artifact ready for future human pairwise listening without fabricating a preference or treating diagnostics-only evidence as a completed listening pass.
+
+Evidence for this lane is test coverage of the review bundle and A/B review output shape. The remaining gap is unchanged: actual human listening has still not been performed, so Phase 10 model adoption still needs manual pairwise notes before treating before/after MIDI as preference evidence.
+
 ## Deferred Operational Lane
 
 Phase 8/9 は削除しない。Phase 10 で generator quality、reference profile、model adoption evidence が安定した後に戻る。

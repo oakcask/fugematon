@@ -50,7 +50,7 @@ test("parseArgs parses review-ab command", () => {
       "--variant-label",
       "candidate",
       "--variant-model",
-      "phase10-oracle-selection",
+      "phase10-section-local-planner",
     ]),
     {
       name: "review-ab",
@@ -59,7 +59,7 @@ test("parseArgs parses review-ab command", () => {
       baselineLabel: "current",
       variantLabel: "candidate",
       baselineModel: "baseline",
-      variantModel: "phase10-oracle-selection",
+      variantModel: "phase10-section-local-planner",
     },
   );
   assert.deepEqual(parseArgs(["review-ab", "--out", "phase10-review"]), {
@@ -77,7 +77,7 @@ test("helpText includes the Phase 10 A/B review command", () => {
   assert.match(helpText(), /fugematon review-ab --out <directory>/);
   assert.match(helpText(), /--baseline-label <label>/);
   assert.match(helpText(), /--variant-label <label>/);
-  assert.match(helpText(), /--variant-model baseline\|phase10-oracle-selection/);
+  assert.match(helpText(), /--variant-model baseline\|phase10-oracle-selection\|phase10-section-local-planner/);
 });
 
 test("parseArgs rejects invalid arguments", () => {

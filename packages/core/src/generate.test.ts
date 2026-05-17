@@ -31,6 +31,7 @@ import {
 } from "./reference-diagnostics.js";
 import {
   evaluatePhase6Diagnostics,
+  evaluatePhase7BGatePolicy,
   evaluatePhase7Diagnostics,
   evaluatePhase59Diagnostics,
   evaluatePhase510Diagnostics,
@@ -841,6 +842,64 @@ test("generateScore can compare the phase-10 oracle selection model against base
     variant.diagnostics.candidatePoolOracle.viableCandidateCount >=
       baseline.diagnostics.candidatePoolOracle.viableCandidateCount,
   );
+});
+
+test("generateScore adds guarded phase-10 section-local planner candidates", () => {
+  const blockerSeeds = ["modal-cadence", "dense-modal"] as const;
+  let baselineHighSoloTextureSections = 0;
+  let variantHighSoloTextureSections = 0;
+  let baselineSoloTextureRisk = 0;
+  let variantSoloTextureRisk = 0;
+
+  for (const seed of blockerSeeds) {
+    const baseline = generateScore({
+      seed,
+      lengthTicks: PHASE_5_LENGTH_TICKS,
+      selectionModel: "phase10-oracle-selection",
+    });
+    const variant = generateScore({
+      seed,
+      lengthTicks: PHASE_5_LENGTH_TICKS,
+      selectionModel: "phase10-section-local-planner",
+    });
+    const baselineGate = evaluatePhase7BGatePolicy(seed, baseline.diagnostics);
+    const variantGate = evaluatePhase7BGatePolicy(seed, variant.diagnostics);
+    const baselineRisks = baseline.diagnostics.selectedCandidateEvaluations.flatMap((evaluation) =>
+      evaluation.explanations.sections.map((section) => section.soloTextureRisk),
+    );
+    const variantRisks = variant.diagnostics.selectedCandidateEvaluations.flatMap((evaluation) =>
+      evaluation.explanations.sections.map((section) => section.soloTextureRisk),
+    );
+
+    assert.equal(baselineGate.phase8Ready, true);
+    assert.equal(variantGate.phase8Ready, true);
+    assert.equal(
+      variant.diagnostics.candidatePoolOracle.schemaVersion,
+      baseline.diagnostics.candidatePoolOracle.schemaVersion,
+    );
+    assert.ok(
+      variant.diagnostics.candidatePoolOracle.candidateCount >= baseline.diagnostics.candidatePoolOracle.candidateCount,
+    );
+    assert.ok(variant.diagnostics.samePitchOverlapCount <= baseline.diagnostics.samePitchOverlapCount);
+    assert.ok(variant.diagnostics.unisonOverlapCount <= baseline.diagnostics.unisonOverlapCount);
+    assert.ok(variant.diagnostics.sharedRhythmOverlapCount <= baseline.diagnostics.sharedRhythmOverlapCount);
+    assert.ok(variant.diagnostics.leapRecoveryMisses <= baseline.diagnostics.leapRecoveryMisses);
+    assert.ok(
+      variant.diagnostics.counterSubjectIdentityRetention >= baseline.diagnostics.counterSubjectIdentityRetention,
+    );
+    assert.ok(
+      variant.diagnostics.pitchContourMotion.fourBeat.outerVoiceSameDirectionRatio <=
+        baseline.diagnostics.pitchContourMotion.fourBeat.outerVoiceSameDirectionRatio,
+    );
+
+    baselineHighSoloTextureSections += baselineRisks.filter((risk) => risk >= 6).length;
+    variantHighSoloTextureSections += variantRisks.filter((risk) => risk >= 6).length;
+    baselineSoloTextureRisk += baselineRisks.reduce((sum, risk) => sum + risk, 0);
+    variantSoloTextureRisk += variantRisks.reduce((sum, risk) => sum + risk, 0);
+  }
+
+  assert.ok(variantHighSoloTextureSections < baselineHighSoloTextureSections);
+  assert.ok(variantSoloTextureRisk < baselineSoloTextureRisk);
 });
 
 test("generateScore nudges non-modal stepwise pattern fixation without modal guardrail regressions", () => {

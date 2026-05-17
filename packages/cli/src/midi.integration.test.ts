@@ -295,7 +295,12 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
     const pairwisePreferences = JSON.parse(await readFile(join(directory, "pairwise-preferences.json"), "utf8")) as {
       schemaVersion: number;
       lengthTicks: number;
-      preferences: unknown[];
+      manualListeningStatus: string;
+      manualListeningGap: {
+        unlistened: boolean;
+        note: string;
+      };
+      comparisons: unknown[];
     };
 
     assert.equal(summary.schemaVersion, 11);
@@ -315,11 +320,16 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
     assert.equal(listeningReview.lengthTicks, 9600);
     assert.ok(listeningReview.regressionChecks.some((check) => check.includes("fugue-smoke")));
     assert.deepEqual(pairwisePreferences, {
-      schemaVersion: 1,
+      schemaVersion: 2,
       lengthTicks: 9600,
       instructions:
-        "Add seed pairs when listening produces a clear preference. These records are candidates for future aesthetic scoring weights and do not override hard constraints.",
-      preferences: [],
+        "Fill preferredSide only after manual pairwise listening. These records are candidates for future aesthetic scoring weights and do not override hard constraints.",
+      manualListeningStatus: "not-reviewed",
+      manualListeningGap: {
+        unlistened: true,
+        note: "This generated template has not been manually listened to and contains no preference judgement.",
+      },
+      comparisons: [],
     });
     for (const entry of summary.seeds) {
       assert.ok(files.includes(entry.diagnosticsFile));
@@ -543,7 +553,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       listeningReview.seeds.filter((entry) => entry.judgement === "not-reviewed").length,
       listeningReview.seeds.length,
     );
-    assert.equal(pairwisePreferences.preferences.length, 0);
+    assert.equal(pairwisePreferences.comparisons.length, 0);
   } finally {
     await rm(directory, { force: true, recursive: true });
   }
@@ -623,9 +633,49 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
         };
       }[];
     };
+    const pairwisePreferences = JSON.parse(await readFile(join(directory, "pairwise-preferences.json"), "utf8")) as {
+      schemaVersion: number;
+      lengthTicks: number;
+      instructions: string;
+      manualListeningStatus: string;
+      manualListeningGap: {
+        unlistened: boolean;
+        note: string;
+      };
+      comparisons: {
+        seed: string;
+        category: string;
+        baseline: {
+          label: string;
+          selectionModel: string;
+          diagnosticsFile: string;
+          midiFile: string;
+        };
+        variant: {
+          label: string;
+          selectionModel: string;
+          diagnosticsFile: string;
+          midiFile: string;
+        };
+        preferredSide: string;
+        criteria: Record<string, string>;
+        reason: string;
+        manualListeningStatus: string;
+        manualListeningGap: {
+          unlistened: boolean;
+          note: string;
+        };
+      }[];
+    };
 
     assert.ok(baselineFiles.includes("summary.json"));
     assert.ok(variantFiles.includes("summary.json"));
+    assert.equal(pairwisePreferences.schemaVersion, 2);
+    assert.equal(pairwisePreferences.lengthTicks, 960);
+    assert.equal(pairwisePreferences.manualListeningStatus, "not-reviewed");
+    assert.equal(pairwisePreferences.manualListeningGap.unlistened, true);
+    assert.match(pairwisePreferences.manualListeningGap.note, /no preference judgement/);
+    assert.equal(pairwisePreferences.comparisons.length, comparison.seeds.length);
     assert.equal(comparison.schemaVersion, 1);
     assert.equal(comparison.lengthTicks, 960);
     assert.deepEqual(comparison.baseline, {
@@ -692,6 +742,31 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
       assert.equal(entry.manualListeningGap.variantJudgement, "not-reviewed");
       assert.equal(entry.manualListeningGap.unlistened, true);
       assert.match(entry.manualListeningGap.note, /manual listening/);
+    }
+    for (const entry of pairwisePreferences.comparisons) {
+      assert.notEqual(entry.seed, "");
+      assert.notEqual(entry.category, "");
+      assert.equal(entry.baseline.label, "current");
+      assert.equal(entry.variant.label, "candidate");
+      assert.equal(entry.baseline.selectionModel, "baseline");
+      assert.equal(entry.variant.selectionModel, "phase10-oracle-selection");
+      assert.match(entry.baseline.diagnosticsFile, /^baseline\/.+\.diagnostics\.json$/);
+      assert.match(entry.baseline.midiFile, /^baseline\/.+\.mid$/);
+      assert.match(entry.variant.diagnosticsFile, /^variant\/.+\.diagnostics\.json$/);
+      assert.match(entry.variant.midiFile, /^variant\/.+\.mid$/);
+      assert.equal(entry.preferredSide, "not-reviewed");
+      assert.deepEqual(Object.values(entry.criteria), [
+        "not-reviewed",
+        "not-reviewed",
+        "not-reviewed",
+        "not-reviewed",
+        "not-reviewed",
+        "not-reviewed",
+      ]);
+      assert.equal(entry.reason, "");
+      assert.equal(entry.manualListeningStatus, "not-reviewed");
+      assert.equal(entry.manualListeningGap.unlistened, true);
+      assert.match(entry.manualListeningGap.note, /not been manually listened to/);
     }
   } finally {
     await rm(directory, { force: true, recursive: true });

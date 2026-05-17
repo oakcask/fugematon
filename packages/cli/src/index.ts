@@ -157,8 +157,20 @@ async function writeAbReviewBundle(
     baselineSummary,
     variantSummary,
   });
+  const pairwisePreferences = createAbPairwisePreferences({
+    lengthTicks,
+    baselineLabel,
+    variantLabel,
+    baselineSummary,
+    variantSummary,
+  });
 
   await writeFile(join(outDirectory, "comparison-summary.json"), `${JSON.stringify(comparison, null, 2)}\n`, "utf8");
+  await writeFile(
+    join(outDirectory, "pairwise-preferences.json"),
+    `${JSON.stringify(pairwisePreferences, null, 2)}\n`,
+    "utf8",
+  );
 }
 
 type ReviewSummary = {
@@ -333,14 +345,36 @@ type ListeningSeedReview = {
 };
 
 type PairwisePreferences = {
-  schemaVersion: 1;
+  schemaVersion: 2;
   lengthTicks: number;
   instructions: string;
-  preferences: {
-    preferredSeed: string;
-    rejectedSeed: string;
-    reason: string;
-  }[];
+  manualListeningStatus: "not-reviewed";
+  manualListeningGap: ManualListeningGap;
+  comparisons: PairwisePreferenceComparison[];
+};
+
+type PairwisePreferenceComparison = {
+  seed: string;
+  category: string;
+  baseline: PairwisePreferenceSide;
+  variant: PairwisePreferenceSide;
+  preferredSide: "baseline" | "variant" | "tie" | "inconclusive" | "not-reviewed";
+  criteria: Record<ListeningCriterion, "not-reviewed">;
+  reason: string;
+  manualListeningStatus: "not-reviewed";
+  manualListeningGap: ManualListeningGap;
+};
+
+type PairwisePreferenceSide = {
+  label: string;
+  selectionModel: SelectionModel;
+  diagnosticsFile: string;
+  midiFile: string;
+};
+
+type ManualListeningGap = {
+  unlistened: true;
+  note: string;
 };
 
 function compareReviewSummaries({
@@ -719,13 +753,103 @@ function createListeningSeedReview(
   };
 }
 
-function createPairwisePreferences(lengthTicks: number): PairwisePreferences {
+function createPairwisePreferences(
+  lengthTicks: number,
+  comparisons: PairwisePreferenceComparison[] = [],
+): PairwisePreferences {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     lengthTicks,
     instructions:
-      "Add seed pairs when listening produces a clear preference. These records are candidates for future aesthetic scoring weights and do not override hard constraints.",
-    preferences: [],
+      "Fill preferredSide only after manual pairwise listening. These records are candidates for future aesthetic scoring weights and do not override hard constraints.",
+    manualListeningStatus: "not-reviewed",
+    manualListeningGap: createManualListeningGap(),
+    comparisons,
+  };
+}
+
+function createAbPairwisePreferences({
+  lengthTicks,
+  baselineLabel,
+  variantLabel,
+  baselineSummary,
+  variantSummary,
+}: {
+  lengthTicks: number;
+  baselineLabel: string;
+  variantLabel: string;
+  baselineSummary: ReviewSummary;
+  variantSummary: ReviewSummary;
+}): PairwisePreferences {
+  return createPairwisePreferences(
+    lengthTicks,
+    baselineSummary.seeds.map((baselineSeed) => {
+      const variantSeed = findSummarySeed(variantSummary.seeds, baselineSeed.seed);
+      return createPairwisePreferenceComparison({
+        baselineSeed,
+        variantSeed,
+        baselineLabel,
+        variantLabel,
+        baselineSelectionModel: baselineSummary.selectionModel,
+        variantSelectionModel: variantSummary.selectionModel,
+      });
+    }),
+  );
+}
+
+function createPairwisePreferenceComparison({
+  baselineSeed,
+  variantSeed,
+  baselineLabel,
+  variantLabel,
+  baselineSelectionModel,
+  variantSelectionModel,
+}: {
+  baselineSeed: ReviewSummarySeed;
+  variantSeed: ReviewSummarySeed;
+  baselineLabel: string;
+  variantLabel: string;
+  baselineSelectionModel: SelectionModel;
+  variantSelectionModel: SelectionModel;
+}): PairwisePreferenceComparison {
+  return {
+    seed: baselineSeed.seed,
+    category: baselineSeed.category,
+    baseline: {
+      label: baselineLabel,
+      selectionModel: baselineSelectionModel,
+      diagnosticsFile: `baseline/${baselineSeed.diagnosticsFile}`,
+      midiFile: `baseline/${baselineSeed.midiFile}`,
+    },
+    variant: {
+      label: variantLabel,
+      selectionModel: variantSelectionModel,
+      diagnosticsFile: `variant/${variantSeed.diagnosticsFile}`,
+      midiFile: `variant/${variantSeed.midiFile}`,
+    },
+    preferredSide: "not-reviewed",
+    criteria: createUnreviewedListeningCriteria(),
+    reason: "",
+    manualListeningStatus: "not-reviewed",
+    manualListeningGap: createManualListeningGap(),
+  };
+}
+
+function createUnreviewedListeningCriteria(): Record<ListeningCriterion, "not-reviewed"> {
+  return {
+    subjectMemorability: "not-reviewed",
+    counterSubjectRecognition: "not-reviewed",
+    nonEntryVoiceSingability: "not-reviewed",
+    episodeMomentum: "not-reviewed",
+    strettoTension: "not-reviewed",
+    longRunInterest: "not-reviewed",
+  };
+}
+
+function createManualListeningGap(): ManualListeningGap {
+  return {
+    unlistened: true,
+    note: "This generated template has not been manually listened to and contains no preference judgement.",
   };
 }
 

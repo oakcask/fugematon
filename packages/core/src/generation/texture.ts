@@ -19,6 +19,7 @@ export type ContinuityCounterpointInput = {
   startTick: number;
   durationTicks: number;
   localKey: KeySignature;
+  maxVoiceCount?: number;
 };
 
 export type ContinuityTexturePlan = ContinuityCounterpointInput & {
@@ -263,8 +264,8 @@ export function addContinuityCounterpoint(notes: Exposition["notes"], input: Con
     return;
   }
 
-  for (const voice of plan.voices) {
-    addContinuityLine(notes, voice, plan);
+  for (const [index, voice] of plan.voices.entries()) {
+    addContinuityLine(notes, voice, plan, index);
   }
 }
 
@@ -276,18 +277,34 @@ export function buildContinuityTexturePlan(
     return { ...input, voices: [] };
   }
 
-  const voice = VOICE_ENTRY_ORDER.find(
+  const maxVoiceCount = input.maxVoiceCount ?? 1;
+  const voices = VOICE_ENTRY_ORDER.filter(
     (candidate) => !hasOverlap(notes, candidate, input.startTick, input.durationTicks),
-  );
+  ).slice(0, maxVoiceCount);
 
   return {
     ...input,
-    voices: voice === undefined ? [] : [voice],
+    voices,
   };
 }
 
-function addContinuityLine(notes: Exposition["notes"], voice: Voice, plan: ContinuityCounterpointInput): void {
-  const degrees = freeCounterpointDegreesForMode(plan.localKey.mode);
+function addContinuityLine(
+  notes: Exposition["notes"],
+  voice: Voice,
+  plan: ContinuityCounterpointInput,
+  lineIndex: number,
+): void {
+  if (lineIndex > 0) {
+    addStaggeredContinuitySupport(notes, voice, plan);
+    return;
+  }
+
+  const degrees = rotateContinuityDegrees(freeCounterpointDegreesForMode(plan.localKey.mode), lineIndex * 2);
+  const startTick = plan.startTick + (lineIndex === 0 ? 0 : TICKS_PER_QUARTER / 2);
+  const maxDurationTicks = Math.max(0, plan.durationTicks - (startTick - plan.startTick));
+  if (maxDurationTicks <= 0) {
+    return;
+  }
   const fillerSubject = degrees.map((scaleDegree, index) => ({
     offsetTick: index * (TICKS_PER_QUARTER / 2),
     durationTicks: TICKS_PER_QUARTER / 2,
@@ -298,13 +315,52 @@ function addContinuityLine(notes: Exposition["notes"], voice: Voice, plan: Conti
   }));
   addPatternCounterpoint(notes, fillerSubject, {
     voice,
-    startTick: plan.startTick,
-    maxDurationTicks: plan.durationTicks,
+    startTick,
+    maxDurationTicks,
     localKey: plan.localKey,
     degrees,
-    velocity: 58,
+    velocity: lineIndex === 0 ? 58 : 52,
     role: "free-counterpoint",
   });
+}
+
+function rotateContinuityDegrees(degrees: readonly number[], offset: number): readonly number[] {
+  return degrees.map((_, index) => degrees[(index + offset) % degrees.length]!);
+}
+
+function addStaggeredContinuitySupport(
+  notes: Exposition["notes"],
+  voice: Voice,
+  plan: ContinuityCounterpointInput,
+): void {
+  const startTick = plan.startTick + TICKS_PER_QUARTER / 2;
+  const maxDurationTicks = Math.max(0, plan.durationTicks - TICKS_PER_QUARTER / 2);
+  if (maxDurationTicks <= 0) {
+    return;
+  }
+
+  const degrees = isModalMode(plan.localKey.mode) ? [0, 1, 2, 1] : [0, 2, 1, 2];
+  const supportNoteTicks = TICKS_PER_QUARTER * 2;
+  let elapsedTicks = 0;
+  let index = 0;
+
+  while (elapsedTicks < maxDurationTicks) {
+    const durationTicks = Math.min(supportNoteTicks, maxDurationTicks - elapsedTicks);
+    addTextureNote(
+      notes,
+      {
+        voice,
+        localKey: plan.localKey,
+        velocity: 50,
+        role: "free-counterpoint",
+      },
+      degrees[index % degrees.length]!,
+      startTick + elapsedTicks,
+      durationTicks,
+    );
+    elapsedTicks += durationTicks;
+    index += 1;
+  }
 }
 
 export function fillAllVoiceSilenceGaps(notes: Exposition["notes"], keySignature: KeySignature): void {
