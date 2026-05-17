@@ -2,7 +2,7 @@ import { generateScore, PHASE_3_LENGTH_TICKS } from "@fugematon/core";
 import "./style.css";
 import { ScorePlayer } from "./audio.js";
 import { drawPianoRoll } from "./piano-roll.js";
-import { createPlaybackModel, type PlaybackModel } from "./score.js";
+import { createPlaybackModel, formatBarBeatDuration, formatTimeSignature, type PlaybackModel } from "./score.js";
 
 const DEFAULT_SEED = "fugue-smoke";
 const SCORE_LENGTH_TICKS = PHASE_3_LENGTH_TICKS;
@@ -153,7 +153,11 @@ function createState(seed: string): AppState {
 
 function render(nextState: AppState): void {
   tempo.textContent = `${nextState.model.bpm} bpm`;
-  duration.textContent = `${nextState.model.totalSeconds.toFixed(1)} s`;
+  duration.textContent = `${nextState.model.totalSeconds.toFixed(1)} s / ${formatBarBeatDuration(
+    nextState.model.totalTicks,
+    nextState.model.timeSignature,
+    nextState.model.ticksPerQuarter,
+  )} / ${formatTimeSignature(nextState.model.timeSignature)}`;
   notes.textContent = `${nextState.model.notes.length}`;
   pitchSpan.textContent = `${nextState.model.pitchRange.min}-${nextState.model.pitchRange.max}`;
   states.textContent = `${new Set(nextState.model.stateTransitions).size}`;

@@ -1,5 +1,5 @@
 import type { Voice } from "@fugematon/core";
-import type { PlaybackEntry, PlaybackModel } from "./score.js";
+import { formatBarBeatPosition, type PlaybackEntry, type PlaybackModel, secondsToTicks } from "./score.js";
 
 export type PianoRollNoteLayout = {
   voice: Voice;
@@ -154,7 +154,12 @@ function drawBackground(
 
   context.fillStyle = "rgba(36, 25, 15, 0.64)";
   context.font = "12px serif";
-  context.fillText(`${Math.floor(playbackSecond)}s`, LEFT_GUTTER, height - 9);
+  const playbackTick = secondsToTicks(playbackSecond, model.bpm, model.ticksPerQuarter);
+  context.fillText(
+    `${Math.floor(playbackSecond)}s / ${formatBarBeatPosition(playbackTick, model.timeSignature, model.ticksPerQuarter)}`,
+    LEFT_GUTTER,
+    height - 9,
+  );
 }
 
 function drawPlayhead(

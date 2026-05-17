@@ -1,13 +1,24 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { generateScore } from "@fugematon/core";
-import { createPlaybackModel, ticksToSeconds } from "./score.js";
+import {
+  createPlaybackModel,
+  formatBarBeatDuration,
+  formatBarBeatPosition,
+  formatTimeSignature,
+  secondsToTicks,
+  ticksPerBar,
+  ticksPerBeat,
+  ticksToSeconds,
+} from "./score.js";
 
 test("createPlaybackModel extracts timing metadata and notes", () => {
   const output = generateScore({ seed: "fugue-smoke", lengthTicks: 7680 });
   const model = createPlaybackModel(output);
 
   assert.equal(model.ticksPerQuarter, 480);
+  assert.ok([3, 4, 6].includes(model.timeSignature.numerator));
+  assert.ok([4, 8].includes(model.timeSignature.denominator));
   assert.equal(model.totalTicks, output.diagnostics.generatedUntilTick);
   assert.equal(model.notes.length, output.diagnostics.noteCount);
   assert.deepEqual(model.stateTransitions, output.diagnostics.stateTransitions);
@@ -30,4 +41,27 @@ test("createPlaybackModel extracts timing metadata and notes", () => {
 test("ticksToSeconds maps score ticks to playback seconds", () => {
   assert.equal(ticksToSeconds(480, 120, 480), 0.5);
   assert.equal(ticksToSeconds(960, 60, 480), 2);
+});
+
+test("secondsToTicks maps playback seconds back to score ticks", () => {
+  assert.equal(secondsToTicks(0.5, 120, 480), 480);
+  assert.equal(secondsToTicks(2, 60, 480), 960);
+});
+
+test("bar and beat helpers use score time signature metadata", () => {
+  const commonTime = { numerator: 4, denominator: 4 } as const;
+  const compoundTime = { numerator: 6, denominator: 8 } as const;
+
+  assert.equal(formatTimeSignature(commonTime), "4/4");
+  assert.equal(ticksPerBeat(commonTime, 480), 480);
+  assert.equal(ticksPerBar(commonTime, 480), 1920);
+  assert.equal(formatBarBeatPosition(0, commonTime, 480), "1:1");
+  assert.equal(formatBarBeatPosition(1920 + 960, commonTime, 480), "2:3");
+  assert.equal(formatBarBeatDuration(1920 * 2 + 480, commonTime, 480), "2 bars + 1 beat");
+
+  assert.equal(formatTimeSignature(compoundTime), "6/8");
+  assert.equal(ticksPerBeat(compoundTime, 480), 240);
+  assert.equal(ticksPerBar(compoundTime, 480), 1440);
+  assert.equal(formatBarBeatPosition(1440 + 240 * 5, compoundTime, 480), "2:6");
+  assert.equal(formatBarBeatDuration(1440 * 3, compoundTime, 480), "3 bars");
 });

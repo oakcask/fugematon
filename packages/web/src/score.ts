@@ -5,6 +5,7 @@ import type {
   NoteEvent,
   PlannedEntry,
   ScoreEvent,
+  TimeSignature,
   Voice,
 } from "@fugematon/core";
 
@@ -24,6 +25,7 @@ export type PlaybackNote = {
 export type PlaybackModel = {
   bpm: number;
   ticksPerQuarter: number;
+  timeSignature: TimeSignature;
   totalTicks: number;
   totalSeconds: number;
   notes: PlaybackNote[];
@@ -37,10 +39,12 @@ export type PlaybackModel = {
 
 const DEFAULT_BPM = 84;
 const DEFAULT_TICKS_PER_QUARTER = 480;
+const DEFAULT_TIME_SIGNATURE: TimeSignature = { numerator: 4, denominator: 4 };
 
 export function createPlaybackModel(output: GenerationOutput): PlaybackModel {
   const bpm = readBpm(output.events) ?? DEFAULT_BPM;
   const ticksPerQuarter = readTicksPerQuarter(output.events) ?? DEFAULT_TICKS_PER_QUARTER;
+  const timeSignature = readTimeSignature(output.events) ?? DEFAULT_TIME_SIGNATURE;
   const totalTicks = readScoreEndTick(output.events) ?? output.diagnostics.generatedUntilTick;
   const subjectEntries = output.diagnostics.subjectEntries.map((entry) => ({ ...entry }));
   const subjectEntryByNoteStart = new Map(
@@ -65,6 +69,7 @@ export function createPlaybackModel(output: GenerationOutput): PlaybackModel {
   return {
     bpm,
     ticksPerQuarter,
+    timeSignature,
     totalTicks,
     totalSeconds: ticksToSeconds(totalTicks, bpm, ticksPerQuarter),
     notes,
@@ -76,6 +81,49 @@ export function createPlaybackModel(output: GenerationOutput): PlaybackModel {
 
 export function ticksToSeconds(ticks: number, bpm: number, ticksPerQuarter: number): number {
   return (ticks / ticksPerQuarter) * (60 / bpm);
+}
+
+export function secondsToTicks(seconds: number, bpm: number, ticksPerQuarter: number): number {
+  return Math.max(0, Math.round((seconds / 60) * bpm * ticksPerQuarter));
+}
+
+export function ticksPerBeat(timeSignature: TimeSignature, ticksPerQuarter: number): number {
+  return ticksPerQuarter * (4 / timeSignature.denominator);
+}
+
+export function ticksPerBar(timeSignature: TimeSignature, ticksPerQuarter: number): number {
+  return ticksPerBeat(timeSignature, ticksPerQuarter) * timeSignature.numerator;
+}
+
+export function formatTimeSignature(timeSignature: TimeSignature): string {
+  return `${timeSignature.numerator}/${timeSignature.denominator}`;
+}
+
+export function formatBarBeatPosition(ticks: number, timeSignature: TimeSignature, ticksPerQuarter: number): string {
+  const beatTicks = ticksPerBeat(timeSignature, ticksPerQuarter);
+  const barTicks = ticksPerBar(timeSignature, ticksPerQuarter);
+  const safeTicks = Math.max(0, ticks);
+  const barIndex = Math.floor(safeTicks / barTicks);
+  const tickWithinBar = safeTicks - barIndex * barTicks;
+  const beatIndex = Math.floor(tickWithinBar / beatTicks);
+
+  return `${barIndex + 1}:${beatIndex + 1}`;
+}
+
+export function formatBarBeatDuration(ticks: number, timeSignature: TimeSignature, ticksPerQuarter: number): string {
+  const beatTicks = ticksPerBeat(timeSignature, ticksPerQuarter);
+  const barTicks = ticksPerBar(timeSignature, ticksPerQuarter);
+  const safeTicks = Math.max(0, ticks);
+  const bars = Math.floor(safeTicks / barTicks);
+  const remainingTicks = safeTicks - bars * barTicks;
+  const beats = Math.floor(remainingTicks / beatTicks);
+  const parts = [`${bars} ${bars === 1 ? "bar" : "bars"}`];
+
+  if (beats > 0) {
+    parts.push(`${beats} ${beats === 1 ? "beat" : "beats"}`);
+  }
+
+  return parts.join(" + ");
 }
 
 function computePitchRange(notes: readonly PlaybackNote[]): PlaybackModel["pitchRange"] {
@@ -100,6 +148,10 @@ function readBpm(events: readonly ScoreEvent[]): number | undefined {
 function readTicksPerQuarter(events: readonly ScoreEvent[]): number | undefined {
   const event = findMetaEvent(events, "timebase");
   return event?.payload.ticksPerQuarter;
+}
+
+function readTimeSignature(events: readonly ScoreEvent[]): TimeSignature | undefined {
+  return findMetaEvent(events, "time-signature")?.payload;
 }
 
 function readScoreEndTick(events: readonly ScoreEvent[]): number | undefined {
