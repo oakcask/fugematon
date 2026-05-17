@@ -4,6 +4,8 @@
 
 音楽理論上のレビューを行う場合は、`music-theory-review` skill を使い、Fux 的な対位法を起点にしつつ、クラシック、ジャズ、ポピュラー音楽の文献調査と seed 横断の evidence を合わせて残してください。
 
+music-quality gate、diagnostics threshold、generator model、candidate scoring model、evaluation weights、section/planner model を変える場合、agent は人間の聴取完了を待たずに、関連する複数 seed の生成譜面を楽典的にレビューしてください。代表 seed、境界 seed、rotation seed、adversarial seed から変更リスクに合う小集合を選び、レビューした seed、楽典上の所見、影響 metric、tradeoff、未実施の聴取 gap を該当 Phase または review doc に残してください。
+
 ## 優先
 
 * [Phase 7+ 再編計画](../phases/phase-7-plus-reorg.md): Phase 7 blocker 後の gate 緩和、review signal 化、Phase 8 以降の進め方。
