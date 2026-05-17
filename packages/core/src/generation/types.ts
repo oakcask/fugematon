@@ -10,6 +10,7 @@ import type {
   OrnamentPlacementReasons,
   PitchContourMotionSummary,
   SoloTextureSummary,
+  StepwisePatternSummary,
 } from "../events.js";
 
 export type SubjectNote = {
@@ -85,6 +86,7 @@ export type TextureDiagnostics = {
   allVoiceSilenceGapCount: number;
   soloTexture: SoloTextureSummary;
   pitchContourMotion: PitchContourMotionSummary;
+  stepwisePattern: StepwisePatternSummary;
   ornamentCandidateCount: number;
   ornamentDensity: number;
   ornamentPlacementReasons: OrnamentPlacementReasons;

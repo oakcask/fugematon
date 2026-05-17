@@ -160,3 +160,11 @@ exact stepwise fifth-climb に追加 entry-risk scoring を入れる案は棄却
 今後の生成改善では、まず diagnostics と review bundle に role/section 別の stepwise pattern evidence を追加する。最低限、`subject`、`answer`、`subject-fragment`、`counter-subject`、`free-counterpoint` を分け、step ratio、上行 step ratio、下行 step ratio、最大単調 step run、反復 degree n-gram、section をまたぐ pattern entropy を出す。候補評価では、順次進行を全面禁止せず、長い単調 run と seed 横断の同型反復だけを soft cost にする。
 
 テスト方針も更新する。生成系の回帰テストは、古い seed の exact metric や exact pattern count を守るためのものではなく、音楽美レビューで確認した品質期待を固定するためのものとする。候補 pattern、weight、gate threshold を変える PR では、`pnpm fugematon review --out samples/<review-name>` で代表 seed、境界 seed、adversarial seed を生成し、diagnostics と MIDI/Web UI 聴取で音楽美レビューを行う。レビューで改善が確認でき、悪化がある場合も tradeoff と影響 seed を文書化できるなら、回帰テストは新しい期待値へ更新してよい。数値を変えづらい場合は、古い exact assert を範囲、傾向、説明 feature の存在確認へ置き換える。
+
+## Phase 7 stepwise diagnostics evidence
+
+scoring 変更の前に、role/section 別の stepwise pattern evidence を diagnostics と review bundle summary に追加した。`GenerationDiagnostics.stepwisePattern` は `subject`、`answer`、`subject-fragment`、`counter-subject`、`free-counterpoint` と、存在する場合の `fallback` について、`stepwiseRunRatio`、`ascendingStepRatio`、`descendingStepRatio`、`maxMonotoneStepRun`、`repeatedDegreePatternCount`、`rolePatternEntropy` を出す。section summary も同じ指標を section state と tick 範囲に紐づける。
+
+review bundle summary は schema version 8 として `diagnosticsSummary.texture.stepwisePattern` を持つ。`CandidateEvaluation.featureVersion` は 2 になり、selected candidate の melody/texture features は free counterpoint の stepwise ratio、最大単調 run、反復 degree pattern、role pattern entropy と role 横断の最大 run/反復 count を参照できる。ただしこの PR では stepwise 指標を scoring weight に入れず、生成挙動を変えない evidence coverage として扱う。
+
+テストでは固定 review seed、rotation seed、adversarial seed 全体で Phase 6/7 gate が pass すること、`freeCounterpointContourScore` が 1 でも上下両方向だけでは長い単調 step run と反復 degree pattern を隠せないことを確認する。Phase 7 は依然として未完了であり、次の PR はこの evidence を使って、順次進行を全面禁止せずに固定 filler 化だけを抑える scoring または generator 変更を小さく検証する。

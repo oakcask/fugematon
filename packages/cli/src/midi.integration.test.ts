@@ -109,6 +109,24 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
                 bassUpperContraryRatio: number;
               };
             };
+            stepwisePattern: {
+              degreePatternLength: number;
+              roles: {
+                role: string;
+                stepwiseRunRatio: number;
+                ascendingStepRatio: number;
+                descendingStepRatio: number;
+                maxMonotoneStepRun: number;
+                repeatedDegreePatternCount: number;
+                rolePatternEntropy: number;
+              }[];
+              sections: {
+                role: string;
+                state: string;
+                maxMonotoneStepRun: number;
+                repeatedDegreePatternCount: number;
+              }[];
+            };
           };
           melody: {
             leapRecoveryMisses: number;
@@ -184,7 +202,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       preferences: unknown[];
     };
 
-    assert.equal(summary.schemaVersion, 7);
+    assert.equal(summary.schemaVersion, 8);
     assert.equal(summary.lengthTicks, 9600);
     assert.ok(summary.seeds.length > 1);
     assert.equal(listeningReview.schemaVersion, 1);
@@ -227,6 +245,12 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       assert.ok(entry.diagnosticsSummary.texture.pitchContourMotion.fourBeat.bassUpperContraryRatio >= 0);
       assert.ok(entry.diagnosticsSummary.texture.pitchContourMotion.eightBeat.bassUpperSameDirectionRatio >= 0);
       assert.ok(entry.diagnosticsSummary.texture.pitchContourMotion.eightBeat.bassUpperContraryRatio >= 0);
+      assert.equal(entry.diagnosticsSummary.texture.stepwisePattern.degreePatternLength, 4);
+      assert.ok(entry.diagnosticsSummary.texture.stepwisePattern.roles.length >= 5);
+      assert.ok(entry.diagnosticsSummary.texture.stepwisePattern.sections.length > 0);
+      assert.ok(
+        entry.diagnosticsSummary.texture.stepwisePattern.roles.some((summary) => summary.role === "free-counterpoint"),
+      );
       assert.equal(entry.diagnosticsSummary.form.longRunRepetition.continuationPatternWindowSize, 4);
       assert.ok(entry.diagnosticsSummary.form.longRunRepetition.mostRepeatedContinuationPatternCount >= 0);
       assert.ok(entry.diagnosticsSummary.form.longRunRepetition.uniqueContinuationPatternCount >= 0);
@@ -268,7 +292,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       assert.ok(!entry.midiFile.includes(directory));
     }
     assert.deepEqual(findReviewSeed(summary.seeds, "fugue-smoke").diagnosticsSummary.candidateEvaluation, {
-      featureVersion: 1,
+      featureVersion: 2,
       evaluationModelVersion: 6,
       selectedCandidateEvaluationCount: 1,
       entryExplanationCount: 1,
@@ -287,7 +311,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       sectionSoloTextureRiskWarningThreshold: 6,
     });
     assert.deepEqual(findReviewSeed(summary.seeds, "modal-cadence").diagnosticsSummary.candidateEvaluation, {
-      featureVersion: 1,
+      featureVersion: 2,
       evaluationModelVersion: 6,
       selectedCandidateEvaluationCount: 1,
       entryExplanationCount: 1,
@@ -306,7 +330,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       sectionSoloTextureRiskWarningThreshold: 6,
     });
     assert.deepEqual(findReviewSeed(summary.seeds, "modal-answer").diagnosticsSummary.candidateEvaluation, {
-      featureVersion: 1,
+      featureVersion: 2,
       evaluationModelVersion: 6,
       selectedCandidateEvaluationCount: 1,
       entryExplanationCount: 1,
