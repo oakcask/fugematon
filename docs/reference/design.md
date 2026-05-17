@@ -82,8 +82,11 @@
 * Phase 7 前半では、Phase 6 後レビューで見つかった pitch contour の概形並行を diagnostics と candidate scoring に入れる。
 * 4 拍窓と 8 拍窓で bass と上声が同じ方向へ流れ続ける偏りを観察し、反行または斜行が増える候補を texture dimension で優先する。
 * Phase 7 後半では、candidate evaluation の dimension breakdown を、seed、section、voice、entry/cadence 周辺、role contour の単位で説明できるようにする。
-* Phase 7 後半は説明だけで完了しない。entry harmony、voice independence、modal counter-subject、melody/phrase、episode/codetta/stretto preparation、stepwise pattern fixation の弱点を、feature extraction の整理と既存 gate のテスト強化後に実際の生成改善へ反映する。
-* 成功条件は「Phase 6 gate を維持したまま、概形進行と role 別 contour 固定化が review bundle と CI で確認でき、評価内訳が次の音楽改善を説明し、代表 seed と境界 seed の手動聴取 gate が pass に近づくこと」とする。
+* Phase 7 後半では、absolute metric の重み調整だけで音楽的な心地よさを完了判定しない。Bach fugue などの参照作品から同じ diagnostics を生成し、Fugematon seed を reference profile と比較する。
+* reference profile は、voice-pair independence、entry-local consonance/dissonance、phrase contour、subject/counter-subject recurrence、section density transition、cadence approach、long-run repetition を別々の分布として持つ。Bach でも出る unison、shared rhythm、stepwise motion はゼロ要求にせず、曲長、active voice-pair duration、entry 数で正規化する。
+* Candidate evaluation は hard constraint、reference-relative soft gate、manual listening preference を分ける。learned aesthetic score を導入する場合も、参照分布からの外れ方を説明できる feature として扱い、range、voice crossing、subject identity、answer plan などの hard failure を採用候補に戻さない。
+* Phase 7 後半は説明だけで完了しない。reference diagnostics によって、entry harmony、voice independence、modal counter-subject、melody/phrase、episode/codetta/stretto preparation、stepwise pattern fixation の弱点が selection problem なのか generator problem なのかを切り分け、section-local planner の改善へ進む。
+* 成功条件は「Phase 6 gate を維持したまま、参照作品 diagnostics と Fugematon 22 seed を比較でき、代表 blocker の candidate pool oracle が selection/generator の責務を分け、少なくとも一つの section-local 改善が pairwise preference で現行より勝つこと」とする。
 
 ### Phase 8: 履歴、巻き戻し、操作パラメータ
 
