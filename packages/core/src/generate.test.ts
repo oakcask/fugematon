@@ -879,19 +879,26 @@ test("generateScore nudges phase-7 voice independence boundary seeds without gat
 test("generateScore preserves phase-7 modal counter-subject retention guardrails", () => {
   const blockerSeeds = [
     ["modal-cadence", 0.573],
-    ["dense-modal", 0.573],
+    ["dense-modal", 0.586],
     ["angular-answer", 0.591],
-    ["modal-answer", 0.608],
+    ["modal-answer", 0.631],
     ["modal-dorian", 0.627],
   ] as const;
 
   for (const [seed, counterSubjectIdentityRetention] of blockerSeeds) {
     const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
+    const gate6 = evaluatePhase6Diagnostics(seed, output.diagnostics);
+    const gate7 = evaluatePhase7Diagnostics(seed, output.diagnostics);
     const selectedEvaluation = requireSelectedCandidateEvaluation(output.diagnostics.selectedCandidateEvaluations);
 
+    assert.deepEqual(gate6.failures, []);
+    assert.deepEqual(gate7.failures, []);
+    assert.equal(gate6.passed, true);
+    assert.equal(gate7.passed, true);
     assert.ok(roundMetric(output.diagnostics.counterSubjectIdentityRetention) >= counterSubjectIdentityRetention);
     assert.ok(output.diagnostics.modalContextCount > 0);
     assert.ok("counterSubjectIdentityRetention" in selectedEvaluation.dimensions.subjectClarity.features);
+    assert.ok(selectedEvaluation.dimensions.subjectClarity.features.selectedModalCounterSubjectIdentityReward > 0);
   }
 });
 
@@ -963,7 +970,7 @@ function requireSelectedCandidateEvaluation(
 
   assert.ok(selectedEvaluation !== undefined);
   assert.equal(selectedEvaluation.featureVersion, 1);
-  assert.equal(selectedEvaluation.evaluationModelVersion, 3);
+  assert.equal(selectedEvaluation.evaluationModelVersion, 4);
   assert.ok(selectedEvaluation.explanations.entries.length > 0);
   assert.ok(selectedEvaluation.explanations.voicePairs.length > 0);
   assert.ok(selectedEvaluation.explanations.voices.length > 0);
