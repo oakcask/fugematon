@@ -27,6 +27,7 @@ const EVALUATION_WEIGHTS = {
     sameDirectionMotion: 3,
     fourBeatBassUpperSameDirection: 2,
     eightBeatBassUpperSameDirection: 1,
+    upperNeighborFifthClimbEightBeatBassUpperSameDirection: 50,
     fourBeatOuterVoiceSameDirection: 1,
     sharedRhythmOverlap: 2,
     voiceIndependenceSelectionUnisonOverlap: 8,
@@ -69,6 +70,10 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
   const diagnostics = analyzeScore(candidateNotes, candidate.subjectEntries, candidate.sectionPlans);
   const riskContexts = buildPhase7CandidateRiskContexts(candidateNotes, candidate, diagnostics);
   const explanations = explainCandidateRiskContexts(riskContexts);
+  const upperNeighborFifthClimbContourSelectionCost =
+    upperNeighborFifthClimbPatternIsPresent(candidate) *
+    diagnostics.pitchContourMotion.eightBeat.bassUpperSameDirectionRatio *
+    EVALUATION_WEIGHTS.texture.upperNeighborFifthClimbEightBeatBassUpperSameDirection;
 
   const hardFailures = diagnostics.issues
     .filter(
@@ -119,6 +124,7 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
         EVALUATION_WEIGHTS.texture.fourBeatBassUpperSameDirection +
       diagnostics.pitchContourMotion.eightBeat.bassUpperSameDirectionRatio *
         EVALUATION_WEIGHTS.texture.eightBeatBassUpperSameDirection +
+      upperNeighborFifthClimbContourSelectionCost +
       diagnostics.pitchContourMotion.fourBeat.outerVoiceSameDirectionRatio *
         EVALUATION_WEIGHTS.texture.fourBeatOuterVoiceSameDirection +
       diagnostics.sharedRhythmOverlapCount * EVALUATION_WEIGHTS.texture.sharedRhythmOverlap +
@@ -144,6 +150,7 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
       fourBeatBassUpperContraryRatio: diagnostics.pitchContourMotion.fourBeat.bassUpperContraryRatio,
       eightBeatBassUpperSameDirectionRatio: diagnostics.pitchContourMotion.eightBeat.bassUpperSameDirectionRatio,
       eightBeatBassUpperContraryRatio: diagnostics.pitchContourMotion.eightBeat.bassUpperContraryRatio,
+      selectedUpperNeighborFifthClimbContourCost: upperNeighborFifthClimbContourSelectionCost,
       fourBeatOuterVoiceSameDirectionRatio: diagnostics.pitchContourMotion.fourBeat.outerVoiceSameDirectionRatio,
       fourBeatOuterVoiceContraryRatio: diagnostics.pitchContourMotion.fourBeat.outerVoiceContraryRatio,
       sharedRhythmOverlapCount: diagnostics.sharedRhythmOverlapCount,
@@ -229,7 +236,7 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
 
   return {
     featureVersion: 1,
-    evaluationModelVersion: 4,
+    evaluationModelVersion: 5,
     totalCost: Math.round(totalCost * 1000) / 1000,
     hardFailures,
     explanations,
@@ -263,5 +270,11 @@ function scoreBalancedEntryHarmonyRisk(contexts: Phase7CandidateRiskContexts): n
       entry.severeIntervalCount * EVALUATION_WEIGHTS.harmony.severeEntryInterval +
       entry.unresolvedSevereIntervalCount * EVALUATION_WEIGHTS.harmony.unresolvedSevereEntryInterval,
     0,
+  );
+}
+
+function upperNeighborFifthClimbPatternIsPresent(candidate: Exposition): number {
+  return Number(
+    candidate.subjectEntries.some((entry) => entry.expectedDegreePattern.slice(0, 8).join("-") === "0-1-2-3-4-3-1-2"),
   );
 }

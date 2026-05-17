@@ -50,7 +50,7 @@ export function addCounterpointTexture(
       startTick: entry.startTick,
       maxDurationTicks: entry.durationTicks,
       localKey: entry.localKey,
-      degrees: counterSubjectDegreesForMode(entry.localKey.mode),
+      degrees: entryCounterSubjectDegrees(subject, entry.localKey.mode),
       velocity: 70,
       role: "counter-subject",
     });
@@ -344,4 +344,22 @@ export function counterSubjectDegreesForMode(mode: KeyMode): readonly number[] {
 
 export function freeCounterpointDegreesForMode(mode: KeyMode): readonly number[] {
   return isModalMode(mode) ? MODAL_FREE_COUNTERPOINT_DEGREES : FREE_COUNTERPOINT_DEGREES;
+}
+
+const FIFTH_CLIMB_ENTRY_COUNTER_SUBJECT_DEGREES = [4, 3, 4, 1, 2, 0, 1, 0] as const;
+
+function entryCounterSubjectDegrees(subject: readonly SubjectNote[], mode: KeyMode): readonly number[] {
+  if (isModalMode(mode)) {
+    return MODAL_COUNTER_SUBJECT_DEGREES;
+  }
+  return hasUpperNeighborFifthClimb(subject) ? FIFTH_CLIMB_ENTRY_COUNTER_SUBJECT_DEGREES : COUNTER_SUBJECT_DEGREES;
+}
+
+function hasUpperNeighborFifthClimb(subject: readonly SubjectNote[]): boolean {
+  return (
+    subject
+      .slice(0, 8)
+      .map((note) => note.scaleDegree)
+      .join("-") === "0-1-2-3-4-3-1-2"
+  );
 }

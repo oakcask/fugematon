@@ -269,7 +269,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
     }
     assert.deepEqual(findReviewSeed(summary.seeds, "fugue-smoke").diagnosticsSummary.candidateEvaluation, {
       featureVersion: 1,
-      evaluationModelVersion: 4,
+      evaluationModelVersion: 5,
       selectedCandidateEvaluationCount: 1,
       entryExplanationCount: 1,
       voicePairExplanationCount: 6,
@@ -288,7 +288,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
     });
     assert.deepEqual(findReviewSeed(summary.seeds, "modal-cadence").diagnosticsSummary.candidateEvaluation, {
       featureVersion: 1,
-      evaluationModelVersion: 4,
+      evaluationModelVersion: 5,
       selectedCandidateEvaluationCount: 1,
       entryExplanationCount: 1,
       voicePairExplanationCount: 6,
@@ -307,7 +307,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
     });
     assert.deepEqual(findReviewSeed(summary.seeds, "modal-answer").diagnosticsSummary.candidateEvaluation, {
       featureVersion: 1,
-      evaluationModelVersion: 4,
+      evaluationModelVersion: 5,
       selectedCandidateEvaluationCount: 1,
       entryExplanationCount: 1,
       voicePairExplanationCount: 6,
@@ -330,8 +330,8 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       mostRepeatedContinuationPatternCount: 0,
       uniqueContinuationPatternCount: 0,
     });
-    assert.equal(findReviewSeed(summary.seeds, "contrary-motion").diagnosticsSummary.melody.leapRecoveryMisses, 8);
-    assert.equal(findReviewSeed(summary.seeds, "contrary-motion").diagnosticsSummary.texture.samePitchOverlapCount, 4);
+    assert.equal(findReviewSeed(summary.seeds, "contrary-motion").diagnosticsSummary.melody.leapRecoveryMisses, 6);
+    assert.equal(findReviewSeed(summary.seeds, "contrary-motion").diagnosticsSummary.texture.samePitchOverlapCount, 3);
     assert.equal(
       listeningReview.seeds.filter((entry) => entry.judgement === "not-reviewed").length,
       listeningReview.seeds.length,

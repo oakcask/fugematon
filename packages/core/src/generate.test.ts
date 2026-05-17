@@ -688,17 +688,17 @@ test("generateScore applies phase-7 contour gates across fixed and rotation seed
 test("generateScore reduces phase-7 stepwise fifth-climb subject pressure", () => {
   const seeds = [...PHASE_5_REVIEW_SEEDS, ...PHASE_5_11_ROTATION_SEEDS];
   const regressionSeeds = [
-    ["fugue-smoke", 143, 108, 100],
+    ["fugue-smoke", 136, 98, 72],
     ["lyrical-line", 145, 108, 100],
     ["modal-cadence", 149, 108, 91],
-    ["wide-key", 143, 105, 97],
-    ["tight-stretto", 160, 105, 97],
+    ["wide-key", 130, 96, 72],
+    ["tight-stretto", 144, 96, 72],
     ["contrary-answer", 145, 105, 97],
   ] as const;
   const protectedSeeds = [
     ["modal-answer", 33, 0.608],
     ["bright-answer", 31, 0.9],
-    ["contrary-motion", 29, 0.9],
+    ["contrary-motion", 29, 0.88],
     ["modal-dorian", 27, 0.58],
     ["dense-modal", 33, 0.573],
     ["angular-answer", 33, 0.573],
@@ -707,6 +707,8 @@ test("generateScore reduces phase-7 stepwise fifth-climb subject pressure", () =
   const turnbackFifthClimbPattern = "0-1-2-3-4-3-1-2";
   let exactStepwiseFifthClimbCount = 0;
   let turnbackFifthClimbCount = 0;
+  let turnbackFifthClimbSevereIntervalCount = 0;
+  let turnbackFifthClimbUnresolvedSevereIntervalCount = 0;
 
   for (const { seed } of seeds) {
     const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
@@ -719,6 +721,8 @@ test("generateScore reduces phase-7 stepwise fifth-climb subject pressure", () =
     }
     if (subjectPattern === turnbackFifthClimbPattern) {
       turnbackFifthClimbCount += 1;
+      turnbackFifthClimbSevereIntervalCount += output.diagnostics.severeEntryIntervalCount;
+      turnbackFifthClimbUnresolvedSevereIntervalCount += output.diagnostics.unresolvedSevereEntryIntervalCount;
     }
 
     assert.deepEqual(gate6.failures, []);
@@ -729,6 +733,8 @@ test("generateScore reduces phase-7 stepwise fifth-climb subject pressure", () =
 
   assert.equal(exactStepwiseFifthClimbCount, 4);
   assert.equal(turnbackFifthClimbCount, 8);
+  assert.ok(turnbackFifthClimbSevereIntervalCount <= 760);
+  assert.ok(turnbackFifthClimbUnresolvedSevereIntervalCount <= 510);
 
   for (const [seed, maxInstabilityCount, maxSevereIntervalCount, maxUnresolvedSevereIntervalCount] of regressionSeeds) {
     const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
@@ -748,11 +754,11 @@ test("generateScore reduces phase-7 stepwise fifth-climb subject pressure", () =
 
 test("generateScore balances phase-7 entry harmony scoring with preservation guardrails", () => {
   const blockerSeeds = [
-    ["fugue-smoke", 143, 108, 100, 3, 3, 3],
+    ["fugue-smoke", 136, 98, 72, 3, 3, 3],
     ["modal-cadence", 149, 108, 91, 4, 3, 3],
     ["lyrical-line", 145, 108, 100, 3, 3, 3],
-    ["tight-stretto", 160, 105, 97, 4, 3, 3],
-    ["wide-key", 143, 105, 97, 3, 3, 3],
+    ["tight-stretto", 144, 96, 72, 4, 3, 3],
+    ["wide-key", 130, 96, 72, 3, 3, 3],
     ["contrary-answer", 145, 105, 97, 3, 3, 3],
   ] as const;
 
@@ -803,8 +809,8 @@ test("generateScore balances phase-7 entry harmony scoring with preservation gua
 
 test("generateScore preserves phase-7 voice-pair independence blocker evidence under scoring changes", () => {
   const blockerSeeds = [
-    ["contrary-motion", 26, 521, 778, 4, 2, 26, 7, 54, 14],
-    ["fugue-smoke", 36, 581, 834, 0, 0, 27, 7, 54, 12],
+    ["contrary-motion", 25, 521, 778, 3, 2, 26, 7, 54, 14],
+    ["fugue-smoke", 37, 581, 834, 0, 0, 27, 7, 54, 12],
     ["minor-entry", 26, 736, 906, 0, 0, 50, 15, 70, 20],
     ["modal-answer", 13, 751, 906, 0, 0, 46, 14, 70, 20],
   ] as const;
@@ -905,7 +911,7 @@ test("generateScore preserves phase-7 modal counter-subject retention guardrails
 test("generateScore preserves phase-7 melody and form guardrails", () => {
   const blockerSeeds = [
     ["modal-answer", 33, 2, 1, 36, 13, 13, 2],
-    ["contrary-motion", 26, 8, 4, 42, 15, 15, 8],
+    ["contrary-motion", 26, 6, 4, 42, 15, 15, 8],
     ["modal-dorian", 27, 3, 1, 37, 13, 13, 8],
     ["bright-answer", 31, 7, 3, 37, 12, 12, 2],
     ["lyrical-line", 25, 3, 2, 42, 16, 16, 8],
@@ -972,7 +978,7 @@ function requireSelectedCandidateEvaluation(
 
   assert.ok(selectedEvaluation !== undefined);
   assert.equal(selectedEvaluation.featureVersion, 1);
-  assert.equal(selectedEvaluation.evaluationModelVersion, 4);
+  assert.equal(selectedEvaluation.evaluationModelVersion, 5);
   assert.ok(selectedEvaluation.explanations.entries.length > 0);
   assert.ok(selectedEvaluation.explanations.voicePairs.length > 0);
   assert.ok(selectedEvaluation.explanations.voices.length > 0);
