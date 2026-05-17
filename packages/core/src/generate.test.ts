@@ -25,6 +25,11 @@ import {
 import type { MetaEvent, NoteEvent, NoteRole, ScoreEvent, StepwisePatternRoleSummary } from "./events.js";
 import { generateScore } from "./generate.js";
 import {
+  compareDiagnosticsToReferenceProfile,
+  normalizeDiagnosticsForReference,
+  PHASE_7_REFERENCE_DIAGNOSTICS_PROFILE,
+} from "./reference-diagnostics.js";
+import {
   evaluatePhase6Diagnostics,
   evaluatePhase7Diagnostics,
   evaluatePhase59Diagnostics,
@@ -720,6 +725,69 @@ test("generateScore catches free-counterpoint contour false positives with stepw
     assert.ok(freeCounterpoint.maxMonotoneStepRun >= 3);
     assert.ok(freeCounterpoint.repeatedDegreePatternCount > 0);
   }
+});
+
+test("generateScore compares phase-7 diagnostics to normalized reference profile axes", () => {
+  const output = generateScore({ seed: "fugue-smoke", lengthTicks: PHASE_5_LENGTH_TICKS });
+  const baselineMetrics = normalizeDiagnosticsForReference(output.diagnostics);
+  const sharedRhythmAxis = PHASE_7_REFERENCE_DIAGNOSTICS_PROFILE.metrics.find(
+    (metric) => metric.axis === "sharedRhythmOverlapPerVoicePairQuarter",
+  );
+  const unisonAxis = PHASE_7_REFERENCE_DIAGNOSTICS_PROFILE.metrics.find(
+    (metric) => metric.axis === "unisonOverlapPerVoicePairQuarter",
+  );
+  const stepwiseAxis = PHASE_7_REFERENCE_DIAGNOSTICS_PROFILE.metrics.find(
+    (metric) => metric.axis === "freeCounterpointStepwiseRunRatio",
+  );
+
+  assert.ok(sharedRhythmAxis !== undefined);
+  assert.ok(unisonAxis !== undefined);
+  assert.ok(stepwiseAxis !== undefined);
+  assert.ok(sharedRhythmAxis.referenceMax > 0);
+  assert.ok(unisonAxis.referenceMax > 0);
+  assert.ok(stepwiseAxis.referenceMin > 0);
+  assert.ok(baselineMetrics.sharedRhythmOverlapPerVoicePairQuarter > 0);
+  assert.ok(baselineMetrics.unisonOverlapPerVoicePairQuarter > 0);
+  assert.ok(baselineMetrics.freeCounterpointStepwiseRunRatio > 0);
+
+  const stretchedDiagnostics = {
+    ...output.diagnostics,
+    lengthTicks: output.diagnostics.lengthTicks * 2,
+    generatedUntilTick: output.diagnostics.generatedUntilTick * 2,
+    sharedRhythmOverlapCount: output.diagnostics.sharedRhythmOverlapCount * 2,
+    unisonOverlapCount: output.diagnostics.unisonOverlapCount * 2,
+    samePitchOverlapCount: output.diagnostics.samePitchOverlapCount * 2,
+    stepwisePattern: {
+      ...output.diagnostics.stepwisePattern,
+      roles: output.diagnostics.stepwisePattern.roles.map((summary) =>
+        summary.role === "free-counterpoint"
+          ? { ...summary, repeatedDegreePatternCount: summary.repeatedDegreePatternCount * 2 }
+          : summary,
+      ),
+    },
+  };
+  const stretchedMetrics = normalizeDiagnosticsForReference(stretchedDiagnostics);
+  const comparison = compareDiagnosticsToReferenceProfile(stretchedDiagnostics);
+
+  assert.equal(
+    stretchedMetrics.sharedRhythmOverlapPerVoicePairQuarter,
+    baselineMetrics.sharedRhythmOverlapPerVoicePairQuarter,
+  );
+  assert.equal(stretchedMetrics.unisonOverlapPerVoicePairQuarter, baselineMetrics.unisonOverlapPerVoicePairQuarter);
+  assert.equal(
+    stretchedMetrics.samePitchOverlapPerVoicePairQuarter,
+    baselineMetrics.samePitchOverlapPerVoicePairQuarter,
+  );
+  assert.equal(
+    stretchedMetrics.freeCounterpointRepeatedDegreePatternsPerQuarter,
+    baselineMetrics.freeCounterpointRepeatedDegreePatternsPerQuarter,
+  );
+  assert.equal(comparison.seed, "fugue-smoke");
+  assert.equal(
+    comparison.normalizers.scoreQuarterNotes,
+    (output.diagnostics.generatedUntilTick * 2) / TICKS_PER_QUARTER,
+  );
+  assert.ok(comparison.metrics.every((metric) => Number.isFinite(metric.value)));
 });
 
 test("generateScore nudges non-modal stepwise pattern fixation without modal guardrail regressions", () => {
