@@ -75,7 +75,7 @@ test("midi command writes a valid standard MIDI file", async () => {
 test("review command writes diagnostics and MIDI files for phase-5 seeds", async () => {
   const directory = await mkdtemp(join(tmpdir(), "fugematon-review-"));
   try {
-    await main(["review", "--ticks", "960", "--out", directory]);
+    await main(["review", "--ticks", "9600", "--out", directory]);
 
     const files = await readdir(directory);
     const summary = JSON.parse(await readFile(join(directory, "summary.json"), "utf8")) as {
@@ -89,6 +89,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
           hardConstraintFailures: number;
           texture: {
             rhythmicIndependenceScore: number;
+            samePitchOverlapCount: number;
             maxEntrySupportInstabilityPerEntry: number;
             maxConsecutiveEntrySupportInstabilities: number;
             unresolvedEntrySupportInstabilityCount: number;
@@ -109,11 +110,15 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
               };
             };
           };
+          melody: {
+            leapRecoveryMisses: number;
+          };
           candidateEvaluation: {
             featureVersion: number;
             evaluationModelVersion: number;
             entryExplanationCount: number;
             voicePairExplanationCount: number;
+            voiceExplanationCount: number;
             sectionExplanationCount: number;
             maxEntryInstabilityCount: number;
             maxEntrySevereIntervalCount: number;
@@ -166,14 +171,14 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
     };
 
     assert.equal(summary.schemaVersion, 6);
-    assert.equal(summary.lengthTicks, 960);
+    assert.equal(summary.lengthTicks, 9600);
     assert.ok(summary.seeds.length > 1);
     assert.equal(listeningReview.schemaVersion, 1);
-    assert.equal(listeningReview.lengthTicks, 960);
+    assert.equal(listeningReview.lengthTicks, 9600);
     assert.ok(listeningReview.regressionChecks.some((check) => check.includes("fugue-smoke")));
     assert.deepEqual(pairwisePreferences, {
       schemaVersion: 1,
-      lengthTicks: 960,
+      lengthTicks: 9600,
       instructions:
         "Add seed pairs when listening produces a clear preference. These records are candidates for future aesthetic scoring weights and do not override hard constraints.",
       preferences: [],
@@ -212,6 +217,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       assert.ok(entry.diagnosticsSummary.candidateEvaluation.evaluationModelVersion >= 0);
       assert.ok(entry.diagnosticsSummary.candidateEvaluation.entryExplanationCount >= 0);
       assert.ok(entry.diagnosticsSummary.candidateEvaluation.voicePairExplanationCount >= 0);
+      assert.ok(entry.diagnosticsSummary.candidateEvaluation.voiceExplanationCount >= 0);
       assert.ok(entry.diagnosticsSummary.candidateEvaluation.sectionExplanationCount >= 0);
       assert.ok(entry.diagnosticsSummary.candidateEvaluation.maxEntryInstabilityCount >= 0);
       assert.ok(entry.diagnosticsSummary.candidateEvaluation.maxEntrySevereIntervalCount >= 0);
@@ -238,6 +244,52 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       assert.ok(!entry.diagnosticsFile.includes(directory));
       assert.ok(!entry.midiFile.includes(directory));
     }
+    assert.deepEqual(findReviewSeed(summary.seeds, "fugue-smoke").diagnosticsSummary.candidateEvaluation, {
+      featureVersion: 1,
+      evaluationModelVersion: 1,
+      entryExplanationCount: 1,
+      voicePairExplanationCount: 6,
+      voiceExplanationCount: 4,
+      sectionExplanationCount: 1,
+      maxEntryInstabilityCount: 3,
+      maxEntrySevereIntervalCount: 3,
+      maxVoicePairUnisonOverlapCount: 7,
+      maxVoicePairSharedRhythmOverlapCount: 12,
+      maxSectionSoloTextureRisk: 8,
+    });
+    assert.deepEqual(findReviewSeed(summary.seeds, "modal-cadence").diagnosticsSummary.candidateEvaluation, {
+      featureVersion: 1,
+      evaluationModelVersion: 1,
+      entryExplanationCount: 1,
+      voicePairExplanationCount: 6,
+      voiceExplanationCount: 4,
+      sectionExplanationCount: 1,
+      maxEntryInstabilityCount: 4,
+      maxEntrySevereIntervalCount: 3,
+      maxVoicePairUnisonOverlapCount: 6,
+      maxVoicePairSharedRhythmOverlapCount: 14,
+      maxSectionSoloTextureRisk: 8,
+    });
+    assert.deepEqual(findReviewSeed(summary.seeds, "modal-answer").diagnosticsSummary.candidateEvaluation, {
+      featureVersion: 1,
+      evaluationModelVersion: 1,
+      entryExplanationCount: 1,
+      voicePairExplanationCount: 6,
+      voiceExplanationCount: 4,
+      sectionExplanationCount: 1,
+      maxEntryInstabilityCount: 3,
+      maxEntrySevereIntervalCount: 2,
+      maxVoicePairUnisonOverlapCount: 14,
+      maxVoicePairSharedRhythmOverlapCount: 20,
+      maxSectionSoloTextureRisk: 2,
+    });
+    assert.equal(findReviewSeed(summary.seeds, "contrary-motion").diagnosticsSummary.melody.leapRecoveryMisses, 7);
+    assert.equal(findReviewSeed(summary.seeds, "contrary-motion").diagnosticsSummary.texture.samePitchOverlapCount, 4);
+    assert.equal(
+      listeningReview.seeds.filter((entry) => entry.judgement === "not-reviewed").length,
+      listeningReview.seeds.length,
+    );
+    assert.equal(pairwisePreferences.preferences.length, 0);
   } finally {
     await rm(directory, { force: true, recursive: true });
   }
@@ -257,6 +309,13 @@ type MidiParseResult = {
   endOfTrackCount: number;
   metaEventTypes: Set<number>;
 };
+
+function findReviewSeed<T extends { seed: string }>(seeds: readonly T[], seed: string): T {
+  const entry = seeds.find((candidate) => candidate.seed === seed);
+
+  assert.ok(entry !== undefined);
+  return entry;
+}
 
 function parseStandardMidiFile(bytes: Uint8Array): MidiParseResult {
   const cursor = new MidiCursor(bytes);
