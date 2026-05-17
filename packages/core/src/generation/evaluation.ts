@@ -42,6 +42,7 @@ const EVALUATION_WEIGHTS = {
     subjectIdentityViolation: 10_000,
     answerPlanViolation: 1_000,
     counterSubjectIdentityRetention: 30,
+    modalCounterSubjectIdentitySelection: 20,
   },
   harmony: {
     entryInstability: 1,
@@ -157,11 +158,19 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
       diagnostics.subjectIdentityViolations * EVALUATION_WEIGHTS.subjectClarity.subjectIdentityViolation +
       diagnostics.answerPlanViolations * EVALUATION_WEIGHTS.subjectClarity.answerPlanViolation,
     reward:
-      diagnostics.counterSubjectIdentityRetention * EVALUATION_WEIGHTS.subjectClarity.counterSubjectIdentityRetention,
+      diagnostics.counterSubjectIdentityRetention * EVALUATION_WEIGHTS.subjectClarity.counterSubjectIdentityRetention +
+      modalCounterSubjectIdentitySelectionReward(
+        diagnostics.counterSubjectIdentityRetention,
+        diagnostics.modalContextCount,
+      ),
     features: {
       subjectIdentityViolations: diagnostics.subjectIdentityViolations,
       answerPlanViolations: diagnostics.answerPlanViolations,
       counterSubjectIdentityRetention: diagnostics.counterSubjectIdentityRetention,
+      selectedModalCounterSubjectIdentityReward: modalCounterSubjectIdentitySelectionReward(
+        diagnostics.counterSubjectIdentityRetention,
+        diagnostics.modalContextCount,
+      ),
     },
   };
   const entryHarmonyRiskCost = scoreBalancedEntryHarmonyRisk(riskContexts);
@@ -220,7 +229,7 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
 
   return {
     featureVersion: 1,
-    evaluationModelVersion: 3,
+    evaluationModelVersion: 4,
     totalCost: Math.round(totalCost * 1000) / 1000,
     hardFailures,
     explanations,
@@ -233,6 +242,17 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
       form,
     },
   };
+}
+
+function modalCounterSubjectIdentitySelectionReward(
+  counterSubjectIdentityRetention: number,
+  modalContextCount: number,
+): number {
+  if (modalContextCount === 0) {
+    return 0;
+  }
+
+  return counterSubjectIdentityRetention * EVALUATION_WEIGHTS.subjectClarity.modalCounterSubjectIdentitySelection;
 }
 
 function scoreBalancedEntryHarmonyRisk(contexts: Phase7CandidateRiskContexts): number {
