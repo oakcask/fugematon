@@ -6,6 +6,7 @@
 
 ## 優先
 
+* [Phase 7 参照作品 diagnostics 計画](phase-7-reference-diagnostics-plan.md): CI metric が音楽的心地よさを十分に表せない問題を、Bach fugue などの参照作品 diagnostics と reference-relative gate へ再構成する計画。
 * [Phase 7 音楽美レビュー](phase-7-musical-review.md): Phase 7 gate 後の seed 横断レビューと、Phase 7 後半を音楽改善へ再編する根拠。
 * [Phase 7 実装メモ](../phases/phase-7.md): 概形進行 diagnostics、candidate scoring、schema version 5 review bundle、Phase 7 前半の完了記録。
 * [Phase 6 概形進行レビュー](phase-6-contour-motion-review.md): 複数パートの pitch contour が数拍単位で並行する問題の seed 横断確認。
@@ -22,7 +23,7 @@
 
 ## 読む判断
 
-* 最新の品質状態や次の音楽改善を見る場合は Phase 7 音楽美レビューを読む。Phase 7 前半の実装完了条件だけを見る場合は Phase 7 実装メモを読む。
+* 最新の品質方針や Phase 7 以降の再構成を見る場合は Phase 7 参照作品 diagnostics 計画を読む。現行 blocker の evidence を見る場合は Phase 7 音楽美レビューを読む。Phase 7 前半の実装完了条件だけを見る場合は Phase 7 実装メモを読む。
 * 概形の並行・反行を扱う場合は Phase 6 概形進行レビューも読む。
 * ある gate がなぜ追加されたかを追う場合だけ、古いレビューへ戻る。
 * diagnostics の閾値や seed セットを変更する場合は、該当レビューと [../reference/technical-plan.md](../reference/technical-plan.md) を合わせて確認する。
