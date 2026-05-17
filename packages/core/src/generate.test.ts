@@ -653,7 +653,7 @@ test("generateScore reports phase-7 contour motion diagnostics", () => {
   assert.ok(fourBeat.outerVoiceSameDirectionRatio >= 0);
   assert.ok(fourBeat.outerVoiceContraryRatio >= 0);
   assert.ok(output.diagnostics.selectedCandidateEvaluations.length > 0);
-  assert.equal(output.diagnostics.selectedCandidateEvaluations[0]!.featureVersion, 2);
+  assert.equal(output.diagnostics.selectedCandidateEvaluations[0]!.featureVersion, 3);
   assert.ok(output.diagnostics.selectedCandidateEvaluations[0]!.explanations.entries.length > 0);
   assert.ok(output.diagnostics.selectedCandidateEvaluations[0]!.explanations.voicePairs.length > 0);
   assert.ok(output.diagnostics.selectedCandidateEvaluations[0]!.explanations.sections.length > 0);
@@ -807,13 +807,28 @@ test("generateScore exposes phase-7 candidate pool oracle classifications", () =
   const oracle = output.diagnostics.candidatePoolOracle;
   const classifications = new Set(oracle.blockerClassifications.map((blocker) => blocker.classification));
 
-  assert.equal(oracle.schemaVersion, 1);
+  assert.equal(oracle.schemaVersion, 2);
   assert.ok(oracle.sectionCount > 0);
   assert.ok(oracle.candidateCount >= oracle.sectionCount);
   assert.ok(oracle.viableCandidateCount > 0);
   assert.ok(oracle.hardFailureRejectedCandidateCount >= 0);
   assert.ok(oracle.blockerClassifications.length > 0);
   assert.ok(classifications.has("selection-model") || classifications.has("generator-or-section-planner"));
+  assert.deepEqual(
+    new Set(oracle.blockerClassifications.map((blocker) => blocker.blocker)),
+    new Set([
+      "entry-harmony",
+      "voice-pair-lockstep",
+      "melody-leap-recovery",
+      "stepwise-pattern-fixation",
+      "section-solo-texture",
+      "metrical-harmony",
+      "bass-root-support",
+      "register-blending",
+      "functional-thinning",
+      "section-grammar-repetition",
+    ]),
+  );
 
   for (const blocker of oracle.blockerClassifications) {
     assert.ok(blocker.referenceAxes.length > 0);
@@ -822,6 +837,14 @@ test("generateScore exposes phase-7 candidate pool oracle classifications", () =
       blocker.observedSectionCount,
       blocker.selectionModelSectionCount + blocker.generatorOrSectionPlannerSectionCount,
     );
+    assert.ok(blocker.viableImprovementCount >= 0);
+    assert.ok(blocker.selectedRiskTotal >= 0);
+    assert.ok(blocker.bestViableRiskTotal >= 0);
+    assert.ok(blocker.selectionOnlyUpperBoundRiskReduction >= 0);
+    assert.ok(blocker.selectionOnlyUpperBoundRiskReductionRate >= 0);
+    assert.ok(blocker.selectionOnlyUpperBoundRiskReductionRate <= 1);
+    assert.ok(blocker.generatorNeededRate >= 0);
+    assert.ok(blocker.generatorNeededRate <= 1);
     assert.ok(blocker.selectedRiskMax >= blocker.bestViableRiskMin);
     assert.ok(blocker.representative.candidateCount > 0);
     assert.ok(blocker.representative.viableCandidateCount > 0);
@@ -1456,7 +1479,7 @@ function requireSelectedCandidateEvaluation(
   const selectedEvaluation = selectedCandidateEvaluations[0];
 
   assert.ok(selectedEvaluation !== undefined);
-  assert.equal(selectedEvaluation.featureVersion, 2);
+  assert.equal(selectedEvaluation.featureVersion, 3);
   assert.equal(selectedEvaluation.evaluationModelVersion, 9);
   assert.ok(selectedEvaluation.explanations.entries.length > 0);
   assert.ok(selectedEvaluation.explanations.voicePairs.length > 0);
@@ -1469,7 +1492,7 @@ function requireSelectedCandidateEvaluation(
 function assertPhase10CandidatePoolOracleShape(
   oracle: ReturnType<typeof generateScore>["diagnostics"]["candidatePoolOracle"],
 ) {
-  assert.equal(oracle.schemaVersion, 1);
+  assert.equal(oracle.schemaVersion, 2);
   assert.ok(oracle.sectionCount > 0);
   assert.ok(oracle.candidateCount >= oracle.sectionCount);
   assert.ok(oracle.viableCandidateCount >= 0);
@@ -1484,6 +1507,13 @@ function assertPhase10CandidatePoolOracleShape(
       blocker.selectionModelSectionCount + blocker.generatorOrSectionPlannerSectionCount,
     );
     assert.ok(blocker.viableImprovementCount >= 0);
+    assert.ok(blocker.selectedRiskTotal >= 0);
+    assert.ok(blocker.bestViableRiskTotal >= 0);
+    assert.ok(blocker.selectionOnlyUpperBoundRiskReduction >= 0);
+    assert.ok(blocker.selectionOnlyUpperBoundRiskReductionRate >= 0);
+    assert.ok(blocker.selectionOnlyUpperBoundRiskReductionRate <= 1);
+    assert.ok(blocker.generatorNeededRate >= 0);
+    assert.ok(blocker.generatorNeededRate <= 1);
     assert.ok(blocker.selectedRiskMax >= blocker.bestViableRiskMin);
     assert.ok(blocker.representative.candidateCount > 0);
     assert.ok(blocker.representative.selectedCandidateIndex >= 0);

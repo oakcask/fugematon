@@ -68,9 +68,31 @@ Project response: この PR では mismatch を top-level diagnostics と select
 
 Remaining listening gap: 今回は automatic diagnostics と generated MIDI bundle の作成までで、通し聴取と before/after pairwise preference は未実施である。baseline と variant は同じ `phase10-section-local-planner` で、音符差分ではなく新しい diagnostic shape と selected candidate feature の確認として扱う。
 
+### 6. Phase 11 blocker family を candidate pool oracle に追加した
+
+生成 bundle:
+
+```sh
+pnpm fugematon review-ab --out samples/phase11-oracle-blocker-families --ticks 129600 --baseline-label phase11-metrical-harmony-diagnostics --baseline-model phase10-section-local-planner --variant-label phase11-oracle-blocker-families --variant-model phase10-section-local-planner
+```
+
+対象 seed: 22 seed 全体。代表例は `bach-001`、境界は `minor-entry`、rotation は `modal-cadence`、adversarial は `dense-modal`。
+
+Candidate pool oracle schema version 2 は、従来の `entry-harmony`、`voice-pair-lockstep`、`melody-leap-recovery`、`stepwise-pattern-fixation`、`section-solo-texture` に加えて、Phase 11 blocker family として `metrical-harmony`、`bass-root-support`、`register-blending`、`functional-thinning`、`section-grammar-repetition` を出す。各 blocker summary には selected risk total、best viable risk total、selection-only upper-bound reduction、reduction rate、generator-needed rate を追加した。candidate evaluation は feature version 3 になり、Phase 11 の harmony、register、functional thinning、section grammar feature を candidate-local に参照できる。
+
+22 seed 合計では hard constraints は 0 のまま維持された。Phase 11 blocker family の generator-needed rate は高く、`metrical-harmony` は 0.915、`bass-root-support` は 0.943、`register-blending` は 0.820、`functional-thinning` は 0.801、`section-grammar-repetition` は 1.000 だった。selection-only upper-bound reduction rate は順に 0.013、0.008、0.016、0.018、0.000 で、既存 candidate pool 内の選択だけでは Phase 10 score review の blocker を大きく下げられない。
+
+代表 seed では `bach-001` の generator-needed rate が `metrical-harmony` 0.900、`bass-root-support` 0.967、`register-blending` 0.867、`functional-thinning` 0.633、`section-grammar-repetition` 1.000 だった。`dense-modal` は metrical harmony と bass root support に selection-only 改善余地が比較的残る一方、register blending、functional thinning、section grammar は 1.000 で、候補生成または planner 側の不足として残る。
+
+Theory basis: strong beat harmony、root support、register blending、functional thinning、section grammar は、候補を並べ替えるだけでなく、主題、支え声部、休符、register、state transition の生成段階で決まる比重が大きい。既存 candidate pool がよい候補を十分に含まない場合、単純な weight tuning は melody、entry harmony、voice independence の既存 guardrail と競合しやすい。
+
+Project response: Phase 11 の次の実装は、oracle が `generator-or-section-planner` と分類した blocker を優先し、HarmonicPlan と subject generation の接続、weak beat non-chord-tone role、section grammar、register planner の候補生成を増やす。`selection-model` が出た subset は、candidate scoring の採用候補ではなく、Pareto guard と before/after review のための上限 evidence として扱う。
+
+Remaining listening gap: 今回も automatic diagnostics と generated MIDI bundle の作成までで、通し聴取と before/after pairwise preference は未実施である。baseline と variant は同じ `phase10-section-local-planner` で、音符差分ではなく oracle shape と responsibility classification の確認として扱う。
+
 ## Remaining Gaps
 
 * MIDI の通し聴取と before/after pairwise preference は未実施。
 * `metricalHarmony` は time signature ごとの強拍分類や non-chord-tone role をまだ持たない暫定 summary である。`harmonicFunctionMismatches` も preparation/resolution role までは見ていない。
-* Candidate pool oracle の Phase 11 blocker family は未実装で、selection-only upper bound と generator-needed rate はまだ出ない。
+* Candidate pool oracle の Phase 11 blocker family は出るが、selection-only upper bound はほとんどの blocker で低く、generator-needed rate が高い。
 * review summary 追加 PR は生成音そのもの、candidate scoring、gate threshold を変えていない。follow-up diagnostics PR は selected candidate feature を増やしたが、selection behavior と gate threshold は変えていない。

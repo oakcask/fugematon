@@ -78,6 +78,7 @@ export function buildFugueScore(
       rng,
       notes,
       selectionModel,
+      stateTransitions,
     );
     notes.push(...selection.section.notes);
     subjectEntries.push(...selection.section.subjectEntries);
@@ -242,6 +243,7 @@ export function chooseContinuationSection(
   rng: Xoshiro128StarStar,
   previousNotes: readonly NoteEvent[],
   selectionModel: SelectionModel = "baseline",
+  stateHistory: readonly FugueState[] = [state],
 ): {
   section: Exposition;
   candidateCount: number;
@@ -298,6 +300,7 @@ export function chooseContinuationSection(
       durationTicks: sectionDurationTicks,
       evaluations,
       selectedCandidateIndex: bestIndex,
+      stateHistory,
     }),
   };
 }
