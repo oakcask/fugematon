@@ -22,6 +22,7 @@ export type ContinuityCounterpointInput = {
   localKey: KeySignature;
   harmonicPlan?: HarmonicPlan;
   maxVoiceCount?: number;
+  voiceOrder?: readonly Voice[];
 };
 
 export type ContinuityTexturePlan = ContinuityCounterpointInput & {
@@ -294,14 +295,20 @@ export function buildContinuityTexturePlan(
   }
 
   const maxVoiceCount = input.maxVoiceCount ?? 1;
-  const voices = VOICE_ENTRY_ORDER.filter(
-    (candidate) => !hasOverlap(notes, candidate, input.startTick, input.durationTicks),
-  ).slice(0, maxVoiceCount);
+  const voiceOrder = input.voiceOrder === undefined ? VOICE_ENTRY_ORDER : uniqueVoiceOrder(input.voiceOrder);
+  const voices = voiceOrder
+    .filter((candidate) => VOICE_ENTRY_ORDER.includes(candidate))
+    .filter((candidate) => !hasOverlap(notes, candidate, input.startTick, input.durationTicks))
+    .slice(0, maxVoiceCount);
 
   return {
     ...input,
     voices,
   };
+}
+
+function uniqueVoiceOrder(voices: readonly Voice[]): Voice[] {
+  return voices.filter((voice, index) => voices.indexOf(voice) === index);
 }
 
 function addContinuityLine(

@@ -265,6 +265,10 @@ export function chooseContinuationSection(
   const evaluations = candidates.map((candidate) => evaluateCandidate(previousNotes, candidate));
   const baselineCandidateCount =
     selectionModel === "phase10-section-local-planner" ? baselineContinuationCandidateCount(state) : candidates.length;
+  const selectableCandidateCount =
+    selectionModel === "phase10-section-local-planner"
+      ? phase10SelectableContinuationCandidateCount(state)
+      : candidates.length;
   let bestIndex = bestContinuationCandidateIndex(
     evaluations.slice(0, baselineCandidateCount),
     selectionModel === "phase10-section-local-planner" ? "phase10-oracle-selection" : selectionModel,
@@ -274,7 +278,10 @@ export function chooseContinuationSection(
   for (const [index, evaluation] of evaluations.entries()) {
     const isSectionLocalCandidate =
       selectionModel === "phase10-section-local-planner" && index >= baselineCandidateCount;
-    if (selectionModel === "phase10-section-local-planner" && !isSectionLocalCandidate) {
+    if (
+      selectionModel === "phase10-section-local-planner" &&
+      (!isSectionLocalCandidate || index >= selectableCandidateCount)
+    ) {
       continue;
     }
     if (isSectionLocalCandidate && !preservesSectionLocalGuardrails(evaluation, baselineEvaluation)) {
@@ -316,6 +323,14 @@ function baselineContinuationCandidateCount(state: FugueState): number {
     return VOICE_ENTRY_ORDER.length * 4;
   }
   return VOICE_ENTRY_ORDER.length * (VOICE_ENTRY_ORDER.length - 1);
+}
+
+function phase10SelectableContinuationCandidateCount(state: FugueState): number {
+  if (state === "stretto-like") {
+    return baselineContinuationCandidateCount(state);
+  }
+
+  return baselineContinuationCandidateCount(state) * 2;
 }
 
 function selectionScore(evaluation: CandidateEvaluation, selectionModel: SelectionModel): number {
@@ -437,6 +452,7 @@ export function buildContinuationCandidates(
   const notes: Exposition["notes"] = [];
   const candidates: Exposition[] = [];
   const sectionLocalPlannerCandidates: Exposition[] = [];
+  const registerPlannerCandidates: Exposition[] = [];
   const includeSectionLocalPlannerCandidates = selectionModel === "phase10-section-local-planner";
 
   if (state === "episode") {
@@ -461,6 +477,13 @@ export function buildContinuationCandidates(
           sectionLocalPlannerCandidates.push(
             buildContinuationSection(subject.slice(0, 4), { ...input, continuityVoiceCount: 2 }),
           );
+          registerPlannerCandidates.push(
+            buildContinuationSection(subject.slice(0, 4), {
+              ...input,
+              continuityVoiceCount: 2,
+              continuityVoiceOrder: registerBlendedContinuityVoiceOrder(voice),
+            }),
+          );
         }
       }
     }
@@ -482,6 +505,13 @@ export function buildContinuationCandidates(
         candidates.push(buildContinuationSection(subject, input));
         if (includeSectionLocalPlannerCandidates) {
           sectionLocalPlannerCandidates.push(buildContinuationSection(subject, { ...input, continuityVoiceCount: 2 }));
+          registerPlannerCandidates.push(
+            buildContinuationSection(subject, {
+              ...input,
+              continuityVoiceCount: 2,
+              continuityVoiceOrder: registerBlendedContinuityVoiceOrder(voice),
+            }),
+          );
         }
       }
     }
@@ -504,6 +534,7 @@ export function buildContinuationCandidates(
   }
 
   candidates.push(...sectionLocalPlannerCandidates);
+  candidates.push(...registerPlannerCandidates);
 
   return candidates.length === 0
     ? [
@@ -516,6 +547,19 @@ export function buildContinuationCandidates(
         },
       ]
     : candidates;
+}
+
+function registerBlendedContinuityVoiceOrder(entryVoice: Voice): readonly Voice[] {
+  if (entryVoice === "soprano") {
+    return ["alto", "tenor", "soprano", "bass"];
+  }
+  if (entryVoice === "alto") {
+    return ["tenor", "alto", "soprano", "bass"];
+  }
+  if (entryVoice === "tenor") {
+    return ["alto", "tenor", "bass", "soprano"];
+  }
+  return ["tenor", "alto", "bass", "soprano"];
 }
 
 export function buildContinuationSection(
@@ -535,6 +579,7 @@ export function buildContinuationSection(
     sequencePattern?: SequencePattern;
     fragmentTransform?: FragmentTransform;
     continuityVoiceCount?: number;
+    continuityVoiceOrder?: readonly Voice[];
   },
 ): Exposition {
   const notes: Exposition["notes"] = [];
@@ -571,6 +616,7 @@ export function buildContinuationSection(
     localKey: entry.targetKey,
     harmonicPlan,
     maxVoiceCount: entry.continuityVoiceCount,
+    voiceOrder: entry.continuityVoiceOrder,
   });
   notes.sort(compareNoteEvents);
 
