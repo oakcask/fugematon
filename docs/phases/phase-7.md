@@ -229,3 +229,13 @@ review bundle summary は schema version 9 として `referenceDiagnostics` と 
 oracle は hard failure を持つ候補を viable candidate から除外し、leap recovery、modal counter-subject identity、Phase 7 contour feature などの guardrail を selected candidate より悪化させない候補だけを見る。そのうえで entry harmony、voice-pair lockstep、melody leap recovery、stepwise pattern fixation、section solo texture の representative blocker について、reference-relative risk を下げる viable candidate が pool 内にあれば `selection-model`、なければ `generator-or-section-planner` に分類する。
 
 review bundle summary は schema version 10 として、seed ごとの `diagnosticsSummary.candidatePoolOracle` を出す。これは責務分類の evidence であり、候補選択や section planner の修正はまだ行わない。Phase 7 は引き続き未完了であり、次は実 score ingestion と reference percentile profile、分類結果に基づく section-local planner/scoring 改善、代表 seed と境界 seed の pairwise listening gate が残る。
+
+### PR3 section-local planner blocker
+
+3 本目の stacked PR では、section-local planner の小変更として non-modal continuation の staged thinning 候補を検証した。候補は primary continuity line に短い 2 声目の held support を足し、solo texture risk を下げる狙いだった。
+
+広い staged thinning は diagnostics 上の solo texture を改善した。22 seed の risk 6 以上の selected section は 317 から 249-278 まで下がり、unsupported solo run も多くの non-modal seed で 0 まで下がった。しかし `sparse-cadence` と `restless-line` は `unisonOverlapCount` が 770-775 になり Phase 6/7 gate を壊し、`fugue-smoke`、`lyrical-line`、`contrary-answer` は `samePitchOverlapCount` が 41-48 まで悪化した。
+
+relative guard、absolute Phase 6/7 ceiling guard、stretto-like 限定の順に候補を狭めたが、gate を完全に保つ設定では selected section solo texture risk が PR2 baseline と同じ risk 6 以上 317 件、total risk 3188 に戻り、before/after pairwise preference を支える改善が残らなかった。このため PR3 では planner change を採用しない。Phase 7 は完了しておらず、Phase 8 へ進む blocker は継続する。
+
+今後の section-local planner は、2 声目を足すだけではなく、active voice-pair の exact pitch/unison、support voice の開始音と held duration、leap recovery、modal identity、outer-voice contour を候補生成時点で同時に評価する必要がある。candidate pool oracle は selection/generator 責務の切り分けには有効だったが、PR3 の結果から、solo texture 改善は local solo risk だけを優先する候補追加としては採用できない。

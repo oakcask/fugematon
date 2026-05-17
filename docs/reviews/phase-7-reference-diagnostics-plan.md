@@ -62,6 +62,16 @@ oracle は hard failure を持つ候補を viable candidate から除外し、Ph
 
 review bundle summary は schema version 10 になり、seed ごとの `diagnosticsSummary.candidatePoolOracle` に候補数、viable 候補数、hard failure 除外数、blocker 別の代表分類を残す。この PR では生成挙動、candidate scoring weight、threshold、manual listening judgement は変えない。
 
+## PR3 blocker record
+
+section-local planner 改善として、continuation 後半に短い held second-support を足す staged thinning 候補を試した。manual listening は実施しておらず、判断は diagnostics-backed before/after に限る。
+
+広い候補では solo texture の diagnostics は改善した。risk 6 以上の selected section は 317 から 249-278 まで下がり、多くの non-modal seed で unsupported solo run が 0 になった。一方で Phase 6/7 hard gate は保てなかった。`sparse-cadence` と `restless-line` は `unisonOverlapCount` が 770-775 へ上がり、`fugue-smoke`、`lyrical-line`、`contrary-answer` は `samePitchOverlapCount` が 41-48 へ悪化した。
+
+relative guard、absolute gate ceiling guard、stretto-like 限定まで狭めると Phase 6/7 gate は pass したが、selected section solo texture risk は baseline の risk 6 以上 317 件、total risk 3188 に戻った。pairwise preference を支える before/after 改善が残らないため、この PR3 planner change は採用しない。
+
+この結果から、candidate pool oracle 後の section-local planner は solo texture risk だけで candidate を足す形では足りない。次の候補生成は 2 声目 support の pitch class、octave、onset、duration、active voice-pair の same-pitch/unison、leap recovery、modal identity、contour を同じ section-local guard に入れる必要がある。gate を保ち、diagnostics-backed preference と manual pairwise preference の両方で勝つ planner または scoring 変更が出るまで、Phase 7 completion は blocked のままとする。
+
 ## 残り作業
 
 次の PR 以降で、実 score ingestion と reference profile の実測化を進める。
