@@ -90,16 +90,22 @@ export {
   summarizeReferenceProfile,
 } from "./reference-diagnostics.js";
 export type {
+  ClassifiedReviewGateFinding,
   ManualListeningJudgement,
   Phase6GateResult,
+  Phase7BGatePolicyResult,
+  Phase7BPolicyOptions,
   Phase7GateResult,
   Phase59GateFailure,
   Phase59GateResult,
   Phase510GateResult,
   Phase511GateResult,
+  ReviewGateFindingSource,
+  ReviewGatePolicyClassification,
 } from "./review-gate.js";
 export {
   evaluatePhase6Diagnostics,
+  evaluatePhase7BGatePolicy,
   evaluatePhase7Diagnostics,
   evaluatePhase59Diagnostics,
   evaluatePhase510Diagnostics,

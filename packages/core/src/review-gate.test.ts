@@ -3,32 +3,7 @@ import test from "node:test";
 import { PHASE_5_LENGTH_TICKS, PHASE_6_DIAGNOSTICS_PROFILE, PHASE_7_DIAGNOSTICS_PROFILE } from "./constants.js";
 import type { GenerationDiagnostics } from "./events.js";
 import { generateScore } from "./generate.js";
-import { evaluatePhase7Diagnostics, type Phase59GateFailure } from "./review-gate.js";
-
-type ExpectedPhase7BPolicy = "hard-failure" | "review-required";
-
-type ExpectedPhase7BFinding = Phase59GateFailure & {
-  policy: ExpectedPhase7BPolicy;
-};
-
-const REVIEW_SIGNAL_METRICS = new Set([
-  "rhythmicIndependenceScore",
-  "unisonOverlapCount",
-  "samePitchOverlapCount",
-  "sharedRhythmOverlapCount",
-  "severeEntryIntervalCount",
-  "unresolvedSevereEntryIntervalCount",
-  "leapRecoveryMisses",
-  "unsupportedSoloRunCount",
-  "abruptTextureDropCount",
-  "soloVoiceImbalance",
-  "fourBeatBassUpperSameDirectionRatio",
-  "fourBeatBassUpperContraryRatio",
-  "eightBeatBassUpperSameDirectionRatio",
-  "eightBeatBassUpperContraryRatio",
-  "fourBeatOuterVoiceSameDirectionRatio",
-  "fourBeatOuterVoiceContraryRatio",
-]);
+import { evaluatePhase7BGatePolicy, evaluatePhase7Diagnostics } from "./review-gate.js";
 
 test("phase-7B policy keeps hard constraints as failures", () => {
   const diagnostics = cloneDiagnostics(
@@ -37,7 +12,7 @@ test("phase-7B policy keeps hard constraints as failures", () => {
   diagnostics.rangeViolations = 1;
   diagnostics.voiceCrossings = 1;
 
-  const policy = deriveExpectedPhase7BPolicy("fugue-smoke", diagnostics);
+  const policy = evaluatePhase7BGatePolicy("fugue-smoke", diagnostics);
 
   assert.equal(policy.hardConstraintPassed, false);
   assert.equal(policy.phase8Ready, false);
@@ -46,6 +21,7 @@ test("phase-7B policy keeps hard constraints as failures", () => {
     ["rangeViolations", "voiceCrossings"],
   );
   assert.ok(policy.hardFailures.every((finding) => finding.policy === "hard-failure"));
+  assert.ok(policy.hardFailures.every((finding) => finding.source === "diagnostics"));
 });
 
 test("phase-7B policy preserves review-signal breaches without blocking hard-constraint readiness", () => {
@@ -69,7 +45,7 @@ test("phase-7B policy preserves review-signal breaches without blocking hard-con
   };
 
   const legacyGate = evaluatePhase7Diagnostics("fugue-smoke", diagnostics);
-  const policy = deriveExpectedPhase7BPolicy("fugue-smoke", diagnostics);
+  const policy = evaluatePhase7BGatePolicy("fugue-smoke", diagnostics);
 
   assert.equal(legacyGate.passed, false);
   assert.equal(policy.hardConstraintPassed, true);
@@ -83,49 +59,10 @@ test("phase-7B policy preserves review-signal breaches without blocking hard-con
   assert.ok(policy.reviewSignals.some((finding) => finding.metric === "leapRecoveryMisses"));
   assert.ok(policy.reviewSignals.some((finding) => finding.metric === "unsupportedSoloRunCount"));
   assert.ok(policy.reviewSignals.some((finding) => finding.metric === "fourBeatBassUpperSameDirectionRatio"));
+  assert.equal(policy.legacyPhase7Gate.passed, false);
+  assert.equal(policy.policy.schemaVersion, 1);
+  assert.equal(policy.policy.phase, "phase-7B");
 });
-
-function deriveExpectedPhase7BPolicy(
-  seed: string,
-  diagnostics: GenerationDiagnostics,
-): {
-  hardConstraintPassed: boolean;
-  phase8Ready: boolean;
-  hardFailures: ExpectedPhase7BFinding[];
-  reviewSignals: ExpectedPhase7BFinding[];
-} {
-  const hardFailures = [
-    ...hardConstraintFailure("rangeViolations", diagnostics.rangeViolations),
-    ...hardConstraintFailure("voiceCrossings", diagnostics.voiceCrossings),
-    ...hardConstraintFailure("subjectIdentityViolations", diagnostics.subjectIdentityViolations),
-    ...hardConstraintFailure("answerPlanViolations", diagnostics.answerPlanViolations),
-    ...hardConstraintFailure("keyMetadataMismatches", diagnostics.keyMetadataMismatches),
-    ...hardConstraintFailure("unresolvedDissonanceCount", diagnostics.unresolvedDissonanceCount),
-    ...hardConstraintFailure("allVoiceSilenceGapCount", diagnostics.allVoiceSilenceGapCount),
-  ];
-  const reviewSignals = evaluatePhase7Diagnostics(seed, diagnostics).failures.flatMap((failure) =>
-    REVIEW_SIGNAL_METRICS.has(metricName(failure.metric)) ? [{ ...failure, policy: "review-required" as const }] : [],
-  );
-
-  return {
-    hardConstraintPassed: hardFailures.length === 0,
-    phase8Ready: hardFailures.length === 0,
-    hardFailures,
-    reviewSignals,
-  };
-}
-
-function hardConstraintFailure(metric: string, actual: number): ExpectedPhase7BFinding[] {
-  if (actual === 0) {
-    return [];
-  }
-
-  return [{ metric, actual, expected: "0", policy: "hard-failure" }];
-}
-
-function metricName(metric: string): string {
-  return metric.slice(metric.lastIndexOf(".") + 1);
-}
 
 function cloneDiagnostics(diagnostics: GenerationDiagnostics): GenerationDiagnostics {
   return structuredClone(diagnostics);
