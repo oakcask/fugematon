@@ -105,16 +105,16 @@ export function helpText(): string {
     "  fugematon diagnose --seed <seed> --ticks <lengthTicks>",
     "  fugematon midi --seed <seed> --ticks <lengthTicks> --out <file>",
     "  fugematon review --out <directory> [--ticks <lengthTicks>]",
-    "  fugematon review-ab --out <directory> [--ticks <lengthTicks>] [--baseline-label <label>] [--variant-label <label>] [--baseline-model baseline|phase10-oracle-selection] [--variant-model baseline|phase10-oracle-selection]",
+    "  fugematon review-ab --out <directory> [--ticks <lengthTicks>] [--baseline-label <label>] [--variant-label <label>] [--baseline-model baseline|phase10-oracle-selection|phase10-section-local-planner] [--variant-model baseline|phase10-oracle-selection|phase10-section-local-planner]",
   ].join("\n");
 }
 
 function parseSelectionModel(value: string, optionName: string): SelectionModel {
-  if (value === "baseline" || value === "phase10-oracle-selection") {
+  if (value === "baseline" || value === "phase10-oracle-selection" || value === "phase10-section-local-planner") {
     return value;
   }
 
-  throw new Error(`--${optionName} must be baseline or phase10-oracle-selection`);
+  throw new Error(`--${optionName} must be baseline, phase10-oracle-selection, or phase10-section-local-planner`);
 }
 
 function parseOptions(args: readonly string[]): Map<string, string> {

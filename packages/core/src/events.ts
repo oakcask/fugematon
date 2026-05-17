@@ -139,7 +139,7 @@ export type GenerationParameters = {
   subjectPresence: number;
 };
 
-export type SelectionModel = "baseline" | "phase10-oracle-selection";
+export type SelectionModel = "baseline" | "phase10-oracle-selection" | "phase10-section-local-planner";
 
 export type GenerationInput = {
   seed: string;

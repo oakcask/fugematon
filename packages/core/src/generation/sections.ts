@@ -248,12 +248,42 @@ export function chooseContinuationSection(
   evaluation: CandidateEvaluation;
   oracleSection: ReturnType<typeof classifyCandidatePoolOracleSection>;
 } {
-  const candidates = buildContinuationCandidates(subject, keySignature, state, startTick, sectionDurationTicks, rng);
+  const candidates = buildContinuationCandidates(
+    subject,
+    keySignature,
+    state,
+    startTick,
+    sectionDurationTicks,
+    rng,
+    selectionModel,
+  );
   const evaluations = candidates.map((candidate) => evaluateCandidate(previousNotes, candidate));
-  let bestIndex = 0;
+  const baselineCandidateCount =
+    selectionModel === "phase10-section-local-planner" ? baselineContinuationCandidateCount(state) : candidates.length;
+  let bestIndex = bestContinuationCandidateIndex(
+    evaluations.slice(0, baselineCandidateCount),
+    selectionModel === "phase10-section-local-planner" ? "phase10-oracle-selection" : selectionModel,
+  );
+  const baselineEvaluation = evaluations[bestIndex]!;
 
   for (const [index, evaluation] of evaluations.entries()) {
-    if (selectionScore(evaluation, selectionModel) < selectionScore(evaluations[bestIndex]!, selectionModel)) {
+    const isSectionLocalCandidate =
+      selectionModel === "phase10-section-local-planner" && index >= baselineCandidateCount;
+    if (selectionModel === "phase10-section-local-planner" && !isSectionLocalCandidate) {
+      continue;
+    }
+    if (isSectionLocalCandidate && !preservesSectionLocalGuardrails(evaluation, baselineEvaluation)) {
+      continue;
+    }
+
+    const candidateScore = isSectionLocalCandidate
+      ? selectionScore(evaluation, selectionModel)
+      : selectionScore(evaluation, selectionModel);
+    const bestScore =
+      selectionModel === "phase10-section-local-planner" && bestIndex < baselineCandidateCount
+        ? selectionScore(evaluations[bestIndex]!, "phase10-oracle-selection")
+        : selectionScore(evaluations[bestIndex]!, selectionModel);
+    if (candidateScore < bestScore) {
       bestIndex = index;
     }
   }
@@ -272,12 +302,26 @@ export function chooseContinuationSection(
   };
 }
 
+function baselineContinuationCandidateCount(state: FugueState): number {
+  if (state === "episode") {
+    return VOICE_ENTRY_ORDER.length * 3;
+  }
+  if (state === "subject-return") {
+    return VOICE_ENTRY_ORDER.length * 4;
+  }
+  return VOICE_ENTRY_ORDER.length * (VOICE_ENTRY_ORDER.length - 1);
+}
+
 function selectionScore(evaluation: CandidateEvaluation, selectionModel: SelectionModel): number {
   if (selectionModel === "baseline") {
     return evaluation.totalCost;
   }
 
-  return evaluation.totalCost + phase10OracleSelectionRiskAdjustment(evaluation);
+  return (
+    evaluation.totalCost +
+    phase10OracleSelectionRiskAdjustment(evaluation) +
+    sectionLocalPlannerSelectionRiskAdjustment(evaluation, selectionModel)
+  );
 }
 
 function phase10OracleSelectionRiskAdjustment(evaluation: CandidateEvaluation): number {
@@ -320,6 +364,61 @@ function melodyPreservationRiskAdjustment(evaluation: CandidateEvaluation): numb
   return evaluation.dimensions.melody.features.leapRecoveryMisses * 20;
 }
 
+function sectionLocalPlannerSelectionRiskAdjustment(
+  evaluation: CandidateEvaluation,
+  selectionModel: SelectionModel,
+): number {
+  if (selectionModel !== "phase10-section-local-planner" || evaluation.hardFailures.length > 0) {
+    return 0;
+  }
+
+  const highSoloTextureSections = evaluation.explanations.sections.filter((section) => section.soloTextureRisk >= 6);
+  const soloTextureRisk = highSoloTextureSections.reduce((sum, section) => sum + section.soloTextureRisk, 0);
+
+  return -soloTextureRisk * 12;
+}
+
+function bestContinuationCandidateIndex(
+  evaluations: readonly CandidateEvaluation[],
+  selectionModel: SelectionModel,
+): number {
+  let bestIndex = 0;
+  for (const [index, evaluation] of evaluations.entries()) {
+    if (selectionScore(evaluation, selectionModel) < selectionScore(evaluations[bestIndex]!, selectionModel)) {
+      bestIndex = index;
+    }
+  }
+  return bestIndex;
+}
+
+function preservesSectionLocalGuardrails(
+  evaluation: CandidateEvaluation,
+  baselineEvaluation: CandidateEvaluation,
+): boolean {
+  const evaluationTexture = evaluation.dimensions.texture.features;
+  const baselineTexture = baselineEvaluation.dimensions.texture.features;
+  const evaluationMelody = evaluation.dimensions.melody.features;
+  const baselineMelody = baselineEvaluation.dimensions.melody.features;
+  const evaluationSubject = evaluation.dimensions.subjectClarity.features;
+  const baselineSubject = baselineEvaluation.dimensions.subjectClarity.features;
+
+  return (
+    evaluation.hardFailures.length === 0 &&
+    selectedSectionSoloTextureRisk(evaluation) <= selectedSectionSoloTextureRisk(baselineEvaluation) - 4 &&
+    evaluationTexture.samePitchOverlapCount <= baselineTexture.samePitchOverlapCount &&
+    evaluationTexture.unisonOverlapCount <= baselineTexture.unisonOverlapCount &&
+    evaluationTexture.sharedRhythmOverlapCount <= baselineTexture.sharedRhythmOverlapCount &&
+    evaluationTexture.fourBeatOuterVoiceSameDirectionRatio <=
+      baselineTexture.fourBeatOuterVoiceSameDirectionRatio + 0.02 &&
+    evaluationMelody.leapRecoveryMisses <= baselineMelody.leapRecoveryMisses &&
+    evaluationSubject.counterSubjectIdentityRetention >= baselineSubject.counterSubjectIdentityRetention
+  );
+}
+
+function selectedSectionSoloTextureRisk(evaluation: CandidateEvaluation): number {
+  return evaluation.explanations.sections.reduce((sum, section) => sum + section.soloTextureRisk, 0);
+}
+
 export function buildContinuationCandidates(
   subject: readonly SubjectNote[],
   keySignature: KeySignature,
@@ -327,48 +426,57 @@ export function buildContinuationCandidates(
   startTick: number,
   sectionDurationTicks: number,
   rng: Xoshiro128StarStar,
+  selectionModel: SelectionModel = "baseline",
 ): Exposition[] {
   const notes: Exposition["notes"] = [];
   const candidates: Exposition[] = [];
+  const sectionLocalPlannerCandidates: Exposition[] = [];
+  const includeSectionLocalPlannerCandidates = selectionModel === "phase10-section-local-planner";
 
   if (state === "episode") {
     for (const voice of rng.shuffle(VOICE_ENTRY_ORDER)) {
       for (const pitchClassOffset of rng.shuffle([0, 5, 7] as const)) {
-        candidates.push(
-          buildContinuationSection(subject.slice(0, 4), {
-            state,
-            voice,
-            form: "subject-fragment",
-            startTick,
-            globalKey: keySignature,
-            localKey: transposeKey(keySignature, pitchClassOffset),
-            targetKey: transposeKey(keySignature, pitchClassOffset === 0 ? 7 : pitchClassOffset),
-            supportDurationTicks: Math.min(sectionDurationTicks, subjectDuration(subject.slice(0, 4))),
-            sectionDurationTicks,
-            styleProfile: chooseStyleProfile(rng),
-            sequencePattern: chooseSequencePattern(rng),
-            fragmentTransform: chooseFragmentTransform(rng),
-          }),
-        );
+        const input = {
+          state,
+          voice,
+          form: "subject-fragment" as const,
+          startTick,
+          globalKey: keySignature,
+          localKey: transposeKey(keySignature, pitchClassOffset),
+          targetKey: transposeKey(keySignature, pitchClassOffset === 0 ? 7 : pitchClassOffset),
+          supportDurationTicks: Math.min(sectionDurationTicks, subjectDuration(subject.slice(0, 4))),
+          sectionDurationTicks,
+          styleProfile: chooseStyleProfile(rng),
+          sequencePattern: chooseSequencePattern(rng),
+          fragmentTransform: chooseFragmentTransform(rng),
+        };
+        candidates.push(buildContinuationSection(subject.slice(0, 4), input));
+        if (includeSectionLocalPlannerCandidates) {
+          sectionLocalPlannerCandidates.push(
+            buildContinuationSection(subject.slice(0, 4), { ...input, continuityVoiceCount: 2 }),
+          );
+        }
       }
     }
   } else if (state === "subject-return") {
     for (const voice of rng.shuffle(VOICE_ENTRY_ORDER)) {
       for (const pitchClassOffset of rng.shuffle([0, 5, 7, 9] as const)) {
-        candidates.push(
-          buildContinuationSection(subject, {
-            state,
-            voice,
-            form: "subject",
-            startTick,
-            globalKey: keySignature,
-            localKey: transposeKey(keySignature, pitchClassOffset),
-            targetKey: transposeKey(keySignature, pitchClassOffset),
-            supportDurationTicks: subjectDuration(subject),
-            sectionDurationTicks,
-            styleProfile: chooseStyleProfile(rng),
-          }),
-        );
+        const input = {
+          state,
+          voice,
+          form: "subject" as const,
+          startTick,
+          globalKey: keySignature,
+          localKey: transposeKey(keySignature, pitchClassOffset),
+          targetKey: transposeKey(keySignature, pitchClassOffset),
+          supportDurationTicks: subjectDuration(subject),
+          sectionDurationTicks,
+          styleProfile: chooseStyleProfile(rng),
+        };
+        candidates.push(buildContinuationSection(subject, input));
+        if (includeSectionLocalPlannerCandidates) {
+          sectionLocalPlannerCandidates.push(buildContinuationSection(subject, { ...input, continuityVoiceCount: 2 }));
+        }
       }
     }
   } else {
@@ -388,6 +496,8 @@ export function buildContinuationCandidates(
       }
     }
   }
+
+  candidates.push(...sectionLocalPlannerCandidates);
 
   return candidates.length === 0
     ? [
@@ -418,6 +528,7 @@ export function buildContinuationSection(
     styleProfile: StyleProfile;
     sequencePattern?: SequencePattern;
     fragmentTransform?: FragmentTransform;
+    continuityVoiceCount?: number;
   },
 ): Exposition {
   const notes: Exposition["notes"] = [];
@@ -449,6 +560,7 @@ export function buildContinuationSection(
     startTick: entry.startTick + entry.supportDurationTicks,
     durationTicks: Math.max(0, entry.sectionDurationTicks - entry.supportDurationTicks),
     localKey: entry.targetKey,
+    maxVoiceCount: entry.continuityVoiceCount,
   });
   notes.sort(compareNoteEvents);
 
