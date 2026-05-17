@@ -54,6 +54,14 @@ Phase 7 完了条件は、参照作品から diagnostics を生成し、Fugemato
 
 この PR では生成挙動、candidate scoring、threshold、manual listening judgement は変えない。
 
+## PR2 完了範囲
+
+2 本目の stacked PR では、reference diagnostics の比較軸を candidate pool review に接続した。現行 continuation candidate pool について、selected candidate と candidate alternatives の `CandidateEvaluation` 説明 feature を比較し、entry harmony、voice-pair lockstep、melody leap recovery、stepwise pattern fixation、section solo texture の representative blocker を `selection-model` または `generator-or-section-planner` に分類する。
+
+oracle は hard failure を持つ候補を viable candidate から除外し、Phase 6/7 の guardrail proxy として leap recovery、counter-subject identity、contour feature が selected candidate より悪化しない候補だけを改善候補にする。pool 内に reference-relative risk を下げる viable candidate があれば selection model の責務、なければ generator または section planner の責務として扱う。
+
+review bundle summary は schema version 10 になり、seed ごとの `diagnosticsSummary.candidatePoolOracle` に候補数、viable 候補数、hard failure 除外数、blocker 別の代表分類を残す。この PR では生成挙動、candidate scoring weight、threshold、manual listening judgement は変えない。
+
 ## 残り作業
 
 次の PR 以降で、実 score ingestion と reference profile の実測化を進める。
@@ -62,7 +70,7 @@ Phase 7 完了条件は、参照作品から diagnostics を生成し、Fugemato
 * active voice-pair duration、entry annotation または subject match、section/cadence metadata を import path から実測する。
 * Bach fugue、chorale、modal/early reference を別 profile として分け、metadata-only fixture の暫定 band を percentile profile へ置き換える。
 * reference-relative result を最初は `review-required` として扱い、CI hard fail とは分離する。
-* blocker seed の candidate pool oracle を作り、selection problem か generator/section planner problem かを切り分ける。
+* candidate pool oracle の分類結果を使い、selection model で動かせる blocker と generator/section planner の候補追加が必要な blocker を別 PR に分ける。
 * section-local planner 改善は pairwise listening で現行より勝つことを確認してから Phase 7 完了候補にする。
 
 ## 参照

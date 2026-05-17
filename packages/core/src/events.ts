@@ -230,6 +230,51 @@ export type CandidateEvaluation = {
   };
 };
 
+export type CandidatePoolOracleBlocker =
+  | "entry-harmony"
+  | "voice-pair-lockstep"
+  | "melody-leap-recovery"
+  | "stepwise-pattern-fixation"
+  | "section-solo-texture";
+
+export type CandidatePoolOracleClassification = "selection-model" | "generator-or-section-planner";
+
+export type CandidatePoolOracleRepresentative = {
+  state: FugueState;
+  startTick: number;
+  durationTicks: number;
+  candidateCount: number;
+  selectedCandidateIndex: number;
+  viableCandidateCount: number;
+  hardFailureRejectedCandidateCount: number;
+  selectedRisk: number;
+  bestViableRisk: number;
+  selectedReferenceStatus: "within-reference" | "below-reference" | "above-reference";
+  bestViableReferenceStatus: "within-reference" | "below-reference" | "above-reference";
+};
+
+export type CandidatePoolOracleBlockerSummary = {
+  blocker: CandidatePoolOracleBlocker;
+  referenceAxes: string[];
+  classification: CandidatePoolOracleClassification;
+  observedSectionCount: number;
+  selectionModelSectionCount: number;
+  generatorOrSectionPlannerSectionCount: number;
+  viableImprovementCount: number;
+  selectedRiskMax: number;
+  bestViableRiskMin: number;
+  representative: CandidatePoolOracleRepresentative;
+};
+
+export type CandidatePoolOracleSummary = {
+  schemaVersion: 1;
+  sectionCount: number;
+  candidateCount: number;
+  viableCandidateCount: number;
+  hardFailureRejectedCandidateCount: number;
+  blockerClassifications: CandidatePoolOracleBlockerSummary[];
+};
+
 export type DurationDistribution = {
   whole: number;
   half: number;
@@ -323,6 +368,7 @@ export type GenerationDiagnostics = {
   noteCount: number;
   candidateEvaluations: number;
   selectedCandidateEvaluations: CandidateEvaluation[];
+  candidatePoolOracle: CandidatePoolOracleSummary;
   stateTransitions: FugueState[];
   subjectEntries: PlannedEntry[];
   sectionPlans: HarmonicPlan[];

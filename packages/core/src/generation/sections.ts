@@ -1,3 +1,4 @@
+import { classifyCandidatePoolOracleSection, summarizeCandidatePoolOracleSections } from "../candidate-pool-oracle.js";
 import { TICKS_PER_QUARTER } from "../constants.js";
 import type {
   AnswerKind,
@@ -47,6 +48,7 @@ export function buildFugueScore(
   const stateTransitions: FugueState[] = ["exposition"];
   const stateChanges: FugueScore["stateChanges"] = [];
   const selectedCandidateEvaluations: CandidateEvaluation[] = [];
+  const candidatePoolOracleSections: ReturnType<typeof classifyCandidatePoolOracleSection>[] = [];
   let candidateEvaluations = 0;
   let sectionStartTick = exposition.endTick;
   const continuationPattern = chooseContinuationStatePattern(rng);
@@ -79,6 +81,7 @@ export function buildFugueScore(
     sectionPlans.push(...selection.section.sectionPlans);
     candidateEvaluations += selection.candidateCount;
     selectedCandidateEvaluations.push(selection.evaluation);
+    candidatePoolOracleSections.push(selection.oracleSection);
     sectionStartTick += selection.section.durationTicks;
     stateIndex += 1;
     if (stateIndex >= statePattern.length) {
@@ -96,6 +99,7 @@ export function buildFugueScore(
     sectionPlans,
     candidateEvaluations,
     selectedCandidateEvaluations,
+    candidatePoolOracle: summarizeCandidatePoolOracleSections(candidatePoolOracleSections),
     stateTransitions,
     stateChanges,
     endTick: Math.max(...notes.map((note) => note.startTick + note.durationTicks)),
@@ -234,20 +238,34 @@ export function chooseContinuationSection(
   sectionDurationTicks: number,
   rng: Xoshiro128StarStar,
   previousNotes: readonly NoteEvent[],
-): { section: Exposition; candidateCount: number; evaluation: CandidateEvaluation } {
+): {
+  section: Exposition;
+  candidateCount: number;
+  evaluation: CandidateEvaluation;
+  oracleSection: ReturnType<typeof classifyCandidatePoolOracleSection>;
+} {
   const candidates = buildContinuationCandidates(subject, keySignature, state, startTick, sectionDurationTicks, rng);
-  let best = candidates[0]!;
-  let bestEvaluation = evaluateCandidate(previousNotes, best);
+  const evaluations = candidates.map((candidate) => evaluateCandidate(previousNotes, candidate));
+  let bestIndex = 0;
 
-  for (const candidate of candidates.slice(1)) {
-    const evaluation = evaluateCandidate(previousNotes, candidate);
-    if (evaluation.totalCost < bestEvaluation.totalCost) {
-      best = candidate;
-      bestEvaluation = evaluation;
+  for (const [index, evaluation] of evaluations.entries()) {
+    if (evaluation.totalCost < evaluations[bestIndex]!.totalCost) {
+      bestIndex = index;
     }
   }
 
-  return { section: best, candidateCount: candidates.length, evaluation: bestEvaluation };
+  return {
+    section: candidates[bestIndex]!,
+    candidateCount: candidates.length,
+    evaluation: evaluations[bestIndex]!,
+    oracleSection: classifyCandidatePoolOracleSection({
+      state,
+      startTick,
+      durationTicks: sectionDurationTicks,
+      evaluations,
+      selectedCandidateIndex: bestIndex,
+    }),
+  };
 }
 
 export function buildContinuationCandidates(

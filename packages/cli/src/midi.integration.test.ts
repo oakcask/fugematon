@@ -183,6 +183,33 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
             highSelectedSectionSoloTextureRiskCount: number;
             sectionSoloTextureRiskWarningThreshold: number;
           };
+          candidatePoolOracle: {
+            schemaVersion: number;
+            sectionCount: number;
+            candidateCount: number;
+            viableCandidateCount: number;
+            hardFailureRejectedCandidateCount: number;
+            blockerClassifications: {
+              blocker: string;
+              referenceAxes: string[];
+              classification: string;
+              observedSectionCount: number;
+              selectionModelSectionCount: number;
+              generatorOrSectionPlannerSectionCount: number;
+              viableImprovementCount: number;
+              selectedRiskMax: number;
+              bestViableRiskMin: number;
+              representative: {
+                state: string;
+                candidateCount: number;
+                viableCandidateCount: number;
+                selectedRisk: number;
+                bestViableRisk: number;
+                selectedReferenceStatus: string;
+                bestViableReferenceStatus: string;
+              };
+            }[];
+          };
         };
         referenceComparison: {
           profileId: string;
@@ -247,7 +274,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       preferences: unknown[];
     };
 
-    assert.equal(summary.schemaVersion, 9);
+    assert.equal(summary.schemaVersion, 10);
     assert.equal(summary.lengthTicks, 9600);
     assert.ok(summary.seeds.length > 1);
     assert.equal(summary.referenceDiagnostics.profile.profileId, "phase-7-fugue-reference-profile");
@@ -354,6 +381,39 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       assert.ok(entry.diagnosticsSummary.candidateEvaluation.averageSelectedSectionSoloTextureRisk >= 0);
       assert.ok(entry.diagnosticsSummary.candidateEvaluation.highSelectedSectionSoloTextureRiskCount >= 0);
       assert.equal(entry.diagnosticsSummary.candidateEvaluation.sectionSoloTextureRiskWarningThreshold, 6);
+      assert.equal(entry.diagnosticsSummary.candidatePoolOracle.schemaVersion, 1);
+      assert.ok(entry.diagnosticsSummary.candidatePoolOracle.sectionCount >= 0);
+      assert.ok(
+        entry.diagnosticsSummary.candidatePoolOracle.candidateCount >=
+          entry.diagnosticsSummary.candidatePoolOracle.sectionCount,
+      );
+      assert.ok(entry.diagnosticsSummary.candidatePoolOracle.viableCandidateCount >= 0);
+      assert.ok(entry.diagnosticsSummary.candidatePoolOracle.hardFailureRejectedCandidateCount >= 0);
+      assert.ok(entry.diagnosticsSummary.candidatePoolOracle.blockerClassifications.length >= 0);
+      for (const blocker of entry.diagnosticsSummary.candidatePoolOracle.blockerClassifications) {
+        assert.ok(blocker.referenceAxes.length > 0);
+        assert.ok(
+          blocker.classification === "selection-model" || blocker.classification === "generator-or-section-planner",
+        );
+        assert.equal(
+          blocker.observedSectionCount,
+          blocker.selectionModelSectionCount + blocker.generatorOrSectionPlannerSectionCount,
+        );
+        assert.ok(blocker.viableImprovementCount >= 0);
+        assert.ok(blocker.selectedRiskMax >= blocker.bestViableRiskMin);
+        assert.ok(blocker.representative.candidateCount > 0);
+        assert.ok(blocker.representative.viableCandidateCount > 0);
+        assert.ok(
+          blocker.representative.selectedReferenceStatus === "within-reference" ||
+            blocker.representative.selectedReferenceStatus === "below-reference" ||
+            blocker.representative.selectedReferenceStatus === "above-reference",
+        );
+        assert.ok(
+          blocker.representative.bestViableReferenceStatus === "within-reference" ||
+            blocker.representative.bestViableReferenceStatus === "below-reference" ||
+            blocker.representative.bestViableReferenceStatus === "above-reference",
+        );
+      }
     }
     for (const entry of listeningReview.seeds) {
       assert.ok(files.includes(entry.diagnosticsFile));
