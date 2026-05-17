@@ -1,3 +1,4 @@
+import { TICKS_PER_QUARTER } from "../constants.js";
 import type { CandidateEvaluation, NoteEvent, NoteRole, StepwisePatternSummary } from "../events.js";
 import {
   buildPhase7CandidateRiskContexts,
@@ -186,6 +187,23 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
       shortStrongBeatEntryNoteCount: diagnostics.shortStrongBeatEntryNoteCount,
       entrySupportInstabilityCount: diagnostics.entrySupportInstabilityCount,
       allVoiceSilenceGapCount: diagnostics.allVoiceSilenceGapCount,
+      phase11AdjacentVoiceOverOctaveCount: diagnostics.phase11Review.adjacentVoiceIntervals.reduce(
+        (sum, interval) => sum + interval.overOctaveCount,
+        0,
+      ),
+      phase11AdjacentVoiceWideP75SemitoneExcess: diagnostics.phase11Review.adjacentVoiceIntervals.reduce(
+        (sum, interval) => sum + Math.max(0, interval.seventyFifthPercentileSemitones - 12),
+        0,
+      ),
+      phase11RegisterSpanSemitoneTotal: diagnostics.phase11Review.registerSpans.reduce(
+        (sum, span) => sum + span.spanSemitones,
+        0,
+      ),
+      phase11FunctionalThinningNonCadentialRunCount: diagnostics.phase11Review.functionalThinning.nonCadentialRunCount,
+      phase11FunctionalThinningOneVoiceRunCount: diagnostics.phase11Review.functionalThinning.oneVoiceRunCount,
+      phase11FunctionalThinningTwoVoiceRunCount: diagnostics.phase11Review.functionalThinning.twoVoiceRunCount,
+      phase11FunctionalThinningMaxDurationQuarters:
+        diagnostics.phase11Review.functionalThinning.maxDurationTicks / TICKS_PER_QUARTER,
     },
   };
   const subjectClarity = {
@@ -227,6 +245,16 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
       strongBeatDissonanceCount: diagnostics.strongBeatDissonanceCount,
       harmonicFunctionMismatches: diagnostics.harmonicFunctionMismatches,
       harmonicFunctionMatches: diagnostics.harmonicFunctionMatches,
+      strongBeatCheckpointCount: diagnostics.phase11Review.metricalHarmony.strongBeatCheckpointCount,
+      strongBeatChordToneSupportCount: diagnostics.phase11Review.metricalHarmony.strongBeatChordToneSupportCount,
+      strongBeatChordToneMismatchCount: diagnostics.phase11Review.metricalHarmony.strongBeatChordToneMismatchCount,
+      strongBeatBassRootSupportCount: diagnostics.phase11Review.metricalHarmony.strongBeatBassRootSupportCount,
+      strongBeatBassRootUnsupportedCount: Math.max(
+        0,
+        diagnostics.phase11Review.metricalHarmony.strongBeatCheckpointCount -
+          diagnostics.phase11Review.metricalHarmony.strongBeatBassRootSupportCount,
+      ),
+      weakBeatChordToneMismatchCount: diagnostics.phase11Review.metricalHarmony.weakBeatChordToneMismatchCount,
       predominantDirectionMisses: diagnostics.predominantDirectionMisses,
       controlledAmbiguityScore: diagnostics.controlledAmbiguityScore,
       styleModulationFit: diagnostics.styleModulationFit,
@@ -250,6 +278,10 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
       formRepetitionWarnings: diagnostics.formRepetitionWarnings,
       episodeDirectionScore: diagnostics.episodeDirectionScore,
       strettoClarityScore: diagnostics.strettoClarityScore,
+      phase11StateGrammarMostRepeatedPatternCount:
+        diagnostics.phase11Review.stateGrammarRepetition.mostRepeatedPatternCount,
+      phase11StateGrammarUniquePatternCount: diagnostics.phase11Review.stateGrammarRepetition.uniquePatternCount,
+      phase11TopEntryPatternFamilyCount: diagnostics.phase11Review.entryPatternFamilies[0]?.count ?? 0,
     },
   };
   const totalCost =
@@ -270,7 +302,7 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
     form.reward;
 
   return {
-    featureVersion: 2,
+    featureVersion: 3,
     evaluationModelVersion: 9,
     totalCost: Math.round(totalCost * 1000) / 1000,
     hardFailures,

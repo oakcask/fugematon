@@ -218,7 +218,7 @@ export type CandidateEvaluationExplanations = {
 };
 
 export type CandidateEvaluation = {
-  featureVersion: 1 | 2;
+  featureVersion: 1 | 2 | 3;
   evaluationModelVersion: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
   totalCost: number;
   hardFailures: DiagnosticIssueCode[];
@@ -238,7 +238,12 @@ export type CandidatePoolOracleBlocker =
   | "voice-pair-lockstep"
   | "melody-leap-recovery"
   | "stepwise-pattern-fixation"
-  | "section-solo-texture";
+  | "section-solo-texture"
+  | "metrical-harmony"
+  | "bass-root-support"
+  | "register-blending"
+  | "functional-thinning"
+  | "section-grammar-repetition";
 
 export type CandidatePoolOracleClassification = "selection-model" | "generator-or-section-planner";
 
@@ -264,13 +269,18 @@ export type CandidatePoolOracleBlockerSummary = {
   selectionModelSectionCount: number;
   generatorOrSectionPlannerSectionCount: number;
   viableImprovementCount: number;
+  selectedRiskTotal: number;
+  bestViableRiskTotal: number;
+  selectionOnlyUpperBoundRiskReduction: number;
+  selectionOnlyUpperBoundRiskReductionRate: number;
+  generatorNeededRate: number;
   selectedRiskMax: number;
   bestViableRiskMin: number;
   representative: CandidatePoolOracleRepresentative;
 };
 
 export type CandidatePoolOracleSummary = {
-  schemaVersion: 1;
+  schemaVersion: 2;
   sectionCount: number;
   candidateCount: number;
   viableCandidateCount: number;

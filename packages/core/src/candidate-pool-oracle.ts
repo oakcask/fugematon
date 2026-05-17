@@ -24,9 +24,14 @@ type CandidatePoolOracleSection = {
   blockers: CandidatePoolOracleSectionBlocker[];
 };
 
+type CandidatePoolOracleSectionContext = {
+  state: FugueState;
+  stateHistory: readonly FugueState[];
+};
+
 type CandidatePoolOracleSectionBlocker = {
   blocker: CandidatePoolOracleBlocker;
-  referenceAxes: ReferenceMetricAxis[];
+  referenceAxes: string[];
   classification: CandidatePoolOracleClassification;
   viableImprovementCount: number;
   selectedRisk: number;
@@ -37,14 +42,16 @@ type CandidatePoolOracleSectionBlocker = {
 
 type BlockerSpec = {
   blocker: CandidatePoolOracleBlocker;
-  referenceAxes: ReferenceMetricAxis[];
-  selectedRisk: (evaluation: CandidateEvaluation) => number;
+  referenceAxes: string[];
+  referenceComparisonAxis?: ReferenceMetricAxis;
+  selectedRisk: (evaluation: CandidateEvaluation, context: CandidatePoolOracleSectionContext) => number;
 };
 
 const BLOCKER_SPECS: readonly BlockerSpec[] = [
   {
     blocker: "entry-harmony",
     referenceAxes: ["severeEntryIntervalPerEntry", "unresolvedSevereEntryIntervalPerEntry"],
+    referenceComparisonAxis: "severeEntryIntervalPerEntry",
     selectedRisk: (evaluation) =>
       maximum(
         evaluation.explanations.entries.map((entry) => entry.severeIntervalCount + entry.unresolvedSevereIntervalCount),
@@ -57,6 +64,7 @@ const BLOCKER_SPECS: readonly BlockerSpec[] = [
       "unisonOverlapPerVoicePairQuarter",
       "sharedRhythmOverlapPerVoicePairQuarter",
     ],
+    referenceComparisonAxis: "samePitchOverlapPerVoicePairQuarter",
     selectedRisk: (evaluation) =>
       maximum(
         evaluation.explanations.voicePairs.map(
@@ -67,11 +75,13 @@ const BLOCKER_SPECS: readonly BlockerSpec[] = [
   {
     blocker: "melody-leap-recovery",
     referenceAxes: ["leapRecoveryMissesPerQuarter"],
+    referenceComparisonAxis: "leapRecoveryMissesPerQuarter",
     selectedRisk: (evaluation) => evaluation.dimensions.melody.features.leapRecoveryMisses ?? 0,
   },
   {
     blocker: "stepwise-pattern-fixation",
     referenceAxes: ["freeCounterpointStepwiseRunRatio", "freeCounterpointRepeatedDegreePatternsPerQuarter"],
+    referenceComparisonAxis: "freeCounterpointStepwiseRunRatio",
     selectedRisk: (evaluation) =>
       (evaluation.dimensions.melody.features.freeCounterpointStepwiseRunRatio ?? 0) * 10 +
       (evaluation.dimensions.melody.features.freeCounterpointRepeatedDegreePatternCount ?? 0) / 100,
@@ -79,7 +89,63 @@ const BLOCKER_SPECS: readonly BlockerSpec[] = [
   {
     blocker: "section-solo-texture",
     referenceAxes: ["unsupportedSoloRunsPerSection", "abruptTextureDropsPerSection"],
+    referenceComparisonAxis: "unsupportedSoloRunsPerSection",
     selectedRisk: (evaluation) => maximum(evaluation.explanations.sections.map((section) => section.soloTextureRisk)),
+  },
+  {
+    blocker: "metrical-harmony",
+    referenceAxes: [
+      "strongBeatDissonanceCount",
+      "harmonicFunctionMismatches",
+      "strongBeatChordToneMismatchCount",
+      "weakBeatChordToneMismatchCount",
+    ],
+    selectedRisk: (evaluation) =>
+      feature(evaluation, "harmony", "strongBeatDissonanceCount") +
+      feature(evaluation, "harmony", "harmonicFunctionMismatches") +
+      feature(evaluation, "harmony", "strongBeatChordToneMismatchCount") +
+      feature(evaluation, "harmony", "weakBeatChordToneMismatchCount") * 0.25,
+  },
+  {
+    blocker: "bass-root-support",
+    referenceAxes: ["strongBeatBassRootUnsupportedCount", "strongBeatBassRootSupportCount"],
+    selectedRisk: (evaluation) => feature(evaluation, "harmony", "strongBeatBassRootUnsupportedCount"),
+  },
+  {
+    blocker: "register-blending",
+    referenceAxes: [
+      "phase11AdjacentVoiceOverOctaveCount",
+      "phase11AdjacentVoiceWideP75SemitoneExcess",
+      "phase11RegisterSpanSemitoneTotal",
+    ],
+    selectedRisk: (evaluation) =>
+      feature(evaluation, "texture", "phase11AdjacentVoiceOverOctaveCount") +
+      feature(evaluation, "texture", "phase11AdjacentVoiceWideP75SemitoneExcess") +
+      feature(evaluation, "texture", "phase11RegisterSpanSemitoneTotal") * 0.05,
+  },
+  {
+    blocker: "functional-thinning",
+    referenceAxes: [
+      "phase11FunctionalThinningNonCadentialRunCount",
+      "phase11FunctionalThinningOneVoiceRunCount",
+      "phase11FunctionalThinningMaxDurationQuarters",
+    ],
+    selectedRisk: (evaluation) =>
+      feature(evaluation, "texture", "phase11FunctionalThinningNonCadentialRunCount") * 2 +
+      feature(evaluation, "texture", "phase11FunctionalThinningOneVoiceRunCount") +
+      feature(evaluation, "texture", "phase11FunctionalThinningMaxDurationQuarters"),
+  },
+  {
+    blocker: "section-grammar-repetition",
+    referenceAxes: [
+      "formRepetitionWarnings",
+      "phase11StateGrammarMostRepeatedPatternCount",
+      "phase11TopEntryPatternFamilyCount",
+    ],
+    selectedRisk: (evaluation) =>
+      feature(evaluation, "form", "formRepetitionWarnings") +
+      Math.max(0, feature(evaluation, "form", "phase11StateGrammarMostRepeatedPatternCount") - 1) +
+      Math.max(0, feature(evaluation, "form", "phase11TopEntryPatternFamilyCount") - 1),
   },
 ] as const;
 
@@ -89,6 +155,7 @@ export function classifyCandidatePoolOracleSection(input: {
   durationTicks: number;
   evaluations: readonly CandidateEvaluation[];
   selectedCandidateIndex: number;
+  stateHistory?: readonly FugueState[];
   referenceProfile?: ReferenceDiagnosticsProfile;
 }): CandidatePoolOracleSection {
   const selected = input.evaluations[input.selectedCandidateIndex];
@@ -101,6 +168,7 @@ export function classifyCandidatePoolOracleSection(input: {
     (evaluation) => evaluation.hardFailures.length > 0,
   ).length;
   const profile = input.referenceProfile ?? PHASE_7_REFERENCE_DIAGNOSTICS_PROFILE;
+  const context = { state: input.state, stateHistory: input.stateHistory ?? [input.state] };
 
   return {
     state: input.state,
@@ -111,13 +179,22 @@ export function classifyCandidatePoolOracleSection(input: {
     viableCandidateCount: viable.filter(Boolean).length,
     hardFailureRejectedCandidateCount,
     blockers: BLOCKER_SPECS.flatMap((spec) => {
-      const selectedRisk = roundOracleRisk(spec.selectedRisk(selected));
+      const selectedRisk = roundOracleRisk(
+        spec.selectedRisk(selected, context) + phase11SectionGrammarHistoryRisk(spec.blocker, context.stateHistory),
+      );
       if (selectedRisk <= 0) {
         return [];
       }
 
       const viableRisks = input.evaluations
-        .map((evaluation, index) => (viable[index] ? roundOracleRisk(spec.selectedRisk(evaluation)) : undefined))
+        .map((evaluation, index) =>
+          viable[index]
+            ? roundOracleRisk(
+                spec.selectedRisk(evaluation, context) +
+                  phase11SectionGrammarHistoryRisk(spec.blocker, context.stateHistory),
+              )
+            : undefined,
+        )
         .filter((risk): risk is number => risk !== undefined);
       const bestViableRisk = viableRisks.length === 0 ? selectedRisk : minimum(viableRisks);
       const viableImprovementCount = viableRisks.filter((risk) => risk < selectedRisk).length;
@@ -130,8 +207,12 @@ export function classifyCandidatePoolOracleSection(input: {
           viableImprovementCount,
           selectedRisk,
           bestViableRisk,
-          selectedReferenceStatus: compareCandidateRiskToReference(selectedRisk, spec.referenceAxes[0], profile),
-          bestViableReferenceStatus: compareCandidateRiskToReference(bestViableRisk, spec.referenceAxes[0], profile),
+          selectedReferenceStatus: compareCandidateRiskToReference(selectedRisk, spec.referenceComparisonAxis, profile),
+          bestViableReferenceStatus: compareCandidateRiskToReference(
+            bestViableRisk,
+            spec.referenceComparisonAxis,
+            profile,
+          ),
         },
       ];
     }),
@@ -156,6 +237,15 @@ export function summarizeCandidatePoolOracleSections(
     const classification: CandidatePoolOracleClassification =
       selectionModelSectionCount > 0 ? "selection-model" : "generator-or-section-planner";
     const representative = chooseRepresentative(sectionBlockers);
+    const selectedRiskTotal = roundOracleRisk(
+      sectionBlockers.reduce((sum, { blocker }) => sum + blocker.selectedRisk, 0),
+    );
+    const bestViableRiskTotal = roundOracleRisk(
+      sectionBlockers.reduce((sum, { blocker }) => sum + blocker.bestViableRisk, 0),
+    );
+    const selectionOnlyUpperBoundRiskReduction = roundOracleRisk(
+      sectionBlockers.reduce((sum, { blocker }) => sum + Math.max(0, blocker.selectedRisk - blocker.bestViableRisk), 0),
+    );
 
     return [
       {
@@ -166,6 +256,11 @@ export function summarizeCandidatePoolOracleSections(
         selectionModelSectionCount,
         generatorOrSectionPlannerSectionCount,
         viableImprovementCount: sectionBlockers.reduce((sum, { blocker }) => sum + blocker.viableImprovementCount, 0),
+        selectedRiskTotal,
+        bestViableRiskTotal,
+        selectionOnlyUpperBoundRiskReduction,
+        selectionOnlyUpperBoundRiskReductionRate: ratio(selectionOnlyUpperBoundRiskReduction, selectedRiskTotal),
+        generatorNeededRate: ratio(generatorOrSectionPlannerSectionCount, sectionBlockers.length),
         selectedRiskMax: maximum(sectionBlockers.map(({ blocker }) => blocker.selectedRisk)),
         bestViableRiskMin: minimum(sectionBlockers.map(({ blocker }) => blocker.bestViableRisk)),
         representative,
@@ -174,7 +269,7 @@ export function summarizeCandidatePoolOracleSections(
   });
 
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     sectionCount: sections.length,
     candidateCount: sections.reduce((sum, section) => sum + section.candidateCount, 0),
     viableCandidateCount: sections.reduce((sum, section) => sum + section.viableCandidateCount, 0),
@@ -245,11 +340,40 @@ function feature(
   return evaluation.dimensions[dimension].features[name] ?? 0;
 }
 
+function phase11SectionGrammarHistoryRisk(
+  blocker: CandidatePoolOracleBlocker,
+  stateHistory: readonly FugueState[],
+): number {
+  if (blocker !== "section-grammar-repetition") {
+    return 0;
+  }
+
+  const continuationStates = stateHistory.filter((state) => state !== "exposition");
+  const windowSize = 4;
+  if (continuationStates.length < windowSize * 2) {
+    return 0;
+  }
+
+  const latestPattern = continuationStates.slice(-windowSize).join(">");
+  let count = 0;
+  for (let index = 0; index + windowSize <= continuationStates.length; index += 1) {
+    if (continuationStates.slice(index, index + windowSize).join(">") === latestPattern) {
+      count += 1;
+    }
+  }
+
+  return Math.max(0, count - 1);
+}
+
 function compareCandidateRiskToReference(
   value: number,
-  axis: ReferenceMetricAxis,
+  axis: ReferenceMetricAxis | undefined,
   profile: ReferenceDiagnosticsProfile,
 ): CandidatePoolOracleRepresentative["selectedReferenceStatus"] {
+  if (axis === undefined) {
+    return "within-reference";
+  }
+
   const metric = profile.metrics.find((candidate) => candidate.axis === axis);
   if (metric === undefined) {
     return "within-reference";
@@ -268,4 +392,12 @@ function minimum(values: readonly number[]): number {
 
 function roundOracleRisk(value: number): number {
   return Math.round(value * 1000) / 1000;
+}
+
+function ratio(numerator: number, denominator: number): number {
+  if (denominator <= 0) {
+    return 0;
+  }
+
+  return roundOracleRisk(numerator / denominator);
 }

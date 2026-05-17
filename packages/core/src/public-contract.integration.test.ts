@@ -52,7 +52,7 @@ test("public API emits the stable score metadata envelope", () => {
   assert.equal(scoreEnd?.tick, output.diagnostics.generatedUntilTick);
   assert.equal(output.diagnostics.eventCount, output.events.length);
   assert.equal(output.diagnostics.noteCount, notes.length);
-  assert.equal(output.diagnostics.candidatePoolOracle.schemaVersion, 1);
+  assert.equal(output.diagnostics.candidatePoolOracle.schemaVersion, 2);
   assert.ok(output.diagnostics.candidatePoolOracle.sectionCount >= 0);
   assert.equal(output.diagnostics.generatorVersion, GENERATOR_VERSION);
   assert.equal(output.diagnostics.seed, "public-contract");
@@ -143,7 +143,7 @@ test("public MIDI export is deterministic for generated score events", () => {
 });
 
 function assertCandidateEvaluation(evaluation: CandidateEvaluation): void {
-  assert.equal(evaluation.featureVersion, 2);
+  assert.equal(evaluation.featureVersion, 3);
   assert.equal(evaluation.evaluationModelVersion, 9);
   assert.ok(Number.isFinite(evaluation.totalCost));
   assert.ok(evaluation.explanations.entries.length > 0);

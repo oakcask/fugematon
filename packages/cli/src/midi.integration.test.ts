@@ -198,6 +198,11 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
               selectionModelSectionCount: number;
               generatorOrSectionPlannerSectionCount: number;
               viableImprovementCount: number;
+              selectedRiskTotal: number;
+              bestViableRiskTotal: number;
+              selectionOnlyUpperBoundRiskReduction: number;
+              selectionOnlyUpperBoundRiskReductionRate: number;
+              generatorNeededRate: number;
               selectedRiskMax: number;
               bestViableRiskMin: number;
               representative: {
@@ -449,7 +454,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       assert.ok(entry.diagnosticsSummary.candidateEvaluation.averageSelectedSectionSoloTextureRisk >= 0);
       assert.ok(entry.diagnosticsSummary.candidateEvaluation.highSelectedSectionSoloTextureRiskCount >= 0);
       assert.equal(entry.diagnosticsSummary.candidateEvaluation.sectionSoloTextureRiskWarningThreshold, 6);
-      assert.equal(entry.diagnosticsSummary.candidatePoolOracle.schemaVersion, 1);
+      assert.equal(entry.diagnosticsSummary.candidatePoolOracle.schemaVersion, 2);
       assert.ok(entry.diagnosticsSummary.candidatePoolOracle.sectionCount >= 0);
       assert.ok(
         entry.diagnosticsSummary.candidatePoolOracle.candidateCount >=
@@ -485,6 +490,13 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
           blocker.selectionModelSectionCount + blocker.generatorOrSectionPlannerSectionCount,
         );
         assert.ok(blocker.viableImprovementCount >= 0);
+        assert.ok(blocker.selectedRiskTotal >= 0);
+        assert.ok(blocker.bestViableRiskTotal >= 0);
+        assert.ok(blocker.selectionOnlyUpperBoundRiskReduction >= 0);
+        assert.ok(blocker.selectionOnlyUpperBoundRiskReductionRate >= 0);
+        assert.ok(blocker.selectionOnlyUpperBoundRiskReductionRate <= 1);
+        assert.ok(blocker.generatorNeededRate >= 0);
+        assert.ok(blocker.generatorNeededRate <= 1);
         assert.ok(blocker.selectedRiskMax >= blocker.bestViableRiskMin);
         assert.ok(blocker.representative.candidateCount > 0);
         assert.ok(blocker.representative.viableCandidateCount > 0);
@@ -520,7 +532,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       assert.ok(!entry.midiFile.includes(directory));
     }
     assert.deepEqual(findReviewSeed(summary.seeds, "fugue-smoke").diagnosticsSummary.candidateEvaluation, {
-      featureVersion: 2,
+      featureVersion: 3,
       evaluationModelVersion: 9,
       selectedCandidateEvaluationCount: 1,
       entryExplanationCount: 1,
@@ -539,7 +551,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       sectionSoloTextureRiskWarningThreshold: 6,
     });
     assert.deepEqual(findReviewSeed(summary.seeds, "modal-cadence").diagnosticsSummary.candidateEvaluation, {
-      featureVersion: 2,
+      featureVersion: 3,
       evaluationModelVersion: 9,
       selectedCandidateEvaluationCount: 1,
       entryExplanationCount: 1,
@@ -558,7 +570,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       sectionSoloTextureRiskWarningThreshold: 6,
     });
     assert.deepEqual(findReviewSeed(summary.seeds, "modal-answer").diagnosticsSummary.candidateEvaluation, {
-      featureVersion: 2,
+      featureVersion: 3,
       evaluationModelVersion: 9,
       selectedCandidateEvaluationCount: 1,
       entryExplanationCount: 1,
@@ -731,8 +743,8 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
       assert.notEqual(entry.category, "");
       assert.ok(entry.baseline.diagnosticsSummary.hardConstraintFailures >= 0);
       assert.ok(entry.variant.diagnosticsSummary.hardConstraintFailures >= 0);
-      assert.equal(entry.baseline.candidatePoolOracle.schemaVersion, 1);
-      assert.equal(entry.variant.candidatePoolOracle.schemaVersion, 1);
+      assert.equal(entry.baseline.candidatePoolOracle.schemaVersion, 2);
+      assert.equal(entry.variant.candidatePoolOracle.schemaVersion, 2);
       assert.deepEqual(entry.baseline.candidatePoolOracle, entry.baseline.diagnosticsSummary.candidatePoolOracle);
       assert.deepEqual(entry.variant.candidatePoolOracle, entry.variant.diagnosticsSummary.candidatePoolOracle);
       assert.equal(typeof entry.baseline.phase7BGate.phase8Ready, "boolean");
