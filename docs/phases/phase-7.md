@@ -107,6 +107,8 @@ long-run form と section texture は、generator を大きく変えずに revie
 
 再生成した 22 seed は Phase 6/7 gate をすべて pass した。ただし evidence は blocker 継続を示している。全 seed で `maxSelectedSectionSoloTextureRisk` は 8 に達し、risk 6 以上の selected section は合計 321 件だった。most repeated 4-section continuation pattern は seed ごとに 6-8 回反復し、unique pattern count は 4-5 に留まった。これは episode、subject-return、stretto-like が短い cycle で回り続け、codetta、episode preparation、stretto preparation、density/register variation がまだ長尺疲労を支えるほど分化していないことを示す。
 
+`prompts/musical-review.md` による schema version 7 再レビューでは、stacked PR #72-#80 は Phase 7 後半の evidence coverage と小さな scoring 改善までは進めたが、Phase 7 完了条件は満たさないと判断する。現在の bundle でも severe entry interval は合計 1956、unresolved severe entry interval は合計 1342、shared rhythm overlap は合計 18484、unison overlap は合計 14140、leap recovery miss は合計 418 残る。`0-1-2-3-4-3-2-1` 型は 4 seed まで減ったが、新しい `0-1-2-3-4-3-1-2` 型の 8 seed も severe entry interval 平均 100.875、未解決平均 80.125 で、5度へ順次上行した後の上部隣接形が entry 周辺の濁りをまだ誘発している可能性が高い。`listening-review.json` が全 seed `not-reviewed`、`pairwise-preferences.json` が空であることも Phase 8 前の blocker として残す。
+
 section solo texture risk を form cost に加える小実験は棄却した。Phase 6/7 gate は保てたが、129600 tick review で `maxSelectedSectionSoloTextureRisk` は 8 のまま、risk 6 以上の selected section も 321 件のままで改善しなかった。候補ごとの weight 調整だけでは、continuity が同じ 1 声 filler shape に寄る構造を変えられないため、今後は section planner に codetta、段階的 thinning、stretto preparation、episode から次 entry へ向かう複数声部 continuity を追加する。
 
 `listening-review.json` は 22 seed すべてが `not-reviewed`、`pairwise-preferences.json` は空のままにする。これらは committed source artifact ではなく review command が再生成する template なので、manual listening judgement と pairwise preference は実際の聴取 pass でだけ埋める。
