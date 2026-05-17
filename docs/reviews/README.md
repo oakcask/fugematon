@@ -10,6 +10,7 @@ music-quality gate、diagnostics threshold、generator model、candidate scoring
 
 * [Phase 7+ 再編計画](../phases/phase-7-plus-reorg.md): Phase 7 blocker 後の gate 緩和、review signal 化、Phase 10 先行と Phase 8/9 defer の進め方。
 * [Phase 11](../phases/phase-11.md): Phase 10 譜面レビュー後に、Phase 8/9 の前へ追加した品質モデル再設計計画。
+* [Phase 11 review summary diagnostics](phase-11-review-summary.md): Phase 11 の最初の diagnostics summary 追加と、22 seed の register、thinning、grammar、metrical harmony 観察。
 * [Phase 10](../phases/phase-10.md): 操作機能より先に進める reference corpus、oracle-driven model update、section-local planner、pairwise preference の品質基盤計画。
 * [Phase 10 譜面レビュー](phase-10-score-review.md): Phase 10 完了後に、代表・境界・rotation・adversarial seed の生成譜面を metric ではなく note/entry/section から読んだレビュー。
 * [Phase 7 参照作品 diagnostics 計画](phase-7-reference-diagnostics-plan.md): CI metric が音楽的心地よさを十分に表せない問題を、Bach fugue などの参照作品 diagnostics と reference-relative gate へ再構成する計画。
@@ -29,7 +30,7 @@ music-quality gate、diagnostics threshold、generator model、candidate scoring
 
 ## 読む判断
 
-* 最新の品質方針や Phase 8/9 前の実装対象を見る場合は Phase 11 を読む。Phase 7 以降の gate 再構成を見る場合は Phase 7 参照作品 diagnostics 計画を読む。現行 blocker の譜面 evidence を見る場合は Phase 10 譜面レビューを読む。
+* 最新の品質方針や Phase 8/9 前の実装対象を見る場合は Phase 11 を読む。Phase 11 の実装済み観察軸を見る場合は Phase 11 review summary diagnostics を読む。Phase 7 以降の gate 再構成を見る場合は Phase 7 参照作品 diagnostics 計画を読む。現行 blocker の譜面 evidence を見る場合は Phase 10 譜面レビューを読む。
 * 概形の並行・反行を扱う場合は Phase 6 概形進行レビューも読む。
 * ある gate がなぜ追加されたかを追う場合だけ、古いレビューへ戻る。
 * diagnostics の閾値や seed セットを変更する場合は、該当レビューと [../reference/technical-plan.md](../reference/technical-plan.md) を合わせて確認する。

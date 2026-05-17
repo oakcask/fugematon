@@ -211,6 +211,24 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
               };
             }[];
           };
+          phase11Review: {
+            schemaVersion: number;
+            adjacentVoiceIntervals: { checkpointCount: number; medianSemitones: number; overOctaveCount: number }[];
+            registerSpans: { noteCount: number; spanSemitones: number }[];
+            functionalThinning: { nonCadentialRunCount: number; maxDurationTicks: number };
+            stateGrammarRepetition: {
+              patternLength: number;
+              uniquePatternCount: number;
+              mostRepeatedPatternCount: number;
+            };
+            entryPatternFamilies: { pattern: number[]; count: number }[];
+            metricalHarmony: {
+              strongBeatCheckpointCount: number;
+              strongBeatChordToneSupportCount: number;
+              strongBeatBassRootSupportCount: number;
+              weakBeatCheckpointCount: number;
+            };
+          };
         };
         referenceComparison: {
           profileId: string;
@@ -440,6 +458,23 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       assert.ok(entry.diagnosticsSummary.candidatePoolOracle.viableCandidateCount >= 0);
       assert.ok(entry.diagnosticsSummary.candidatePoolOracle.hardFailureRejectedCandidateCount >= 0);
       assert.ok(entry.diagnosticsSummary.candidatePoolOracle.blockerClassifications.length >= 0);
+      assert.equal(entry.diagnosticsSummary.phase11Review.schemaVersion, 1);
+      assert.equal(entry.diagnosticsSummary.phase11Review.adjacentVoiceIntervals.length, 3);
+      assert.equal(entry.diagnosticsSummary.phase11Review.registerSpans.length, 4);
+      assert.ok(entry.diagnosticsSummary.phase11Review.functionalThinning.nonCadentialRunCount >= 0);
+      assert.equal(entry.diagnosticsSummary.phase11Review.stateGrammarRepetition.patternLength, 4);
+      assert.ok(entry.diagnosticsSummary.phase11Review.stateGrammarRepetition.uniquePatternCount >= 0);
+      assert.ok(entry.diagnosticsSummary.phase11Review.entryPatternFamilies.length > 0);
+      assert.ok(entry.diagnosticsSummary.phase11Review.metricalHarmony.strongBeatCheckpointCount > 0);
+      assert.ok(entry.diagnosticsSummary.phase11Review.metricalHarmony.weakBeatCheckpointCount > 0);
+      assert.ok(
+        entry.diagnosticsSummary.phase11Review.metricalHarmony.strongBeatChordToneSupportCount <=
+          entry.diagnosticsSummary.phase11Review.metricalHarmony.strongBeatCheckpointCount,
+      );
+      assert.ok(
+        entry.diagnosticsSummary.phase11Review.metricalHarmony.strongBeatBassRootSupportCount <=
+          entry.diagnosticsSummary.phase11Review.metricalHarmony.strongBeatCheckpointCount,
+      );
       for (const blocker of entry.diagnosticsSummary.candidatePoolOracle.blockerClassifications) {
         assert.ok(blocker.referenceAxes.length > 0);
         assert.ok(
