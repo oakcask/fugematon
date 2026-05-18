@@ -27,7 +27,12 @@ import {
   subjectDuration,
   VOICE_ENTRY_ORDER,
 } from "./shared.js";
-import { addContinuityCounterpoint, addCounterpointTexture, fillAllVoiceSilenceGaps } from "./texture.js";
+import {
+  addContinuityCounterpoint,
+  addCounterpointTexture,
+  addFunctionalThinningSupport,
+  fillAllVoiceSilenceGaps,
+} from "./texture.js";
 import type { Exposition, FugueScore, SubjectNote } from "./types.js";
 
 const CONTINUATION_STATE_PATTERNS: readonly (readonly FugueState[])[] = [
@@ -132,6 +137,9 @@ export function buildFugueScore(
   }
 
   fillAllVoiceSilenceGaps(notes, keySignature);
+  if (selectionModel === "phase10-section-local-planner") {
+    addFunctionalThinningSupport(notes, sectionPlans);
+  }
   notes.sort(compareNoteEvents);
 
   return {
