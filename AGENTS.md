@@ -23,6 +23,7 @@
 - When changing code, make small, nearby, behavior-preserving refactors that improve progressive disclosure within the touched ownership boundary.
 - Keep PR-sized refactors in prerequisite stacked PRs when they prepare later feature, fix, or scoring work.
 - If a change affects a public contract, generated output shape, or planned behavior, update the relevant tests and docs.
+- Place scripts invoked from GitHub Workflows under `workflow-scripts/`.
 
 ## Task-Specific Skills
 

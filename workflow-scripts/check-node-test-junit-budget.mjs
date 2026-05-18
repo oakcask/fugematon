@@ -155,7 +155,7 @@ function parseArguments(args) {
 
   if (reportPath === undefined || rawMaxSeconds === undefined) {
     throw new Error(
-      "Usage: node scripts/check-node-test-junit-budget.mjs --junit-report <path> --max-seconds <seconds>",
+      "Usage: node workflow-scripts/check-node-test-junit-budget.mjs --junit-report <path> --max-seconds <seconds>",
     );
   }
 

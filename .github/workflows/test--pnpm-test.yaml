@@ -6,7 +6,7 @@ on:
       - package.json
       - pnpm-lock.yaml
       - pnpm-workspace.yaml
-      - scripts/**
+      - workflow-scripts/check-node-test-junit-budget.mjs
       - tsconfig.json
       - packages/**
   push:
@@ -16,7 +16,7 @@ on:
       - package.json
       - pnpm-lock.yaml
       - pnpm-workspace.yaml
-      - scripts/**
+      - workflow-scripts/check-node-test-junit-budget.mjs
       - tsconfig.json
       - packages/**
 
@@ -82,4 +82,4 @@ jobs:
           name: node-test-junit
           path: test-results
       - name: Check slow test files
-        run: node scripts/check-node-test-junit-budget.mjs --junit-report test-results/node-test-junit.xml --max-seconds 45
+        run: node workflow-scripts/check-node-test-junit-budget.mjs --junit-report test-results/node-test-junit.xml --max-seconds 45
