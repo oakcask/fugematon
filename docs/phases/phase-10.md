@@ -130,10 +130,10 @@ Phase 10 は以下の evidence により完了扱いにする。
 
 ## Deferred Operational Lane
 
-Phase 8/9 は削除しない。ただし Phase 10 後の譜面レビューで、音域分離、進行反復、終止感のない thinning、強拍/弱拍を意識しない和声設計が blocker と確認された。このため現在の実装対象は Phase 8 ではなく Phase 11 に移す。
+Phase 8/9 は削除しない。ただし Phase 10 後の譜面レビューで、音域分離、進行反復、終止感のない thinning、強拍/弱拍を意識しない和声設計が blocker と確認された。このため当時の実装対象は Phase 8 ではなく Phase 11 に移した。
 
 * Phase 11: harmonic rhythm、subject family、section grammar、register planning、functional texture thinning を、破壊的変更も含めて再設計する。
 * Phase 8: ring buffer replay、rewind、MVP sliders、parameter-change meta event。
 * Phase 9: Dedicated Web Worker、deadline、best-so-far fallback。
 
-Phase 8/9 へ戻る条件は、Phase 11 で採用する品質 baseline が hard constraints、determinism、schema compatibility、reference diagnostics summary、candidate-pool oracle shape を維持し、Phase 10 譜面レビューの blocker を譜面 evidence と人間レビューで改善できることである。
+Phase 8/9 へ戻る条件は後続 Phase で更新され、現在は Phase 12P の performance profile integration と Phase 13 の quality vector review model を先に完了する。

@@ -162,7 +162,7 @@
   * 同主調への転調、parallel major/minor shift、借用和音的な色彩変化は style profile に応じて評価し、strict-classical では控えめ、hybrid または popular-tolerant では表情変化として許容する。
   * modal context では古典的な導音解決を常に強制せず、mode の特徴音と modal cadence の説得力を別指標で扱う。
   * 複数 seed の note 数、entry 数、状態遷移列が不自然に同型になり続ける場合は form repetition warning として扱う。
-  * Phase 8 の操作パラメータは、Phase 7B の gate policy reset 後に hard constraint 上は増やせる状態になった。Phase 7B、Phase 10、Phase 11、Phase 12 は完了しており、Phase 6-7 の美しさ metric と manual listening は quality lane の evidence とする。Phase 12 後の human feedback で残った高声部 repeated-note pressure、unison、second collision、低声部ペアの長い unison motion は、Phase 13 の quality vector statistical review で扱ってから Phase 8 operational lane へ戻る。
+  * Phase 8 の操作パラメータは、Phase 7B の gate policy reset 後に hard constraint 上は増やせる状態になった。Phase 7B、Phase 10、Phase 11、Phase 12 は完了しており、Phase 6-7 の美しさ metric と manual listening は quality lane の evidence とする。Phase 12 後は Phase 12P で performance profile を MIDI/WebAudio 共通の rendering boundary として組み込み、その後 human feedback で残った高声部 repeated-note pressure、unison、second collision、低声部ペアの長い unison motion を Phase 13 の quality vector statistical review で扱ってから Phase 8 operational lane へ戻る。
 * 閾値はコード内に散らさず、CI 用の diagnostics profile として管理する。
 * diagnostics の項目追加は互換的変更として扱うが、既存閾値の厳格化は generatorVersion とは別に CI 設定の変更として扱う。
 
@@ -270,6 +270,7 @@ type GenerationInput = {
   seed: string;
   lengthTicks: number;
   parameters: GenerationParameters;
+  writingProfile?: WritingProfileId;
 };
 
 type GenerationOutput = {
@@ -282,6 +283,8 @@ function generateScore(input: GenerationInput): GenerationOutput;
 
 * diagnostics には、禁則違反数、声域違反数、主題出現数、状態遷移列などを含める。
 * generateScore は同じ input に対して同じ output を返す決定的な関数として扱う。
+* `writingProfile` は作曲制約として扱う。音域、快適レジスタ、奏法適性、dynamic responsiveness など、生成結果に影響する楽器編成上の制約だけを持つ。
+* pan、volume、MIDI program、reverb、SoundFont、WebAudio oscillator などは `GenerationInput` に入れず、演奏またはレンダリング側の profile で扱う。
 
 ## CLI 方針
 
@@ -310,20 +313,25 @@ pnpm fugematon diagnose --seed bach-001 --ticks 7680
   * packages/core
     * UI、WebAudio、Canvas、Node.js 固有 API に依存しない生成エンジン。
     * ブラウザと CLI の両方から使う。
+    * `WritingProfile` を入力として扱うが、MIDI バイナリやレンダリング設定は持たない。
+  * packages/midi
+    * `PerformanceEvent` または core の `ScoreEvent` と演奏 profile を標準 MIDI ファイルへ変換する。
+    * MIDI track、channel、program change、pan、volume、controller、meta event の責務を閉じ込める。
   * packages/cli
     * core API を呼び出す CLI。
-    * ScoreEvent JSON、MIDI、diagnostics を生成する。
+    * ScoreEvent JSON、diagnostics、MIDI export 呼び出しを担当する。
   * apps/web
     * Vite ベースの Web UI。
     * Canvas ビジュアライザ、WebAudio 再生、操作 UI を持つ。
+  * packages/performance
+    * WebAudio と MIDI export が同じ演奏解釈を共有するための必須境界として分離する。
+    * `ScoreEvent` と `PerformanceProfile` から `PerformanceEvent` を作る純粋変換を担当する。
+    * `organ-default`、`string-quartet`、`chamber-band`、`strict-counterpoint` などの profile を、WebAudio と MIDI export の両方から参照できるようにする。
 * 後続候補：
-  * packages/midi
-    * MIDI エクスポートを core から分離したくなった場合の候補。
-    * 初期は core または cli 内に置き、複雑化したら分離する。
   * packages/wasm-core
     * Rust + wasm_bindgen による生成器や PRNG を導入する場合の候補。
     * 初期は作らず、TypeScript 実装で性能や境界を確認してから検討する。
-* core は最初からブラウザと Node.js の両方で動くようにし、DOM、AudioContext、Canvas、fs へ直接依存しない。
+* core は最初からブラウザと Node.js の両方で動くようにし、DOM、AudioContext、Canvas、fs、MIDI encoder へ直接依存しない。
 
 ## パッケージ依存ルール
 
@@ -337,19 +345,29 @@ pnpm fugematon diagnose --seed bach-001 --ticks 7680
     * WebAudio
     * Worker API
     * Node.js の fs / path / process などの実行環境 API
+    * MIDI バイナリ encoder
     * UI フレームワーク
-  * core は deterministic な生成、診断、変換だけを担当する。
+  * core は deterministic な生成、診断、作曲制約上の変換だけを担当する。
+  * `ScoreEvent` の `velocity` は最終 MIDI velocity ではなく、当面は相対的な dynamic emphasis として扱う。
+* packages/midi
+  * Node.js API に依存しない純粋な MIDI encoder を基本にする。
+  * `PerformanceEvent`、または暫定的に `ScoreEvent` と `PerformanceProfile` を MIDI バイナリへ変換する責務に限定する。
+  * MIDI channel、program change、pan、volume、controller、track name などは演奏 profile から解決する。
+  * 生成ロジック、diagnostics、score selection は持たない。
 * packages/cli
   * Node.js API に依存してよい。
   * ファイル入出力、標準出力、CI 成果物生成を担当する。
-  * 生成ロジックは持たず、core API を呼ぶ。
+  * 生成ロジックと MIDI encoder は持たず、core API と packages/midi を呼ぶ。
 * apps/web
   * DOM、Canvas、WebAudio、Worker API に依存してよい。
   * 表示、再生、ユーザー操作、ブラウザ上の履歴管理を担当する。
   * 生成ロジックは持たず、core API または Worker 経由で core を呼ぶ。
-* packages/midi
-  * MIDI エクスポートが複雑になった場合に分離する。
-  * core の ScoreEvent を MIDI バイナリへ変換する責務に限定する。
+  * pan、volume、音色、空間、WebAudio oscillator は共有 `PerformanceProfile` を WebAudio 向けに解釈して解決する。
+* packages/performance
+  * DOM、WebAudio、Node.js API、MIDI encoder に依存しない。
+  * 同じ `PerformanceProfile` から MIDI と WebAudio が共通の velocity curve、articulation、humanize、note length compensation を得るための中間層にする。
+  * WebAudio preview という専用 profile は作らない。ブラウザ再生は `organ-default`、`string-quartet`、`chamber-band` など、MIDI export と同じ演奏解釈を使う。
+  * `strict-counterpoint` は対位法上の声部と衝突を聴き取りやすくする検査用 profile とし、残響を抑えたピアノまたは近い単純音色、浅い humanize、明瞭な発音を基本にする。
 * packages/wasm-core
   * Rust + wasm_bindgen を導入する場合の候補。
   * TypeScript core と API 境界を揃え、置き換えまたは併用できる形を目指す。
@@ -394,6 +412,16 @@ pnpm fugematon diagnose --seed bach-001 --ticks 7680
 
 ## MIDI エクスポート方針
 
+* MIDI export は packages/midi の責務とし、core から分離する。
+* 入力は `PerformanceEvent` を基本にする。移行中は `ScoreEvent` と `PerformanceProfile` を受け取り、内部で同じ演奏化処理を使ってよい。
+* `PerformanceProfile` は MIDI と WebAudio で共有する演奏設定を持つ。MIDI export では、そのうち標準 MIDI に落とせる値を encode する。
+  * 声部ごとの track name、channel、program、pan、volume。
+  * velocity curve、最小・最大 velocity、accent の効かせ方。
+  * articulation、note length compensation、legato overlap、release。
+  * deterministic humanize の onset range と velocity range。
+  * reverb send や chorus send など、標準 controller に落とせる空間設定。
+* `PerformanceProfile` の変更は MIDI や WebAudio の聴こえ方を変えるが、`ScoreEvent` と `generatorVersion` は変えない。review bundle では使用した performance profile id と version を記録する。
+* `WritingProfile` の変更は生成される pitch、duration、voice assignment、velocity emphasis を変え得るため、生成差分として扱う。
 * 内部の tick 表現は 480 ticks per quarter note を基準にする。
 * MIDI の PPQ も 480 に合わせる。
 * Phase 0-2 ではテンポと拍子は曲中で変更しない。
@@ -405,6 +433,8 @@ pnpm fugematon diagnose --seed bach-001 --ticks 7680
 * parameter-change や state-change は、標準 MIDI 再生には影響しないため、必要に応じてテキスト系メタイベントとして出力する。
 * MIDI エクスポートは、音楽確認用であり、Fugematon 独自の全メタデータを完全保存する形式とは別に考える。
 * Fugematon 独自の完全な再現データは、ScoreEvent 列と seed / parameters を保存する形式で扱う。
+* 初期実装では `organ-default` profile を用意し、既存 MIDI 出力に近い track layout と program を再現する。次に `string-quartet` や `chamber-band` を追加し、楽譜差分なしで室内楽風またはオルガン風の聴こえ方を WebAudio と MIDI export の両方で比較できるようにする。
+* `strict-counterpoint` profile は musical preview ではなく検査用の特殊な演奏解釈とする。残響や音色の厚みで濁りを隠さず、声部独立、同音重複、entry clash、articulation の問題を聴き取りやすくする。
 
 ## Fugematon 再現データ形式
 
@@ -488,8 +518,9 @@ pnpm fugematon diagnose --seed bach-001 --ticks 7680
 * Phase 10: 操作機能より音楽美を優先し、reference corpus manifest、A/B review harness、oracle-driven selection model、section-local planner quality lane、manual pairwise preference template を先に扱った。Phase 10 は完了扱いだが、譜面レビューにより default model adoption には不十分と判断する。実 reference ingestion、manual pairwise listening、learned aesthetic score は継続 quality lane として残る。
 * Phase 11: Phase 8/9 の無限再生・操作機能へ進む前に、harmonic rhythm、subject family、section grammar、register planning、functional texture thinning を破壊的変更も含めて再設計する。strong beat chord support、weak beat non-chord-tone role、bass/root support、suspension preparation/resolution、cadence beat arrival を diagnostics と candidate scoring に入れる。主題 family と continuation state cycle の反復を減らし、adjacent voice interval、声部別 pitch span、register blending、cadence から離れた active voice count を review summary に出す。candidate pool oracle は Phase 11 blocker を `selection-model` と `generator-or-section-planner` に分類し、selection で直る問題だけを scoring、tie-break、Pareto guard、説明可能な offline ranking model の探索対象にする。learned aesthetic score は本採用せず、oracle-best と manual pairwise preference を説明できる feature weight の診断 lane に留める。Phase 11 の変更は hard constraints、determinism、schema compatibility、reference diagnostics summary、candidate-pool oracle shape を維持する。Phase 11 は完了したが、post-completion review により similar phrase blocker は Phase 12 へ移す。
 * Phase 12: Phase 11 後も残る similar phrase blocker を、Phase 8/9 より前に扱った。phrase-family generator、motive derivation grammar、phrase-level harmonic rhythm、planned support counterpoint を破壊的変更も含めて再設計する方針のうち、subject stem、answer transform、fragment derivation reason、phrase function、section-state pattern を diagnostics と review bundle に出し、guarded phrase-unit planning を採用した。`angular-answer`、`modal-dorian`、`modal-answer`、`modal-cadence`、`dense-modal` の most repeated 4-section pattern count と unique pattern count は Phase 11 current より改善した。repetition はゼロ要求にせず、function-bearing repetition と mechanical repetition を分け、reference profile と比較する。Phase 12 の変更は hard constraints、determinism、schema compatibility、reference diagnostics summary、candidate-pool oracle shape を維持する。voice-independence、leap-recovery、counter-subject identity、repeated-note pressure、low-voice unison span の tradeoff は quality lane に残す。
-* Phase 13: Phase 12 後の human feedback で残った高声部 repeated-note pressure、exact unison、second collision、bass-tenor / bass-alto の長い pitch-class unison を、単独 metric のしきい値ではなく quality vector の統計的 review/adoption model として扱う。first pass では selected output を変えず、duration-based voice-pair unison、soprano repeated-note contour/ornament release、entry-local severe interval duration、local sentinel を diagnostics に追加し、review bundle に `qualityVector` と `qualityProfileComparison` を出す。22 seed aggregate は median、p90、max、outside seed count、top contributing axes を持つ。hard constraints は従来どおり残し、vector distance は review-required evidence として扱う。learned aesthetic score や covariance-heavy distance は、reference corpus と pairwise listening evidence が揃うまで exploratory に留める。
-* Phase 8: Phase 13 の review/adoption model が Phase 12 baseline を説明できる状態になった後に、リングバッファ履歴、巻き戻し replay、MVP 用スライダ、parameter-change メタイベントを実装する。Phase 6-7 の美しさ metric と manual listening がすべて pass になることは開始条件にしないが、操作 UI が音楽的な退屈さや Phase 12 後の unison / repeated-note defects を隠す設計にならないよう、Phase 13 の quality vector evidence baseline を前提にする。操作機能は hard constraints、determinism、schema compatibility、reference diagnostics summary、candidate-pool oracle shape を守り、review signal と quality vector comparison を消さずに操作前後で比較できることを条件にする。
+* Phase 12P: Phase 13 の前に performance profile integration を行う。`packages/performance` を DOM、WebAudio、Node.js API、MIDI encoder に依存しない純粋変換層として追加し、`ScoreEvent` と `PerformanceProfile` から deterministic な `PerformanceEvent` を作る。MIDI export と WebAudio preview は同じ profile interpretation を使い、pan、volume、program、velocity curve、articulation、humanize、note length compensation を `ScoreEvent` へ混ぜない。review bundle、MIDI metadata、A/B summary には performance profile id と version を残す。Phase 12P は selected output、generator scoring、quality diagnostics threshold、`generatorVersion` を変えず、profile 変更は rendering change として扱う。
+* Phase 13: Phase 12P で performance profile boundary を固定した後、Phase 12 後の human feedback で残った高声部 repeated-note pressure、exact unison、second collision、bass-tenor / bass-alto の長い pitch-class unison を、単独 metric のしきい値ではなく quality vector の統計的 review/adoption model として扱う。first pass では selected output を変えず、duration-based voice-pair unison、soprano repeated-note contour/ornament release、entry-local severe interval duration、local sentinel を diagnostics に追加し、review bundle に `qualityVector` と `qualityProfileComparison` を出す。22 seed aggregate は median、p90、max、outside seed count、top contributing axes を持つ。hard constraints は従来どおり残し、vector distance は review-required evidence として扱う。learned aesthetic score や covariance-heavy distance は、reference corpus と pairwise listening evidence が揃うまで exploratory に留める。
+* Phase 8: Phase 13 の review/adoption model が Phase 12 baseline を説明できる状態になった後に、リングバッファ履歴、巻き戻し replay、MVP 用スライダ、parameter-change メタイベントを実装する。Phase 6-7 の美しさ metric と manual listening がすべて pass になることは開始条件にしないが、操作 UI が音楽的な退屈さや Phase 12 後の unison / repeated-note defects を隠す設計にならないよう、Phase 13 の quality vector evidence baseline を前提にする。操作機能は hard constraints、determinism、schema compatibility、reference diagnostics summary、candidate-pool oracle shape を守り、performance profile metadata、review signal、quality vector comparison を消さずに操作前後で比較できることを条件にする。
 * Phase 9: Phase 8 後に Dedicated Web Worker による生成探索の分離、生成期限、フォールバック候補を実装する。Worker fallback は hard constraints を満たす候補を返し、reference diagnostics と review signal を維持する。
 
 ## 生成期限とフォールバック
@@ -546,6 +577,7 @@ pnpm fugematon diagnose --seed bach-001 --ticks 7680
 * Phase 10 以降の CI または review harness で確認する項目：
   * A/B review summary は baseline と variant の diagnostics、reference comparison、candidate pool oracle、review signals を seed ごとに比較できる。
   * oracle-driven model update は hard constraints、determinism、schema compatibility、reference diagnostics summary、candidate-pool oracle shape を壊さない。
+  * Phase 12P 以降は performance profile id と version を review artifact に残し、MIDI/WebAudio rendering change を generation change と分ける。
   * Phase 13 以降は quality vector comparison、local sentinel regression、top contributing axes、manual listening gap を A/B adoption summary に残す。
 * Phase 8 以降の CI で確認する項目：
   * parameter-change メタイベントは、次の状態遷移以降のイベントにのみ影響する。
