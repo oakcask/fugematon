@@ -2,7 +2,7 @@
 
 Phase 12 は、Phase 11 完了後も残った similar phrase blocker を扱う品質フェーズである。Phase 8/9 の無限再生、巻き戻し、UI 操作、Worker 化より先に実施する。
 
-Status: complete. Phase 12 adopted the phrase-unit repetition baseline after the 22 seed review showed focused blocker improvement while preserving hard constraints, determinism, schema compatibility, reference diagnostics, candidate-pool oracle shape, and Phase 7B readiness. Phase 8/9 operational work can resume from this baseline; voice-independence, leap-recovery, and counter-subject tradeoffs remain in the quality lane.
+Status: complete. Phase 12 adopted the phrase-unit repetition baseline after the 22 seed review showed focused blocker improvement while preserving hard constraints, determinism, schema compatibility, reference diagnostics, candidate-pool oracle shape, and Phase 7B readiness. Phase 12 human feedback confirmed the rhythm and rest-closure improvements while leaving repeated-note and unison defects in the quality lane. Phase 13 now handles those defects as quality-vector statistical review before Phase 8/9 operational work resumes.
 
 ## Rationale
 
@@ -84,4 +84,8 @@ Rejected selection experiment: making the initial phrase-family oracle candidate
 
 Phase 12 adopted a guarded phrase-unit planning baseline instead of direct phrase-family candidate selection. Modal phrase units preserve their subject family until repeated 4-section patterns become structural risks, then allow state-unit variation under the existing section-local guardrails. The focused blocker seeds all improved most repeated 4-section pattern count and unique pattern count against Phase 11 current: `angular-answer` 7 -> 5 / 4 -> 9, `modal-dorian` 6 -> 5 / 5 -> 11, `modal-answer` 6 -> 5 / 5 -> 11, `modal-cadence` 7 -> 5 / 4 -> 9, and `dense-modal` 7 -> 5 / 4 -> 12. The 22 seed aggregate also reduced top entry-pattern family count, total 4-section repetition, and unsupported functional thinning; details are in [Phase 12 review summary](../reviews/phase-12-review-summary.md).
 
-Accepted tradeoff: the phrase-unit baseline increases some review signals. Across the 22 seed review set, unison overlap rose by 458, shared-rhythm overlap rose by 416, leap-recovery misses rose by 71, and total counter-subject identity retention fell by 0.279. These are documented as musical symptoms of denser phrase contrast and support alignment, not accepted silently as numbers. Phase 12 accepts the tradeoff because Phase 7B hard readiness remains intact and the similar-phrase blocker is reduced; future quality-lane work should target voice independence and leap recovery inside the new phrase-unit baseline rather than reverting to mechanical repetition.
+Accepted tradeoff: the phrase-unit baseline increases some review signals. Across the 22 seed review set, unison overlap rose by 458, shared-rhythm overlap rose by 416, leap-recovery misses rose by 71, and total counter-subject identity retention fell by 0.279. These are documented as musical symptoms of denser phrase contrast and support alignment, not accepted silently as numbers. Phase 12 accepts the tradeoff because Phase 7B hard readiness remains intact and the similar-phrase blocker is reduced.
+
+## Follow-up Plan
+
+Phase 12 follow-up is [Phase 13](phase-13.md), not another round of single-metric threshold tuning. Phase 13 keeps the Phase 12 selected output stable while adding duration-based voice-pair unison diagnostics, soprano repeated-note pressure, local sentinel checks, and `qualityVector` / `qualityProfileComparison` review summaries. Future quality-lane work should target voice independence, repeated-note pressure, and leap recovery inside the new phrase-unit baseline rather than reverting to mechanical repetition.

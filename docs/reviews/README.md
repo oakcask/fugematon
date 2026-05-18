@@ -8,7 +8,8 @@ music-quality gate、diagnostics threshold、generator model、candidate scoring
 
 ## 優先
 
-* [Phase 12 review summary](phase-12-review-summary.md): Phase 12 完了時の 22 seed A/B evidence、focused blocker 改善、voice-independence / leap-recovery tradeoff。
+* [Phase 12 review summary](phase-12-review-summary.md): Phase 12 完了時の 22 seed A/B evidence、human feedback、quality vector 化する unresolved symptoms。
+* [Phase 13](../phases/phase-13.md): Phase 12 後の repeated-note / unison defects を quality vector と統計的 review/adoption model で扱う計画。
 * [Phase 11 post-completion score review](phase-11-post-review.md): Phase 11 完了後の 22 seed 評価。similar phrase blocker が残るため、Phase 8/9 より前へ Phase 12 phrase/repetition quality rewrite を挿入する根拠。
 * [Phase 7+ 再編計画](../phases/phase-7-plus-reorg.md): Phase 7 blocker 後の gate 緩和、review signal 化、Phase 10 先行と Phase 8/9 defer の進め方。
 * [Phase 11](../phases/phase-11.md): Phase 10 譜面レビュー後に、Phase 8/9 の前へ追加した品質モデル再設計計画。
@@ -32,7 +33,7 @@ music-quality gate、diagnostics threshold、generator model、candidate scoring
 
 ## 読む判断
 
-* 最新の品質方針や Phase 8/9 前の実装対象を見る場合は Phase 12 review summary と Phase 12 を読む。Phase 11 の実装済み観察軸を見る場合は Phase 11 review summary diagnostics を読む。Phase 7 以降の gate 再構成を見る場合は Phase 7 参照作品 diagnostics 計画を読む。Phase 12 挿入前の blocker evidence を見る場合は Phase 11 post-completion score review を読む。
+* 最新の品質方針や Phase 8/9 前の実装対象を見る場合は Phase 12 review summary、Phase 13、Phase 7+ 再編計画を読む。Phase 11 の実装済み観察軸を見る場合は Phase 11 review summary diagnostics を読む。Phase 7 以降の gate 再構成を見る場合は Phase 7 参照作品 diagnostics 計画を読む。Phase 12 挿入前の blocker evidence を見る場合は Phase 11 post-completion score review を読む。
 * 概形の並行・反行を扱う場合は Phase 6 概形進行レビューも読む。
 * ある gate がなぜ追加されたかを追う場合だけ、古いレビューへ戻る。
 * diagnostics の閾値や seed セットを変更する場合は、該当レビューと [../reference/technical-plan.md](../reference/technical-plan.md) を合わせて確認する。
