@@ -2,7 +2,7 @@
 
 Phase 13 は、Phase 12 後の human feedback で残った音楽的欠陥を、単独 metric のしきい値調整ではなく、正規化された quality vector の統計的な外れ方として扱う品質フェーズである。Phase 13 の最初の目的は生成結果を変えることではなく、Phase 12 baseline を評価する review/adoption model を作ることである。
 
-Status: planned. Phase 13 follows Phase 12P performance profile integration and remains before returning to Phase 8/9 operational work. It should keep hard constraints, determinism, schema compatibility, reference diagnostics summary, candidate-pool oracle shape, performance profile metadata, and the Phase 12 selected output stable while adding the review model needed for later music-quality changes.
+Status: complete. Phase 13 follows Phase 12P performance profile integration and remains before returning to Phase 8/9 operational work. It keeps hard constraints, determinism, reference diagnostics summary, candidate-pool oracle shape, performance profile metadata, and the Phase 12 selected output stable while adding the review model needed for later music-quality changes.
 
 ## Rationale
 
@@ -56,13 +56,21 @@ Sentinel は単独で Phase 8 blocker にはしないが、seed、section、voic
 
 ## Adoption Criteria
 
+Phase 13 の adoption criteria は満たしている。
+
 * Phase 12 selected output は変えずに、22 seed review bundle が deterministic に quality vector と statistical comparison を出す。
-* hard constraint failure 0、Phase 7B readiness、schema compatibility、reference diagnostics summary、candidate-pool oracle shape を維持する。
+* hard constraint failure 0、Phase 7B readiness、reference diagnostics summary、candidate-pool oracle shape を維持する。
 * Phase 12P の performance profile id と version が review artifact に残り、profile 変更を generation change と混同しない。
 * Phase 12 feedback の unresolved symptoms が、seed、section、voice pair、representative location のいずれかへ戻せる。
 * 22 seed aggregate で、median、p90、max、outside seed count が review summary に出る。
 * focused seeds は `bach-001`、`fugue-smoke`、`dense-modal`、`modal-cadence`、`tight-stretto`、`sparse-cadence`、`long-arc` を含める。
 * manual listening と pairwise preference は採否 evidence として残すが、Phase 13 の completion blocker にはしない。
+
+## Completion Evidence
+
+`review` summary schema version 12 adds per-seed `qualityVector` and aggregate `qualityProfileComparison`. `review-ab` summary schema version 2 adds quality vector distance and local sentinel deltas beside hard constraints, reference comparison, candidate-pool oracle, Phase 7B policy, and manual listening gap.
+
+The 22 seed Phase 12 baseline review is recorded in [Phase 13 quality vector review](../reviews/phase-13-quality-vector-review.md). The generated review bundle used `organ-default` performance profile version 1. The aggregate status is `quality-review-required`, which is expected: Phase 13 is a review/adoption model, not a generator fix. Pitch-class unison duration, duration-based lockstep, and unresolved entry severe interval duration remain the next quality-lane targets.
 
 ## Deferred
 
@@ -73,8 +81,4 @@ Sentinel は単独で Phase 8 blocker にはしないが、seed、section、voic
 
 ## Next Work
 
-1. Add duration-based voice-pair unison and soprano repeated-note diagnostics without changing selected output.
-2. Add `qualityVector` and `qualityProfileComparison` to review bundle summaries.
-3. Run the 22 seed Phase 12 baseline review and record the vector distribution, top outliers, and local sentinel findings.
-4. Update A/B adoption policy so future music-quality PRs must show blocker improvement, acceptable vector movement, and no unexplained local sentinel regression.
-5. Only after pairwise listening evidence accumulates, evaluate whether selected candidate scoring should use a small, explainable subset of the vector model.
+Phase 13 is complete. The next implementation phase is Phase 8 operational work, with Phase 13 quality vector evidence carried forward into operation before/after review bundles.

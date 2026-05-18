@@ -164,9 +164,15 @@ Phase 13 は、Phase 12P で演奏プロファイル境界を固定した後、P
 
 Phase 13 は first pass では generator selection や scoring weight を変更しない。future quality PR は、blocker improvement、acceptable vector movement、unexplained local sentinel regression がないこと、manual listening gap を A/B adoption evidence として残してから採否を判断する。
 
+完了記録:
+
+* Phase 13 は review/adoption model として完了した。`review` は schema version 12 として seed ごとの `qualityVector` と 22 seed aggregate の `qualityProfileComparison` を出す。`review-ab` は schema version 2 として quality vector distance、local sentinel delta、manual listening gap を比較する。
+* Phase 13 は selected output、generator scoring、performance profile、hard constraints、reference diagnostics summary、candidate-pool oracle shape、Phase 7B readiness を変えない。
+* 22 seed baseline review では pitch-class unison duration、duration-based lockstep、unresolved entry severe interval duration が `quality-review-required` の主因として残った。詳細は [Phase 13 quality vector review](../reviews/phase-13-quality-vector-review.md) に置く。
+
 ### Phase 8: 操作機能 MVP
 
-Phase 8 は Phase 13 の quality vector review model を持った後に戻る deferred operational lane とする。Phase 7B 時点で開始可能な safety baseline と Phase 10/11/12/12P compatibility baseline は維持するが、操作 UI が similar phrase blocker や Phase 12 後の unison / repeated-note defects を隠す設計にならないようにする。
+Phase 8 は Phase 13 の quality vector review model を持った後に戻る deferred operational lane とする。Phase 7B 時点で開始可能な safety baseline と Phase 10/11/12/12P/13 compatibility baseline は維持するが、操作 UI が similar phrase blocker や Phase 12 後の unison / repeated-note defects を隠す設計にならないようにする。
 
 完了条件:
 

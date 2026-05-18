@@ -109,6 +109,22 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
         outsideReferenceSeedCount: number;
         maxDistance: number;
       };
+      qualityProfileComparison: {
+        schemaVersion: number;
+        modelVersion: number;
+        seedCount: number;
+        axes: {
+          axis: string;
+          median: number;
+          p90: number;
+          max: number;
+          outsideSeedCount: number;
+          topContributingSeeds: { seed: string; value: number; normalizedValue: number }[];
+        }[];
+        localSentinelCount: number;
+        localSentinelsByKind: { kind: string; count: number }[];
+        reviewStatus: string;
+      };
       seeds: {
         seed: string;
         diagnosticsFile: string;
@@ -257,6 +273,36 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
               mostRepeatedPatternCount: number;
             };
           };
+          qualityVector: {
+            schemaVersion: number;
+            modelVersion: number;
+            axes: {
+              axis: string;
+              value: number;
+              normalizedValue: number;
+              status: string;
+              groupingKey: Record<string, unknown>;
+            }[];
+            voicePairUnisons: {
+              leftVoice: string;
+              rightVoice: string;
+              exactSamePitchDurationTicks: number;
+              pitchClassUnisonDurationTicks: number;
+              longestExactSamePitchSpanTicks: number;
+              longestPitchClassUnisonSpanTicks: number;
+            }[];
+            sopranoRepeatedNotePressure: {
+              voice: string;
+              runCount: number;
+              pressureDurationTicks: number;
+            };
+            entrySevereIntervals: {
+              voice: string;
+              severeIntervalDurationTicks: number;
+              unresolvedDurationTicks: number;
+            }[];
+            localSentinels: { kind: string; severity: string; durationTicks: number; symptom: string }[];
+          };
         };
         referenceComparison: {
           profileId: string;
@@ -350,7 +396,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       comparisons: unknown[];
     };
 
-    assert.equal(summary.schemaVersion, 11);
+    assert.equal(summary.schemaVersion, 12);
     assert.equal(summary.lengthTicks, 9600);
     assert.equal(summary.selectionModel, "baseline");
     assert.deepEqual(summary.performanceProfile, { id: "organ-default", version: 1 });
@@ -364,6 +410,24 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
     assert.equal(summary.referenceDiagnostics.seedCount, summary.seeds.length);
     assert.ok(summary.referenceDiagnostics.axes.length > 1);
     assert.ok(summary.referenceDiagnostics.maxDistance >= 0);
+    assert.equal(summary.qualityProfileComparison.schemaVersion, 1);
+    assert.equal(summary.qualityProfileComparison.modelVersion, 1);
+    assert.equal(summary.qualityProfileComparison.seedCount, summary.seeds.length);
+    assert.ok(summary.qualityProfileComparison.axes.length >= 8);
+    assert.ok(summary.qualityProfileComparison.localSentinelCount >= 0);
+    assert.ok(
+      summary.qualityProfileComparison.reviewStatus === "within-quality-profile" ||
+        summary.qualityProfileComparison.reviewStatus === "quality-review-required",
+    );
+    assert.ok(
+      summary.qualityProfileComparison.axes.some(
+        (axis) =>
+          axis.axis === "longestPitchClassUnisonSpan" &&
+          axis.p90 >= 0 &&
+          axis.max >= axis.p90 &&
+          axis.topContributingSeeds.length > 0,
+      ),
+    );
     assert.equal(listeningReview.schemaVersion, 1);
     assert.equal(listeningReview.lengthTicks, 9600);
     assert.ok(listeningReview.regressionChecks.some((check) => check.includes("fugue-smoke")));
@@ -514,6 +578,27 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       assert.ok(entry.diagnosticsSummary.phase12Review.answerTransformFamilies.length > 0);
       assert.ok(entry.diagnosticsSummary.phase12Review.phraseFunctions.length > 0);
       assert.equal(entry.diagnosticsSummary.phase12Review.sectionStatePatterns.patternLength, 4);
+      assert.equal(entry.diagnosticsSummary.qualityVector.schemaVersion, 1);
+      assert.equal(entry.diagnosticsSummary.qualityVector.modelVersion, 1);
+      assert.ok(entry.diagnosticsSummary.qualityVector.axes.length >= 8);
+      assert.equal(entry.diagnosticsSummary.qualityVector.voicePairUnisons.length, 6);
+      assert.equal(entry.diagnosticsSummary.qualityVector.sopranoRepeatedNotePressure.voice, "soprano");
+      assert.ok(entry.diagnosticsSummary.qualityVector.sopranoRepeatedNotePressure.runCount >= 0);
+      assert.ok(entry.diagnosticsSummary.qualityVector.entrySevereIntervals.length > 0);
+      assert.ok(
+        entry.diagnosticsSummary.qualityVector.axes.some(
+          (axis) =>
+            axis.axis === "unresolvedEntrySevereIntervalDuration" &&
+            axis.value >= 0 &&
+            axis.normalizedValue >= 0 &&
+            (axis.status === "within-profile" || axis.status === "review-required"),
+        ),
+      );
+      assert.ok(
+        entry.diagnosticsSummary.qualityVector.localSentinels.every(
+          (sentinel) => sentinel.severity === "review-required" && sentinel.durationTicks >= 0,
+        ),
+      );
       for (const blocker of entry.diagnosticsSummary.candidatePoolOracle.blockerClassifications) {
         assert.ok(blocker.referenceAxes.length > 0);
         assert.ok(
@@ -693,6 +778,10 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
             reviewSignalCount: number;
             reviewSignals: unknown[];
           };
+          qualityVector: {
+            axes: { normalizedValue: number; weight: number }[];
+            localSentinels: unknown[];
+          };
         };
         variant: {
           diagnosticsSummary: {
@@ -708,6 +797,10 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
             reviewSignalCount: number;
             reviewSignals: unknown[];
           };
+          qualityVector: {
+            axes: { normalizedValue: number; weight: number }[];
+            localSentinels: unknown[];
+          };
         };
         deltas: {
           hardConstraintFailures: number;
@@ -715,6 +808,8 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
           candidatePoolViableCandidates: number;
           phase7BHardFailures: number;
           phase7BReviewSignals: number;
+          qualityVectorDistance: number;
+          localSentinelCount: number;
           phase8ReadyChanged: boolean;
         };
         improvements: string[];
@@ -773,7 +868,7 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
     assert.equal(pairwisePreferences.manualListeningGap.unlistened, true);
     assert.match(pairwisePreferences.manualListeningGap.note, /no preference judgement/);
     assert.equal(pairwisePreferences.comparisons.length, comparison.seeds.length);
-    assert.equal(comparison.schemaVersion, 1);
+    assert.equal(comparison.schemaVersion, 2);
     assert.equal(comparison.lengthTicks, 960);
     assert.deepEqual(comparison.baseline, {
       label: "current",
@@ -807,6 +902,8 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
       assert.ok(Array.isArray(entry.variant.phase7BGate.hardFailures));
       assert.equal(entry.baseline.phase7BGate.reviewSignalCount, entry.baseline.phase7BGate.reviewSignals.length);
       assert.equal(entry.variant.phase7BGate.reviewSignalCount, entry.variant.phase7BGate.reviewSignals.length);
+      assert.ok(entry.baseline.qualityVector.axes.length > 0);
+      assert.ok(entry.variant.qualityVector.axes.length > 0);
       assert.equal(
         entry.deltas.hardConstraintFailures,
         entry.variant.diagnosticsSummary.hardConstraintFailures -
@@ -830,6 +927,11 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
         entry.deltas.phase7BReviewSignals,
         entry.variant.phase7BGate.reviewSignalCount - entry.baseline.phase7BGate.reviewSignalCount,
       );
+      assert.equal(
+        entry.deltas.localSentinelCount,
+        entry.variant.qualityVector.localSentinels.length - entry.baseline.qualityVector.localSentinels.length,
+      );
+      assert.equal(typeof entry.deltas.qualityVectorDistance, "number");
       assert.equal(
         entry.deltas.phase8ReadyChanged,
         entry.variant.phase7BGate.phase8Ready !== entry.baseline.phase7BGate.phase8Ready,

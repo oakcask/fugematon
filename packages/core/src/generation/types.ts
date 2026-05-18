@@ -12,6 +12,7 @@ import type {
   OrnamentPlacementReasons,
   Phase11ReviewSummary,
   Phase12ReviewSummary,
+  Phase13QualityVector,
   PitchContourMotionSummary,
   SoloTextureSummary,
   StepwisePatternSummary,
@@ -95,6 +96,7 @@ export type TextureDiagnostics = {
   stepwisePattern: StepwisePatternSummary;
   phase11Review: Phase11ReviewSummary;
   phase12Review: Phase12ReviewSummary;
+  qualityVector: Phase13QualityVector;
   ornamentCandidateCount: number;
   ornamentDensity: number;
   ornamentPlacementReasons: OrnamentPlacementReasons;
