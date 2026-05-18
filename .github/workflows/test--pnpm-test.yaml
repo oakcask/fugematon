@@ -26,7 +26,6 @@ permissions:
 env:
   # renovate: datasource=npm depName=pnpm
   PNPM_VERSION: "11.1.2"
-  TEST_FILE_MAX_SECONDS: "45"
 
 jobs:
   test:
@@ -83,4 +82,4 @@ jobs:
           name: node-test-junit
           path: test-results
       - name: Check slow test files
-        run: node scripts/check-node-test-junit-budget.mjs
+        run: node scripts/check-node-test-junit-budget.mjs test-results/node-test-junit.xml 45

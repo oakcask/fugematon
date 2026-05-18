@@ -1,12 +1,8 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
-const DEFAULT_MAX_SECONDS = 45;
-const DEFAULT_REPORT_PATH = "test-results/node-test-junit.xml";
-
 const cwd = process.cwd();
-const reportPath = toPosixRelativePath(process.env.NODE_TEST_JUNIT_REPORT ?? process.argv[2] ?? DEFAULT_REPORT_PATH);
-const maxSeconds = readPositiveNumber("TEST_FILE_MAX_SECONDS", DEFAULT_MAX_SECONDS);
+const { reportPath, maxSeconds } = parseArguments(process.argv.slice(2));
 const report = await readFile(reportPath, "utf8");
 const testCases = parseJUnitTestCases(report);
 const slowTestCases = testCases.filter((testCase) => testCase.seconds > maxSeconds);
@@ -72,15 +68,19 @@ function toPosixRelativePath(filePath) {
   return path.relative(cwd, path.resolve(cwd, filePath)).split(path.sep).join("/");
 }
 
-function readPositiveNumber(name, fallback) {
-  const rawValue = process.env[name];
-  if (rawValue === undefined) {
-    return fallback;
+function parseArguments(args) {
+  if (args.length !== 2) {
+    throw new Error("Usage: node scripts/check-node-test-junit-budget.mjs <junit-report> <max-seconds>");
   }
 
-  const value = Number(rawValue);
+  const [rawReportPath, rawMaxSeconds] = args;
+  const value = Number(rawMaxSeconds);
   if (!Number.isFinite(value) || value <= 0) {
-    throw new Error(`${name} must be a positive number.`);
+    throw new Error("max-seconds must be a positive number.");
   }
-  return value;
+
+  return {
+    reportPath: toPosixRelativePath(rawReportPath),
+    maxSeconds: value,
+  };
 }
