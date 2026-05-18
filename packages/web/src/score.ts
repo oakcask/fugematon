@@ -2,12 +2,20 @@ import type {
   FugueState,
   GenerationOutput,
   MetaEvent,
-  NoteEvent,
   PlannedEntry,
   ScoreEvent,
   TimeSignature,
   Voice,
 } from "@fugematon/core";
+import {
+  DEFAULT_PERFORMANCE_PROFILE_ID,
+  getPerformanceProfile,
+  type PerformanceProfileId,
+  type PerformanceProfileMetadata,
+  performanceProfileMetadata,
+  scoreToPerformanceEvents,
+  type VoicePerformanceSettings,
+} from "@fugematon/performance";
 
 export type PlaybackEntry = PlannedEntry;
 
@@ -19,6 +27,11 @@ export type PlaybackNote = {
   durationSecond: number;
   pitch: number;
   velocity: number;
+  volume: number;
+  gain: number;
+  pan: number;
+  oscillatorType: VoicePerformanceSettings["oscillatorType"];
+  releaseSeconds: number;
   entry?: PlaybackEntry;
 };
 
@@ -31,6 +44,7 @@ export type PlaybackModel = {
   notes: PlaybackNote[];
   stateTransitions: FugueState[];
   subjectEntries: PlaybackEntry[];
+  performanceProfile: PerformanceProfileMetadata;
   pitchRange: {
     min: number;
     max: number;
@@ -41,7 +55,10 @@ const DEFAULT_BPM = 84;
 const DEFAULT_TICKS_PER_QUARTER = 480;
 const DEFAULT_TIME_SIGNATURE: TimeSignature = { numerator: 4, denominator: 4 };
 
-export function createPlaybackModel(output: GenerationOutput): PlaybackModel {
+export function createPlaybackModel(
+  output: GenerationOutput,
+  performanceProfileId: PerformanceProfileId = DEFAULT_PERFORMANCE_PROFILE_ID,
+): PlaybackModel {
   const bpm = readBpm(output.events) ?? DEFAULT_BPM;
   const ticksPerQuarter = readTicksPerQuarter(output.events) ?? DEFAULT_TICKS_PER_QUARTER;
   const timeSignature = readTimeSignature(output.events) ?? DEFAULT_TIME_SIGNATURE;
@@ -50,7 +67,12 @@ export function createPlaybackModel(output: GenerationOutput): PlaybackModel {
   const subjectEntryByNoteStart = new Map(
     subjectEntries.map((entry) => [entryKey(entry.voice, entry.startTick), entry]),
   );
-  const notes = output.events.filter(isNoteEvent).map((note) => {
+  const performanceEvents = scoreToPerformanceEvents({
+    events: output.events,
+    seed: output.diagnostics.seed,
+    profile: performanceProfileId,
+  });
+  const notes = performanceEvents.map((note) => {
     const startSecond = ticksToSeconds(note.startTick, bpm, ticksPerQuarter);
     const durationSecond = ticksToSeconds(note.durationTicks, bpm, ticksPerQuarter);
 
@@ -62,6 +84,11 @@ export function createPlaybackModel(output: GenerationOutput): PlaybackModel {
       durationSecond,
       pitch: note.pitch,
       velocity: note.velocity,
+      volume: note.volume,
+      gain: note.gain,
+      pan: note.pan,
+      oscillatorType: note.oscillatorType,
+      releaseSeconds: note.releaseSeconds,
       entry: subjectEntryByNoteStart.get(entryKey(note.voice, note.startTick)),
     };
   });
@@ -75,6 +102,7 @@ export function createPlaybackModel(output: GenerationOutput): PlaybackModel {
     notes,
     stateTransitions: output.diagnostics.stateTransitions,
     subjectEntries,
+    performanceProfile: performanceProfileMetadata(getPerformanceProfile(performanceProfileId)),
     pitchRange: computePitchRange(notes),
   };
 }
@@ -165,10 +193,6 @@ function findMetaEvent<TType extends MetaEvent["type"]>(
   return events.find(
     (event): event is Extract<MetaEvent, { type: TType }> => event.kind === "meta" && event.type === type,
   );
-}
-
-function isNoteEvent(event: ScoreEvent): event is NoteEvent {
-  return event.kind === "note";
 }
 
 function entryKey(voice: Voice, startTick: number): string {

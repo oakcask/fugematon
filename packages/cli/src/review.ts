@@ -9,7 +9,6 @@ import {
   evaluatePhase59Diagnostics,
   evaluatePhase510Diagnostics,
   evaluatePhase511Diagnostics,
-  exportMidi,
   generateScore,
   PHASE_5_11_ROTATION_SEEDS,
   PHASE_5_REVIEW_SEEDS,
@@ -24,17 +23,27 @@ import {
   type ReferenceDiagnosticsComparison,
   summarizeReferenceDiagnosticsComparisons,
 } from "@fugematon/core";
+import { exportMidi } from "@fugematon/midi";
+import {
+  DEFAULT_PERFORMANCE_PROFILE_ID,
+  getPerformanceProfile,
+  type PerformanceProfileId,
+  type PerformanceProfileMetadata,
+  performanceProfileMetadata,
+} from "@fugematon/performance";
 
 export async function writeReviewBundle(
   outDirectory: string,
   lengthTicks: number,
   selectionModel: SelectionModel = "baseline",
+  performanceProfileId: PerformanceProfileId = DEFAULT_PERFORMANCE_PROFILE_ID,
 ): Promise<ReviewSummary> {
   await mkdir(outDirectory, { recursive: true });
+  const performanceProfile = performanceProfileMetadata(getPerformanceProfile(performanceProfileId));
   const summarySeeds: ReviewSummarySeed[] = [];
   const referenceComparisons: ReferenceDiagnosticsComparison[] = [];
   const listeningReview = createListeningReview(lengthTicks);
-  const pairwisePreferences = createPairwisePreferences(lengthTicks);
+  const pairwisePreferences = createPairwisePreferences(lengthTicks, performanceProfile);
 
   for (const { seed, category } of [...PHASE_5_REVIEW_SEEDS, ...PHASE_5_11_ROTATION_SEEDS]) {
     const output = generateScore({ seed, lengthTicks, selectionModel });
@@ -43,7 +52,10 @@ export async function writeReviewBundle(
     const midiFile = `${safeSeed}.mid`;
 
     await writeFile(join(outDirectory, diagnosticsFile), `${JSON.stringify(output.diagnostics, null, 2)}\n`, "utf8");
-    await writeFile(join(outDirectory, midiFile), exportMidi(output.events));
+    await writeFile(
+      join(outDirectory, midiFile),
+      exportMidi(output.events, { seed, performanceProfileId: performanceProfile.id }),
+    );
     const referenceComparison = compareDiagnosticsToReferenceProfile(output.diagnostics);
     referenceComparisons.push(referenceComparison);
     summarySeeds.push({
@@ -51,6 +63,7 @@ export async function writeReviewBundle(
       category,
       diagnosticsFile,
       midiFile,
+      performanceProfile,
       diagnosticsSummary: summarizeDiagnostics(output.diagnostics),
       referenceComparison,
       phase59Gate: evaluatePhase59Diagnostics(seed, output.diagnostics),
@@ -70,6 +83,7 @@ export async function writeReviewBundle(
     schemaVersion: 11,
     lengthTicks,
     selectionModel,
+    performanceProfile,
     referenceDiagnostics: summarizeReferenceDiagnosticsComparisons(referenceComparisons),
     seeds: summarySeeds,
   };
@@ -92,13 +106,14 @@ export async function writeAbReviewBundle(
   variantLabel: string,
   baselineModel: SelectionModel,
   variantModel: SelectionModel,
+  performanceProfileId: PerformanceProfileId = DEFAULT_PERFORMANCE_PROFILE_ID,
 ): Promise<void> {
   const baselineDirectory = join(outDirectory, "baseline");
   const variantDirectory = join(outDirectory, "variant");
   await mkdir(outDirectory, { recursive: true });
 
-  const baselineSummary = await writeReviewBundle(baselineDirectory, lengthTicks, baselineModel);
-  const variantSummary = await writeReviewBundle(variantDirectory, lengthTicks, variantModel);
+  const baselineSummary = await writeReviewBundle(baselineDirectory, lengthTicks, baselineModel, performanceProfileId);
+  const variantSummary = await writeReviewBundle(variantDirectory, lengthTicks, variantModel, performanceProfileId);
   const comparison = compareReviewSummaries({
     lengthTicks,
     baselineLabel,
@@ -126,6 +141,7 @@ type ReviewSummary = {
   schemaVersion: 11;
   lengthTicks: number;
   selectionModel: SelectionModel;
+  performanceProfile: PerformanceProfileMetadata;
   referenceDiagnostics: ReferenceDiagnosticsAggregate;
   seeds: ReviewSummarySeed[];
 };
@@ -135,6 +151,7 @@ type ReviewSummarySeed = {
   category: string;
   diagnosticsFile: string;
   midiFile: string;
+  performanceProfile: PerformanceProfileMetadata;
   diagnosticsSummary: ReviewDiagnosticsSummary;
   referenceComparison: ReferenceDiagnosticsComparison;
   phase59Gate: Phase59GateResult;
@@ -158,6 +175,7 @@ type ReviewBundleSide = {
   directory: "baseline" | "variant";
   summaryFile: string;
   selectionModel: SelectionModel;
+  performanceProfile: PerformanceProfileMetadata;
 };
 
 type AbReviewSeedComparison = {
@@ -298,6 +316,7 @@ type ListeningSeedReview = {
 type PairwisePreferences = {
   schemaVersion: 2;
   lengthTicks: number;
+  performanceProfile: PerformanceProfileMetadata;
   instructions: string;
   manualListeningStatus: "not-reviewed";
   manualListeningGap: ManualListeningGap;
@@ -349,12 +368,14 @@ function compareReviewSummaries({
       directory: "baseline",
       summaryFile: "baseline/summary.json",
       selectionModel: baselineSummary.selectionModel,
+      performanceProfile: baselineSummary.performanceProfile,
     },
     variant: {
       label: variantLabel,
       directory: "variant",
       summaryFile: "variant/summary.json",
       selectionModel: variantSummary.selectionModel,
+      performanceProfile: variantSummary.performanceProfile,
     },
     seeds: baselineSummary.seeds.map((baselineSeed) => {
       const variantSeed = findSummarySeed(variantSummary.seeds, baselineSeed.seed);
@@ -708,11 +729,13 @@ function createListeningSeedReview(
 
 function createPairwisePreferences(
   lengthTicks: number,
+  performanceProfile: PerformanceProfileMetadata,
   comparisons: PairwisePreferenceComparison[] = [],
 ): PairwisePreferences {
   return {
     schemaVersion: 2,
     lengthTicks,
+    performanceProfile,
     instructions:
       "Fill preferredSide only after manual pairwise listening. These records are candidates for future aesthetic scoring weights and do not override hard constraints.",
     manualListeningStatus: "not-reviewed",
@@ -736,6 +759,7 @@ function createAbPairwisePreferences({
 }): PairwisePreferences {
   return createPairwisePreferences(
     lengthTicks,
+    baselineSummary.performanceProfile,
     baselineSummary.seeds.map((baselineSeed) => {
       const variantSeed = findSummarySeed(variantSummary.seeds, baselineSeed.seed);
       return createPairwisePreferenceComparison({

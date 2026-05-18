@@ -1,4 +1,10 @@
 {
   "files": [],
-  "references": [{ "path": "packages/core" }, { "path": "packages/cli" }, { "path": "packages/web" }]
+  "references": [
+    { "path": "packages/core" },
+    { "path": "packages/performance" },
+    { "path": "packages/midi" },
+    { "path": "packages/cli" },
+    { "path": "packages/web" }
+  ]
 }

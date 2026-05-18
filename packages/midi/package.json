@@ -1,19 +1,21 @@
 {
-  "name": "@fugematon/web",
+  "name": "@fugematon/midi",
   "version": "0.0.0",
-  "private": true,
   "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "dependencies": {
     "@fugematon/core": "workspace:*",
     "@fugematon/performance": "workspace:*"
   },
-  "devDependencies": {
-    "vite": "^8.0.13"
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
   },
   "scripts": {
-    "dev": "vite --host 127.0.0.1",
-    "build": "tsc -b && vite build",
-    "build:bundle": "vite build",
+    "build": "tsc -b",
     "test": "node --test dist/**/*.test.js"
   }
 }

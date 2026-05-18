@@ -26,14 +26,38 @@ importers:
       '@fugematon/core':
         specifier: workspace:*
         version: link:../core
+      '@fugematon/midi':
+        specifier: workspace:*
+        version: link:../midi
+      '@fugematon/performance':
+        specifier: workspace:*
+        version: link:../performance
 
   packages/core: {}
+
+  packages/midi:
+    dependencies:
+      '@fugematon/core':
+        specifier: workspace:*
+        version: link:../core
+      '@fugematon/performance':
+        specifier: workspace:*
+        version: link:../performance
+
+  packages/performance:
+    dependencies:
+      '@fugematon/core':
+        specifier: workspace:*
+        version: link:../core
 
   packages/web:
     dependencies:
       '@fugematon/core':
         specifier: workspace:*
         version: link:../core
+      '@fugematon/performance':
+        specifier: workspace:*
+        version: link:../performance
     devDependencies:
       vite:
         specifier: ^8.0.13

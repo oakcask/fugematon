@@ -1,4 +1,9 @@
 import { generateScore, PHASE_3_LENGTH_TICKS } from "@fugematon/core";
+import {
+  DEFAULT_PERFORMANCE_PROFILE_ID,
+  listPerformanceProfiles,
+  type PerformanceProfileId,
+} from "@fugematon/performance";
 import "./style.css";
 import { ScorePlayer } from "./audio.js";
 import { drawPianoRoll } from "./piano-roll.js";
@@ -9,6 +14,7 @@ const SCORE_LENGTH_TICKS = PHASE_3_LENGTH_TICKS;
 
 type AppState = {
   seed: string;
+  performanceProfileId: PerformanceProfileId;
   model: PlaybackModel;
 };
 
@@ -27,10 +33,11 @@ app.innerHTML = `
       <label for="seed">Seed</label>
       <div class="seed-row">
         <input id="seed" name="seed" autocomplete="off" spellcheck="false" />
+        <select id="performance-profile" name="performance-profile"></select>
         <button type="button" class="secondary" id="random-seed">Random seed</button>
         <button type="submit">Regenerate</button>
       </div>
-      <p class="hint">The same seed always produces the same Phase 4 score.</p>
+      <p class="hint">The same seed always produces the same score events.</p>
     </form>
     <section class="score-card" aria-live="polite">
       <div>
@@ -80,6 +87,10 @@ app.innerHTML = `
 
 const seedForm = requireElement(document.querySelector<HTMLFormElement>("#seed-form"), "seed form");
 const seedInput = requireElement(document.querySelector<HTMLInputElement>("#seed"), "seed input");
+const performanceProfileSelect = requireElement(
+  document.querySelector<HTMLSelectElement>("#performance-profile"),
+  "performance profile select",
+);
 const randomSeedButton = requireElement(
   document.querySelector<HTMLButtonElement>("#random-seed"),
   "random seed button",
@@ -97,6 +108,10 @@ const transportStatus = requireElement(document.querySelector<HTMLElement>("#tra
 const pianoRoll = requireElement(document.querySelector<HTMLCanvasElement>("#piano-roll"), "piano roll");
 
 seedInput.value = state.seed;
+for (const profile of listPerformanceProfiles()) {
+  performanceProfileSelect.add(new Option(profile.id, profile.id));
+}
+performanceProfileSelect.value = state.performanceProfileId;
 render(state);
 drawPianoRoll(pianoRoll, state.model, 0);
 
@@ -137,7 +152,7 @@ function regenerateScore(seed: string): void {
   seedInput.value = nextSeed;
   player?.stop();
   cancelVisualizerLoop();
-  state = createState(nextSeed);
+  state = createState(nextSeed, performanceProfileSelect.value as PerformanceProfileId);
   render(state);
   drawPianoRoll(pianoRoll, state.model, 0);
   transportStatus.textContent = "Ready";
@@ -149,10 +164,14 @@ function createRandomSeed(): string {
   return `seed-${Array.from(values, (value) => value.toString(36).padStart(7, "0")).join("-")}`;
 }
 
-function createState(seed: string): AppState {
+function createState(
+  seed: string,
+  performanceProfileId: PerformanceProfileId = DEFAULT_PERFORMANCE_PROFILE_ID,
+): AppState {
   return {
     seed,
-    model: createPlaybackModel(generateScore({ seed, lengthTicks: SCORE_LENGTH_TICKS })),
+    performanceProfileId,
+    model: createPlaybackModel(generateScore({ seed, lengthTicks: SCORE_LENGTH_TICKS }), performanceProfileId),
   };
 }
 

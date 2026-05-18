@@ -67,6 +67,7 @@ test("midi command writes a valid standard MIDI file", async () => {
     assert.ok(result.metaEventTypes.has(0x58));
     assert.ok(result.metaEventTypes.has(0x59));
     assert.ok(result.metaEventTypes.has(0x03));
+    assert.ok(result.metaEventTypes.has(0x01));
   } finally {
     await rm(directory, { force: true, recursive: true });
   }
@@ -82,6 +83,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       schemaVersion: number;
       lengthTicks: number;
       selectionModel: string;
+      performanceProfile: { id: string; version: number };
       referenceDiagnostics: {
         profile: {
           profileId: string;
@@ -111,6 +113,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
         seed: string;
         diagnosticsFile: string;
         midiFile: string;
+        performanceProfile: { id: string; version: number };
         diagnosticsSummary: {
           hardConstraintFailures: number;
           texture: {
@@ -338,6 +341,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
     const pairwisePreferences = JSON.parse(await readFile(join(directory, "pairwise-preferences.json"), "utf8")) as {
       schemaVersion: number;
       lengthTicks: number;
+      performanceProfile: { id: string; version: number };
       manualListeningStatus: string;
       manualListeningGap: {
         unlistened: boolean;
@@ -349,6 +353,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
     assert.equal(summary.schemaVersion, 11);
     assert.equal(summary.lengthTicks, 9600);
     assert.equal(summary.selectionModel, "baseline");
+    assert.deepEqual(summary.performanceProfile, { id: "organ-default", version: 1 });
     assert.ok(summary.seeds.length > 1);
     assert.equal(summary.referenceDiagnostics.profile.profileId, "phase-7-fugue-reference-profile");
     assert.equal(summary.referenceDiagnostics.profile.sources[0]?.sourceFormat, "profile-fixture");
@@ -365,6 +370,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
     assert.deepEqual(pairwisePreferences, {
       schemaVersion: 2,
       lengthTicks: 9600,
+      performanceProfile: { id: "organ-default", version: 1 },
       instructions:
         "Fill preferredSide only after manual pairwise listening. These records are candidates for future aesthetic scoring weights and do not override hard constraints.",
       manualListeningStatus: "not-reviewed",
@@ -378,6 +384,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       assert.ok(files.includes(entry.diagnosticsFile));
       assert.ok(files.includes(entry.midiFile));
       assert.ok(!entry.diagnosticsFile.includes(directory));
+      assert.deepEqual(entry.performanceProfile, summary.performanceProfile);
       assert.ok(!entry.midiFile.includes(directory));
       assert.ok(entry.diagnosticsSummary.hardConstraintFailures >= 0);
       assert.equal(entry.referenceComparison.profileId, "phase-7-fugue-reference-profile");
@@ -653,8 +660,20 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
     const comparison = JSON.parse(await readFile(join(directory, "comparison-summary.json"), "utf8")) as {
       schemaVersion: number;
       lengthTicks: number;
-      baseline: { label: string; directory: string; summaryFile: string; selectionModel: string };
-      variant: { label: string; directory: string; summaryFile: string; selectionModel: string };
+      baseline: {
+        label: string;
+        directory: string;
+        summaryFile: string;
+        selectionModel: string;
+        performanceProfile: { id: string; version: number };
+      };
+      variant: {
+        label: string;
+        directory: string;
+        summaryFile: string;
+        selectionModel: string;
+        performanceProfile: { id: string; version: number };
+      };
       seeds: {
         seed: string;
         category: string;
@@ -710,6 +729,7 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
     const pairwisePreferences = JSON.parse(await readFile(join(directory, "pairwise-preferences.json"), "utf8")) as {
       schemaVersion: number;
       lengthTicks: number;
+      performanceProfile: { id: string; version: number };
       instructions: string;
       manualListeningStatus: string;
       manualListeningGap: {
@@ -746,6 +766,7 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
     assert.ok(variantFiles.includes("summary.json"));
     assert.equal(pairwisePreferences.schemaVersion, 2);
     assert.equal(pairwisePreferences.lengthTicks, 960);
+    assert.deepEqual(pairwisePreferences.performanceProfile, { id: "organ-default", version: 1 });
     assert.equal(pairwisePreferences.manualListeningStatus, "not-reviewed");
     assert.equal(pairwisePreferences.manualListeningGap.unlistened, true);
     assert.match(pairwisePreferences.manualListeningGap.note, /no preference judgement/);
@@ -757,12 +778,14 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
       directory: "baseline",
       summaryFile: "baseline/summary.json",
       selectionModel: "baseline",
+      performanceProfile: { id: "organ-default", version: 1 },
     });
     assert.deepEqual(comparison.variant, {
       label: "candidate",
       directory: "variant",
       summaryFile: "variant/summary.json",
       selectionModel: "phase10-oracle-selection",
+      performanceProfile: { id: "organ-default", version: 1 },
     });
     assert.ok(comparison.seeds.length > 1);
     for (const entry of comparison.seeds) {

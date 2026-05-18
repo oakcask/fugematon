@@ -23,6 +23,7 @@ test("createPlaybackModel extracts timing metadata and notes", () => {
   assert.equal(model.notes.length, output.diagnostics.noteCount);
   assert.deepEqual(model.stateTransitions, output.diagnostics.stateTransitions);
   assert.equal(model.subjectEntries.length, output.diagnostics.subjectEntries.length);
+  assert.deepEqual(model.performanceProfile, { id: "organ-default", version: 1 });
   assert.ok(model.notes.some((note) => note.entry?.state === "exposition"));
   assert.ok(model.notes.some((note) => note.entry?.answerKind === "tonal"));
   assert.ok(model.notes.every((note) => note.entry === undefined || note.entry.localKey.tonic.length > 0));
@@ -36,6 +37,15 @@ test("createPlaybackModel extracts timing metadata and notes", () => {
   assert.ok(model.bpm >= 66);
   assert.ok(model.totalSeconds > 0);
   assert.ok(model.pitchRange.min <= model.pitchRange.max);
+});
+
+test("createPlaybackModel can select the strict counterpoint performance profile", () => {
+  const output = generateScore({ seed: "fugue-smoke", lengthTicks: 7680 });
+  const model = createPlaybackModel(output, "strict-counterpoint");
+
+  assert.deepEqual(model.performanceProfile, { id: "strict-counterpoint", version: 1 });
+  assert.ok(model.notes.every((note) => note.oscillatorType === "sine"));
+  assert.equal(model.notes.find((note) => note.voice === "soprano")?.gain, 0.2);
 });
 
 test("ticksToSeconds maps score ticks to playback seconds", () => {

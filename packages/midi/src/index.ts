@@ -1,12 +1,14 @@
-import { TICKS_PER_QUARTER, VOICES } from "./constants.js";
-import type { KeySignature, ScoreEvent, TimeSignature, Voice } from "./events.js";
-
-const VOICE_CHANNELS: Record<Voice, number> = {
-  soprano: 0,
-  alto: 1,
-  tenor: 2,
-  bass: 3,
-};
+import type { KeySignature, ScoreEvent, TimeSignature, Voice } from "@fugematon/core";
+import { TICKS_PER_QUARTER, VOICES } from "@fugematon/core";
+import {
+  DEFAULT_PERFORMANCE_PROFILE_ID,
+  type PerformanceEvent,
+  type PerformanceProfileId,
+  type PerformanceProfileMetadata,
+  performanceProfileMetadata,
+  resolvePerformanceProfile,
+  scoreToPerformanceEvents,
+} from "@fugematon/performance";
 
 const KEY_SIGNATURES = new Map<string, number>([
   ["Cb", -7],
@@ -32,10 +34,18 @@ type MidiEvent = {
   bytes: number[];
 };
 
-export function exportMidi(events: readonly ScoreEvent[]): Uint8Array {
+export type MidiExportOptions = {
+  performanceProfileId?: PerformanceProfileId;
+  seed?: string;
+};
+
+export function exportMidi(events: readonly ScoreEvent[], options: MidiExportOptions = {}): Uint8Array {
+  const profile = resolvePerformanceProfile(options.performanceProfileId ?? DEFAULT_PERFORMANCE_PROFILE_ID);
+  const performanceEvents = scoreToPerformanceEvents({ events, profile, seed: options.seed });
+  const metadata = performanceProfileMetadata(profile);
   const tracks = [
-    encodeTrack(buildMetaTrackEvents(events)),
-    ...VOICES.map((voice) => encodeTrack(buildVoiceTrackEvents(events, voice))),
+    encodeTrack(buildMetaTrackEvents(events, metadata)),
+    ...VOICES.map((voice) => encodeTrack(buildVoiceTrackEvents(performanceEvents, voice))),
   ];
 
   return bytes([
@@ -48,8 +58,14 @@ export function exportMidi(events: readonly ScoreEvent[]): Uint8Array {
   ]);
 }
 
-function buildMetaTrackEvents(events: readonly ScoreEvent[]): MidiEvent[] {
-  const trackEvents: MidiEvent[] = [];
+function buildMetaTrackEvents(events: readonly ScoreEvent[], metadata: PerformanceProfileMetadata): MidiEvent[] {
+  const trackEvents: MidiEvent[] = [
+    {
+      tick: 0,
+      order: 1,
+      bytes: [0xff, 0x01, ...textPayload(`PerformanceProfile ${metadata.id}@${metadata.version}`)],
+    },
+  ];
 
   for (const event of events) {
     if (event.kind === "note") {
@@ -83,42 +99,53 @@ function buildMetaTrackEvents(events: readonly ScoreEvent[]): MidiEvent[] {
   return trackEvents;
 }
 
-function buildVoiceTrackEvents(events: readonly ScoreEvent[], voice: Voice): MidiEvent[] {
-  const channel = VOICE_CHANNELS[voice];
-  const voiceIndex = VOICES.indexOf(voice);
+function buildVoiceTrackEvents(events: readonly PerformanceEvent[], voice: Voice): MidiEvent[] {
+  const voiceEvents = events.filter((event) => event.voice === voice);
+  const firstEvent = voiceEvents[0];
+  const trackName = firstEvent?.trackName ?? voice;
+  const channel = firstEvent?.channel ?? VOICES.indexOf(voice);
+  const program = firstEvent?.program ?? 0;
+  const pan = firstEvent?.pan ?? 64;
+  const volume = firstEvent?.volume ?? 100;
   const trackEvents: MidiEvent[] = [
     {
       tick: 0,
       order: 0,
-      bytes: [0xff, 0x03, voice.length, ...ascii(voice)],
+      bytes: [0xff, 0x03, ...textPayload(trackName)],
     },
     {
       tick: 0,
       order: 1,
-      bytes: [0xc0 | channel, voiceIndex === 3 ? 32 : 19],
+      bytes: [0xb0 | channel, 7, volume],
+    },
+    {
+      tick: 0,
+      order: 2,
+      bytes: [0xb0 | channel, 10, pan],
+    },
+    {
+      tick: 0,
+      order: 3,
+      bytes: [0xc0 | channel, program],
     },
   ];
   let endTick = 0;
 
-  for (const event of events) {
-    if (event.kind !== "note" || event.voice !== voice) {
-      continue;
-    }
-
+  for (const event of voiceEvents) {
     trackEvents.push({
       tick: event.startTick,
-      order: 3,
-      bytes: [0x90 | channel, event.pitch, event.velocity],
+      order: 5,
+      bytes: [0x90 | event.channel, event.pitch, event.velocity],
     });
     trackEvents.push({
       tick: event.startTick + event.durationTicks,
-      order: 2,
-      bytes: [0x80 | channel, event.pitch, 0],
+      order: 4,
+      bytes: [0x80 | event.channel, event.pitch, 0],
     });
     endTick = Math.max(endTick, event.startTick + event.durationTicks);
   }
 
-  trackEvents.push({ tick: endTick, order: 4, bytes: [0xff, 0x2f, 0x00] });
+  trackEvents.push({ tick: endTick, order: 6, bytes: [0xff, 0x2f, 0x00] });
   trackEvents.sort((left, right) => left.tick - right.tick || left.order - right.order);
   return trackEvents;
 }
@@ -210,6 +237,11 @@ function transposeTonicName(tonic: string, semitones: number): string {
     return "C";
   }
   return names.get((((pitchClass + semitones) % 12) + 12) % 12) ?? "C";
+}
+
+function textPayload(value: string): number[] {
+  const payload = ascii(value);
+  return [...variableLengthQuantity(payload.length), ...payload];
 }
 
 function variableLengthQuantity(value: number): number[] {

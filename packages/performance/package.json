@@ -1,16 +1,17 @@
 {
-  "name": "@fugematon/cli",
+  "name": "@fugematon/performance",
   "version": "0.0.0",
   "type": "module",
-  "bin": {
-    "fugematon": "./dist/index.js"
-  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "dependencies": {
-    "@fugematon/core": "workspace:*",
-    "@fugematon/midi": "workspace:*",
-    "@fugematon/performance": "workspace:*"
+    "@fugematon/core": "workspace:*"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
   },
   "scripts": {
     "build": "tsc -b",

@@ -5,8 +5,8 @@
 ## 現在読むもの
 
 * [Phase 7+ 再編計画](phase-7-plus-reorg.md): Phase 12 後に Phase 12P と Phase 13 を挟み、その後 Phase 8/9 operational lane へ戻る現在計画を確認する。
-* [Phase 12P](phase-12-performance-profile.md): Phase 13 の前に、MIDI と WebAudio が共有する演奏プロファイル境界を組み込む計画。
-* [Phase 13](phase-13.md): Phase 12 human feedback 後の、quality vector と統計的 review/adoption model の計画。
+* [Phase 13](phase-13.md): 現在の次 Phase。Phase 12 human feedback 後の、quality vector と統計的 review/adoption model の計画。
+* [Phase 12P](phase-12-performance-profile.md): 完了済み。Phase 13 の前に、MIDI と WebAudio が共有する演奏プロファイル境界を組み込んだ infrastructure phase。
 * [Phase 12](phase-12.md): 完了済みの、Phase 11 後に残った similar phrase blocker を Phase 8/9 より前に扱った品質フェーズ。
 * [Phase 11](phase-11.md): 完了済みの、無限再生・操作機能の前に必要な音楽品質モデル再設計と残る quality lane を確認する。
 * [Phase 10](phase-10.md): 完了済みの reference corpus、oracle-driven model update、section-local planner、pairwise preference 品質基盤と、継続 quality lane の gap を確認する。

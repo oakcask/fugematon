@@ -27,6 +27,8 @@ test("createScheduledNotes preserves default voice dynamics", () => {
   assert.equal(round(firstByVoice.get("alto")!.gain), round(0.16 * (firstByVoice.get("alto")!.note.velocity / 127)));
   assert.equal(round(firstByVoice.get("tenor")!.gain), round(0.15 * (firstByVoice.get("tenor")!.note.velocity / 127)));
   assert.equal(round(firstByVoice.get("bass")!.gain), round(0.2 * (firstByVoice.get("bass")!.note.velocity / 127)));
+  assert.equal(round(firstByVoice.get("soprano")!.pan), round((32 - 64) / 63));
+  assert.equal(round(firstByVoice.get("bass")!.pan), round((96 - 64) / 63));
 });
 
 test("midiToFrequency uses A4 as 440hz", () => {
