@@ -2,7 +2,7 @@
 
 Phase 12 は、Phase 11 完了後も残った similar phrase blocker を扱う品質フェーズである。Phase 8/9 の無限再生、巻き戻し、UI 操作、Worker 化より先に実施する。
 
-Status: in progress.
+Status: complete. Phase 12 adopted the phrase-unit repetition baseline after the 22 seed review showed focused blocker improvement while preserving hard constraints, determinism, schema compatibility, reference diagnostics, candidate-pool oracle shape, and Phase 7B readiness. Phase 8/9 operational work can resume from this baseline; voice-independence, leap-recovery, and counter-subject tradeoffs remain in the quality lane.
 
 ## Rationale
 
@@ -81,3 +81,7 @@ Repetition-family diagnostics are now the first Phase 12 implementation slice. `
 Phrase-family oracle candidates are now added to the Phase 10 section-local planner candidate pool as evidence-only candidates. They introduce alternate subject, fragment, and stretto stems for Phase 12 comparison, while selection explicitly skips them so current selected output remains stable. Candidate pool oracle schema version 4 reports `phase12PhraseFamilyCandidateCount` so review bundles can distinguish Phase 12 upper-bound evidence from selectable Phase 10 candidates.
 
 Rejected selection experiment: making the initial phrase-family oracle candidates selectable with only local hard-failure, overlap, leap-recovery, and counter-subject-retention guards was not adopted. The focused Phase 12 seeds selected some phrase-family candidates, but the full regression suite showed same-pitch and shared-rhythm regressions beyond the Phase 11 compatibility envelope. Future selection work must compare phrase-family benefit against voice-leading costs at the section and 22-seed aggregate level before changing selected output.
+
+Phase 12 adopted a guarded phrase-unit planning baseline instead of direct phrase-family candidate selection. Modal phrase units preserve their subject family until repeated 4-section patterns become structural risks, then allow state-unit variation under the existing section-local guardrails. The focused blocker seeds all improved most repeated 4-section pattern count and unique pattern count against Phase 11 current: `angular-answer` 7 -> 5 / 4 -> 9, `modal-dorian` 6 -> 5 / 5 -> 11, `modal-answer` 6 -> 5 / 5 -> 11, `modal-cadence` 7 -> 5 / 4 -> 9, and `dense-modal` 7 -> 5 / 4 -> 12. The 22 seed aggregate also reduced top entry-pattern family count, total 4-section repetition, and unsupported functional thinning; details are in [Phase 12 review summary](../reviews/phase-12-review-summary.md).
+
+Accepted tradeoff: the phrase-unit baseline increases some review signals. Across the 22 seed review set, unison overlap rose by 458, shared-rhythm overlap rose by 416, leap-recovery misses rose by 71, and total counter-subject identity retention fell by 0.279. These are documented as musical symptoms of denser phrase contrast and support alignment, not accepted silently as numbers. Phase 12 accepts the tradeoff because Phase 7B hard readiness remains intact and the similar-phrase blocker is reduced; future quality-lane work should target voice independence and leap recovery inside the new phrase-unit baseline rather than reverting to mechanical repetition.

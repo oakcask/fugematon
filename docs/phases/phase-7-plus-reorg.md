@@ -129,6 +129,12 @@ Phase 12 は、Phase 11 完了後も残った similar phrase blocker を Phase 8
 * phrase-level harmonic rhythm と planned support counterpoint により、unsupported thinning を戻さず、unison/shared rhythm、leap recovery、counter-subject identity の tradeoff を seed 別に説明する。
 * 22 seed A/B review で、Phase 11 current より phrase similarity が下がったことを ScoreEvent と譜面レビューで記録する。
 
+完了記録:
+
+* Phase 12 は完了した。`phase10-section-local-planner` は guarded phrase-unit repetition baseline として、focused blocker seeds の most repeated 4-section pattern count と unique pattern count を Phase 11 current より改善した。22 seed aggregate でも top entry-pattern family count、total 4-section repetition、unsupported functional thinning が下がった。詳細は [Phase 12 review summary](../reviews/phase-12-review-summary.md) に置く。
+* direct phrase-family candidate selection は採用しない。local guardrail だけでは full-score voice independence と leap recovery の tradeoff を予測しきれないため、alternate stems は candidate-pool oracle evidence として残し、selected output は phrase-unit state variation で反復を下げる。
+* Phase 8/9 へ戻る。ただし unison/shared rhythm、leap recovery、counter-subject identity の review signal regressions は quality lane に残し、操作 UI や Worker fallback がこれを隠す設計にしない。
+
 ### Phase 8: 操作機能 MVP
 
 Phase 8 は Phase 12 の phrase/repetition baseline 採用後に戻る deferred operational lane とする。Phase 7B 時点で開始可能な safety baseline と Phase 10/11 compatibility baseline は維持するが、操作 UI が similar phrase blocker を隠す設計にならないようにする。
