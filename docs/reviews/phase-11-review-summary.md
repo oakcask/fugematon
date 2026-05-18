@@ -261,11 +261,27 @@ Theory basis: thinning は cadence、entry preparation、echo、pedal、suspensi
 
 Project response: functional support formula は Phase 11 の thinning blocker に有効な採用候補とする。ただし support を入れた箇所で harmonic mismatch、unison/shared rhythm、leap recovery が悪化する seed は残るため、次の採否レビューでは support の入る representative locations を pairwise score note で確認する。
 
+### 15. Focused pairwise score review で Phase 11 baseline を採用した
+
+対象 seed: representative `bach-001` / `fugue-smoke`、boundary `minor-entry`、rotation `modal-cadence`、adversarial `dense-modal`。比較は `phase10-oracle-selection` baseline と `phase10-section-local-planner` variant の diagnostics / ScoreEvent 由来 summary に基づく。これは agent-side の譜面レビューであり、MIDI 通し聴取ではない。
+
+Pairwise score review:
+
+* `bach-001`: variant を採用する。section grammar risk は 78 から 9、most repeated pattern は 7 から 3、unique pattern は 4 から 20、unsupported thinning は 2 から 1、bass/root support は 25 から 33 へ改善した。leap recovery は 16 から 13 へ改善する一方、unison は 640 から 700、shared rhythm は 790 から 854、counter-subject identity retention は 0.851 から 0.840 へ悪化する。譜面上の読みは、長尺 form と低密度 support の改善が主効果で、支え声部が同型リズムへ寄る箇所は manual listening で確認する。
+* `fugue-smoke`: variant を採用する。section grammar risk は 78 から 14、most repeated pattern は 7 から 4、unsupported thinning は 2 から 1、bass/root support は 14 から 30、harmonic mismatch は 98 から 88、leap recovery は 27 から 17、counter-subject identity retention は 0.877 から 0.884 へ改善した。unison は 581 から 619、shared rhythm は 834 から 866 へ悪化するが、以前の short alternating cycle は再発していない。form blocker 改善の利益が大きいため採用する。
+* `minor-entry`: variant を条件付きで採用する。section grammar risk は 70 から 10、most repeated pattern は 6 から 3、unsupported thinning は 2 から 1、bass/root support は 16 から 32、harmonic mismatch は 84 から 73 へ改善した。shared rhythm は 906 から 886 へ改善する一方、leap recovery は 17 から 26、counter-subject identity retention は 0.920 から 0.897 へ悪化する。これは boundary seed の旋律回収を使う tradeoff なので、Phase 11 採用 blocker にはしないが、次の melody/support formula で優先確認する。
+* `modal-cadence`: variant を条件付きで採用する。section grammar risk は 84 から 60、most repeated pattern は 7 から 6、unsupported thinning は 3 から 1、bass/root support は 9 から 23、harmonic mismatch は 97 から 93、unison は 576 から 575、shared rhythm は 810 から 794、leap recovery は 14 から 13 へ改善した。counter-subject identity retention は 0.580 から 0.558 へ悪化する。modal color と対主題輪郭の余裕は薄いが、hard constraints と modal diagnostics は維持されるため、manual listening follow-up 付きで採用する。
+* `dense-modal`: variant を条件付きで採用する。section grammar risk は 84 から 60、most repeated pattern は 7 から 6、unsupported thinning は 2 から 1、unison は 585 から 570、shared rhythm は 810 から 794 へ改善し、leap recovery は 6 のまま維持した。bass/root support は 17 から 15、harmonic mismatch は 97 から 98、counter-subject identity retention は 0.586 から 0.584 へ小悪化する。adversarial modal seed としては form/texture 改善を優先し、metrical harmony の残りは Phase 8/9 後の quality lane で扱う。
+
+Adoption decision: Phase 11 の generator-quality baseline として `phase10-section-local-planner` を採用する。理由は、Phase 10 score review の主 blocker だった long-run section grammar repetition と unsupported functional thinning が focused set と 22 seed aggregate の両方で改善し、hard constraints、determinism、schema compatibility、reference diagnostics summary、candidate-pool oracle shape、Phase 7B readiness が維持されたためである。
+
+残る review signal は Phase 11 採用 blocker ではなく、Phase 8/9 へ戻った後の継続 quality lane とする。特に `minor-entry` の leap recovery、`modal-cadence` の counter-subject identity retention、`bach-001` / `fugue-smoke` の unison/shared rhythm、`dense-modal` の bass/root support は、次の manual listening または support formula refinement で確認する。
+
 ## Remaining Gaps
 
-* MIDI の通し聴取と before/after pairwise preference は未実施。
+* MIDI の通し聴取は未実施。Phase 11 は pairwise score review で採用し、manual listening は継続 quality lane として残す。
 * `metricalHarmony` は time signature ごとの強拍分類をまだ持たない暫定 summary である。weak beat non-chord-tone resolution は次 strong beat までの stepwise chord-tone arrival に限るため、掛留の準備、anticipation、escape tone、longer preparation/resolution はまだ区別しない。
 * Candidate pool oracle の Phase 11 blocker family は出るが、selection-only upper bound はほとんどの blocker で低く、generator-needed rate が高い。
-* section grammar repetition は phrase-unit planner で selected risk total が 1602 から 486 へ下がったが、unison、shared rhythm、leap recovery、counter-subject identity retention の review-signal tradeoff が残る。
-* functional thinning support は unsupported run を 46 から 22 へ下げたが、harmonic mismatch、unison、shared rhythm、leap recovery の review-signal tradeoff が残る。
+* section grammar repetition は phrase-unit planner で selected risk total が 1602 から 486 へ下がったが、unison、shared rhythm、leap recovery、counter-subject identity retention の review-signal tradeoff が残る。これは Phase 11 採用 blocker ではなく、継続 quality lane の確認事項である。
+* functional thinning support は unsupported run を 46 から 22 へ下げたが、harmonic mismatch、unison、shared rhythm、leap recovery の review-signal tradeoff が残る。これは Phase 11 採用 blocker ではなく、継続 quality lane の確認事項である。
 * review summary 追加 PR は生成音そのもの、candidate scoring、gate threshold を変えていない。follow-up diagnostics PR は selected candidate feature を増やし、register / section grammar candidate PR は oracle pool を増やした。history-aware planner、phrase-unit planner、functional thinning support は selected output を変えるが、gate threshold は変えていない。
