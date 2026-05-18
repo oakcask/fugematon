@@ -99,7 +99,7 @@
 
 ### Phase 8: 履歴、巻き戻し、操作パラメータ
 
-* Phase 8 は Phase 11 の品質モデル再設計後に戻る deferred operational lane とする。Phase 6-7 の美しさ metric と聴取 gate の完全 pass は開始条件にしないが、操作 UI が音楽的な退屈さを隠す設計にならないよう、先に generator quality と model adoption evidence を進める。
+* Phase 8 は Phase 12 の phrase/repetition baseline 採用後に戻る deferred operational lane とする。Phase 6-7 の美しさ metric と聴取 gate の完全 pass は開始条件にしないが、操作 UI が音楽的な退屈さを隠す設計にならないよう、先に generator quality と model adoption evidence を進める。
 * 生成済みイベントをメモリ上のリングバッファに保存する。
 * 保存済み範囲内では event replay により巻き戻して再生し直せるようにする。
 * strictness、density、subjectPresence などの MVP 用スライダを追加する。
@@ -120,7 +120,14 @@
 * Phase 11 では、harmonic rhythm、subject family、section grammar、register planning、functional texture thinning を、破壊的変更も含めて再設計する。
 * Phase 11 の oracle は、既存候補の selection で直る blocker と、candidate generation または section-local planner を変える必要がある blocker を分類する。`selection-model` は scoring、tie-break、Pareto guard、説明可能な小型 ranking model の探索対象にし、`generator-or-section-planner` は weight tuning で押し切らない。
 * learned aesthetic score は Phase 11 の default model にはしない。offline の oracle distillation と manual pairwise preference から説明可能な feature weight を検証する探索 lane に留め、hard constraints、determinism、schema compatibility を上書きしない。
-* Phase 8/9 は、Phase 11 の品質 baseline が譜面 evidence と人間レビューで改善を示すまで開始しない。
+* Phase 11 は完了したが、post-completion 22 seed review で similar phrase blocker が残ったため、Phase 8/9 の直前 baseline には Phase 12 を追加する。
+
+### Phase 12: phrase and repetition quality rewrite
+
+* Phase 12 は、Phase 11 後も残る subject family、subject-fragment、modal/rotation seed の短い cycle を扱う。
+* Phase 12 では、phrase-family generator、motive derivation grammar、phrase-level harmonic rhythm、planned support counterpoint を破壊的変更も含めて再設計する。
+* repetition はゼロ要求にせず、function-bearing repetition と mechanical repetition を分ける。subject recurrence、fragment recurrence、section pattern recurrence、cadence spacing、density arc は reference profile と比較する。
+* Phase 8/9 は、Phase 12 の 22 seed review が phrase similarity の改善と voice-leading tradeoff の説明を示すまで開始しない。
 
 ## 内部表現
 
