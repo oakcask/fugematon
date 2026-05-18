@@ -15,7 +15,25 @@ test("createScheduledNotes maps playback notes to absolute audio times", () => {
   assert.ok(scheduled.every((note) => note.gain > 0 && note.gain <= 0.2));
 });
 
+test("createScheduledNotes preserves default voice dynamics", () => {
+  const model = createPlaybackModel(generateScore({ seed: "fugue-smoke", lengthTicks: 7680 }));
+  const scheduled = createScheduledNotes(model, 0);
+  const firstByVoice = new Map(scheduled.map((note) => [note.note.voice, note]));
+
+  assert.equal(
+    round(firstByVoice.get("soprano")!.gain),
+    round(0.18 * (firstByVoice.get("soprano")!.note.velocity / 127)),
+  );
+  assert.equal(round(firstByVoice.get("alto")!.gain), round(0.16 * (firstByVoice.get("alto")!.note.velocity / 127)));
+  assert.equal(round(firstByVoice.get("tenor")!.gain), round(0.15 * (firstByVoice.get("tenor")!.note.velocity / 127)));
+  assert.equal(round(firstByVoice.get("bass")!.gain), round(0.2 * (firstByVoice.get("bass")!.note.velocity / 127)));
+});
+
 test("midiToFrequency uses A4 as 440hz", () => {
   assert.equal(midiToFrequency(69), 440);
   assert.ok(Math.abs(midiToFrequency(60) - 261.625565) < 0.000001);
 });
+
+function round(value: number): number {
+  return Math.round(value * 1_000_000) / 1_000_000;
+}
