@@ -260,4 +260,4 @@ Phase 7B は gate policy reset として完了した。review bundle summary は
 
 Phase 8 は Phase 7B の gate policy reset 後に開始できる。manual listening と pairwise preference は廃止しないが、全 seed pass を Phase 8 開始条件にはしない。開始条件は hard constraints、determinism、schema compatibility、reference diagnostics summary、candidate-pool oracle shape が通ることである。
 
-その後、section-local planner 改善、reference corpus ingestion、percentile profile、manual pairwise preference は Phase 10 として先に進め、Phase 8/9 は deferred operational lane に送った。Phase 10、Phase 11、Phase 12 は完了し、現在は Phase 8/9 へ戻る前に Phase 12P の performance profile integration と Phase 13 の quality vector statistical review を扱う。詳細は [Phase 7+ 再編計画](phase-7-plus-reorg.md)、[Phase 12P](phase-12-performance-profile.md)、[Phase 13](phase-13.md) を参照する。
+その後、section-local planner 改善、reference corpus ingestion、percentile profile、manual pairwise preference は Phase 10 として先に進め、Phase 8/9 は deferred operational lane に送った。Phase 10、Phase 11、Phase 12、Phase 12P、Phase 13 は完了し、現在は Phase 13 の quality vector review/adoption model を持って Phase 8/9 へ戻る。詳細は [Phase 7+ 再編計画](phase-7-plus-reorg.md)、[Phase 12P](phase-12-performance-profile.md)、[Phase 13](phase-13.md) を参照する。

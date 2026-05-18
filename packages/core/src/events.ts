@@ -529,6 +529,101 @@ export type Phase12ReviewSummary = {
   };
 };
 
+export type Phase13QualityVectorAxis =
+  | "exactSamePitchUnisonDuration"
+  | "pitchClassUnisonDuration"
+  | "longestExactSamePitchSpan"
+  | "longestPitchClassUnisonSpan"
+  | "durationBasedLockstep"
+  | "sopranoRepeatedNotePressure"
+  | "entrySevereIntervalDuration"
+  | "unresolvedEntrySevereIntervalDuration";
+
+export type Phase13QualityVectorStatus = "within-profile" | "review-required";
+
+export type Phase13QualityVectorGroupingKey = {
+  styleProfile: StyleProfile | "mixed";
+  sectionRole: FugueState | "mixed";
+  voicePair?: string;
+  voice?: Voice;
+  entryRole?: EntryForm;
+  register?: "low" | "middle" | "high";
+};
+
+export type Phase13QualityVectorAxisSummary = {
+  axis: Phase13QualityVectorAxis;
+  value: number;
+  normalizedValue: number;
+  expectedMax: number;
+  weight: number;
+  status: Phase13QualityVectorStatus;
+  groupingKey: Phase13QualityVectorGroupingKey;
+  topContributors: string[];
+};
+
+export type Phase13VoicePairUnisonSummary = {
+  leftVoice: Voice;
+  rightVoice: Voice;
+  activeDurationTicks: number;
+  exactSamePitchDurationTicks: number;
+  pitchClassUnisonDurationTicks: number;
+  durationBasedLockstepTicks: number;
+  longestExactSamePitchSpanTicks: number;
+  longestPitchClassUnisonSpanTicks: number;
+  sectionRole: FugueState | "mixed";
+  styleProfile: StyleProfile | "mixed";
+};
+
+export type Phase13SopranoRepeatedNotePressureSummary = {
+  voice: Extract<Voice, "soprano">;
+  runCount: number;
+  highRegisterRunCount: number;
+  unreleasedRunCount: number;
+  pressureDurationTicks: number;
+  longestRunNoteCount: number;
+  longestRunDurationTicks: number;
+  register: "low" | "middle" | "high";
+};
+
+export type Phase13EntrySevereIntervalDurationSummary = {
+  voice: Voice;
+  form: EntryForm;
+  state: FugueState;
+  startTick: number;
+  severeIntervalDurationTicks: number;
+  unresolvedDurationTicks: number;
+  resolutionDeadlineTicks: number;
+  representativeTick: number;
+};
+
+export type Phase13LocalSentinelKind =
+  | "long-exact-same-pitch-unison"
+  | "long-pitch-class-unison"
+  | "high-soprano-repeated-note-pressure"
+  | "unresolved-entry-severe-interval";
+
+export type Phase13LocalSentinelSummary = {
+  kind: Phase13LocalSentinelKind;
+  severity: "review-required";
+  seed?: string;
+  startTick: number;
+  durationTicks: number;
+  voicePair?: string;
+  voice?: Voice;
+  sectionRole: FugueState | "mixed";
+  symptom: string;
+};
+
+export type Phase13QualityVector = {
+  schemaVersion: 1;
+  modelVersion: 1;
+  axes: Phase13QualityVectorAxisSummary[];
+  voicePairUnisons: Phase13VoicePairUnisonSummary[];
+  sopranoRepeatedNotePressure: Phase13SopranoRepeatedNotePressureSummary;
+  entrySevereIntervals: Phase13EntrySevereIntervalDurationSummary[];
+  localSentinels: Phase13LocalSentinelSummary[];
+};
+
 export type GenerationDiagnostics = {
   generatorVersion: number;
   seed: string;
@@ -574,6 +669,7 @@ export type GenerationDiagnostics = {
   stepwisePattern: StepwisePatternSummary;
   phase11Review: Phase11ReviewSummary;
   phase12Review: Phase12ReviewSummary;
+  qualityVector: Phase13QualityVector;
   ornamentCandidateCount: number;
   ornamentDensity: number;
   ornamentPlacementReasons: OrnamentPlacementReasons;

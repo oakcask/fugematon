@@ -12,6 +12,7 @@ import type {
   Phase11ReviewSummary,
   Phase12PhraseFunction,
   Phase12ReviewSummary,
+  Phase13QualityVector,
   PitchContourMotionSummary,
   PitchContourWindowSummary,
   PlannedEntry,
@@ -24,6 +25,7 @@ import { chordTonePitchClasses, nearestHarmonicAnchor, rootDegreeForFunction } f
 import { analyzeHarmonicPlans } from "./harmony-diagnostics.js";
 import { isModalMode, tonicPitchClass } from "./key.js";
 import { scaleDegreePitchClass } from "./pitch.js";
+import { analyzePhase13QualityVector } from "./quality-vector.js";
 import {
   COUNTER_SUBJECT_DEGREES,
   compareNoteEvents,
@@ -70,6 +72,7 @@ export function analyzeScore(
   stepwisePattern: StepwisePatternSummary;
   phase11Review: Phase11ReviewSummary;
   phase12Review: Phase12ReviewSummary;
+  qualityVector: Phase13QualityVector;
   ornamentCandidateCount: number;
   ornamentDensity: number;
   ornamentPlacementReasons: OrnamentPlacementReasons;
@@ -283,6 +286,7 @@ function analyzeTextureDiagnostics(
     stepwisePattern: analyzeStepwisePattern(notes, sectionPlans),
     phase11Review: analyzePhase11ReviewSummary(notes, subjectEntries, sectionPlans),
     phase12Review: analyzePhase12ReviewSummary(subjectEntries, sectionPlans),
+    qualityVector: analyzePhase13QualityVector(notes, subjectEntries, sectionPlans),
     ornamentCandidateCount,
     ornamentDensity: roundRatio(ornamentCandidateCount / supportNoteCount),
     ornamentPlacementReasons: analyzeOrnamentPlacementReasons(notes, subjectEntries, sectionPlans),

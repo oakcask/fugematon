@@ -76,11 +76,12 @@ export async function writeReviewBundle(
   }
 
   const summary: ReviewSummary = {
-    schemaVersion: 11,
+    schemaVersion: 12,
     lengthTicks,
     selectionModel,
     performanceProfile,
     referenceDiagnostics: summarizeReferenceDiagnosticsComparisons(referenceComparisons),
+    qualityProfileComparison: summarizeQualityProfileComparison(summarySeeds),
     seeds: summarySeeds,
   };
 
@@ -134,11 +135,12 @@ export async function writeAbReviewBundle(
 }
 
 type ReviewSummary = {
-  schemaVersion: 11;
+  schemaVersion: 12;
   lengthTicks: number;
   selectionModel: SelectionModel;
   performanceProfile: PerformanceProfileMetadata;
   referenceDiagnostics: ReferenceDiagnosticsAggregate;
+  qualityProfileComparison: QualityProfileComparison;
   seeds: ReviewSummarySeed[];
 };
 
@@ -156,6 +158,25 @@ type ReviewSummarySeed = {
   phase6Gate: Phase6GateResult;
   phase7Gate: Phase7GateResult;
   phase7BGate: Phase7BGatePolicyResult;
+};
+
+type QualityProfileComparison = {
+  schemaVersion: 1;
+  modelVersion: GenerationDiagnostics["qualityVector"]["modelVersion"];
+  seedCount: number;
+  axes: QualityProfileAxisComparison[];
+  localSentinelCount: number;
+  localSentinelsByKind: { kind: string; count: number }[];
+  reviewStatus: "within-quality-profile" | "quality-review-required";
+};
+
+type QualityProfileAxisComparison = {
+  axis: string;
+  median: number;
+  p90: number;
+  max: number;
+  outsideSeedCount: number;
+  topContributingSeeds: { seed: string; value: number; normalizedValue: number }[];
 };
 
 function createReviewSummarySeed({
@@ -203,7 +224,7 @@ function createReviewSummarySeed({
 }
 
 type AbReviewComparisonSummary = {
-  schemaVersion: 1;
+  schemaVersion: 2;
   lengthTicks: number;
   baseline: ReviewBundleSide;
   variant: ReviewBundleSide;
@@ -246,6 +267,7 @@ type ReviewSeedComparisonSnapshot = {
     reviewSignalCount: number;
     reviewSignals: Phase7BGatePolicyResult["reviewSignals"];
   };
+  qualityVector: GenerationDiagnostics["qualityVector"];
 };
 
 type ReviewSeedComparisonDeltas = {
@@ -254,6 +276,8 @@ type ReviewSeedComparisonDeltas = {
   candidatePoolViableCandidates: number;
   phase7BHardFailures: number;
   phase7BReviewSignals: number;
+  qualityVectorDistance: number;
+  localSentinelCount: number;
   phase8ReadyChanged: boolean;
 };
 
@@ -320,6 +344,7 @@ type ReviewDiagnosticsSummary = {
   candidatePoolOracle: CandidatePoolOracleSummary;
   phase11Review: GenerationDiagnostics["phase11Review"];
   phase12Review: GenerationDiagnostics["phase12Review"];
+  qualityVector: GenerationDiagnostics["qualityVector"];
 };
 
 const LONG_RUN_FORM_PATTERN_WINDOW_SIZE = 4;
@@ -401,7 +426,7 @@ function compareReviewSummaries({
   variantSummary: ReviewSummary;
 }): AbReviewComparisonSummary {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     lengthTicks,
     baseline: {
       label: baselineLabel,
@@ -436,6 +461,10 @@ function compareReviewSeed(baselineSeed: ReviewSummarySeed, variantSeed: ReviewS
       variant.candidatePoolOracle.viableCandidateCount - baseline.candidatePoolOracle.viableCandidateCount,
     phase7BHardFailures: variant.phase7BGate.hardFailureCount - baseline.phase7BGate.hardFailureCount,
     phase7BReviewSignals: variant.phase7BGate.reviewSignalCount - baseline.phase7BGate.reviewSignalCount,
+    qualityVectorDistance: roundRatio(
+      qualityVectorDistance(variant.qualityVector) - qualityVectorDistance(baseline.qualityVector),
+    ),
+    localSentinelCount: variant.qualityVector.localSentinels.length - baseline.qualityVector.localSentinels.length,
     phase8ReadyChanged: variant.phase7BGate.phase8Ready !== baseline.phase7BGate.phase8Ready,
   };
 
@@ -469,6 +498,7 @@ function createReviewSeedSnapshot(seed: ReviewSummarySeed): ReviewSeedComparison
       reviewSignalCount: seed.phase7BGate.reviewSignals.length,
       reviewSignals: seed.phase7BGate.reviewSignals,
     },
+    qualityVector: seed.diagnosticsSummary.qualityVector,
   };
 }
 
@@ -495,6 +525,12 @@ function describeImprovements(
   }
   if (deltas.candidatePoolViableCandidates > 0) {
     improvements.push("candidate pool has more viable alternatives");
+  }
+  if (deltas.qualityVectorDistance < 0) {
+    improvements.push("quality vector distance decreased");
+  }
+  if (deltas.localSentinelCount < 0) {
+    improvements.push("local sentinel count decreased");
   }
 
   return improvements;
@@ -524,6 +560,12 @@ function describeRegressions(
   if (deltas.candidatePoolViableCandidates < 0) {
     regressions.push("candidate pool has fewer viable alternatives");
   }
+  if (deltas.qualityVectorDistance > 0) {
+    regressions.push("quality vector distance increased");
+  }
+  if (deltas.localSentinelCount > 0) {
+    regressions.push("local sentinel count increased");
+  }
 
   return regressions;
 }
@@ -552,6 +594,80 @@ function findSummarySeed(seeds: readonly ReviewSummarySeed[], seed: string): Rev
   }
 
   return entry;
+}
+
+function summarizeQualityProfileComparison(seeds: readonly ReviewSummarySeed[]): QualityProfileComparison {
+  const firstVector = seeds[0]?.diagnosticsSummary.qualityVector;
+  const axes = firstVector?.axes.map((axisSummary) => summarizeQualityProfileAxis(seeds, axisSummary.axis)) ?? [];
+  const localSentinelsByKind = countLocalSentinelsByKind(seeds);
+  const localSentinelCount = localSentinelsByKind.reduce((sum, entry) => sum + entry.count, 0);
+  const outsideSeedCount = axes.reduce((sum, axis) => sum + axis.outsideSeedCount, 0);
+
+  return {
+    schemaVersion: 1,
+    modelVersion: firstVector?.modelVersion ?? 1,
+    seedCount: seeds.length,
+    axes,
+    localSentinelCount,
+    localSentinelsByKind,
+    reviewStatus: outsideSeedCount > 0 || localSentinelCount > 0 ? "quality-review-required" : "within-quality-profile",
+  };
+}
+
+function summarizeQualityProfileAxis(
+  seeds: readonly ReviewSummarySeed[],
+  axis: GenerationDiagnostics["qualityVector"]["axes"][number]["axis"],
+): QualityProfileAxisComparison {
+  const seedAxes = seeds.map((seed) => {
+    const axisSummary = seed.diagnosticsSummary.qualityVector.axes.find((candidate) => candidate.axis === axis);
+    return {
+      seed: seed.seed,
+      value: axisSummary?.value ?? 0,
+      normalizedValue: axisSummary?.normalizedValue ?? 0,
+      outside: axisSummary?.status === "review-required",
+    };
+  });
+
+  return {
+    axis,
+    median: percentile(
+      seedAxes.map((entry) => entry.normalizedValue),
+      0.5,
+    ),
+    p90: percentile(
+      seedAxes.map((entry) => entry.normalizedValue),
+      0.9,
+    ),
+    max: maximum(seedAxes.map((entry) => entry.normalizedValue)),
+    outsideSeedCount: seedAxes.filter((entry) => entry.outside).length,
+    topContributingSeeds: seedAxes
+      .sort((left, right) => right.normalizedValue - left.normalizedValue || left.seed.localeCompare(right.seed))
+      .slice(0, 3)
+      .map(({ seed, value, normalizedValue }) => ({
+        seed,
+        value,
+        normalizedValue,
+      })),
+  };
+}
+
+function countLocalSentinelsByKind(seeds: readonly ReviewSummarySeed[]): { kind: string; count: number }[] {
+  const counts = new Map<string, number>();
+  for (const seed of seeds) {
+    for (const sentinel of seed.diagnosticsSummary.qualityVector.localSentinels) {
+      counts.set(sentinel.kind, (counts.get(sentinel.kind) ?? 0) + 1);
+    }
+  }
+
+  return [...counts.entries()]
+    .map(([kind, count]) => ({ kind, count }))
+    .sort((left, right) => right.count - left.count || left.kind.localeCompare(right.kind));
+}
+
+function qualityVectorDistance(qualityVector: GenerationDiagnostics["qualityVector"]): number {
+  return Math.sqrt(
+    qualityVector.axes.reduce((sum, axis) => sum + axis.normalizedValue * axis.normalizedValue * axis.weight, 0),
+  );
 }
 
 function summarizeDiagnostics(diagnostics: GenerationDiagnostics): ReviewDiagnosticsSummary {
@@ -609,6 +725,7 @@ function summarizeDiagnostics(diagnostics: GenerationDiagnostics): ReviewDiagnos
     candidatePoolOracle: diagnostics.candidatePoolOracle,
     phase11Review: diagnostics.phase11Review,
     phase12Review: diagnostics.phase12Review,
+    qualityVector: diagnostics.qualityVector,
   };
 }
 
@@ -702,6 +819,16 @@ function maximum(values: readonly number[]): number {
   }
 
   return Math.max(...values);
+}
+
+function percentile(values: readonly number[], quantile: number): number {
+  if (values.length === 0) {
+    return 0;
+  }
+
+  const sorted = [...values].sort((left, right) => left - right);
+  const index = Math.min(sorted.length - 1, Math.max(0, Math.ceil(sorted.length * quantile) - 1));
+  return roundRatio(sorted[index]!);
 }
 
 function average(values: readonly number[]): number {
