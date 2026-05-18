@@ -123,6 +123,7 @@ export function generateScore(input: GenerationInput): GenerationOutput {
       pitchContourMotion: diagnostics.pitchContourMotion,
       stepwisePattern: diagnostics.stepwisePattern,
       phase11Review: diagnostics.phase11Review,
+      phase12Review: diagnostics.phase12Review,
       ornamentCandidateCount: diagnostics.ornamentCandidateCount,
       ornamentDensity: diagnostics.ornamentDensity,
       ornamentPlacementReasons: diagnostics.ornamentPlacementReasons,

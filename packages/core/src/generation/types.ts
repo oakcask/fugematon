@@ -11,6 +11,7 @@ import type {
   NoteEvent,
   OrnamentPlacementReasons,
   Phase11ReviewSummary,
+  Phase12ReviewSummary,
   PitchContourMotionSummary,
   SoloTextureSummary,
   StepwisePatternSummary,
@@ -93,6 +94,7 @@ export type TextureDiagnostics = {
   pitchContourMotion: PitchContourMotionSummary;
   stepwisePattern: StepwisePatternSummary;
   phase11Review: Phase11ReviewSummary;
+  phase12Review: Phase12ReviewSummary;
   ornamentCandidateCount: number;
   ornamentDensity: number;
   ornamentPlacementReasons: OrnamentPlacementReasons;
