@@ -69,18 +69,49 @@ function toPosixRelativePath(filePath) {
 }
 
 function parseArguments(args) {
-  if (args.length !== 2) {
-    throw new Error("Usage: node scripts/check-node-test-junit-budget.mjs <junit-report> <max-seconds>");
+  const values = parseLongOptions(args);
+  const reportPath = values.get("--junit-report");
+  const rawMaxSeconds = values.get("--max-seconds");
+
+  if (reportPath === undefined || rawMaxSeconds === undefined) {
+    throw new Error(
+      "Usage: node scripts/check-node-test-junit-budget.mjs --junit-report <path> --max-seconds <seconds>",
+    );
   }
 
-  const [rawReportPath, rawMaxSeconds] = args;
   const value = Number(rawMaxSeconds);
   if (!Number.isFinite(value) || value <= 0) {
-    throw new Error("max-seconds must be a positive number.");
+    throw new Error("--max-seconds must be a positive number.");
   }
 
   return {
-    reportPath: toPosixRelativePath(rawReportPath),
+    reportPath: toPosixRelativePath(reportPath),
     maxSeconds: value,
   };
+}
+
+function parseLongOptions(args) {
+  const values = new Map();
+
+  for (let index = 0; index < args.length; index += 2) {
+    const option = args[index];
+    const value = args[index + 1];
+
+    if (!option?.startsWith("--")) {
+      throw new Error(`Unexpected positional argument: ${option ?? ""}`);
+    }
+    if (value === undefined || value.startsWith("--")) {
+      throw new Error(`${option} requires a value.`);
+    }
+    if (option !== "--junit-report" && option !== "--max-seconds") {
+      throw new Error(`Unknown option: ${option}`);
+    }
+    if (values.has(option)) {
+      throw new Error(`Duplicate option: ${option}`);
+    }
+
+    values.set(option, value);
+  }
+
+  return values;
 }
