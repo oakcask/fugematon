@@ -37,6 +37,19 @@ const CONTINUATION_STATE_PATTERNS: readonly (readonly FugueState[])[] = [
   ["episode", "stretto-like", "episode", "subject-return"],
 ];
 
+type PhraseDensityArc = "thin" | "balanced" | "full";
+
+type ContinuationPhraseSectionIntent = {
+  state: FugueState;
+  cadenceKind?: CadenceKind;
+  keyOffset: number;
+  densityArc: PhraseDensityArc;
+};
+
+type ContinuationPhraseUnit = {
+  sections: ContinuationPhraseSectionIntent[];
+};
+
 export function buildFugueScore(
   subject: readonly SubjectNote[],
   keySignature: KeySignature,
@@ -58,6 +71,8 @@ export function buildFugueScore(
   const continuationPatternIndex = CONTINUATION_STATE_PATTERNS.indexOf(continuationPattern);
   let continuationCycleIndex = 0;
   let stateIndex = 0;
+  let phraseUnit: ContinuationPhraseUnit | undefined;
+  let phraseSectionIndex = 0;
 
   while (sectionStartTick < lengthTicks) {
     const statePattern = continuationPatternForCycle(
@@ -66,7 +81,24 @@ export function buildFugueScore(
       continuationCycleIndex,
       isModalMode(keySignature.mode),
     );
-    const state = statePattern[stateIndex]!;
+    if (
+      selectionModel === "phase10-section-local-planner" &&
+      (phraseUnit === undefined || phraseSectionIndex >= phraseUnit.sections.length)
+    ) {
+      phraseUnit = chooseContinuationPhraseUnit({
+        primaryPattern: statePattern,
+        stateIndex,
+        stateHistory: stateTransitions,
+        previousSectionPlans: sectionPlans,
+        previousNotes: notes,
+        keySignature,
+        preserveSubjectFamily: isModalMode(keySignature.mode),
+      });
+      phraseSectionIndex = 0;
+    }
+
+    const phraseIntent = phraseUnit?.sections[phraseSectionIndex];
+    const state = phraseIntent?.state ?? statePattern[stateIndex]!;
     const sectionDurationTicks = chooseContinuationSectionTicks(state, rng);
     const selection = chooseContinuationSection(
       subject,
@@ -79,6 +111,7 @@ export function buildFugueScore(
       selectionModel,
       [...stateTransitions, state],
       sectionPlans,
+      phraseIntent,
     );
     const selectedState = selection.section.sectionPlans[0]?.state ?? state;
     stateTransitions.push(selectedState);
@@ -95,6 +128,7 @@ export function buildFugueScore(
       stateIndex = 0;
       continuationCycleIndex += 1;
     }
+    phraseSectionIndex += 1;
   }
 
   fillAllVoiceSilenceGaps(notes, keySignature);
@@ -112,6 +146,182 @@ export function buildFugueScore(
     endTick: Math.max(...notes.map((note) => note.startTick + note.durationTicks)),
     durationTicks: Math.max(...notes.map((note) => note.startTick + note.durationTicks)),
   };
+}
+
+function chooseContinuationPhraseUnit(input: {
+  primaryPattern: readonly FugueState[];
+  stateIndex: number;
+  stateHistory: readonly FugueState[];
+  previousSectionPlans: readonly HarmonicPlan[];
+  previousNotes: readonly NoteEvent[];
+  keySignature: KeySignature;
+  preserveSubjectFamily: boolean;
+}): ContinuationPhraseUnit {
+  const phraseLength = Math.min(4, Math.max(2, input.primaryPattern.length - input.stateIndex));
+  const primaryStates = nextPatternStates(input.primaryPattern, input.stateIndex, phraseLength);
+  if (input.preserveSubjectFamily) {
+    return {
+      sections: primaryStates.map((state, index) => ({
+        state,
+        cadenceKind: phraseCadenceKind(state, index, primaryStates.length, input.keySignature),
+        keyOffset: phraseKeyOffset(state, index, 0),
+        densityArc: phraseDensityArc(index, primaryStates.length),
+      })),
+    };
+  }
+
+  const candidateStateUnits = phraseStateUnitCandidates(primaryStates);
+  const previousPlan = input.previousSectionPlans.at(-1);
+  const previousDensity =
+    previousPlan === undefined
+      ? 0
+      : averageActiveVoiceDensity(input.previousNotes, previousPlan.startTick, previousPlan.durationTicks);
+  const keyDistance = previousPlan === undefined ? 0 : localKeyDistance(input.keySignature, previousPlan.targetKey);
+  let bestStates = candidateStateUnits[0]!;
+  let bestScore = Number.POSITIVE_INFINITY;
+
+  for (const states of candidateStateUnits) {
+    const score = phraseUnitStateScore({
+      states,
+      stateHistory: input.stateHistory,
+      previousCadenceKind: previousPlan?.cadenceKind,
+      previousDensity,
+      keyDistance,
+    });
+    if (score < bestScore) {
+      bestStates = states;
+      bestScore = score;
+    }
+  }
+
+  return {
+    sections: bestStates.map((state, index) => ({
+      state,
+      cadenceKind: phraseCadenceKind(state, index, bestStates.length, input.keySignature),
+      keyOffset: phraseKeyOffset(state, index, keyDistance),
+      densityArc: phraseDensityArc(index, bestStates.length),
+    })),
+  };
+}
+
+function nextPatternStates(
+  pattern: readonly FugueState[],
+  stateIndex: number,
+  phraseLength: number,
+): readonly FugueState[] {
+  return Array.from({ length: phraseLength }, (_, index) => pattern[(stateIndex + index) % pattern.length]!);
+}
+
+function phraseStateUnitCandidates(primaryStates: readonly FugueState[]): readonly (readonly FugueState[])[] {
+  const first = primaryStates[0] ?? "episode";
+  const second = primaryStates[1] ?? "subject-return";
+  const third = primaryStates[2] ?? "episode";
+  const fourth = primaryStates[3] ?? "stretto-like";
+  const candidates: FugueState[][] = [
+    [...primaryStates],
+    [first, second === "episode" ? "subject-return" : "episode", third],
+    [first, "subject-return", "episode", "stretto-like"],
+    [first, "episode", "subject-return"],
+    [first, "stretto-like", "subject-return"],
+    [first, second, third === first ? "subject-return" : third, fourth === second ? "episode" : fourth],
+  ];
+
+  return deduplicateStateUnits(candidates.map((states) => states.slice(0, primaryStates.length)));
+}
+
+function deduplicateStateUnits(candidates: readonly (readonly FugueState[])[]): readonly (readonly FugueState[])[] {
+  const seen = new Set<string>();
+  const unique: FugueState[][] = [];
+  for (const candidate of candidates) {
+    const key = candidate.join(">");
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    unique.push([...candidate]);
+  }
+  return unique;
+}
+
+function phraseUnitStateScore(input: {
+  states: readonly FugueState[];
+  stateHistory: readonly FugueState[];
+  previousCadenceKind?: CadenceKind;
+  previousDensity: number;
+  keyDistance: number;
+}): number {
+  let score = 0;
+  const history = [...input.stateHistory];
+
+  for (const [index, state] of input.states.entries()) {
+    score +=
+      historyAwareStateScore({
+        state,
+        stateHistory: history,
+        previousCadenceKind:
+          index === 0 ? input.previousCadenceKind : phraseCadenceKind(state, index, input.states.length),
+        previousDensity: index === 0 ? input.previousDensity : input.states[index - 1] === "stretto-like" ? 3.5 : 2.5,
+        keyDistance: index === 0 ? input.keyDistance : phraseKeyOffset(state, index, input.keyDistance),
+      }) *
+      (index + 1);
+    history.push(state);
+  }
+
+  if (createsShortAlternatingPhrase(history)) {
+    score += 2500;
+  }
+  if (input.states.length >= 3 && new Set(input.states).size === 1) {
+    score += 1000;
+  }
+  if (!input.states.some((state) => state === "subject-return")) {
+    score += 6;
+  }
+  if (!input.states.some((state) => state === "episode")) {
+    score += 4;
+  }
+
+  return score;
+}
+
+function phraseCadenceKind(
+  state: FugueState,
+  index: number,
+  phraseLength: number,
+  keySignature?: KeySignature,
+): CadenceKind {
+  if (keySignature !== undefined && isModalMode(keySignature.mode)) {
+    return "modal";
+  }
+  if (index === phraseLength - 1) {
+    return state === "stretto-like" ? "evaded" : "authentic";
+  }
+  if (state === "episode") {
+    return index === 0 ? "modulatory" : "half";
+  }
+  return state === "stretto-like" ? "evaded" : "deceptive";
+}
+
+function phraseKeyOffset(state: FugueState, index: number, previousKeyDistance: number): number {
+  if (state === "subject-return") {
+    return previousKeyDistance >= 5 ? 0 : 7;
+  }
+  if (state === "stretto-like") {
+    return 7;
+  }
+  return [5, 2, 9, 0][index % 4]!;
+}
+
+function phraseDensityArc(index: number, phraseLength: number): PhraseDensityArc {
+  if (phraseLength <= 2) {
+    return index === 0 ? "balanced" : "full";
+  }
+  if (index === phraseLength - 1) {
+    return "full";
+  }
+  if (index === 1) {
+    return "thin";
+  }
+  return "balanced";
 }
 
 export function chooseContinuationStatePattern(rng: Xoshiro128StarStar): readonly FugueState[] {
@@ -392,6 +602,7 @@ export function chooseContinuationSection(
   selectionModel: SelectionModel = "baseline",
   stateHistory: readonly FugueState[] = [state],
   previousSectionPlans: readonly HarmonicPlan[] = [],
+  phraseIntent?: ContinuationPhraseSectionIntent,
 ): {
   section: Exposition;
   candidateCount: number;
@@ -406,6 +617,7 @@ export function chooseContinuationSection(
     sectionDurationTicks,
     rng,
     selectionModel,
+    phraseIntent,
   );
   const evaluations = candidates.map((candidate) => evaluateCandidate(previousNotes, candidate));
   const baselineCandidateCount =
@@ -718,6 +930,7 @@ export function buildContinuationCandidates(
   sectionDurationTicks: number,
   rng: Xoshiro128StarStar,
   selectionModel: SelectionModel = "baseline",
+  phraseIntent?: ContinuationPhraseSectionIntent,
 ): Exposition[] {
   const notes: Exposition["notes"] = [];
   const candidates: Exposition[] = [];
@@ -725,10 +938,11 @@ export function buildContinuationCandidates(
   const registerPlannerCandidates: Exposition[] = [];
   const sectionGrammarCandidates: Exposition[] = [];
   const includeSectionLocalPlannerCandidates = selectionModel === "phase10-section-local-planner";
+  const phraseSubject = subject;
 
   if (state === "episode") {
     for (const voice of rng.shuffle(VOICE_ENTRY_ORDER)) {
-      for (const pitchClassOffset of rng.shuffle([0, 5, 7] as const)) {
+      for (const pitchClassOffset of rng.shuffle(preferredOffsets([0, 5, 7] as const, phraseIntent?.keyOffset))) {
         const input = {
           state,
           voice,
@@ -737,21 +951,25 @@ export function buildContinuationCandidates(
           globalKey: keySignature,
           localKey: transposeKey(keySignature, pitchClassOffset),
           targetKey: transposeKey(keySignature, pitchClassOffset === 0 ? 7 : pitchClassOffset),
-          supportDurationTicks: Math.min(sectionDurationTicks, subjectDuration(subject.slice(0, 4))),
+          supportDurationTicks: Math.min(sectionDurationTicks, subjectDuration(phraseSubject.slice(0, 4))),
           sectionDurationTicks,
           styleProfile: chooseStyleProfile(rng),
           sequencePattern: chooseSequencePattern(rng),
           fragmentTransform: chooseFragmentTransform(rng),
+          cadenceKind: phraseIntent?.cadenceKind,
         };
-        candidates.push(buildContinuationSection(subject.slice(0, 4), input));
+        candidates.push(buildContinuationSection(phraseSubject.slice(0, 4), input));
         if (includeSectionLocalPlannerCandidates) {
           sectionLocalPlannerCandidates.push(
-            buildContinuationSection(subject.slice(0, 4), { ...input, continuityVoiceCount: 2 }),
+            buildContinuationSection(phraseSubject.slice(0, 4), {
+              ...input,
+              continuityVoiceCount: phraseContinuityVoiceCount(phraseIntent, 2),
+            }),
           );
           registerPlannerCandidates.push(
-            buildContinuationSection(subject.slice(0, 4), {
+            buildContinuationSection(phraseSubject.slice(0, 4), {
               ...input,
-              continuityVoiceCount: 2,
+              continuityVoiceCount: phraseContinuityVoiceCount(phraseIntent, 2),
               continuityVoiceOrder: registerBlendedContinuityVoiceOrder(voice),
             }),
           );
@@ -760,7 +978,7 @@ export function buildContinuationCandidates(
     }
   } else if (state === "subject-return") {
     for (const voice of rng.shuffle(VOICE_ENTRY_ORDER)) {
-      for (const pitchClassOffset of rng.shuffle([0, 5, 7, 9] as const)) {
+      for (const pitchClassOffset of rng.shuffle(preferredOffsets([0, 5, 7, 9] as const, phraseIntent?.keyOffset))) {
         const input = {
           state,
           voice,
@@ -769,17 +987,23 @@ export function buildContinuationCandidates(
           globalKey: keySignature,
           localKey: transposeKey(keySignature, pitchClassOffset),
           targetKey: transposeKey(keySignature, pitchClassOffset),
-          supportDurationTicks: subjectDuration(subject),
+          supportDurationTicks: subjectDuration(phraseSubject),
           sectionDurationTicks,
           styleProfile: chooseStyleProfile(rng),
+          cadenceKind: phraseIntent?.cadenceKind,
         };
-        candidates.push(buildContinuationSection(subject, input));
+        candidates.push(buildContinuationSection(phraseSubject, input));
         if (includeSectionLocalPlannerCandidates) {
-          sectionLocalPlannerCandidates.push(buildContinuationSection(subject, { ...input, continuityVoiceCount: 2 }));
-          registerPlannerCandidates.push(
-            buildContinuationSection(subject, {
+          sectionLocalPlannerCandidates.push(
+            buildContinuationSection(phraseSubject, {
               ...input,
-              continuityVoiceCount: 2,
+              continuityVoiceCount: phraseContinuityVoiceCount(phraseIntent, 2),
+            }),
+          );
+          registerPlannerCandidates.push(
+            buildContinuationSection(phraseSubject, {
+              ...input,
+              continuityVoiceCount: phraseContinuityVoiceCount(phraseIntent, 2),
               continuityVoiceOrder: registerBlendedContinuityVoiceOrder(voice),
             }),
           );
@@ -798,6 +1022,7 @@ export function buildContinuationCandidates(
             globalKey: keySignature,
             sectionDurationTicks,
             styleProfile: chooseStyleProfile(rng),
+            cadenceKind: phraseIntent?.cadenceKind,
           }),
         );
       }
@@ -825,6 +1050,23 @@ export function buildContinuationCandidates(
         },
       ]
     : candidates;
+}
+
+function preferredOffsets<const T extends readonly number[]>(offsets: T, preferredOffset: number | undefined): T {
+  if (preferredOffset === undefined || !offsets.includes(preferredOffset)) {
+    return offsets;
+  }
+  return [preferredOffset, ...offsets.filter((offset) => offset !== preferredOffset)] as unknown as T;
+}
+
+function phraseContinuityVoiceCount(
+  phraseIntent: ContinuationPhraseSectionIntent | undefined,
+  fallback: number,
+): number {
+  if (phraseIntent?.densityArc === "full") {
+    return 2;
+  }
+  return fallback;
 }
 
 function buildSectionGrammarOracleCandidates(
@@ -993,6 +1235,7 @@ export function buildContinuationSection(
     fragmentTransform?: FragmentTransform;
     continuityVoiceCount?: number;
     continuityVoiceOrder?: readonly Voice[];
+    cadenceKind?: CadenceKind;
   },
 ): Exposition {
   const notes: Exposition["notes"] = [];
@@ -1006,7 +1249,7 @@ export function buildContinuationSection(
       localKey: entry.localKey,
       targetKey: entry.targetKey,
       styleProfile: entry.styleProfile,
-      cadenceKind: cadenceKindForSection(entry.state, entry.targetKey),
+      cadenceKind: entry.cadenceKind ?? cadenceKindForSection(entry.state, entry.targetKey),
       ambiguityIntent: entry.state === "episode" ? "pivot-harmony" : "none",
       sequencePattern: entry.sequencePattern,
       fragmentTransform: entry.fragmentTransform,
@@ -1052,6 +1295,7 @@ export function buildStrettoSection(
     globalKey: KeySignature;
     sectionDurationTicks: number;
     styleProfile: StyleProfile;
+    cadenceKind?: CadenceKind;
   },
 ): Exposition {
   const notes: Exposition["notes"] = [];
@@ -1065,7 +1309,7 @@ export function buildStrettoSection(
       localKey: entry.globalKey,
       targetKey: transposeKey(entry.globalKey, 7),
       styleProfile: entry.styleProfile,
-      cadenceKind: "evaded",
+      cadenceKind: entry.cadenceKind ?? "evaded",
       ambiguityIntent: "evaded-cadence",
     }),
   ];
