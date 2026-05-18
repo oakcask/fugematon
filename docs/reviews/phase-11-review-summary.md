@@ -217,10 +217,32 @@ Focused seed check では、`bach-001` が non-cadential run 20 件のうち ann
 
 Project response: この PR は diagnostics annotation までで止める。次の generator work は、phrase unit が thinning role を先に持ち、support voice formula が entry preparation、cadential preparation、pedal、suspension preparation を生成時に選べるようにする。
 
+### 13. Multi-section phrase-unit planner を selected output に追加した
+
+生成 bundle:
+
+```sh
+pnpm fugematon review-ab --out samples/phase11-phrase-planner-ab --ticks 129600 --baseline-label phase11-oracle-selection --baseline-model phase10-oracle-selection --variant-label phase11-phrase-planner --variant-model phase10-section-local-planner
+```
+
+対象 seed: 22 seed 全体。focused set は `bach-001`、`fugue-smoke`、`minor-entry`、`modal-cadence`、`dense-modal`。
+
+Phase 11 の selected output は、1 section ずつ state を差し替えるのではなく、2-4 section の phrase unit を先に選ぶ。phrase unit は state sequence、cadence kind、density arc、local key distance を持ち、短い `A > B > A > B` cycle と単一 state 固定を高 risk として避ける。modal seed は modal identity と counter-subject guardrail の余裕が小さいため、primary state sequence を保った上で既存の history-aware candidate selection に任せる。
+
+22 seed では hard constraints と Phase 7B readiness は維持された。candidate pool viable count は全 seed で増えた。section grammar selected risk total は 1602 から 486、unique 4-section continuation pattern 合計は 112 から 371、top entry pattern family count 合計は 333 から 314 へ改善した。unsupported functional-thinning run は 46 から 47 でほぼ横ばいだった。
+
+Focused seed では、`bach-001` の most repeated pattern は 7 から 3、section grammar risk は 78 から 9 へ下がった。`fugue-smoke` は 7 から 4、78 から 14 へ下がり、以前の `episode > stretto-like > episode > stretto-like` 固定悪化は再発しなかった。`minor-entry` は 6 から 3、70 から 10 へ下がったが、leap recovery misses は 17 から 26 へ悪化した。`modal-cadence` と `dense-modal` は most repeated pattern が 7 から 6、section grammar risk が 84 から 60 へ下がり、unison/shared rhythm と leap recovery は改善したが、counter-subject identity retention は小悪化した。
+
+Tradeoff: 22 seed 合計では unison overlap が 14241 から 14432、shared rhythm overlap が 18536 から 18848、leap recovery misses が 402 から 429 へ悪化した。counter-subject identity retention 合計は 18.204 から 18.043 へ下がった。これは metric だけの失敗ではなく、phrase-level form 改善が一部 seed で支え声部を同型リズムや近接 unison に寄せ、対主題の認識性や大跳躍後の歌いやすさを少し使っていることを示す。
+
+Theory basis: 長尺 fugue form では、episode、subject return、stretto-like section が単純周期にならず、cadence と local key によって方向感を持つ必要がある。一方で、form の反復を崩すために声部独立、対主題の輪郭、跳躍回収を犠牲にしすぎると、Bach/fugue 的な素材の認識性と Fux 的な melodic recoverability が弱くなる。
+
+Project response: phrase-unit planner は Phase 11 の section grammar blocker に有効な採用候補とするが、review signal の悪化は残す。次の採否レビューでは、`minor-entry` の leap recovery、`bach-001` / `fugue-smoke` の unison/shared rhythm、`modal-cadence` の counter-subject identity retention を focused pairwise note で確認する。functional thinning は annotation 上ほぼ横ばいなので、support voice formula と thinning role を生成時に結びつける作業はまだ残る。
+
 ## Remaining Gaps
 
 * MIDI の通し聴取と before/after pairwise preference は未実施。
 * `metricalHarmony` は time signature ごとの強拍分類をまだ持たない暫定 summary である。weak beat non-chord-tone resolution は次 strong beat までの stepwise chord-tone arrival に限るため、掛留の準備、anticipation、escape tone、longer preparation/resolution はまだ区別しない。
 * Candidate pool oracle の Phase 11 blocker family は出るが、selection-only upper bound はほとんどの blocker で低く、generator-needed rate が高い。
-* section grammar repetition は section grammar alternatives で generator-needed rate が 1.000 から 0.942 へ下がり、history-aware planner で selected risk total が 1602 から 1551 へ下がったが、`fugue-smoke` の最頻 pattern count 悪化が残る。
-* review summary 追加 PR は生成音そのもの、candidate scoring、gate threshold を変えていない。follow-up diagnostics PR は selected candidate feature を増やし、register / section grammar candidate PR は oracle pool を増やした。history-aware planner PR は selected output を変えるが、gate threshold は変えていない。
+* section grammar repetition は phrase-unit planner で selected risk total が 1602 から 486 へ下がったが、unison、shared rhythm、leap recovery、counter-subject identity retention の review-signal tradeoff が残る。
+* review summary 追加 PR は生成音そのもの、candidate scoring、gate threshold を変えていない。follow-up diagnostics PR は selected candidate feature を増やし、register / section grammar candidate PR は oracle pool を増やした。history-aware planner と phrase-unit planner は selected output を変えるが、gate threshold は変えていない。

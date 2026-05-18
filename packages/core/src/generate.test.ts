@@ -1183,6 +1183,84 @@ test("generateScore applies history-aware section grammar planning to selected o
   assert.ok(variantSectionGrammarRisk < baselineSectionGrammarRisk);
 });
 
+test("generateScore applies phase-11 phrase-unit planning across review seeds", () => {
+  const seeds = [...PHASE_5_REVIEW_SEEDS, ...PHASE_5_11_ROTATION_SEEDS].map(({ seed }) => seed);
+  let changedStateSequenceCount = 0;
+  let baselineUniqueContinuationPatternCount = 0;
+  let variantUniqueContinuationPatternCount = 0;
+  let baselineSectionGrammarRisk = 0;
+  let variantSectionGrammarRisk = 0;
+  let baselineTopEntryPatternFamilyCount = 0;
+  let variantTopEntryPatternFamilyCount = 0;
+  let baselineUnsupportedThinningRuns = 0;
+  let variantUnsupportedThinningRuns = 0;
+  let baselineUnisonOverlapCount = 0;
+  let variantUnisonOverlapCount = 0;
+  let baselineSharedRhythmOverlapCount = 0;
+  let variantSharedRhythmOverlapCount = 0;
+  let baselineLeapRecoveryMisses = 0;
+  let variantLeapRecoveryMisses = 0;
+  let baselineCounterSubjectIdentityRetention = 0;
+  let variantCounterSubjectIdentityRetention = 0;
+
+  for (const seed of seeds) {
+    const baseline = generateScore({
+      seed,
+      lengthTicks: PHASE_5_LENGTH_TICKS,
+      selectionModel: "phase10-oracle-selection",
+    });
+    const variant = generateScore({
+      seed,
+      lengthTicks: PHASE_5_LENGTH_TICKS,
+      selectionModel: "phase10-section-local-planner",
+    });
+    const gate = evaluatePhase7BGatePolicy(seed, variant.diagnostics);
+    const baselineStats = summarizeContinuationPatterns(baseline.diagnostics.stateTransitions);
+    const variantStats = summarizeContinuationPatterns(variant.diagnostics.stateTransitions);
+    const baselineGrammar = requireOracleBlocker(
+      baseline.diagnostics.candidatePoolOracle,
+      "section-grammar-repetition",
+    );
+    const variantGrammar = requireOracleBlocker(variant.diagnostics.candidatePoolOracle, "section-grammar-repetition");
+
+    assert.equal(gate.phase8Ready, true);
+    assert.equal(gate.hardConstraintPassed, true);
+    assert.deepEqual(gate.hardFailures, []);
+    if (
+      JSON.stringify(variant.diagnostics.stateTransitions) !== JSON.stringify(baseline.diagnostics.stateTransitions)
+    ) {
+      changedStateSequenceCount += 1;
+    }
+
+    baselineUniqueContinuationPatternCount += baselineStats.uniqueCount;
+    variantUniqueContinuationPatternCount += variantStats.uniqueCount;
+    baselineSectionGrammarRisk += baselineGrammar.selectedRiskTotal;
+    variantSectionGrammarRisk += variantGrammar.selectedRiskTotal;
+    baselineTopEntryPatternFamilyCount += baseline.diagnostics.phase11Review.entryPatternFamilies[0]?.count ?? 0;
+    variantTopEntryPatternFamilyCount += variant.diagnostics.phase11Review.entryPatternFamilies[0]?.count ?? 0;
+    baselineUnsupportedThinningRuns += baseline.diagnostics.phase11Review.functionalThinning.unsupportedRunCount;
+    variantUnsupportedThinningRuns += variant.diagnostics.phase11Review.functionalThinning.unsupportedRunCount;
+    baselineUnisonOverlapCount += baseline.diagnostics.unisonOverlapCount;
+    variantUnisonOverlapCount += variant.diagnostics.unisonOverlapCount;
+    baselineSharedRhythmOverlapCount += baseline.diagnostics.sharedRhythmOverlapCount;
+    variantSharedRhythmOverlapCount += variant.diagnostics.sharedRhythmOverlapCount;
+    baselineLeapRecoveryMisses += baseline.diagnostics.leapRecoveryMisses;
+    variantLeapRecoveryMisses += variant.diagnostics.leapRecoveryMisses;
+    baselineCounterSubjectIdentityRetention += baseline.diagnostics.counterSubjectIdentityRetention;
+    variantCounterSubjectIdentityRetention += variant.diagnostics.counterSubjectIdentityRetention;
+  }
+
+  assert.ok(changedStateSequenceCount >= 18);
+  assert.ok(variantUniqueContinuationPatternCount >= baselineUniqueContinuationPatternCount * 3);
+  assert.ok(variantSectionGrammarRisk <= baselineSectionGrammarRisk * 0.35);
+  assert.ok(variantTopEntryPatternFamilyCount < baselineTopEntryPatternFamilyCount);
+  assert.ok(variantUnsupportedThinningRuns <= baselineUnsupportedThinningRuns + 1);
+  assert.ok(variantUnisonOverlapCount <= baselineUnisonOverlapCount + 200);
+  assert.ok(variantSharedRhythmOverlapCount <= baselineSharedRhythmOverlapCount + 320);
+  assert.ok(variantLeapRecoveryMisses <= baselineLeapRecoveryMisses + 30);
+  assert.ok(variantCounterSubjectIdentityRetention >= baselineCounterSubjectIdentityRetention - 0.17);
+});
+
 test("generateScore nudges non-modal stepwise pattern fixation without modal guardrail regressions", () => {
   const blockerSeeds = [
     ["fugue-smoke", 0.72, 5, 566, 25],
