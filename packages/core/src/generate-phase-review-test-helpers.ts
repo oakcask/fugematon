@@ -5,6 +5,24 @@ import { generateScore } from "./generate.js";
 import { evaluatePhase7BGatePolicy } from "./review-gate.js";
 
 export const PHASE_11_12_REVIEW_SEEDS = PHASE_5_REVIEW_SEEDS.map(({ seed }) => seed);
+export const PHASE_11_12_REVIEW_BATCH_A = [
+  "bach-001",
+  "fugue-smoke",
+  "wide-key",
+  "modal-dorian",
+  "circle-fifths",
+  "dark-episode",
+  "ornament-test",
+] as const;
+export const PHASE_11_12_REVIEW_BATCH_B = [
+  "minor-entry",
+  "lyrical-line",
+  "close-imitation",
+  "sparse-cadence",
+  "bright-answer",
+  "long-arc",
+  "contrary-motion",
+] as const;
 export const PHASE_11_12_ROTATION_SEEDS = PHASE_5_11_ROTATION_SEEDS.map(({ seed }) => seed);
 export const PHASE_12_REPETITION_FOCUSED_SEEDS = [
   "angular-answer",
