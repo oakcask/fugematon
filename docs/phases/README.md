@@ -4,7 +4,8 @@
 
 ## 現在読むもの
 
-* [Phase 7+ 再編計画](phase-7-plus-reorg.md): Phase 11 完了後に Phase 8/9 の deferred operational lane へ戻る現在方針を確認する。
+* [Phase 12](phase-12.md): Phase 11 完了後も残った similar phrase blocker を、Phase 8/9 より前に扱う現在の品質フェーズ。
+* [Phase 7+ 再編計画](phase-7-plus-reorg.md): Phase 12 を Phase 8/9 の前へ挿入する再編方針を確認する。
 * [Phase 11](phase-11.md): 完了済みの、無限再生・操作機能の前に必要な音楽品質モデル再設計と残る quality lane を確認する。
 * [Phase 10](phase-10.md): 完了済みの reference corpus、oracle-driven model update、section-local planner、pairwise preference 品質基盤と、継続 quality lane の gap を確認する。
 * [Phase 7](phase-7.md): 概形進行 diagnostics、candidate scoring、review schema version 5、Phase 7 前半の完了記録。
@@ -21,7 +22,7 @@
 
 ## 読む判断
 
-* 現在の実装対象を見る場合は [Phase 7+ 再編計画](phase-7-plus-reorg.md) の Phase 8/9 節を先に読む。
+* 現在の実装対象を見る場合は [Phase 12](phase-12.md) を先に読む。
 * Phase 10 の完了条件、採用条件、review evidence、残る listening gap を見る場合は [Phase 10](phase-10.md) を読む。
 * 実装対象の Phase が分かっている場合は、その Phase だけ読む。
 * Phase 5 の品質根拠が必要な場合は、本文中のリンクから該当レビューへ進む。
