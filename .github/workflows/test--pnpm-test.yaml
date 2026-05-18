@@ -6,6 +6,7 @@ on:
       - package.json
       - pnpm-lock.yaml
       - pnpm-workspace.yaml
+      - scripts/**
       - tsconfig.json
       - packages/**
   push:
@@ -15,6 +16,7 @@ on:
       - package.json
       - pnpm-lock.yaml
       - pnpm-workspace.yaml
+      - scripts/**
       - tsconfig.json
       - packages/**
 
@@ -24,6 +26,7 @@ permissions:
 env:
   # renovate: datasource=npm depName=pnpm
   PNPM_VERSION: "11.1.2"
+  TEST_FILE_MAX_SECONDS: "45"
 
 jobs:
   test:
@@ -44,5 +47,40 @@ jobs:
           cache: pnpm
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      - name: Run tests
-        run: pnpm test
+      - name: Run tests with JUnit report
+        run: |
+          pnpm build
+          mkdir -p test-results
+          node --test \
+            --test-reporter=junit \
+            --test-reporter-destination=test-results/node-test-junit.xml \
+            --test-reporter=spec \
+            --test-reporter-destination=stdout \
+            packages/*/dist/**/*.test.js
+      - name: Upload JUnit report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: node-test-junit
+          path: test-results/node-test-junit.xml
+          if-no-files-found: warn
+
+  slow-test-files:
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version-file: .nvmrc
+      - name: Download JUnit report
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: node-test-junit
+          path: test-results
+      - name: Check slow test files
+        run: node scripts/check-node-test-junit-budget.mjs
