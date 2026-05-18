@@ -315,7 +315,7 @@ pnpm fugematon diagnose --seed bach-001 --ticks 7680
     * ブラウザと CLI の両方から使う。
     * `WritingProfile` を入力として扱うが、MIDI バイナリやレンダリング設定は持たない。
   * packages/midi
-    * core の `ScoreEvent` と演奏 profile を標準 MIDI ファイルへ変換する。
+    * `PerformanceEvent` または core の `ScoreEvent` と演奏 profile を標準 MIDI ファイルへ変換する。
     * MIDI track、channel、program change、pan、volume、controller、meta event の責務を閉じ込める。
   * packages/cli
     * core API を呼び出す CLI。
@@ -323,10 +323,11 @@ pnpm fugematon diagnose --seed bach-001 --ticks 7680
   * apps/web
     * Vite ベースの Web UI。
     * Canvas ビジュアライザ、WebAudio 再生、操作 UI を持つ。
-* 後続候補：
   * packages/performance
-    * WebAudio と MIDI export が同じ演奏解釈を共有する必要が出た時点で分離する。
+    * WebAudio と MIDI export が同じ演奏解釈を共有するための必須境界として分離する。
     * `ScoreEvent` と `PerformanceProfile` から `PerformanceEvent` を作る純粋変換を担当する。
+    * `organ-default`、`string-quartet`、`chamber-band`、`strict-counterpoint` などの profile を、WebAudio と MIDI export の両方から参照できるようにする。
+* 後続候補：
   * packages/wasm-core
     * Rust + wasm_bindgen による生成器や PRNG を導入する場合の候補。
     * 初期は作らず、TypeScript 実装で性能や境界を確認してから検討する。
@@ -350,7 +351,7 @@ pnpm fugematon diagnose --seed bach-001 --ticks 7680
   * `ScoreEvent` の `velocity` は最終 MIDI velocity ではなく、当面は相対的な dynamic emphasis として扱う。
 * packages/midi
   * Node.js API に依存しない純粋な MIDI encoder を基本にする。
-  * `ScoreEvent`、または後続の `PerformanceEvent` を MIDI バイナリへ変換する責務に限定する。
+  * `PerformanceEvent`、または暫定的に `ScoreEvent` と `PerformanceProfile` を MIDI バイナリへ変換する責務に限定する。
   * MIDI channel、program change、pan、volume、controller、track name などは演奏 profile から解決する。
   * 生成ロジック、diagnostics、score selection は持たない。
 * packages/cli
@@ -361,10 +362,12 @@ pnpm fugematon diagnose --seed bach-001 --ticks 7680
   * DOM、Canvas、WebAudio、Worker API に依存してよい。
   * 表示、再生、ユーザー操作、ブラウザ上の履歴管理を担当する。
   * 生成ロジックは持たず、core API または Worker 経由で core を呼ぶ。
-  * pan、volume、音色、空間、WebAudio oscillator は WebAudio 側の演奏 profile で解決する。
+  * pan、volume、音色、空間、WebAudio oscillator は共有 `PerformanceProfile` を WebAudio 向けに解釈して解決する。
 * packages/performance
-  * 導入する場合は DOM、WebAudio、Node.js API、MIDI encoder に依存しない。
-  * 同じ `PerformanceProfile` から MIDI と WebAudio が共通の velocity curve、articulation、humanize を得るための中間層にする。
+  * DOM、WebAudio、Node.js API、MIDI encoder に依存しない。
+  * 同じ `PerformanceProfile` から MIDI と WebAudio が共通の velocity curve、articulation、humanize、note length compensation を得るための中間層にする。
+  * WebAudio preview という専用 profile は作らない。ブラウザ再生は `organ-default`、`string-quartet`、`chamber-band` など、MIDI export と同じ演奏解釈を使う。
+  * `strict-counterpoint` は対位法上の声部と衝突を聴き取りやすくする検査用 profile とし、残響を抑えたピアノまたは近い単純音色、浅い humanize、明瞭な発音を基本にする。
 * packages/wasm-core
   * Rust + wasm_bindgen を導入する場合の候補。
   * TypeScript core と API 境界を揃え、置き換えまたは併用できる形を目指す。
@@ -410,8 +413,8 @@ pnpm fugematon diagnose --seed bach-001 --ticks 7680
 ## MIDI エクスポート方針
 
 * MIDI export は packages/midi の責務とし、core から分離する。
-* 入力は `ScoreEvent` と `PerformanceProfile` を基本にする。将来 `PerformanceEvent` を導入した場合は、packages/midi は `PerformanceEvent` から MIDI を encode する。
-* `PerformanceProfile` は次のような MIDI 出力向け設定を持つ。
+* 入力は `PerformanceEvent` を基本にする。移行中は `ScoreEvent` と `PerformanceProfile` を受け取り、内部で同じ演奏化処理を使ってよい。
+* `PerformanceProfile` は MIDI と WebAudio で共有する演奏設定を持つ。MIDI export では、そのうち標準 MIDI に落とせる値を encode する。
   * 声部ごとの track name、channel、program、pan、volume。
   * velocity curve、最小・最大 velocity、accent の効かせ方。
   * articulation、note length compensation、legato overlap、release。
@@ -430,7 +433,8 @@ pnpm fugematon diagnose --seed bach-001 --ticks 7680
 * parameter-change や state-change は、標準 MIDI 再生には影響しないため、必要に応じてテキスト系メタイベントとして出力する。
 * MIDI エクスポートは、音楽確認用であり、Fugematon 独自の全メタデータを完全保存する形式とは別に考える。
 * Fugematon 独自の完全な再現データは、ScoreEvent 列と seed / parameters を保存する形式で扱う。
-* 初期実装では `organ-default` profile を用意し、既存 MIDI 出力に近い track layout と program を再現する。次に `string-quartet` や `chamber-band` を追加し、楽譜差分なしで聴こえ方を比較できるようにする。
+* 初期実装では `organ-default` profile を用意し、既存 MIDI 出力に近い track layout と program を再現する。次に `string-quartet` や `chamber-band` を追加し、楽譜差分なしで室内楽風またはオルガン風の聴こえ方を WebAudio と MIDI export の両方で比較できるようにする。
+* `strict-counterpoint` profile は musical preview ではなく検査用の特殊な演奏解釈とする。残響や音色の厚みで濁りを隠さず、声部独立、同音重複、entry clash、articulation の問題を聴き取りやすくする。
 
 ## Fugematon 再現データ形式
 

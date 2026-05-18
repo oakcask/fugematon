@@ -182,7 +182,9 @@ type MetaEvent = {
   * 将来は `dynamicIntent` のような楽譜上の強調意図へ寄せる。
 * `PerformanceProfile` は再生・レンダリング側が見る演奏制約である。
   * MIDI channel、program、pan、track volume、velocity curve、articulation、humanize、reverb send などを持つ。
-  * 同じ `ScoreEvent` に対して、organ、string quartet、chamber band、web preview など複数の演奏解釈を適用できる。
+  * 同じ `ScoreEvent` に対して、organ、string quartet、chamber band など複数の演奏解釈を適用できる。
+  * WebAudio preview という独立した演奏解釈は置かない。ブラウザ再生は MIDI export と同じ `PerformanceProfile` を使い、WebAudio renderer がその profile を実装する。
+  * `strict-counterpoint` は例外的な検査用 profile として、残響や音色の厚みを抑え、声部独立、同音重複、entry clash を聴き取りやすくする。
   * pan、volume、reverb、SoundFont、WebAudio oscillator などは `ScoreEvent` に混ぜない。
 * `PerformanceEvent` は `ScoreEvent` と `PerformanceProfile` から得る派生表現である。
   * 最終 velocity、微小 timing、note length compensation、MIDI controller 相当の値を持つ。
