@@ -2,7 +2,7 @@
 
 Phase 12 は、Phase 11 完了後も残った similar phrase blocker を扱う品質フェーズである。Phase 8/9 の無限再生、巻き戻し、UI 操作、Worker 化より先に実施する。
 
-Status: complete. Phase 12 adopted the phrase-unit repetition baseline after the 22 seed review showed focused blocker improvement while preserving hard constraints, determinism, schema compatibility, reference diagnostics, candidate-pool oracle shape, and Phase 7B readiness. Phase 12 human feedback confirmed the rhythm and rest-closure improvements while leaving repeated-note and unison defects in the quality lane. Phase 13 now handles those defects as quality-vector statistical review before Phase 8/9 operational work resumes.
+Status: complete. Phase 12 adopted the phrase-unit repetition baseline after the 22 seed review showed focused blocker improvement while preserving hard constraints, determinism, schema compatibility, reference diagnostics, candidate-pool oracle shape, and Phase 7B readiness. Phase 12 human feedback confirmed the rhythm and rest-closure improvements while leaving repeated-note and unison defects in the quality lane. Phase 12P now integrates performance profiles before Phase 13 handles those defects as quality-vector statistical review.
 
 ## Rationale
 
@@ -88,4 +88,4 @@ Accepted tradeoff: the phrase-unit baseline increases some review signals. Acros
 
 ## Follow-up Plan
 
-Phase 12 follow-up is [Phase 13](phase-13.md), not another round of single-metric threshold tuning. Phase 13 keeps the Phase 12 selected output stable while adding duration-based voice-pair unison diagnostics, soprano repeated-note pressure, local sentinel checks, and `qualityVector` / `qualityProfileComparison` review summaries. Future quality-lane work should target voice independence, repeated-note pressure, and leap recovery inside the new phrase-unit baseline rather than reverting to mechanical repetition.
+Phase 12 follow-up is [Phase 12P](phase-12-performance-profile.md), then [Phase 13](phase-13.md), not another round of single-metric threshold tuning. Phase 12P keeps selected `ScoreEvent` output stable while routing MIDI and WebAudio through shared `PerformanceProfile` interpretation. Phase 13 then keeps the Phase 12 selected output stable while adding duration-based voice-pair unison diagnostics, soprano repeated-note pressure, local sentinel checks, and `qualityVector` / `qualityProfileComparison` review summaries. Future quality-lane work should target voice independence, repeated-note pressure, and leap recovery inside the new phrase-unit baseline rather than reverting to mechanical repetition.

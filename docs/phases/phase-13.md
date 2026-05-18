@@ -2,7 +2,7 @@
 
 Phase 13 は、Phase 12 後の human feedback で残った音楽的欠陥を、単独 metric のしきい値調整ではなく、正規化された quality vector の統計的な外れ方として扱う品質フェーズである。Phase 13 の最初の目的は生成結果を変えることではなく、Phase 12 baseline を評価する review/adoption model を作ることである。
 
-Status: planned. Phase 13 is inserted before returning to Phase 8/9 operational work. It should keep hard constraints, determinism, schema compatibility, reference diagnostics summary, candidate-pool oracle shape, and the Phase 12 selected output stable while adding the review model needed for later music-quality changes.
+Status: planned. Phase 13 follows Phase 12P performance profile integration and remains before returning to Phase 8/9 operational work. It should keep hard constraints, determinism, schema compatibility, reference diagnostics summary, candidate-pool oracle shape, performance profile metadata, and the Phase 12 selected output stable while adding the review model needed for later music-quality changes.
 
 ## Rationale
 
@@ -50,6 +50,7 @@ Sentinel は単独で Phase 8 blocker にはしないが、seed、section、voic
 
 * `qualityVector` は normalized axes、grouping keys、local sentinel summaries、model version を持つ。
 * `qualityProfileComparison` は seed-level distance、aggregate distribution、outside group count、top contributing axes を持つ。
+* review bundle は Phase 12P で導入した performance profile id と version を保持し、MIDI/WebAudio の聴取条件を score diagnostics と分けて再現できるようにする。
 * A/B summary は blocker improvement、vector distance、local sentinel regression、manual listening gap を並べて表示する。
 * Phase 13 では scoring や generator selection に quality vector を直結しない。まず review/adoption model として安定させる。
 
@@ -57,6 +58,7 @@ Sentinel は単独で Phase 8 blocker にはしないが、seed、section、voic
 
 * Phase 12 selected output は変えずに、22 seed review bundle が deterministic に quality vector と statistical comparison を出す。
 * hard constraint failure 0、Phase 7B readiness、schema compatibility、reference diagnostics summary、candidate-pool oracle shape を維持する。
+* Phase 12P の performance profile id と version が review artifact に残り、profile 変更を generation change と混同しない。
 * Phase 12 feedback の unresolved symptoms が、seed、section、voice pair、representative location のいずれかへ戻せる。
 * 22 seed aggregate で、median、p90、max、outside seed count が review summary に出る。
 * focused seeds は `bach-001`、`fugue-smoke`、`dense-modal`、`modal-cadence`、`tight-stretto`、`sparse-cadence`、`long-arc` を含める。

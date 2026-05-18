@@ -4,7 +4,8 @@
 
 ## 現在読むもの
 
-* [Phase 7+ 再編計画](phase-7-plus-reorg.md): Phase 12 後に Phase 13 を挟み、その後 Phase 8/9 operational lane へ戻る現在計画を確認する。
+* [Phase 7+ 再編計画](phase-7-plus-reorg.md): Phase 12 後に Phase 12P と Phase 13 を挟み、その後 Phase 8/9 operational lane へ戻る現在計画を確認する。
+* [Phase 12P](phase-12-performance-profile.md): Phase 13 の前に、MIDI と WebAudio が共有する演奏プロファイル境界を組み込む計画。
 * [Phase 13](phase-13.md): Phase 12 human feedback 後の、quality vector と統計的 review/adoption model の計画。
 * [Phase 12](phase-12.md): 完了済みの、Phase 11 後に残った similar phrase blocker を Phase 8/9 より前に扱った品質フェーズ。
 * [Phase 11](phase-11.md): 完了済みの、無限再生・操作機能の前に必要な音楽品質モデル再設計と残る quality lane を確認する。
@@ -23,7 +24,7 @@
 
 ## 読む判断
 
-* 現在の実装対象を見る場合は [Phase 7+ 再編計画](phase-7-plus-reorg.md) を先に読み、quality vector の実装詳細は [Phase 13](phase-13.md) を読む。
+* 現在の実装対象を見る場合は [Phase 7+ 再編計画](phase-7-plus-reorg.md) を先に読み、演奏プロファイルは [Phase 12P](phase-12-performance-profile.md)、quality vector の実装詳細は [Phase 13](phase-13.md) を読む。
 * Phase 10 の完了条件、採用条件、review evidence、残る listening gap を見る場合は [Phase 10](phase-10.md) を読む。
 * 実装対象の Phase が分かっている場合は、その Phase だけ読む。
 * Phase 5 の品質根拠が必要な場合は、本文中のリンクから該当レビューへ進む。

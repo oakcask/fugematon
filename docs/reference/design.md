@@ -99,7 +99,7 @@
 
 ### Phase 8: 履歴、巻き戻し、操作パラメータ
 
-* Phase 8 は Phase 12 の phrase/repetition baseline 採用後に戻る deferred operational lane とする。Phase 6-7 の美しさ metric と聴取 gate の完全 pass は開始条件にしないが、操作 UI が音楽的な退屈さを隠す設計にならないよう、先に generator quality と model adoption evidence を進める。
+* Phase 8 は Phase 12P の performance profile integration と Phase 13 の quality vector review model の後に戻る deferred operational lane とする。Phase 6-7 の美しさ metric と聴取 gate の完全 pass は開始条件にしないが、操作 UI が音楽的な退屈さを隠す設計にならないよう、先に generator quality、rendering boundary、model adoption evidence を進める。
 * 生成済みイベントをメモリ上のリングバッファに保存する。
 * 保存済み範囲内では event replay により巻き戻して再生し直せるようにする。
 * strictness、density、subjectPresence などの MVP 用スライダを追加する。
@@ -128,6 +128,13 @@
 * Phase 12 では、phrase-family generator、motive derivation grammar、phrase-level harmonic rhythm、planned support counterpoint を破壊的変更も含めて再設計する。
 * repetition はゼロ要求にせず、function-bearing repetition と mechanical repetition を分ける。subject recurrence、fragment recurrence、section pattern recurrence、cadence spacing、density arc は reference profile と比較する。
 * Phase 12 は完了し、22 seed review と human feedback は phrase similarity、rhythm feel、part rest closure の改善を支持した。ただし高声部の repeated-note pressure、exact unison、second collision、低声部ペアの長い pitch-class unison は quality lane に残る。
+
+### Phase 12P: performance profile integration
+
+* Phase 12P は、Phase 13 の前に MIDI export と WebAudio preview が同じ `PerformanceProfile` を使うための rendering boundary を組み込む。
+* `ScoreEvent` は作曲結果として安定させ、pan、volume、program、velocity curve、articulation、humanize、note length compensation は `PerformanceProfile` と `PerformanceEvent` で扱う。
+* Phase 12P は selected output、generator scoring、quality diagnostics threshold、`generatorVersion` を変えない。聴こえ方の差分は rendering change として扱い、review artifact に profile id と version を残す。
+* Phase 13 は、Phase 12P で聴取・MIDI・WebAudio の再現条件を固定してから quality vector review に入る。
 
 ### Phase 13: quality vector statistical review
 
