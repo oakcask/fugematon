@@ -274,6 +274,7 @@ export type CandidatePoolOracleRepresentative = {
   startTick: number;
   durationTicks: number;
   candidateCount: number;
+  phase12PhraseFamilyCandidateCount: number;
   selectedCandidateIndex: number;
   viableCandidateCount: number;
   hardFailureRejectedCandidateCount: number;
@@ -302,9 +303,10 @@ export type CandidatePoolOracleBlockerSummary = {
 };
 
 export type CandidatePoolOracleSummary = {
-  schemaVersion: 2 | 3;
+  schemaVersion: 2 | 3 | 4;
   sectionCount: number;
   candidateCount: number;
+  phase12PhraseFamilyCandidateCount: number;
   viableCandidateCount: number;
   hardFailureRejectedCandidateCount: number;
   blockerClassifications: CandidatePoolOracleBlockerSummary[];

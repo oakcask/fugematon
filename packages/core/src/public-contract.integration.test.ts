@@ -52,8 +52,9 @@ test("public API emits the stable score metadata envelope", () => {
   assert.equal(scoreEnd?.tick, output.diagnostics.generatedUntilTick);
   assert.equal(output.diagnostics.eventCount, output.events.length);
   assert.equal(output.diagnostics.noteCount, notes.length);
-  assert.equal(output.diagnostics.candidatePoolOracle.schemaVersion, 3);
+  assert.equal(output.diagnostics.candidatePoolOracle.schemaVersion, 4);
   assert.ok(output.diagnostics.candidatePoolOracle.sectionCount >= 0);
+  assert.equal(output.diagnostics.candidatePoolOracle.phase12PhraseFamilyCandidateCount, 0);
   assert.equal(output.diagnostics.generatorVersion, GENERATOR_VERSION);
   assert.equal(output.diagnostics.seed, "public-contract");
   assert.equal(output.diagnostics.lengthTicks, PHASE_5_LENGTH_TICKS);

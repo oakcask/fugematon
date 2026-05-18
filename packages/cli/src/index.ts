@@ -312,6 +312,7 @@ type ReviewDiagnosticsSummary = {
   };
   candidatePoolOracle: CandidatePoolOracleSummary;
   phase11Review: GenerationDiagnostics["phase11Review"];
+  phase12Review: GenerationDiagnostics["phase12Review"];
 };
 
 const LONG_RUN_FORM_PATTERN_WINDOW_SIZE = 4;
@@ -597,6 +598,7 @@ function summarizeDiagnostics(diagnostics: GenerationDiagnostics): ReviewDiagnos
     candidateEvaluation: summarizeCandidateEvaluation(diagnostics),
     candidatePoolOracle: diagnostics.candidatePoolOracle,
     phase11Review: diagnostics.phase11Review,
+    phase12Review: diagnostics.phase12Review,
   };
 }
 

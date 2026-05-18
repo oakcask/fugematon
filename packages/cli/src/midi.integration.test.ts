@@ -188,6 +188,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
             schemaVersion: number;
             sectionCount: number;
             candidateCount: number;
+            phase12PhraseFamilyCandidateCount: number;
             viableCandidateCount: number;
             hardFailureRejectedCandidateCount: number;
             blockerClassifications: {
@@ -208,6 +209,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
               representative: {
                 state: string;
                 candidateCount: number;
+                phase12PhraseFamilyCandidateCount: number;
                 viableCandidateCount: number;
                 selectedRisk: number;
                 bestViableRisk: number;
@@ -232,6 +234,24 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
               strongBeatChordToneSupportCount: number;
               strongBeatBassRootSupportCount: number;
               weakBeatCheckpointCount: number;
+            };
+          };
+          phase12Review: {
+            schemaVersion: number;
+            entryPatternFamilyConcentration: {
+              entryCount: number;
+              uniqueFamilyCount: number;
+              topFamilyCount: number;
+              topFamilyShare: number;
+            };
+            subjectStemFamilies: { pattern: number[]; count: number; share: number }[];
+            answerTransformFamilies: { answerKind: string; pattern: number[]; count: number; share: number }[];
+            fragmentDerivations: { transform: string; phraseFunction: string; count: number; share: number }[];
+            phraseFunctions: { phraseFunction: string; count: number; share: number }[];
+            sectionStatePatterns: {
+              patternLength: number;
+              uniquePatternCount: number;
+              mostRepeatedPatternCount: number;
             };
           };
         };
@@ -454,12 +474,13 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       assert.ok(entry.diagnosticsSummary.candidateEvaluation.averageSelectedSectionSoloTextureRisk >= 0);
       assert.ok(entry.diagnosticsSummary.candidateEvaluation.highSelectedSectionSoloTextureRiskCount >= 0);
       assert.equal(entry.diagnosticsSummary.candidateEvaluation.sectionSoloTextureRiskWarningThreshold, 6);
-      assert.equal(entry.diagnosticsSummary.candidatePoolOracle.schemaVersion, 3);
+      assert.equal(entry.diagnosticsSummary.candidatePoolOracle.schemaVersion, 4);
       assert.ok(entry.diagnosticsSummary.candidatePoolOracle.sectionCount >= 0);
       assert.ok(
         entry.diagnosticsSummary.candidatePoolOracle.candidateCount >=
           entry.diagnosticsSummary.candidatePoolOracle.sectionCount,
       );
+      assert.ok(entry.diagnosticsSummary.candidatePoolOracle.phase12PhraseFamilyCandidateCount >= 0);
       assert.ok(entry.diagnosticsSummary.candidatePoolOracle.viableCandidateCount >= 0);
       assert.ok(entry.diagnosticsSummary.candidatePoolOracle.hardFailureRejectedCandidateCount >= 0);
       assert.ok(entry.diagnosticsSummary.candidatePoolOracle.blockerClassifications.length >= 0);
@@ -480,6 +501,12 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
         entry.diagnosticsSummary.phase11Review.metricalHarmony.strongBeatBassRootSupportCount <=
           entry.diagnosticsSummary.phase11Review.metricalHarmony.strongBeatCheckpointCount,
       );
+      assert.equal(entry.diagnosticsSummary.phase12Review.schemaVersion, 1);
+      assert.ok(entry.diagnosticsSummary.phase12Review.entryPatternFamilyConcentration.entryCount > 0);
+      assert.ok(entry.diagnosticsSummary.phase12Review.subjectStemFamilies.length > 0);
+      assert.ok(entry.diagnosticsSummary.phase12Review.answerTransformFamilies.length > 0);
+      assert.ok(entry.diagnosticsSummary.phase12Review.phraseFunctions.length > 0);
+      assert.equal(entry.diagnosticsSummary.phase12Review.sectionStatePatterns.patternLength, 4);
       for (const blocker of entry.diagnosticsSummary.candidatePoolOracle.blockerClassifications) {
         assert.ok(blocker.referenceAxes.length > 0);
         assert.ok(
@@ -743,8 +770,8 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
       assert.notEqual(entry.category, "");
       assert.ok(entry.baseline.diagnosticsSummary.hardConstraintFailures >= 0);
       assert.ok(entry.variant.diagnosticsSummary.hardConstraintFailures >= 0);
-      assert.equal(entry.baseline.candidatePoolOracle.schemaVersion, 3);
-      assert.equal(entry.variant.candidatePoolOracle.schemaVersion, 3);
+      assert.equal(entry.baseline.candidatePoolOracle.schemaVersion, 4);
+      assert.equal(entry.variant.candidatePoolOracle.schemaVersion, 4);
       assert.deepEqual(entry.baseline.candidatePoolOracle, entry.baseline.diagnosticsSummary.candidatePoolOracle);
       assert.deepEqual(entry.variant.candidatePoolOracle, entry.variant.diagnosticsSummary.candidatePoolOracle);
       assert.equal(typeof entry.baseline.phase7BGate.phase8Ready, "boolean");

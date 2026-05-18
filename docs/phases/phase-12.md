@@ -77,3 +77,5 @@ Phase 11 は section grammar repetition と unsupported functional thinning を�
 ## Implementation Progress
 
 Repetition-family diagnostics are now the first Phase 12 implementation slice. `phase12Review` reports subject stem families, answer transform families, fragment derivation and phrase-function concentration, and 4-section state pattern repetition without changing selected output. This satisfies the first diagnostics part of the Phase 12 adoption criteria, but Phase 12 remains incomplete until phrase-family candidates are generated, selected, and reviewed against Phase 11 current.
+
+Phrase-family oracle candidates are now added to the Phase 10 section-local planner candidate pool as evidence-only candidates. They introduce alternate subject, fragment, and stretto stems for Phase 12 comparison, while selection explicitly skips them so current selected output remains stable. Candidate pool oracle schema version 4 reports `phase12PhraseFamilyCandidateCount` so review bundles can distinguish Phase 12 upper-bound evidence from selectable Phase 10 candidates.
