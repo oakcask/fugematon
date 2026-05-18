@@ -18,6 +18,7 @@ type CandidatePoolOracleSection = {
   startTick: number;
   durationTicks: number;
   candidateCount: number;
+  phase12PhraseFamilyCandidateCount: number;
   selectedCandidateIndex: number;
   viableCandidateCount: number;
   hardFailureRejectedCandidateCount: number;
@@ -157,6 +158,7 @@ export function classifyCandidatePoolOracleSection(input: {
   durationTicks: number;
   evaluations: readonly CandidateEvaluation[];
   selectedCandidateIndex: number;
+  phase12PhraseFamilyCandidateCount?: number;
   stateHistory?: readonly FugueState[];
   referenceProfile?: ReferenceDiagnosticsProfile;
 }): CandidatePoolOracleSection {
@@ -177,6 +179,7 @@ export function classifyCandidatePoolOracleSection(input: {
     startTick: input.startTick,
     durationTicks: input.durationTicks,
     candidateCount: input.evaluations.length,
+    phase12PhraseFamilyCandidateCount: input.phase12PhraseFamilyCandidateCount ?? 0,
     selectedCandidateIndex: input.selectedCandidateIndex,
     viableCandidateCount: viable.filter(Boolean).length,
     hardFailureRejectedCandidateCount,
@@ -276,9 +279,13 @@ export function summarizeCandidatePoolOracleSections(
   });
 
   return {
-    schemaVersion: 3,
+    schemaVersion: 4,
     sectionCount: sections.length,
     candidateCount: sections.reduce((sum, section) => sum + section.candidateCount, 0),
+    phase12PhraseFamilyCandidateCount: sections.reduce(
+      (sum, section) => sum + section.phase12PhraseFamilyCandidateCount,
+      0,
+    ),
     viableCandidateCount: sections.reduce((sum, section) => sum + section.viableCandidateCount, 0),
     hardFailureRejectedCandidateCount: sections.reduce(
       (sum, section) => sum + section.hardFailureRejectedCandidateCount,
@@ -309,6 +316,7 @@ function chooseRepresentative(
     startTick: best.section.startTick,
     durationTicks: best.section.durationTicks,
     candidateCount: best.section.candidateCount,
+    phase12PhraseFamilyCandidateCount: best.section.phase12PhraseFamilyCandidateCount,
     selectedCandidateIndex: best.section.selectedCandidateIndex,
     viableCandidateCount: best.section.viableCandidateCount,
     hardFailureRejectedCandidateCount: best.section.hardFailureRejectedCandidateCount,

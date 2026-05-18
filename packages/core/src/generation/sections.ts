@@ -20,6 +20,7 @@ import { addSubjectEntry, chooseAnswerKind } from "./entries.js";
 import { evaluateCandidate } from "./evaluation.js";
 import { buildHarmonicPlan, cadenceKindForSection } from "./harmony.js";
 import { isModalMode, tonicPitchClass, transposeKey } from "./key.js";
+import { melodicRoleForScaleDegree } from "./pitch.js";
 import {
   compareNoteEvents,
   ENTRY_SPACING_TICKS,
@@ -638,6 +639,10 @@ export function chooseContinuationSection(
     selectionModel === "phase10-section-local-planner"
       ? phase10SectionGrammarCandidateStartIndex(state)
       : candidates.length;
+  const phraseFamilyCandidateStart =
+    selectionModel === "phase10-section-local-planner"
+      ? phase12PhraseFamilyCandidateStartIndex(state)
+      : candidates.length;
   let bestIndex = bestContinuationCandidateIndex(
     evaluations.slice(0, baselineCandidateCount),
     selectionModel === "phase10-section-local-planner" ? "phase10-oracle-selection" : selectionModel,
@@ -654,10 +659,16 @@ export function chooseContinuationSection(
     const isSectionLocalCandidate =
       selectionModel === "phase10-section-local-planner" && index >= baselineCandidateCount;
     const isSectionGrammarCandidate =
-      selectionModel === "phase10-section-local-planner" && index >= sectionGrammarCandidateStart;
+      selectionModel === "phase10-section-local-planner" &&
+      index >= sectionGrammarCandidateStart &&
+      index < phraseFamilyCandidateStart;
+    const isPhraseFamilyCandidate =
+      selectionModel === "phase10-section-local-planner" && index >= phraseFamilyCandidateStart;
     if (
       selectionModel === "phase10-section-local-planner" &&
-      (!isSectionLocalCandidate || (index >= selectableCandidateCount && !isSectionGrammarCandidate))
+      (!isSectionLocalCandidate ||
+        isPhraseFamilyCandidate ||
+        (index >= selectableCandidateCount && !isSectionGrammarCandidate))
     ) {
       continue;
     }
@@ -697,6 +708,7 @@ export function chooseContinuationSection(
     baselineCandidateCount,
     selectableCandidateCount,
     sectionGrammarCandidateStart,
+    phraseFamilyCandidateStart,
     baselineEvaluation,
     historyContext,
     selectionModel,
@@ -713,6 +725,8 @@ export function chooseContinuationSection(
       durationTicks: sectionDurationTicks,
       evaluations,
       selectedCandidateIndex: bestIndex,
+      phase12PhraseFamilyCandidateCount:
+        selectionModel === "phase10-section-local-planner" ? candidates.length - phraseFamilyCandidateStart : 0,
       stateHistory: [...stateHistory.slice(0, -1), selectedState],
     }),
   };
@@ -725,6 +739,7 @@ function avoidShortAlternatingPhraseSelection(input: {
   baselineCandidateCount: number;
   selectableCandidateCount: number;
   sectionGrammarCandidateStart: number;
+  phraseFamilyCandidateStart: number;
   baselineEvaluation: CandidateEvaluation;
   historyContext: HistoryAwareSelectionContext;
   selectionModel: SelectionModel;
@@ -743,8 +758,10 @@ function avoidShortAlternatingPhraseSelection(input: {
 
   for (const [index, evaluation] of input.evaluations.entries()) {
     const isSectionLocalCandidate = index >= input.baselineCandidateCount;
-    const isSectionGrammarCandidate = index >= input.sectionGrammarCandidateStart;
-    if (index >= input.selectableCandidateCount && !isSectionGrammarCandidate) {
+    const isSectionGrammarCandidate =
+      index >= input.sectionGrammarCandidateStart && index < input.phraseFamilyCandidateStart;
+    const isPhraseFamilyCandidate = index >= input.phraseFamilyCandidateStart;
+    if (isPhraseFamilyCandidate || (index >= input.selectableCandidateCount && !isSectionGrammarCandidate)) {
       continue;
     }
     if (evaluation.hardFailures.length > 0) {
@@ -798,6 +815,10 @@ function phase10SectionGrammarCandidateStartIndex(state: FugueState): number {
   }
 
   return baselineContinuationCandidateCount(state) * 3;
+}
+
+function phase12PhraseFamilyCandidateStartIndex(state: FugueState): number {
+  return phase10SectionGrammarCandidateStartIndex(state) + 4;
 }
 
 function selectionScore(evaluation: CandidateEvaluation, selectionModel: SelectionModel): number {
@@ -945,6 +966,7 @@ export function buildContinuationCandidates(
   const sectionLocalPlannerCandidates: Exposition[] = [];
   const registerPlannerCandidates: Exposition[] = [];
   const sectionGrammarCandidates: Exposition[] = [];
+  const phraseFamilyOracleCandidates: Exposition[] = [];
   const includeSectionLocalPlannerCandidates = selectionModel === "phase10-section-local-planner";
   const phraseSubject = subject;
 
@@ -1041,11 +1063,15 @@ export function buildContinuationCandidates(
     sectionGrammarCandidates.push(
       ...buildSectionGrammarOracleCandidates(subject, keySignature, state, startTick, sectionDurationTicks),
     );
+    phraseFamilyOracleCandidates.push(
+      ...buildPhase12PhraseFamilyOracleCandidates(subject, keySignature, state, startTick, sectionDurationTicks),
+    );
   }
 
   candidates.push(...sectionLocalPlannerCandidates);
   candidates.push(...registerPlannerCandidates);
   candidates.push(...sectionGrammarCandidates);
+  candidates.push(...phraseFamilyOracleCandidates);
 
   return candidates.length === 0
     ? [
@@ -1102,6 +1128,122 @@ function buildSectionGrammarOracleCandidates(
   }
 
   return candidates;
+}
+
+function buildPhase12PhraseFamilyOracleCandidates(
+  subject: readonly SubjectNote[],
+  keySignature: KeySignature,
+  state: FugueState,
+  startTick: number,
+  sectionDurationTicks: number,
+): Exposition[] {
+  const subjectVariation = deriveSubjectStem(subject, [0, 2, 1, 3, 4, 2, 3, 1]);
+  const modalVariation = deriveSubjectStem(subject, [0, 2, 3, 1, 4, 3, 1, 0]);
+  const fragmentVariation = deriveSubjectStem(subject.slice(0, 4), [0, 2, 1, 3]);
+
+  if (state === "episode") {
+    return [
+      buildContinuationSection(fragmentVariation, {
+        state,
+        voice: "alto",
+        form: "subject-fragment",
+        startTick,
+        globalKey: keySignature,
+        localKey: transposeKey(keySignature, 5),
+        targetKey: transposeKey(keySignature, 7),
+        supportDurationTicks: Math.min(sectionDurationTicks, subjectDuration(fragmentVariation)),
+        sectionDurationTicks,
+        styleProfile: "hybrid",
+        sequencePattern: "circle-fifths",
+        fragmentTransform: "inversion",
+        continuityVoiceCount: 2,
+        continuityVoiceOrder: registerBlendedContinuityVoiceOrder("alto"),
+      }),
+      buildContinuationSection(deriveSubjectStem(subject.slice(0, 4), [0, 3, 1, 2]), {
+        state,
+        voice: "tenor",
+        form: "subject-fragment",
+        startTick,
+        globalKey: keySignature,
+        localKey: transposeKey(keySignature, 7),
+        targetKey: transposeKey(keySignature, 5),
+        supportDurationTicks: Math.min(sectionDurationTicks, subjectDuration(fragmentVariation)),
+        sectionDurationTicks,
+        styleProfile: "strict-classical",
+        sequencePattern: "descending-step",
+        fragmentTransform: "contrary-motion",
+        continuityVoiceCount: 2,
+        continuityVoiceOrder: registerBlendedContinuityVoiceOrder("tenor"),
+      }),
+    ];
+  }
+
+  if (state === "subject-return") {
+    const returnSubject = isModalMode(keySignature.mode) ? modalVariation : subjectVariation;
+    return [
+      buildContinuationSection(returnSubject, {
+        state,
+        voice: "alto",
+        form: "subject",
+        startTick,
+        globalKey: keySignature,
+        localKey: keySignature,
+        targetKey: keySignature,
+        supportDurationTicks: subjectDuration(returnSubject),
+        sectionDurationTicks,
+        styleProfile: isModalMode(keySignature.mode) ? "hybrid" : "strict-classical",
+        continuityVoiceCount: 2,
+        continuityVoiceOrder: registerBlendedContinuityVoiceOrder("alto"),
+      }),
+      buildContinuationSection(subjectVariation, {
+        state,
+        voice: "tenor",
+        form: "subject",
+        startTick,
+        globalKey: keySignature,
+        localKey: transposeKey(keySignature, 7),
+        targetKey: transposeKey(keySignature, 7),
+        supportDurationTicks: subjectDuration(subjectVariation),
+        sectionDurationTicks,
+        styleProfile: "hybrid",
+        continuityVoiceCount: 2,
+        continuityVoiceOrder: registerBlendedContinuityVoiceOrder("tenor"),
+      }),
+    ];
+  }
+
+  return [
+    buildStrettoSection(subjectVariation.slice(0, 6), {
+      state: "stretto-like",
+      firstVoice: "soprano",
+      secondVoice: "tenor",
+      startTick,
+      globalKey: keySignature,
+      sectionDurationTicks,
+      styleProfile: "hybrid",
+    }),
+    buildStrettoSection(modalVariation.slice(0, 6), {
+      state: "stretto-like",
+      firstVoice: "bass",
+      secondVoice: "alto",
+      startTick,
+      globalKey: keySignature,
+      sectionDurationTicks,
+      styleProfile: isModalMode(keySignature.mode) ? "hybrid" : "strict-classical",
+    }),
+  ];
+}
+
+function deriveSubjectStem(subject: readonly SubjectNote[], degreePattern: readonly number[]): SubjectNote[] {
+  return subject.slice(0, degreePattern.length).map((note, index) => {
+    const scaleDegree = degreePattern[index]!;
+    return {
+      ...note,
+      scaleDegree,
+      importantTone: scaleDegree === 0 || scaleDegree === 4 || index === degreePattern.length - 1,
+      melodicRole: melodicRoleForScaleDegree(scaleDegree),
+    };
+  });
 }
 
 function buildEpisodeGrammarOracleCandidates(
