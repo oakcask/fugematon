@@ -1,6 +1,12 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import type { CandidatePoolOracleSummary, FugueState, GenerationDiagnostics, SelectionModel } from "@fugematon/core";
+import type {
+  CandidatePoolOracleSummary,
+  FugueState,
+  GenerationDiagnostics,
+  GenerationOutput,
+  SelectionModel,
+} from "@fugematon/core";
 import {
   compareDiagnosticsToReferenceProfile,
   evaluatePhase6Diagnostics,
@@ -56,26 +62,16 @@ export async function writeReviewBundle(
       join(outDirectory, midiFile),
       exportMidi(output.events, { seed, performanceProfileId: performanceProfile.id }),
     );
-    const referenceComparison = compareDiagnosticsToReferenceProfile(output.diagnostics);
-    referenceComparisons.push(referenceComparison);
-    summarySeeds.push({
+    const { summarySeed, referenceComparison } = createReviewSummarySeed({
       seed,
       category,
       diagnosticsFile,
       midiFile,
       performanceProfile,
-      diagnosticsSummary: summarizeDiagnostics(output.diagnostics),
-      referenceComparison,
-      phase59Gate: evaluatePhase59Diagnostics(seed, output.diagnostics),
-      phase510Gate: evaluatePhase510Diagnostics(seed, output.diagnostics),
-      phase511Gate: evaluatePhase511Diagnostics(seed, output.diagnostics),
-      phase6Gate: evaluatePhase6Diagnostics(seed, output.diagnostics),
-      phase7Gate: evaluatePhase7Diagnostics(seed, output.diagnostics),
-      phase7BGate: evaluatePhase7BGatePolicy(seed, output.diagnostics, {
-        manualListeningCategory: category,
-        manualListeningJudgement: "not-reviewed",
-      }),
+      output,
     });
+    referenceComparisons.push(referenceComparison);
+    summarySeeds.push(summarySeed);
     listeningReview.seeds.push(createListeningSeedReview(seed, category, diagnosticsFile, midiFile));
   }
 
@@ -161,6 +157,50 @@ type ReviewSummarySeed = {
   phase7Gate: Phase7GateResult;
   phase7BGate: Phase7BGatePolicyResult;
 };
+
+function createReviewSummarySeed({
+  seed,
+  category,
+  diagnosticsFile,
+  midiFile,
+  performanceProfile,
+  output,
+}: {
+  seed: string;
+  category: string;
+  diagnosticsFile: string;
+  midiFile: string;
+  performanceProfile: PerformanceProfileMetadata;
+  output: GenerationOutput;
+}): {
+  summarySeed: ReviewSummarySeed;
+  referenceComparison: ReferenceDiagnosticsComparison;
+} {
+  const diagnostics = output.diagnostics;
+  const referenceComparison = compareDiagnosticsToReferenceProfile(diagnostics);
+
+  return {
+    referenceComparison,
+    summarySeed: {
+      seed,
+      category,
+      diagnosticsFile,
+      midiFile,
+      performanceProfile,
+      diagnosticsSummary: summarizeDiagnostics(diagnostics),
+      referenceComparison,
+      phase59Gate: evaluatePhase59Diagnostics(seed, diagnostics),
+      phase510Gate: evaluatePhase510Diagnostics(seed, diagnostics),
+      phase511Gate: evaluatePhase511Diagnostics(seed, diagnostics),
+      phase6Gate: evaluatePhase6Diagnostics(seed, diagnostics),
+      phase7Gate: evaluatePhase7Diagnostics(seed, diagnostics),
+      phase7BGate: evaluatePhase7BGatePolicy(seed, diagnostics, {
+        manualListeningCategory: category,
+        manualListeningJudgement: "not-reviewed",
+      }),
+    },
+  };
+}
 
 type AbReviewComparisonSummary = {
   schemaVersion: 1;
