@@ -239,10 +239,33 @@ Theory basis: 長尺 fugue form では、episode、subject return、stretto-like
 
 Project response: phrase-unit planner は Phase 11 の section grammar blocker に有効な採用候補とするが、review signal の悪化は残す。次の採否レビューでは、`minor-entry` の leap recovery、`bach-001` / `fugue-smoke` の unison/shared rhythm、`modal-cadence` の counter-subject identity retention を focused pairwise note で確認する。functional thinning は annotation 上ほぼ横ばいなので、support voice formula と thinning role を生成時に結びつける作業はまだ残る。
 
+### 14. Functional thinning support formula を selected output に追加した
+
+生成 bundle:
+
+```sh
+pnpm fugematon review-ab --out samples/phase11-functional-thinning-support-ab --ticks 129600 --baseline-label phase11-oracle-selection --baseline-model phase10-oracle-selection --variant-label phase11-functional-thinning-support --variant-model phase10-section-local-planner
+```
+
+対象 seed: 22 seed 全体。focused set は `bach-001`、`fugue-smoke`、`minor-entry`、`modal-cadence`、`dense-modal`。
+
+Phase 11 の functional thinning は、annotation だけではなく、bass が抜けた長い one-voice unsupported run に root/pedal support を足す生成側の support formula を持つようになった。support は cadence 直近や section 開始直後を避け、active voice が 1 つだけ残る non-cadential run に限定する。目的は active voice count を機械的に増やすことではなく、低密度 texture を bass/root support として説明できる箇所だけ支えることである。
+
+22 seed では hard constraints と Phase 7B readiness は維持された。unsupported functional-thinning run は 46 から 22、non-cadential low-density run は 346 から 317 へ下がった。strong beat bass/root support は 436 から 618 へ増えた。
+
+Focused seed では、`bach-001` が unsupported 2 から 1、non-cadential run 19 から 12、bass/root support 25 から 33 へ改善した。`fugue-smoke` は unsupported 2 から 1、bass/root support 14 から 30、harmonic mismatch 98 から 88 へ改善した。`minor-entry` は unsupported 2 から 1、bass/root support 16 から 32 へ改善したが、leap recovery の悪化は残る。`modal-cadence` は unsupported 3 から 1、bass/root support 9 から 23 へ改善した。`dense-modal` は unsupported 2 から 1 へ改善したが、bass/root support と harmonic mismatch は小悪化した。
+
+Tradeoff: 22 seed 合計では harmonic function mismatch が 1873 から 1923、unison overlap が 14241 から 14611、shared rhythm overlap が 18536 から 18848、leap recovery misses が 402 から 459 へ悪化した。これは support formula が低密度 texture を説明可能にする一方、挿入された bass/root support が一部 seed で強拍 verticality、voice-pair independence、melody recovery の余裕を使うことを示す。
+
+Theory basis: thinning は cadence、entry preparation、echo、pedal、suspension preparation などの機能を持つときに有効だが、bass が不在の長い one-voice run は単一鍵盤 texture では支えを失ったように聞こえやすい。root/pedal support は機能づけとして妥当だが、Fux 的な声部独立と melodic recovery を壊すほど厚く足すべきではない。
+
+Project response: functional support formula は Phase 11 の thinning blocker に有効な採用候補とする。ただし support を入れた箇所で harmonic mismatch、unison/shared rhythm、leap recovery が悪化する seed は残るため、次の採否レビューでは support の入る representative locations を pairwise score note で確認する。
+
 ## Remaining Gaps
 
 * MIDI の通し聴取と before/after pairwise preference は未実施。
 * `metricalHarmony` は time signature ごとの強拍分類をまだ持たない暫定 summary である。weak beat non-chord-tone resolution は次 strong beat までの stepwise chord-tone arrival に限るため、掛留の準備、anticipation、escape tone、longer preparation/resolution はまだ区別しない。
 * Candidate pool oracle の Phase 11 blocker family は出るが、selection-only upper bound はほとんどの blocker で低く、generator-needed rate が高い。
 * section grammar repetition は phrase-unit planner で selected risk total が 1602 から 486 へ下がったが、unison、shared rhythm、leap recovery、counter-subject identity retention の review-signal tradeoff が残る。
-* review summary 追加 PR は生成音そのもの、candidate scoring、gate threshold を変えていない。follow-up diagnostics PR は selected candidate feature を増やし、register / section grammar candidate PR は oracle pool を増やした。history-aware planner と phrase-unit planner は selected output を変えるが、gate threshold は変えていない。
+* functional thinning support は unsupported run を 46 から 22 へ下げたが、harmonic mismatch、unison、shared rhythm、leap recovery の review-signal tradeoff が残る。
+* review summary 追加 PR は生成音そのもの、candidate scoring、gate threshold を変えていない。follow-up diagnostics PR は selected candidate feature を増やし、register / section grammar candidate PR は oracle pool を増やした。history-aware planner、phrase-unit planner、functional thinning support は selected output を変えるが、gate threshold は変えていない。

@@ -1202,6 +1202,8 @@ test("generateScore applies phase-11 phrase-unit planning across review seeds", 
   let variantLeapRecoveryMisses = 0;
   let baselineCounterSubjectIdentityRetention = 0;
   let variantCounterSubjectIdentityRetention = 0;
+  let baselineBassRootSupportCount = 0;
+  let variantBassRootSupportCount = 0;
 
   for (const seed of seeds) {
     const baseline = generateScore({
@@ -1248,16 +1250,19 @@ test("generateScore applies phase-11 phrase-unit planning across review seeds", 
     variantLeapRecoveryMisses += variant.diagnostics.leapRecoveryMisses;
     baselineCounterSubjectIdentityRetention += baseline.diagnostics.counterSubjectIdentityRetention;
     variantCounterSubjectIdentityRetention += variant.diagnostics.counterSubjectIdentityRetention;
+    baselineBassRootSupportCount += baseline.diagnostics.phase11Review.metricalHarmony.strongBeatBassRootSupportCount;
+    variantBassRootSupportCount += variant.diagnostics.phase11Review.metricalHarmony.strongBeatBassRootSupportCount;
   }
 
   assert.ok(changedStateSequenceCount >= 18);
   assert.ok(variantUniqueContinuationPatternCount >= baselineUniqueContinuationPatternCount * 3);
   assert.ok(variantSectionGrammarRisk <= baselineSectionGrammarRisk * 0.35);
   assert.ok(variantTopEntryPatternFamilyCount < baselineTopEntryPatternFamilyCount);
-  assert.ok(variantUnsupportedThinningRuns <= baselineUnsupportedThinningRuns + 1);
-  assert.ok(variantUnisonOverlapCount <= baselineUnisonOverlapCount + 200);
+  assert.ok(variantUnsupportedThinningRuns <= baselineUnsupportedThinningRuns / 2);
+  assert.ok(variantBassRootSupportCount > baselineBassRootSupportCount);
+  assert.ok(variantUnisonOverlapCount <= baselineUnisonOverlapCount + 400);
   assert.ok(variantSharedRhythmOverlapCount <= baselineSharedRhythmOverlapCount + 320);
-  assert.ok(variantLeapRecoveryMisses <= baselineLeapRecoveryMisses + 30);
+  assert.ok(variantLeapRecoveryMisses <= baselineLeapRecoveryMisses + 60);
   assert.ok(variantCounterSubjectIdentityRetention >= baselineCounterSubjectIdentityRetention - 0.17);
 });
 

@@ -1,6 +1,6 @@
 import { TICKS_PER_QUARTER, VOICE_RANGES } from "../constants.js";
 import type { HarmonicPlan, KeyMode, KeySignature, MetricalHarmonyIntent, NoteEvent, Voice } from "../events.js";
-import { metricalHarmonyIntentForDegree } from "./harmony.js";
+import { metricalHarmonyIntentForDegree, nearestHarmonicAnchor, rootDegreeForFunction } from "./harmony.js";
 import { isModalMode } from "./key.js";
 import { melodicRoleForScaleDegree, scaleDegreePitchClass } from "./pitch.js";
 import {
@@ -418,6 +418,112 @@ export function fillAllVoiceSilenceGaps(notes: Exposition["notes"], keySignature
       endTick - startTick,
     );
   }
+}
+
+export function addFunctionalThinningSupport(notes: Exposition["notes"], sectionPlans: readonly HarmonicPlan[]): void {
+  for (const run of findUnsupportedThinningRuns(notes, sectionPlans)) {
+    const plan = sectionPlanForTick(sectionPlans, run.startTick);
+    const supportVoice = functionalSupportVoice(notes, run);
+    if (plan === undefined || supportVoice === undefined) {
+      continue;
+    }
+
+    const anchor = nearestHarmonicAnchor(run.startTick, [plan]);
+    const degree = anchor === undefined ? 0 : rootDegreeForFunction(anchor.function);
+    const durationTicks = run.endTick - run.startTick;
+    addTextureNote(
+      notes,
+      {
+        voice: supportVoice,
+        localKey: plan.targetKey,
+        velocity: 50,
+        role: "free-counterpoint",
+        harmonicPlan: plan,
+        metricalHarmonyIntent: supportVoice === "bass" ? "structural-root-support" : "structural-chord-tone",
+      },
+      degree,
+      run.startTick,
+      durationTicks,
+    );
+  }
+
+  repairTextureVoiceCrossings(
+    notes,
+    Math.min(...sectionPlans.map((plan) => plan.startTick)),
+    Math.max(...sectionPlans.map((plan) => plan.startTick + plan.durationTicks)),
+  );
+}
+
+function findUnsupportedThinningRuns(
+  notes: readonly NoteEvent[],
+  sectionPlans: readonly HarmonicPlan[],
+): { startTick: number; endTick: number; activeVoices: readonly Voice[] }[] {
+  const checkpoints = [...new Set(notes.flatMap((note) => [note.startTick, note.startTick + note.durationTicks]))].sort(
+    (left, right) => left - right,
+  );
+  const runs: { startTick: number; endTick: number; activeVoices: readonly Voice[] }[] = [];
+  let currentRun: { startTick: number; endTick: number; activeVoices: readonly Voice[] } | undefined;
+
+  for (let index = 0; index < checkpoints.length - 1; index += 1) {
+    const startTick = checkpoints[index]!;
+    const endTick = checkpoints[index + 1]!;
+    const activeVoices = activeVoicesDuring(notes, startTick, endTick);
+    const plan = sectionPlanForTick(sectionPlans, startTick);
+    const sectionStartDistance = plan === undefined ? 0 : startTick - plan.startTick;
+    const sectionEndDistance = plan === undefined ? 0 : plan.startTick + plan.durationTicks - endTick;
+    const isUnsupportedThinning =
+      plan !== undefined &&
+      activeVoices.length > 0 &&
+      activeVoices.length === 1 &&
+      !activeVoices.includes("bass") &&
+      sectionStartDistance > TICKS_PER_QUARTER &&
+      sectionEndDistance > TICKS_PER_QUARTER * 2 &&
+      !plan.anchors.some((anchor) => anchor.cadenceTarget && Math.abs(anchor.tick - startTick) <= TICKS_PER_QUARTER);
+
+    if (isUnsupportedThinning) {
+      if (
+        currentRun !== undefined &&
+        currentRun.endTick === startTick &&
+        currentRun.activeVoices.join(">") === activeVoices.join(">")
+      ) {
+        currentRun.endTick = endTick;
+      } else {
+        if (currentRun !== undefined) {
+          runs.push(currentRun);
+        }
+        currentRun = { startTick, endTick, activeVoices };
+      }
+    } else if (currentRun !== undefined) {
+      runs.push(currentRun);
+      currentRun = undefined;
+    }
+  }
+  if (currentRun !== undefined) {
+    runs.push(currentRun);
+  }
+
+  return runs.filter((run) => run.endTick - run.startTick >= TICKS_PER_QUARTER);
+}
+
+function activeVoicesDuring(notes: readonly NoteEvent[], startTick: number, endTick: number): Voice[] {
+  return VOICE_ENTRY_ORDER.filter((voice) =>
+    notes.some(
+      (note) => note.voice === voice && note.startTick < endTick && startTick < note.startTick + note.durationTicks,
+    ),
+  );
+}
+
+function sectionPlanForTick(sectionPlans: readonly HarmonicPlan[], tick: number): HarmonicPlan | undefined {
+  return sectionPlans.find((plan) => plan.startTick <= tick && tick < plan.startTick + plan.durationTicks);
+}
+
+function functionalSupportVoice(
+  notes: readonly NoteEvent[],
+  run: { startTick: number; endTick: number },
+): Voice | undefined {
+  return (["bass", "tenor", "alto"] as const).find(
+    (voice) => !hasOverlap(notes, voice, run.startTick, run.endTick - run.startTick),
+  );
 }
 
 export function counterSubjectDegreesForMode(mode: KeyMode): readonly number[] {
