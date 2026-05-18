@@ -1,27 +1,40 @@
-import { readFile } from "node:fs/promises";
+import { access, readFile } from "node:fs/promises";
 import path from "node:path";
 
 const cwd = process.cwd();
-const { reportPath, maxSeconds } = parseArguments(process.argv.slice(2));
-const report = await readFile(reportPath, "utf8");
-const testCases = parseJUnitTestCases(report);
-const slowTestCases = testCases.filter((testCase) => testCase.seconds > maxSeconds);
+const isGitHubActions = process.env.GITHUB_ACTIONS === "true";
 
-if (slowTestCases.length > 0) {
-  console.error(`Slow test files exceeded the ${maxSeconds.toFixed(2)}s budget:`);
-  for (const testCase of slowTestCases.toSorted((left, right) => right.seconds - left.seconds)) {
-    console.error(`- ${testCase.name}: ${testCase.seconds.toFixed(2)}s`);
-  }
-  console.error("\nSplit slow test files so node --test can distribute the work across more test processes.");
-}
-
-console.log("JUnit test file durations:");
-for (const testCase of testCases.toSorted((left, right) => right.seconds - left.seconds)) {
-  console.log(`- ${testCase.name}: ${testCase.seconds.toFixed(2)}s`);
-}
-
-if (slowTestCases.length > 0) {
+try {
+  await main();
+} catch (error) {
+  reportScriptError(error);
   process.exit(1);
+}
+
+async function main() {
+  const { reportPath, maxSeconds } = parseArguments(process.argv.slice(2));
+  const report = await readFile(reportPath, "utf8");
+  const testCases = parseJUnitTestCases(report);
+  const slowTestCases = testCases.filter((testCase) => testCase.seconds > maxSeconds);
+
+  if (slowTestCases.length > 0) {
+    console.error(`Slow test files exceeded the ${maxSeconds.toFixed(2)}s budget:`);
+    const sortedSlowTestCases = slowTestCases.toSorted((left, right) => right.seconds - left.seconds);
+    for (const testCase of sortedSlowTestCases) {
+      console.error(`- ${testCase.name}: ${testCase.seconds.toFixed(2)}s`);
+      await reportSlowTestCase(testCase, maxSeconds);
+    }
+    console.error("\nSplit slow test files so node --test can distribute the work across more test processes.");
+  }
+
+  console.log("JUnit test file durations:");
+  for (const testCase of testCases.toSorted((left, right) => right.seconds - left.seconds)) {
+    console.log(`- ${testCase.name}: ${testCase.seconds.toFixed(2)}s`);
+  }
+
+  if (slowTestCases.length > 0) {
+    process.exit(1);
+  }
 }
 
 function parseJUnitTestCases(xml) {
@@ -66,6 +79,73 @@ function decodeXmlEntities(value) {
 
 function toPosixRelativePath(filePath) {
   return path.relative(cwd, path.resolve(cwd, filePath)).split(path.sep).join("/");
+}
+
+async function reportSlowTestCase(testCase, maxSeconds) {
+  if (!isGitHubActions) {
+    return;
+  }
+
+  const annotationFile = await resolveAnnotationFile(testCase.name);
+  const message = `${testCase.name} took ${testCase.seconds.toFixed(2)}s, exceeding the ${maxSeconds.toFixed(
+    2,
+  )}s node --test file duration budget. Split the file so node --test can distribute the work across more test processes.`;
+
+  writeGitHubErrorAnnotation({
+    file: annotationFile,
+    title: "Slow node --test file",
+    message,
+  });
+}
+
+function reportScriptError(error) {
+  const message = error instanceof Error ? error.message : String(error);
+  if (isGitHubActions) {
+    writeGitHubErrorAnnotation({
+      title: "JUnit duration budget check failed",
+      message,
+    });
+  }
+  console.error(message);
+}
+
+async function resolveAnnotationFile(testCaseName) {
+  const sourceFile = testCaseName.replace(/\/dist\/(.+)\.js$/, "/src/$1.ts");
+  if (await fileExists(sourceFile)) {
+    return sourceFile;
+  }
+  if (await fileExists(testCaseName)) {
+    return testCaseName;
+  }
+  return undefined;
+}
+
+async function fileExists(filePath) {
+  try {
+    await access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function writeGitHubErrorAnnotation({ file, title, message }) {
+  const properties = [
+    file === undefined ? undefined : `file=${escapeGitHubAnnotationProperty(file)}`,
+    `title=${escapeGitHubAnnotationProperty(title)}`,
+  ]
+    .filter((property) => property !== undefined)
+    .join(",");
+
+  console.error(`::error ${properties}::${escapeGitHubAnnotationMessage(message)}`);
+}
+
+function escapeGitHubAnnotationProperty(value) {
+  return escapeGitHubAnnotationMessage(value).replaceAll(":", "%3A").replaceAll(",", "%2C");
+}
+
+function escapeGitHubAnnotationMessage(value) {
+  return value.replaceAll("%", "%25").replaceAll("\r", "%0D").replaceAll("\n", "%0A");
 }
 
 function parseArguments(args) {
