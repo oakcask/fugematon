@@ -98,7 +98,8 @@ export function buildFugueScore(
         previousSectionPlans: sectionPlans,
         previousNotes: notes,
         keySignature,
-        preserveSubjectFamily: isModalMode(keySignature.mode),
+        preserveSubjectFamily:
+          isModalMode(keySignature.mode) && latestContinuationPatternRepeatCount(stateTransitions) < 4,
       });
       phraseSectionIndex = 0;
     }
@@ -932,18 +933,24 @@ function preservesSectionLocalGuardrails(
   const baselineMelody = baselineEvaluation.dimensions.melody.features;
   const evaluationSubject = evaluation.dimensions.subjectClarity.features;
   const baselineSubject = baselineEvaluation.dimensions.subjectClarity.features;
+  const evaluationHarmony = evaluation.dimensions.harmony.features;
+  const baselineHarmony = baselineEvaluation.dimensions.harmony.features;
+  const soloTextureAllowance = allowNeutralSoloTexture ? 0 : 4;
 
   return (
     evaluation.hardFailures.length === 0 &&
     selectedSectionSoloTextureRisk(evaluation) <=
-      selectedSectionSoloTextureRisk(baselineEvaluation) - (allowNeutralSoloTexture ? 0 : 4) &&
+      selectedSectionSoloTextureRisk(baselineEvaluation) - soloTextureAllowance &&
     evaluationTexture.samePitchOverlapCount <= baselineTexture.samePitchOverlapCount &&
     evaluationTexture.unisonOverlapCount <= baselineTexture.unisonOverlapCount &&
     evaluationTexture.sharedRhythmOverlapCount <= baselineTexture.sharedRhythmOverlapCount &&
     evaluationTexture.fourBeatOuterVoiceSameDirectionRatio <=
       baselineTexture.fourBeatOuterVoiceSameDirectionRatio + 0.02 &&
     evaluationMelody.leapRecoveryMisses <= baselineMelody.leapRecoveryMisses &&
-    evaluationSubject.counterSubjectIdentityRetention >= baselineSubject.counterSubjectIdentityRetention
+    evaluationSubject.counterSubjectIdentityRetention >= baselineSubject.counterSubjectIdentityRetention &&
+    evaluationHarmony.entrySupportInstabilityCount <= baselineHarmony.entrySupportInstabilityCount &&
+    evaluationHarmony.severeEntryIntervalCount <= baselineHarmony.severeEntryIntervalCount &&
+    evaluationHarmony.unresolvedSevereEntryIntervalCount <= baselineHarmony.unresolvedSevereEntryIntervalCount
   );
 }
 
