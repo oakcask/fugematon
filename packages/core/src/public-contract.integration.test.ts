@@ -97,6 +97,11 @@ test("public diagnostics expose finite candidate score dimensions", () => {
   assert.ok(output.diagnostics.phase11Review.entryPatternFamilies.length > 0);
   assert.ok(output.diagnostics.phase11Review.functionalThinning.unsupportedRunCount >= 0);
   assert.ok(output.diagnostics.phase11Review.metricalHarmony.strongBeatCheckpointCount > 0);
+  assert.equal(output.diagnostics.phase12Review.schemaVersion, 1);
+  assert.ok(output.diagnostics.phase12Review.subjectStemFamilies.length > 0);
+  assert.ok(output.diagnostics.phase12Review.answerTransformFamilies.length > 0);
+  assert.ok(output.diagnostics.phase12Review.phraseFunctions.length > 0);
+  assert.ok(output.diagnostics.phase12Review.sectionStatePatterns.topPatterns.length > 0);
 
   for (const issue of output.diagnostics.issues) {
     assert.equal(issue.severity, "warning");

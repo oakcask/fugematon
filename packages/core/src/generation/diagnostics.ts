@@ -10,6 +10,8 @@ import type {
   NoteRole,
   OrnamentPlacementReasons,
   Phase11ReviewSummary,
+  Phase12PhraseFunction,
+  Phase12ReviewSummary,
   PitchContourMotionSummary,
   PitchContourWindowSummary,
   PlannedEntry,
@@ -67,6 +69,7 @@ export function analyzeScore(
   pitchContourMotion: PitchContourMotionSummary;
   stepwisePattern: StepwisePatternSummary;
   phase11Review: Phase11ReviewSummary;
+  phase12Review: Phase12ReviewSummary;
   ornamentCandidateCount: number;
   ornamentDensity: number;
   ornamentPlacementReasons: OrnamentPlacementReasons;
@@ -279,6 +282,7 @@ function analyzeTextureDiagnostics(
     pitchContourMotion: analyzePitchContourMotion(notes),
     stepwisePattern: analyzeStepwisePattern(notes, sectionPlans),
     phase11Review: analyzePhase11ReviewSummary(notes, subjectEntries, sectionPlans),
+    phase12Review: analyzePhase12ReviewSummary(subjectEntries, sectionPlans),
     ornamentCandidateCount,
     ornamentDensity: roundRatio(ornamentCandidateCount / supportNoteCount),
     ornamentPlacementReasons: analyzeOrnamentPlacementReasons(notes, subjectEntries, sectionPlans),
@@ -307,6 +311,190 @@ function analyzePhase11ReviewSummary(
     entryPatternFamilies: summarizeEntryPatternFamilies(subjectEntries),
     metricalHarmony: summarizeMetricalHarmony(notes, verticalities, sectionPlans),
   };
+}
+
+function analyzePhase12ReviewSummary(
+  subjectEntries: readonly PlannedEntry[],
+  sectionPlans: readonly HarmonicPlan[],
+): Phase12ReviewSummary {
+  const entryPatternFamilies = summarizeEntryPatternFamilies(subjectEntries);
+  const topEntryFamilyCount = maximum(entryPatternFamilies.map((family) => family.count));
+
+  return {
+    schemaVersion: 1,
+    entryPatternFamilyConcentration: {
+      entryCount: subjectEntries.length,
+      uniqueFamilyCount: entryPatternFamilies.length,
+      topFamilyCount: topEntryFamilyCount,
+      topFamilyShare: roundRatio(topEntryFamilyCount / Math.max(1, subjectEntries.length)),
+    },
+    subjectStemFamilies: summarizePhase12SubjectStemFamilies(subjectEntries),
+    answerTransformFamilies: summarizePhase12AnswerTransformFamilies(subjectEntries),
+    fragmentDerivations: summarizePhase12FragmentDerivations(sectionPlans),
+    phraseFunctions: summarizePhase12PhraseFunctions(sectionPlans),
+    sectionStatePatterns: summarizePhase12SectionStatePatterns(sectionPlans),
+  };
+}
+
+function summarizePhase12SubjectStemFamilies(
+  subjectEntries: readonly PlannedEntry[],
+): Phase12ReviewSummary["subjectStemFamilies"] {
+  const stemEntries = subjectEntries.filter(
+    (entry): entry is PlannedEntry & { form: "subject" | "subject-fragment" } =>
+      entry.form === "subject" || entry.form === "subject-fragment",
+  );
+  const counts = new Map<string, { form: "subject" | "subject-fragment"; pattern: number[]; count: number }>();
+
+  for (const entry of stemEntries) {
+    const pattern = [...entry.expectedDegreePattern];
+    const key = `${entry.form}:${pattern.join("-")}`;
+    const current = counts.get(key);
+    if (current === undefined) {
+      counts.set(key, { form: entry.form, pattern, count: 1 });
+    } else {
+      current.count += 1;
+    }
+  }
+
+  return [...counts.values()]
+    .map((family) => ({
+      ...family,
+      share: roundRatio(family.count / Math.max(1, stemEntries.length)),
+    }))
+    .sort(
+      (left, right) =>
+        right.count - left.count ||
+        left.form.localeCompare(right.form) ||
+        left.pattern.join("-").localeCompare(right.pattern.join("-")),
+    )
+    .slice(0, 8);
+}
+
+function summarizePhase12AnswerTransformFamilies(
+  subjectEntries: readonly PlannedEntry[],
+): Phase12ReviewSummary["answerTransformFamilies"] {
+  const answerEntries = subjectEntries.filter((entry) => entry.form === "answer");
+  const counts = new Map<string, { answerKind: "true" | "tonal" | "none"; pattern: number[]; count: number }>();
+
+  for (const entry of answerEntries) {
+    const answerKind = entry.answerKind ?? "none";
+    const pattern = [...entry.expectedDegreePattern];
+    const key = `${answerKind}:${pattern.join("-")}`;
+    const current = counts.get(key);
+    if (current === undefined) {
+      counts.set(key, { answerKind, pattern, count: 1 });
+    } else {
+      current.count += 1;
+    }
+  }
+
+  return [...counts.values()]
+    .map((family) => ({
+      ...family,
+      share: roundRatio(family.count / Math.max(1, answerEntries.length)),
+    }))
+    .sort(
+      (left, right) =>
+        right.count - left.count ||
+        left.answerKind.localeCompare(right.answerKind) ||
+        left.pattern.join("-").localeCompare(right.pattern.join("-")),
+    )
+    .slice(0, 8);
+}
+
+function summarizePhase12FragmentDerivations(
+  sectionPlans: readonly HarmonicPlan[],
+): Phase12ReviewSummary["fragmentDerivations"] {
+  const continuationPlans = sectionPlans.filter((plan) => plan.state !== "exposition");
+  const counts = new Map<
+    string,
+    {
+      transform: "sequence" | "contrary-motion" | "inversion" | "none";
+      phraseFunction: Phase12PhraseFunction;
+      count: number;
+    }
+  >();
+
+  for (const plan of continuationPlans) {
+    const transform = plan.fragmentTransform ?? "none";
+    const phraseFunction = phase12PhraseFunctionForPlan(plan);
+    const key = `${transform}:${phraseFunction}`;
+    const current = counts.get(key);
+    if (current === undefined) {
+      counts.set(key, { transform, phraseFunction, count: 1 });
+    } else {
+      current.count += 1;
+    }
+  }
+
+  return [...counts.values()]
+    .map((derivation) => ({
+      ...derivation,
+      share: roundRatio(derivation.count / Math.max(1, continuationPlans.length)),
+    }))
+    .sort(
+      (left, right) =>
+        right.count - left.count ||
+        left.transform.localeCompare(right.transform) ||
+        left.phraseFunction.localeCompare(right.phraseFunction),
+    );
+}
+
+function summarizePhase12PhraseFunctions(
+  sectionPlans: readonly HarmonicPlan[],
+): Phase12ReviewSummary["phraseFunctions"] {
+  const counts = new Map<Phase12PhraseFunction, number>();
+  for (const plan of sectionPlans) {
+    const phraseFunction = phase12PhraseFunctionForPlan(plan);
+    counts.set(phraseFunction, (counts.get(phraseFunction) ?? 0) + 1);
+  }
+
+  return [...counts.entries()]
+    .map(([phraseFunction, count]) => ({
+      phraseFunction,
+      count,
+      share: roundRatio(count / Math.max(1, sectionPlans.length)),
+    }))
+    .sort((left, right) => right.count - left.count || left.phraseFunction.localeCompare(right.phraseFunction));
+}
+
+function summarizePhase12SectionStatePatterns(
+  sectionPlans: readonly HarmonicPlan[],
+): Phase12ReviewSummary["sectionStatePatterns"] {
+  const states = sectionPlans.filter((plan) => plan.state !== "exposition").map((plan) => plan.state);
+  const patterns = countPatterns(states, PHASE_11_STATE_PATTERN_LENGTH);
+  const totalPatternCount = [...patterns.values()].reduce((sum, count) => sum + count, 0);
+  const topPatterns = [...patterns.entries()]
+    .map(([pattern, count]) => ({
+      pattern: pattern.split(">") as HarmonicPlan["state"][],
+      count,
+      share: roundRatio(count / Math.max(1, totalPatternCount)),
+    }))
+    .sort((left, right) => right.count - left.count || left.pattern.join(">").localeCompare(right.pattern.join(">")))
+    .slice(0, 5);
+
+  return {
+    patternLength: PHASE_11_STATE_PATTERN_LENGTH,
+    uniquePatternCount: patterns.size,
+    mostRepeatedPatternCount: maximum(topPatterns.map((pattern) => pattern.count)),
+    topPatterns,
+  };
+}
+
+function phase12PhraseFunctionForPlan(plan: HarmonicPlan): Phase12PhraseFunction {
+  if (plan.state === "exposition") {
+    return "exposition";
+  }
+  if (plan.state === "stretto-like") {
+    return "stretto-compression";
+  }
+  if (plan.state === "subject-return") {
+    return plan.cadenceKind === "authentic" || plan.cadenceKind === "modal" ? "cadence-extension" : "restatement";
+  }
+  if (plan.fragmentTransform !== undefined || plan.sequencePattern !== undefined) {
+    return "episode-sequence";
+  }
+  return "entry-preparation";
 }
 
 function summarizeAdjacentVoiceIntervals(

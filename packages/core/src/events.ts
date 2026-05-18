@@ -437,6 +437,47 @@ export type Phase11EntryPatternFamilySummary = {
   count: number;
 };
 
+export type Phase12PhraseFunction =
+  | "exposition"
+  | "entry-preparation"
+  | "episode-sequence"
+  | "cadence-extension"
+  | "stretto-compression"
+  | "restatement";
+
+export type Phase12SubjectStemFamilySummary = {
+  form: Extract<EntryForm, "subject" | "subject-fragment">;
+  pattern: number[];
+  count: number;
+  share: number;
+};
+
+export type Phase12AnswerTransformSummary = {
+  answerKind: AnswerKind | "none";
+  pattern: number[];
+  count: number;
+  share: number;
+};
+
+export type Phase12FragmentDerivationSummary = {
+  transform: FragmentTransform | "none";
+  phraseFunction: Phase12PhraseFunction;
+  count: number;
+  share: number;
+};
+
+export type Phase12PhraseFunctionSummary = {
+  phraseFunction: Phase12PhraseFunction;
+  count: number;
+  share: number;
+};
+
+export type Phase12SectionStatePatternSummary = {
+  pattern: FugueState[];
+  count: number;
+  share: number;
+};
+
 export type Phase11MetricalHarmonySummary = {
   strongBeatCheckpointCount: number;
   strongBeatChordToneSupportCount: number;
@@ -464,6 +505,26 @@ export type Phase11ReviewSummary = {
   };
   entryPatternFamilies: Phase11EntryPatternFamilySummary[];
   metricalHarmony: Phase11MetricalHarmonySummary;
+};
+
+export type Phase12ReviewSummary = {
+  schemaVersion: 1;
+  entryPatternFamilyConcentration: {
+    entryCount: number;
+    uniqueFamilyCount: number;
+    topFamilyCount: number;
+    topFamilyShare: number;
+  };
+  subjectStemFamilies: Phase12SubjectStemFamilySummary[];
+  answerTransformFamilies: Phase12AnswerTransformSummary[];
+  fragmentDerivations: Phase12FragmentDerivationSummary[];
+  phraseFunctions: Phase12PhraseFunctionSummary[];
+  sectionStatePatterns: {
+    patternLength: number;
+    uniquePatternCount: number;
+    mostRepeatedPatternCount: number;
+    topPatterns: Phase12SectionStatePatternSummary[];
+  };
 };
 
 export type GenerationDiagnostics = {
@@ -510,6 +571,7 @@ export type GenerationDiagnostics = {
   pitchContourMotion: PitchContourMotionSummary;
   stepwisePattern: StepwisePatternSummary;
   phase11Review: Phase11ReviewSummary;
+  phase12Review: Phase12ReviewSummary;
   ornamentCandidateCount: number;
   ornamentDensity: number;
   ornamentPlacementReasons: OrnamentPlacementReasons;
