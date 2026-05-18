@@ -31,6 +31,15 @@ export const PHASE_12_REPETITION_FOCUSED_SEEDS = [
   "modal-cadence",
   "dense-modal",
 ] as const;
+export const PHASE_13_FOCUSED_SEEDS = [
+  "bach-001",
+  "fugue-smoke",
+  "dense-modal",
+  "modal-cadence",
+  "tight-stretto",
+  "sparse-cadence",
+  "long-arc",
+] as const;
 
 const PHASE_12_REPETITION_REVIEW_SEEDS = [...PHASE_5_REVIEW_SEEDS, ...PHASE_5_11_ROTATION_SEEDS].map(
   ({ seed }) => seed,
@@ -175,6 +184,41 @@ export function assertPhase12FocusedRepetitionAdoption(seeds: readonly string[])
       variant.diagnostics.phase12Review.sectionStatePatterns.uniquePatternCount >
         baseline.diagnostics.phase12Review.sectionStatePatterns.uniquePatternCount,
     );
+  }
+}
+
+export function assertPhase13ReviewPreconditions(seeds: readonly string[]): void {
+  const reviewSeedSet = new Set<string>(PHASE_12_REPETITION_REVIEW_SEEDS);
+
+  for (const seed of seeds) {
+    assert.equal(reviewSeedSet.has(seed), true);
+
+    const first = generateScore({
+      seed,
+      lengthTicks: PHASE_5_LENGTH_TICKS,
+      selectionModel: "phase10-section-local-planner",
+    });
+    const repeated = generateScore({
+      seed,
+      lengthTicks: PHASE_5_LENGTH_TICKS,
+      selectionModel: "phase10-section-local-planner",
+    });
+    const gate = evaluatePhase7BGatePolicy(seed, first.diagnostics);
+
+    assert.deepEqual(repeated.events, first.events);
+    assert.deepEqual(repeated.diagnostics, first.diagnostics);
+    assert.equal(gate.phase8Ready, true);
+    assert.equal(gate.hardConstraintPassed, true);
+    assert.deepEqual(gate.hardFailures, []);
+    assert.equal(first.diagnostics.rangeViolations, 0);
+    assert.equal(first.diagnostics.voiceCrossings, 0);
+    assert.equal(first.diagnostics.subjectIdentityViolations, 0);
+    assert.equal(first.diagnostics.answerPlanViolations, 0);
+    assert.equal(first.diagnostics.keyMetadataMismatches, 0);
+    assert.equal(first.diagnostics.unresolvedDissonanceCount, 0);
+    assert.equal(first.diagnostics.allVoiceSilenceGapCount, 0);
+    assert.equal(first.diagnostics.candidatePoolOracle.schemaVersion, 4);
+    assert.equal(first.diagnostics.phase12Review.schemaVersion, 1);
   }
 }
 

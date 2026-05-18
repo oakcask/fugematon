@@ -653,6 +653,8 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
       "current",
       "--variant-label",
       "candidate",
+      "--performance-profile",
+      "strict-counterpoint",
     ]);
 
     const baselineFiles = await readdir(join(directory, "baseline"));
@@ -766,7 +768,7 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
     assert.ok(variantFiles.includes("summary.json"));
     assert.equal(pairwisePreferences.schemaVersion, 2);
     assert.equal(pairwisePreferences.lengthTicks, 960);
-    assert.deepEqual(pairwisePreferences.performanceProfile, { id: "organ-default", version: 1 });
+    assert.deepEqual(pairwisePreferences.performanceProfile, { id: "strict-counterpoint", version: 1 });
     assert.equal(pairwisePreferences.manualListeningStatus, "not-reviewed");
     assert.equal(pairwisePreferences.manualListeningGap.unlistened, true);
     assert.match(pairwisePreferences.manualListeningGap.note, /no preference judgement/);
@@ -778,14 +780,14 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
       directory: "baseline",
       summaryFile: "baseline/summary.json",
       selectionModel: "baseline",
-      performanceProfile: { id: "organ-default", version: 1 },
+      performanceProfile: { id: "strict-counterpoint", version: 1 },
     });
     assert.deepEqual(comparison.variant, {
       label: "candidate",
       directory: "variant",
       summaryFile: "variant/summary.json",
       selectionModel: "phase10-oracle-selection",
-      performanceProfile: { id: "organ-default", version: 1 },
+      performanceProfile: { id: "strict-counterpoint", version: 1 },
     });
     assert.ok(comparison.seeds.length > 1);
     for (const entry of comparison.seeds) {
