@@ -270,6 +270,7 @@ type GenerationInput = {
   seed: string;
   lengthTicks: number;
   parameters: GenerationParameters;
+  writingProfile?: WritingProfileId;
 };
 
 type GenerationOutput = {
@@ -282,6 +283,8 @@ function generateScore(input: GenerationInput): GenerationOutput;
 
 * diagnostics には、禁則違反数、声域違反数、主題出現数、状態遷移列などを含める。
 * generateScore は同じ input に対して同じ output を返す決定的な関数として扱う。
+* `writingProfile` は作曲制約として扱う。音域、快適レジスタ、奏法適性、dynamic responsiveness など、生成結果に影響する楽器編成上の制約だけを持つ。
+* pan、volume、MIDI program、reverb、SoundFont、WebAudio oscillator などは `GenerationInput` に入れず、演奏またはレンダリング側の profile で扱う。
 
 ## CLI 方針
 
@@ -310,20 +313,24 @@ pnpm fugematon diagnose --seed bach-001 --ticks 7680
   * packages/core
     * UI、WebAudio、Canvas、Node.js 固有 API に依存しない生成エンジン。
     * ブラウザと CLI の両方から使う。
+    * `WritingProfile` を入力として扱うが、MIDI バイナリやレンダリング設定は持たない。
+  * packages/midi
+    * core の `ScoreEvent` と演奏 profile を標準 MIDI ファイルへ変換する。
+    * MIDI track、channel、program change、pan、volume、controller、meta event の責務を閉じ込める。
   * packages/cli
     * core API を呼び出す CLI。
-    * ScoreEvent JSON、MIDI、diagnostics を生成する。
+    * ScoreEvent JSON、diagnostics、MIDI export 呼び出しを担当する。
   * apps/web
     * Vite ベースの Web UI。
     * Canvas ビジュアライザ、WebAudio 再生、操作 UI を持つ。
 * 後続候補：
-  * packages/midi
-    * MIDI エクスポートを core から分離したくなった場合の候補。
-    * 初期は core または cli 内に置き、複雑化したら分離する。
+  * packages/performance
+    * WebAudio と MIDI export が同じ演奏解釈を共有する必要が出た時点で分離する。
+    * `ScoreEvent` と `PerformanceProfile` から `PerformanceEvent` を作る純粋変換を担当する。
   * packages/wasm-core
     * Rust + wasm_bindgen による生成器や PRNG を導入する場合の候補。
     * 初期は作らず、TypeScript 実装で性能や境界を確認してから検討する。
-* core は最初からブラウザと Node.js の両方で動くようにし、DOM、AudioContext、Canvas、fs へ直接依存しない。
+* core は最初からブラウザと Node.js の両方で動くようにし、DOM、AudioContext、Canvas、fs、MIDI encoder へ直接依存しない。
 
 ## パッケージ依存ルール
 
@@ -337,19 +344,27 @@ pnpm fugematon diagnose --seed bach-001 --ticks 7680
     * WebAudio
     * Worker API
     * Node.js の fs / path / process などの実行環境 API
+    * MIDI バイナリ encoder
     * UI フレームワーク
-  * core は deterministic な生成、診断、変換だけを担当する。
+  * core は deterministic な生成、診断、作曲制約上の変換だけを担当する。
+  * `ScoreEvent` の `velocity` は最終 MIDI velocity ではなく、当面は相対的な dynamic emphasis として扱う。
+* packages/midi
+  * Node.js API に依存しない純粋な MIDI encoder を基本にする。
+  * `ScoreEvent`、または後続の `PerformanceEvent` を MIDI バイナリへ変換する責務に限定する。
+  * MIDI channel、program change、pan、volume、controller、track name などは演奏 profile から解決する。
+  * 生成ロジック、diagnostics、score selection は持たない。
 * packages/cli
   * Node.js API に依存してよい。
   * ファイル入出力、標準出力、CI 成果物生成を担当する。
-  * 生成ロジックは持たず、core API を呼ぶ。
+  * 生成ロジックと MIDI encoder は持たず、core API と packages/midi を呼ぶ。
 * apps/web
   * DOM、Canvas、WebAudio、Worker API に依存してよい。
   * 表示、再生、ユーザー操作、ブラウザ上の履歴管理を担当する。
   * 生成ロジックは持たず、core API または Worker 経由で core を呼ぶ。
-* packages/midi
-  * MIDI エクスポートが複雑になった場合に分離する。
-  * core の ScoreEvent を MIDI バイナリへ変換する責務に限定する。
+  * pan、volume、音色、空間、WebAudio oscillator は WebAudio 側の演奏 profile で解決する。
+* packages/performance
+  * 導入する場合は DOM、WebAudio、Node.js API、MIDI encoder に依存しない。
+  * 同じ `PerformanceProfile` から MIDI と WebAudio が共通の velocity curve、articulation、humanize を得るための中間層にする。
 * packages/wasm-core
   * Rust + wasm_bindgen を導入する場合の候補。
   * TypeScript core と API 境界を揃え、置き換えまたは併用できる形を目指す。
@@ -394,6 +409,16 @@ pnpm fugematon diagnose --seed bach-001 --ticks 7680
 
 ## MIDI エクスポート方針
 
+* MIDI export は packages/midi の責務とし、core から分離する。
+* 入力は `ScoreEvent` と `PerformanceProfile` を基本にする。将来 `PerformanceEvent` を導入した場合は、packages/midi は `PerformanceEvent` から MIDI を encode する。
+* `PerformanceProfile` は次のような MIDI 出力向け設定を持つ。
+  * 声部ごとの track name、channel、program、pan、volume。
+  * velocity curve、最小・最大 velocity、accent の効かせ方。
+  * articulation、note length compensation、legato overlap、release。
+  * deterministic humanize の onset range と velocity range。
+  * reverb send や chorus send など、標準 controller に落とせる空間設定。
+* `PerformanceProfile` の変更は MIDI や WebAudio の聴こえ方を変えるが、`ScoreEvent` と `generatorVersion` は変えない。review bundle では使用した performance profile id と version を記録する。
+* `WritingProfile` の変更は生成される pitch、duration、voice assignment、velocity emphasis を変え得るため、生成差分として扱う。
 * 内部の tick 表現は 480 ticks per quarter note を基準にする。
 * MIDI の PPQ も 480 に合わせる。
 * Phase 0-2 ではテンポと拍子は曲中で変更しない。
@@ -405,6 +430,7 @@ pnpm fugematon diagnose --seed bach-001 --ticks 7680
 * parameter-change や state-change は、標準 MIDI 再生には影響しないため、必要に応じてテキスト系メタイベントとして出力する。
 * MIDI エクスポートは、音楽確認用であり、Fugematon 独自の全メタデータを完全保存する形式とは別に考える。
 * Fugematon 独自の完全な再現データは、ScoreEvent 列と seed / parameters を保存する形式で扱う。
+* 初期実装では `organ-default` profile を用意し、既存 MIDI 出力に近い track layout と program を再現する。次に `string-quartet` や `chamber-band` を追加し、楽譜差分なしで聴こえ方を比較できるようにする。
 
 ## Fugematon 再現データ形式
 
