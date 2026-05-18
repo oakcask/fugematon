@@ -6,6 +6,7 @@ on:
       - package.json
       - pnpm-lock.yaml
       - pnpm-workspace.yaml
+      - workflow-scripts/add-node-test-junit-file-attributes.mjs
       - workflow-scripts/check-node-test-junit-budget.mjs
       - tsconfig.json
       - packages/**
@@ -16,11 +17,13 @@ on:
       - package.json
       - pnpm-lock.yaml
       - pnpm-workspace.yaml
+      - workflow-scripts/add-node-test-junit-file-attributes.mjs
       - workflow-scripts/check-node-test-junit-budget.mjs
       - tsconfig.json
       - packages/**
 
 permissions:
+  actions: read
   contents: read
 
 env:
@@ -31,10 +34,22 @@ jobs:
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        shard-id: [1, 2, 3, 4]
 
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - name: Distribute test files
+        id: parallel-test
+        uses: int128/parallel-test-action@27a17b32204e5b7ab0cef7b10f084c82c1ac9a6d # v1.99.0
+        with:
+          test-files: packages/*/src/**/*.test.ts
+          test-report-artifact-name-prefix: node-test-junit-
+          test-report-branch: main
+          shard-count: ${{ strategy.job-total }}
       - name: Setup pnpm
         uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6
         with:
@@ -50,18 +65,31 @@ jobs:
         run: |
           pnpm build
           mkdir -p test-results
-          node --test \
+          sed -e 's#/src/#/dist/#' -e 's#\.ts$#.js#' "$SHARD_SOURCE_FILE" > "$SHARD_DIST_FILE"
+          xargs --no-run-if-empty node --test \
             --test-reporter=junit \
-            --test-reporter-destination=test-results/node-test-junit.xml \
+            --test-reporter-destination="$JUNIT_REPORT" \
             --test-reporter=spec \
             --test-reporter-destination=stdout \
-            packages/*/dist/**/*.test.js
+            < "$SHARD_DIST_FILE"
+        env:
+          JUNIT_REPORT: test-results/node-test-junit-${{ matrix.shard-id }}.xml
+          SHARD_DIST_FILE: test-results/node-test-shard-${{ matrix.shard-id }}.txt
+          SHARD_SOURCE_FILE: ${{ steps.parallel-test.outputs.shards-directory }}/${{ matrix.shard-id }}
+      - name: Add JUnit file attributes
+        if: always()
+        run: |
+          if [ -f "$JUNIT_REPORT" ]; then
+            node workflow-scripts/add-node-test-junit-file-attributes.mjs --junit-report "$JUNIT_REPORT"
+          fi
+        env:
+          JUNIT_REPORT: test-results/node-test-junit-${{ matrix.shard-id }}.xml
       - name: Upload JUnit report
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: node-test-junit
-          path: test-results/node-test-junit.xml
+          name: node-test-junit-${{ matrix.shard-id }}
+          path: test-results/node-test-junit-${{ matrix.shard-id }}.xml
           if-no-files-found: warn
 
   slow-test-files:
@@ -79,7 +107,8 @@ jobs:
       - name: Download JUnit report
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
-          name: node-test-junit
+          pattern: node-test-junit-*
           path: test-results
+          merge-multiple: true
       - name: Check slow test files
-        run: node workflow-scripts/check-node-test-junit-budget.mjs --junit-report test-results/node-test-junit.xml --max-seconds 45
+        run: node workflow-scripts/check-node-test-junit-budget.mjs --junit-report test-results --max-seconds 45

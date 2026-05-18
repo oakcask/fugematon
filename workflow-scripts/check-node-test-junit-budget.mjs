@@ -1,4 +1,4 @@
-import { access, readFile } from "node:fs/promises";
+import { access, readdir, readFile, stat } from "node:fs/promises";
 import path from "node:path";
 
 const cwd = process.cwd();
@@ -13,8 +13,8 @@ try {
 
 async function main() {
   const { reportPath, maxSeconds } = parseArguments(process.argv.slice(2));
-  const report = await readFile(reportPath, "utf8");
-  const testCases = parseJUnitTestCases(report);
+  const reports = await readJUnitReports(reportPath);
+  const testCases = reports.flatMap(({ report }) => parseJUnitTestCases(report));
   const slowTestCases = testCases.filter((testCase) => testCase.seconds > maxSeconds);
 
   if (slowTestCases.length > 0) {
@@ -34,6 +34,49 @@ async function main() {
 
   if (slowTestCases.length > 0) {
     process.exit(1);
+  }
+}
+
+async function readJUnitReports(reportPath) {
+  const reportPaths = await collectJUnitReportPaths(reportPath);
+  const reports = [];
+
+  for (const junitReportPath of reportPaths) {
+    reports.push({
+      report: await readFile(junitReportPath, "utf8"),
+    });
+  }
+
+  return reports;
+}
+
+async function collectJUnitReportPaths(reportPath) {
+  const reportStat = await stat(reportPath);
+  if (!reportStat.isDirectory()) {
+    return [reportPath];
+  }
+
+  const reportPaths = [];
+  await collectXmlFiles(reportPath, reportPaths);
+  reportPaths.sort();
+
+  if (reportPaths.length === 0) {
+    throw new Error(`JUnit report directory did not contain any XML files: ${reportPath}`);
+  }
+
+  return reportPaths;
+}
+
+async function collectXmlFiles(directory, reportPaths) {
+  const entries = await readdir(directory, { withFileTypes: true });
+
+  for (const entry of entries) {
+    const entryPath = path.join(directory, entry.name);
+    if (entry.isDirectory()) {
+      await collectXmlFiles(entryPath, reportPaths);
+    } else if (entry.isFile() && entry.name.endsWith(".xml")) {
+      reportPaths.push(toPosixRelativePath(entryPath));
+    }
   }
 }
 
