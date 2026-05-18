@@ -2,7 +2,7 @@
 
 Phase 12P は、Phase 13 の quality vector review に入る前に、MIDI export と WebAudio preview が同じ演奏プロファイルを使うための実装境界を組み込む infrastructure phase である。
 
-Status: planned. Phase 12P is inserted after Phase 12 and before Phase 13. It should not change selected `ScoreEvent` output, generator scoring, quality diagnostics thresholds, or `generatorVersion`. It may change MIDI/WebAudio rendering because `PerformanceProfile` becomes the source of performance interpretation.
+Status: complete. Phase 12P added a shared performance profile boundary after Phase 12 and before Phase 13. It did not change selected `ScoreEvent` output, generator scoring, quality diagnostics thresholds, or `generatorVersion`. MIDI and WebAudio rendering now resolve through `PerformanceProfile`, and review artifacts retain the profile id and version needed for Phase 13 comparison.
 
 ## Rationale
 
@@ -51,8 +51,18 @@ Phase 13 は Phase 12 baseline の musical defects を `qualityVector` と local
 
 ## Next Work
 
-1. Add `packages/performance` with profile types, default profiles, and `ScoreEvent` to `PerformanceEvent` conversion.
-2. Route MIDI export through the shared performance conversion.
-3. Route WebAudio playback through the same profile interpretation.
-4. Add profile id and version to review artifacts and A/B summaries.
-5. Verify representative Phase 12 scores keep stable `ScoreEvent` output while MIDI/WebAudio rendering uses the selected profile.
+Phase 12P is complete. The next implementation phase is [Phase 13](phase-13.md).
+
+## Implementation Notes
+
+* `packages/performance` defines `PerformanceProfile`, `PerformanceEvent`, `organ-default`, `strict-counterpoint`, and deterministic `ScoreEvent` to `PerformanceEvent` conversion without depending on DOM, WebAudio, Node.js runtime APIs, or the MIDI encoder.
+* MIDI export moved to `packages/midi` and consumes the shared performance conversion. The default `organ-default` profile preserves the existing voice track names, channels, organ programs, and score-derived velocity while adding profile metadata, pan, and volume as rendering data.
+* WebAudio playback uses the same performance conversion for gain, oscillator type, release, and selected profile metadata instead of keeping a separate preview profile.
+* CLI `midi`, `review`, and `review-ab` accept `--performance-profile`; review summaries, A/B summaries, pairwise preference templates, and MIDI metadata record profile id and version.
+* `packages/core` no longer exports the MIDI encoder and remains independent of DOM, WebAudio, Node.js runtime APIs, MIDI encoding, and renderer profile settings.
+
+## Completion Review
+
+* Existing generation tests keep selected `ScoreEvent` output, hard constraints, Phase 7B readiness, schema-compatible diagnostics, reference diagnostics, and candidate-pool oracle shape stable.
+* Default rendering stays close to the Phase 12 listening baseline: WebAudio still derives gain from score velocity and the organ profile, while MIDI keeps the same voice channels and programs.
+* Rendering changes are documented as performance-profile changes, not generation changes. The default MIDI now carries profile metadata plus pan and volume controller events so Phase 13 can reproduce listening conditions.

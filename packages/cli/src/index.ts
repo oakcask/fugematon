@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { writeFile } from "node:fs/promises";
-import { exportMidi, generateScore } from "@fugematon/core";
+import { generateScore } from "@fugematon/core";
+import { exportMidi } from "@fugematon/midi";
 import { helpText, parseArgs } from "./args.js";
 import { writeAbReviewBundle, writeReviewBundle } from "./review.js";
 
@@ -13,7 +14,7 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
   }
 
   if (command.name === "review") {
-    await writeReviewBundle(command.out, command.lengthTicks);
+    await writeReviewBundle(command.out, command.lengthTicks, "baseline", command.performanceProfileId);
     return;
   }
 
@@ -25,6 +26,7 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
       command.variantLabel,
       command.baselineModel,
       command.variantModel,
+      command.performanceProfileId,
     );
     return;
   }
@@ -40,7 +42,10 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
   }
 
   if (command.name === "midi") {
-    await writeFile(command.out, exportMidi(output.events));
+    await writeFile(
+      command.out,
+      exportMidi(output.events, { seed: command.seed, performanceProfileId: command.performanceProfileId }),
+    );
     return;
   }
 

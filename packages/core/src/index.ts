@@ -73,7 +73,6 @@ export type {
   Voice,
 } from "./events.js";
 export { generateScore, normalizeParameters } from "./generate.js";
-export { exportMidi } from "./midi.js";
 export { seedToUint32State, Xoshiro128StarStar } from "./prng.js";
 export type {
   NormalizedReferenceDiagnosticAxis,

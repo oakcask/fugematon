@@ -103,7 +103,9 @@ pnpm build
 
 ## Project Layout
 
-* `packages/core`: deterministic score generation, diagnostics, PRNG, and MIDI export.
+* `packages/core`: deterministic score generation, diagnostics, and PRNG.
+* `packages/performance`: shared performance profile conversion for MIDI and WebAudio rendering.
+* `packages/midi`: standard MIDI export from score events and performance profiles.
 * `packages/cli`: command-line wrapper around the core generator.
 * `packages/web`: Vite app for browser playback and visualization.
 * `docs`: design notes, technical plan, and phase implementation notes.

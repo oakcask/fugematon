@@ -20,7 +20,8 @@ body {
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
 }
 
@@ -44,7 +45,8 @@ button.secondary {
   background: rgba(255, 248, 237, 0.64);
 }
 
-input {
+input,
+select {
   min-width: 0;
   width: 100%;
   border: 1px solid rgba(60, 43, 30, 0.26);
@@ -119,7 +121,7 @@ h1 {
 
 .seed-row {
   display: grid;
-  grid-template-columns: 1fr auto auto;
+  grid-template-columns: 1fr minmax(12rem, auto) auto auto;
   gap: 0.7rem;
   margin-top: 0.65rem;
 }

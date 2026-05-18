@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { DEFAULT_PERFORMANCE_PROFILE_ID } from "@fugematon/performance";
 import { helpText, parseArgs } from "./args.js";
 
 test("parseArgs parses generate command", () => {
@@ -25,7 +26,28 @@ test("parseArgs parses midi command", () => {
     seed: "bach-001",
     lengthTicks: 7680,
     out: "score.mid",
+    performanceProfileId: DEFAULT_PERFORMANCE_PROFILE_ID,
   });
+  assert.deepEqual(
+    parseArgs([
+      "midi",
+      "--seed",
+      "bach-001",
+      "--ticks",
+      "7680",
+      "--out",
+      "score.mid",
+      "--performance-profile",
+      "strict-counterpoint",
+    ]),
+    {
+      name: "midi",
+      seed: "bach-001",
+      lengthTicks: 7680,
+      out: "score.mid",
+      performanceProfileId: "strict-counterpoint",
+    },
+  );
 });
 
 test("parseArgs parses review command", () => {
@@ -33,6 +55,7 @@ test("parseArgs parses review command", () => {
     name: "review",
     lengthTicks: 960,
     out: "review",
+    performanceProfileId: DEFAULT_PERFORMANCE_PROFILE_ID,
   });
   assert.equal(parseArgs(["review", "--out", "review"]).name, "review");
 });
@@ -60,6 +83,7 @@ test("parseArgs parses review-ab command", () => {
       variantLabel: "candidate",
       baselineModel: "baseline",
       variantModel: "phase10-section-local-planner",
+      performanceProfileId: DEFAULT_PERFORMANCE_PROFILE_ID,
     },
   );
   assert.deepEqual(parseArgs(["review-ab", "--out", "phase10-review"]), {
@@ -70,6 +94,7 @@ test("parseArgs parses review-ab command", () => {
     variantLabel: "variant",
     baselineModel: "baseline",
     variantModel: "phase10-oracle-selection",
+    performanceProfileId: DEFAULT_PERFORMANCE_PROFILE_ID,
   });
 });
 
@@ -78,6 +103,7 @@ test("helpText includes the Phase 10 A/B review command", () => {
   assert.match(helpText(), /--baseline-label <label>/);
   assert.match(helpText(), /--variant-label <label>/);
   assert.match(helpText(), /--variant-model baseline\|phase10-oracle-selection\|phase10-section-local-planner/);
+  assert.match(helpText(), /--performance-profile organ-default\|strict-counterpoint/);
 });
 
 test("parseArgs rejects invalid arguments", () => {
@@ -91,6 +117,21 @@ test("parseArgs rejects invalid arguments", () => {
   assert.throws(
     () => parseArgs(["review-ab", "--ticks", "960", "--out", "review", "--variant-model", "unknown"]),
     /--variant-model/,
+  );
+  assert.throws(
+    () =>
+      parseArgs([
+        "midi",
+        "--seed",
+        "bach-001",
+        "--ticks",
+        "960",
+        "--out",
+        "score.mid",
+        "--performance-profile",
+        "unknown",
+      ]),
+    /--performance-profile/,
   );
   assert.throws(() => parseArgs(["generate", "--seed", "bach-001", "--ticks", "0"]), /--ticks/);
 });

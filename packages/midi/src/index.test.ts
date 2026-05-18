@@ -1,25 +1,24 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { NoteEvent } from "./events.js";
-import { generateScore } from "./generate.js";
-import { exportMidi } from "./midi.js";
+import { generateScore, type NoteEvent } from "@fugematon/core";
+import { exportMidi } from "./index.js";
 
 test("exportMidi creates a deterministic standard MIDI file", () => {
   const score = generateScore({ seed: "bach-001", lengthTicks: 7680 });
-  const first = exportMidi(score.events);
-  const second = exportMidi(score.events);
+  const first = exportMidi(score.events, { seed: score.diagnostics.seed });
+  const second = exportMidi(score.events, { seed: score.diagnostics.seed });
 
   assert.deepEqual(first, second);
-  assert.deepEqual([...first.slice(0, 4)].map((code) => String.fromCharCode(code)).join(""), "MThd");
-  assert.deepEqual([...first.slice(14, 18)].map((code) => String.fromCharCode(code)).join(""), "MTrk");
-  assert.equal((first[8] << 8) | first[9], 1);
-  assert.equal((first[10] << 8) | first[11], 5);
+  assert.equal(asAscii(first.slice(0, 4)), "MThd");
+  assert.equal(asAscii(first.slice(14, 18)), "MTrk");
+  assert.equal((first[8]! << 8) | first[9]!, 1);
+  assert.equal((first[10]! << 8) | first[11]!, 5);
   assert.ok(first.length > 100);
 });
 
 test("exportMidi preserves the default voice track layout", () => {
   const score = generateScore({ seed: "fugue-smoke", lengthTicks: 7680 });
-  const midi = exportMidi(score.events);
+  const midi = exportMidi(score.events, { seed: score.diagnostics.seed });
   const tracks = parseMidiTracks(midi);
   const notesByVoice = new Map(
     ["soprano", "alto", "tenor", "bass"].map((voice) => [
@@ -42,6 +41,27 @@ test("exportMidi preserves the default voice track layout", () => {
       { channel: 3, program: 32 },
     ],
   );
+  assert.deepEqual(
+    tracks.slice(1).map((track) => track.controllerChanges),
+    [
+      [
+        { channel: 0, controller: 7, value: 127 },
+        { channel: 0, controller: 10, value: 32 },
+      ],
+      [
+        { channel: 1, controller: 7, value: 127 },
+        { channel: 1, controller: 10, value: 48 },
+      ],
+      [
+        { channel: 2, controller: 7, value: 127 },
+        { channel: 2, controller: 10, value: 80 },
+      ],
+      [
+        { channel: 3, controller: 7, value: 127 },
+        { channel: 3, controller: 10, value: 96 },
+      ],
+    ],
+  );
   for (const [index, voice] of ["soprano", "alto", "tenor", "bass"].entries()) {
     assert.deepEqual(
       tracks[index + 1]!.noteOnVelocities,
@@ -50,9 +70,27 @@ test("exportMidi preserves the default voice track layout", () => {
   }
 });
 
+test("exportMidi writes performance profile metadata", () => {
+  const score = generateScore({ seed: "fugue-smoke", lengthTicks: 7680 });
+  const tracks = parseMidiTracks(exportMidi(score.events, { performanceProfileId: "strict-counterpoint" }));
+
+  assert.ok(tracks[0]!.textEvents.includes("PerformanceProfile strict-counterpoint@1"));
+  assert.deepEqual(
+    tracks.slice(1).map((track) => track.programChange),
+    [
+      { channel: 0, program: 73 },
+      { channel: 1, program: 73 },
+      { channel: 2, program: 73 },
+      { channel: 3, program: 73 },
+    ],
+  );
+});
+
 type ParsedTrack = {
   trackName?: string;
+  textEvents: string[];
   programChange?: { channel: number; program: number };
+  controllerChanges: { channel: number; controller: number; value: number }[];
   noteOnVelocities: number[];
 };
 
@@ -74,7 +112,7 @@ function parseMidiTracks(bytes: Uint8Array): ParsedTrack[] {
 }
 
 function parseMidiTrack(bytes: Uint8Array): ParsedTrack {
-  const track: ParsedTrack = { noteOnVelocities: [] };
+  const track: ParsedTrack = { controllerChanges: [], noteOnVelocities: [], textEvents: [] };
   let offset = 0;
   let runningStatus: number | undefined;
 
@@ -101,6 +139,8 @@ function parseMidiTrack(bytes: Uint8Array): ParsedTrack {
       offset += length.value;
       if (type === 0x03) {
         track.trackName = asAscii(payload);
+      } else if (type === 0x01) {
+        track.textEvents.push(asAscii(payload));
       }
       continue;
     }
@@ -109,7 +149,9 @@ function parseMidiTrack(bytes: Uint8Array): ParsedTrack {
     const data = bytes.slice(offset, offset + dataByteCount);
     offset += dataByteCount;
     const eventKind = status & 0xf0;
-    if (eventKind === 0xc0) {
+    if (eventKind === 0xb0) {
+      track.controllerChanges.push({ channel: status & 0x0f, controller: data[0]!, value: data[1]! });
+    } else if (eventKind === 0xc0) {
       track.programChange = { channel: status & 0x0f, program: data[0]! };
     } else if (eventKind === 0x90 && data[1] !== 0) {
       track.noteOnVelocities.push(data[1]!);

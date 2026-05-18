@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import type { CandidateEvaluation, MetaEvent, NoteEvent, ScoreDimension } from "./index.js";
 import {
-  exportMidi,
   GENERATOR_VERSION,
   generateScore,
   PHASE_5_DIAGNOSTICS_PROFILE,
@@ -138,17 +137,6 @@ test("public subject entry diagnostics correspond to emitted entry notes", () =>
   }
 });
 
-test("public MIDI export is deterministic for generated score events", () => {
-  const output = generateScore({ seed: "midi-contract", lengthTicks: 7680 });
-  const first = exportMidi(output.events);
-  const second = exportMidi(output.events);
-
-  assert.deepEqual(first, second);
-  assert.equal(asAscii(first.slice(0, 4)), "MThd");
-  assert.equal(asAscii(first.slice(14, 18)), "MTrk");
-  assert.ok(first.length > 100);
-});
-
 function assertCandidateEvaluation(evaluation: CandidateEvaluation): void {
   assert.equal(evaluation.featureVersion, 4);
   assert.equal(evaluation.evaluationModelVersion, 10);
@@ -177,10 +165,6 @@ function assertScoreDimension(dimension: ScoreDimension): void {
   for (const value of Object.values(dimension.features)) {
     assert.ok(Number.isFinite(value));
   }
-}
-
-function asAscii(bytes: Uint8Array): string {
-  return String.fromCharCode(...bytes);
 }
 
 function positiveModulo(value: number, divisor: number): number {

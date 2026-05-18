@@ -6,17 +6,11 @@ export type ScheduledNote = {
   stopSecond: number;
   frequency: number;
   gain: number;
+  pan: number;
 };
 
 const START_DELAY_SECONDS = 0.12;
-const RELEASE_SECONDS = 0.08;
 const MASTER_GAIN = 0.68;
-const VOICE_GAINS = {
-  soprano: 0.18,
-  alto: 0.16,
-  tenor: 0.15,
-  bass: 0.2,
-} as const;
 
 export function createScheduledNotes(model: PlaybackModel, startAtSecond: number): ScheduledNote[] {
   return model.notes.map((note) => ({
@@ -24,7 +18,8 @@ export function createScheduledNotes(model: PlaybackModel, startAtSecond: number
     startSecond: startAtSecond + note.startSecond,
     stopSecond: startAtSecond + note.startSecond + note.durationSecond,
     frequency: midiToFrequency(note.pitch),
-    gain: VOICE_GAINS[note.voice] * (note.velocity / 127),
+    gain: note.gain * (note.volume / 127) * (note.velocity / 127),
+    pan: (note.pan - 64) / 63,
   }));
 }
 
@@ -37,6 +32,7 @@ export class ScorePlayer {
   private readonly master: GainNode;
   private readonly activeSources = new Set<OscillatorNode>();
   private readonly activeGains = new Set<GainNode>();
+  private readonly activePanners = new Set<StereoPannerNode>();
   private startedAtSecond: number | undefined;
   private durationSecond = 0;
 
@@ -85,8 +81,13 @@ export class ScorePlayer {
       gain.disconnect();
     }
 
+    for (const panner of this.activePanners) {
+      panner.disconnect();
+    }
+
     this.activeSources.clear();
     this.activeGains.clear();
+    this.activePanners.clear();
     this.startedAtSecond = undefined;
     this.durationSecond = 0;
   }
@@ -94,30 +95,35 @@ export class ScorePlayer {
   private scheduleOrganNote(scheduled: ScheduledNote): void {
     const oscillator = this.context.createOscillator();
     const gain = this.context.createGain();
+    const panner = this.context.createStereoPanner();
     const attackEnd = scheduled.startSecond + 0.025;
-    const releaseStart = Math.max(scheduled.startSecond, scheduled.stopSecond - RELEASE_SECONDS);
+    const releaseStart = Math.max(scheduled.startSecond, scheduled.stopSecond - scheduled.note.releaseSeconds);
 
-    oscillator.type = scheduled.note.voice === "bass" ? "sawtooth" : "triangle";
+    oscillator.type = scheduled.note.oscillatorType;
     oscillator.frequency.setValueAtTime(scheduled.frequency, scheduled.startSecond);
 
     gain.gain.setValueAtTime(0, scheduled.startSecond);
     gain.gain.linearRampToValueAtTime(scheduled.gain, attackEnd);
     gain.gain.setValueAtTime(scheduled.gain, releaseStart);
-    gain.gain.linearRampToValueAtTime(0.0001, scheduled.stopSecond + RELEASE_SECONDS);
+    gain.gain.linearRampToValueAtTime(0.0001, scheduled.stopSecond + scheduled.note.releaseSeconds);
+    panner.pan.setValueAtTime(scheduled.pan, scheduled.startSecond);
 
-    oscillator.connect(gain).connect(this.master);
+    oscillator.connect(gain).connect(panner).connect(this.master);
     oscillator.start(scheduled.startSecond);
-    oscillator.stop(scheduled.stopSecond + RELEASE_SECONDS);
+    oscillator.stop(scheduled.stopSecond + scheduled.note.releaseSeconds);
 
     this.activeSources.add(oscillator);
     this.activeGains.add(gain);
+    this.activePanners.add(panner);
     oscillator.addEventListener(
       "ended",
       () => {
         this.activeSources.delete(oscillator);
         this.activeGains.delete(gain);
+        this.activePanners.delete(panner);
         oscillator.disconnect();
         gain.disconnect();
+        panner.disconnect();
       },
       { once: true },
     );

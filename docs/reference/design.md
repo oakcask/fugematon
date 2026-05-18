@@ -131,7 +131,7 @@
 
 ### Phase 12P: performance profile integration
 
-* Phase 12P は、Phase 13 の前に MIDI export と WebAudio preview が同じ `PerformanceProfile` を使うための rendering boundary を組み込む。
+* Phase 12P は完了し、MIDI export と WebAudio preview は同じ `PerformanceProfile` を使う rendering boundary を持つ。
 * `ScoreEvent` は作曲結果として安定させ、pan、volume、program、velocity curve、articulation、humanize、note length compensation は `PerformanceProfile` と `PerformanceEvent` で扱う。
 * Phase 12P は selected output、generator scoring、quality diagnostics threshold、`generatorVersion` を変えない。聴こえ方の差分は rendering change として扱い、review artifact に profile id と version を残す。
 * Phase 13 は、Phase 12P で聴取・MIDI・WebAudio の再現条件を固定してから quality vector review に入る。
