@@ -51,7 +51,7 @@ test("public API emits the stable score metadata envelope", () => {
   assert.equal(scoreEnd?.tick, output.diagnostics.generatedUntilTick);
   assert.equal(output.diagnostics.eventCount, output.events.length);
   assert.equal(output.diagnostics.noteCount, notes.length);
-  assert.equal(output.diagnostics.candidatePoolOracle.schemaVersion, 4);
+  assert.equal(output.diagnostics.candidatePoolOracle.schemaVersion, 5);
   assert.ok(output.diagnostics.candidatePoolOracle.sectionCount >= 0);
   assert.equal(output.diagnostics.candidatePoolOracle.phase12PhraseFamilyCandidateCount, 0);
   assert.equal(output.diagnostics.generatorVersion, GENERATOR_VERSION);
@@ -102,6 +102,8 @@ test("public diagnostics expose finite candidate score dimensions", () => {
   assert.ok(output.diagnostics.phase12Review.answerTransformFamilies.length > 0);
   assert.ok(output.diagnostics.phase12Review.phraseFunctions.length > 0);
   assert.ok(output.diagnostics.phase12Review.sectionStatePatterns.topPatterns.length > 0);
+  assert.equal(output.diagnostics.phase13QReview.schemaVersion, 1);
+  assert.ok(Array.isArray(output.diagnostics.phase13QReview.sentinelCandidateLinks));
 
   for (const issue of output.diagnostics.issues) {
     assert.equal(issue.severity, "warning");

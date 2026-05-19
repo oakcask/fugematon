@@ -148,7 +148,7 @@ test("candidate pool oracle reports phase-11 blocker families and upper-bound ev
   );
   const bassRootSupport = summary.blockerClassifications.find((blocker) => blocker.blocker === "bass-root-support");
 
-  assert.equal(summary.schemaVersion, 4);
+  assert.equal(summary.schemaVersion, 5);
   assert.equal(summary.phase12PhraseFamilyCandidateCount, 0);
   assert.equal(phase11Blockers.length, 5);
   assert.ok(phase11Blockers.every((blocker) => blocker.classification === "selection-model"));
@@ -229,6 +229,7 @@ test("candidate pool oracle keeps phase-12 phrase family evidence traceable per 
       durationTicks: 3840,
       evaluations: [selected, alternative],
       selectedCandidateIndex: 0,
+      candidateDiversityDescriptors: [candidateDiversity("stem-a"), candidateDiversity("stem-b")],
       phase12PhraseFamilyCandidateCount: 3,
     }),
     classifyCandidatePoolOracleSection({
@@ -237,15 +238,22 @@ test("candidate pool oracle keeps phase-12 phrase family evidence traceable per 
       durationTicks: 3840,
       evaluations: [selected, alternative],
       selectedCandidateIndex: 0,
+      candidateDiversityDescriptors: [candidateDiversity("stem-a"), candidateDiversity("stem-a")],
       phase12PhraseFamilyCandidateCount: 5,
     }),
   ]);
   const entryHarmony = summary.blockerClassifications.find((blocker) => blocker.blocker === "entry-harmony");
+  const subjectStemDiversity = summary.candidateDiversity.find((diversity) => diversity.facet === "subjectStem");
 
   assert.equal(summary.phase12PhraseFamilyCandidateCount, 8);
   assert.equal(entryHarmony?.representative.phase12PhraseFamilyCandidateCount, 3);
   assert.equal(entryHarmony?.representative.candidateCount, 2);
   assert.equal(entryHarmony?.representative.viableCandidateCount, 2);
+  assert.equal(subjectStemDiversity?.candidateCount, 4);
+  assert.equal(subjectStemDiversity?.viableCandidateCount, 4);
+  assert.equal(subjectStemDiversity?.uniqueValueCount, 2);
+  assert.equal(subjectStemDiversity?.viableUniqueValueCount, 2);
+  assert.equal(subjectStemDiversity?.selectionHasViableAlternative, true);
 });
 
 function candidateEvaluation(input: {
@@ -352,5 +360,17 @@ function dimension(features: Record<string, number>) {
     cost: 0,
     reward: 0,
     features,
+  };
+}
+
+function candidateDiversity(subjectStem: string) {
+  return {
+    subjectStem,
+    answerTransform: "none",
+    fragmentDerivation: "none:restatement",
+    phraseFunction: "restatement",
+    cadenceApproach: "authentic",
+    supportRole: "counter-subject",
+    sectionState: "subject-return",
   };
 }

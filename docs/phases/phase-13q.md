@@ -2,7 +2,7 @@
 
 Phase 13Q は、Phase 13 の quality vector review model を使って、Phase 8/9 の UI・操作機能へ戻る前に生成結果そのものを改善する品質フェーズである。
 
-Status: planned. Phase 13Q is inserted after Phase 13 and before Phase 8. The phase should extend candidate diversity beyond the Phase 12 phrase-unit baseline, preserve the Phase 12 phrase/repetition gains, and reduce the main Phase 13 review-required signals: pitch-class unison duration, duration-based lockstep, and unresolved entry severe interval duration.
+Status: in progress. Phase 13Q is inserted after Phase 13 and before Phase 8. The phase should extend candidate diversity beyond the Phase 12 phrase-unit baseline, preserve the Phase 12 phrase/repetition gains, and reduce the main Phase 13 review-required signals: pitch-class unison duration, duration-based lockstep, and unresolved entry severe interval duration.
 
 Use [quality metrics reference](../reference/quality-metrics.md) for current diagnostics, quality vector axes, and adoption policy meanings. This Phase doc only records the planned generation-quality response.
 
@@ -148,4 +148,6 @@ Fux-style counterpoint supports treating unresolved seconds and sevenths, expose
 
 ## Next Work
 
-The next implementation slice should build candidate-diversity summaries and the local-sentinel feature bridge without changing selected output. Scoring and planner candidate changes should follow only after the review bundle can explain the affected seed, section, voice pair, phrase family, available alternatives, and musical symptom.
+The first implementation slice adds schema version 5 candidate-diversity summaries to `candidatePoolOracle` and `phase13QReview.sentinelCandidateLinks` so continuation local sentinels can be traced back to selected candidate section, cadence, entry, voice, voice pair, duration, and resolution-deadline context. This slice does not change selected output.
+
+A small section-local selection penalty for voice-pair lockstep, entry severe intervals, and leap recovery was tested and rejected for now: the 22 seed aggregate worsened pitch-class unison duration, duration-based lockstep, and leap recovery while preserving the Phase 12 repetition totals. The next implementation slice should add new voice-pair support candidates or entry-harmony candidates before changing selection, because selection-only pressure on the current pool does not provide a safe improvement.
