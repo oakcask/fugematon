@@ -33,6 +33,7 @@ import {
   addContinuityCounterpoint,
   addCounterpointTexture,
   addFunctionalThinningSupport,
+  type ContinuityLineKind,
   fillAllVoiceSilenceGaps,
 } from "./texture.js";
 import type { Exposition, FugueScore, SubjectNote } from "./types.js";
@@ -918,7 +919,7 @@ function phase10SelectableContinuationCandidateCount(state: FugueState): number 
     return baselineContinuationCandidateCount(state);
   }
 
-  return baselineContinuationCandidateCount(state) * 2;
+  return baselineContinuationCandidateCount(state) * 3;
 }
 
 function phase10SectionGrammarCandidateStartIndex(state: FugueState): number {
@@ -926,7 +927,7 @@ function phase10SectionGrammarCandidateStartIndex(state: FugueState): number {
     return baselineContinuationCandidateCount(state);
   }
 
-  return baselineContinuationCandidateCount(state) * 3;
+  return baselineContinuationCandidateCount(state) * 4;
 }
 
 function phase12PhraseFamilyCandidateStartIndex(state: FugueState): number {
@@ -950,7 +951,7 @@ function phase10OracleSelectionRiskAdjustment(evaluation: CandidateEvaluation): 
     return 0;
   }
   if (evaluation.dimensions.harmony.features.modalContextCount > 0) {
-    return 0;
+    return entryHarmonySelectionRiskAdjustment(evaluation);
   }
 
   return (
@@ -964,8 +965,14 @@ function phase10OracleSelectionRiskAdjustment(evaluation: CandidateEvaluation): 
 function entryHarmonySelectionRiskAdjustment(evaluation: CandidateEvaluation): number {
   const { entrySupportInstabilityCount, severeEntryIntervalCount, unresolvedSevereEntryIntervalCount } =
     evaluation.dimensions.harmony.features;
+  const unresolvedDuration = evaluation.dimensions.harmony.features.qualityVectorUnresolvedEntrySevereIntervalDuration;
 
-  return entrySupportInstabilityCount * 1.5 + severeEntryIntervalCount * 3 + unresolvedSevereEntryIntervalCount * 5;
+  return (
+    entrySupportInstabilityCount * 1.5 +
+    severeEntryIntervalCount * 3 +
+    unresolvedSevereEntryIntervalCount * 5 +
+    unresolvedDuration * 0.6
+  );
 }
 
 function stepwiseFixationSelectionRiskAdjustment(evaluation: CandidateEvaluation): number {
@@ -976,9 +983,19 @@ function stepwiseFixationSelectionRiskAdjustment(evaluation: CandidateEvaluation
 }
 
 function voicePairLockstepSelectionRiskAdjustment(evaluation: CandidateEvaluation): number {
-  const { selectedVoicePairLockstepSelectionCost, samePitchOverlapCount } = evaluation.dimensions.texture.features;
+  const {
+    selectedVoicePairLockstepSelectionCost,
+    samePitchOverlapCount,
+    qualityVectorPitchClassUnisonDuration,
+    qualityVectorDurationBasedLockstep,
+  } = evaluation.dimensions.texture.features;
 
-  return selectedVoicePairLockstepSelectionCost * 1.5 + samePitchOverlapCount * 2;
+  return (
+    selectedVoicePairLockstepSelectionCost * 1.5 +
+    samePitchOverlapCount * 2 +
+    qualityVectorPitchClassUnisonDuration * 0.2 +
+    qualityVectorDurationBasedLockstep * 0.2
+  );
 }
 
 function melodyPreservationRiskAdjustment(evaluation: CandidateEvaluation): number {
@@ -1055,13 +1072,17 @@ function preservesSectionLocalGuardrails(
     evaluationTexture.samePitchOverlapCount <= baselineTexture.samePitchOverlapCount &&
     evaluationTexture.unisonOverlapCount <= baselineTexture.unisonOverlapCount &&
     evaluationTexture.sharedRhythmOverlapCount <= baselineTexture.sharedRhythmOverlapCount &&
+    evaluationTexture.qualityVectorPitchClassUnisonDuration <= baselineTexture.qualityVectorPitchClassUnisonDuration &&
+    evaluationTexture.qualityVectorDurationBasedLockstep <= baselineTexture.qualityVectorDurationBasedLockstep &&
     evaluationTexture.fourBeatOuterVoiceSameDirectionRatio <=
       baselineTexture.fourBeatOuterVoiceSameDirectionRatio + 0.02 &&
     evaluationMelody.leapRecoveryMisses <= baselineMelody.leapRecoveryMisses &&
     evaluationSubject.counterSubjectIdentityRetention >= baselineSubject.counterSubjectIdentityRetention &&
     evaluationHarmony.entrySupportInstabilityCount <= baselineHarmony.entrySupportInstabilityCount &&
     evaluationHarmony.severeEntryIntervalCount <= baselineHarmony.severeEntryIntervalCount &&
-    evaluationHarmony.unresolvedSevereEntryIntervalCount <= baselineHarmony.unresolvedSevereEntryIntervalCount
+    evaluationHarmony.unresolvedSevereEntryIntervalCount <= baselineHarmony.unresolvedSevereEntryIntervalCount &&
+    evaluationHarmony.qualityVectorUnresolvedEntrySevereIntervalDuration <=
+      baselineHarmony.qualityVectorUnresolvedEntrySevereIntervalDuration
   );
 }
 
@@ -1082,6 +1103,7 @@ export function buildContinuationCandidates(
   const notes: Exposition["notes"] = [];
   const candidates: Exposition[] = [];
   const sectionLocalPlannerCandidates: Exposition[] = [];
+  const voicePairSupportCandidates: Exposition[] = [];
   const registerPlannerCandidates: Exposition[] = [];
   const sectionGrammarCandidates: Exposition[] = [];
   const phraseFamilyOracleCandidates: Exposition[] = [];
@@ -1112,6 +1134,14 @@ export function buildContinuationCandidates(
             buildContinuationSection(phraseSubject.slice(0, 4), {
               ...input,
               continuityVoiceCount: phraseContinuityVoiceCount(phraseIntent, 2),
+            }),
+          );
+          voicePairSupportCandidates.push(
+            buildContinuationSection(phraseSubject.slice(0, 4), {
+              ...input,
+              continuityVoiceCount: phraseContinuityVoiceCount(phraseIntent, 2),
+              continuityVoiceOrder: voicePairSupportContinuityVoiceOrder(voice),
+              continuityLineKind: "oblique-support",
             }),
           );
           registerPlannerCandidates.push(
@@ -1146,6 +1176,14 @@ export function buildContinuationCandidates(
             buildContinuationSection(phraseSubject, {
               ...input,
               continuityVoiceCount: phraseContinuityVoiceCount(phraseIntent, 2),
+            }),
+          );
+          voicePairSupportCandidates.push(
+            buildContinuationSection(phraseSubject, {
+              ...input,
+              continuityVoiceCount: phraseContinuityVoiceCount(phraseIntent, 2),
+              continuityVoiceOrder: voicePairSupportContinuityVoiceOrder(voice),
+              continuityLineKind: "oblique-support",
             }),
           );
           registerPlannerCandidates.push(
@@ -1187,6 +1225,7 @@ export function buildContinuationCandidates(
   }
 
   candidates.push(...sectionLocalPlannerCandidates);
+  candidates.push(...voicePairSupportCandidates);
   candidates.push(...registerPlannerCandidates);
   candidates.push(...sectionGrammarCandidates);
   candidates.push(...phraseFamilyOracleCandidates);
@@ -1485,6 +1524,19 @@ function registerBlendedContinuityVoiceOrder(entryVoice: Voice): readonly Voice[
   return ["tenor", "alto", "bass", "soprano"];
 }
 
+function voicePairSupportContinuityVoiceOrder(entryVoice: Voice): readonly Voice[] {
+  if (entryVoice === "soprano") {
+    return ["tenor", "alto", "bass", "soprano"];
+  }
+  if (entryVoice === "alto") {
+    return ["bass", "tenor", "soprano", "alto"];
+  }
+  if (entryVoice === "tenor") {
+    return ["soprano", "alto", "bass", "tenor"];
+  }
+  return ["alto", "tenor", "soprano", "bass"];
+}
+
 export function buildContinuationSection(
   subject: readonly SubjectNote[],
   entry: {
@@ -1503,6 +1555,7 @@ export function buildContinuationSection(
     fragmentTransform?: FragmentTransform;
     continuityVoiceCount?: number;
     continuityVoiceOrder?: readonly Voice[];
+    continuityLineKind?: ContinuityLineKind;
     cadenceKind?: CadenceKind;
   },
 ): Exposition {
@@ -1541,6 +1594,7 @@ export function buildContinuationSection(
     harmonicPlan,
     maxVoiceCount: entry.continuityVoiceCount,
     voiceOrder: entry.continuityVoiceOrder,
+    lineKind: entry.continuityLineKind,
   });
   notes.sort(compareNoteEvents);
 

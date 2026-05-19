@@ -120,3 +120,23 @@ test("generateScore links unresolved entry sentinels to selected entry context a
     ),
   );
 });
+
+test("generateScore exposes phase-13Q quality-vector features in selected candidate evaluations", () => {
+  const output = generateScore({
+    seed: "modal-cadence",
+    lengthTicks: PHASE_5_LENGTH_TICKS,
+    selectionModel: "phase10-section-local-planner",
+  });
+  const selected = output.diagnostics.selectedCandidateEvaluations.at(-1);
+
+  assert.ok(selected !== undefined);
+  assert.equal(typeof selected.dimensions.texture.features.qualityVectorPitchClassUnisonDuration, "number");
+  assert.equal(typeof selected.dimensions.texture.features.qualityVectorDurationBasedLockstep, "number");
+  assert.equal(
+    typeof selected.dimensions.harmony.features.qualityVectorUnresolvedEntrySevereIntervalDuration,
+    "number",
+  );
+  assert.ok(Number.isFinite(selected.dimensions.texture.features.qualityVectorPitchClassUnisonDuration));
+  assert.ok(Number.isFinite(selected.dimensions.texture.features.qualityVectorDurationBasedLockstep));
+  assert.ok(Number.isFinite(selected.dimensions.harmony.features.qualityVectorUnresolvedEntrySevereIntervalDuration));
+});

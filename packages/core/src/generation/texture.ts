@@ -23,11 +23,14 @@ export type ContinuityCounterpointInput = {
   harmonicPlan?: HarmonicPlan;
   maxVoiceCount?: number;
   voiceOrder?: readonly Voice[];
+  lineKind?: ContinuityLineKind;
 };
 
 export type ContinuityTexturePlan = ContinuityCounterpointInput & {
   voices: Voice[];
 };
+
+export type ContinuityLineKind = "linear" | "oblique-support";
 
 export function addCounterpointTexture(
   notes: Exposition["notes"],
@@ -317,6 +320,11 @@ function addContinuityLine(
   plan: ContinuityCounterpointInput,
   lineIndex: number,
 ): void {
+  if ((plan.lineKind ?? "linear") === "oblique-support") {
+    addObliqueContinuitySupport(notes, voice, plan, lineIndex);
+    return;
+  }
+
   if (lineIndex > 0) {
     addStaggeredContinuitySupport(notes, voice, plan);
     return;
@@ -347,6 +355,65 @@ function addContinuityLine(
     role: "free-counterpoint",
     harmonicPlan: plan.harmonicPlan,
   });
+}
+
+function addObliqueContinuitySupport(
+  notes: Exposition["notes"],
+  voice: Voice,
+  plan: ContinuityCounterpointInput,
+  lineIndex: number,
+): void {
+  const startTick = plan.startTick + (lineIndex === 0 ? 0 : TICKS_PER_QUARTER / 2);
+  const maxDurationTicks = Math.max(0, plan.durationTicks - (startTick - plan.startTick));
+  if (maxDurationTicks <= 0) {
+    return;
+  }
+
+  const degrees = obliqueSupportDegrees(voice, plan.localKey.mode, lineIndex);
+  const durations = [TICKS_PER_QUARTER, TICKS_PER_QUARTER * 2, TICKS_PER_QUARTER, TICKS_PER_QUARTER * 2];
+  let elapsedTicks = 0;
+  let index = 0;
+
+  while (elapsedTicks < maxDurationTicks) {
+    const durationTicks = Math.min(durations[index % durations.length]!, maxDurationTicks - elapsedTicks);
+    const degree = degrees[index % degrees.length]!;
+    addTextureNote(
+      notes,
+      {
+        voice,
+        localKey: plan.localKey,
+        velocity: lineIndex === 0 ? 54 : 50,
+        role: "free-counterpoint",
+        harmonicPlan: plan.harmonicPlan,
+        metricalHarmonyIntent: voice === "bass" ? "structural-root-support" : "structural-chord-tone",
+      },
+      degree,
+      startTick + elapsedTicks,
+      durationTicks,
+    );
+    elapsedTicks += durationTicks;
+    index += 1;
+  }
+}
+
+function obliqueSupportDegrees(voice: Voice, mode: KeyMode, lineIndex: number): readonly number[] {
+  if (isModalMode(mode)) {
+    if (voice === "bass") {
+      return lineIndex === 0 ? [0, 4, 3, 4] : [2, 4, 1, 3];
+    }
+    return lineIndex === 0 ? [2, 4, 1, 3] : [4, 2, 5, 3];
+  }
+
+  if (voice === "bass") {
+    return lineIndex === 0 ? [0, 4, 3, 4] : [2, 4, 1, 4];
+  }
+  if (voice === "tenor") {
+    return lineIndex === 0 ? [2, 4, 5, 4] : [4, 2, 3, 2];
+  }
+  if (voice === "alto") {
+    return lineIndex === 0 ? [4, 2, 5, 3] : [2, 4, 1, 3];
+  }
+  return lineIndex === 0 ? [5, 4, 2, 4] : [4, 2, 3, 2];
 }
 
 function rotateContinuityDegrees(degrees: readonly number[], offset: number): readonly number[] {
