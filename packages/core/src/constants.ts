@@ -1,3 +1,5 @@
+import type { SelectionModel } from "./events.js";
+
 export const GENERATOR_VERSION = 3;
 
 export const TICKS_PER_QUARTER = 480;
@@ -16,6 +18,8 @@ export const DEFAULT_GENERATION_PARAMETERS = {
   density: 0.5,
   subjectPresence: 0.7,
 } as const;
+
+export const DEFAULT_SELECTION_MODEL = "baseline" satisfies SelectionModel;
 
 export const PHASE_1_DIAGNOSTICS_PROFILE = {
   rangeViolations: 0,
