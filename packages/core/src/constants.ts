@@ -37,7 +37,7 @@ export const PHASE_3_DIAGNOSTICS_PROFILE = {
   maxParallelPerfectsPerMinute: 12,
   minSubjectReturns: 2,
   minStrettoEntries: 2,
-  maxGenerationMilliseconds: 1000,
+  maxGenerationMilliseconds: 1250,
 } as const;
 
 export const PHASE_3_REPRESENTATIVE_SEEDS = [

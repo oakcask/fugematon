@@ -256,9 +256,13 @@ test("generateScore validates representative phase-3 seeds", () => {
   }
 
   const elapsedCpuMilliseconds = cpuUsageMilliseconds(process.cpuUsage(startCpuUsage));
+  const maxGenerationCpuMilliseconds =
+    PHASE_3_DIAGNOSTICS_PROFILE.maxGenerationMilliseconds * PHASE_3_REPRESENTATIVE_SEEDS.length;
   assert.ok(
-    elapsedCpuMilliseconds <
-      PHASE_3_DIAGNOSTICS_PROFILE.maxGenerationMilliseconds * PHASE_3_REPRESENTATIVE_SEEDS.length,
+    elapsedCpuMilliseconds < maxGenerationCpuMilliseconds,
+    `phase-3 representative generation used ${elapsedCpuMilliseconds.toFixed(
+      1,
+    )}ms CPU, exceeding ${maxGenerationCpuMilliseconds.toFixed(1)}ms`,
   );
 });
 
