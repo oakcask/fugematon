@@ -3,11 +3,12 @@ import test from "node:test";
 import { generateScore, PHASE_3_LENGTH_TICKS } from "@fugematon/core";
 import {
   computeActivePitches,
+  computeActivePitchMarkerLayout,
   computePianoRollLayout,
   computePianoRollViewport,
   DEFAULT_VIEWPORT_SECONDS,
 } from "./piano-roll.js";
-import { createPlaybackModel } from "./score.js";
+import { createPlaybackModel, type PlaybackModel } from "./score.js";
 
 test("computePianoRollLayout maps visible notes into canvas bounds", () => {
   const model = createPlaybackModel(generateScore({ seed: "fugue-smoke", lengthTicks: PHASE_3_LENGTH_TICKS }));
@@ -49,4 +50,32 @@ test("computeActivePitches returns currently sounding pitches in ascending order
     activePitches,
     [...new Set(firstNotePitches)].sort((left, right) => left - right),
   );
+});
+
+test("computeActivePitchMarkerLayout separates black and white key labels in the left gutter", () => {
+  const model = { pitchRange: { min: 60, max: 72 } } as PlaybackModel;
+  const markers = computeActivePitchMarkerLayout(model, 260, [60, 61, 62]);
+  const c4 = markers.find((marker) => marker.pitch === 60)!;
+  const cSharp4 = markers.find((marker) => marker.pitch === 61)!;
+
+  assert.equal(c4.name, "C4");
+  assert.equal(cSharp4.name, "C#4");
+  assert.equal(c4.isBlackKey, false);
+  assert.equal(cSharp4.isBlackKey, true);
+  assert.equal(c4.textAlign, "right");
+  assert.equal(cSharp4.textAlign, "left");
+  assert.equal(cSharp4.x, c4.x);
+  assert.ok(cSharp4.labelX < c4.labelX);
+  assert.ok(c4.width > cSharp4.width);
+});
+
+test("computeActivePitchMarkerLayout spaces nearby labels within each key lane", () => {
+  const model = { pitchRange: { min: 48, max: 84 } } as PlaybackModel;
+  const whiteMarkers = computeActivePitchMarkerLayout(model, 260, [64, 65, 67]).sort(
+    (left, right) => left.labelY - right.labelY,
+  );
+
+  for (let index = 1; index < whiteMarkers.length; index += 1) {
+    assert.ok(whiteMarkers[index]!.labelY - whiteMarkers[index - 1]!.labelY >= 11);
+  }
 });
