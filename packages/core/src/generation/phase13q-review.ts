@@ -25,26 +25,16 @@ function linkSentinelToSelectedCandidate(
 ): Phase13QSentinelCandidateLink[] {
   const section = selectedCandidateEvaluations
     .flatMap((evaluation) => evaluation.explanations.sections)
-    .find(
-      (candidateSection) =>
-        sentinel.startTick >= candidateSection.startTick &&
-        sentinel.startTick < candidateSection.startTick + candidateSection.durationTicks &&
-        (sentinel.sectionRole === "mixed" || sentinel.sectionRole === candidateSection.state),
-    );
+    .find((candidateSection) => sectionContainsSentinel(candidateSection, sentinel));
   if (section === undefined) {
     return [];
   }
 
   const entry = selectedCandidateEvaluations
     .flatMap((evaluation) => evaluation.explanations.entries)
-    .find(
-      (candidateEntry) =>
-        candidateEntry.startTick >= section.startTick &&
-        candidateEntry.startTick < section.startTick + section.durationTicks &&
-        (sentinel.voice === undefined || candidateEntry.voice === sentinel.voice),
-    );
-  const severeInterval = qualityVector.entrySevereIntervals.find(
-    (interval) => interval.voice === sentinel.voice && interval.startTick === sentinel.startTick,
+    .find((candidateEntry) => entryBelongsToSentinelSection(candidateEntry, section, sentinel));
+  const severeInterval = qualityVector.entrySevereIntervals.find((interval) =>
+    entrySevereIntervalMatchesSentinel(interval, sentinel),
   );
 
   return [
@@ -63,4 +53,34 @@ function linkSentinelToSelectedCandidate(
       resolutionDeadlineTicks: severeInterval?.resolutionDeadlineTicks,
     },
   ];
+}
+
+function sectionContainsSentinel(
+  section: CandidateEvaluation["explanations"]["sections"][number],
+  sentinel: Phase13LocalSentinelSummary,
+): boolean {
+  return (
+    sentinel.startTick >= section.startTick &&
+    sentinel.startTick < section.startTick + section.durationTicks &&
+    (sentinel.sectionRole === "mixed" || sentinel.sectionRole === section.state)
+  );
+}
+
+function entryBelongsToSentinelSection(
+  entry: CandidateEvaluation["explanations"]["entries"][number],
+  section: CandidateEvaluation["explanations"]["sections"][number],
+  sentinel: Phase13LocalSentinelSummary,
+): boolean {
+  return (
+    entry.startTick >= section.startTick &&
+    entry.startTick < section.startTick + section.durationTicks &&
+    (sentinel.voice === undefined || entry.voice === sentinel.voice)
+  );
+}
+
+function entrySevereIntervalMatchesSentinel(
+  interval: Phase13QualityVector["entrySevereIntervals"][number],
+  sentinel: Phase13LocalSentinelSummary,
+): boolean {
+  return interval.voice === sentinel.voice && interval.startTick === sentinel.startTick;
 }
