@@ -38,14 +38,26 @@ test("diagnose command writes diagnostics JSON to stdout", async () => {
   const diagnostics = JSON.parse(stdout) as {
     seed: string;
     lengthTicks: number;
+    selectionModel: string;
     eventCount: number;
     noteCount: number;
+    phase13RReview: {
+      selectionModel: string;
+      reviewRequired: boolean;
+      findings: { code: string }[];
+    };
   };
 
   assert.equal(diagnostics.seed, "bach-001");
   assert.equal(diagnostics.lengthTicks, 960);
+  assert.equal(diagnostics.selectionModel, "baseline");
   assert.ok(diagnostics.eventCount > 0);
   assert.ok(diagnostics.noteCount > 0);
+  assert.equal(diagnostics.phase13RReview.selectionModel, diagnostics.selectionModel);
+  assert.equal(diagnostics.phase13RReview.reviewRequired, true);
+  assert.ok(
+    diagnostics.phase13RReview.findings.some((finding) => finding.code === "legacy-default-selection-model"),
+  );
 });
 
 test("midi command writes a valid standard MIDI file", async () => {
@@ -272,6 +284,11 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
               uniquePatternCount: number;
               mostRepeatedPatternCount: number;
             };
+          };
+          phase13RReview: {
+            selectionModel: string;
+            reviewRequired: boolean;
+            findings: { code: string }[];
           };
           qualityVector: {
             schemaVersion: number;
@@ -578,6 +595,13 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       assert.ok(entry.diagnosticsSummary.phase12Review.answerTransformFamilies.length > 0);
       assert.ok(entry.diagnosticsSummary.phase12Review.phraseFunctions.length > 0);
       assert.equal(entry.diagnosticsSummary.phase12Review.sectionStatePatterns.patternLength, 4);
+      assert.equal(entry.diagnosticsSummary.phase13RReview.selectionModel, summary.selectionModel);
+      assert.equal(entry.diagnosticsSummary.phase13RReview.reviewRequired, true);
+      assert.ok(
+        entry.diagnosticsSummary.phase13RReview.findings.some(
+          (finding) => finding.code === "legacy-default-selection-model",
+        ),
+      );
       assert.equal(entry.diagnosticsSummary.qualityVector.schemaVersion, 1);
       assert.equal(entry.diagnosticsSummary.qualityVector.modelVersion, 1);
       assert.ok(entry.diagnosticsSummary.qualityVector.axes.length >= 8);
