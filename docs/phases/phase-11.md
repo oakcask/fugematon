@@ -2,7 +2,7 @@
 
 Phase 11 は、Phase 8/9 の無限再生・操作機能へ進む前に、生成モデルそのものを破壊的変更も含めて作り直す品質フェーズである。
 
-Status: complete. Phase 8/9 は削除しないが、Phase 11 後の 22 seed review で similar phrase blocker が残ったため、Phase 12 phrase/repetition quality rewrite を挟んだ。Phase 11 の generator-quality baseline は採用済みで、manual listening は継続 quality lane として残す。現在の Phase 8/9 前 follow-up は Phase 13Q に移っている。
+Status: complete. Phase 8/9 は削除しないが、Phase 11 後の 22 seed review で similar phrase blocker が残ったため、Phase 12 phrase/repetition quality rewrite を挟んだ。Phase 11 の generator-quality baseline は採用済みで、manual listening は継続 quality lane として残す。現在の Phase 8/9 前 follow-up repair は Phase 13R に移っている。
 
 ## Rationale
 

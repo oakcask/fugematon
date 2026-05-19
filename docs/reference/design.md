@@ -99,7 +99,7 @@
 
 ### Phase 8: 無限再生セッション
 
-* Phase 8 は Phase 13R の automatic default baseline / phrase convergence repair 後に戻る operational lane とする。Phase 6-7 の美しさ metric と聴取 gate の完全 pass は開始条件にしないが、細かな操作 UI が音楽的な退屈さを隠す設計にならないよう、generator quality、rendering boundary、model adoption evidence を前提にする。
+* Phase 8 は Phase 13R の automatic default baseline / phrase convergence repair と required follow-up repair 後に戻る operational lane とする。Phase 6-7 の美しさ metric と聴取 gate の完全 pass は開始条件にしないが、Phase 13R の focused listening、seed 横断 subject-diversity evidence、そこで見つかった音楽的問題の修正 evidence は開始条件にする。細かな操作 UI が音楽的な退屈さを隠す設計にならないよう、generator quality、rendering boundary、model adoption evidence を前提にする。
 * 生成済みイベントをメモリ上のリングバッファに保存する。
 * 保存済み範囲内では event replay により巻き戻して再生し直せるようにする。
 * continuous fugue、endless program、regenerative cycle を同じ状態遷移 model の異なる境界表現として扱う。
@@ -109,7 +109,7 @@
 
 ### Phase 9: Worker 化と安定化
 
-* Phase 9 は Phase 8 後に戻る deferred operational lane とする。
+* Phase 9 は Phase 13R required follow-up repair と Phase 8 後に戻る deferred operational lane とする。
 * 生成探索を Dedicated Web Worker に移し、メインスレッドの描画と操作を安定させる。
 * AudioWorklet は、標準 WebAudio ノードでは音声処理が不足した場合に導入する。
 * OffscreenCanvas、SharedWorker、Service Worker は必要性が明確になってから検討する。
@@ -145,7 +145,7 @@
 * learned aesthetic score や covariance-heavy distance は、reference corpus と manual pairwise preference が不足している間は exploratory とする。採用候補は axis-level explanation と local sentinel location に戻せる必要がある。
 * Phase 13Q は、Phase 13 の review/adoption model を使って candidate diversity、voice independence、entry harmony を生成側で改善した。
 * Phase 13R は automatic adoption complete として、通常生成経路を採用済み baseline へ揃え、後半 phrase convergence を修正した。legacy `baseline` は比較 model として残すが、CLI、MIDI、Web UI は暗黙に古い path を鳴らさない。
-* Phase 8/9 は、Phase 13R の automatic default path と phrase convergence evidence を前提に戻る。ただし focused listening は未完了なので、Phase 8 は phrase-convergence repair を human-approved とは扱わない。
+* Phase 8/9 は、Phase 13R の automatic default path だけでは戻らない。focused listening、seed 横断 subject-diversity follow-up、その follow-up で見つかった音楽的問題の修正を先に完了し、`subjectFamilyDiversity` review summary、A/B delta、`buildSubject` 候補拡張、修正後 re-review の evidence を残してから operational lane へ戻る。
 
 ## 内部表現
 
