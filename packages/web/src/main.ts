@@ -1,4 +1,4 @@
-import { generateScore, PHASE_3_LENGTH_TICKS } from "@fugematon/core";
+import { DEFAULT_SELECTION_MODEL, generateScore, PHASE_3_LENGTH_TICKS } from "@fugematon/core";
 import {
   DEFAULT_PERFORMANCE_PROFILE_ID,
   listPerformanceProfiles,
@@ -171,7 +171,10 @@ function createState(
   return {
     seed,
     performanceProfileId,
-    model: createPlaybackModel(generateScore({ seed, lengthTicks: SCORE_LENGTH_TICKS }), performanceProfileId),
+    model: createPlaybackModel(
+      generateScore({ seed, lengthTicks: SCORE_LENGTH_TICKS, selectionModel: DEFAULT_SELECTION_MODEL }),
+      performanceProfileId,
+    ),
   };
 }
 

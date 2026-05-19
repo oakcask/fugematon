@@ -1,4 +1,9 @@
-import { DEFAULT_GENERATION_PARAMETERS, GENERATOR_VERSION, TICKS_PER_QUARTER } from "./constants.js";
+import {
+  DEFAULT_GENERATION_PARAMETERS,
+  DEFAULT_SELECTION_MODEL,
+  GENERATOR_VERSION,
+  TICKS_PER_QUARTER,
+} from "./constants.js";
 import type { GenerationInput, GenerationOutput, GenerationParameters, ScoreEvent } from "./events.js";
 import { analyzeScore } from "./generation/diagnostics.js";
 import { chooseKeySignature, chooseTempo, chooseTimeSignature } from "./generation/key.js";
@@ -17,7 +22,7 @@ export function generateScore(input: GenerationInput): GenerationOutput {
   const timeSignature = chooseTimeSignature(rng);
   const bpm = chooseTempo(rng);
   const subject = buildSubject(rng, keySignature);
-  const selectionModel = input.selectionModel ?? "baseline";
+  const selectionModel = input.selectionModel ?? DEFAULT_SELECTION_MODEL;
   const score = buildFugueScore(subject, keySignature, input.lengthTicks, rng, selectionModel);
   const diagnostics = analyzeScore(score.notes, score.subjectEntries, score.sectionPlans);
   const phase13QReview = buildPhase13QReviewSummary(score.selectedCandidateEvaluations, diagnostics.qualityVector);

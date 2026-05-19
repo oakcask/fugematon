@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { writeFile } from "node:fs/promises";
-import { generateScore } from "@fugematon/core";
+import { DEFAULT_SELECTION_MODEL, generateScore } from "@fugematon/core";
 import { exportMidi } from "@fugematon/midi";
 import { helpText, parseArgs } from "./args.js";
 import { writeAbReviewBundle, writeReviewBundle } from "./review.js";
@@ -14,7 +14,7 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
   }
 
   if (command.name === "review") {
-    await writeReviewBundle(command.out, command.lengthTicks, "baseline", command.performanceProfileId);
+    await writeReviewBundle(command.out, command.lengthTicks, DEFAULT_SELECTION_MODEL, command.performanceProfileId);
     return;
   }
 
@@ -34,6 +34,7 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
   const output = generateScore({
     seed: command.seed,
     lengthTicks: command.lengthTicks,
+    selectionModel: DEFAULT_SELECTION_MODEL,
   });
 
   if (command.name === "diagnose") {
