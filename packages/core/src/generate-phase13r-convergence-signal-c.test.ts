@@ -5,14 +5,10 @@ import { generateScore } from "./generate.js";
 
 const PHASE_13R_FOCUSED_SEEDS = ["minor-entry", "sparse-cadence", "random-listen-check"] as const;
 
-test("phase-13R boundary seeds keep legacy-default and current-planner convergence comparable in CI", () => {
+test("phase-13R boundary seeds keep default planner convergence comparable in CI", () => {
   for (const seed of PHASE_13R_FOCUSED_SEEDS) {
-    const legacy = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
-    const current = generateScore({
-      seed,
-      lengthTicks: PHASE_5_LENGTH_TICKS,
-      selectionModel: "phase10-section-local-planner",
-    });
+    const legacy = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS, selectionModel: "baseline" });
+    const current = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
 
     assert.equal(legacy.diagnostics.phase13RReview.selectionModel, "baseline");
     assert.equal(current.diagnostics.phase13RReview.selectionModel, "phase10-section-local-planner");
