@@ -14,8 +14,8 @@ docs_has_scope(subject) if {
 	regex.match(`^docs\(`, subject)
 }
 
-fix_has_ci_scope(subject) if {
-	regex.match(`^fix\(ci\)!?: .+$`, subject)
+product_type_has_ci_related_scope(subject) if {
+	regex.match(`^(feat|fix)\((ci|workflow|workflows|actions)\)!?: .+$`, subject)
 }
 
 deny contains msg if {
@@ -56,6 +56,6 @@ deny contains msg if {
 	is_string(subject)
 	subject != ""
 	valid_subject(subject)
-	fix_has_ci_scope(subject)
-	msg := sprintf("Invalid %s: %s. Use chore(ci) for CI workflow, pipeline, and automation changes instead of fix(ci)", [label, subject])
+	product_type_has_ci_related_scope(subject)
+	msg := sprintf("Invalid %s: %s. Use chore(ci) for CI workflow, pipeline, and automation changes; reserve feat and fix for product changes", [label, subject])
 }
