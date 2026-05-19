@@ -20,7 +20,7 @@ test("generateScore validates representative phase-3 seeds", () => {
   const startCpuUsage = process.cpuUsage();
 
   for (const { seed, category } of PHASE_3_REPRESENTATIVE_SEEDS) {
-    const output = generateScore({ seed, lengthTicks: PHASE_3_LENGTH_TICKS });
+    const output = generateScore({ seed, lengthTicks: PHASE_3_LENGTH_TICKS, selectionModel: "baseline" });
     const subjectReturns = output.diagnostics.subjectEntries.filter(
       (entry) => entry.state === "subject-return" && entry.form === "subject",
     ).length;
@@ -51,7 +51,7 @@ test("generateScore validates representative phase-3 seeds", () => {
 
 test("generateScore validates representative phase-4 seeds", () => {
   for (const { seed, category } of PHASE_4_REPRESENTATIVE_SEEDS) {
-    const output = generateScore({ seed, lengthTicks: PHASE_3_LENGTH_TICKS });
+    const output = generateScore({ seed, lengthTicks: PHASE_3_LENGTH_TICKS, selectionModel: "baseline" });
 
     assert.ok(category === "fixed" || category === "boundary");
     assert.equal(output.diagnostics.rangeViolations, PHASE_4_DIAGNOSTICS_PROFILE.rangeViolations);
@@ -76,7 +76,7 @@ test("generateScore validates representative phase-4 seeds", () => {
 });
 
 test("generateScore reports phase-5 counterpoint texture metrics", () => {
-  const output = generateScore({ seed: "lyrical-line", lengthTicks: PHASE_3_LENGTH_TICKS });
+  const output = generateScore({ seed: "lyrical-line", lengthTicks: PHASE_3_LENGTH_TICKS, selectionModel: "baseline" });
   const totalMinutes = scoreMinutes(output.diagnostics.generatedUntilTick);
   const maxLeapRecoveryMisses = Math.ceil(totalMinutes * PHASE_5_DIAGNOSTICS_PROFILE.maxLeapRecoveryMissesPerMinute);
 
@@ -90,7 +90,11 @@ test("generateScore reports phase-5 counterpoint texture metrics", () => {
 });
 
 test("generateScore keeps planned entries tied to emitted entry notes", () => {
-  const output = generateScore({ seed: "entry-contract", lengthTicks: PHASE_5_LENGTH_TICKS });
+  const output = generateScore({
+    seed: "entry-contract",
+    lengthTicks: PHASE_5_LENGTH_TICKS,
+    selectionModel: "baseline",
+  });
   const notes = output.events.filter((event): event is NoteEvent => event.kind === "note");
 
   assert.ok(output.diagnostics.subjectEntries.length > 4);
@@ -115,7 +119,7 @@ test("generateScore keeps planned entries tied to emitted entry notes", () => {
 });
 
 test("generateScore reports phase-5.6 beauty and texture diagnostics", () => {
-  const output = generateScore({ seed: "fugue-smoke", lengthTicks: PHASE_5_LENGTH_TICKS });
+  const output = generateScore({ seed: "fugue-smoke", lengthTicks: PHASE_5_LENGTH_TICKS, selectionModel: "baseline" });
   const selectedEvaluation = output.diagnostics.selectedCandidateEvaluations[0];
 
   assert.ok(selectedEvaluation !== undefined);
@@ -154,7 +158,7 @@ test("generateScore reports phase-5.6 beauty and texture diagnostics", () => {
 });
 
 test("generateScore reports phase-5.7 modal context diagnostics", () => {
-  const output = generateScore({ seed: "modal-dorian", lengthTicks: PHASE_5_LENGTH_TICKS });
+  const output = generateScore({ seed: "modal-dorian", lengthTicks: PHASE_5_LENGTH_TICKS, selectionModel: "baseline" });
   const keySignature = output.events.find(
     (event): event is Extract<MetaEvent, { type: "key-signature" }> =>
       event.kind === "meta" && event.type === "key-signature",

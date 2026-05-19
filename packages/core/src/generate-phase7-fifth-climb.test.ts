@@ -30,7 +30,7 @@ test("generateScore reduces phase-7 stepwise fifth-climb subject pressure", () =
   let turnbackFifthClimbUnresolvedSevereIntervalCount = 0;
 
   for (const { seed } of seeds) {
-    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
+    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS, selectionModel: "baseline" });
     const gate6 = evaluatePhase6Diagnostics(seed, output.diagnostics);
     const gate7 = evaluatePhase7Diagnostics(seed, output.diagnostics);
     const subjectPattern = output.diagnostics.subjectEntries[0]?.expectedDegreePattern.join("-");
@@ -56,7 +56,7 @@ test("generateScore reduces phase-7 stepwise fifth-climb subject pressure", () =
   assert.ok(turnbackFifthClimbUnresolvedSevereIntervalCount <= 582);
 
   for (const [seed, maxInstabilityCount, maxSevereIntervalCount, maxUnresolvedSevereIntervalCount] of regressionSeeds) {
-    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
+    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS, selectionModel: "baseline" });
 
     assert.ok(output.diagnostics.entrySupportInstabilityCount <= maxInstabilityCount);
     assert.ok(output.diagnostics.severeEntryIntervalCount <= maxSevereIntervalCount);
@@ -64,7 +64,7 @@ test("generateScore reduces phase-7 stepwise fifth-climb subject pressure", () =
   }
 
   for (const [seed, maxLeapRecoveryMisses, minCounterSubjectIdentityRetention] of protectedSeeds) {
-    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
+    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS, selectionModel: "baseline" });
 
     assert.ok(output.diagnostics.leapRecoveryMisses <= maxLeapRecoveryMisses);
     assert.ok(output.diagnostics.counterSubjectIdentityRetention >= minCounterSubjectIdentityRetention);

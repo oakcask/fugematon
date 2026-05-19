@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import type { CandidateEvaluation, MetaEvent, NoteEvent, ScoreDimension } from "./index.js";
 import {
+  DEFAULT_SELECTION_MODEL,
   GENERATOR_VERSION,
   generateScore,
   PHASE_5_DIAGNOSTICS_PROFILE,
@@ -53,8 +54,9 @@ test("public API emits the stable score metadata envelope", () => {
   assert.equal(output.diagnostics.noteCount, notes.length);
   assert.equal(output.diagnostics.candidatePoolOracle.schemaVersion, 5);
   assert.ok(output.diagnostics.candidatePoolOracle.sectionCount >= 0);
-  assert.equal(output.diagnostics.candidatePoolOracle.phase12PhraseFamilyCandidateCount, 0);
+  assert.ok(output.diagnostics.candidatePoolOracle.phase12PhraseFamilyCandidateCount >= 0);
   assert.equal(output.diagnostics.generatorVersion, GENERATOR_VERSION);
+  assert.equal(output.diagnostics.selectionModel, DEFAULT_SELECTION_MODEL);
   assert.equal(output.diagnostics.seed, "public-contract");
   assert.equal(output.diagnostics.lengthTicks, PHASE_5_LENGTH_TICKS);
 });

@@ -169,6 +169,12 @@ Phase 13Q は UI 変更ではない。ring buffer replay、rewind、state-change
 
 Phase 13R は、Phase 13Q 後に見つかった通常生成経路と後半 phrase convergence の blocker を、Phase 8/9 の前に扱う品質フェーズである。詳細は [Phase 13R](phase-13r.md) に置く。計画根拠は [Phase 13R convergence review](../reviews/phase-13r-convergence-review.md) に置く。
 
+完了記録:
+
+* Phase 13R は automatic adoption complete とする。core default generation、CLI、MIDI export、review bundle、Web UI playback は `phase10-section-local-planner` を同じ default model として使い、legacy `baseline` は `review-ab` などの明示比較 model として残す。
+* 22 seed automatic evidence では hard constraint failure 0 と Phase 7B readiness 22/22 を維持した。focused convergence seeds は most repeated 4-section pattern count と unique 4-section pattern count が legacy `baseline` から改善した。残る subject stem / subject-fragment concentration は function-bearing recurrence として [Phase 13R](phase-13r.md) に seed 別で記録した。
+* manual listening は未完了で、Phase 8 はこの automatic baseline を使って再開できるが、phrase-convergence repair を human-approved とは扱わない。
+
 完了条件:
 
 * core default generation、CLI、MIDI export、Web UI playback が同じ採用済み default model を使う。

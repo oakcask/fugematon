@@ -13,7 +13,7 @@ test("generateScore applies phase-6 observation gate across fixed and rotation s
   const seeds = [...PHASE_5_REVIEW_SEEDS, ...PHASE_5_11_ROTATION_SEEDS];
 
   for (const { seed } of seeds) {
-    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
+    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS, selectionModel: "baseline" });
     const gate = evaluatePhase6Diagnostics(seed, output.diagnostics);
 
     assert.deepEqual(gate.failures, []);

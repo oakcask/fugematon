@@ -13,7 +13,7 @@ test("generateScore applies phase-5.11 margin gates across fixed and rotation se
   const seeds = [...PHASE_5_REVIEW_SEEDS, ...PHASE_5_11_ROTATION_SEEDS];
 
   for (const { seed } of seeds) {
-    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
+    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS, selectionModel: "baseline" });
     const gate = evaluatePhase511Diagnostics(seed, output.diagnostics);
 
     assert.deepEqual(gate.failures, []);
@@ -49,7 +49,7 @@ test("generateScore applies phase-5.11 margin gates across fixed and rotation se
 
 test("generateScore applies phase-5.11 modal rotation seed gates", () => {
   for (const [seed, profile] of Object.entries(PHASE_5_11_DIAGNOSTICS_PROFILE.modalRotationSeeds)) {
-    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
+    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS, selectionModel: "baseline" });
 
     assert.ok(output.diagnostics.counterSubjectIdentityRetention >= profile.minCounterSubjectIdentityRetention);
     assert.ok(output.diagnostics.sameDirectionMotionCount <= profile.maxSameDirectionMotionCount);

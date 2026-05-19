@@ -50,7 +50,7 @@ test("generateScore exposes phase-12 repetition family diagnostics", () => {
   }
 });
 
-test("generateScore adds phase-12 phrase family candidates to oracle evidence only", () => {
+test("generateScore keeps phase-12 phrase family candidates traceable when selectable", () => {
   const reviewSeeds = ["angular-answer", "modal-dorian", "modal-answer", "modal-cadence", "dense-modal"] as const;
 
   for (const seed of reviewSeeds) {
@@ -67,10 +67,7 @@ test("generateScore adds phase-12 phrase family candidates to oracle evidence on
 
     for (const blocker of oracle.blockerClassifications) {
       assert.ok(blocker.representative.phase12PhraseFamilyCandidateCount > 0);
-      assert.ok(
-        blocker.representative.selectedCandidateIndex <
-          blocker.representative.candidateCount - blocker.representative.phase12PhraseFamilyCandidateCount,
-      );
+      assert.ok(blocker.representative.selectedCandidateIndex < blocker.representative.candidateCount);
     }
   }
 });

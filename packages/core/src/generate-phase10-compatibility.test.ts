@@ -6,7 +6,7 @@ import { assertPhase10CompletionCompatibility } from "./generate-phase10-compati
 import { evaluatePhase6Diagnostics } from "./review-gate.js";
 
 test("generateScore can compare the phase-10 oracle selection model against baseline", () => {
-  const baseline = generateScore({ seed: "bach-001", lengthTicks: PHASE_5_LENGTH_TICKS });
+  const baseline = generateScore({ seed: "bach-001", lengthTicks: PHASE_5_LENGTH_TICKS, selectionModel: "baseline" });
   const variant = generateScore({
     seed: "bach-001",
     lengthTicks: PHASE_5_LENGTH_TICKS,

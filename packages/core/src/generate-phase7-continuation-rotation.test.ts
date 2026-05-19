@@ -12,7 +12,7 @@ test("generateScore rotates long-run continuation patterns without gate regressi
   let maxRepeatedContinuationPatternCount = 0;
 
   for (const { seed } of seeds) {
-    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
+    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS, selectionModel: "baseline" });
     const gate6 = evaluatePhase6Diagnostics(seed, output.diagnostics);
     const gate7 = evaluatePhase7Diagnostics(seed, output.diagnostics);
     const selectedSectionRisks = output.diagnostics.selectedCandidateEvaluations.flatMap((evaluation) =>

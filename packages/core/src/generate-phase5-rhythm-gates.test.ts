@@ -5,7 +5,7 @@ import { generateScore } from "./generate.js";
 import { evaluatePhase510Diagnostics } from "./review-gate.js";
 
 test("generateScore exposes phase-5.10 rhythm and entry support diagnostics", () => {
-  const output = generateScore({ seed: "fugue-smoke", lengthTicks: PHASE_5_LENGTH_TICKS });
+  const output = generateScore({ seed: "fugue-smoke", lengthTicks: PHASE_5_LENGTH_TICKS, selectionModel: "baseline" });
   const selectedEvaluation = output.diagnostics.selectedCandidateEvaluations[0];
 
   assert.ok(output.diagnostics.shortStrongBeatEntryNoteCount > 0);
@@ -20,7 +20,7 @@ test("generateScore exposes phase-5.10 rhythm and entry support diagnostics", ()
 
 test("generateScore applies phase-5.10 rhythm counterpoint gates across review seeds", () => {
   for (const { seed } of PHASE_5_REVIEW_SEEDS) {
-    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
+    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS, selectionModel: "baseline" });
     const gate = evaluatePhase510Diagnostics(seed, output.diagnostics);
 
     assert.deepEqual(gate.failures, []);
