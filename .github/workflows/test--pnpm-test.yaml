@@ -78,7 +78,7 @@ jobs:
           JUNIT_REPORT: test-results/node-test-junit-${{ matrix.shard-id }}.xml
           SHARD_DIST_FILE: test-results/node-test-shard-${{ matrix.shard-id }}.txt
           SHARD_SOURCE_FILE: ${{ steps.parallel-test.outputs.shards-directory }}/${{ matrix.shard-id }}
-      - name: Add JUnit file attributes
+      - name: Normalize JUnit report
         if: always()
         run: |
           if [ -f "$JUNIT_REPORT" ]; then

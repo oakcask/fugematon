@@ -14,7 +14,11 @@ if (isMainModule()) {
 async function main() {
   const { reportPath } = parseArguments(process.argv.slice(2));
   const xml = await readFile(reportPath, "utf8");
-  await writeFile(reportPath, normalizeNodeTestJUnitFileAttributes(xml));
+  await writeFile(reportPath, normalizeNodeTestJUnitReport(xml));
+}
+
+export function normalizeNodeTestJUnitReport(xml) {
+  return wrapRootNodeTestCasesInTestSuite(normalizeNodeTestJUnitFileAttributes(xml));
 }
 
 export function normalizeNodeTestJUnitFileAttributes(xml) {
@@ -33,6 +37,17 @@ export function normalizeNodeTestJUnitFileAttributes(xml) {
     const closing = element.endsWith("/>") ? "/>" : ">";
     const opening = element.slice(0, -closing.length).replace(/\s*\/$/, "");
     return `${opening}${fileAttribute}${closing}`;
+  });
+}
+
+export function wrapRootNodeTestCasesInTestSuite(xml) {
+  return xml.replace(/<testsuites\b([^>]*)>([\s\S]*?)<\/testsuites>/, (element, rawAttributes, body) => {
+    if (!/<testcase\b/.test(body) || /<testsuite\b/.test(body)) {
+      return element;
+    }
+
+    const indentedBody = body.trimEnd().replace(/\n/g, "\n  ");
+    return `<testsuites${rawAttributes}>\n  <testsuite name="node:test">${indentedBody}\n  </testsuite>\n</testsuites>`;
   });
 }
 
