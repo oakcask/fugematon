@@ -1,6 +1,6 @@
 # Phase 13Q: Candidate Diversity, Voice Independence, And Entry Harmony Quality Pass
 
-Phase 13Q は、Phase 13 の quality vector review model を使って、Phase 8/9 の UI・操作機能へ戻る前に生成結果そのものを改善する品質フェーズである。
+Phase 13Q は、Phase 13 の quality vector review model を使って、Phase 8/9 の無限再生 operational lane へ戻る前に生成結果そのものを改善する品質フェーズである。
 
 Status: automatic adoption complete; manual listening follow-up remains open. Phase 13Q is inserted after Phase 13 and before Phase 8. It extends candidate diversity beyond the Phase 12 phrase-unit baseline, preserves the focused Phase 12 phrase/repetition gains, and reduces the main Phase 13 review-required signals in the 22 seed automatic bundle: pitch-class unison duration, duration-based lockstep, and unresolved entry severe interval duration. The generated listening and pairwise preference templates are still `not-reviewed`, so this is diagnostics-backed adoption rather than human-listening signoff.
 
@@ -124,7 +124,7 @@ Phase 13Q is adoptable only if the variant satisfies all of the following:
 
 ## Non-Goals
 
-* Phase 8 UI sliders, rewind, ring-buffer replay, parameter-change meta events, or Worker fallback.
+* Phase 8 infinite playback session work, rewind, ring-buffer replay, state-change / boundary / mode-change meta events, or Worker fallback.
 * Turning quality-vector axes into hard absolute thresholds.
 * Requiring zero unison, zero shared rhythm, zero repetition, or zero stepwise motion.
 * Increasing randomness without phrase-function, identity, cadence, and voice-leading explanations.
