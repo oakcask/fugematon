@@ -1,3 +1,8 @@
+import {
+  candidateEvaluationFeature,
+  candidateSectionState,
+  isViableCandidateEvaluation,
+} from "./candidate-evaluation.js";
 import type {
   CandidateEvaluation,
   CandidatePoolOracleBlocker,
@@ -103,16 +108,17 @@ const BLOCKER_SPECS: readonly BlockerSpec[] = [
       "weakBeatUnresolvedNonChordToneCount",
     ],
     selectedRisk: (evaluation) =>
-      feature(evaluation, "harmony", "strongBeatDissonanceCount") +
-      feature(evaluation, "harmony", "harmonicFunctionMismatches") +
-      feature(evaluation, "harmony", "strongBeatChordToneMismatchCount") +
-      feature(evaluation, "harmony", "strongBeatStructuralIntentMismatchCount") +
-      feature(evaluation, "harmony", "weakBeatUnresolvedNonChordToneCount") * 0.25,
+      candidateEvaluationFeature(evaluation, "harmony", "strongBeatDissonanceCount") +
+      candidateEvaluationFeature(evaluation, "harmony", "harmonicFunctionMismatches") +
+      candidateEvaluationFeature(evaluation, "harmony", "strongBeatChordToneMismatchCount") +
+      candidateEvaluationFeature(evaluation, "harmony", "strongBeatStructuralIntentMismatchCount") +
+      candidateEvaluationFeature(evaluation, "harmony", "weakBeatUnresolvedNonChordToneCount") * 0.25,
   },
   {
     blocker: "bass-root-support",
     referenceAxes: ["strongBeatBassRootUnsupportedCount", "strongBeatBassRootSupportCount"],
-    selectedRisk: (evaluation) => feature(evaluation, "harmony", "strongBeatBassRootUnsupportedCount"),
+    selectedRisk: (evaluation) =>
+      candidateEvaluationFeature(evaluation, "harmony", "strongBeatBassRootUnsupportedCount"),
   },
   {
     blocker: "register-blending",
@@ -122,9 +128,9 @@ const BLOCKER_SPECS: readonly BlockerSpec[] = [
       "phase11RegisterSpanSemitoneTotal",
     ],
     selectedRisk: (evaluation) =>
-      feature(evaluation, "texture", "phase11AdjacentVoiceOverOctaveCount") +
-      feature(evaluation, "texture", "phase11AdjacentVoiceWideP75SemitoneExcess") +
-      feature(evaluation, "texture", "phase11RegisterSpanSemitoneTotal") * 0.05,
+      candidateEvaluationFeature(evaluation, "texture", "phase11AdjacentVoiceOverOctaveCount") +
+      candidateEvaluationFeature(evaluation, "texture", "phase11AdjacentVoiceWideP75SemitoneExcess") +
+      candidateEvaluationFeature(evaluation, "texture", "phase11RegisterSpanSemitoneTotal") * 0.05,
   },
   {
     blocker: "functional-thinning",
@@ -134,9 +140,9 @@ const BLOCKER_SPECS: readonly BlockerSpec[] = [
       "phase11FunctionalThinningMaxDurationQuarters",
     ],
     selectedRisk: (evaluation) =>
-      feature(evaluation, "texture", "phase11FunctionalThinningNonCadentialRunCount") * 2 +
-      feature(evaluation, "texture", "phase11FunctionalThinningOneVoiceRunCount") +
-      feature(evaluation, "texture", "phase11FunctionalThinningMaxDurationQuarters"),
+      candidateEvaluationFeature(evaluation, "texture", "phase11FunctionalThinningNonCadentialRunCount") * 2 +
+      candidateEvaluationFeature(evaluation, "texture", "phase11FunctionalThinningOneVoiceRunCount") +
+      candidateEvaluationFeature(evaluation, "texture", "phase11FunctionalThinningMaxDurationQuarters"),
   },
   {
     blocker: "section-grammar-repetition",
@@ -146,9 +152,9 @@ const BLOCKER_SPECS: readonly BlockerSpec[] = [
       "phase11TopEntryPatternFamilyCount",
     ],
     selectedRisk: (evaluation) =>
-      feature(evaluation, "form", "formRepetitionWarnings") +
-      Math.max(0, feature(evaluation, "form", "phase11StateGrammarMostRepeatedPatternCount") - 1) +
-      Math.max(0, feature(evaluation, "form", "phase11TopEntryPatternFamilyCount") - 1),
+      candidateEvaluationFeature(evaluation, "form", "formRepetitionWarnings") +
+      Math.max(0, candidateEvaluationFeature(evaluation, "form", "phase11StateGrammarMostRepeatedPatternCount") - 1) +
+      Math.max(0, candidateEvaluationFeature(evaluation, "form", "phase11TopEntryPatternFamilyCount") - 1),
   },
 ] as const;
 
@@ -167,7 +173,7 @@ export function classifyCandidatePoolOracleSection(input: {
     throw new Error("selected candidate evaluation is missing");
   }
 
-  const viable = input.evaluations.map((evaluation) => isViableOracleCandidate(evaluation, selected));
+  const viable = input.evaluations.map((evaluation) => isViableCandidateEvaluation(evaluation, selected));
   const hardFailureRejectedCandidateCount = input.evaluations.filter(
     (evaluation) => evaluation.hardFailures.length > 0,
   ).length;
@@ -325,38 +331,6 @@ function chooseRepresentative(
     selectedReferenceStatus: best.blocker.selectedReferenceStatus,
     bestViableReferenceStatus: best.blocker.bestViableReferenceStatus,
   };
-}
-
-function isViableOracleCandidate(evaluation: CandidateEvaluation, selected: CandidateEvaluation): boolean {
-  if (evaluation.hardFailures.length > 0) {
-    return false;
-  }
-
-  return (
-    feature(evaluation, "subjectClarity", "subjectIdentityViolations") === 0 &&
-    feature(evaluation, "subjectClarity", "answerPlanViolations") === 0 &&
-    feature(evaluation, "melody", "leapRecoveryMisses") <= feature(selected, "melody", "leapRecoveryMisses") &&
-    feature(evaluation, "subjectClarity", "counterSubjectIdentityRetention") >=
-      feature(selected, "subjectClarity", "counterSubjectIdentityRetention") &&
-    feature(evaluation, "texture", "fourBeatBassUpperSameDirectionRatio") <=
-      feature(selected, "texture", "fourBeatBassUpperSameDirectionRatio") &&
-    feature(evaluation, "texture", "eightBeatBassUpperSameDirectionRatio") <=
-      feature(selected, "texture", "eightBeatBassUpperSameDirectionRatio") &&
-    feature(evaluation, "texture", "fourBeatOuterVoiceSameDirectionRatio") <=
-      feature(selected, "texture", "fourBeatOuterVoiceSameDirectionRatio")
-  );
-}
-
-function feature(
-  evaluation: CandidateEvaluation,
-  dimension: keyof CandidateEvaluation["dimensions"],
-  name: string,
-): number {
-  return evaluation.dimensions[dimension].features[name] ?? 0;
-}
-
-function candidateSectionState(evaluation: CandidateEvaluation): FugueState | undefined {
-  return evaluation.explanations.sections[0]?.state;
 }
 
 function phase11SectionGrammarHistoryRisk(
