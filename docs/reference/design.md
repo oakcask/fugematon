@@ -221,6 +221,8 @@ type MetaEvent = {
 
 Fugematon の生成品質は、単に禁則違反が少ないことでは評価しない。対位法上の健全さ、フーガとしての構造、旋律としての自然さ、長時間聴いたときの変化を分けて扱う。
 
+個別 diagnostics、reference profile、quality vector、採否 policy の current な意味は [quality metrics reference](quality-metrics.md) に置く。この section は音楽上の原則を扱う。
+
 * hard constraints:
   * 声域違反、声部交差、明らかな並行完全5度・完全8度、未解決の強い不協和など、破綻として扱う項目。
   * 生成器の成熟に応じて CI の失敗条件に昇格する。

@@ -123,6 +123,8 @@
 
 ## Diagnostics 閾値
 
+指標の一般的な意味、正規化、採否上の扱いは [quality metrics reference](quality-metrics.md) に置く。この section は CI profile と phase-specific threshold policy だけを扱う。
+
 * diagnostics の閾値は、生成器の成熟度に合わせて段階的に厳しくする。
 * 初期は「破綻を検出できること」を優先し、完全な音楽品質判定を CI に背負わせない。
 * Phase 0-1 の閾値：

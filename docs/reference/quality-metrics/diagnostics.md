@@ -1,0 +1,51 @@
+# Diagnostics Metrics
+
+`GenerationDiagnostics` の主要指標の意味です。ここでは current な読み方をまとめます。古い Phase での導入理由は review docs を参照してください。
+
+## Hard Constraint Metrics
+
+| Metric | Meaning | Current policy |
+| --- | --- | --- |
+| `rangeViolations` | 声部の音域外 note。 | hard failure |
+| `voiceCrossings` | 声部間の上下関係が交差する箇所。 | hard failure |
+| `subjectIdentityViolations` | subject entry が想定 scale-degree pattern と一致しない箇所。 | hard failure |
+| `answerPlanViolations` | true answer / tonal answer の計画と実際の entry が矛盾する箇所。 | hard failure |
+| `keyMetadataMismatches` | key signature、entry local key、実 pitch sequence の矛盾。 | hard failure |
+| `unresolvedDissonanceCount` | 解決されない不協和の疑い。 | hard failure |
+| `allVoiceSilenceGapCount` | 全声部が同時に無音になる gap。 | hard failure |
+
+## Voice Independence
+
+| Metric | Meaning | Read as |
+| --- | --- | --- |
+| `samePitchOverlapCount` | 複数声部が同じ MIDI pitch を同時に鳴らす exact same-pitch overlap。 | 同じ楽器 texture では声部独立を壊しやすい。開始、終止、短い経過的 doubling で説明できるか確認する。 |
+| `unisonOverlapCount` | 複数声部が同じ pitch class を同時に鳴らす overlap。octave 違いを含む。 | 文脈つきでは許容されるため、ゼロ要求にはしない。duration と声部ペアで読む。 |
+| `sharedRhythmOverlapCount` | 声部ペアが同じ rhythm window で動く重なり。 | lockstep の疑い。subject entry や cadence の機能的同期か、機械的な同型進行かを区別する。 |
+| `sameDirectionMotionCount` | 声部が同方向に動く重なり。 | parallel perfect とは別。bass と上声が長く同じ概形へ流れる場合は review signal。 |
+
+## Entry Harmony
+
+| Metric | Meaning | Read as |
+| --- | --- | --- |
+| `entrySupportInstabilityCount` | subject / answer entry 周辺の支え声部が和声的に不安定な箇所。 | root、chord member、avoid note、解決先を entry 単位で読む。 |
+| `severeEntryIntervalCount` | entry 周辺の m2、M2、m7、M7 など聴感上目立つ interval。 | count だけでなく duration と解決文脈を見る。 |
+| `unresolvedSevereEntryIntervalCount` | severe interval が resolution deadline までに説明されない箇所。 | entry harmony の主要 review signal。Phase 13 以降は duration axis も見る。 |
+
+## Melody And Texture
+
+| Metric | Meaning | Read as |
+| --- | --- | --- |
+| `leapRecoveryMisses` | 大跳躍後に反行または順次進行で回収されない箇所。 | 旋律線の歌いやすさの signal。安全な順次型に偏りすぎていないかも確認する。 |
+| `repeatedPitchRunCount` | 同じ pitch の反復 run。 | 高声部では耳につきやすい。Phase 13 の soprano repeated-note pressure と合わせて読む。 |
+| `soloTexture` | cadence や phrase boundary で説明できない薄い texture。 | unsupported solo run、abrupt texture drop、solo voice imbalance を分けて読む。 |
+| `stepwisePattern` | 長い順次進行や同じ degree pattern の横断反復。 | 自然な旋律運動と mechanical filler を区別する。 |
+| `pitchContourMotion` | bass-upper / outer-voice の同方向、反行、概形 motion。 | Phase 7B 以降は hard failure ではなく review signal。 |
+
+## Review Summaries
+
+| Field | Meaning |
+| --- | --- |
+| `candidatePoolOracle` | selected candidate と alternatives を比べ、selection model で直せる問題か、generator / section planner が足りない問題かを切り分ける。 |
+| `phase11Review` | register、functional thinning、state grammar、metrical harmony の summary。 |
+| `phase12Review` | subject stem、answer transform、fragment derivation、phrase function、section-state pattern の反復 summary。 |
+| `qualityVector` | Phase 13 以降の normalized review/adoption signal。詳細は [quality vector](quality-vector.md)。 |

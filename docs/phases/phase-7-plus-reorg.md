@@ -6,40 +6,13 @@ Phase 7 の reference diagnostics と candidate pool oracle は、既存の abso
 
 そのうえで、操作機能より音楽美を優先するため、Phase 8/9 はいったん deferred operational lane に送り、先に Phase 10 quality foundation、Phase 11 quality model rebuild、Phase 12 phrase and repetition quality rewrite を実施した。Phase 12 後の human feedback ではリズム感と休符時の終止感が改善した一方で、高声部の同音反復、exact unison、second collision、低声部ペアの長い unison motion が残ることを確認した。Phase 12P で演奏プロファイルを MIDI/WebAudio 共通のレンダリング境界として組み込み、Phase 13 で残る欠陥を単独しきい値ではなく quality vector の統計的 review/adoption model として扱った。現在は Phase 8/9 へ戻る前に、Phase 13Q で candidate diversity、voice independence、entry harmony を生成側で改善する。
 
+Current metric meanings and adoption policy live in [quality metrics reference](../reference/quality-metrics.md). This doc records why the route was reorganized and how each Phase uses those policies.
+
 ## Gate 方針
 
-### Hard constraint として残す
+Phase 7B 以降の current policy は [adoption policy](../reference/quality-metrics/adoption-policy.md) に置く。この route で決めた durable point は、Phase 8/9 を始める条件を hard constraints と再現性へ絞り、unison、same-pitch、entry severe interval、leap recovery、solo texture、contour、modal identity などを quality lane の review signal として扱うことである。
 
-以下は参照作品との距離や style profile に関係なく、CI failure として残す。
-
-* range violation、voice crossing、key metadata mismatch。
-* subject identity violation と answer plan violation。
-* unresolved strong dissonance など、現行 diagnostics が明確な破綻として扱うもの。
-* generator determinism、schema compatibility、review bundle の生成可能性。
-* Phase 7 reference diagnostics と candidate pool oracle の出力 shape。
-
-### Review signal へ降格する
-
-以下は美しさや style fit に関わるが、単体の absolute threshold を Phase 8 blocker にしない。CI は schema と集計の存在を確認し、値は review bundle と docs で比較する。
-
-* rhythmic independence、shared rhythm overlap、unison overlap、same-pitch overlap。
-* severe entry interval と unresolved severe entry interval。
-* leap recovery misses、stepwise pattern fixation、free-counterpoint contour。
-* solo texture risk、abrupt texture drop、long-run form repetition。
-* bass-upper / outer-voice contour ratio。
-* counter-subject identity retention と modal identity margin。
-
-これらは「増えたら即失敗」ではなく、どの style profile で、どの section role で、何と引き換えに増えたかを review する。改善 PR は、少なくとも代表 seed と境界 seedで hard constraint を壊さず、悪化した review signal の理由を docs に残す。
-
-### 廃止または凍結する
-
-以下の運用は廃止する。
-
-* `Phase 6/7 gate を完全維持しなければ Phase 8 へ進まない` という運用。
-* manual listening が全 seed `pass` になるまで操作機能を始めない運用。
-* absolute count の小さな悪化だけで、diagnostics-backed 改善を戻す運用。
-
-ただし manual listening と pairwise preference は廃止しない。Phase completion blocker ではなく、quality lane の採否 evidence として残す。
+廃止した運用は、`Phase 6/7 gate を完全維持しなければ Phase 8 へ進まない` という扱い、manual listening が全 seed `pass` になるまで操作機能を始めない扱い、absolute count の小さな悪化だけで diagnostics-backed 改善を戻す扱いである。manual listening と pairwise preference は廃止せず、model adoption evidence として残す。
 
 ## 再編後の Phase
 

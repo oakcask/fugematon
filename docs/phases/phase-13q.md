@@ -4,6 +4,8 @@ Phase 13Q は、Phase 13 の quality vector review model を使って、Phase 8/
 
 Status: planned. Phase 13Q is inserted after Phase 13 and before Phase 8. The phase should extend candidate diversity beyond the Phase 12 phrase-unit baseline, preserve the Phase 12 phrase/repetition gains, and reduce the main Phase 13 review-required signals: pitch-class unison duration, duration-based lockstep, and unresolved entry severe interval duration.
 
+Use [quality metrics reference](../reference/quality-metrics.md) for current diagnostics, quality vector axes, and adoption policy meanings. This Phase doc only records the planned generation-quality response.
+
 ## Rationale
 
 Phase 12 improved phrase repetition, state-pattern variety, and functional thinning. Phase 12P then separated rendering from score generation, and Phase 13 added the quality vector model without changing selected `ScoreEvent` output.

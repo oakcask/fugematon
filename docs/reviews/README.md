@@ -6,6 +6,8 @@
 
 music-quality gate、diagnostics threshold、generator model、candidate scoring model、evaluation weights、section/planner model を変える場合、agent は人間の聴取完了を待たずに、関連する複数 seed の生成譜面を楽典的にレビューしてください。代表 seed、境界 seed、rotation seed、adversarial seed から変更リスクに合う小集合を選び、レビューした seed、楽典上の所見、影響 metric、tradeoff、未実施の聴取 gap を該当 Phase または review doc に残してください。
 
+指標の一般的な意味、正規化、採否 policy は [../reference/quality-metrics.md](../reference/quality-metrics.md) に置く。Review docs は seed evidence、音楽的症状、tradeoff、計画変更の根拠を残す場所です。
+
 ## 優先
 
 * [Phase 12 review summary](phase-12-review-summary.md): Phase 12 完了時の 22 seed A/B evidence、human feedback、quality vector 化する unresolved symptoms。
@@ -40,4 +42,4 @@ music-quality gate、diagnostics threshold、generator model、candidate scoring
 * 最新の品質方針や Phase 8/9 前の実装対象を見る場合は Phase 13Q planning review、Phase 13Q、Phase 13 quality vector review、Phase 7+ 再編計画を読む。Phase 11 の実装済み観察軸を見る場合は Phase 11 review summary diagnostics を読む。Phase 7 以降の gate 再構成を見る場合は Phase 7 参照作品 diagnostics 計画を読む。Phase 12 挿入前の blocker evidence を見る場合は Phase 11 post-completion score review を読む。
 * 概形の並行・反行を扱う場合は Phase 6 概形進行レビューも読む。
 * ある gate がなぜ追加されたかを追う場合だけ、古いレビューへ戻る。
-* diagnostics の閾値や seed セットを変更する場合は、該当レビューと [../reference/technical-plan.md](../reference/technical-plan.md) を合わせて確認する。
+* diagnostics の閾値や seed セットを変更する場合は、該当レビュー、[../reference/quality-metrics.md](../reference/quality-metrics.md)、[../reference/technical-plan.md](../reference/technical-plan.md) を合わせて確認する。
