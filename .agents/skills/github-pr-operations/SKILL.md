@@ -7,7 +7,7 @@ description: Use when creating, editing, or managing pull requests with GitHub C
 
 ## Goal
 
-Use GitHub CLI in a way that preserves repository approval rules, avoids accidental shell wrapping, and keeps stacked pull requests labeled correctly.
+Use GitHub CLI in a way that preserves repository approval rules and avoids accidental shell wrapping.
 
 ## Workflow
 
@@ -15,8 +15,7 @@ Use GitHub CLI in a way that preserves repository approval rules, avoids acciden
 2. Use `conventional-commits` for PR titles authored by Codex.
 3. Use `change-rationale-writing` for PR descriptions authored by Codex.
 4. Run `gh pr create` or `gh pr edit` directly.
-5. For a stacked pull request, add the `auto-rebase` label as part of PR creation or immediately after creation.
-6. If a direct `gh pr create` or `gh pr edit` fails with a GitHub API connection error, treat it as a sandbox network failure and retry the same direct command with the existing GitHub CLI approval prefix.
+5. If a direct `gh pr create` or `gh pr edit` fails with a GitHub API connection error, treat it as a sandbox network failure and retry the same direct command with the existing GitHub CLI approval prefix.
 
 ## Command Rules
 
