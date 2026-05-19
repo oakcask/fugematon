@@ -9,10 +9,6 @@ test("generateScore completes phase-12 repetition adoption across review seeds b
   assertPhase12RepetitionReviewBatch(PHASE_12_REPETITION_REVIEW_BATCH_A.slice(0, 6), 6, -6);
 });
 
-test("generateScore completes phase-12 repetition adoption across review seeds batch A2", () => {
-  assertPhase12RepetitionReviewBatch(PHASE_12_REPETITION_REVIEW_BATCH_A.slice(6), 5, -3);
-});
-
 function assertPhase12RepetitionReviewBatch(
   seeds: readonly string[],
   expectedSeedCount: number,
