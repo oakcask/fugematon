@@ -48,3 +48,13 @@ Remaining gaps:
 * no full 22 seed `review-ab` bundle was generated for Phase 13R yet;
 * no manual listening templates were filled for the focused convergence seeds;
 * the current check did not inspect exact ScoreEvent windows around late-score phrase boundaries.
+
+## Detection Audit After Automatic Adoption
+
+A follow-up seed sweep checked the adopted default path against the 22 seed review set plus extra ad hoc seeds chosen to exercise subject-family similarity. The current detector correctly keeps the product-boundary failure visible: explicit legacy `baseline` reported three or four Phase 13R findings on every checked seed, while the omitted/default path reported `phase10-section-local-planner`.
+
+For within-score phrase convergence, `phase13RReview` is useful but scoped. On the 22 seed review set, 15 seeds still reported review-required convergence findings under the adopted default path: 9 `subject-stem-family-concentration`, 6 `subject-fragment-family-concentration`, and 1 `entry-pattern-family-concentration`. The no-finding seeds were `bach-001`, `lyrical-line`, `circle-fifths`, `close-imitation`, `long-arc`, `restless-line`, and `modal-answer`. This means the detector catches many cases where one family dominates a single generated score, but it intentionally treats the remaining findings as review signals rather than hard failures.
+
+The same sweep also showed a distinct seed-crossing subject-similarity gap. The top subject stem across 29 checked seeds collapsed into only three degree patterns: `0-2-1-3-4-3-2-1` on 15 seeds, `0-1-2-3-4-3-1-2` on 11 seeds, and `0-1-2-3-4-3-2-1` on 3 seeds. Top subject fragments collapsed into only two patterns: `0-2-1-3` on 15 seeds and `0-1-2-3` on 14 seeds. Several seeds with no Phase 13R findings still belonged to these cross-seed top-family clusters, so the current detector does not detect "different seeds keep generating similar subjects" unless the repeated family also exceeds the per-score concentration threshold.
+
+The implementation explains that gap: `buildSubject` currently chooses from three subject degree shapes before later phrase-family variation. Therefore cross-seed subject originality needs a separate diagnostic or generator change. Candidate options are a corpus-level subject-family diversity summary in `review` / `review-ab`, a per-bundle threshold for top subject-shape share, and a broader subject generator that varies rhythm, contour, climax placement, and tail motion before phrase-family selection.
