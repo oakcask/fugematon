@@ -154,6 +154,11 @@ export function formatBarBeatDuration(ticks: number, timeSignature: TimeSignatur
   return parts.join(" + ");
 }
 
+export function formatPlaybackPosition(seconds: number, model: PlaybackModel): string {
+  const playbackTick = secondsToTicks(seconds, model.bpm, model.ticksPerQuarter);
+  return `${Math.floor(seconds)}s / ${formatBarBeatPosition(playbackTick, model.timeSignature, model.ticksPerQuarter)}`;
+}
+
 function computePitchRange(notes: readonly PlaybackNote[]): PlaybackModel["pitchRange"] {
   if (notes.length === 0) {
     return { min: 48, max: 72 };

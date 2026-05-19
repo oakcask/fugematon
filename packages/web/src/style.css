@@ -176,6 +176,19 @@ h1 {
   line-height: 1.15;
 }
 
+.transport-summary {
+  min-width: 0;
+}
+
+.playback-position {
+  display: block;
+  margin-top: 0.45rem;
+  color: #5f4630;
+  font-size: 0.96rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
 .score-card strong {
   white-space: nowrap;
 }

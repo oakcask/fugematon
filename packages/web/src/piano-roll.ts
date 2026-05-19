@@ -1,5 +1,5 @@
 import type { Voice } from "@fugematon/core";
-import { formatBarBeatPosition, type PlaybackEntry, type PlaybackModel, secondsToTicks } from "./score.js";
+import type { PlaybackEntry, PlaybackModel } from "./score.js";
 
 export type PianoRollNoteLayout = {
   voice: Voice;
@@ -138,7 +138,7 @@ export function drawPianoRoll(canvas: HTMLCanvasElement, model: PlaybackModel, p
   context.clearRect(0, 0, width, height);
   const viewport = computePianoRollViewport(model, playbackSecond);
   const activePitches = computeActivePitches(model, playbackSecond);
-  drawBackground(context, width, height, model, playbackSecond, viewport, activePitches);
+  drawBackground(context, width, height, model, viewport, activePitches);
 
   for (const note of computePianoRollLayout(model, width, height, viewport, playbackSecond)) {
     context.fillStyle = VOICE_COLORS[note.voice];
@@ -176,7 +176,6 @@ function drawBackground(
   width: number,
   height: number,
   model: PlaybackModel,
-  playbackSecond: number,
   viewport: PianoRollViewport,
   activePitches: readonly number[],
 ): void {
@@ -201,15 +200,6 @@ function drawBackground(
   }
 
   drawActivePitchMarkers(context, width, height, model, activePitches);
-
-  context.fillStyle = "rgba(36, 25, 15, 0.64)";
-  context.font = "12px serif";
-  const playbackTick = secondsToTicks(playbackSecond, model.bpm, model.ticksPerQuarter);
-  context.fillText(
-    `${Math.floor(playbackSecond)}s / ${formatBarBeatPosition(playbackTick, model.timeSignature, model.ticksPerQuarter)}`,
-    LEFT_GUTTER,
-    height - 9,
-  );
 }
 
 function drawPlayhead(
