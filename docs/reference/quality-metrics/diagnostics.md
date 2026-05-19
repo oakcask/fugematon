@@ -41,6 +41,14 @@
 | `stepwisePattern` | 長い順次進行や同じ degree pattern の横断反復。 | 自然な旋律運動と mechanical filler を区別する。 |
 | `pitchContourMotion` | bass-upper / outer-voice の同方向、反行、概形 motion。 | Phase 7B 以降は hard failure ではなく review signal。 |
 
+## Subject And Phrase Diversity
+
+| Metric | Meaning | Read as |
+| --- | --- | --- |
+| `phase12Review.subjectStemFamilies` | 1つの generated score 内で subject stem / subject-fragment family がどれだけ集中しているか。 | Per-score phrase convergence の signal。function-bearing return と mechanical reuse を分けて読む。 |
+| `phase13RReview` | default path、4-section pattern、entry-pattern family、subject stem、subject-fragment concentration の Phase 13R review summary。 | 1曲内の convergence と legacy default path の検出には使えるが、seed 横断の初期主題類似は bundle-level summary と合わせて読む。 |
+| `subjectFamilyDiversity` | Review bundle 全体で、initial subject degree/rhythm/contour/tail family が何種類に分散しているか。 | Planned metric。複数 seed が同じ少数の主題形へ収束していないかを見る corpus-level review signal。 |
+
 ## Review Summaries
 
 | Field | Meaning |
@@ -50,3 +58,4 @@
 | `phase12Review` | subject stem、answer transform、fragment derivation、phrase function、section-state pattern の反復 summary。 |
 | `qualityVector` | Phase 13 以降の normalized review/adoption signal。詳細は [quality vector](quality-vector.md)。 |
 | `phase13QReview` | Phase 13 local sentinel を selected candidate explanation の section、entry、voice pair、resolution deadline へ戻す review-only bridge。 |
+| `phase13RReview` | Phase 13R の per-score convergence review signal。Bundle-level `subjectFamilyDiversity` が追加されるまでは、seed 横断の主題語彙崩壊を単独では検出しない。 |
