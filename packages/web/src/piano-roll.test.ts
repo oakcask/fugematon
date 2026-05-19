@@ -1,13 +1,18 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { generateScore, PHASE_3_LENGTH_TICKS } from "@fugematon/core";
-import { computePianoRollLayout, computePianoRollViewport, DEFAULT_VIEWPORT_SECONDS } from "./piano-roll.js";
+import {
+  computeActivePitches,
+  computePianoRollLayout,
+  computePianoRollViewport,
+  DEFAULT_VIEWPORT_SECONDS,
+} from "./piano-roll.js";
 import { createPlaybackModel } from "./score.js";
 
 test("computePianoRollLayout maps visible notes into canvas bounds", () => {
   const model = createPlaybackModel(generateScore({ seed: "fugue-smoke", lengthTicks: PHASE_3_LENGTH_TICKS }));
   const viewport = computePianoRollViewport(model, 0);
-  const layout = computePianoRollLayout(model, 960, 360, viewport);
+  const layout = computePianoRollLayout(model, 960, 360, viewport, 0);
 
   assert.ok(layout.length > 0);
   assert.ok(layout.length < model.notes.length);
@@ -17,6 +22,7 @@ test("computePianoRollLayout maps visible notes into canvas bounds", () => {
   assert.ok(layout.every((note) => note.y >= 0 && note.y <= 360));
   assert.ok(layout.every((note) => note.width >= 2));
   assert.ok(layout.every((note) => note.height > 0));
+  assert.ok(layout.some((note) => note.isActive));
 });
 
 test("computePianoRollViewport starts at the opening and follows playback", () => {
@@ -29,4 +35,18 @@ test("computePianoRollViewport starts at the opening and follows playback", () =
   assert.ok(following.startSecond > opening.startSecond);
   assert.ok(following.startSecond < DEFAULT_VIEWPORT_SECONDS * 2);
   assert.equal(following.endSecond - following.startSecond, DEFAULT_VIEWPORT_SECONDS);
+});
+
+test("computeActivePitches returns currently sounding pitches in ascending order", () => {
+  const model = createPlaybackModel(generateScore({ seed: "fugue-smoke", lengthTicks: PHASE_3_LENGTH_TICKS }));
+  const firstChordSecond = model.notes[0]!.startSecond;
+  const firstNotePitches = model.notes
+    .filter((note) => note.startSecond <= firstChordSecond && firstChordSecond < note.startSecond + note.durationSecond)
+    .map((note) => note.pitch);
+  const activePitches = computeActivePitches(model, firstChordSecond);
+
+  assert.deepEqual(
+    activePitches,
+    [...new Set(firstNotePitches)].sort((left, right) => left - right),
+  );
 });
