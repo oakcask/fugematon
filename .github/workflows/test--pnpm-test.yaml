@@ -111,4 +111,4 @@ jobs:
           path: test-results
           merge-multiple: true
       - name: Check slow test files
-        run: node workflow-scripts/check-node-test-junit-budget.mjs --junit-report test-results --max-seconds 45
+        run: node workflow-scripts/check-node-test-junit-budget.mjs --junit-report test-results --max-seconds 20
