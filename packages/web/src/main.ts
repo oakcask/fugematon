@@ -69,13 +69,13 @@ app.innerHTML = `
         <strong id="entries"></strong>
       </div>
     </section>
-    <section class="transport-card">
+    <section class="transport-card" aria-label="Playback controls">
       <div>
-        <span class="metric-label">Transport</span>
-        <strong id="transport-status">Ready</strong>
+        <span class="metric-label">Playback</span>
+        <strong id="transport-status">Ready to play</strong>
       </div>
       <div class="transport-actions">
-        <button type="button" id="start">Start</button>
+        <button type="button" id="start">Play score</button>
         <button type="button" class="secondary" id="stop">Stop</button>
       </div>
     </section>
@@ -135,7 +135,7 @@ stopButton.addEventListener("click", () => {
   player?.stop();
   cancelVisualizerLoop();
   drawPianoRoll(pianoRoll, state.model, 0);
-  transportStatus.textContent = "Stopped";
+  transportStatus.textContent = "Playback stopped";
 });
 
 window.addEventListener("resize", () => {
@@ -155,7 +155,7 @@ function regenerateScore(seed: string): void {
   state = createState(nextSeed, performanceProfileSelect.value as PerformanceProfileId);
   render(state);
   drawPianoRoll(pianoRoll, state.model, 0);
-  transportStatus.textContent = "Ready";
+  transportStatus.textContent = "Ready to play";
 }
 
 function createRandomSeed(): string {
@@ -191,12 +191,12 @@ function render(nextState: AppState): void {
 
 async function startPlayback(): Promise<void> {
   startButton.disabled = true;
-  transportStatus.textContent = "Starting";
+  transportStatus.textContent = "Starting playback";
 
   try {
     player ??= new ScorePlayer();
     await player.play(state.model);
-    transportStatus.textContent = `Playing ${state.seed}`;
+    transportStatus.textContent = "Playing score";
     startVisualizerLoop();
   } catch (error) {
     transportStatus.textContent = error instanceof Error ? error.message : "Playback failed";
@@ -218,7 +218,7 @@ function startVisualizerLoop(): void {
     }
 
     animationFrame = undefined;
-    transportStatus.textContent = "Complete";
+    transportStatus.textContent = "Playback complete";
   };
 
   animationFrame = window.requestAnimationFrame(drawFrame);

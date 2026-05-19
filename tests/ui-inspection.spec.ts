@@ -26,7 +26,7 @@ for (const viewport of VIEWPORTS) {
     await expect(seedInput).toHaveValue("fugue-smoke");
     await expect(page.getByRole("button", { name: "Random seed" })).toBeVisible();
     await expect(page.getByText("Tempo")).toBeVisible();
-    await expect(page.getByRole("button", { name: "Start" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Play score" })).toBeVisible();
 
     await page.getByRole("button", { name: "Random seed" }).click();
     await expect(seedInput).toHaveValue(/^seed-[0-9a-z]{7}-[0-9a-z]{7}$/);
