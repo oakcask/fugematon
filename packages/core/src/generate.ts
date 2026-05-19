@@ -3,6 +3,7 @@ import type { GenerationInput, GenerationOutput, GenerationParameters, ScoreEven
 import { analyzeScore } from "./generation/diagnostics.js";
 import { chooseKeySignature, chooseTempo, chooseTimeSignature } from "./generation/key.js";
 import { buildPhase13QReviewSummary } from "./generation/phase13q-review.js";
+import { buildPhase13RReviewSummary } from "./generation/phase13r-review.js";
 import { buildFugueScore } from "./generation/sections.js";
 import { buildSubject } from "./generation/subject.js";
 import { Xoshiro128StarStar } from "./prng.js";
@@ -16,9 +17,11 @@ export function generateScore(input: GenerationInput): GenerationOutput {
   const timeSignature = chooseTimeSignature(rng);
   const bpm = chooseTempo(rng);
   const subject = buildSubject(rng, keySignature);
-  const score = buildFugueScore(subject, keySignature, input.lengthTicks, rng, input.selectionModel ?? "baseline");
+  const selectionModel = input.selectionModel ?? "baseline";
+  const score = buildFugueScore(subject, keySignature, input.lengthTicks, rng, selectionModel);
   const diagnostics = analyzeScore(score.notes, score.subjectEntries, score.sectionPlans);
   const phase13QReview = buildPhase13QReviewSummary(score.selectedCandidateEvaluations, diagnostics.qualityVector);
+  const phase13RReview = buildPhase13RReviewSummary(selectionModel, diagnostics.phase12Review);
   const generatedUntilTick = Math.max(input.lengthTicks, score.endTick);
 
   const events: ScoreEvent[] = [
@@ -83,6 +86,7 @@ export function generateScore(input: GenerationInput): GenerationOutput {
     events,
     diagnostics: {
       generatorVersion: GENERATOR_VERSION,
+      selectionModel,
       seed: input.seed,
       lengthTicks: input.lengthTicks,
       generatedUntilTick,
@@ -128,6 +132,7 @@ export function generateScore(input: GenerationInput): GenerationOutput {
       phase12Review: diagnostics.phase12Review,
       qualityVector: diagnostics.qualityVector,
       phase13QReview,
+      phase13RReview,
       ornamentCandidateCount: diagnostics.ornamentCandidateCount,
       ornamentDensity: diagnostics.ornamentDensity,
       ornamentPlacementReasons: diagnostics.ornamentPlacementReasons,

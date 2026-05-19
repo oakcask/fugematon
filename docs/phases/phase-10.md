@@ -136,4 +136,4 @@ Phase 8/9 は削除しない。ただし Phase 10 後の譜面レビューで、
 * Phase 8: ring buffer replay、rewind、MVP sliders、parameter-change meta event。
 * Phase 9: Dedicated Web Worker、deadline、best-so-far fallback。
 
-Phase 8/9 へ戻る条件は後続 Phase で更新され、現在は Phase 13Q の voice independence / entry harmony quality pass を先に完了する。
+Phase 8/9 へ戻る条件は後続 Phase で更新され、現在は Phase 13R の default baseline / phrase convergence repair を先に完了する。

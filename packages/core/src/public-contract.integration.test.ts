@@ -104,6 +104,10 @@ test("public diagnostics expose finite candidate score dimensions", () => {
   assert.ok(output.diagnostics.phase12Review.sectionStatePatterns.topPatterns.length > 0);
   assert.equal(output.diagnostics.phase13QReview.schemaVersion, 1);
   assert.ok(Array.isArray(output.diagnostics.phase13QReview.sentinelCandidateLinks));
+  assert.equal(output.diagnostics.phase13RReview.schemaVersion, 1);
+  assert.equal(output.diagnostics.phase13RReview.selectionModel, output.diagnostics.selectionModel);
+  assert.ok(Array.isArray(output.diagnostics.phase13RReview.findings));
+  assert.equal(typeof output.diagnostics.phase13RReview.reviewRequired, "boolean");
 
   for (const issue of output.diagnostics.issues) {
     assert.equal(issue.severity, "warning");

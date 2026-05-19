@@ -674,8 +674,40 @@ export type Phase13QReviewSummary = {
   sentinelCandidateLinks: Phase13QSentinelCandidateLink[];
 };
 
+export type Phase13RReviewFindingCode =
+  | "legacy-default-selection-model"
+  | "mechanical-section-pattern-repetition"
+  | "low-section-pattern-diversity"
+  | "entry-pattern-family-concentration"
+  | "subject-stem-family-concentration"
+  | "subject-fragment-family-concentration";
+
+export type Phase13RReviewFinding = {
+  code: Phase13RReviewFindingCode;
+  severity: "review-required";
+  metric: string;
+  actual: number | string;
+  expected: string;
+  message: string;
+};
+
+export type Phase13RReviewSummary = {
+  schemaVersion: 1;
+  selectionModel: SelectionModel;
+  reviewRequired: boolean;
+  metrics: {
+    mostRepeatedFourSectionPatternCount: number;
+    uniqueFourSectionPatternCount: number;
+    topEntryPatternFamilyShare: number;
+    topSubjectStemFamilyShare: number;
+    topSubjectFragmentFamilyShare: number;
+  };
+  findings: Phase13RReviewFinding[];
+};
+
 export type GenerationDiagnostics = {
   generatorVersion: number;
+  selectionModel: SelectionModel;
   seed: string;
   lengthTicks: number;
   generatedUntilTick: number;
@@ -721,6 +753,7 @@ export type GenerationDiagnostics = {
   phase12Review: Phase12ReviewSummary;
   qualityVector: Phase13QualityVector;
   phase13QReview: Phase13QReviewSummary;
+  phase13RReview: Phase13RReviewSummary;
   ornamentCandidateCount: number;
   ornamentDensity: number;
   ornamentPlacementReasons: OrnamentPlacementReasons;

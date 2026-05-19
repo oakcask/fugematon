@@ -2,6 +2,8 @@
 
 This review records the evidence for inserting Phase 13Q before Phase 8/9 UI and operational work. It is based on the Phase 13 quality vector model and a focused A/B score review comparing `phase10-oracle-selection` with the current `phase10-section-local-planner` baseline.
 
+Update: Phase 13Q is no longer the direct predecessor to Phase 8. Later listening and default-path diagnostics inserted [Phase 13R](../phases/phase-13r.md) after Phase 13Q; see [Phase 13R convergence review](phase-13r-convergence-review.md).
+
 Use [quality metrics reference](../reference/quality-metrics.md) for current diagnostics, reference profile, quality vector, and adoption policy meanings. This review records why Phase 13Q is inserted before Phase 8/9.
 
 Review command used for the focused planning pass:
@@ -44,5 +46,7 @@ Evidence strength: plausible and seed-crossing. It is supported by the 22 seed a
 ## Project Response
 
 Insert Phase 13Q before Phase 8. The work should first expose candidate diversity and bridge Phase 13 quality-vector evidence into candidate explanations, then add guarded phrase-family, entry-harmony, and voice-pair planner changes. Adoption should require A/B review, focused seed score inspection, and manual listening notes under the default and strict-counterpoint performance profiles.
+
+Later project response: after Phase 13Q automatic adoption, insert Phase 13R before Phase 8 to align the normal default path and repair remaining phrase convergence.
 
 Do not make UI controls the next phase. The current issues are generator and planner quality problems, not interaction problems.

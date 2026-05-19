@@ -268,6 +268,7 @@ type ReviewSeedComparisonSnapshot = {
     reviewSignals: Phase7BGatePolicyResult["reviewSignals"];
   };
   qualityVector: GenerationDiagnostics["qualityVector"];
+  phase13RReview: GenerationDiagnostics["phase13RReview"];
 };
 
 type ReviewSeedComparisonDeltas = {
@@ -278,6 +279,7 @@ type ReviewSeedComparisonDeltas = {
   phase7BReviewSignals: number;
   qualityVectorDistance: number;
   localSentinelCount: number;
+  phase13RReviewFindings: number;
   phase8ReadyChanged: boolean;
 };
 
@@ -344,6 +346,7 @@ type ReviewDiagnosticsSummary = {
   candidatePoolOracle: CandidatePoolOracleSummary;
   phase11Review: GenerationDiagnostics["phase11Review"];
   phase12Review: GenerationDiagnostics["phase12Review"];
+  phase13RReview: GenerationDiagnostics["phase13RReview"];
   qualityVector: GenerationDiagnostics["qualityVector"];
 };
 
@@ -465,6 +468,7 @@ function compareReviewSeed(baselineSeed: ReviewSummarySeed, variantSeed: ReviewS
       qualityVectorDistance(variant.qualityVector) - qualityVectorDistance(baseline.qualityVector),
     ),
     localSentinelCount: variant.qualityVector.localSentinels.length - baseline.qualityVector.localSentinels.length,
+    phase13RReviewFindings: variant.phase13RReview.findings.length - baseline.phase13RReview.findings.length,
     phase8ReadyChanged: variant.phase7BGate.phase8Ready !== baseline.phase7BGate.phase8Ready,
   };
 
@@ -499,6 +503,7 @@ function createReviewSeedSnapshot(seed: ReviewSummarySeed): ReviewSeedComparison
       reviewSignals: seed.phase7BGate.reviewSignals,
     },
     qualityVector: seed.diagnosticsSummary.qualityVector,
+    phase13RReview: seed.diagnosticsSummary.phase13RReview,
   };
 }
 
@@ -531,6 +536,9 @@ function describeImprovements(
   }
   if (deltas.localSentinelCount < 0) {
     improvements.push("local sentinel count decreased");
+  }
+  if (deltas.phase13RReviewFindings < 0) {
+    improvements.push("Phase 13R convergence review findings decreased");
   }
 
   return improvements;
@@ -565,6 +573,9 @@ function describeRegressions(
   }
   if (deltas.localSentinelCount > 0) {
     regressions.push("local sentinel count increased");
+  }
+  if (deltas.phase13RReviewFindings > 0) {
+    regressions.push("Phase 13R convergence review findings increased");
   }
 
   return regressions;
@@ -725,6 +736,7 @@ function summarizeDiagnostics(diagnostics: GenerationDiagnostics): ReviewDiagnos
     candidatePoolOracle: diagnostics.candidatePoolOracle,
     phase11Review: diagnostics.phase11Review,
     phase12Review: diagnostics.phase12Review,
+    phase13RReview: diagnostics.phase13RReview,
     qualityVector: diagnostics.qualityVector,
   };
 }

@@ -83,4 +83,4 @@ The 22 seed Phase 12 baseline review is recorded in [Phase 13 quality vector rev
 
 ## Next Work
 
-Phase 13 is complete. The next implementation phase is [Phase 13Q](phase-13q.md), which uses the quality vector evidence to improve voice independence and entry harmony before Phase 8 operational work. Phase 8 should carry Phase 13Q review evidence forward into operation before/after review bundles.
+Phase 13 is complete. Phase 13Q used the quality vector evidence to improve voice independence and entry harmony. The current next implementation phase is [Phase 13R](phase-13r.md), which aligns the normal default path and repairs phrase convergence before Phase 8 operational work.
