@@ -43,4 +43,4 @@ Planning response: Phase 12P should first integrate shared `PerformanceProfile` 
 
 ## Completion Decision
 
-Adopt `phase10-section-local-planner` as the Phase 12 phrase/repetition baseline. Phase 8/9 operational work should resume only after Phase 12P integrates shared performance profiles and Phase 13 adds the quality-vector review model for the remaining voice-independence, repeated-note, unison-span, leap-recovery, and counter-subject tradeoffs.
+Adopt `phase10-section-local-planner` as the Phase 12 phrase/repetition baseline. Phase 8/9 operational work should resume only after Phase 12P integrates shared performance profiles, Phase 13 adds the quality-vector review model, and Phase 13Q uses that evidence to improve the remaining voice-independence, entry-harmony, repeated-note, unison-span, leap-recovery, and counter-subject tradeoffs.
