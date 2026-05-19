@@ -29,4 +29,5 @@
 * Phase 10 の完了条件、採用条件、review evidence、残る listening gap を見る場合は [Phase 10](phase-10.md) を読む。
 * 実装対象の Phase が分かっている場合は、その Phase だけ読む。
 * Phase 5 の品質根拠が必要な場合は、本文中のリンクから該当レビューへ進む。
+* 指標の意味や採否 policy を確認する場合は、Phase 文書ではなく [../reference/quality-metrics.md](../reference/quality-metrics.md) を読む。
 * Phase scope を変更する場合は、[../reference/technical-plan.md](../reference/technical-plan.md) も確認する。

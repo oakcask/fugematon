@@ -2,6 +2,8 @@
 
 Phase 13 added review-only quality vector diagnostics to the Phase 12P performance-profile baseline. It does not change selected `ScoreEvent` output, generator scoring, selection model, performance profile resolution, or `generatorVersion`.
 
+Current definitions for quality vector axes and local sentinels live in [quality metrics reference](../reference/quality-metrics.md). This review records the Phase 13 evidence and project response.
+
 Evidence command:
 
 ```sh

@@ -2,6 +2,8 @@
 
 This review records the evidence for inserting Phase 13Q before Phase 8/9 UI and operational work. It is based on the Phase 13 quality vector model and a focused A/B score review comparing `phase10-oracle-selection` with the current `phase10-section-local-planner` baseline.
 
+Use [quality metrics reference](../reference/quality-metrics.md) for current diagnostics, reference profile, quality vector, and adoption policy meanings. This review records why Phase 13Q is inserted before Phase 8/9.
+
 Review command used for the focused planning pass:
 
 ```sh
