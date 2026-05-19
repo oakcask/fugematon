@@ -12,7 +12,7 @@
 ## 詳細本文の主な範囲
 
 * 基本方針、アプリケーション基盤、音声、描画、永続化。
-* 生成パラメータ、テスト、diagnostics 閾値。指標の意味は [quality-metrics.md](quality-metrics.md) に置く。
+* 無限再生モード、内部状態可視化、限定操作、テスト、diagnostics 閾値。指標の意味は [quality-metrics.md](quality-metrics.md) に置く。
 * 調性的処理、主題 entry、教会旋法。
 * 生成エンジン API、CLI、パッケージ構成、依存ルール、performance profile、CI。
 * 代表 seed、MIDI export、再現データ形式、フェーズ別実装順序。

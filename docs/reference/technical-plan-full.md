@@ -68,28 +68,19 @@
 * セッション保存や生成結果のエクスポートには IndexedDB を採用する。
 * 設定値程度であれば localStorage でも足りるが、譜面イベント列の保存には IndexedDB の方が適している。
 
-## 生成パラメータ案
+## 無限再生と操作方針
 
-* MVP では、音楽的破綻につながりにくく、聴感上の変化が分かりやすいパラメータからスライダ化する。
-* パラメータ変更は即時に生成済みノートへ反映せず、次の状態遷移から有効にする。
-* パラメータ変更は parameter-change メタイベントとして履歴に記録する。
+Fugematon の長時間体験は、細かな生成パラメータをユーザーが直接調整することではなく、音楽的な記憶を持った再生セッションとして設計する。有限状態機械が扱う状態は、主題 family、派生形、調性領域、密度、終止感、反復疲労、直近の形式機能などの抽象状態にする。実装上は状態遷移を共有し、視聴体験としては以下のモードを分ける。
 
-### MVP 候補
+* continuous fugue: 明確な曲間を作らず、主題の再現、断片化、転回、移調、episode、stretto-like section を続ける。
+* endless program: 個々の曲または segment は意味的に終止し、次の曲は前の主題 family、調性、密度、終止感、疲労度を受けて生成する。
+* regenerative cycle: segment ごとに終止感を持たせながら、主題や状態の記憶を残して次の section へ橋渡しする。
 
-* strictness: 対位法規則の厳格さ。
-  * 高いほど禁則回避を優先し、低いほど旋律的な自由度を増やす。
-* density: 音符密度。
-  * 高いほど細かい音価や動きが増え、低いほど長い音価が増える。
-* subjectPresence: 主題の出現頻度。
-  * 高いほど主題や主題断片が頻繁に現れ、低いほど episode 的な推移が長くなる。
-* episodeTension: episode の緊張度。
-  * 高いほど転調感、順次進行、主題断片の反復を強める。
-* voiceIndependence: 声部の独立性。
-  * 高いほど各声部が別々に動き、低いほど和声的にまとまった動きが増える。
-* registerSpread: 声部間の音域の広がり。
-  * 高いほど上下に広く、低いほど密集した響きになる。
-* ornamentation: 装飾の量。
-  * 高いほど経過音、刺繍音、短い装飾が増える。
+ユーザー向け MVP 操作は、再生モード、seed、performance profile、必要最小限の再生成またはスキップに絞る。strictness、density、subjectPresence などの細かな値は、初期は直接スライダ化せず、seed と session state から決まる内部状態として扱う。操作を追加する場合も、音楽的な退屈さを隠すためではなく、次の状態遷移を選ぶための高水準 command として設計する。
+
+内部状態はビジュアライザの主要な鑑賞要素にする。状態遷移、主題 family、answer transform、fragment derivation、調性領域、cadence preparation、density arc、疲労度または novelty budget は、過度な数値 UI ではなく、色、透明度、軌跡、強調表示、境界演出で見せる。
+
+状態変更は即時に生成済みノートへ反映せず、次の状態遷移または segment 境界から有効にする。必要な変更は state-change、boundary、mode-change、parameter-change などのメタイベントとして履歴に記録する。
 
 ### 音色パラメータ
 
@@ -164,7 +155,7 @@
   * 同主調への転調、parallel major/minor shift、借用和音的な色彩変化は style profile に応じて評価し、strict-classical では控えめ、hybrid または popular-tolerant では表情変化として許容する。
   * modal context では古典的な導音解決を常に強制せず、mode の特徴音と modal cadence の説得力を別指標で扱う。
   * 複数 seed の note 数、entry 数、状態遷移列が不自然に同型になり続ける場合は form repetition warning として扱う。
-  * Phase 8 の操作パラメータは、Phase 7B の gate policy reset 後に hard constraint 上は増やせる状態になった。Phase 7B、Phase 10、Phase 11、Phase 12、Phase 12P、Phase 13 は完了しており、Phase 6-7 の美しさ metric と manual listening は quality lane の evidence とする。Phase 13Q では、Phase 13 の quality vector evidence を使って candidate diversity、voice independence、entry harmony を生成側で改善してから Phase 8 operational lane へ戻る。
+  * Phase 8 の無限再生セッションは、Phase 7B の gate policy reset 後に hard constraint 上は開始できる状態になった。Phase 7B、Phase 10、Phase 11、Phase 12、Phase 12P、Phase 13 は完了しており、Phase 6-7 の美しさ metric と manual listening は quality lane の evidence とする。Phase 13Q では、Phase 13 の quality vector evidence を使って candidate diversity、voice independence、entry harmony を生成側で改善してから Phase 8 operational lane へ戻る。
 * 閾値はコード内に散らさず、CI 用の diagnostics profile として管理する。
 * diagnostics の項目追加は互換的変更として扱うが、既存閾値の厳格化は generatorVersion とは別に CI 設定の変更として扱う。
 
@@ -453,8 +444,8 @@ pnpm fugematon diagnose --seed bach-001 --ticks 7680
     * 疑似乱数生成器の初期値。
     * 調性、拍子、テンポ、主題、初期パラメータなどを決める起点になる。
   * initialParameters
-    * 演奏開始時点の生成パラメータ。
-    * strictness、density、subjectPresence など、seed だけではなくユーザ指定で上書きされる値を含む。
+    * 演奏開始時点の生成パラメータと内部状態の初期値。
+    * strictness、density、subjectPresence など、seed 由来または高水準 command から決まる値を含む。MVP では細かな値を直接 UI スライダにしない。
   * timebase
     * tick 解像度、テンポ、拍子、開始 tick などの時間基準。
     * 生成、再生、描画、MIDI エクスポートの共通基準になる。
@@ -518,13 +509,13 @@ pnpm fugematon diagnose --seed bach-001 --ticks 7680
 * Phase 7: 前半では Phase 6 後レビューで残った旋律 contour を、声部単体の大跳躍回収だけでなく、4 拍窓と 8 拍窓で bass と上声が同じ概形へ流れ続ける問題として扱う。bass-upper same-direction ratio、contrary ratio、outer-voice contour は diagnostics、candidate scoring、review bundle schema version 5、CI gate に入っている。後半では Phase 7 音楽美レビューで残った rhythmic independence、unison overlap、entry 周辺の severe seconds/sevenths、modal counter-subject identity、long-run form repetition、主題以外も含む stepwise pattern fixation を、評価説明力と実際の生成改善の両方で扱う。リファクタとして `CandidateEvaluation` の feature extraction を entry、cadence、section、voice-pair、role contour の集計単位へ分け、既存 gate のテストを強化してから scoring を変える。候補評価は hard constraint、rule-based soft score、learned aesthetic score に分ける。`CandidateEvaluation` の dimension 別 breakdown、feature version、evaluation model version、pairwise preference、必要に応じた learned weights の A/B review を扱う。harmony dimension は root、chord member、avoid note status、non-chord tone role、解決期限を entry/cadence 周辺で説明する。主題フレーズ生成では、`0-1-2-3-4-3-2-1` 型の過多と 5度到達後の同型下降を減らし、answer entry の支え声部が 2度/7度を持続しない候補を優先する。さらに counter-subject、free counterpoint、continuity filler では、長い単調順次進行、上行/下行 step ratio の偏り、同じ degree pattern の横断反復を diagnostics と review gate に入れる。属音開始を緩めて 3度/6度開始を許す案は derived answer として限定検証し、subject identity、local key、後続 structural tone の説明が gate を通る場合に限る。texture density が下がる箇所では、なぜ 1 声だけが残り、他の 3 パートが休むのかを section、phrase、cadence の文脈で説明する。manual listening gate と pairwise preference は Phase 10 quality lane の採否 evidence とし、満点に張り付く dimension は、section 単位の説明が出るまで hard failure ではなく review signal として扱う。生成品質の回帰テストは古い exact metric を守るための固定具にせず、複数 seed の review bundle と音楽美レビューで改善を確認したうえで新しい期待値へ更新できる。
 * Phase 7 reference diagnostics reset: Phase 7 後半は、absolute metric の weight tuning を主作業にしない。Bach WTC fugue などの参照作品から Fugematon と同じ diagnostics を生成し、voice-pair independence、entry-local consonance/dissonance、phrase contour、subject/counter-subject recurrence、section density transition、cadence approach、long-run repetition を reference profile として保存する。count は曲長、active voice-pair duration、entry 数、section 数で正規化し、Bach でも文脈つきで現れる unison、shared rhythm、stepwise motion をゼロ要求にしない。CI は hard constraints、reference-relative review signal、manual listening and pairwise preference に分ける。candidate pool oracle で blocker seed の候補集合に同時成立解があるか確認し、存在すれば selection model、存在しなければ section-local planner を直す。PR3/PR4 の blocker audit により、既存 absolute Phase 6/7 gate を完全維持したままでは section-local 改善が戻ることを確認したため、Phase 7A は diagnostics reset と blocker 記録で完了扱いにした。Phase 7B は gate policy を hard constraint、review signal、manual preference へ再分類し、review bundle schema version 11 の `phase7BGate` に分類結果を出すところまで完了した。詳細は `docs/phases/phase-7-plus-reorg.md` と `docs/reviews/phase-7-reference-diagnostics-plan.md` に置く。
 * Phase 10: 操作機能より音楽美を優先し、reference corpus manifest、A/B review harness、oracle-driven selection model、section-local planner quality lane、manual pairwise preference template を先に扱った。Phase 10 は完了扱いだが、譜面レビューにより default model adoption には不十分と判断する。実 reference ingestion、manual pairwise listening、learned aesthetic score は継続 quality lane として残る。
-* Phase 11: Phase 8/9 の無限再生・操作機能へ進む前に、harmonic rhythm、subject family、section grammar、register planning、functional texture thinning を破壊的変更も含めて再設計する。strong beat chord support、weak beat non-chord-tone role、bass/root support、suspension preparation/resolution、cadence beat arrival を diagnostics と candidate scoring に入れる。主題 family と continuation state cycle の反復を減らし、adjacent voice interval、声部別 pitch span、register blending、cadence から離れた active voice count を review summary に出す。candidate pool oracle は Phase 11 blocker を `selection-model` と `generator-or-section-planner` に分類し、selection で直る問題だけを scoring、tie-break、Pareto guard、説明可能な offline ranking model の探索対象にする。learned aesthetic score は本採用せず、oracle-best と manual pairwise preference を説明できる feature weight の診断 lane に留める。Phase 11 の変更は hard constraints、determinism、schema compatibility、reference diagnostics summary、candidate-pool oracle shape を維持する。Phase 11 は完了したが、post-completion review により similar phrase blocker は Phase 12 へ移す。
+* Phase 11: Phase 8/9 の無限再生 operational lane へ進む前に、harmonic rhythm、subject family、section grammar、register planning、functional texture thinning を破壊的変更も含めて再設計する。strong beat chord support、weak beat non-chord-tone role、bass/root support、suspension preparation/resolution、cadence beat arrival を diagnostics と candidate scoring に入れる。主題 family と continuation state cycle の反復を減らし、adjacent voice interval、声部別 pitch span、register blending、cadence から離れた active voice count を review summary に出す。candidate pool oracle は Phase 11 blocker を `selection-model` と `generator-or-section-planner` に分類し、selection で直る問題だけを scoring、tie-break、Pareto guard、説明可能な offline ranking model の探索対象にする。learned aesthetic score は本採用せず、oracle-best と manual pairwise preference を説明できる feature weight の診断 lane に留める。Phase 11 の変更は hard constraints、determinism、schema compatibility、reference diagnostics summary、candidate-pool oracle shape を維持する。Phase 11 は完了したが、post-completion review により similar phrase blocker は Phase 12 へ移す。
 * Phase 12: Phase 11 後も残る similar phrase blocker を、Phase 8/9 より前に扱った。phrase-family generator、motive derivation grammar、phrase-level harmonic rhythm、planned support counterpoint を破壊的変更も含めて再設計する方針のうち、subject stem、answer transform、fragment derivation reason、phrase function、section-state pattern を diagnostics と review bundle に出し、guarded phrase-unit planning を採用した。`angular-answer`、`modal-dorian`、`modal-answer`、`modal-cadence`、`dense-modal` の most repeated 4-section pattern count と unique pattern count は Phase 11 current より改善した。repetition はゼロ要求にせず、function-bearing repetition と mechanical repetition を分け、reference profile と比較する。Phase 12 の変更は hard constraints、determinism、schema compatibility、reference diagnostics summary、candidate-pool oracle shape を維持する。voice-independence、leap-recovery、counter-subject identity、repeated-note pressure、low-voice unison span の tradeoff は quality lane に残す。
 * Phase 12P: Phase 13 の前に performance profile integration を完了した。`packages/performance` を DOM、WebAudio、Node.js API、MIDI encoder に依存しない純粋変換層として追加し、`ScoreEvent` と `PerformanceProfile` から deterministic な `PerformanceEvent` を作る。MIDI export は `packages/midi` に分離し、WebAudio preview と同じ profile interpretation を使う。pan、volume、program、velocity curve、articulation、humanize、note length compensation は `ScoreEvent` へ混ぜない。review bundle、MIDI metadata、A/B summary には performance profile id と version を残す。Phase 12P は selected output、generator scoring、quality diagnostics threshold、`generatorVersion` を変えず、profile 変更は rendering change として扱う。
 * Phase 13: Phase 12P で performance profile boundary を固定した後、Phase 12 後の human feedback で残った高声部 repeated-note pressure、exact unison、second collision、bass-tenor / bass-alto の長い pitch-class unison を、単独 metric のしきい値ではなく quality vector の統計的 review/adoption model として扱った。first pass では selected output を変えず、duration-based voice-pair unison、soprano repeated-note contour/ornament release、entry-local severe interval duration、local sentinel を diagnostics に追加し、review bundle に `qualityVector` と `qualityProfileComparison` を出す。22 seed aggregate は median、p90、max、outside seed count、top contributing axes を持つ。hard constraints は従来どおり残し、vector distance は review-required evidence として扱う。learned aesthetic score や covariance-heavy distance は、reference corpus と pairwise listening evidence が揃うまで exploratory に留める。
-* Phase 13Q: Phase 8/9 の UI・操作機能へ戻る前に、Phase 13 の quality vector evidence を使って candidate diversity、voice independence、entry harmony を生成側で改善する。Phase 12 の phrase/repetition 改善を大きく戻さず、subject stem、answer transform、fragment derivation、phrase function、cadence approach、support role の viable candidate diversity を review bundle に出す。pitch-class unison duration、duration-based lockstep、unresolved entry severe interval duration を主対象にし、quality vector local sentinel を candidate explanations へ戻し、phrase-family / derivation candidates、entry harmony selection guard、voice-pair support candidates、soprano repeated-note detector calibration を扱う。採用には 22 seed hard constraint failure 0、Phase 7B readiness、A/B review、focused seed listening note を要求する。
-* Phase 8: Phase 13Q の voice independence / entry harmony 改善後に、リングバッファ履歴、巻き戻し replay、MVP 用スライダ、parameter-change メタイベントを実装する。Phase 6-7 の美しさ metric と manual listening がすべて pass になることは開始条件にしないが、操作 UI が音楽的な退屈さや Phase 12 後の unison / repeated-note defects を隠す設計にならないよう、Phase 13Q の review evidence baseline を前提にする。操作機能は hard constraints、determinism、schema compatibility、reference diagnostics summary、candidate-pool oracle shape を守り、performance profile metadata、review signal、quality vector comparison を消さずに操作前後で比較できることを条件にする。
-* Phase 9: Phase 8 後に Dedicated Web Worker による生成探索の分離、生成期限、フォールバック候補を実装する。Worker fallback は hard constraints を満たす候補を返し、reference diagnostics と review signal を維持する。
+* Phase 13Q: Phase 8/9 の無限再生 operational lane へ戻る前に、Phase 13 の quality vector evidence を使って candidate diversity、voice independence、entry harmony を生成側で改善する。Phase 12 の phrase/repetition 改善を大きく戻さず、subject stem、answer transform、fragment derivation、phrase function、cadence approach、support role の viable candidate diversity を review bundle に出す。pitch-class unison duration、duration-based lockstep、unresolved entry severe interval duration を主対象にし、quality vector local sentinel を candidate explanations へ戻し、phrase-family / derivation candidates、entry harmony selection guard、voice-pair support candidates、soprano repeated-note detector calibration を扱う。採用には 22 seed hard constraint failure 0、Phase 7B readiness、A/B review、focused seed listening note を要求する。
+* Phase 8: Phase 13Q の voice independence / entry harmony 改善後に、無限再生セッションを実装する。ring buffer replay、segment boundary、state-change / boundary / mode-change メタイベント、continuous fugue / endless program / regenerative cycle のモードを扱う。ユーザー向け操作は高水準 command に絞り、細かな生成パラメータのスライダ化は後続課題にする。Phase 6-7 の美しさ metric と manual listening がすべて pass になることは開始条件にしないが、UI が音楽的な退屈さや Phase 12 後の unison / repeated-note defects を隠す設計にならないよう、Phase 13Q の review evidence baseline を前提にする。無限再生セッションは hard constraints、determinism、schema compatibility、reference diagnostics summary、candidate-pool oracle shape を守り、performance profile metadata、review signal、quality vector comparison を消さずに segment 前後で比較できることを条件にする。
+* Phase 9: Phase 8 後に Dedicated Web Worker による生成探索の分離、生成期限、フォールバック候補、長時間 visualizer stability を実装する。Worker fallback は hard constraints を満たす候補を返し、reference diagnostics と review signal を維持する。内部状態可視化は生成、描画、再生が分離されても破綻しないことを条件にする。
 
 ## 生成期限とフォールバック
 
@@ -583,7 +574,7 @@ pnpm fugematon diagnose --seed bach-001 --ticks 7680
   * Phase 12P 以降は performance profile id と version を review artifact に残し、MIDI/WebAudio rendering change を generation change と分ける。
   * Phase 13 以降は quality vector comparison、local sentinel regression、top contributing axes、manual listening gap を A/B adoption summary に残す。
 * Phase 8 以降の CI で確認する項目：
-  * parameter-change メタイベントは、次の状態遷移以降のイベントにのみ影響する。
+  * state-change、boundary、mode-change、parameter-change メタイベントは、次の状態遷移または segment 境界以降のイベントにのみ影響する。
 * Phase 2 以降の手動またはブラウザテストで確認する項目：
   * AudioContext はユーザー操作後に開始し、演奏が途切れず続く。
   * ブラウザが許す場合は、同一セッションや再訪問時に自動再開を試みる。

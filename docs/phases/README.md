@@ -4,12 +4,14 @@
 
 ## 現在読むもの
 
-* [Phase 7+ 再編計画](phase-7-plus-reorg.md): Phase 12 後に Phase 12P、Phase 13、Phase 13Q を挟み、その後 Phase 8/9 operational lane へ戻る現在計画を確認する。
-* [Phase 13Q](phase-13q.md): automatic adoption complete; manual listening follow-up remains open。Phase 8/9 の UI・操作機能へ戻る前に、candidate diversity、voice independence、entry harmony を改善した品質フェーズ。
+* [Phase 7+ 再編計画](phase-7-plus-reorg.md): Phase 12 後に Phase 12P、Phase 13、Phase 13Q を挟み、その後 Phase 8/9 の無限再生 operational lane へ戻る現在計画を確認する。
+* [Phase 8](phase-8.md): Phase 13Q 後に戻る、無限再生セッション、境界設計、内部状態 visualizer の MVP。
+* [Phase 9](phase-9.md): Phase 8 後の Worker 化、生成期限、fallback、長時間 visualizer stability。
+* [Phase 13Q](phase-13q.md): automatic adoption complete; manual listening follow-up remains open。Phase 8/9 の無限再生 operational lane へ戻る前に、candidate diversity、voice independence、entry harmony を改善した品質フェーズ。
 * [Phase 13](phase-13.md): 完了済み。Phase 12 human feedback 後の、quality vector と統計的 review/adoption model。
 * [Phase 12P](phase-12-performance-profile.md): 完了済み。Phase 13 の前に、MIDI と WebAudio が共有する演奏プロファイル境界を組み込んだ infrastructure phase。
 * [Phase 12](phase-12.md): 完了済みの、Phase 11 後に残った similar phrase blocker を Phase 8/9 より前に扱った品質フェーズ。
-* [Phase 11](phase-11.md): 完了済みの、無限再生・操作機能の前に必要な音楽品質モデル再設計と残る quality lane を確認する。
+* [Phase 11](phase-11.md): 完了済みの、無限再生 operational lane の前に必要な音楽品質モデル再設計と残る quality lane を確認する。
 * [Phase 10](phase-10.md): 完了済みの reference corpus、oracle-driven model update、section-local planner、pairwise preference 品質基盤と、継続 quality lane の gap を確認する。
 * [Phase 7](phase-7.md): 概形進行 diagnostics、candidate scoring、review schema version 5、Phase 7 前半の完了記録。
 * [Phase 6](phase-6.md): 旋律線、entry 支持和声、装飾配置、solo texture の自動 gate と完了記録。
@@ -25,7 +27,7 @@
 
 ## 読む判断
 
-* 現在の実装対象を見る場合は [Phase 7+ 再編計画](phase-7-plus-reorg.md) を先に読み、次の品質作業は [Phase 13Q](phase-13q.md)、quality vector の完了 evidence は [Phase 13](phase-13.md) と [../reviews/phase-13-quality-vector-review.md](../reviews/phase-13-quality-vector-review.md) を読む。Phase 8/9 は Phase 13Q 後に戻る operational lane として読む。
+* 現在の実装対象を見る場合は [Phase 7+ 再編計画](phase-7-plus-reorg.md) を先に読み、次の品質作業は [Phase 13Q](phase-13q.md)、quality vector の完了 evidence は [Phase 13](phase-13.md) と [../reviews/phase-13-quality-vector-review.md](../reviews/phase-13-quality-vector-review.md) を読む。Phase 8/9 は Phase 13Q 後に戻る無限再生 operational lane として読む。
 * Phase 10 の完了条件、採用条件、review evidence、残る listening gap を見る場合は [Phase 10](phase-10.md) を読む。
 * 実装対象の Phase が分かっている場合は、その Phase だけ読む。
 * Phase 5 の品質根拠が必要な場合は、本文中のリンクから該当レビューへ進む。
