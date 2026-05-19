@@ -1,6 +1,6 @@
 # Phase 9: Worker 化と長時間安定化
 
-Phase 9 は Phase 8 後の operational lane である。目的は生成探索を UI thread から分離し、無限再生セッション、音声、内部状態 visualizer を長時間安定させることである。
+Phase 9 は Phase 13R required follow-up repair と Phase 8 後の operational lane である。目的は生成探索を UI thread から分離し、無限再生セッション、音声、内部状態 visualizer を長時間安定させることである。
 
 詳細な route は [Phase 7+ 再編計画](phase-7-plus-reorg.md) を読む。fallback の quality policy は [quality metrics reference](../reference/quality-metrics.md) を読む。
 
@@ -17,6 +17,7 @@ Phase 9 は Phase 8 後の operational lane である。目的は生成探索を
 * Worker 化と同時に生成品質の大きな採用判断を変えること。
 * AudioWorklet、OffscreenCanvas、SharedWorker、Service Worker の導入。必要性が明確になってから別途扱う。
 * 細かな生成パラメータ UI を増やすこと。
+* Phase 13R required follow-up repair を Worker fallback や deadline policy で代替すること。
 
 ## Completion Conditions
 
@@ -24,3 +25,4 @@ Phase 9 は Phase 8 後の operational lane である。目的は生成探索を
 * timeout や fallback が reference diagnostics、review signal、quality vector の記録を消さない。
 * 長時間再生で replay、state-change history、boundary history が壊れない。
 * 生成、描画、再生、内部状態 visualizer が分離されても、操作感と音声が安定する。
+* Phase 13R required follow-up repair の focused manual listening、subject-family diversity evidence、検出された音楽的問題の修正と再レビューが Phase 8 開始前に完了している。

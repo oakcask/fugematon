@@ -37,6 +37,8 @@ Review signal へ降格するもの:
 
 この再分類は、音楽的問題を無視するためではありません。Phase 8/9 の operational work が hard constraints と再現性を保ったまま進められるようにし、音楽美は quality lane の evidence として扱うためです。
 
+Current exception: Phase 13R follow-up repair は、focused manual listening、seed 横断 subject-diversity evidence、そこで見つかった音楽的問題の修正 evidence を Phase 8/9 前の開始条件へ昇格します。この例外は、旧 Phase 6/7 beauty gate を復活させるものではなく、Phase 13R で確認した product-boundary / subject-family convergence と、その follow-up で確認した具体的な音楽的問題の申し送りに限定します。
+
 ## A/B Review
 
 Model adoption では、A/B summary の次の項目を合わせて読む。
