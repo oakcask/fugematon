@@ -217,7 +217,7 @@ export function assertPhase13ReviewPreconditions(seeds: readonly string[]): void
     assert.equal(first.diagnostics.keyMetadataMismatches, 0);
     assert.equal(first.diagnostics.unresolvedDissonanceCount, 0);
     assert.equal(first.diagnostics.allVoiceSilenceGapCount, 0);
-    assert.equal(first.diagnostics.candidatePoolOracle.schemaVersion, 4);
+    assert.equal(first.diagnostics.candidatePoolOracle.schemaVersion, 5);
     assert.equal(first.diagnostics.phase12Review.schemaVersion, 1);
   }
 }

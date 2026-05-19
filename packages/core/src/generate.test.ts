@@ -808,12 +808,15 @@ test("generateScore exposes phase-7 candidate pool oracle classifications", () =
   const oracle = output.diagnostics.candidatePoolOracle;
   const classifications = new Set(oracle.blockerClassifications.map((blocker) => blocker.classification));
 
-  assert.equal(oracle.schemaVersion, 4);
+  assert.equal(oracle.schemaVersion, 5);
   assert.ok(oracle.sectionCount > 0);
   assert.ok(oracle.candidateCount >= oracle.sectionCount);
   assert.equal(oracle.phase12PhraseFamilyCandidateCount, 0);
   assert.ok(oracle.viableCandidateCount > 0);
   assert.ok(oracle.hardFailureRejectedCandidateCount >= 0);
+  assert.equal(oracle.candidateDiversity.length, 7);
+  assert.ok(oracle.candidateDiversity.every((diversity) => diversity.candidateCount > 0));
+  assert.ok(oracle.candidateDiversity.some((diversity) => diversity.selectionHasViableAlternative));
   assert.ok(oracle.blockerClassifications.length > 0);
   assert.ok(classifications.has("selection-model") || classifications.has("generator-or-section-planner"));
   assert.deepEqual(
@@ -970,7 +973,7 @@ test("generateScore adds phase-12 phrase family candidates to oracle evidence on
     });
     const oracle = output.diagnostics.candidatePoolOracle;
 
-    assert.equal(oracle.schemaVersion, 4);
+    assert.equal(oracle.schemaVersion, 5);
     assert.ok(oracle.phase12PhraseFamilyCandidateCount > 0);
     assert.ok(oracle.candidateCount > oracle.phase12PhraseFamilyCandidateCount);
 
@@ -1700,7 +1703,7 @@ function requireSelectedCandidateEvaluation(
 function assertPhase10CandidatePoolOracleShape(
   oracle: ReturnType<typeof generateScore>["diagnostics"]["candidatePoolOracle"],
 ) {
-  assert.equal(oracle.schemaVersion, 4);
+  assert.equal(oracle.schemaVersion, 5);
   assert.ok(oracle.sectionCount > 0);
   assert.ok(oracle.candidateCount >= oracle.sectionCount);
   assert.ok(oracle.phase12PhraseFamilyCandidateCount >= 0);

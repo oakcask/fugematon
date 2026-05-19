@@ -3,6 +3,7 @@ import { TICKS_PER_QUARTER } from "../constants.js";
 import type {
   AnswerKind,
   CadenceKind,
+  CandidateDiversityDescriptor,
   CandidateEvaluation,
   EntryForm,
   FragmentTransform,
@@ -726,11 +727,77 @@ export function chooseContinuationSection(
       durationTicks: sectionDurationTicks,
       evaluations,
       selectedCandidateIndex: bestIndex,
+      candidateDiversityDescriptors: candidates.map(describeCandidateDiversity),
       phase12PhraseFamilyCandidateCount:
         selectionModel === "phase10-section-local-planner" ? candidates.length - phraseFamilyCandidateStart : 0,
       stateHistory: [...stateHistory.slice(0, -1), selectedState],
     }),
   };
+}
+
+function describeCandidateDiversity(candidate: Exposition): CandidateDiversityDescriptor {
+  const section = candidate.sectionPlans[0];
+  const entry = candidate.subjectEntries[0];
+  return {
+    subjectStem: subjectStemDescriptor(candidate),
+    answerTransform: answerTransformDescriptor(candidate),
+    fragmentDerivation: fragmentDerivationDescriptor(section),
+    phraseFunction: phraseFunctionDescriptor(section),
+    cadenceApproach: section?.cadenceKind ?? "unknown",
+    supportRole: supportRoleDescriptor(candidate.notes),
+    sectionState: section?.state ?? entry?.state ?? "unknown",
+  };
+}
+
+function subjectStemDescriptor(candidate: Exposition): string {
+  const entry = candidate.subjectEntries.find((candidateEntry) => candidateEntry.form !== "answer");
+  return entry === undefined ? "none" : `${entry.form}:${entry.expectedDegreePattern.slice(0, 8).join("-")}`;
+}
+
+function answerTransformDescriptor(candidate: Exposition): string {
+  const entry = candidate.subjectEntries.find((candidateEntry) => candidateEntry.form === "answer");
+  if (entry === undefined) {
+    return "none";
+  }
+  return `${entry.answerKind ?? "none"}:${entry.expectedDegreePattern.slice(0, 8).join("-")}`;
+}
+
+function fragmentDerivationDescriptor(section: HarmonicPlan | undefined): string {
+  return `${section?.fragmentTransform ?? "none"}:${phraseFunctionDescriptor(section)}`;
+}
+
+function phraseFunctionDescriptor(section: HarmonicPlan | undefined): string {
+  if (section === undefined) {
+    return "unknown";
+  }
+  if (section.state === "episode") {
+    return section.sequencePattern === undefined ? "episode-sequence" : `episode-${section.sequencePattern}`;
+  }
+  if (section.state === "stretto-like") {
+    return "stretto-compression";
+  }
+  if (section.cadenceKind === "authentic" || section.cadenceKind === "modal") {
+    return "cadence-extension";
+  }
+  return "restatement";
+}
+
+function supportRoleDescriptor(notes: readonly NoteEvent[]): string {
+  const supportRoles = new Set(
+    notes
+      .map((note) => note.role)
+      .filter(
+        (role): role is Exclude<NonNullable<NoteEvent["role"]>, "subject" | "answer"> =>
+          role !== undefined && role !== "subject" && role !== "answer",
+      ),
+  );
+  if (supportRoles.size === 0) {
+    return "none";
+  }
+  if (supportRoles.size > 1) {
+    return "mixed";
+  }
+  return [...supportRoles][0]!;
 }
 
 function avoidShortAlternatingPhraseSelection(input: {

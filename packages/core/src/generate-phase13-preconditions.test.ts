@@ -48,6 +48,8 @@ test("generateScore keeps phase-13 local sentinels traceable to selected candida
   );
 
   assert.ok(continuationSentinels.length > 0);
+  assert.equal(output.diagnostics.phase13QReview.schemaVersion, 1);
+  assert.ok(output.diagnostics.phase13QReview.sentinelCandidateLinks.length > 0);
   for (const sentinel of continuationSentinels) {
     assert.ok(
       selectedSections.some(
@@ -55,6 +57,14 @@ test("generateScore keeps phase-13 local sentinels traceable to selected candida
           sentinel.startTick >= section.startTick &&
           sentinel.startTick < section.startTick + section.durationTicks &&
           (sentinel.sectionRole === "mixed" || sentinel.sectionRole === section.state),
+      ),
+    );
+    assert.ok(
+      output.diagnostics.phase13QReview.sentinelCandidateLinks.some(
+        (link) =>
+          link.sentinelKind === sentinel.kind &&
+          link.sentinelStartTick === sentinel.startTick &&
+          link.sentinelDurationTicks === sentinel.durationTicks,
       ),
     );
   }

@@ -4,6 +4,9 @@ import {
   isViableCandidateEvaluation,
 } from "./candidate-evaluation.js";
 import type {
+  CandidateDiversityDescriptor,
+  CandidateDiversityFacet,
+  CandidateDiversityFacetSummary,
   CandidateEvaluation,
   CandidatePoolOracleBlocker,
   CandidatePoolOracleClassification,
@@ -27,6 +30,7 @@ type CandidatePoolOracleSection = {
   selectedCandidateIndex: number;
   viableCandidateCount: number;
   hardFailureRejectedCandidateCount: number;
+  candidateDiversity: CandidateDiversityFacetSummary[];
   blockers: CandidatePoolOracleSectionBlocker[];
 };
 
@@ -164,6 +168,7 @@ export function classifyCandidatePoolOracleSection(input: {
   durationTicks: number;
   evaluations: readonly CandidateEvaluation[];
   selectedCandidateIndex: number;
+  candidateDiversityDescriptors?: readonly CandidateDiversityDescriptor[];
   phase12PhraseFamilyCandidateCount?: number;
   stateHistory?: readonly FugueState[];
   referenceProfile?: ReferenceDiagnosticsProfile;
@@ -189,6 +194,11 @@ export function classifyCandidatePoolOracleSection(input: {
     selectedCandidateIndex: input.selectedCandidateIndex,
     viableCandidateCount: viable.filter(Boolean).length,
     hardFailureRejectedCandidateCount,
+    candidateDiversity: summarizeCandidateDiversity(
+      input.candidateDiversityDescriptors ?? [],
+      viable,
+      input.selectedCandidateIndex,
+    ),
     blockers: BLOCKER_SPECS.flatMap((spec) => {
       const selectedRisk = roundOracleRisk(
         spec.selectedRisk(selected, context) +
@@ -285,7 +295,7 @@ export function summarizeCandidatePoolOracleSections(
   });
 
   return {
-    schemaVersion: 4,
+    schemaVersion: 5,
     sectionCount: sections.length,
     candidateCount: sections.reduce((sum, section) => sum + section.candidateCount, 0),
     phase12PhraseFamilyCandidateCount: sections.reduce(
@@ -297,8 +307,130 @@ export function summarizeCandidatePoolOracleSections(
       (sum, section) => sum + section.hardFailureRejectedCandidateCount,
       0,
     ),
+    candidateDiversity: summarizeCandidateDiversitySections(sections),
     blockerClassifications: blockerSummaries,
   };
+}
+
+const CANDIDATE_DIVERSITY_FACETS: readonly CandidateDiversityFacet[] = [
+  "subjectStem",
+  "answerTransform",
+  "fragmentDerivation",
+  "phraseFunction",
+  "cadenceApproach",
+  "supportRole",
+  "sectionState",
+] as const;
+
+function summarizeCandidateDiversity(
+  descriptors: readonly CandidateDiversityDescriptor[],
+  viable: readonly boolean[],
+  selectedCandidateIndex: number,
+): CandidateDiversityFacetSummary[] {
+  if (descriptors.length === 0) {
+    return [];
+  }
+
+  return CANDIDATE_DIVERSITY_FACETS.map((facet) => {
+    const selectedValue = descriptors[selectedCandidateIndex]?.[facet] ?? "unknown";
+    const valueSummaries = [...countDiversityValues(descriptors, viable, selectedCandidateIndex, facet).values()].sort(
+      (left, right) =>
+        right.viableCandidateCount - left.viableCandidateCount ||
+        right.candidateCount - left.candidateCount ||
+        left.value.localeCompare(right.value),
+    );
+    const viableUniqueValueCount = valueSummaries.filter((value) => value.viableCandidateCount > 0).length;
+
+    return {
+      facet,
+      candidateCount: descriptors.length,
+      viableCandidateCount: viable.filter(Boolean).length,
+      uniqueValueCount: valueSummaries.length,
+      viableUniqueValueCount,
+      selectedValueCount: valueSummaries.find((value) => value.value === selectedValue)?.candidateCount ?? 0,
+      selectionHasViableAlternative: valueSummaries.some(
+        (value) => value.value !== selectedValue && value.viableCandidateCount > 0,
+      ),
+      values: valueSummaries.slice(0, 8),
+    };
+  });
+}
+
+function summarizeCandidateDiversitySections(
+  sections: readonly CandidatePoolOracleSection[],
+): CandidateDiversityFacetSummary[] {
+  return CANDIDATE_DIVERSITY_FACETS.map((facet) => {
+    const valueCounts = new Map<
+      string,
+      { value: string; candidateCount: number; viableCandidateCount: number; selectedCount: number }
+    >();
+    let candidateCount = 0;
+    let viableCandidateCount = 0;
+    let selectionHasViableAlternative = false;
+    let selectedValueCount = 0;
+
+    for (const section of sections) {
+      const facetSummary = section.candidateDiversity.find((summary) => summary.facet === facet);
+      if (facetSummary === undefined) {
+        continue;
+      }
+      candidateCount += facetSummary.candidateCount;
+      viableCandidateCount += facetSummary.viableCandidateCount;
+      selectedValueCount += facetSummary.selectedValueCount;
+      selectionHasViableAlternative ||= facetSummary.selectionHasViableAlternative;
+      for (const value of facetSummary.values) {
+        const current = valueCounts.get(value.value) ?? {
+          value: value.value,
+          candidateCount: 0,
+          viableCandidateCount: 0,
+          selectedCount: 0,
+        };
+        current.candidateCount += value.candidateCount;
+        current.viableCandidateCount += value.viableCandidateCount;
+        current.selectedCount += value.selectedCount;
+        valueCounts.set(value.value, current);
+      }
+    }
+
+    const values = [...valueCounts.values()].sort(
+      (left, right) =>
+        right.viableCandidateCount - left.viableCandidateCount ||
+        right.candidateCount - left.candidateCount ||
+        left.value.localeCompare(right.value),
+    );
+
+    return {
+      facet,
+      candidateCount,
+      viableCandidateCount,
+      uniqueValueCount: values.length,
+      viableUniqueValueCount: values.filter((value) => value.viableCandidateCount > 0).length,
+      selectedValueCount,
+      selectionHasViableAlternative,
+      values: values.slice(0, 8),
+    };
+  });
+}
+
+function countDiversityValues(
+  descriptors: readonly CandidateDiversityDescriptor[],
+  viable: readonly boolean[],
+  selectedCandidateIndex: number,
+  facet: CandidateDiversityFacet,
+) {
+  const values = new Map<
+    string,
+    { value: string; candidateCount: number; viableCandidateCount: number; selectedCount: number }
+  >();
+  for (const [index, descriptor] of descriptors.entries()) {
+    const value = descriptor[facet] || "unknown";
+    const current = values.get(value) ?? { value, candidateCount: 0, viableCandidateCount: 0, selectedCount: 0 };
+    current.candidateCount += 1;
+    current.viableCandidateCount += viable[index] ? 1 : 0;
+    current.selectedCount += index === selectedCandidateIndex ? 1 : 0;
+    values.set(value, current);
+  }
+  return values;
 }
 
 function chooseRepresentative(

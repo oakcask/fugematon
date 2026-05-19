@@ -545,7 +545,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       assert.ok(entry.diagnosticsSummary.candidateEvaluation.averageSelectedSectionSoloTextureRisk >= 0);
       assert.ok(entry.diagnosticsSummary.candidateEvaluation.highSelectedSectionSoloTextureRiskCount >= 0);
       assert.equal(entry.diagnosticsSummary.candidateEvaluation.sectionSoloTextureRiskWarningThreshold, 6);
-      assert.equal(entry.diagnosticsSummary.candidatePoolOracle.schemaVersion, 4);
+      assert.equal(entry.diagnosticsSummary.candidatePoolOracle.schemaVersion, 5);
       assert.ok(entry.diagnosticsSummary.candidatePoolOracle.sectionCount >= 0);
       assert.ok(
         entry.diagnosticsSummary.candidatePoolOracle.candidateCount >=
@@ -890,8 +890,8 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
       assert.notEqual(entry.category, "");
       assert.ok(entry.baseline.diagnosticsSummary.hardConstraintFailures >= 0);
       assert.ok(entry.variant.diagnosticsSummary.hardConstraintFailures >= 0);
-      assert.equal(entry.baseline.candidatePoolOracle.schemaVersion, 4);
-      assert.equal(entry.variant.candidatePoolOracle.schemaVersion, 4);
+      assert.equal(entry.baseline.candidatePoolOracle.schemaVersion, 5);
+      assert.equal(entry.variant.candidatePoolOracle.schemaVersion, 5);
       assert.deepEqual(entry.baseline.candidatePoolOracle, entry.baseline.diagnosticsSummary.candidatePoolOracle);
       assert.deepEqual(entry.variant.candidatePoolOracle, entry.variant.diagnosticsSummary.candidatePoolOracle);
       assert.equal(typeof entry.baseline.phase7BGate.phase8Ready, "boolean");

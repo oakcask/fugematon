@@ -284,6 +284,35 @@ export type CandidatePoolOracleRepresentative = {
   bestViableReferenceStatus: "within-reference" | "below-reference" | "above-reference";
 };
 
+export type CandidateDiversityFacet =
+  | "subjectStem"
+  | "answerTransform"
+  | "fragmentDerivation"
+  | "phraseFunction"
+  | "cadenceApproach"
+  | "supportRole"
+  | "sectionState";
+
+export type CandidateDiversityValueSummary = {
+  value: string;
+  candidateCount: number;
+  viableCandidateCount: number;
+  selectedCount: number;
+};
+
+export type CandidateDiversityFacetSummary = {
+  facet: CandidateDiversityFacet;
+  candidateCount: number;
+  viableCandidateCount: number;
+  uniqueValueCount: number;
+  viableUniqueValueCount: number;
+  selectedValueCount: number;
+  selectionHasViableAlternative: boolean;
+  values: CandidateDiversityValueSummary[];
+};
+
+export type CandidateDiversityDescriptor = Record<CandidateDiversityFacet, string>;
+
 export type CandidatePoolOracleBlockerSummary = {
   blocker: CandidatePoolOracleBlocker;
   referenceAxes: string[];
@@ -303,12 +332,13 @@ export type CandidatePoolOracleBlockerSummary = {
 };
 
 export type CandidatePoolOracleSummary = {
-  schemaVersion: 2 | 3 | 4;
+  schemaVersion: 2 | 3 | 4 | 5;
   sectionCount: number;
   candidateCount: number;
   phase12PhraseFamilyCandidateCount: number;
   viableCandidateCount: number;
   hardFailureRejectedCandidateCount: number;
+  candidateDiversity: CandidateDiversityFacetSummary[];
   blockerClassifications: CandidatePoolOracleBlockerSummary[];
 };
 
@@ -624,6 +654,26 @@ export type Phase13QualityVector = {
   localSentinels: Phase13LocalSentinelSummary[];
 };
 
+export type Phase13QSentinelCandidateLink = {
+  sentinelKind: Phase13LocalSentinelKind;
+  sentinelStartTick: number;
+  sentinelDurationTicks: number;
+  sectionState: FugueState;
+  sectionStartTick: number;
+  sectionDurationTicks: number;
+  cadenceKind: CadenceKind;
+  voicePair?: string;
+  voice?: Voice;
+  entryForm?: EntryForm;
+  entryStartTick?: number;
+  resolutionDeadlineTicks?: number;
+};
+
+export type Phase13QReviewSummary = {
+  schemaVersion: 1;
+  sentinelCandidateLinks: Phase13QSentinelCandidateLink[];
+};
+
 export type GenerationDiagnostics = {
   generatorVersion: number;
   seed: string;
@@ -670,6 +720,7 @@ export type GenerationDiagnostics = {
   phase11Review: Phase11ReviewSummary;
   phase12Review: Phase12ReviewSummary;
   qualityVector: Phase13QualityVector;
+  phase13QReview: Phase13QReviewSummary;
   ornamentCandidateCount: number;
   ornamentDensity: number;
   ornamentPlacementReasons: OrnamentPlacementReasons;

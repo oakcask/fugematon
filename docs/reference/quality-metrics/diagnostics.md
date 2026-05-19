@@ -45,7 +45,8 @@
 
 | Field | Meaning |
 | --- | --- |
-| `candidatePoolOracle` | selected candidate と alternatives を比べ、selection model で直せる問題か、generator / section planner が足りない問題かを切り分ける。 |
+| `candidatePoolOracle` | selected candidate と alternatives を比べ、selection model で直せる問題か、generator / section planner が足りない問題かを切り分ける。Phase 13Q 以降は viable candidate diversity も出す。 |
 | `phase11Review` | register、functional thinning、state grammar、metrical harmony の summary。 |
 | `phase12Review` | subject stem、answer transform、fragment derivation、phrase function、section-state pattern の反復 summary。 |
 | `qualityVector` | Phase 13 以降の normalized review/adoption signal。詳細は [quality vector](quality-vector.md)。 |
+| `phase13QReview` | Phase 13 local sentinel を selected candidate explanation の section、entry、voice pair、resolution deadline へ戻す review-only bridge。 |

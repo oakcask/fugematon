@@ -2,6 +2,7 @@ import { DEFAULT_GENERATION_PARAMETERS, GENERATOR_VERSION, TICKS_PER_QUARTER } f
 import type { GenerationInput, GenerationOutput, GenerationParameters, ScoreEvent } from "./events.js";
 import { analyzeScore } from "./generation/diagnostics.js";
 import { chooseKeySignature, chooseTempo, chooseTimeSignature } from "./generation/key.js";
+import { buildPhase13QReviewSummary } from "./generation/phase13q-review.js";
 import { buildFugueScore } from "./generation/sections.js";
 import { buildSubject } from "./generation/subject.js";
 import { Xoshiro128StarStar } from "./prng.js";
@@ -17,6 +18,7 @@ export function generateScore(input: GenerationInput): GenerationOutput {
   const subject = buildSubject(rng, keySignature);
   const score = buildFugueScore(subject, keySignature, input.lengthTicks, rng, input.selectionModel ?? "baseline");
   const diagnostics = analyzeScore(score.notes, score.subjectEntries, score.sectionPlans);
+  const phase13QReview = buildPhase13QReviewSummary(score.selectedCandidateEvaluations, diagnostics.qualityVector);
   const generatedUntilTick = Math.max(input.lengthTicks, score.endTick);
 
   const events: ScoreEvent[] = [
@@ -125,6 +127,7 @@ export function generateScore(input: GenerationInput): GenerationOutput {
       phase11Review: diagnostics.phase11Review,
       phase12Review: diagnostics.phase12Review,
       qualityVector: diagnostics.qualityVector,
+      phase13QReview,
       ornamentCandidateCount: diagnostics.ornamentCandidateCount,
       ornamentDensity: diagnostics.ornamentDensity,
       ornamentPlacementReasons: diagnostics.ornamentPlacementReasons,
