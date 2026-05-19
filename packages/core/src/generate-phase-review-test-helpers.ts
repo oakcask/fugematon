@@ -40,6 +40,20 @@ export const PHASE_13_FOCUSED_SEEDS = [
   "sparse-cadence",
   "long-arc",
 ] as const;
+export const PHASE_13Q_FOCUSED_SEEDS = [
+  "bach-001",
+  "fugue-smoke",
+  "sparse-cadence",
+  "minor-entry",
+  "modal-cadence",
+  "tight-stretto",
+  "angular-answer",
+  "modal-answer",
+  "dense-modal",
+  "wide-key",
+  "circle-fifths",
+  "contrary-motion",
+] as const;
 
 const PHASE_12_REPETITION_REVIEW_SEEDS = [...PHASE_5_REVIEW_SEEDS, ...PHASE_5_11_ROTATION_SEEDS].map(
   ({ seed }) => seed,
