@@ -4,8 +4,12 @@ import { PHASE_5_LENGTH_TICKS } from "./constants.js";
 import { generateScore } from "./generate.js";
 import { assertPhase13ReviewPreconditions, PHASE_13_FOCUSED_SEEDS } from "./generate-phase-review-test-helpers.js";
 
-test("generateScore keeps phase-13 focused seeds ready for review-only diagnostics", () => {
-  assertPhase13ReviewPreconditions(PHASE_13_FOCUSED_SEEDS);
+test("generateScore keeps phase-13 focused seed batch A ready for review-only diagnostics", () => {
+  assertPhase13ReviewPreconditions(PHASE_13_FOCUSED_SEEDS.slice(0, 4));
+});
+
+test("generateScore keeps phase-13 focused seed batch B ready for review-only diagnostics", () => {
+  assertPhase13ReviewPreconditions(PHASE_13_FOCUSED_SEEDS.slice(4));
 });
 
 test("generateScore exposes phase-13 quality vector diagnostics", () => {
