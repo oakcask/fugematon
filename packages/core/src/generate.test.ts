@@ -234,7 +234,7 @@ test("generateScore validates representative phase-1 seeds", () => {
 });
 
 test("generateScore validates representative phase-3 seeds", () => {
-  const startMilliseconds = performance.now();
+  const startCpuUsage = process.cpuUsage();
 
   for (const { seed, category } of PHASE_3_REPRESENTATIVE_SEEDS) {
     const output = generateScore({ seed, lengthTicks: PHASE_3_LENGTH_TICKS });
@@ -255,9 +255,10 @@ test("generateScore validates representative phase-3 seeds", () => {
     assert.ok(output.diagnostics.candidateEvaluations > 0);
   }
 
-  const elapsedMilliseconds = performance.now() - startMilliseconds;
+  const elapsedCpuMilliseconds = cpuUsageMilliseconds(process.cpuUsage(startCpuUsage));
   assert.ok(
-    elapsedMilliseconds < PHASE_3_DIAGNOSTICS_PROFILE.maxGenerationMilliseconds * PHASE_3_REPRESENTATIVE_SEEDS.length,
+    elapsedCpuMilliseconds <
+      PHASE_3_DIAGNOSTICS_PROFILE.maxGenerationMilliseconds * PHASE_3_REPRESENTATIVE_SEEDS.length,
   );
 });
 
@@ -1765,6 +1766,10 @@ function stepwisePatternRole(
 function maximum(values: readonly number[]): number {
   assert.ok(values.length > 0);
   return Math.max(...values);
+}
+
+function cpuUsageMilliseconds(usage: NodeJS.CpuUsage): number {
+  return (usage.user + usage.system) / 1000;
 }
 
 function roundMetric(value: number): number {
