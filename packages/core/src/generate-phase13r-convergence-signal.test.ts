@@ -3,7 +3,17 @@ import test from "node:test";
 import { PHASE_5_LENGTH_TICKS } from "./constants.js";
 import { generateScore } from "./generate.js";
 
-const PHASE_13R_FOCUSED_SEEDS = ["bach-001", "fugue-smoke", "modal-cadence", "dense-modal"] as const;
+const PHASE_13R_FOCUSED_SEEDS = [
+  "bach-001",
+  "fugue-smoke",
+  "modal-cadence",
+  "dense-modal",
+  "angular-answer",
+  "modal-answer",
+  "minor-entry",
+  "sparse-cadence",
+  "random-listen-check",
+] as const;
 
 test("generateScore exposes phase-13R review signals for the implicit legacy default path", () => {
   const output = generateScore({ seed: "fugue-smoke", lengthTicks: PHASE_5_LENGTH_TICKS });
@@ -56,5 +66,7 @@ test("phase-13R focused seeds make legacy-default and current-planner convergenc
       current.diagnostics.phase13RReview.metrics.uniqueFourSectionPatternCount >=
         legacy.diagnostics.phase13RReview.metrics.uniqueFourSectionPatternCount,
     );
+    assert.ok(current.diagnostics.phase13RReview.metrics.topSubjectStemFamilyShare > 0);
+    assert.ok(current.diagnostics.phase13RReview.metrics.topSubjectFragmentFamilyShare > 0);
   }
 });
