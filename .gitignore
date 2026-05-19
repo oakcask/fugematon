@@ -7,4 +7,6 @@ samples/**/*.mid
 samples/**/*.json
 playwright-report/
 test-results/
+.cache/
+tmp/
 .bibliography-cache/
