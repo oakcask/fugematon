@@ -1,38 +1,45 @@
 import { access, readdir, readFile, stat } from "node:fs/promises";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const cwd = process.cwd();
 const isGitHubActions = process.env.GITHUB_ACTIONS === "true";
+const slowTestCaseSampleLimit = 5;
 
-try {
-  await main();
-} catch (error) {
-  reportScriptError(error);
-  process.exit(1);
+if (isMainModule()) {
+  try {
+    await main();
+  } catch (error) {
+    reportScriptError(error);
+    process.exit(1);
+  }
 }
 
 async function main() {
   const { reportPath, maxSeconds } = parseArguments(process.argv.slice(2));
   const reports = await readJUnitReports(reportPath);
   const testCases = reports.flatMap(({ report }) => parseJUnitTestCases(report));
-  const slowTestCases = testCases.filter((testCase) => testCase.seconds > maxSeconds);
+  const testFiles = summarizeTestFileDurations(testCases);
+  const slowTestFiles = testFiles.filter((testFile) => testFile.seconds > maxSeconds);
 
-  if (slowTestCases.length > 0) {
+  if (slowTestFiles.length > 0) {
     console.error(`Slow test files exceeded the ${maxSeconds.toFixed(2)}s budget:`);
-    const sortedSlowTestCases = slowTestCases.toSorted((left, right) => right.seconds - left.seconds);
-    for (const testCase of sortedSlowTestCases) {
-      console.error(`- ${testCase.name}: ${testCase.seconds.toFixed(2)}s`);
-      await reportSlowTestCase(testCase, maxSeconds);
+    for (const testFile of slowTestFiles) {
+      console.error(`- ${formatTestFileDuration(testFile)}`);
+      for (const testCase of testFile.testCases.slice(0, slowTestCaseSampleLimit)) {
+        console.error(`  - ${formatTestCaseDuration(testCase)}`);
+      }
+      await reportSlowTestFile(testFile, maxSeconds);
     }
     console.error("\nSplit slow test files so node --test can distribute the work across more test processes.");
   }
 
   console.log("JUnit test file durations:");
-  for (const testCase of testCases.toSorted((left, right) => right.seconds - left.seconds)) {
-    console.log(`- ${testCase.name}: ${testCase.seconds.toFixed(2)}s`);
+  for (const testFile of testFiles) {
+    console.log(`- ${formatTestFileDuration(testFile)}; slowest ${formatTestCaseDuration(testFile.testCases[0])}`);
   }
 
-  if (slowTestCases.length > 0) {
+  if (slowTestFiles.length > 0) {
     process.exit(1);
   }
 }
@@ -80,7 +87,7 @@ async function collectXmlFiles(directory, reportPaths) {
   }
 }
 
-function parseJUnitTestCases(xml) {
+export function parseJUnitTestCases(xml) {
   const testCases = [];
   const testcasePattern = /<testcase\b([^>]*)\/?>/g;
 
@@ -89,7 +96,12 @@ function parseJUnitTestCases(xml) {
     const name = attributes.name;
     const seconds = Number(attributes.time);
     if (name !== undefined && Number.isFinite(seconds)) {
-      testCases.push({ name, seconds });
+      testCases.push({
+        file:
+          attributes.file === undefined ? normalizeNodeTestFilePath(name) : normalizeNodeTestFilePath(attributes.file),
+        name,
+        seconds,
+      });
     }
   }
 
@@ -98,6 +110,58 @@ function parseJUnitTestCases(xml) {
   }
 
   return testCases;
+}
+
+export function summarizeTestFileDurations(testCases) {
+  const summariesByFile = new Map();
+
+  for (const testCase of testCases) {
+    let summary = summariesByFile.get(testCase.file);
+    if (summary === undefined) {
+      summary = {
+        file: testCase.file,
+        seconds: 0,
+        testCases: [],
+      };
+      summariesByFile.set(testCase.file, summary);
+    }
+
+    summary.seconds += testCase.seconds;
+    summary.testCases.push(testCase);
+  }
+
+  for (const summary of summariesByFile.values()) {
+    summary.testCases.sort((left, right) => right.seconds - left.seconds);
+  }
+
+  return Array.from(summariesByFile.values()).sort((left, right) => right.seconds - left.seconds);
+}
+
+function normalizeNodeTestFilePath(filePath) {
+  const normalized = filePath.replaceAll("\\", "/");
+  const sourceMatch = normalized.match(/(?:^|\/)((?:packages\/[^/]+\/src\/.+\.ts)|(?:workflow-scripts\/.+\.mjs))$/);
+  if (sourceMatch !== null) {
+    return sourceMatch[1];
+  }
+
+  const packageDistMatch = normalized.match(/(?:^|\/)(packages\/[^/]+)\/dist\/(.+)\.js$/);
+  if (packageDistMatch !== null) {
+    return `${packageDistMatch[1]}/src/${packageDistMatch[2]}.ts`;
+  }
+
+  return normalized;
+}
+
+function formatTestFileDuration(testFile) {
+  return `${testFile.file}: ${testFile.seconds.toFixed(2)}s across ${formatTestCaseCount(testFile.testCases.length)}`;
+}
+
+function formatTestCaseDuration(testCase) {
+  return `${testCase.name}: ${testCase.seconds.toFixed(2)}s`;
+}
+
+function formatTestCaseCount(count) {
+  return `${count} test ${count === 1 ? "case" : "cases"}`;
 }
 
 function parseXmlAttributes(rawAttributes) {
@@ -124,15 +188,19 @@ function toPosixRelativePath(filePath) {
   return path.relative(cwd, path.resolve(cwd, filePath)).split(path.sep).join("/");
 }
 
-async function reportSlowTestCase(testCase, maxSeconds) {
+async function reportSlowTestFile(testFile, maxSeconds) {
   if (!isGitHubActions) {
     return;
   }
 
-  const annotationFile = await resolveAnnotationFile(testCase.name);
-  const message = `${testCase.name} took ${testCase.seconds.toFixed(2)}s, exceeding the ${maxSeconds.toFixed(
+  const annotationFile = await resolveAnnotationFile(testFile.file);
+  const message = `${testFile.file} took ${testFile.seconds.toFixed(2)}s across ${formatTestCaseCount(
+    testFile.testCases.length,
+  )}, exceeding the ${maxSeconds.toFixed(
     2,
-  )}s node --test file duration budget. Split the file so node --test can distribute the work across more test processes.`;
+  )}s node --test file duration budget. Slowest test case: ${formatTestCaseDuration(
+    testFile.testCases[0],
+  )}. Split the file so node --test can distribute the work across more test processes.`;
 
   writeGitHubErrorAnnotation({
     file: annotationFile,
@@ -161,6 +229,10 @@ async function resolveAnnotationFile(testCaseName) {
     return testCaseName;
   }
   return undefined;
+}
+
+function isMainModule() {
+  return process.argv[1] !== undefined && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 }
 
 async function fileExists(filePath) {
