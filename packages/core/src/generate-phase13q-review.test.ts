@@ -31,7 +31,7 @@ test("generateScore keeps phase-13Q focused seeds ready for candidate-diversity 
   }
 });
 
-test("generateScore links unresolved entry sentinels to selected entry context", () => {
+test("generateScore links unresolved entry sentinels to selected entry context and deadlines", () => {
   const output = generateScore({
     seed: "modal-cadence",
     lengthTicks: PHASE_5_LENGTH_TICKS,
@@ -49,6 +49,7 @@ test("generateScore links unresolved entry sentinels to selected entry context",
   assert.ok(unresolvedEntryLinks.every((link) => link.voice !== undefined));
   assert.ok(unresolvedEntryLinks.every((link) => link.entryForm !== undefined));
   assert.ok(unresolvedEntryLinks.every((link) => link.entryStartTick !== undefined));
+  assert.ok(unresolvedEntryLinks.every((link) => link.resolutionDeadlineTicks !== undefined));
   assert.ok(
     unresolvedEntryLinks.every(
       (link) =>

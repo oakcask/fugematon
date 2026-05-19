@@ -82,5 +82,5 @@ function entrySevereIntervalMatchesSentinel(
   interval: Phase13QualityVector["entrySevereIntervals"][number],
   sentinel: Phase13LocalSentinelSummary,
 ): boolean {
-  return interval.voice === sentinel.voice && interval.startTick === sentinel.startTick;
+  return interval.voice === sentinel.voice && interval.representativeTick === sentinel.startTick;
 }
