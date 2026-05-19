@@ -17,7 +17,7 @@ import {
 import { evaluatePhase6Diagnostics, evaluatePhase7Diagnostics } from "./review-gate.js";
 
 test("generateScore reports phase-6 melody, entry, ornament, and solo diagnostics", () => {
-  const output = generateScore({ seed: "fugue-smoke", lengthTicks: PHASE_5_LENGTH_TICKS });
+  const output = generateScore({ seed: "fugue-smoke", lengthTicks: PHASE_5_LENGTH_TICKS, selectionModel: "baseline" });
   const firstContinuationStartTick = output.diagnostics.sectionPlans.find(
     (plan) => plan.state !== "exposition",
   )?.startTick;
@@ -41,7 +41,7 @@ test("generateScore reports phase-6 melody, entry, ornament, and solo diagnostic
 });
 
 test("generateScore reports phase-7 contour motion diagnostics", () => {
-  const output = generateScore({ seed: "wide-key", lengthTicks: PHASE_5_LENGTH_TICKS });
+  const output = generateScore({ seed: "wide-key", lengthTicks: PHASE_5_LENGTH_TICKS, selectionModel: "baseline" });
   const { fourBeat, eightBeat } = output.diagnostics.pitchContourMotion;
 
   assert.equal(fourBeat.windowTicks, TICKS_PER_QUARTER * 4);
@@ -68,7 +68,7 @@ test("generateScore reports phase-7 contour motion diagnostics", () => {
 });
 
 test("generateScore reports role and section stepwise pattern diagnostics", () => {
-  const output = generateScore({ seed: "fugue-smoke", lengthTicks: PHASE_5_LENGTH_TICKS });
+  const output = generateScore({ seed: "fugue-smoke", lengthTicks: PHASE_5_LENGTH_TICKS, selectionModel: "baseline" });
   const roles = new Set(output.diagnostics.stepwisePattern.roles.map((summary) => summary.role));
   const freeCounterpoint = stepwisePatternRole(output.diagnostics.stepwisePattern.roles, "free-counterpoint");
   const counterSubject = stepwisePatternRole(output.diagnostics.stepwisePattern.roles, "counter-subject");
@@ -104,7 +104,7 @@ test("generateScore keeps stepwise pattern evidence across phase-7 review seeds 
   const seeds = [...PHASE_5_REVIEW_SEEDS, ...PHASE_5_11_ROTATION_SEEDS];
 
   for (const { seed } of seeds) {
-    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
+    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS, selectionModel: "baseline" });
     const gate6 = evaluatePhase6Diagnostics(seed, output.diagnostics);
     const gate7 = evaluatePhase7Diagnostics(seed, output.diagnostics);
     const freeCounterpoint = stepwisePatternRole(output.diagnostics.stepwisePattern.roles, "free-counterpoint");
@@ -128,7 +128,7 @@ test("generateScore catches free-counterpoint contour false positives with stepw
   const blockerSeeds = ["fugue-smoke", "lyrical-line", "contrary-answer", "bright-answer", "modal-answer"] as const;
 
   for (const seed of blockerSeeds) {
-    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
+    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS, selectionModel: "baseline" });
     const freeCounterpoint = stepwisePatternRole(output.diagnostics.stepwisePattern.roles, "free-counterpoint");
 
     assert.equal(output.diagnostics.freeCounterpointContourScore, 1);
@@ -140,7 +140,7 @@ test("generateScore catches free-counterpoint contour false positives with stepw
 });
 
 test("generateScore compares phase-7 diagnostics to normalized reference profile axes", () => {
-  const output = generateScore({ seed: "fugue-smoke", lengthTicks: PHASE_5_LENGTH_TICKS });
+  const output = generateScore({ seed: "fugue-smoke", lengthTicks: PHASE_5_LENGTH_TICKS, selectionModel: "baseline" });
   const baselineMetrics = normalizeDiagnosticsForReference(output.diagnostics);
   const sharedRhythmAxis = PHASE_7_REFERENCE_DIAGNOSTICS_PROFILE.metrics.find(
     (metric) => metric.axis === "sharedRhythmOverlapPerVoicePairQuarter",

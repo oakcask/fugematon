@@ -1,16 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import {
-  PHASE_5_9_DIAGNOSTICS_PROFILE,
-  PHASE_5_LENGTH_TICKS,
-  PHASE_5_REVIEW_SEEDS,
-} from "./constants.js";
+import { PHASE_5_9_DIAGNOSTICS_PROFILE, PHASE_5_LENGTH_TICKS, PHASE_5_REVIEW_SEEDS } from "./constants.js";
 import { generateScore } from "./generate.js";
 import { evaluatePhase59Diagnostics } from "./review-gate.js";
 
 test("generateScore applies phase-5.9 beauty gates across review seeds", () => {
   for (const { seed } of PHASE_5_REVIEW_SEEDS) {
-    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
+    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS, selectionModel: "baseline" });
     const gate = evaluatePhase59Diagnostics(seed, output.diagnostics);
 
     assert.deepEqual(gate.failures, []);
@@ -44,7 +40,7 @@ test("generateScore applies phase-5.9 boundary seed gates", () => {
   const boundaryProfiles = PHASE_5_9_DIAGNOSTICS_PROFILE.boundarySeeds;
 
   for (const [seed, profile] of Object.entries(boundaryProfiles)) {
-    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
+    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS, selectionModel: "baseline" });
     const textureCosts = output.diagnostics.selectedCandidateEvaluations.map(
       (evaluation) => evaluation.dimensions.texture.cost,
     );

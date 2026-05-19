@@ -19,7 +19,7 @@ export const DEFAULT_GENERATION_PARAMETERS = {
   subjectPresence: 0.7,
 } as const;
 
-export const DEFAULT_SELECTION_MODEL = "baseline" satisfies SelectionModel;
+export const DEFAULT_SELECTION_MODEL = "phase10-section-local-planner" satisfies SelectionModel;
 
 export const PHASE_1_DIAGNOSTICS_PROFILE = {
   rangeViolations: 0,

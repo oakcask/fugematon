@@ -99,7 +99,7 @@
 
 ### Phase 8: 無限再生セッション
 
-* Phase 8 は Phase 13R の default baseline / phrase convergence repair 後に戻る deferred operational lane とする。Phase 6-7 の美しさ metric と聴取 gate の完全 pass は開始条件にしないが、細かな操作 UI が音楽的な退屈さを隠す設計にならないよう、generator quality、rendering boundary、model adoption evidence を前提にする。
+* Phase 8 は Phase 13R の automatic default baseline / phrase convergence repair 後に戻る operational lane とする。Phase 6-7 の美しさ metric と聴取 gate の完全 pass は開始条件にしないが、細かな操作 UI が音楽的な退屈さを隠す設計にならないよう、generator quality、rendering boundary、model adoption evidence を前提にする。
 * 生成済みイベントをメモリ上のリングバッファに保存する。
 * 保存済み範囲内では event replay により巻き戻して再生し直せるようにする。
 * continuous fugue、endless program、regenerative cycle を同じ状態遷移 model の異なる境界表現として扱う。
@@ -144,8 +144,8 @@
 * quality vector は seed、style profile、section role、voice pair ごとの median、p90、max、outside count、top contributing axes を出す。hard constraints は従来どおり残し、vector distance は review-required evidence として扱う。
 * learned aesthetic score や covariance-heavy distance は、reference corpus と manual pairwise preference が不足している間は exploratory とする。採用候補は axis-level explanation と local sentinel location に戻せる必要がある。
 * Phase 13Q は、Phase 13 の review/adoption model を使って candidate diversity、voice independence、entry harmony を生成側で改善した。
-* Phase 13R は、Phase 8/9 に戻る前に通常生成経路を採用済み baseline へ揃え、後半 phrase convergence を修正する。legacy `baseline` は比較 model として残すが、CLI、MIDI、Web UI が暗黙に古い path を鳴らさないことを条件にする。
-* Phase 8/9 は、Phase 13R が default path と phrase convergence evidence を説明できる状態になってから戻る。
+* Phase 13R は automatic adoption complete として、通常生成経路を採用済み baseline へ揃え、後半 phrase convergence を修正した。legacy `baseline` は比較 model として残すが、CLI、MIDI、Web UI は暗黙に古い path を鳴らさない。
+* Phase 8/9 は、Phase 13R の automatic default path と phrase convergence evidence を前提に戻る。ただし focused listening は未完了なので、Phase 8 は phrase-convergence repair を human-approved とは扱わない。
 
 ## 内部表現
 

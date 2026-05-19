@@ -24,7 +24,7 @@ test("generateScore balances phase-7 entry harmony scoring with preservation gua
     selectedSevereIntervalCount,
     selectedUnresolvedSevereIntervalCount,
   ] of blockerSeeds) {
-    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
+    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS, selectionModel: "baseline" });
     const gate = evaluatePhase7Diagnostics(seed, output.diagnostics);
     const selectedEvaluation = requireSelectedCandidateEvaluation(output.diagnostics.selectedCandidateEvaluations);
 
@@ -84,7 +84,7 @@ test("generateScore preserves phase-7 voice-pair independence blocker evidence u
     selectedSharedRhythmFeatureCount,
     selectedSharedRhythmExplanationCount,
   ] of blockerSeeds) {
-    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
+    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS, selectionModel: "baseline" });
     const selectedEvaluation = requireSelectedCandidateEvaluation(output.diagnostics.selectedCandidateEvaluations);
 
     assert.equal(output.diagnostics.samePitchOverlapCount, samePitchOverlapCount);
@@ -126,7 +126,7 @@ test("generateScore guards phase-7 exact pitch lockstep without gate regressions
     maxLeapRecoveryMisses,
     minCounterSubjectIdentityRetention,
   ] of blockerSeeds) {
-    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
+    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS, selectionModel: "baseline" });
     const gate6 = evaluatePhase6Diagnostics(seed, output.diagnostics);
     const gate7 = evaluatePhase7Diagnostics(seed, output.diagnostics);
 
@@ -152,7 +152,7 @@ test("generateScore preserves phase-7 modal counter-subject retention guardrails
   ] as const;
 
   for (const [seed, counterSubjectIdentityRetention] of blockerSeeds) {
-    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
+    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS, selectionModel: "baseline" });
     const gate6 = evaluatePhase6Diagnostics(seed, output.diagnostics);
     const gate7 = evaluatePhase7Diagnostics(seed, output.diagnostics);
     const selectedEvaluation = requireSelectedCandidateEvaluation(output.diagnostics.selectedCandidateEvaluations);
@@ -189,7 +189,7 @@ test("generateScore preserves phase-7 melody and form guardrails", () => {
     abruptTextureDropCount,
     selectedSectionSoloTextureRisk,
   ] of blockerSeeds) {
-    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
+    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS, selectionModel: "baseline" });
     const selectedEvaluation = requireSelectedCandidateEvaluation(output.diagnostics.selectedCandidateEvaluations);
 
     assert.ok(output.diagnostics.leapRecoveryMisses <= leapRecoveryMisses);

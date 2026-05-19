@@ -24,7 +24,7 @@ test("generateScore nudges non-modal stepwise pattern fixation without modal gua
     maxRepeatedDegreePatternCount,
     maxLeapRecoveryMisses,
   ] of blockerSeeds) {
-    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
+    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS, selectionModel: "baseline" });
     const gate6 = evaluatePhase6Diagnostics(seed, output.diagnostics);
     const gate7 = evaluatePhase7Diagnostics(seed, output.diagnostics);
     const freeCounterpoint = stepwisePatternRole(output.diagnostics.stepwisePattern.roles, "free-counterpoint");
@@ -42,7 +42,7 @@ test("generateScore nudges non-modal stepwise pattern fixation without modal gua
   }
 
   for (const seed of ["modal-dorian", "modal-answer"] as const) {
-    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
+    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS, selectionModel: "baseline" });
     const gate6 = evaluatePhase6Diagnostics(seed, output.diagnostics);
     const gate7 = evaluatePhase7Diagnostics(seed, output.diagnostics);
     const selectedEvaluation = requireSelectedCandidateEvaluation(output.diagnostics.selectedCandidateEvaluations);
@@ -60,7 +60,7 @@ test("generateScore applies phase-7 contour gates across fixed and rotation seed
   const seeds = [...PHASE_5_REVIEW_SEEDS, ...PHASE_5_11_ROTATION_SEEDS];
 
   for (const { seed } of seeds) {
-    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
+    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS, selectionModel: "baseline" });
     const gate = evaluatePhase7Diagnostics(seed, output.diagnostics);
 
     assert.deepEqual(gate.failures, []);

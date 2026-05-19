@@ -4,7 +4,7 @@ import { PHASE_5_LENGTH_TICKS, VOICES } from "./constants.js";
 import { generateScore } from "./generate.js";
 
 test("generateScore exposes phase-7 candidate pool oracle classifications", () => {
-  const output = generateScore({ seed: "fugue-smoke", lengthTicks: PHASE_5_LENGTH_TICKS });
+  const output = generateScore({ seed: "fugue-smoke", lengthTicks: PHASE_5_LENGTH_TICKS, selectionModel: "baseline" });
   const oracle = output.diagnostics.candidatePoolOracle;
   const classifications = new Set(oracle.blockerClassifications.map((blocker) => blocker.classification));
 

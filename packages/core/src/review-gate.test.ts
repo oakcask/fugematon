@@ -7,7 +7,7 @@ import { evaluatePhase7BGatePolicy, evaluatePhase7Diagnostics } from "./review-g
 
 test("phase-7B policy keeps hard constraints as failures", () => {
   const diagnostics = cloneDiagnostics(
-    generateScore({ seed: "fugue-smoke", lengthTicks: PHASE_5_LENGTH_TICKS }).diagnostics,
+    generateScore({ seed: "fugue-smoke", lengthTicks: PHASE_5_LENGTH_TICKS, selectionModel: "baseline" }).diagnostics,
   );
   diagnostics.rangeViolations = 1;
   diagnostics.voiceCrossings = 1;
@@ -26,7 +26,7 @@ test("phase-7B policy keeps hard constraints as failures", () => {
 
 test("phase-7B policy preserves review-signal breaches without blocking hard-constraint readiness", () => {
   const diagnostics = cloneDiagnostics(
-    generateScore({ seed: "fugue-smoke", lengthTicks: PHASE_5_LENGTH_TICKS }).diagnostics,
+    generateScore({ seed: "fugue-smoke", lengthTicks: PHASE_5_LENGTH_TICKS, selectionModel: "baseline" }).diagnostics,
   );
   diagnostics.rhythmicIndependenceScore = 0;
   diagnostics.samePitchOverlapCount = PHASE_6_DIAGNOSTICS_PROFILE.maxSamePitchOverlapCount + 1;

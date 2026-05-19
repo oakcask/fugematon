@@ -661,7 +661,11 @@ export function chooseContinuationSection(
     }
     if (
       candidateBand !== "baseline" &&
-      !preservesSectionLocalGuardrails(evaluation, baselineEvaluation, candidateBand === "section-grammar")
+      !preservesSectionLocalGuardrails(
+        evaluation,
+        baselineEvaluation,
+        candidateBand === "section-grammar" || candidateBand === "phrase-family",
+      )
     ) {
       continue;
     }
@@ -815,7 +819,11 @@ function avoidShortAlternatingPhraseSelection(input: {
     }
     if (
       candidateBand !== "baseline" &&
-      !preservesSectionLocalGuardrails(evaluation, input.baselineEvaluation, candidateBand === "section-grammar")
+      !preservesSectionLocalGuardrails(
+        evaluation,
+        input.baselineEvaluation,
+        candidateBand === "section-grammar" || candidateBand === "phrase-family",
+      )
     ) {
       continue;
     }
@@ -886,10 +894,10 @@ function candidateBandCanBeSelected(
   if (selectionModel !== "phase10-section-local-planner") {
     return true;
   }
-  if (band === "baseline" || band === "phrase-family") {
+  if (band === "baseline") {
     return false;
   }
-  return index < window.selectableCandidateCount || band === "section-grammar";
+  return index < window.selectableCandidateCount || band === "section-grammar" || band === "phrase-family";
 }
 
 function candidateBandCanBeFallback(
