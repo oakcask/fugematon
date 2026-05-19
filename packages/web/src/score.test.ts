@@ -5,6 +5,7 @@ import {
   createPlaybackModel,
   formatBarBeatDuration,
   formatBarBeatPosition,
+  formatPlaybackPosition,
   formatTimeSignature,
   secondsToTicks,
   ticksPerBar,
@@ -74,4 +75,11 @@ test("bar and beat helpers use score time signature metadata", () => {
   assert.equal(ticksPerBar(compoundTime, 480), 1440);
   assert.equal(formatBarBeatPosition(1440 + 240 * 5, compoundTime, 480), "2:6");
   assert.equal(formatBarBeatDuration(1440 * 3, compoundTime, 480), "3 bars");
+});
+
+test("formatPlaybackPosition reports seconds and bar-beat location", () => {
+  const model = createPlaybackModel(generateScore({ seed: "fugue-smoke", lengthTicks: 7680 }));
+
+  assert.equal(formatPlaybackPosition(0, model), "0s / 1:1");
+  assert.match(formatPlaybackPosition(2.75, model), /^2s \/ \d+:\d+$/);
 });

@@ -7,7 +7,13 @@ import {
 import "./style.css";
 import { ScorePlayer } from "./audio.js";
 import { drawPianoRoll } from "./piano-roll.js";
-import { createPlaybackModel, formatBarBeatDuration, formatTimeSignature, type PlaybackModel } from "./score.js";
+import {
+  createPlaybackModel,
+  formatBarBeatDuration,
+  formatPlaybackPosition,
+  formatTimeSignature,
+  type PlaybackModel,
+} from "./score.js";
 
 const DEFAULT_SEED = "fugue-smoke";
 const SCORE_LENGTH_TICKS = PHASE_3_LENGTH_TICKS;
@@ -70,9 +76,10 @@ app.innerHTML = `
       </div>
     </section>
     <section class="transport-card" aria-label="Playback controls">
-      <div>
+      <div class="transport-summary">
         <span class="metric-label">Playback</span>
         <strong id="transport-status">Ready to play</strong>
+        <span class="playback-position" id="playback-position"></span>
       </div>
       <div class="transport-actions">
         <button type="button" id="start">Play score</button>
@@ -105,6 +112,7 @@ const entries = requireElement(document.querySelector<HTMLElement>("#entries"), 
 const startButton = requireElement(document.querySelector<HTMLButtonElement>("#start"), "start button");
 const stopButton = requireElement(document.querySelector<HTMLButtonElement>("#stop"), "stop button");
 const transportStatus = requireElement(document.querySelector<HTMLElement>("#transport-status"), "transport status");
+const playbackPosition = requireElement(document.querySelector<HTMLElement>("#playback-position"), "playback position");
 const pianoRoll = requireElement(document.querySelector<HTMLCanvasElement>("#piano-roll"), "piano roll");
 
 seedInput.value = state.seed;
@@ -114,6 +122,7 @@ for (const profile of listPerformanceProfiles()) {
 performanceProfileSelect.value = state.performanceProfileId;
 render(state);
 drawPianoRoll(pianoRoll, state.model, 0);
+renderPlaybackPosition(0);
 
 let player: ScorePlayer | undefined;
 let animationFrame: number | undefined;
@@ -135,11 +144,14 @@ stopButton.addEventListener("click", () => {
   player?.stop();
   cancelVisualizerLoop();
   drawPianoRoll(pianoRoll, state.model, 0);
+  renderPlaybackPosition(0);
   transportStatus.textContent = "Playback stopped";
 });
 
 window.addEventListener("resize", () => {
-  drawPianoRoll(pianoRoll, state.model, player?.playbackSecond ?? 0);
+  const playbackSecond = player?.playbackSecond ?? 0;
+  drawPianoRoll(pianoRoll, state.model, playbackSecond);
+  renderPlaybackPosition(playbackSecond);
 });
 
 function regenerateScore(seed: string): void {
@@ -155,6 +167,7 @@ function regenerateScore(seed: string): void {
   state = createState(nextSeed, performanceProfileSelect.value as PerformanceProfileId);
   render(state);
   drawPianoRoll(pianoRoll, state.model, 0);
+  renderPlaybackPosition(0);
   transportStatus.textContent = "Ready to play";
 }
 
@@ -192,9 +205,14 @@ function render(nextState: AppState): void {
   entries.textContent = `${nextState.model.subjectEntries.length}`;
 }
 
+function renderPlaybackPosition(playbackSecond: number): void {
+  playbackPosition.textContent = formatPlaybackPosition(playbackSecond, state.model);
+}
+
 async function startPlayback(): Promise<void> {
   startButton.disabled = true;
   transportStatus.textContent = "Starting playback";
+  renderPlaybackPosition(0);
 
   try {
     player ??= new ScorePlayer();
@@ -214,6 +232,7 @@ function startVisualizerLoop(): void {
   const drawFrame = () => {
     const playbackSecond = player?.playbackSecond ?? 0;
     drawPianoRoll(pianoRoll, state.model, playbackSecond);
+    renderPlaybackPosition(playbackSecond);
 
     if (player?.isPlaying) {
       animationFrame = window.requestAnimationFrame(drawFrame);
