@@ -32,6 +32,7 @@
 - Use `conventional-commits` when authoring commit messages or PR titles.
 - Use `change-rationale-writing` when drafting commit bodies, PR descriptions, changelog entries, release notes, or decision records.
 - Use `github-pr-operations` when creating, editing, or managing pull requests with GitHub CLI.
+- Use `github-actions-inspection` when inspecting GitHub Actions workflow runs, jobs, logs, artifacts, or check failures with GitHub CLI.
 - Use `ui-inspection` when browser-level Web UI validation is needed.
 - Use `dependency-review` before adding, choosing, upgrading, or approving third-party dependencies.
 - Use `music-theory-review` when reviewing generated music, diagnostics, MIDI, score events, music-quality gates, or phase plans for counterpoint, harmony, fugue form, style fit, or literature-grounded music-theory issues.
