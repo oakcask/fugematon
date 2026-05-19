@@ -1,33 +1,39 @@
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 
-try {
-  await main();
-} catch (error) {
-  console.error(error instanceof Error ? error.message : String(error));
-  process.exit(1);
+if (isMainModule()) {
+  try {
+    await main();
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exit(1);
+  }
 }
 
 async function main() {
   const { reportPath } = parseArguments(process.argv.slice(2));
   const xml = await readFile(reportPath, "utf8");
-  const normalizedXml = xml.replaceAll(/<testcase\b([^>]*)>/g, (element, rawAttributes) => {
-    if (/\sfile=/.test(rawAttributes)) {
+  await writeFile(reportPath, normalizeNodeTestJUnitFileAttributes(xml));
+}
+
+export function normalizeNodeTestJUnitFileAttributes(xml) {
+  return xml.replaceAll(/<testcase\b([^>]*)>/g, (element, rawAttributes) => {
+    const attributes = parseXmlAttributes(rawAttributes);
+    const filename = attributes.file ?? attributes.name;
+    if (filename === undefined) {
       return element;
     }
 
-    const attributes = parseXmlAttributes(rawAttributes);
-    const name = attributes.name;
-    if (name === undefined) {
-      return element;
+    const fileAttribute = ` file="${escapeXmlAttribute(toSourceTestFilename(filename))}"`;
+    if (/\sfile=/.test(rawAttributes)) {
+      return element.replace(/\sfile="[^"]*"/, fileAttribute);
     }
 
     const closing = element.endsWith("/>") ? "/>" : ">";
     const opening = element.slice(0, -closing.length).replace(/\s*\/$/, "");
-    return `${opening} file="${escapeXmlAttribute(toSourceTestFilename(name))}"${closing}`;
+    return `${opening}${fileAttribute}${closing}`;
   });
-
-  await writeFile(reportPath, normalizedXml);
 }
 
 function parseXmlAttributes(rawAttributes) {
@@ -51,10 +57,23 @@ function decodeXmlEntities(value) {
 }
 
 function toSourceTestFilename(filename) {
-  return filename
-    .replace(/\/dist\/(.+)\.js$/, "/src/$1.ts")
-    .split(path.sep)
-    .join("/");
+  const normalizedFilename = filename.split(path.sep).join("/");
+  const packageDistMatch = normalizedFilename.match(/(?:^|\/)(packages\/[^/]+)\/dist\/(.+)\.js$/);
+  if (packageDistMatch !== null) {
+    return `${packageDistMatch[1]}/src/${packageDistMatch[2]}.ts`;
+  }
+
+  const packageSourceMatch = normalizedFilename.match(/(?:^|\/)(packages\/[^/]+\/src\/.+\.test\.ts)$/);
+  if (packageSourceMatch !== null) {
+    return packageSourceMatch[1];
+  }
+
+  const workflowScriptTestMatch = normalizedFilename.match(/(?:^|\/)(workflow-scripts\/.+\.test\.mjs)$/);
+  if (workflowScriptTestMatch !== null) {
+    return workflowScriptTestMatch[1];
+  }
+
+  return normalizedFilename;
 }
 
 function escapeXmlAttribute(value) {
@@ -105,4 +124,8 @@ function parseLongOptions(args) {
   }
 
   return values;
+}
+
+function isMainModule() {
+  return process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href;
 }

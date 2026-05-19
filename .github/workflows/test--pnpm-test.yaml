@@ -7,8 +7,7 @@ on:
       - package.json
       - pnpm-lock.yaml
       - pnpm-workspace.yaml
-      - workflow-scripts/add-node-test-junit-file-attributes.mjs
-      - workflow-scripts/check-node-test-junit-budget.mjs
+      - workflow-scripts/**
       - tsconfig.json
       - packages/**
   push:
@@ -19,8 +18,7 @@ on:
       - package.json
       - pnpm-lock.yaml
       - pnpm-workspace.yaml
-      - workflow-scripts/add-node-test-junit-file-attributes.mjs
-      - workflow-scripts/check-node-test-junit-budget.mjs
+      - workflow-scripts/**
       - tsconfig.json
       - packages/**
 
@@ -48,7 +46,9 @@ jobs:
         id: parallel-test
         uses: int128/parallel-test-action@27a17b32204e5b7ab0cef7b10f084c82c1ac9a6d # v1.99.0
         with:
-          test-files: packages/*/src/**/*.test.ts
+          test-files: |
+            packages/*/src/**/*.test.ts
+            workflow-scripts/*.test.mjs
           test-report-artifact-name-prefix: node-test-junit-
           test-report-branch: main
           shard-count: ${{ strategy.job-total }}
