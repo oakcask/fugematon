@@ -27,13 +27,31 @@ const ENTRY_STROKES: Record<PlaybackEntry["form"], string> = {
   answer: "#15130f",
   "subject-fragment": "#eef0c8",
 };
+const ACTIVE_NOTE_STROKE = "#007c91";
+const ACTIVE_NOTE_GLOW = "rgba(0, 124, 145, 0.48)";
 
-const LEFT_GUTTER = 44;
+const LEFT_GUTTER = 62;
 const RIGHT_GUTTER = 20;
 const TOP_GUTTER = 18;
 const BOTTOM_GUTTER = 28;
 const NOTE_NAMES = ["C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"] as const;
+const BLACK_PITCH_CLASSES = new Set([1, 3, 6, 8, 10]);
+const MIN_ACTIVE_LABEL_GAP = 11;
 export const DEFAULT_VIEWPORT_SECONDS = 24;
+
+export type ActivePitchMarkerLayout = {
+  pitch: number;
+  name: string;
+  isBlackKey: boolean;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  labelX: number;
+  labelY: number;
+  labelMaxWidth: number;
+  textAlign: CanvasTextAlign;
+};
 
 export function computePianoRollViewport(
   model: PlaybackModel,
@@ -126,8 +144,8 @@ export function drawPianoRoll(canvas: HTMLCanvasElement, model: PlaybackModel, p
     context.fillStyle = VOICE_COLORS[note.voice];
     context.globalAlpha = note.isActive ? 1 : 0.82;
     if (note.isActive) {
-      context.shadowBlur = 12;
-      context.shadowColor = "rgba(255, 248, 237, 0.92)";
+      context.shadowBlur = 14;
+      context.shadowColor = ACTIVE_NOTE_GLOW;
     }
     roundRect(context, note.x, note.y, note.width, note.height, 5);
     context.fill();
@@ -142,15 +160,15 @@ export function drawPianoRoll(canvas: HTMLCanvasElement, model: PlaybackModel, p
     }
     if (note.isActive) {
       context.globalAlpha = 1;
-      context.strokeStyle = "#fff8ed";
-      context.lineWidth = 3;
+      context.strokeStyle = ACTIVE_NOTE_STROKE;
+      context.lineWidth = 4;
       context.setLineDash([]);
       context.stroke();
     }
   }
 
   context.globalAlpha = 1;
-  drawPlayhead(context, width, height, playbackSecond, viewport, activePitches);
+  drawPlayhead(context, width, height, playbackSecond, viewport);
 }
 
 function drawBackground(
@@ -200,7 +218,6 @@ function drawPlayhead(
   height: number,
   playbackSecond: number,
   viewport: PianoRollViewport,
-  activePitches: readonly number[],
 ): void {
   const viewportDuration = Math.max(1, viewport.endSecond - viewport.startSecond);
   const progress = (playbackSecond - viewport.startSecond) / viewportDuration;
@@ -215,16 +232,6 @@ function drawPlayhead(
   context.moveTo(x, TOP_GUTTER);
   context.lineTo(x, height - BOTTOM_GUTTER);
   context.stroke();
-
-  if (activePitches.length === 0) {
-    return;
-  }
-
-  context.fillStyle = "rgba(36, 25, 15, 0.78)";
-  context.font = "700 12px serif";
-  context.textAlign = "right";
-  context.fillText(formatActivePitches(activePitches), width - RIGHT_GUTTER, TOP_GUTTER + 12);
-  context.textAlign = "left";
 }
 
 function drawActivePitchMarkers(
@@ -234,26 +241,116 @@ function drawActivePitchMarkers(
   model: PlaybackModel,
   activePitches: readonly number[],
 ): void {
-  const usableHeight = Math.max(1, height - TOP_GUTTER - BOTTOM_GUTTER);
-  const pitchSpan = Math.max(1, model.pitchRange.max - model.pitchRange.min + 1);
-
   context.fillStyle = "rgba(36, 25, 15, 0.14)";
-  context.fillRect(0, TOP_GUTTER, LEFT_GUTTER, usableHeight);
+  context.fillRect(0, 0, LEFT_GUTTER, height);
+  context.strokeStyle = "rgba(45, 29, 18, 0.26)";
+  context.lineWidth = 1;
+  context.beginPath();
+  context.moveTo(LEFT_GUTTER + 0.5, 0);
+  context.lineTo(LEFT_GUTTER + 0.5, height);
+  context.stroke();
 
-  for (const pitch of activePitches) {
-    const normalizedPitch = (pitch - model.pitchRange.min) / pitchSpan;
-    const y = TOP_GUTTER + (1 - normalizedPitch) * usableHeight;
-    context.fillStyle = "rgba(248, 251, 242, 0.9)";
-    roundRect(context, 7, y - 6, LEFT_GUTTER - 14, 12, 6);
+  const markers = computeActivePitchMarkerLayout(model, height, activePitches);
+
+  for (const marker of markers.filter((marker) => !marker.isBlackKey)) {
+    context.fillStyle = "rgba(255, 252, 241, 0.94)";
+    roundRect(context, marker.x, marker.y, marker.width, marker.height, 3);
     context.fill();
-    context.strokeStyle = "rgba(45, 29, 18, 0.72)";
-    context.lineWidth = 1;
+    context.strokeStyle = "rgba(45, 29, 18, 0.34)";
+    roundRect(context, marker.x + 0.5, marker.y + 0.5, marker.width - 1, marker.height - 1, 3);
     context.stroke();
   }
+
+  for (const marker of markers.filter((marker) => marker.isBlackKey)) {
+    context.fillStyle = "rgba(34, 29, 24, 0.9)";
+    roundRect(context, marker.x, marker.y, marker.width, marker.height, 3);
+    context.fill();
+  }
+
+  context.font = "700 10px system-ui, sans-serif";
+  context.textBaseline = "middle";
+  for (const marker of markers) {
+    context.textAlign = marker.textAlign;
+    context.fillStyle = marker.isBlackKey ? "rgba(255, 252, 241, 0.96)" : "rgba(45, 29, 18, 0.86)";
+    context.fillText(marker.name, marker.labelX, marker.labelY, marker.labelMaxWidth);
+  }
+  context.textAlign = "left";
+  context.textBaseline = "alphabetic";
 }
 
-function formatActivePitches(activePitches: readonly number[]): string {
-  return `Active ${activePitches.map(formatPitchName).join(" ")}`;
+export function computeActivePitchMarkerLayout(
+  model: PlaybackModel,
+  height: number,
+  activePitches: readonly number[],
+): ActivePitchMarkerLayout[] {
+  const usableHeight = Math.max(1, height - TOP_GUTTER - BOTTOM_GUTTER);
+  const pitchSpan = Math.max(1, model.pitchRange.max - model.pitchRange.min + 1);
+  const pitchHeight = usableHeight / pitchSpan;
+  const keyHeight = Math.max(7, Math.min(16, pitchHeight * 1.45));
+  const blackKeyWidth = Math.round(LEFT_GUTTER * 0.62);
+
+  const markers = activePitches.map((pitch) => {
+    const pitchClass = ((pitch % 12) + 12) % 12;
+    const isBlackKey = BLACK_PITCH_CLASSES.has(pitchClass);
+    const pitchOffset = pitch - model.pitchRange.min;
+    const centerY = TOP_GUTTER + (pitchSpan - pitchOffset - 0.5) * pitchHeight;
+    const y = Math.max(0, Math.min(height - keyHeight, centerY - keyHeight / 2));
+
+    return {
+      pitch,
+      name: formatPitchName(pitch),
+      isBlackKey,
+      x: 0,
+      y,
+      width: isBlackKey ? blackKeyWidth : LEFT_GUTTER,
+      height: keyHeight,
+      labelX: isBlackKey ? 5 : LEFT_GUTTER - 6,
+      labelY: centerY,
+      labelMaxWidth: isBlackKey ? blackKeyWidth - 8 : LEFT_GUTTER - blackKeyWidth + 2,
+      textAlign: isBlackKey ? "left" : "right",
+    } satisfies ActivePitchMarkerLayout;
+  });
+
+  distributeActiveMarkerLabels(
+    markers.filter((marker) => marker.isBlackKey),
+    height,
+  );
+  distributeActiveMarkerLabels(
+    markers.filter((marker) => !marker.isBlackKey),
+    height,
+  );
+
+  return markers;
+}
+
+function distributeActiveMarkerLabels(markers: ActivePitchMarkerLayout[], height: number): void {
+  if (markers.length <= 1) {
+    return;
+  }
+
+  const minY = 7;
+  const maxY = height - 7;
+  const sortedMarkers = [...markers].sort((left, right) => left.labelY - right.labelY);
+  let nextY = minY;
+  for (const marker of sortedMarkers) {
+    marker.labelY = Math.max(marker.labelY, nextY);
+    nextY = marker.labelY + MIN_ACTIVE_LABEL_GAP;
+  }
+
+  const overflow = sortedMarkers[sortedMarkers.length - 1]!.labelY - maxY;
+  if (overflow > 0) {
+    for (const marker of sortedMarkers) {
+      marker.labelY -= overflow;
+    }
+  }
+
+  if (sortedMarkers[0]!.labelY < minY) {
+    nextY = minY;
+    for (const marker of sortedMarkers) {
+      marker.labelY = Math.max(marker.labelY, nextY);
+      nextY = marker.labelY + MIN_ACTIVE_LABEL_GAP;
+    }
+  }
 }
 
 function formatPitchName(pitch: number): string {
