@@ -210,6 +210,44 @@ test("candidate pool oracle scores section grammar history by candidate state", 
   assert.equal(sectionGrammar?.generatorNeededRate, 0);
 });
 
+test("candidate pool oracle keeps phase-12 phrase family evidence traceable per representative", () => {
+  const selected = candidateEvaluation({
+    entryRisk: 6,
+    leapRecoveryMisses: 2,
+    counterSubjectIdentityRetention: 0.8,
+  });
+  const alternative = candidateEvaluation({
+    entryRisk: 2,
+    leapRecoveryMisses: 2,
+    counterSubjectIdentityRetention: 0.8,
+  });
+
+  const summary = summarizeCandidatePoolOracleSections([
+    classifyCandidatePoolOracleSection({
+      state: "episode",
+      startTick: 9600,
+      durationTicks: 3840,
+      evaluations: [selected, alternative],
+      selectedCandidateIndex: 0,
+      phase12PhraseFamilyCandidateCount: 3,
+    }),
+    classifyCandidatePoolOracleSection({
+      state: "subject-return",
+      startTick: 13_440,
+      durationTicks: 3840,
+      evaluations: [selected, alternative],
+      selectedCandidateIndex: 0,
+      phase12PhraseFamilyCandidateCount: 5,
+    }),
+  ]);
+  const entryHarmony = summary.blockerClassifications.find((blocker) => blocker.blocker === "entry-harmony");
+
+  assert.equal(summary.phase12PhraseFamilyCandidateCount, 8);
+  assert.equal(entryHarmony?.representative.phase12PhraseFamilyCandidateCount, 3);
+  assert.equal(entryHarmony?.representative.candidateCount, 2);
+  assert.equal(entryHarmony?.representative.viableCandidateCount, 2);
+});
+
 function candidateEvaluation(input: {
   entryRisk: number;
   leapRecoveryMisses: number;
