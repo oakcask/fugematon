@@ -18,9 +18,7 @@ if (isAbsolute(normalizedPath)) {
 }
 
 const allowedPrefixes = [`.cache${sep}`, `tmp${sep}`];
-const isAllowedPath = allowedPrefixes.some((prefix) =>
-  normalizedPath.startsWith(prefix),
-);
+const isAllowedPath = allowedPrefixes.some((prefix) => normalizedPath.startsWith(prefix));
 
 if (!isAllowedPath || normalizedPath.includes(`..${sep}`) || normalizedPath === "..") {
   console.error("OUTPUT_PATH must be under .cache/ or tmp/");

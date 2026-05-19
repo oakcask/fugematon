@@ -13,6 +13,7 @@ music-quality gate、diagnostics threshold、generator model、candidate scoring
 * [Phase 12 review summary](phase-12-review-summary.md): Phase 12 完了時の 22 seed A/B evidence、human feedback、quality vector 化する unresolved symptoms。
 * [Phase 13 quality vector review](phase-13-quality-vector-review.md): Phase 13 完了時の 22 seed quality vector aggregate、local sentinel、manual listening gap。
 * [Phase 13Q planning review](phase-13q-planning-review.md): Phase 8/9 の前へ candidate diversity / voice independence / entry harmony 品質フェーズを挿入する根拠。
+* [Phase 13Q voice-pair support review](phase-13q-voice-pair-support-review.md): oblique support candidates と quality-vector-aware selection の自動採用 evidence。
 * [Phase 12P](../phases/phase-12-performance-profile.md): Phase 13 の前に、MIDI と WebAudio が共有する演奏プロファイル境界を組み込む計画。
 * [Phase 13Q](../phases/phase-13q.md): Phase 13 の quality vector evidence を生成改善へつなぐ計画。
 * [Phase 13](../phases/phase-13.md): Phase 12 後の repeated-note / unison defects を quality vector と統計的 review/adoption model で扱った完了記録。

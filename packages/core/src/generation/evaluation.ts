@@ -186,6 +186,8 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
       ),
       selectedVoiceIndependenceSelectionCost: voiceIndependenceSelectionCost,
       selectedVoicePairLockstepSelectionCost: voicePairLockstepSelectionCost,
+      qualityVectorPitchClassUnisonDuration: qualityVectorAxisValue(diagnostics, "pitchClassUnisonDuration"),
+      qualityVectorDurationBasedLockstep: qualityVectorAxisValue(diagnostics, "durationBasedLockstep"),
       shortStrongBeatEntryNoteCount: diagnostics.shortStrongBeatEntryNoteCount,
       entrySupportInstabilityCount: diagnostics.entrySupportInstabilityCount,
       allVoiceSilenceGapCount: diagnostics.allVoiceSilenceGapCount,
@@ -278,6 +280,10 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
       entrySupportInstabilityCount: diagnostics.entrySupportInstabilityCount,
       severeEntryIntervalCount: diagnostics.severeEntryIntervalCount,
       unresolvedSevereEntryIntervalCount: diagnostics.unresolvedSevereEntryIntervalCount,
+      qualityVectorUnresolvedEntrySevereIntervalDuration: qualityVectorAxisValue(
+        diagnostics,
+        "unresolvedEntrySevereIntervalDuration",
+      ),
       selectedEntryHarmonyRiskCost: entryHarmonyRiskCost,
       selectedModalCadenceEntrySupportRiskCost: modalCadenceEntrySupportRiskCost,
     },
@@ -394,6 +400,10 @@ function scoreModalCadenceEntrySupportRisk(candidate: Exposition, contexts: Phas
       entry.unresolvedSevereIntervalCount * EVALUATION_WEIGHTS.harmony.modalCadenceUnresolvedSevereEntryInterval,
     0,
   );
+}
+
+function qualityVectorAxisValue(diagnostics: ReturnType<typeof analyzeScore>, axis: string): number {
+  return diagnostics.qualityVector.axes.find((summary) => summary.axis === axis)?.value ?? 0;
 }
 
 function upperNeighborFifthClimbPatternIsPresent(candidate: Exposition): number {

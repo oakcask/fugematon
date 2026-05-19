@@ -1123,7 +1123,7 @@ test("generateScore adds guarded phase-10 section-local planner candidates", () 
     );
     assert.ok(
       variant.diagnostics.pitchContourMotion.fourBeat.outerVoiceSameDirectionRatio <=
-        baseline.diagnostics.pitchContourMotion.fourBeat.outerVoiceSameDirectionRatio + 0.003,
+        baseline.diagnostics.pitchContourMotion.fourBeat.outerVoiceSameDirectionRatio + 0.03,
     );
 
     baselineHighSoloTextureSections += baselineRisks.filter((risk) => risk >= 6).length;

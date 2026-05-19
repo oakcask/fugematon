@@ -5,7 +5,7 @@
 ## 現在読むもの
 
 * [Phase 7+ 再編計画](phase-7-plus-reorg.md): Phase 12 後に Phase 12P、Phase 13、Phase 13Q を挟み、その後 Phase 8/9 operational lane へ戻る現在計画を確認する。
-* [Phase 13Q](phase-13q.md): planned。Phase 8/9 の UI・操作機能へ戻る前に、candidate diversity、voice independence、entry harmony を改善する品質フェーズ。
+* [Phase 13Q](phase-13q.md): automatic adoption complete; manual listening follow-up remains open。Phase 8/9 の UI・操作機能へ戻る前に、candidate diversity、voice independence、entry harmony を改善した品質フェーズ。
 * [Phase 13](phase-13.md): 完了済み。Phase 12 human feedback 後の、quality vector と統計的 review/adoption model。
 * [Phase 12P](phase-12-performance-profile.md): 完了済み。Phase 13 の前に、MIDI と WebAudio が共有する演奏プロファイル境界を組み込んだ infrastructure phase。
 * [Phase 12](phase-12.md): 完了済みの、Phase 11 後に残った similar phrase blocker を Phase 8/9 より前に扱った品質フェーズ。

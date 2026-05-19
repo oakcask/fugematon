@@ -2,7 +2,7 @@
 
 Phase 13Q は、Phase 13 の quality vector review model を使って、Phase 8/9 の UI・操作機能へ戻る前に生成結果そのものを改善する品質フェーズである。
 
-Status: in progress. Phase 13Q is inserted after Phase 13 and before Phase 8. The phase should extend candidate diversity beyond the Phase 12 phrase-unit baseline, preserve the Phase 12 phrase/repetition gains, and reduce the main Phase 13 review-required signals: pitch-class unison duration, duration-based lockstep, and unresolved entry severe interval duration.
+Status: automatic adoption complete; manual listening follow-up remains open. Phase 13Q is inserted after Phase 13 and before Phase 8. It extends candidate diversity beyond the Phase 12 phrase-unit baseline, preserves the focused Phase 12 phrase/repetition gains, and reduces the main Phase 13 review-required signals in the 22 seed automatic bundle: pitch-class unison duration, duration-based lockstep, and unresolved entry severe interval duration. The generated listening and pairwise preference templates are still `not-reviewed`, so this is diagnostics-backed adoption rather than human-listening signoff.
 
 Use [quality metrics reference](../reference/quality-metrics.md) for current diagnostics, quality vector axes, and adoption policy meanings. This Phase doc only records the planned generation-quality response.
 
@@ -148,8 +148,12 @@ Fux-style counterpoint supports treating unresolved seconds and sevenths, expose
 
 ## Next Work
 
-The first implementation slice adds schema version 5 candidate-diversity summaries to `candidatePoolOracle` and `phase13QReview.sentinelCandidateLinks` so continuation local sentinels can be traced back to selected candidate section, cadence, entry, voice, voice pair, duration, and resolution-deadline context. This slice does not change selected output.
+The first implementation slice added schema version 5 candidate-diversity summaries to `candidatePoolOracle` and `phase13QReview.sentinelCandidateLinks` so continuation local sentinels can be traced back to selected candidate section, cadence, entry, voice, voice pair, duration, and resolution-deadline context. This slice did not change selected output.
 
 A small section-local selection penalty for voice-pair lockstep, entry severe intervals, and leap recovery was tested and rejected for now: the 22 seed aggregate worsened pitch-class unison duration, duration-based lockstep, and leap recovery while preserving the Phase 12 repetition totals. The next implementation slice should add new voice-pair support candidates or entry-harmony candidates before changing selection, because selection-only pressure on the current pool does not provide a safe improvement.
 
-Implementation note: the review-only bridge now links unresolved-entry local sentinels back to the selected entry context and resolution deadline. The remaining Phase 13Q adoption work is still generator/planner-facing: add viable entry-harmony or voice-pair support candidates before changing selection.
+Implementation note: the review-only bridge now links unresolved-entry local sentinels back to the selected entry context and resolution deadline.
+
+The adopted automatic generator slice adds selectable oblique voice-pair support candidates and promotes Phase 13 quality-vector axes into candidate evaluation. The 22 seed prior/current comparison changed viable candidates `2140 -> 2687`, `pitchClassUnisonDuration` `1892 -> 1872.5`, `durationBasedLockstep` `2375 -> 2315`, and `unresolvedEntrySevereIntervalDuration` `223 -> 212`; hard constraint failures remained 0 and Phase 7B readiness remained true for all 22 seeds. Focused Phase 12 repetition seeds kept the same most repeated 4-section pattern count and unique pattern count. Details and seed-level tradeoffs are recorded in [Phase 13Q voice-pair support review](../reviews/phase-13q-voice-pair-support-review.md).
+
+Manual MIDI listening remains open under `organ-default` and `strict-counterpoint`. Phase 8 may proceed with this diagnostics-backed baseline, but human preference claims must not treat Phase 13Q as manually listened until the generated listening templates are filled.
