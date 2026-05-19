@@ -2,7 +2,7 @@
 
 Phase 13 は、Phase 12 後の human feedback で残った音楽的欠陥を、単独 metric のしきい値調整ではなく、正規化された quality vector の統計的な外れ方として扱う品質フェーズである。Phase 13 の最初の目的は生成結果を変えることではなく、Phase 12 baseline を評価する review/adoption model を作ることである。
 
-Status: complete. Phase 13 follows Phase 12P performance profile integration and remains before returning to Phase 8/9 operational work. It keeps hard constraints, determinism, reference diagnostics summary, candidate-pool oracle shape, performance profile metadata, and the Phase 12 selected output stable while adding the review model needed for later music-quality changes.
+Status: complete. Phase 13 follows Phase 12P performance profile integration and precedes Phase 13Q. It keeps hard constraints, determinism, reference diagnostics summary, candidate-pool oracle shape, performance profile metadata, and the Phase 12 selected output stable while adding the review model needed for later music-quality changes.
 
 ## Rationale
 
@@ -81,4 +81,4 @@ The 22 seed Phase 12 baseline review is recorded in [Phase 13 quality vector rev
 
 ## Next Work
 
-Phase 13 is complete. The next implementation phase is Phase 8 operational work, with Phase 13 quality vector evidence carried forward into operation before/after review bundles.
+Phase 13 is complete. The next implementation phase is [Phase 13Q](phase-13q.md), which uses the quality vector evidence to improve voice independence and entry harmony before Phase 8 operational work. Phase 8 should carry Phase 13Q review evidence forward into operation before/after review bundles.
