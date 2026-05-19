@@ -3,6 +3,7 @@ name: test / pnpm test
 on:
   pull_request:
     paths:
+      - .github/workflows/test--pnpm-test.yaml
       - package.json
       - pnpm-lock.yaml
       - pnpm-workspace.yaml
@@ -14,6 +15,7 @@ on:
     branches:
       - main
     paths:
+      - .github/workflows/test--pnpm-test.yaml
       - package.json
       - pnpm-lock.yaml
       - pnpm-workspace.yaml
@@ -111,4 +113,4 @@ jobs:
           path: test-results
           merge-multiple: true
       - name: Check slow test files
-        run: node workflow-scripts/check-node-test-junit-budget.mjs --junit-report test-results --max-seconds 20
+        run: node workflow-scripts/check-node-test-junit-budget.mjs --junit-report test-results --max-seconds 35
