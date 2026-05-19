@@ -363,6 +363,15 @@ type HistoryAwareSelectionContext = {
   keyDistance: number;
 };
 
+type ContinuationCandidateSelectionBand = "baseline" | "section-local" | "section-grammar" | "phrase-family";
+
+type ContinuationCandidateSelectionWindow = {
+  baselineCandidateCount: number;
+  selectableCandidateCount: number;
+  sectionGrammarCandidateStart: number;
+  phraseFamilyCandidateStart: number;
+};
+
 function buildHistoryAwareSelectionContext(
   stateHistory: readonly FugueState[],
   previousSectionPlans: readonly HarmonicPlan[],
@@ -631,22 +640,9 @@ export function chooseContinuationSection(
     phraseIntent,
   );
   const evaluations = candidates.map((candidate) => evaluateCandidate(previousNotes, candidate));
-  const baselineCandidateCount =
-    selectionModel === "phase10-section-local-planner" ? baselineContinuationCandidateCount(state) : candidates.length;
-  const selectableCandidateCount =
-    selectionModel === "phase10-section-local-planner"
-      ? phase10SelectableContinuationCandidateCount(state)
-      : candidates.length;
-  const sectionGrammarCandidateStart =
-    selectionModel === "phase10-section-local-planner"
-      ? phase10SectionGrammarCandidateStartIndex(state)
-      : candidates.length;
-  const phraseFamilyCandidateStart =
-    selectionModel === "phase10-section-local-planner"
-      ? phase12PhraseFamilyCandidateStartIndex(state)
-      : candidates.length;
+  const selectionWindow = continuationCandidateSelectionWindow(state, selectionModel, candidates.length);
   let bestIndex = bestContinuationCandidateIndex(
-    evaluations.slice(0, baselineCandidateCount),
+    evaluations.slice(0, selectionWindow.baselineCandidateCount),
     selectionModel === "phase10-section-local-planner" ? "phase10-oracle-selection" : selectionModel,
   );
   const baselineEvaluation = evaluations[bestIndex]!;
@@ -658,25 +654,13 @@ export function chooseContinuationSection(
   );
 
   for (const [index, evaluation] of evaluations.entries()) {
-    const isSectionLocalCandidate =
-      selectionModel === "phase10-section-local-planner" && index >= baselineCandidateCount;
-    const isSectionGrammarCandidate =
-      selectionModel === "phase10-section-local-planner" &&
-      index >= sectionGrammarCandidateStart &&
-      index < phraseFamilyCandidateStart;
-    const isPhraseFamilyCandidate =
-      selectionModel === "phase10-section-local-planner" && index >= phraseFamilyCandidateStart;
-    if (
-      selectionModel === "phase10-section-local-planner" &&
-      (!isSectionLocalCandidate ||
-        isPhraseFamilyCandidate ||
-        (index >= selectableCandidateCount && !isSectionGrammarCandidate))
-    ) {
+    const candidateBand = continuationCandidateSelectionBand(index, selectionWindow, selectionModel);
+    if (!candidateBandCanBeSelected(candidateBand, index, selectionWindow, selectionModel)) {
       continue;
     }
     if (
-      isSectionLocalCandidate &&
-      !preservesSectionLocalGuardrails(evaluation, baselineEvaluation, isSectionGrammarCandidate)
+      candidateBand !== "baseline" &&
+      !preservesSectionLocalGuardrails(evaluation, baselineEvaluation, candidateBand === "section-grammar")
     ) {
       continue;
     }
@@ -684,10 +668,10 @@ export function chooseContinuationSection(
     const candidateScore =
       selectionScore(evaluation, selectionModel) +
       (selectionModel === "phase10-section-local-planner"
-        ? sectionGrammarPlannerSelectionRiskAdjustment(evaluation, historyContext, isSectionGrammarCandidate)
+        ? sectionGrammarPlannerSelectionRiskAdjustment(evaluation, historyContext, candidateBand === "section-grammar")
         : 0);
     const bestScore =
-      selectionModel === "phase10-section-local-planner" && bestIndex < baselineCandidateCount
+      selectionModel === "phase10-section-local-planner" && bestIndex < selectionWindow.baselineCandidateCount
         ? selectionScore(evaluations[bestIndex]!, "phase10-oracle-selection") +
           sectionGrammarPlannerSelectionRiskAdjustment(evaluations[bestIndex]!, historyContext, false)
         : selectionScore(evaluations[bestIndex]!, selectionModel) +
@@ -695,7 +679,7 @@ export function chooseContinuationSection(
             ? sectionGrammarPlannerSelectionRiskAdjustment(
                 evaluations[bestIndex]!,
                 historyContext,
-                bestIndex >= sectionGrammarCandidateStart,
+                continuationCandidateSelectionBand(bestIndex, selectionWindow, selectionModel) === "section-grammar",
               )
             : 0);
     if (candidateScore < bestScore) {
@@ -707,10 +691,7 @@ export function chooseContinuationSection(
     candidates,
     evaluations,
     bestIndex,
-    baselineCandidateCount,
-    selectableCandidateCount,
-    sectionGrammarCandidateStart,
-    phraseFamilyCandidateStart,
+    selectionWindow,
     baselineEvaluation,
     historyContext,
     selectionModel,
@@ -729,7 +710,9 @@ export function chooseContinuationSection(
       selectedCandidateIndex: bestIndex,
       candidateDiversityDescriptors: candidates.map(describeCandidateDiversity),
       phase12PhraseFamilyCandidateCount:
-        selectionModel === "phase10-section-local-planner" ? candidates.length - phraseFamilyCandidateStart : 0,
+        selectionModel === "phase10-section-local-planner"
+          ? candidates.length - selectionWindow.phraseFamilyCandidateStart
+          : 0,
       stateHistory: [...stateHistory.slice(0, -1), selectedState],
     }),
   };
@@ -804,10 +787,7 @@ function avoidShortAlternatingPhraseSelection(input: {
   candidates: readonly Exposition[];
   evaluations: readonly CandidateEvaluation[];
   bestIndex: number;
-  baselineCandidateCount: number;
-  selectableCandidateCount: number;
-  sectionGrammarCandidateStart: number;
-  phraseFamilyCandidateStart: number;
+  selectionWindow: ContinuationCandidateSelectionWindow;
   baselineEvaluation: CandidateEvaluation;
   historyContext: HistoryAwareSelectionContext;
   selectionModel: SelectionModel;
@@ -825,19 +805,16 @@ function avoidShortAlternatingPhraseSelection(input: {
   let fallbackScore = Number.POSITIVE_INFINITY;
 
   for (const [index, evaluation] of input.evaluations.entries()) {
-    const isSectionLocalCandidate = index >= input.baselineCandidateCount;
-    const isSectionGrammarCandidate =
-      index >= input.sectionGrammarCandidateStart && index < input.phraseFamilyCandidateStart;
-    const isPhraseFamilyCandidate = index >= input.phraseFamilyCandidateStart;
-    if (isPhraseFamilyCandidate || (index >= input.selectableCandidateCount && !isSectionGrammarCandidate)) {
+    const candidateBand = continuationCandidateSelectionBand(index, input.selectionWindow, input.selectionModel);
+    if (!candidateBandCanBeFallback(candidateBand, index, input.selectionWindow, input.selectionModel)) {
       continue;
     }
     if (evaluation.hardFailures.length > 0) {
       continue;
     }
     if (
-      isSectionLocalCandidate &&
-      !preservesSectionLocalGuardrails(evaluation, input.baselineEvaluation, isSectionGrammarCandidate)
+      candidateBand !== "baseline" &&
+      !preservesSectionLocalGuardrails(evaluation, input.baselineEvaluation, candidateBand === "section-grammar")
     ) {
       continue;
     }
@@ -847,9 +824,10 @@ function avoidShortAlternatingPhraseSelection(input: {
       continue;
     }
 
-    const candidateScore = isSectionLocalCandidate
-      ? selectionScore(evaluation, input.selectionModel)
-      : selectionScore(evaluation, "phase10-oracle-selection");
+    const candidateScore =
+      candidateBand !== "baseline"
+        ? selectionScore(evaluation, input.selectionModel)
+        : selectionScore(evaluation, "phase10-oracle-selection");
     if (candidateScore < fallbackScore) {
       fallbackIndex = index;
       fallbackScore = candidateScore;
@@ -857,6 +835,72 @@ function avoidShortAlternatingPhraseSelection(input: {
   }
 
   return fallbackIndex;
+}
+
+function continuationCandidateSelectionWindow(
+  state: FugueState,
+  selectionModel: SelectionModel,
+  candidateCount: number,
+): ContinuationCandidateSelectionWindow {
+  if (selectionModel !== "phase10-section-local-planner") {
+    return {
+      baselineCandidateCount: candidateCount,
+      selectableCandidateCount: candidateCount,
+      sectionGrammarCandidateStart: candidateCount,
+      phraseFamilyCandidateStart: candidateCount,
+    };
+  }
+
+  return {
+    baselineCandidateCount: baselineContinuationCandidateCount(state),
+    selectableCandidateCount: phase10SelectableContinuationCandidateCount(state),
+    sectionGrammarCandidateStart: phase10SectionGrammarCandidateStartIndex(state),
+    phraseFamilyCandidateStart: phase12PhraseFamilyCandidateStartIndex(state),
+  };
+}
+
+function continuationCandidateSelectionBand(
+  index: number,
+  window: ContinuationCandidateSelectionWindow,
+  selectionModel: SelectionModel,
+): ContinuationCandidateSelectionBand {
+  if (selectionModel !== "phase10-section-local-planner" || index < window.baselineCandidateCount) {
+    return "baseline";
+  }
+  if (index < window.sectionGrammarCandidateStart) {
+    return "section-local";
+  }
+  if (index < window.phraseFamilyCandidateStart) {
+    return "section-grammar";
+  }
+  return "phrase-family";
+}
+
+function candidateBandCanBeSelected(
+  band: ContinuationCandidateSelectionBand,
+  index: number,
+  window: ContinuationCandidateSelectionWindow,
+  selectionModel: SelectionModel,
+): boolean {
+  if (selectionModel !== "phase10-section-local-planner") {
+    return true;
+  }
+  if (band === "baseline" || band === "phrase-family") {
+    return false;
+  }
+  return index < window.selectableCandidateCount || band === "section-grammar";
+}
+
+function candidateBandCanBeFallback(
+  band: ContinuationCandidateSelectionBand,
+  index: number,
+  window: ContinuationCandidateSelectionWindow,
+  selectionModel: SelectionModel,
+): boolean {
+  if (band === "baseline") {
+    return true;
+  }
+  return candidateBandCanBeSelected(band, index, window, selectionModel);
 }
 
 function baselineContinuationCandidateCount(state: FugueState): number {
