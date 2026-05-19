@@ -31,4 +31,4 @@ The full 22 seed aggregate changed the Phase 12 repetition totals from `76 -> 77
 
 ## Project Response
 
-Adopt this as the Phase 13Q automatic generator baseline before Phase 8 operational work. Keep manual MIDI listening as an explicit follow-up: the generated `listening-review.json` and pairwise preference template remain `not-reviewed`, so this adoption is diagnostics-backed rather than human-listening-backed.
+Adopt this as the Phase 13Q automatic generator baseline before Phase 13R. Keep manual MIDI listening as an explicit follow-up: the generated `listening-review.json` and pairwise preference template remain `not-reviewed`, so this adoption is diagnostics-backed rather than human-listening-backed. Later listening and default-path diagnostics inserted [Phase 13R](../phases/phase-13r.md) before Phase 8 operational work.

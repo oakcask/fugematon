@@ -14,6 +14,8 @@ music-quality gate、diagnostics threshold、generator model、candidate scoring
 * [Phase 13 quality vector review](phase-13-quality-vector-review.md): Phase 13 完了時の 22 seed quality vector aggregate、local sentinel、manual listening gap。
 * [Phase 13Q planning review](phase-13q-planning-review.md): Phase 8/9 の前へ candidate diversity / voice independence / entry harmony 品質フェーズを挿入する根拠。
 * [Phase 13Q voice-pair support review](phase-13q-voice-pair-support-review.md): oblique support candidates と quality-vector-aware selection の自動採用 evidence。
+* [Phase 13R convergence review](phase-13r-convergence-review.md): Phase 8/9 の前へ default baseline / phrase convergence repair を挿入する根拠。
+* [Phase 13R](../phases/phase-13r.md): Phase 13Q 後、Phase 8 前に通常生成経路と後半 phrase convergence を修正する計画。
 * [Phase 12P](../phases/phase-12-performance-profile.md): Phase 13 の前に、MIDI と WebAudio が共有する演奏プロファイル境界を組み込む計画。
 * [Phase 13Q](../phases/phase-13q.md): Phase 13 の quality vector evidence を生成改善へつなぐ計画。
 * [Phase 13](../phases/phase-13.md): Phase 12 後の repeated-note / unison defects を quality vector と統計的 review/adoption model で扱った完了記録。
@@ -40,7 +42,7 @@ music-quality gate、diagnostics threshold、generator model、candidate scoring
 
 ## 読む判断
 
-* 最新の品質方針や Phase 8/9 前の実装対象を見る場合は Phase 13Q planning review、Phase 13Q、Phase 13 quality vector review、Phase 7+ 再編計画を読む。Phase 11 の実装済み観察軸を見る場合は Phase 11 review summary diagnostics を読む。Phase 7 以降の gate 再構成を見る場合は Phase 7 参照作品 diagnostics 計画を読む。Phase 12 挿入前の blocker evidence を見る場合は Phase 11 post-completion score review を読む。
+* 最新の品質方針や Phase 8/9 前の実装対象を見る場合は Phase 13R convergence review、Phase 13R、Phase 13Q planning review、Phase 13Q、Phase 13 quality vector review、Phase 7+ 再編計画を読む。Phase 11 の実装済み観察軸を見る場合は Phase 11 review summary diagnostics を読む。Phase 7 以降の gate 再構成を見る場合は Phase 7 参照作品 diagnostics 計画を読む。Phase 12 挿入前の blocker evidence を見る場合は Phase 11 post-completion score review を読む。
 * 概形の並行・反行を扱う場合は Phase 6 概形進行レビューも読む。
 * ある gate がなぜ追加されたかを追う場合だけ、古いレビューへ戻る。
 * diagnostics の閾値や seed セットを変更する場合は、該当レビュー、[../reference/quality-metrics.md](../reference/quality-metrics.md)、[../reference/technical-plan.md](../reference/technical-plan.md) を合わせて確認する。

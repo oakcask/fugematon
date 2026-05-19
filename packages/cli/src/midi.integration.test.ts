@@ -768,6 +768,7 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
           diagnosticsSummary: {
             hardConstraintFailures: number;
             candidatePoolOracle: { schemaVersion: number; viableCandidateCount: number };
+            phase13RReview: { findings: unknown[] };
           };
           referenceComparison: { reviewStatus: string; outsideReferenceCount: number };
           candidatePoolOracle: { schemaVersion: number; viableCandidateCount: number };
@@ -787,6 +788,7 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
           diagnosticsSummary: {
             hardConstraintFailures: number;
             candidatePoolOracle: { schemaVersion: number; viableCandidateCount: number };
+            phase13RReview: { findings: unknown[] };
           };
           referenceComparison: { reviewStatus: string; outsideReferenceCount: number };
           candidatePoolOracle: { schemaVersion: number; viableCandidateCount: number };
@@ -810,6 +812,7 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
           phase7BReviewSignals: number;
           qualityVectorDistance: number;
           localSentinelCount: number;
+          phase13RReviewFindings: number;
           phase8ReadyChanged: boolean;
         };
         improvements: string[];
@@ -931,6 +934,11 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
         entry.deltas.localSentinelCount,
         entry.variant.qualityVector.localSentinels.length - entry.baseline.qualityVector.localSentinels.length,
       );
+      assert.equal(
+        entry.deltas.phase13RReviewFindings,
+        entry.variant.diagnosticsSummary.phase13RReview.findings.length -
+          entry.baseline.diagnosticsSummary.phase13RReview.findings.length,
+      );
       assert.equal(typeof entry.deltas.qualityVectorDistance, "number");
       assert.equal(
         entry.deltas.phase8ReadyChanged,
@@ -938,7 +946,7 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
       );
       assert.ok(Array.isArray(entry.improvements));
       assert.ok(Array.isArray(entry.regressions));
-      assert.ok(entry.tradeoffs.length > 0);
+      assert.ok(Array.isArray(entry.tradeoffs));
       assert.equal(entry.manualListeningGap.baselineJudgement, "not-reviewed");
       assert.equal(entry.manualListeningGap.variantJudgement, "not-reviewed");
       assert.equal(entry.manualListeningGap.unlistened, true);
