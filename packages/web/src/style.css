@@ -147,7 +147,7 @@ h1 {
 }
 
 .score-card {
-  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
 }
 
 .transport-card {
@@ -171,7 +171,13 @@ h1 {
 .transport-card strong {
   display: block;
   margin-top: 0.35rem;
-  font-size: clamp(1.25rem, 3vw, 2.2rem);
+  font-size: 1.35rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+}
+
+.score-card strong {
+  white-space: nowrap;
 }
 
 .transport-actions {
@@ -216,6 +222,10 @@ h1 {
 
   .lede {
     font-size: 1.2rem;
+  }
+
+  .score-card strong {
+    white-space: normal;
   }
 
   .seed-row,
