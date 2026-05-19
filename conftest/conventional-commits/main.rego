@@ -14,6 +14,10 @@ docs_has_scope(subject) if {
 	regex.match(`^docs\(`, subject)
 }
 
+fix_has_ci_scope(subject) if {
+	regex.match(`^fix\(ci\)!?: .+$`, subject)
+}
+
 deny contains msg if {
 	not is_array(subjects)
 	msg := "subjects must be an array"
@@ -44,4 +48,14 @@ deny contains msg if {
 	valid_subject(subject)
 	docs_has_scope(subject)
 	msg := sprintf("Invalid %s: %s. docs commits must not include a scope", [label, subject])
+}
+
+deny contains msg if {
+	is_array(subjects)
+	some subject in subjects
+	is_string(subject)
+	subject != ""
+	valid_subject(subject)
+	fix_has_ci_scope(subject)
+	msg := sprintf("Invalid %s: %s. Use chore(ci) for CI workflow, pipeline, and automation changes instead of fix(ci)", [label, subject])
 }

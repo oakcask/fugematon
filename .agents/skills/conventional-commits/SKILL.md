@@ -22,7 +22,8 @@ Use this format:
 ```
 
 - Use common types such as `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `chore`, or `revert`.
-- Use `chore` for CI-related changes, including workflow, pipeline, and automation updates.
+- Use `chore` for CI-related changes, including workflow, pipeline, and automation updates. Do not use
+  `fix(ci)` for CI-only changes; reserve `fix` for product, runtime, API, or user-visible bug fixes.
 - Use `chore` for agent-instruction changes, including `AGENTS.md` and skills updates.
 - Add a scope only when it names the affected component, package, subsystem, surface, or document, for example `fix(auth): handle expired tokens`.
 - Prefer scopes such as `cli`, `core`, `api`, `parser`, `readme`, or `agents` when they match the actual area changed.
