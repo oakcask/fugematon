@@ -5,6 +5,8 @@ import type {
   FugueState,
   GenerationDiagnostics,
   GenerationOutput,
+  NoteEvent,
+  PlannedEntry,
   SelectionModel,
 } from "@fugematon/core";
 import {
@@ -28,6 +30,7 @@ import {
   type ReferenceDiagnosticsAggregate,
   type ReferenceDiagnosticsComparison,
   summarizeReferenceDiagnosticsComparisons,
+  TICKS_PER_QUARTER,
 } from "@fugematon/core";
 import { exportMidi } from "@fugematon/midi";
 import {
@@ -42,6 +45,12 @@ import {
   qualityVectorDistance,
   summarizeQualityProfileComparison,
 } from "./review-quality-profile.js";
+import {
+  compareSubjectFamilyDiversity,
+  type InitialSubjectProfile,
+  type SubjectFamilyDiversitySummary,
+  summarizeSubjectFamilyDiversity,
+} from "./review-subject-family.js";
 
 export async function writeReviewBundle(
   outDirectory: string,
@@ -81,12 +90,13 @@ export async function writeReviewBundle(
   }
 
   const summary: ReviewSummary = {
-    schemaVersion: 12,
+    schemaVersion: 13,
     lengthTicks,
     selectionModel,
     performanceProfile,
     referenceDiagnostics: summarizeReferenceDiagnosticsComparisons(referenceComparisons),
     qualityProfileComparison: summarizeQualityProfileComparison(summarySeeds),
+    subjectFamilyDiversity: summarizeSubjectFamilyDiversity(summarySeeds),
     seeds: summarySeeds,
   };
 
@@ -140,12 +150,13 @@ export async function writeAbReviewBundle(
 }
 
 type ReviewSummary = {
-  schemaVersion: 12;
+  schemaVersion: 13;
   lengthTicks: number;
   selectionModel: SelectionModel;
   performanceProfile: PerformanceProfileMetadata;
   referenceDiagnostics: ReferenceDiagnosticsAggregate;
   qualityProfileComparison: QualityProfileComparison;
+  subjectFamilyDiversity: SubjectFamilyDiversitySummary;
   seeds: ReviewSummarySeed[];
 };
 
@@ -155,6 +166,7 @@ type ReviewSummarySeed = {
   diagnosticsFile: string;
   midiFile: string;
   performanceProfile: PerformanceProfileMetadata;
+  initialSubjectProfile: InitialSubjectProfile;
   diagnosticsSummary: ReviewDiagnosticsSummary;
   referenceComparison: ReferenceDiagnosticsComparison;
   phase59Gate: Phase59GateResult;
@@ -194,6 +206,7 @@ function createReviewSummarySeed({
       diagnosticsFile,
       midiFile,
       performanceProfile,
+      initialSubjectProfile: summarizeInitialSubjectProfile(output),
       diagnosticsSummary: summarizeDiagnostics(diagnostics),
       referenceComparison,
       phase59Gate: evaluatePhase59Diagnostics(seed, diagnostics),
@@ -210,10 +223,11 @@ function createReviewSummarySeed({
 }
 
 type AbReviewComparisonSummary = {
-  schemaVersion: 2;
+  schemaVersion: 3;
   lengthTicks: number;
   baseline: ReviewBundleSide;
   variant: ReviewBundleSide;
+  subjectFamilyDiversity: ReturnType<typeof compareSubjectFamilyDiversity>;
   seeds: AbReviewSeedComparison[];
 };
 
@@ -415,7 +429,7 @@ function compareReviewSummaries({
   variantSummary: ReviewSummary;
 }): AbReviewComparisonSummary {
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     lengthTicks,
     baseline: {
       label: baselineLabel,
@@ -431,6 +445,10 @@ function compareReviewSummaries({
       selectionModel: variantSummary.selectionModel,
       performanceProfile: variantSummary.performanceProfile,
     },
+    subjectFamilyDiversity: compareSubjectFamilyDiversity(
+      baselineSummary.subjectFamilyDiversity,
+      variantSummary.subjectFamilyDiversity,
+    ),
     seeds: baselineSummary.seeds.map((baselineSeed) => {
       const variantSeed = findSummarySeed(variantSummary.seeds, baselineSeed.seed);
       return compareReviewSeed(baselineSeed, variantSeed);
@@ -591,6 +609,89 @@ function findSummarySeed(seeds: readonly ReviewSummarySeed[], seed: string): Rev
   }
 
   return entry;
+}
+
+function summarizeInitialSubjectProfile(output: GenerationOutput): InitialSubjectProfile {
+  const initialSubject = output.diagnostics.subjectEntries.find((entry) => entry.form === "subject");
+  if (initialSubject === undefined) {
+    return {
+      degreePattern: [],
+      rhythmPattern: [],
+      contourClass: "none",
+      localClimaxIndex: -1,
+      tailMotion: "repeated",
+      mode: "major",
+      answerCompatibility: "none",
+    };
+  }
+
+  const answer = output.diagnostics.subjectEntries.find((entry) => entry.form === "answer");
+
+  return {
+    degreePattern: [...initialSubject.expectedDegreePattern],
+    rhythmPattern: initialSubjectNotes(output, initialSubject).map((note) =>
+      Math.round(note.durationTicks / TICKS_PER_QUARTER),
+    ),
+    contourClass: contourClass(initialSubject.expectedDegreePattern),
+    localClimaxIndex: localClimaxIndex(initialSubject.expectedDegreePattern),
+    tailMotion: tailMotion(initialSubject.expectedDegreePattern),
+    mode: initialSubject.localKey.mode,
+    answerCompatibility:
+      answer?.answerKind === "true" ? "true-answer" : answer?.answerKind === "tonal" ? "tonal-answer" : "none",
+  };
+}
+
+function initialSubjectNotes(output: GenerationOutput, initialSubject: PlannedEntry): NoteEvent[] {
+  return output.events
+    .filter(
+      (event): event is NoteEvent =>
+        event.kind === "note" &&
+        event.role === "subject" &&
+        event.voice === initialSubject.voice &&
+        event.startTick >= initialSubject.startTick,
+    )
+    .sort((left, right) => left.startTick - right.startTick || left.pitch - right.pitch)
+    .slice(0, initialSubject.expectedDegreePattern.length);
+}
+
+function contourClass(pattern: readonly number[]): string {
+  return pattern
+    .slice(1)
+    .map((degree, index) => {
+      const previous = pattern[index]!;
+      if (degree > previous) {
+        return "u";
+      }
+      if (degree < previous) {
+        return "d";
+      }
+      return "r";
+    })
+    .join("");
+}
+
+function localClimaxIndex(pattern: readonly number[]): number {
+  let index = 0;
+  let value = pattern[0] ?? 0;
+  for (let candidateIndex = 1; candidateIndex < pattern.length; candidateIndex += 1) {
+    const candidate = pattern[candidateIndex]!;
+    if (candidate > value) {
+      index = candidateIndex;
+      value = candidate;
+    }
+  }
+
+  return index;
+}
+
+function tailMotion(pattern: readonly number[]): InitialSubjectProfile["tailMotion"] {
+  const previous = pattern.at(-2);
+  const final = pattern.at(-1);
+  if (previous === undefined || final === undefined || final === previous) {
+    return "repeated";
+  }
+
+  return final > previous ? "ascending" : "descending";
 }
 
 function summarizeDiagnostics(diagnostics: GenerationDiagnostics): ReviewDiagnosticsSummary {

@@ -160,7 +160,11 @@ Focused convergence evidence against explicit legacy `baseline`:
 
 Manual listening gap: focused `organ-default` and `strict-counterpoint` listening is still not reviewed. This is now a Phase 8/9 blocker, not only a claims limitation. Any confirmed musical defect found by that pass must be repaired and re-reviewed before Phase 8/9.
 
-Cross-seed subject-diversity follow-up: the automatic default path still needs a bundle-level detector and upstream subject-generator repair for the seed-crossing subject-similarity gap recorded in [Phase 13R convergence review](../reviews/phase-13r-convergence-review.md). If the follow-up exposes additional musical problems, they are part of the same pre-Phase-8/9 repair loop. Until that loop lands, Phase 8/9 remain deferred.
+Cross-seed subject-diversity follow-up: review bundle schema version 13 now writes `subjectFamilyDiversity`, and review-ab schema version 3 writes subject-family diversity deltas. `buildSubject` now chooses a conservative additional upper-neighbor subject shape on the adopted planner path while keeping explicit legacy `baseline` and `phase10-oracle-selection` comparison paths on the old subject vocabulary.
+
+The 22 seed `organ-default` and `strict-counterpoint` review bundles both report hard constraint failures 0, Phase 7B readiness 22/22, 4 unique initial subject families, top initial subject family share 0.318, top subject-fragment family share 0.409, and no `subjectFamilyDiversity` findings. The focused Phase 13R seed sweep reports 4 top subject families across 9 seeds, hard constraint failures 0, and top family share 0.444. Details are in [Phase 13R subject diversity follow-up](../reviews/phase-13r-subject-diversity-follow-up.md).
+
+Human focused listening remains the remaining Phase 13R pre-Phase-8/9 blocker. The generated `organ-default` and `strict-counterpoint` review bundles include MIDI and listening templates, and agent-side score review did not find a new confirmed musical blocker, but no human playback judgement has been entered in source. Phase 8/9 remain deferred until the focused listening notes are filled or this requirement is explicitly revised.
 
 ## Theory Basis
 

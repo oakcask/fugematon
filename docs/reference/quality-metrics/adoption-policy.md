@@ -49,6 +49,7 @@ Model adoption では、A/B summary の次の項目を合わせて読む。
 * `candidatePoolOracle` が、selection-only で直せる問題か generator / planner が必要な問題かを示している。
 * `qualityVectorDistance` と axis-level contributors が改善または説明可能な tradeoff を示す。
 * `localSentinelCount` と sentinel kind が unexplained regression を起こしていない。
+* Phase 13R subject-diversity repair では `subjectFamilyDiversity` の unique family count、top initial subject family share、top subject-fragment family share が改善または説明可能な tradeoff を示す。
 * manual listening gap が残る場合は、採用根拠として未実施であることを明記する。
 
 ## Regression Notes

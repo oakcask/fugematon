@@ -1,5 +1,5 @@
 import { TICKS_PER_QUARTER } from "../constants.js";
-import type { KeySignature } from "../events.js";
+import type { KeySignature, SelectionModel } from "../events.js";
 import type { Xoshiro128StarStar } from "../prng.js";
 import { melodicRoleForScaleDegree } from "./pitch.js";
 import { SUBJECT_DEGREES, SUBJECT_DURATIONS } from "./shared.js";
@@ -7,13 +7,14 @@ import type { SubjectNote } from "./types.js";
 
 const SUBJECT_TURNBACK_DEGREES = [0, 1, 2, 3, 4, 3, 1, 2] as const;
 const SUBJECT_THIRD_LEAP_DEGREES = [0, 2, 1, 3, 4, 3, 2, 1] as const;
+const SUBJECT_UPPER_NEIGHBOR_DEGREES = [0, 1, 3, 2, 4, 3, 2, 1] as const;
 
-export function buildSubject(rng: Xoshiro128StarStar, keySignature: KeySignature): SubjectNote[] {
-  const shape = rng.chooseWeighted<readonly number[]>([
-    { value: SUBJECT_TURNBACK_DEGREES, weight: 3 },
-    { value: SUBJECT_DEGREES, weight: stepwiseFifthClimbWeight(keySignature) },
-    { value: SUBJECT_THIRD_LEAP_DEGREES, weight: 2 },
-  ]);
+export function buildSubject(
+  rng: Xoshiro128StarStar,
+  keySignature: KeySignature,
+  selectionModel: SelectionModel = "baseline",
+): SubjectNote[] {
+  const shape = rng.chooseWeighted(subjectShapeChoices(keySignature, selectionModel));
 
   let offsetTick = 0;
   return shape.map((scaleDegree, index) => {
@@ -29,6 +30,23 @@ export function buildSubject(rng: Xoshiro128StarStar, keySignature: KeySignature
     offsetTick += note.durationTicks;
     return note;
   });
+}
+
+function subjectShapeChoices(
+  keySignature: KeySignature,
+  selectionModel: SelectionModel,
+): { value: readonly number[]; weight: number }[] {
+  const legacyChoices = [
+    { value: SUBJECT_TURNBACK_DEGREES, weight: 3 },
+    { value: SUBJECT_DEGREES, weight: stepwiseFifthClimbWeight(keySignature) },
+    { value: SUBJECT_THIRD_LEAP_DEGREES, weight: 2 },
+  ];
+
+  if (selectionModel !== "phase10-section-local-planner") {
+    return legacyChoices;
+  }
+
+  return [...legacyChoices, { value: SUBJECT_UPPER_NEIGHBOR_DEGREES, weight: 1.25 }];
 }
 
 function subjectMetricalHarmonyIntent(
