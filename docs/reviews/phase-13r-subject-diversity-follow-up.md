@@ -27,12 +27,14 @@ The generated 22 seed review bundles for `organ-default` and `strict-counterpoin
 
 Quality-vector local sentinel count is 386. This is a review signal count, not a hard failure. It is higher than the automatic baseline recorded before this follow-up, so it remains a focused playback-review risk rather than a completed musical acceptance claim. No new hard failure, readiness loss, subject identity loss, answer-plan failure, or unresolved dissonance appears in the review bundle evidence.
 
-### 3. Focused convergence seeds improve, but still need human playback review
+### 3. Focused convergence seeds improve automatically, but human playback still hears blockers
 
 The focused Phase 13R seed sweep (`bach-001`, `fugue-smoke`, `modal-cadence`, `dense-modal`, `angular-answer`, `modal-answer`, `minor-entry`, `sparse-cadence`, `random-listen-check`) reports 4 top subject families across 9 seeds, hard constraint failures 0, and top family share 0.444.
 
-Agent-side score review did not find a new counterpoint, harmony, rhythm, texture, or form blocker in the generated diagnostics. The concentrated focused-family result is a residual review signal, not a completed human listening pass. The generated `organ-default` and `strict-counterpoint` review bundles include the MIDI files and `listening-review.json` templates needed for playback judgement, but no human manual listening judgement has been entered in source.
+Agent-side score review did not find a new counterpoint, harmony, rhythm, texture, or form blocker in the generated diagnostics. That was incomplete evidence, not a completed human listening pass. Post-Phase-13R human playback feedback reports that similar structure and phrase material still recur both within a score and across seeds. This means the subject-diversity repair is insufficient as a musical closeout even though it improved the aggregate detector.
+
+The same listening feedback reports that abrupt three-part silence still occurs. This is a texture / form blocker when the silence is not explained by cadence, phrase boundary, or staged functional thinning. The affected seeds and exact windows are not yet recorded in this review, so the next repair should derive focused evidence from active-voice counts, cadence distance, section state, and phrase-boundary context before changing the generator or scoring thresholds.
 
 ## Handoff
 
-This repair completes the automated subject-diversity detector and generator-side diversity response. It does not honestly close the human focused listening requirement by itself. Phase 8/9 should resume only after a human or playback-capable reviewer fills the focused `organ-default` and `strict-counterpoint` listening notes, or the Phase 13R requirement is explicitly revised to accept agent-side score review as the completion evidence.
+This repair completes the automated subject-diversity detector and a first conservative generator-side diversity response. It does not close the human focused listening requirement. Phase 8/9 should resume only after the confirmed post-listening blockers are localized, repaired, and re-reviewed across representative, boundary, rotation, and adversarial seeds, or a later review rejects a specific report as a false positive with evidence.

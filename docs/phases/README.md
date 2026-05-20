@@ -5,7 +5,7 @@
 ## 現在読むもの
 
 * [Phase 7+ 再編計画](phase-7-plus-reorg.md): Phase 12 後に Phase 12P、Phase 13、Phase 13Q、Phase 13R を挟み、Phase 13R follow-up repair 完了後に Phase 8/9 の無限再生 operational lane へ戻る現在計画を確認する。
-* [Phase 13R](phase-13r.md): 現在の次作業。automatic default-baseline adoption は完了済みだが、focused manual listening、seed 横断 subject-diversity repair、そこで見つかった音楽的問題の修正を Phase 8/9 前の必須 follow-up として扱う。
+* [Phase 13R](phase-13r.md): 現在の次作業。automatic default-baseline adoption と最初の seed 横断 subject-diversity repair は完了済みだが、post-listening で類似構成 / 類似フレーズ収束と不自然な3パート無音化が残ったため、Phase 8/9 前の必須 repair として扱う。
 * [Phase 8](phase-8.md): Phase 13R follow-up repair 後に戻る、無限再生セッション、境界設計、内部状態 visualizer の MVP。
 * [Phase 9](phase-9.md): Phase 13R follow-up repair と Phase 8 後の Worker 化、生成期限、fallback、長時間 visualizer stability。
 * [Phase 13Q](phase-13q.md): automatic adoption complete; manual listening follow-up remains open。Phase 13R の前に、candidate diversity、voice independence、entry harmony を改善した品質フェーズ。
@@ -28,7 +28,7 @@
 
 ## 読む判断
 
-* 現在の実装対象を見る場合は [Phase 13R](phase-13r.md) の required follow-up repair を読む。Phase 8/9 は、その focused manual listening、seed 横断 subject-diversity evidence、検出された音楽的問題の修正 evidence が揃ってから読む。Phase 13R の根拠は [../reviews/phase-13r-convergence-review.md](../reviews/phase-13r-convergence-review.md) を読む。Phase 13Q の完了 evidence は [Phase 13Q](phase-13q.md) と [../reviews/phase-13q-voice-pair-support-review.md](../reviews/phase-13q-voice-pair-support-review.md)、quality vector の完了 evidence は [Phase 13](phase-13.md) と [../reviews/phase-13-quality-vector-review.md](../reviews/phase-13-quality-vector-review.md) を読む。
+* 現在の実装対象を見る場合は [Phase 13R](phase-13r.md) の required follow-up repair を読む。Phase 8/9 は、post-listening で確認された類似構成 / 類似フレーズ収束と不自然な3パート無音化の localization、修正、再レビュー evidence が揃ってから読む。Phase 13R の根拠は [../reviews/phase-13r-convergence-review.md](../reviews/phase-13r-convergence-review.md) を読む。Phase 13Q の完了 evidence は [Phase 13Q](phase-13q.md) と [../reviews/phase-13q-voice-pair-support-review.md](../reviews/phase-13q-voice-pair-support-review.md)、quality vector の完了 evidence は [Phase 13](phase-13.md) と [../reviews/phase-13-quality-vector-review.md](../reviews/phase-13-quality-vector-review.md) を読む。
 * Phase 10 の完了条件、採用条件、review evidence、残る listening gap を見る場合は [Phase 10](phase-10.md) を読む。
 * 実装対象の Phase が分かっている場合は、その Phase だけ読む。
 * Phase 5 の品質根拠が必要な場合は、本文中のリンクから該当レビューへ進む。
