@@ -37,7 +37,7 @@ Review signal へ降格するもの:
 
 この再分類は、音楽的問題を無視するためではありません。Phase 8/9 の operational work が hard constraints と再現性を保ったまま進められるようにし、音楽美は quality lane の evidence として扱うためです。
 
-Current exception: Phase 13R follow-up repair は、focused manual listening、seed 横断 subject-diversity evidence、そこで見つかった音楽的問題の修正 evidence を Phase 8/9 前の開始条件へ昇格します。この例外は、旧 Phase 6/7 beauty gate を復活させるものではなく、Phase 13R で確認した product-boundary / subject-family convergence と、その follow-up で確認した具体的な音楽的問題の申し送りに限定します。
+Current exception: Phase 13S は、Phase 13R 後の score review で確認した主題リズムの同型化、entry friction、voice lockstep、counter-subject identity、form metric の説明不足を Phase 8/9 前の開始条件へ昇格します。この例外は、旧 Phase 6/7 beauty gate を復活させるものではなく、音楽的美しさを project core として扱い、metric が譜面上の良さを表現できているかを再検証するためです。既存モデル互換性、旧 guardrail margin、旧 expected values は、譜面上の改善と矛盾する場合は採用条件にしません。
 
 ## A/B Review
 
@@ -50,6 +50,7 @@ Model adoption では、A/B summary の次の項目を合わせて読む。
 * `qualityVectorDistance` と axis-level contributors が改善または説明可能な tradeoff を示す。
 * `localSentinelCount` と sentinel kind が unexplained regression を起こしていない。
 * Phase 13R subject-diversity repair では `subjectFamilyDiversity` の unique family count、top initial subject family share、top subject-fragment family share が改善または説明可能な tradeoff を示す。
+* Phase 13S では subject rhythm / climax diversity、counter-subject family、entry-local dissonance role、voice-pair score windows、episode / stretto phrase function が、metric 改善の具体的な譜面症状を説明する。
 * manual listening gap が残る場合は、採用根拠として未実施であることを明記する。
 
 ## Regression Notes
