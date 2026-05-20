@@ -11,11 +11,11 @@ const PHASE_13R_FOLLOWUP_TEXTURE_SEEDS_A = [
   "angular-answer",
 ] as const;
 
-test("phase-13R follow-up representative seeds localize abrupt three-part silence as unsupported solo texture", () => {
+test("phase-13R follow-up representative seeds repair abrupt three-part silence as unsupported solo texture", () => {
   const seedsWithAbruptDrops = PHASE_13R_FOLLOWUP_TEXTURE_SEEDS_A.filter(
     (seed) =>
       generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS }).diagnostics.soloTexture.abruptTextureDropCount > 0,
   );
 
-  assert.deepEqual(seedsWithAbruptDrops, ["bach-001", "fugue-smoke", "modal-cadence", "dense-modal", "angular-answer"]);
+  assert.deepEqual(seedsWithAbruptDrops, []);
 });

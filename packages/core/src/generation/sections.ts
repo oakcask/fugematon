@@ -1116,7 +1116,7 @@ export function buildContinuationCandidates(
   const sectionGrammarCandidates: Exposition[] = [];
   const phraseFamilyOracleCandidates: Exposition[] = [];
   const includeSectionLocalPlannerCandidates = selectionModel === "phase10-section-local-planner";
-  const phraseSubject = subject;
+  const phraseSubject = phraseSubjectForIntent(subject, state, selectionModel, phraseIntent);
 
   if (state === "episode") {
     for (const voice of rng.shuffle(VOICE_ENTRY_ORDER)) {
@@ -1249,6 +1249,24 @@ export function buildContinuationCandidates(
         },
       ]
     : candidates;
+}
+
+function phraseSubjectForIntent(
+  subject: readonly SubjectNote[],
+  state: FugueState,
+  selectionModel: SelectionModel,
+  phraseIntent: ContinuationPhraseSectionIntent | undefined,
+): readonly SubjectNote[] {
+  if (selectionModel !== "phase10-section-local-planner" || phraseIntent === undefined || state !== "episode") {
+    return subject;
+  }
+  if (phraseIntent.densityArc === "balanced") {
+    return deriveSubjectStem(subject, [0, 2, 1, 3, 4, 3, 2, 1]);
+  }
+  if (phraseIntent.densityArc === "full") {
+    return deriveSubjectStem(subject, [0, 1, 3, 2, 4, 3, 1, 2]);
+  }
+  return subject;
 }
 
 function preferredOffsets<const T extends readonly number[]>(offsets: T, preferredOffset: number | undefined): T {

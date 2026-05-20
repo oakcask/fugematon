@@ -10,11 +10,11 @@ const PHASE_13R_FOLLOWUP_TEXTURE_SEEDS_B = [
   "random-listen-check",
 ] as const;
 
-test("phase-13R follow-up boundary seeds localize abrupt three-part silence as unsupported solo texture", () => {
+test("phase-13R follow-up boundary seeds repair abrupt three-part silence as unsupported solo texture", () => {
   const seedsWithAbruptDrops = PHASE_13R_FOLLOWUP_TEXTURE_SEEDS_B.filter(
     (seed) =>
       generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS }).diagnostics.soloTexture.abruptTextureDropCount > 0,
   );
 
-  assert.deepEqual(seedsWithAbruptDrops, ["modal-answer", "minor-entry", "random-listen-check"]);
+  assert.deepEqual(seedsWithAbruptDrops, []);
 });

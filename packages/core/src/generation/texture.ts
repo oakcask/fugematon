@@ -537,7 +537,7 @@ function findUnsupportedThinningRuns(
     const activeVoices = activeVoicesDuring(notes, startTick, endTick);
     const plan = sectionPlanForTick(sectionPlans, startTick);
 
-    if (isUnsupportedThinningSegment({ activeVoices, startTick, endTick, plan })) {
+    if (isUnsupportedThinningSegment({ activeVoices, startTick, plan })) {
       if (
         currentRun !== undefined &&
         currentRun.endTick === startTick &&
@@ -565,15 +565,14 @@ function findUnsupportedThinningRuns(
 function isUnsupportedThinningSegment(input: {
   activeVoices: readonly Voice[];
   startTick: number;
-  endTick: number;
   plan: HarmonicPlan | undefined;
 }): boolean {
-  const { activeVoices, startTick, endTick, plan } = input;
+  const { activeVoices, startTick, plan } = input;
   return (
     plan !== undefined &&
     isAbruptUpperSolo(activeVoices) &&
     sectionStartDistance(plan, startTick) > TICKS_PER_QUARTER &&
-    sectionEndDistance(plan, endTick) > TICKS_PER_QUARTER * 2 &&
+    sectionEndDistance(plan, startTick) > TICKS_PER_QUARTER &&
     !hasNearbyCadenceTarget(plan, startTick)
   );
 }
