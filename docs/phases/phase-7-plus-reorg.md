@@ -4,7 +4,7 @@ Phase 7 の reference diagnostics と candidate pool oracle は、既存の abso
 
 このため Phase 7 以降は、音楽美を単一の pass/fail gate で完了判定しない。hard constraint、review signal、manual preference を分け、Phase 8 の operational lane は hard safety と再現性が通る状態で開始可能にした。
 
-そのうえで、無限再生 operational lane より音楽美を優先するため、Phase 8/9 はいったん deferred operational lane に送り、先に Phase 10 quality foundation、Phase 11 quality model rebuild、Phase 12 phrase and repetition quality rewrite を実施した。Phase 12 後の human feedback ではリズム感と休符時の終止感が改善した一方で、高声部の同音反復、exact unison、second collision、低声部ペアの長い unison motion が残ることを確認した。Phase 12P で演奏プロファイルを MIDI/WebAudio 共通のレンダリング境界として組み込み、Phase 13 で残る欠陥を単独しきい値ではなく quality vector の統計的 review/adoption model として扱った。Phase 13Q では candidate diversity、voice independence、entry harmony を生成側で改善したが、通常生成経路が採用済み baseline を使っていないことと後半 phrase convergence が残ることが聴取で確認された。Phase 13R では default baseline と phrase convergence の automatic adoption まで完了したが、focused manual listening、seed 横断 subject-diversity follow-up、その follow-up で見つかった音楽的問題の修正を Phase 8/9 前の必須作業へ昇格する。Phase 8 へ戻る際は、細かな生成パラメータ操作を主目的にせず、無限再生セッション、境界設計、内部状態の鑑賞用 visualizer を主目的にする。
+そのうえで、無限再生 operational lane より音楽美を優先するため、Phase 8/9 はいったん deferred operational lane に送り、先に Phase 10 quality foundation、Phase 11 quality model rebuild、Phase 12 phrase and repetition quality rewrite を実施した。Phase 12 後の human feedback ではリズム感と休符時の終止感が改善した一方で、高声部の同音反復、exact unison、second collision、低声部ペアの長い unison motion が残ることを確認した。Phase 12P で演奏プロファイルを MIDI/WebAudio 共通のレンダリング境界として組み込み、Phase 13 で残る欠陥を単独しきい値ではなく quality vector の統計的 review/adoption model として扱った。Phase 13Q では candidate diversity、voice independence、entry harmony を生成側で改善したが、通常生成経路が採用済み baseline を使っていないことと後半 phrase convergence が残ることが聴取で確認された。Phase 13R では default baseline、phrase convergence、focused manual listening 後に見つかった mechanical subject-fragment convergence と abrupt three-part silence の follow-up repair を完了した。Phase 8 へ戻る際は、細かな生成パラメータ操作を主目的にせず、無限再生セッション、境界設計、内部状態の鑑賞用 visualizer を主目的にする。
 
 Current metric meanings and adoption policy live in [quality metrics reference](../reference/quality-metrics.md). This doc records why the route was reorganized and how each Phase uses those policies.
 
@@ -48,7 +48,7 @@ CI gate を hard constraint と review signal に分ける。
 * review signal へ降格したものは counter-subject identity retention、rhythmic independence、unison overlap、same-pitch overlap、same-direction motion、shared rhythm overlap、leap recovery misses、selected candidate melody/texture cost、entry support instability、severe / unresolved severe entry interval、solo texture、bass-upper / outer-voice contour ratio、modal context / characteristic tone / modal cadence evidence である。stepwise pattern fixation、free-counterpoint contour、long-run form repetition、candidate-pool oracle は summary evidence として残し、単独の absolute count では Phase 8 blocker にしない。
 * Phase 8 は Phase 7B 時点では hard constraints、generator determinism、review bundle schema compatibility、reference diagnostics summary、candidate-pool oracle shape が通る状態で開始できる。manual listening と pairwise preference は quality lane evidence として残り、全 seed の musical beauty pass は開始条件にしない。
 * Phase 10 完了後の譜面レビューにより、Phase 8/9 は再度 deferred operational lane に戻す。Phase 8 が hard constraint 上は開始可能であることは、無限再生へ進む音楽品質が十分であることを意味しない。
-* Phase 13R 後の現在計画では、focused manual listening、seed 横断 subject-diversity follow-up、そこで見つかった音楽的問題の修正と再レビューも Phase 8/9 前の開始条件にする。
+* Phase 13R 後の現在計画では、focused manual listening、seed 横断 subject-diversity follow-up、そこで見つかった音楽的問題の修正と再レビューを完了済みの Phase 8/9 前開始条件として扱う。
 
 観測した tradeoff:
 
@@ -216,7 +216,7 @@ Phase 9 は Phase 13R required follow-up repair と Phase 8 後に戻る deferre
 
 ### Phase 10 以降の継続 quality lane
 
-Phase 10 で品質基盤を先行したが、Phase 10 後の譜面レビューにより Phase 11 quality model rebuild を挟んだ。Phase 11 後の 22 seed review でも similar phrase blocker が残ったため、Phase 8/9 の前に Phase 12 phrase/repetition quality rewrite を挟んだ。Phase 12 後は Phase 12P で演奏プロファイル境界を組み込み、human feedback で残った欠陥は Phase 13 quality vector statistical review で review/adoption model 化した。Phase 13Q ではその evidence を使い、candidate diversity、voice independence、entry harmony を無限再生 operational lane 前に改善した。Phase 13R では通常生成経路を採用済み baseline へ揃え、後半 phrase convergence を修正した。Phase 13R follow-up repair として focused manual listening、seed 横断 subject-diversity repair、そこで見つかった音楽的問題の修正を完了してから Phase 8/9 へ戻る。Phase 13R follow-up repair 後も、以下は継続 lane として残る。
+Phase 10 で品質基盤を先行したが、Phase 10 後の譜面レビューにより Phase 11 quality model rebuild を挟んだ。Phase 11 後の 22 seed review でも similar phrase blocker が残ったため、Phase 8/9 の前に Phase 12 phrase/repetition quality rewrite を挟んだ。Phase 12 後は Phase 12P で演奏プロファイル境界を組み込み、human feedback で残った欠陥は Phase 13 quality vector statistical review で review/adoption model 化した。Phase 13Q ではその evidence を使い、candidate diversity、voice independence、entry harmony を無限再生 operational lane 前に改善した。Phase 13R では通常生成経路を採用済み baseline へ揃え、後半 phrase convergence、seed 横断 subject-diversity、mechanical subject-fragment convergence、abrupt three-part silence を修正した。Phase 13R follow-up repair 後も、以下は継続 lane として残る。
 
 対象:
 

@@ -2,7 +2,7 @@
 
 Phase 13R is inserted after Phase 13Q and before Phase 8. Its purpose is to make the improved generator the actual default path heard through core, CLI, MIDI, and Web UI, then repair the remaining tendency for long continuations to converge on the same subject fragments and short section cycles.
 
-Status: automatic default-baseline adoption complete; cross-seed subject-diversity diagnostics and the first conservative generator repair are implemented, but post-Phase-13R human listening confirms that similar structure / phrase convergence and abrupt three-part silence still remain. Phase 8/9 may not start from the automatic baseline alone, because infinite playback and Worker fallback would extend confirmed musical defects over longer sessions.
+Status: complete. Automatic default-baseline adoption, cross-seed subject-diversity diagnostics, first conservative generator repair, and the post-listening follow-up repair are implemented. Phase 8 may resume from this baseline; Phase 9 inherits the Phase 8 evidence instead of using Worker fallback or deadlines to mask quality defects.
 
 Use [quality metrics reference](../reference/quality-metrics.md) for diagnostics and adoption policy meanings. Use [Phase 13R convergence review](../reviews/phase-13r-convergence-review.md) for the seed evidence that triggered this reordering.
 
@@ -77,7 +77,7 @@ Run the adoption against the focused convergence seeds and the full 22 seed bund
 
 Manual listening must cover at least `organ-default` and `strict-counterpoint` for the focused set before Phase 8 resumes. Any musical problem found in that listening pass or in the subject-diversity sweep must be classified and fixed before Phase 8/9, unless the review explicitly rejects it as a false positive rather than an accepted defect.
 
-Post-Phase-13R listening feedback now confirms two still-open blockers: similar structure and phrase material recur within a score and across seeds, and three parts can still become silent abruptly without convincing cadence, phrase-boundary, or staged-thinning function. The affected seeds and exact locations are not yet isolated in source, so the next repair must first reproduce and localize representative windows before changing gates or declaring the issue fixed.
+Post-Phase-13R listening feedback confirmed two blockers: similar structure and phrase material recurred within a score and across seeds, and three parts could become silent abruptly without convincing cadence, phrase-boundary, or staged-thinning function. The follow-up repair localizes these through Phase 13R fragment-family findings and unsupported solo texture, then repairs the mechanical subject-fragment and abrupt texture-drop symptoms before Phase 8.
 
 ## Adoption Criteria
 
@@ -132,7 +132,7 @@ The automatic baseline is no longer enough to restart the operational lane. Befo
 * re-review affected representative, boundary, rotation, and adversarial seeds after each fix;
 * record whether remaining subject similarity or other symptoms are function-bearing recurrence, false positives, or still blockers.
 
-Phase 8 may start only after this follow-up records its evidence and fixes the confirmed musical problems it finds. Phase 9 inherits the same precondition and may not use Worker fallback, deadlines, or visualizer stability work to mask unresolved subject-family collapse, phrase convergence, counterpoint regressions, harmony defects, or listening-fatigue symptoms.
+This follow-up has recorded its evidence and fixed the confirmed mechanical subject-fragment convergence and abrupt three-part silence symptoms. Phase 8 may now start. Phase 9 inherits this baseline and may not use Worker fallback, deadlines, or visualizer stability work to mask future subject-family collapse, phrase convergence, counterpoint regressions, harmony defects, or listening-fatigue symptoms.
 
 ## Implementation Progress
 
@@ -162,13 +162,24 @@ Focused convergence evidence against explicit legacy `baseline`:
 * `minor-entry` and `sparse-cadence`: repeated 6 -> 3, unique 5 -> 18. Subject-fragment share falls, while subject-stem share rises as a return-anchor tradeoff for stronger section diversity.
 * `random-listen-check`: repeated 6 -> 5, unique 5 -> 11, entry share 0.341 -> 0.333, fragment share 0.394 -> 0.364; unchanged stem share remains a review signal.
 
-Manual listening update: focused playback has now confirmed Phase 8/9 blockers rather than merely leaving a claims gap. Similar structure / phrase convergence and abrupt three-part silence remain open until representative seeds or windows are localized, repaired, and re-reviewed.
+Manual listening update: focused playback confirmed Phase 8/9 blockers rather than merely leaving a claims gap. Similar structure / phrase convergence and abrupt three-part silence were localized through subject-fragment concentration and unsupported solo texture, then repaired and re-reviewed in the final follow-up.
 
 Cross-seed subject-diversity follow-up: review bundle schema version 13 now writes `subjectFamilyDiversity`, and review-ab schema version 3 writes subject-family diversity deltas. `buildSubject` now chooses a conservative additional upper-neighbor subject shape on the adopted planner path while keeping explicit legacy `baseline` and `phase10-oracle-selection` comparison paths on the old subject vocabulary.
 
 The 22 seed `organ-default` and `strict-counterpoint` review bundles both report hard constraint failures 0, Phase 7B readiness 22/22, 4 unique initial subject families, top initial subject family share 0.318, top subject-fragment family share 0.409, and no `subjectFamilyDiversity` findings. The focused Phase 13R seed sweep reports 4 top subject families across 9 seeds, hard constraint failures 0, and top family share 0.444. Details are in [Phase 13R subject diversity follow-up](../reviews/phase-13r-subject-diversity-follow-up.md).
 
-Human focused listening has now found confirmed Phase 13R pre-Phase-8/9 blockers. The generated `organ-default` and `strict-counterpoint` review bundles include MIDI and listening templates, and agent-side score review did not previously find a new confirmed musical blocker, but human playback feedback reports that similar structure / phrase convergence still persists and abrupt three-part silence still occurs. Phase 8/9 remain deferred until those symptoms are localized, repaired, and re-reviewed, or a later review rejects a specific report as a false positive with evidence.
+Human focused listening found confirmed Phase 13R pre-Phase-8/9 blockers after the initial subject-diversity follow-up. The final follow-up repair responds in two places. First, section-local planner episodes now derive phrase material from the phrase density arc, so mechanical subject-fragment concentration is removed from the 22 seed review set while subject-stem findings remain as function-bearing subject returns for later listening review. Second, functional thinning support now covers long upper-voice solo runs that start before a section ending, so the focused post-listening seeds and the full 22 seed set report `unsupportedSoloRunCount` 0 and `abruptTextureDropCount` 0.
+
+Final 22 seed follow-up evidence under the adopted default path:
+
+* hard constraint failures: 0;
+* Phase 7B readiness: 22/22 seeds;
+* Phase 13R review findings: 11 subject-stem concentration review signals, 0 subject-fragment concentration findings;
+* unsupported solo texture: 0 unsupported solo runs, 0 abrupt texture drops;
+* quality-vector local sentinels: 367;
+* aggregate unison overlap / shared rhythm / leap recovery misses: 14456 / 19065 / 520.
+
+The accepted tradeoff is a small increase in some voice-pair and leap-recovery review signals while repairing a confirmed texture/form blocker and reducing mechanical fragment recurrence. The remaining subject-stem findings are not treated as blockers here because recognizable subject return is a fugue function, not the same defect as repeated episode fragments. Phase 8 should keep these review signals visible during infinite playback work instead of converting them into UI masking.
 
 ## Theory Basis
 

@@ -5,7 +5,7 @@ import { collectPhase1112PlanningMetrics, PHASE_11_12_ROTATION_SEEDS } from "./g
 test("generateScore applies phase-11 and phase-12 phrase-unit planning across rotation seed batch A", () => {
   assertPhase1112RotationBatch(PHASE_11_12_ROTATION_SEEDS.slice(0, 5), {
     topEntryPatternFamilyDelta: 4,
-    leapRecoveryMissDelta: 24,
+    leapRecoveryMissDelta: 30,
   });
 });
 

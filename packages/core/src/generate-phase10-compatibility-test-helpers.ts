@@ -10,13 +10,19 @@ import {
 } from "./reference-diagnostics.js";
 import { evaluatePhase7BGatePolicy } from "./review-gate.js";
 
-export function assertPhase10CompletionCompatibility(selectionModel: SelectionModel): void {
-  const compatibilitySeeds = [
-    { seed: "bach-001", category: "representative" },
-    { seed: "minor-entry", category: "boundary" },
-    { seed: "modal-cadence", category: "rotation" },
-    { seed: "dense-modal", category: "adversarial" },
-  ] as const;
+export const PHASE10_COMPLETION_COMPATIBILITY_SEEDS = [
+  { seed: "bach-001", category: "representative" },
+  { seed: "minor-entry", category: "boundary" },
+  { seed: "modal-cadence", category: "rotation" },
+  { seed: "dense-modal", category: "adversarial" },
+] as const;
+
+type Phase10CompletionCompatibilitySeed = (typeof PHASE10_COMPLETION_COMPATIBILITY_SEEDS)[number];
+
+export function assertPhase10CompletionCompatibility(
+  selectionModel: SelectionModel,
+  compatibilitySeeds: readonly Phase10CompletionCompatibilitySeed[] = PHASE10_COMPLETION_COMPATIBILITY_SEEDS,
+): void {
   const referenceComparisons = [];
 
   for (const { seed, category } of compatibilitySeeds) {
