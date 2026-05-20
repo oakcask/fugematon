@@ -38,8 +38,8 @@ import {
   performanceProfileMetadata,
 } from "@fugematon/performance";
 import {
-  qualityVectorDistance,
   type QualityProfileComparison,
+  qualityVectorDistance,
   summarizeQualityProfileComparison,
 } from "./review-quality-profile.js";
 

@@ -22,9 +22,7 @@ test("phase-13R subject-family source diagnostics include seeds without per-scor
 test("phase-13R subject-family source diagnostics expose cross-seed subject patterns", () => {
   const topSubjectPatterns = SUBJECT_FAMILY_SOURCE_SEEDS.map((seed) => {
     const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
-    const topSubject = output.diagnostics.phase12Review.subjectStemFamilies.find(
-      (family) => family.form === "subject",
-    );
+    const topSubject = output.diagnostics.phase12Review.subjectStemFamilies.find((family) => family.form === "subject");
 
     assert.ok(topSubject !== undefined, `${seed} should expose a top subject family`);
     return topSubject.pattern.join("-");
