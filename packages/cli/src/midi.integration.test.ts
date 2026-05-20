@@ -138,6 +138,8 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
         schemaVersion: number;
         seedCount: number;
         uniqueInitialSubjectFamilyCount: number;
+        uniqueInitialSubjectRhythmPatternCount: number;
+        uniqueInitialSubjectClimaxIndexCount: number;
         topInitialSubjectFamilyShare: number;
         topInitialSubjectFragmentFamilyShare: number;
         initialSubjectFamilyEntropy: number;
@@ -476,6 +478,8 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
     assert.equal(summary.subjectFamilyDiversity.schemaVersion, 1);
     assert.equal(summary.subjectFamilyDiversity.seedCount, summary.seeds.length);
     assert.ok(summary.subjectFamilyDiversity.uniqueInitialSubjectFamilyCount > 0);
+    assert.ok(summary.subjectFamilyDiversity.uniqueInitialSubjectRhythmPatternCount > 0);
+    assert.ok(summary.subjectFamilyDiversity.uniqueInitialSubjectClimaxIndexCount > 0);
     assert.ok(summary.subjectFamilyDiversity.topInitialSubjectFamilyShare > 0);
     assert.ok(summary.subjectFamilyDiversity.initialSubjectFamilyEntropy >= 0);
     assert.ok(summary.subjectFamilyDiversity.initialSubjectFamilies.length > 0);
@@ -779,10 +783,24 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
         performanceProfile: { id: string; version: number };
       };
       subjectFamilyDiversity: {
-        baseline: { seedCount: number; uniqueInitialSubjectFamilyCount: number; findings: unknown[] };
-        variant: { seedCount: number; uniqueInitialSubjectFamilyCount: number; findings: unknown[] };
+        baseline: {
+          seedCount: number;
+          uniqueInitialSubjectFamilyCount: number;
+          uniqueInitialSubjectRhythmPatternCount: number;
+          uniqueInitialSubjectClimaxIndexCount: number;
+          findings: unknown[];
+        };
+        variant: {
+          seedCount: number;
+          uniqueInitialSubjectFamilyCount: number;
+          uniqueInitialSubjectRhythmPatternCount: number;
+          uniqueInitialSubjectClimaxIndexCount: number;
+          findings: unknown[];
+        };
         deltas: {
           uniqueInitialSubjectFamilyCount: number;
+          uniqueInitialSubjectRhythmPatternCount: number;
+          uniqueInitialSubjectClimaxIndexCount: number;
           topInitialSubjectFamilyShare: number;
           topInitialSubjectFragmentFamilyShare: number;
           findingCount: number;
@@ -922,6 +940,16 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
       comparison.subjectFamilyDiversity.deltas.uniqueInitialSubjectFamilyCount,
       comparison.subjectFamilyDiversity.variant.uniqueInitialSubjectFamilyCount -
         comparison.subjectFamilyDiversity.baseline.uniqueInitialSubjectFamilyCount,
+    );
+    assert.equal(
+      comparison.subjectFamilyDiversity.deltas.uniqueInitialSubjectRhythmPatternCount,
+      comparison.subjectFamilyDiversity.variant.uniqueInitialSubjectRhythmPatternCount -
+        comparison.subjectFamilyDiversity.baseline.uniqueInitialSubjectRhythmPatternCount,
+    );
+    assert.equal(
+      comparison.subjectFamilyDiversity.deltas.uniqueInitialSubjectClimaxIndexCount,
+      comparison.subjectFamilyDiversity.variant.uniqueInitialSubjectClimaxIndexCount -
+        comparison.subjectFamilyDiversity.baseline.uniqueInitialSubjectClimaxIndexCount,
     );
     assert.equal(
       comparison.subjectFamilyDiversity.deltas.findingCount,

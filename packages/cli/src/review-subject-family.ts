@@ -14,6 +14,8 @@ export type SubjectFamilyDiversitySummary = {
   schemaVersion: 1;
   seedCount: number;
   uniqueInitialSubjectFamilyCount: number;
+  uniqueInitialSubjectRhythmPatternCount: number;
+  uniqueInitialSubjectClimaxIndexCount: number;
   topInitialSubjectFamilyShare: number;
   topInitialSubjectFragmentFamilyShare: number;
   initialSubjectFamilyEntropy: number;
@@ -23,7 +25,11 @@ export type SubjectFamilyDiversitySummary = {
 };
 
 export type SubjectFamilyDiversityFinding = {
-  code: "initial-subject-family-concentration" | "subject-fragment-vocabulary-collapse";
+  code:
+    | "initial-subject-family-concentration"
+    | "initial-subject-rhythm-collapse"
+    | "initial-subject-climax-collapse"
+    | "subject-fragment-vocabulary-collapse";
   severity: "review-required";
   metric: string;
   actual: number;
@@ -62,10 +68,17 @@ type SubjectFamilySeed = {
 export function summarizeSubjectFamilyDiversity(seeds: readonly SubjectFamilySeed[]): SubjectFamilyDiversitySummary {
   const initialSubjectFamilies = summarizeInitialSubjectFamilies(seeds);
   const subjectFragmentFamilies = summarizeSubjectFragmentFamilies(seeds);
+  const uniqueInitialSubjectRhythmPatternCount = new Set(
+    seeds.map((seed) => seed.initialSubjectProfile.rhythmPattern.join("-")),
+  ).size;
+  const uniqueInitialSubjectClimaxIndexCount = new Set(seeds.map((seed) => seed.initialSubjectProfile.localClimaxIndex))
+    .size;
   const topInitialSubjectFamilyShare = initialSubjectFamilies[0]?.share ?? 0;
   const topInitialSubjectFragmentFamilyShare = subjectFragmentFamilies[0]?.share ?? 0;
   const findings = summarizeFindings({
     uniqueInitialSubjectFamilyCount: initialSubjectFamilies.length,
+    uniqueInitialSubjectRhythmPatternCount,
+    uniqueInitialSubjectClimaxIndexCount,
     topInitialSubjectFamilyShare,
     topInitialSubjectFragmentFamilyShare,
   });
@@ -74,6 +87,8 @@ export function summarizeSubjectFamilyDiversity(seeds: readonly SubjectFamilySee
     schemaVersion: 1,
     seedCount: seeds.length,
     uniqueInitialSubjectFamilyCount: initialSubjectFamilies.length,
+    uniqueInitialSubjectRhythmPatternCount,
+    uniqueInitialSubjectClimaxIndexCount,
     topInitialSubjectFamilyShare,
     topInitialSubjectFragmentFamilyShare,
     initialSubjectFamilyEntropy: roundRatio(
@@ -93,6 +108,8 @@ export function compareSubjectFamilyDiversity(
   variant: SubjectFamilyDiversitySummary;
   deltas: {
     uniqueInitialSubjectFamilyCount: number;
+    uniqueInitialSubjectRhythmPatternCount: number;
+    uniqueInitialSubjectClimaxIndexCount: number;
     topInitialSubjectFamilyShare: number;
     topInitialSubjectFragmentFamilyShare: number;
     findingCount: number;
@@ -102,6 +119,10 @@ export function compareSubjectFamilyDiversity(
 } {
   const deltas = {
     uniqueInitialSubjectFamilyCount: variant.uniqueInitialSubjectFamilyCount - baseline.uniqueInitialSubjectFamilyCount,
+    uniqueInitialSubjectRhythmPatternCount:
+      variant.uniqueInitialSubjectRhythmPatternCount - baseline.uniqueInitialSubjectRhythmPatternCount,
+    uniqueInitialSubjectClimaxIndexCount:
+      variant.uniqueInitialSubjectClimaxIndexCount - baseline.uniqueInitialSubjectClimaxIndexCount,
     topInitialSubjectFamilyShare: roundRatio(
       variant.topInitialSubjectFamilyShare - baseline.topInitialSubjectFamilyShare,
     ),
@@ -133,7 +154,13 @@ function summarizeInitialSubjectFamilies(seeds: readonly SubjectFamilySeed[]): S
 
   for (const seed of seeds) {
     const profile = seed.initialSubjectProfile;
-    const key = profile.degreePattern.join("-");
+    const key = [
+      profile.degreePattern.join("-"),
+      profile.rhythmPattern.join("-"),
+      profile.localClimaxIndex,
+      profile.tailMotion,
+      profile.contourClass,
+    ].join("|");
     const current = counts.get(key);
     if (current === undefined) {
       counts.set(key, {
@@ -201,10 +228,14 @@ function summarizeSubjectFragmentFamilies(seeds: readonly SubjectFamilySeed[]): 
 
 function summarizeFindings({
   uniqueInitialSubjectFamilyCount,
+  uniqueInitialSubjectRhythmPatternCount,
+  uniqueInitialSubjectClimaxIndexCount,
   topInitialSubjectFamilyShare,
   topInitialSubjectFragmentFamilyShare,
 }: {
   uniqueInitialSubjectFamilyCount: number;
+  uniqueInitialSubjectRhythmPatternCount: number;
+  uniqueInitialSubjectClimaxIndexCount: number;
   topInitialSubjectFamilyShare: number;
   topInitialSubjectFragmentFamilyShare: number;
 }): SubjectFamilyDiversityFinding[] {
@@ -218,6 +249,28 @@ function summarizeFindings({
       actual: topInitialSubjectFamilyShare,
       expected: "at least 4 initial subject families and no top family above 0.4 share",
       message: "Initial subjects are concentrated across the review seed bundle.",
+    });
+  }
+
+  if (uniqueInitialSubjectRhythmPatternCount < 2) {
+    findings.push({
+      code: "initial-subject-rhythm-collapse",
+      severity: "review-required",
+      metric: "uniqueInitialSubjectRhythmPatternCount",
+      actual: uniqueInitialSubjectRhythmPatternCount,
+      expected: "more than one initial subject rhythm pattern across the review bundle",
+      message: "Initial subjects share the same rhythm pattern across the review seed bundle.",
+    });
+  }
+
+  if (uniqueInitialSubjectClimaxIndexCount < 2) {
+    findings.push({
+      code: "initial-subject-climax-collapse",
+      severity: "review-required",
+      metric: "uniqueInitialSubjectClimaxIndexCount",
+      actual: uniqueInitialSubjectClimaxIndexCount,
+      expected: "more than one local climax index across the review bundle",
+      message: "Initial subjects share the same local climax index across the review seed bundle.",
     });
   }
 
@@ -237,6 +290,8 @@ function summarizeFindings({
 
 function describeImprovements(deltas: {
   uniqueInitialSubjectFamilyCount: number;
+  uniqueInitialSubjectRhythmPatternCount: number;
+  uniqueInitialSubjectClimaxIndexCount: number;
   topInitialSubjectFamilyShare: number;
   topInitialSubjectFragmentFamilyShare: number;
   findingCount: number;
@@ -244,6 +299,12 @@ function describeImprovements(deltas: {
   const improvements: string[] = [];
   if (deltas.uniqueInitialSubjectFamilyCount > 0) {
     improvements.push("unique initial subject family count increased");
+  }
+  if (deltas.uniqueInitialSubjectRhythmPatternCount > 0) {
+    improvements.push("unique initial subject rhythm pattern count increased");
+  }
+  if (deltas.uniqueInitialSubjectClimaxIndexCount > 0) {
+    improvements.push("unique initial subject climax index count increased");
   }
   if (deltas.topInitialSubjectFamilyShare < 0) {
     improvements.push("top initial subject family share decreased");
@@ -260,6 +321,8 @@ function describeImprovements(deltas: {
 
 function describeRegressions(deltas: {
   uniqueInitialSubjectFamilyCount: number;
+  uniqueInitialSubjectRhythmPatternCount: number;
+  uniqueInitialSubjectClimaxIndexCount: number;
   topInitialSubjectFamilyShare: number;
   topInitialSubjectFragmentFamilyShare: number;
   findingCount: number;
@@ -267,6 +330,12 @@ function describeRegressions(deltas: {
   const regressions: string[] = [];
   if (deltas.uniqueInitialSubjectFamilyCount < 0) {
     regressions.push("unique initial subject family count decreased");
+  }
+  if (deltas.uniqueInitialSubjectRhythmPatternCount < 0) {
+    regressions.push("unique initial subject rhythm pattern count decreased");
+  }
+  if (deltas.uniqueInitialSubjectClimaxIndexCount < 0) {
+    regressions.push("unique initial subject climax index count decreased");
   }
   if (deltas.topInitialSubjectFamilyShare > 0) {
     regressions.push("top initial subject family share increased");
