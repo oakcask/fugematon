@@ -21,8 +21,8 @@ export function generateScore(input: GenerationInput): GenerationOutput {
   const keySignature = chooseKeySignature(rng, input.seed);
   const timeSignature = chooseTimeSignature(rng);
   const bpm = chooseTempo(rng);
-  const subject = buildSubject(rng, keySignature);
   const selectionModel = input.selectionModel ?? DEFAULT_SELECTION_MODEL;
+  const subject = buildSubject(rng, keySignature, selectionModel);
   const score = buildFugueScore(subject, keySignature, input.lengthTicks, rng, selectionModel);
   const diagnostics = analyzeScore(score.notes, score.subjectEntries, score.sectionPlans);
   const phase13QReview = buildPhase13QReviewSummary(score.selectedCandidateEvaluations, diagnostics.qualityVector);

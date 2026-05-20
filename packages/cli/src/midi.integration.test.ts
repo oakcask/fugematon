@@ -134,11 +134,42 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
         localSentinelsByKind: { kind: string; count: number }[];
         reviewStatus: string;
       };
+      subjectFamilyDiversity: {
+        schemaVersion: number;
+        seedCount: number;
+        uniqueInitialSubjectFamilyCount: number;
+        topInitialSubjectFamilyShare: number;
+        topInitialSubjectFragmentFamilyShare: number;
+        initialSubjectFamilyEntropy: number;
+        findings: { code: string; severity: string }[];
+        initialSubjectFamilies: {
+          degreePattern: number[];
+          rhythmPattern: number[];
+          contourClass: string;
+          localClimaxIndex: number;
+          tailMotion: string;
+          modes: string[];
+          answerCompatibility: string[];
+          seedCount: number;
+          share: number;
+          seeds: string[];
+        }[];
+        subjectFragmentFamilies: { pattern: number[]; seedCount: number; share: number; seeds: string[] }[];
+      };
       seeds: {
         seed: string;
         diagnosticsFile: string;
         midiFile: string;
         performanceProfile: { id: string; version: number };
+        initialSubjectProfile: {
+          degreePattern: number[];
+          rhythmPattern: number[];
+          contourClass: string;
+          localClimaxIndex: number;
+          tailMotion: string;
+          mode: string;
+          answerCompatibility: string;
+        };
         diagnosticsSummary: {
           hardConstraintFailures: number;
           texture: {
@@ -410,7 +441,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       comparisons: unknown[];
     };
 
-    assert.equal(summary.schemaVersion, 12);
+    assert.equal(summary.schemaVersion, 13);
     assert.equal(summary.lengthTicks, 9600);
     assert.equal(summary.selectionModel, "phase10-section-local-planner");
     assert.deepEqual(summary.performanceProfile, { id: "organ-default", version: 1 });
@@ -442,6 +473,15 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
           axis.topContributingSeeds.length > 0,
       ),
     );
+    assert.equal(summary.subjectFamilyDiversity.schemaVersion, 1);
+    assert.equal(summary.subjectFamilyDiversity.seedCount, summary.seeds.length);
+    assert.ok(summary.subjectFamilyDiversity.uniqueInitialSubjectFamilyCount > 0);
+    assert.ok(summary.subjectFamilyDiversity.topInitialSubjectFamilyShare > 0);
+    assert.ok(summary.subjectFamilyDiversity.initialSubjectFamilyEntropy >= 0);
+    assert.ok(summary.subjectFamilyDiversity.initialSubjectFamilies.length > 0);
+    assert.ok(summary.subjectFamilyDiversity.initialSubjectFamilies[0]!.degreePattern.length > 0);
+    assert.ok(summary.subjectFamilyDiversity.initialSubjectFamilies[0]!.rhythmPattern.length > 0);
+    assert.ok(summary.subjectFamilyDiversity.subjectFragmentFamilies.length > 0);
     assert.equal(listeningReview.schemaVersion, 1);
     assert.equal(listeningReview.lengthTicks, 9600);
     assert.ok(listeningReview.regressionChecks.some((check) => check.includes("fugue-smoke")));
@@ -463,6 +503,9 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       assert.ok(files.includes(entry.midiFile));
       assert.ok(!entry.diagnosticsFile.includes(directory));
       assert.deepEqual(entry.performanceProfile, summary.performanceProfile);
+      assert.ok(entry.initialSubjectProfile.degreePattern.length > 0);
+      assert.ok(entry.initialSubjectProfile.rhythmPattern.length > 0);
+      assert.notEqual(entry.initialSubjectProfile.contourClass, "");
       assert.ok(!entry.midiFile.includes(directory));
       assert.ok(entry.diagnosticsSummary.hardConstraintFailures >= 0);
       assert.equal(entry.referenceComparison.profileId, "phase-7-fugue-reference-profile");
@@ -735,6 +778,18 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
         selectionModel: string;
         performanceProfile: { id: string; version: number };
       };
+      subjectFamilyDiversity: {
+        baseline: { seedCount: number; uniqueInitialSubjectFamilyCount: number; findings: unknown[] };
+        variant: { seedCount: number; uniqueInitialSubjectFamilyCount: number; findings: unknown[] };
+        deltas: {
+          uniqueInitialSubjectFamilyCount: number;
+          topInitialSubjectFamilyShare: number;
+          topInitialSubjectFragmentFamilyShare: number;
+          findingCount: number;
+        };
+        improvements: string[];
+        regressions: string[];
+      };
       seeds: {
         seed: string;
         category: string;
@@ -845,7 +900,7 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
     assert.equal(pairwisePreferences.manualListeningGap.unlistened, true);
     assert.match(pairwisePreferences.manualListeningGap.note, /no preference judgement/);
     assert.equal(pairwisePreferences.comparisons.length, comparison.seeds.length);
-    assert.equal(comparison.schemaVersion, 2);
+    assert.equal(comparison.schemaVersion, 3);
     assert.equal(comparison.lengthTicks, 960);
     assert.deepEqual(comparison.baseline, {
       label: "current",
@@ -861,6 +916,20 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
       selectionModel: "phase10-oracle-selection",
       performanceProfile: { id: "strict-counterpoint", version: 1 },
     });
+    assert.equal(comparison.subjectFamilyDiversity.baseline.seedCount, comparison.seeds.length);
+    assert.equal(comparison.subjectFamilyDiversity.variant.seedCount, comparison.seeds.length);
+    assert.equal(
+      comparison.subjectFamilyDiversity.deltas.uniqueInitialSubjectFamilyCount,
+      comparison.subjectFamilyDiversity.variant.uniqueInitialSubjectFamilyCount -
+        comparison.subjectFamilyDiversity.baseline.uniqueInitialSubjectFamilyCount,
+    );
+    assert.equal(
+      comparison.subjectFamilyDiversity.deltas.findingCount,
+      comparison.subjectFamilyDiversity.variant.findings.length -
+        comparison.subjectFamilyDiversity.baseline.findings.length,
+    );
+    assert.ok(Array.isArray(comparison.subjectFamilyDiversity.improvements));
+    assert.ok(Array.isArray(comparison.subjectFamilyDiversity.regressions));
     assert.ok(comparison.seeds.length > 1);
     for (const entry of comparison.seeds) {
       assert.notEqual(entry.seed, "");
