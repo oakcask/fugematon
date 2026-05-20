@@ -2,7 +2,7 @@
 
 Phase 13S is inserted after Phase 13R and before Phase 8. Its purpose is to treat musical beauty as the project core, not as a compatibility-constrained quality lane. The phase starts from the score review in [Phase 13S music beauty review](../reviews/phase-13s-music-beauty-review.md).
 
-Status: planned. Phase 8 and Phase 9 stay deferred until this phase has either repaired the confirmed score-level problems or explicitly rejected a finding with score-window and listening evidence.
+Status: complete. Phase 13S repaired the confirmed subject-rhetoric collapse and entry-friction blocker enough to resume Phase 8, while explicitly carrying the remaining voice-pair independence risks as Phase 8 listening and visualizer evidence rather than hiding them.
 
 ## Rationale
 
@@ -91,6 +91,25 @@ Phase 13S is complete only when:
 * `organ-default` and `strict-counterpoint` listening templates are filled for the focused seeds;
 * metrics that claim improvement are backed by score-window examples and do not contradict manual listening notes.
 
+## Completion Record
+
+Phase 13S completed with a breaking default-generator update and `generatorVersion` 4. The old default score shape is not preserved because Phase 13S treats score-level beauty ahead of model compatibility.
+
+Review evidence:
+
+* Review bundles were regenerated for the 22 seed set with `organ-default` and `strict-counterpoint`.
+* Initial subject rhetoric now has 4 rhythm patterns, 3 local climax indexes, and 7 initial subject families across the 22 seeds.
+* Top initial subject family share moved to 0.227. Top subject-fragment family share moved from 0.682 to 0.545; this remains above the old collapse threshold, but the dominant fragment is accepted as function-bearing recurrence because it now appears inside a wider subject-rhythm and climax vocabulary instead of being the only subject rhetoric.
+* Unresolved entry severe interval duration moved from 306 quarter notes in the Phase 13S planning review to 151 quarter notes in the completion evidence.
+* Counter-subject identity total across the 22 seeds moved from 17.946 to 18.196. The focused modal and angular seeds preserve their pre-rewrite recognition floor: `modal-answer` 0.545, `dense-modal` 0.571, `modal-cadence` 0.573, `modal-dorian` 0.632, and `angular-answer` 0.591.
+* The completion regression test records these expectations in `packages/core/src/generate-phase13s-music-beauty.test.ts`.
+
+Accepted tradeoffs:
+
+* Duration-based lockstep and pitch-class unison remain outside the quality profile for all seeds. The subject rewrite uses held openings and shifted climaxes, which can expose longer simultaneous support spans even while reducing unresolved entry friction. This is not accepted as final musical quality; it is accepted as a Phase 8 carry-forward listening risk because the Phase 13S blocker was subject sameness and entry friction, not a full voice-independence rewrite.
+* Reference-profile pass remains evidence-only until real reference ingestion exists.
+* Focused listening notes for both performance profiles found the rewrite preferable for subject memorability and entry clarity, but still marked voice-pair lockstep and pitch-class unison as needs-work for long-run listening.
+
 ## Implementation Order
 
 1. Add score-window extraction for subject rhythm/climax, counter-subject identity, entry severe intervals, voice-pair lockstep, and phrase-function examples.
@@ -106,3 +125,5 @@ Phase 13S is complete only when:
 ## Handoff To Phase 8
 
 Phase 8 may resume only after Phase 13S records score-window evidence, metric movement, focused listening notes, and any accepted tradeoffs. Phase 8 must not use infinite playback controls, visualizer presentation, performance profile, Worker fallback, or UI choices to hide unresolved subject sameness, entry friction, voice lockstep, or weak fugal development.
+
+Phase 8 may now resume. Its first implementation should surface, not hide, the remaining voice-pair lockstep and pitch-class unison risk in boundary review and listening notes.

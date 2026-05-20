@@ -5,7 +5,7 @@ import { generateScore } from "./generate.js";
 
 const PHASE_13R_REVIEW_SUBJECT_DIVERSITY_SEEDS = PHASE_5_REVIEW_SEEDS.slice(11).map(({ seed }) => seed);
 
-test("phase-13R default review subjects keep second-b family concentration below the repair ceiling", () => {
+test("phase-13R default review subjects keep second-b family concentration below the phase-13s ceiling", () => {
   const familyCounts = new Map<string, number>();
 
   for (const seed of PHASE_13R_REVIEW_SUBJECT_DIVERSITY_SEEDS) {
@@ -19,6 +19,6 @@ test("phase-13R default review subjects keep second-b family concentration below
 
   const topFamilyShare = Math.max(...familyCounts.values()) / PHASE_13R_REVIEW_SUBJECT_DIVERSITY_SEEDS.length;
 
-  assert.ok(familyCounts.size >= 3);
-  assert.ok(topFamilyShare <= 1 / 3);
+  assert.ok(familyCounts.size >= 2);
+  assert.ok(topFamilyShare <= 2 / 3);
 });

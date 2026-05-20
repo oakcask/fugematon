@@ -83,4 +83,4 @@ The 22 seed Phase 12 baseline review is recorded in [Phase 13 quality vector rev
 
 ## Next Work
 
-Phase 13 is complete. Phase 13Q used the quality vector evidence to improve voice independence and entry harmony, and Phase 13R aligned the normal default path. The current next implementation phase is [Phase 13S](phase-13s.md), which rechecks musical beauty from score evidence before Phase 8 operational work.
+Phase 13 is complete. Phase 13Q used the quality vector evidence to improve voice independence and entry harmony, Phase 13R aligned the normal default path, and Phase 13S completed the music-beauty-first rewrite. The current next implementation phase is [Phase 8](phase-8.md).

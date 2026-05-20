@@ -1,6 +1,6 @@
 import type { SelectionModel } from "./events.js";
 
-export const GENERATOR_VERSION = 3;
+export const GENERATOR_VERSION = 4;
 
 export const TICKS_PER_QUARTER = 480;
 

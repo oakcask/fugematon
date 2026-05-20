@@ -260,4 +260,4 @@ Phase 7B は gate policy reset として完了した。review bundle summary は
 
 Phase 8 は Phase 7B の gate policy reset 後に開始できる。manual listening と pairwise preference は廃止しないが、全 seed pass を Phase 8 開始条件にはしない。開始条件は hard constraints、determinism、schema compatibility、reference diagnostics summary、candidate-pool oracle shape が通ることである。
 
-その後、section-local planner 改善、reference corpus ingestion、percentile profile、manual pairwise preference は Phase 10 として先に進め、Phase 8/9 は deferred operational lane に送った。Phase 10、Phase 11、Phase 12、Phase 12P、Phase 13、Phase 13Q、Phase 13R follow-up repair は完了した。現在は Phase 13S として音楽美を再レビューし、Phase 8 はその後に戻る。詳細は [Phase 7+ 再編計画](phase-7-plus-reorg.md)、[Phase 13S](phase-13s.md)、[Phase 8](phase-8.md) を参照する。
+その後、section-local planner 改善、reference corpus ingestion、percentile profile、manual pairwise preference は Phase 10 として先に進め、Phase 8/9 は deferred operational lane に送った。Phase 10、Phase 11、Phase 12、Phase 12P、Phase 13、Phase 13Q、Phase 13R follow-up repair、Phase 13S music-beauty-first rewrite は完了した。現在は Phase 8 に戻る。詳細は [Phase 7+ 再編計画](phase-7-plus-reorg.md)、[Phase 13S](phase-13s.md)、[Phase 8](phase-8.md) を参照する。

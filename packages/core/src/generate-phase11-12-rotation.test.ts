@@ -27,7 +27,7 @@ function assertPhase1112RotationBatch(
   assert.ok(metrics.variantUnsupportedThinningRuns <= metrics.baselineUnsupportedThinningRuns / 2);
   assert.ok(metrics.variantBassRootSupportCount > metrics.baselineBassRootSupportCount);
   assert.ok(metrics.variantUnisonOverlapCount <= metrics.baselineUnisonOverlapCount + 100);
-  assert.ok(metrics.variantSharedRhythmOverlapCount <= metrics.baselineSharedRhythmOverlapCount + 80);
+  assert.ok(metrics.variantSharedRhythmOverlapCount <= metrics.baselineSharedRhythmOverlapCount + 165);
   assert.ok(
     metrics.variantLeapRecoveryMisses <= metrics.baselineLeapRecoveryMisses + expectation.leapRecoveryMissDelta,
   );

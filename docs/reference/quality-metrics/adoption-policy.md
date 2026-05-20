@@ -37,7 +37,7 @@ Review signal へ降格するもの:
 
 この再分類は、音楽的問題を無視するためではありません。Phase 8/9 の operational work が hard constraints と再現性を保ったまま進められるようにし、音楽美は quality lane の evidence として扱うためです。
 
-Current exception: Phase 13S は、Phase 13R 後の score review で確認した主題リズムの同型化、entry friction、voice lockstep、counter-subject identity、form metric の説明不足を Phase 8/9 前の開始条件へ昇格します。この例外は、旧 Phase 6/7 beauty gate を復活させるものではなく、音楽的美しさを project core として扱い、metric が譜面上の良さを表現できているかを再検証するためです。既存モデル互換性、旧 guardrail margin、旧 expected values は、譜面上の改善と矛盾する場合は採用条件にしません。
+Completed exception: Phase 13S は、Phase 13R 後の score review で確認した主題リズムの同型化、entry friction、voice lockstep、counter-subject identity、form metric の説明不足を Phase 8/9 前の開始条件へ昇格しました。この例外は、旧 Phase 6/7 beauty gate を復活させるものではなく、音楽的美しさを project core として扱い、metric が譜面上の良さを表現できているかを再検証するためです。既存モデル互換性、旧 guardrail margin、旧 expected values は、譜面上の改善と矛盾する場合は採用条件にしません。Phase 13S 完了後も voice-pair lockstep と pitch-class unison は Phase 8 の review/listening signal として残します。
 
 ## A/B Review
 
