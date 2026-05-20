@@ -570,6 +570,7 @@ function isUnsupportedThinningSegment(input: {
   const { activeVoices, startTick, plan } = input;
   return (
     plan !== undefined &&
+    plan.state !== "exposition" &&
     isAbruptUpperSolo(activeVoices) &&
     sectionStartDistance(plan, startTick) > TICKS_PER_QUARTER &&
     sectionEndDistance(plan, startTick) > TICKS_PER_QUARTER &&
