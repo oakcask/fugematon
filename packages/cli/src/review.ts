@@ -302,6 +302,7 @@ type ReviewDiagnosticsSummary = {
     unresolvedSevereEntryIntervalCount: number;
     soloTexture: GenerationDiagnostics["soloTexture"];
     pitchContourMotion: GenerationDiagnostics["pitchContourMotion"];
+    lowerVoiceVocality: GenerationDiagnostics["lowerVoiceVocality"];
     stepwisePattern: GenerationDiagnostics["stepwisePattern"];
   };
   melody: {
@@ -728,6 +729,7 @@ function summarizeDiagnostics(diagnostics: GenerationDiagnostics): ReviewDiagnos
       unresolvedSevereEntryIntervalCount: diagnostics.unresolvedSevereEntryIntervalCount,
       soloTexture: diagnostics.soloTexture,
       pitchContourMotion: diagnostics.pitchContourMotion,
+      lowerVoiceVocality: diagnostics.lowerVoiceVocality,
       stepwisePattern: diagnostics.stepwisePattern,
     },
     melody: {

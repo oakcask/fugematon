@@ -7,6 +7,7 @@ import type {
   FugueState,
   GenerationOutput,
   HarmonicPlan,
+  LowerVoiceVocalitySummary,
   MetricalHarmonyIntent,
   NoteEvent,
   OrnamentPlacementReasons,
@@ -93,6 +94,7 @@ export type TextureDiagnostics = {
   allVoiceSilenceGapCount: number;
   soloTexture: SoloTextureSummary;
   pitchContourMotion: PitchContourMotionSummary;
+  lowerVoiceVocality: LowerVoiceVocalitySummary;
   stepwisePattern: StepwisePatternSummary;
   phase11Review: Phase11ReviewSummary;
   phase12Review: Phase12ReviewSummary;

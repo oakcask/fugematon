@@ -41,6 +41,14 @@ Theory basis: fugue subjects must recur recognizably, but episodes should vary f
 
 Tradeoff: aggregate quality-vector local sentinels are 367, with aggregate unison overlap / shared rhythm / leap recovery misses at 14456 / 19065 / 520. These remain review signals rather than hard failures. The accepted tradeoff is that a small amount of added support motion is preferable to abrupt unsupported three-part silence, while hard constraints, Phase 7B readiness, subject identity, and answer planning remain intact.
 
+### 4. Lower-voice support must remain vocal, not only present
+
+Post-review playback of `seed-0jt0g5o-11s90sf` showed that the bass and tenor problem was not long duration by itself. The concrete symptom was that low support notes could sound like held functional padding instead of a singable line.
+
+Project response: `lowerVoiceVocality` now records bass/tenor support-line connection quality, unvocal long-support duration, and representative long-support examples. The generator-side repair splits functional thinning support and all-voice gap fillers into short connected support lines instead of single sustained filler notes.
+
+Evidence: in the focused check, `seed-0jt0g5o-11s90sf` has no bass or tenor support note at 2 quarters or longer, no unvocal long-support examples, hard constraint failures 0, and `lowerVoiceVocality.score` 0.917. Across the 22 review seeds, hard constraint failures remain 0, no seed has unvocal long-support duration, and average `lowerVoiceVocality.score` is 0.960. One review seed remains below 0.900 because of static or large-leap lower-support connections, so this is improved generator evidence rather than a completed listening pass.
+
 ## Handoff
 
-This repair completes the automated subject-diversity detector, the first conservative generator-side diversity response, and the post-listening repair for mechanical subject-fragment convergence and abrupt three-part silence. Phase 8 may resume from this baseline. Remaining subject-stem concentration and voice-pair / leap-recovery movements stay visible as review signals for Phase 8 listening, not as blockers to hide with playback controls.
+This repair completes the automated subject-diversity detector, the first conservative generator-side diversity response, and the post-listening repairs for mechanical subject-fragment convergence, abrupt three-part silence, and unvocal low support. Phase 8 may resume from this baseline. Remaining subject-stem concentration, lower-support connection, voice-pair, and leap-recovery movements stay visible as review signals for Phase 8 listening, not as blockers to hide with playback controls.
