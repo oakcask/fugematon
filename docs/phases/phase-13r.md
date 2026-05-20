@@ -2,7 +2,7 @@
 
 Phase 13R is inserted after Phase 13Q and before Phase 8. Its purpose is to make the improved generator the actual default path heard through core, CLI, MIDI, and Web UI, then repair the remaining tendency for long continuations to converge on the same subject fragments and short section cycles.
 
-Status: complete. Automatic default-baseline adoption, cross-seed subject-diversity diagnostics, first conservative generator repair, and the post-listening follow-up repair are implemented. Phase 8 may resume from this baseline; Phase 9 inherits the Phase 8 evidence instead of using Worker fallback or deadlines to mask quality defects.
+Status: implemented with residual repair required. Automatic default-baseline adoption, cross-seed subject-diversity diagnostics, first conservative generator repair, and the post-listening follow-up repair are implemented. A later audit found that the current 22 seed review bundle still reports bundle-level `subject-fragment-vocabulary-collapse`, and generated listening templates remain `not-reviewed`. Phase 13S now supersedes the old Phase 8 handoff: Phase 8 may not use this as an accepted operational baseline until the music-beauty-first review has handled subject rhythm, entry friction, voice lockstep, counter-subject identity, and metric explanation gaps.
 
 Use [quality metrics reference](../reference/quality-metrics.md) for diagnostics and adoption policy meanings. Use [Phase 13R convergence review](../reviews/phase-13r-convergence-review.md) for the seed evidence that triggered this reordering.
 
@@ -132,7 +132,31 @@ The automatic baseline is no longer enough to restart the operational lane. Befo
 * re-review affected representative, boundary, rotation, and adversarial seeds after each fix;
 * record whether remaining subject similarity or other symptoms are function-bearing recurrence, false positives, or still blockers.
 
-This follow-up has recorded its evidence and fixed the confirmed mechanical subject-fragment convergence and abrupt three-part silence symptoms. Phase 8 may now start. Phase 9 inherits this baseline and may not use Worker fallback, deadlines, or visualizer stability work to mask future subject-family collapse, phrase convergence, counterpoint regressions, harmony defects, or listening-fatigue symptoms.
+This follow-up has recorded its evidence and fixed the confirmed per-score mechanical subject-fragment convergence and abrupt three-part silence symptoms. Phase 13S inherits the remaining residual vocabulary and listening-review signals and broadens the repair to musical beauty itself. Phase 8/9 may not use Worker fallback, deadlines, playback controls, or visualizer stability work to mask future subject-family collapse, phrase convergence, counterpoint regressions, harmony defects, or listening-fatigue symptoms.
+
+## Residual Repair Plan
+
+The Phase 13R implementation fixed the product-boundary error, per-score mechanical subject-fragment concentration, abrupt texture drops, and unvocal long lower support. The remaining issue is narrower but still musically relevant: the generated 22 seed review bundle can still concentrate its top subject-fragment vocabulary across seeds even when no single score reports `subject-fragment-family-concentration`.
+
+Current audit evidence under the adopted default path:
+
+* 22 seed hard constraint failures remain 0 and Phase 7B readiness remains 22/22.
+* Per-score Phase 13R review reports 11 `subject-stem-family-concentration` review signals and 0 `subject-fragment-family-concentration` findings.
+* Bundle-level `subjectFamilyDiversity` reports 4 initial subject families with top initial subject family share 0.318.
+* Bundle-level top initial subject-fragment family share is 0.682, so `subject-fragment-vocabulary-collapse` remains review-required.
+* Generated listening review templates are still `not-reviewed`, so the human playback feedback has not been converted into durable per-seed artifact evidence.
+
+Repair sequence:
+
+1. Keep the default-path and texture repairs unchanged while changing only the fragment-vocabulary layer. The first target is cross-seed top fragment share, not a new broad rewrite of section grammar.
+2. Extend subject and episode fragment derivation so the common `0-2-1-3` leading fragment has at least one guarded alternate for seeds that already share it. Prefer changes that alter fragment direction, tail motion, or rhythmic placement while preserving subject identity and tonal-answer compatibility.
+3. Add or tighten tests around the 22 seed subject-family aggregate so `subject-fragment-vocabulary-collapse` cannot be reintroduced silently. Per-score `subject-fragment-family-concentration` staying at 0 is necessary but not sufficient.
+4. Re-run the 22 seed `organ-default` and `strict-counterpoint` review bundles and a focused seed sweep including `bach-001`, `fugue-smoke`, `modal-cadence`, `dense-modal`, `angular-answer`, `modal-answer`, `minor-entry`, `sparse-cadence`, and `random-listen-check`.
+5. Accept a change only if hard constraints stay at 0, Phase 7B readiness stays 22/22, explicit legacy comparison remains possible, per-score fragment concentration stays 0, and bundle-level `subjectFamilyDiversity.findings` is empty or the remaining finding is explicitly rejected as function-bearing recurrence with seed evidence.
+6. Fill focused listening notes for `organ-default` and `strict-counterpoint`. At minimum, record whether repeated fragment material is functional recurrence, mechanical episode filler, or not audible as a blocker; keep any unresolved listening gap visible in Phase 8.
+7. Update this phase note and [Phase 13R subject diversity follow-up](../reviews/phase-13r-subject-diversity-follow-up.md) with the affected seeds, musical symptom, accepted tradeoffs, and final aggregate numbers.
+
+Theory basis: fugue subjects and fragments should recur recognizably, but cross-seed episode fragments should not collapse into the same short cell unless the recurrence has changed function, direction, cadence preparation, or contrapuntal tension. Fux-style counterpoint still constrains the repair: additional variety is not acceptable if it creates unresolved dissonance, exposed long unison, poor leap recovery, or unclear subject / answer identity.
 
 ## Implementation Progress
 
@@ -166,7 +190,7 @@ Manual listening update: focused playback confirmed Phase 8/9 blockers rather th
 
 Cross-seed subject-diversity follow-up: review bundle schema version 13 now writes `subjectFamilyDiversity`, and review-ab schema version 3 writes subject-family diversity deltas. `buildSubject` now chooses a conservative additional upper-neighbor subject shape on the adopted planner path while keeping explicit legacy `baseline` and `phase10-oracle-selection` comparison paths on the old subject vocabulary.
 
-The 22 seed `organ-default` and `strict-counterpoint` review bundles both report hard constraint failures 0, Phase 7B readiness 22/22, 4 unique initial subject families, top initial subject family share 0.318, top subject-fragment family share 0.409, and no `subjectFamilyDiversity` findings. The focused Phase 13R seed sweep reports 4 top subject families across 9 seeds, hard constraint failures 0, and top family share 0.444. Details are in [Phase 13R subject diversity follow-up](../reviews/phase-13r-subject-diversity-follow-up.md).
+The current 22 seed `organ-default` review bundle reports hard constraint failures 0, Phase 7B readiness 22/22, 4 unique initial subject families, top initial subject family share 0.318, top subject-fragment family share 0.682, and one `subject-fragment-vocabulary-collapse` finding. The focused Phase 13R seed sweep reports 4 top subject families across 9 seeds, hard constraint failures 0, and top family share 0.444. Details and the residual repair plan are in [Phase 13R subject diversity follow-up](../reviews/phase-13r-subject-diversity-follow-up.md).
 
 Human focused listening found confirmed Phase 13R pre-Phase-8/9 blockers after the initial subject-diversity follow-up. The final follow-up repair responds in two places. First, section-local planner episodes now derive phrase material from the phrase density arc, so mechanical subject-fragment concentration is removed from the 22 seed review set while subject-stem findings remain as function-bearing subject returns for later listening review. Second, functional thinning support now covers long upper-voice solo runs that start before a section ending, so the focused post-listening seeds and the full 22 seed set report `unsupportedSoloRunCount` 0 and `abruptTextureDropCount` 0.
 
