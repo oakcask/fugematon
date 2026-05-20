@@ -3,20 +3,16 @@ import test from "node:test";
 import { PHASE_5_LENGTH_TICKS } from "./constants.js";
 import { generateScore } from "./generate.js";
 
-const PHASE_13R_FOLLOWUP_SEEDS = [
+const PHASE_13R_FOLLOWUP_CONVERGENCE_SEEDS_A = [
   "bach-001",
   "fugue-smoke",
   "modal-cadence",
   "dense-modal",
   "angular-answer",
-  "modal-answer",
-  "minor-entry",
-  "sparse-cadence",
-  "random-listen-check",
 ] as const;
 
-test("phase-13R follow-up seeds localize phrase-family convergence review signals", () => {
-  const seedsWithConvergenceFindings = PHASE_13R_FOLLOWUP_SEEDS.filter((seed) =>
+test("phase-13R follow-up representative seeds localize phrase-family convergence review signals", () => {
+  const seedsWithConvergenceFindings = PHASE_13R_FOLLOWUP_CONVERGENCE_SEEDS_A.filter((seed) =>
     generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS }).diagnostics.phase13RReview.findings.some(
       (finding) =>
         finding.code === "subject-stem-family-concentration" ||
@@ -24,14 +20,5 @@ test("phase-13R follow-up seeds localize phrase-family convergence review signal
     ),
   );
 
-  assert.deepEqual(seedsWithConvergenceFindings, [
-    "fugue-smoke",
-    "modal-cadence",
-    "dense-modal",
-    "angular-answer",
-    "modal-answer",
-    "minor-entry",
-    "sparse-cadence",
-    "random-listen-check",
-  ]);
+  assert.deepEqual(seedsWithConvergenceFindings, ["fugue-smoke", "modal-cadence", "dense-modal", "angular-answer"]);
 });

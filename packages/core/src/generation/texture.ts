@@ -536,18 +536,8 @@ function findUnsupportedThinningRuns(
     const endTick = checkpoints[index + 1]!;
     const activeVoices = activeVoicesDuring(notes, startTick, endTick);
     const plan = sectionPlanForTick(sectionPlans, startTick);
-    const sectionStartDistance = plan === undefined ? 0 : startTick - plan.startTick;
-    const sectionEndDistance = plan === undefined ? 0 : plan.startTick + plan.durationTicks - endTick;
-    const isUnsupportedThinning =
-      plan !== undefined &&
-      activeVoices.length > 0 &&
-      activeVoices.length === 1 &&
-      !activeVoices.includes("bass") &&
-      sectionStartDistance > TICKS_PER_QUARTER &&
-      sectionEndDistance > TICKS_PER_QUARTER * 2 &&
-      !plan.anchors.some((anchor) => anchor.cadenceTarget && Math.abs(anchor.tick - startTick) <= TICKS_PER_QUARTER);
 
-    if (isUnsupportedThinning) {
+    if (isUnsupportedThinningSegment({ activeVoices, startTick, endTick, plan })) {
       if (
         currentRun !== undefined &&
         currentRun.endTick === startTick &&
@@ -570,6 +560,38 @@ function findUnsupportedThinningRuns(
   }
 
   return runs.filter((run) => run.endTick - run.startTick >= TICKS_PER_QUARTER);
+}
+
+function isUnsupportedThinningSegment(input: {
+  activeVoices: readonly Voice[];
+  startTick: number;
+  endTick: number;
+  plan: HarmonicPlan | undefined;
+}): boolean {
+  const { activeVoices, startTick, endTick, plan } = input;
+  return (
+    plan !== undefined &&
+    isAbruptUpperSolo(activeVoices) &&
+    sectionStartDistance(plan, startTick) > TICKS_PER_QUARTER &&
+    sectionEndDistance(plan, endTick) > TICKS_PER_QUARTER * 2 &&
+    !hasNearbyCadenceTarget(plan, startTick)
+  );
+}
+
+function isAbruptUpperSolo(activeVoices: readonly Voice[]): boolean {
+  return activeVoices.length === 1 && !activeVoices.includes("bass");
+}
+
+function sectionStartDistance(plan: HarmonicPlan, tick: number): number {
+  return tick - plan.startTick;
+}
+
+function sectionEndDistance(plan: HarmonicPlan, tick: number): number {
+  return plan.startTick + plan.durationTicks - tick;
+}
+
+function hasNearbyCadenceTarget(plan: HarmonicPlan, tick: number): boolean {
+  return plan.anchors.some((anchor) => anchor.cadenceTarget && Math.abs(anchor.tick - tick) <= TICKS_PER_QUARTER);
 }
 
 function activeVoicesDuring(notes: readonly NoteEvent[], startTick: number, endTick: number): Voice[] {
