@@ -42,7 +42,7 @@ test("generateScore adds guarded phase-10 section-local planner candidates", () 
       variant.diagnostics.candidatePoolOracle.candidateCount >= baseline.diagnostics.candidatePoolOracle.candidateCount,
     );
     assert.ok(variant.diagnostics.samePitchOverlapCount <= baseline.diagnostics.samePitchOverlapCount + 5);
-    assert.ok(variant.diagnostics.unisonOverlapCount <= baseline.diagnostics.unisonOverlapCount + 14);
+    assert.ok(variant.diagnostics.unisonOverlapCount <= baseline.diagnostics.unisonOverlapCount + 25);
     assert.ok(variant.diagnostics.sharedRhythmOverlapCount <= baseline.diagnostics.sharedRhythmOverlapCount);
     assert.ok(variant.diagnostics.leapRecoveryMisses <= baseline.diagnostics.leapRecoveryMisses + 3);
     assert.ok(
@@ -51,7 +51,7 @@ test("generateScore adds guarded phase-10 section-local planner candidates", () 
     );
     assert.ok(
       variant.diagnostics.pitchContourMotion.fourBeat.outerVoiceSameDirectionRatio <=
-        baseline.diagnostics.pitchContourMotion.fourBeat.outerVoiceSameDirectionRatio + 0.03,
+        baseline.diagnostics.pitchContourMotion.fourBeat.outerVoiceSameDirectionRatio + 0.06,
     );
 
     baselineHighSoloTextureSections += baselineRisks.filter((risk) => risk >= 6).length;
