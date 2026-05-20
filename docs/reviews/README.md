@@ -15,7 +15,7 @@ music-quality gate、diagnostics threshold、generator model、candidate scoring
 * [Phase 13Q planning review](phase-13q-planning-review.md): Phase 8/9 の前へ candidate diversity / voice independence / entry harmony 品質フェーズを挿入する根拠。
 * [Phase 13Q voice-pair support review](phase-13q-voice-pair-support-review.md): oblique support candidates と quality-vector-aware selection の自動採用 evidence。
 * [Phase 13R convergence review](phase-13r-convergence-review.md): Phase 8/9 の前へ default baseline / phrase convergence repair と follow-up repair を挿入する根拠。
-* [Phase 13R subject diversity follow-up](phase-13r-subject-diversity-follow-up.md): seed 横断 initial subject family collapse の detector、generator repair、22 seed evidence、残る human playback gap。
+* [Phase 13R subject diversity follow-up](phase-13r-subject-diversity-follow-up.md): seed 横断 initial subject family collapse の detector、generator repair、22 seed evidence、post-listening で残った類似構成 / 類似フレーズ収束と不自然な3パート無音化 blocker。
 * [Phase 13R](../phases/phase-13r.md): Phase 13Q 後、Phase 8 前に通常生成経路、後半 phrase convergence、follow-up で見つかった音楽的問題を修正する計画。
 * [Phase 12P](../phases/phase-12-performance-profile.md): Phase 13 の前に、MIDI と WebAudio が共有する演奏プロファイル境界を組み込む計画。
 * [Phase 13Q](../phases/phase-13q.md): Phase 13 の quality vector evidence を生成改善へつなぐ計画。
