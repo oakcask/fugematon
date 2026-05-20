@@ -602,7 +602,13 @@ function functionalThinningRole(
     (plan) => plan.startTick <= run.startTick && run.startTick < plan.startTick + plan.durationTicks,
   );
   if (containingPlan === undefined) {
-    return "unsupported";
+    const upcomingPlan = sectionPlans.find(
+      (plan) => run.endTick <= plan.startTick && plan.startTick - run.endTick <= TICKS_PER_QUARTER * 2,
+    );
+    return upcomingPlan === undefined ? "unsupported" : "entry-preparation";
+  }
+  if (containingPlan.state === "exposition") {
+    return "entry-preparation";
   }
 
   const sectionEndTick = containingPlan.startTick + containingPlan.durationTicks;
