@@ -240,8 +240,8 @@ export type CandidateEvaluationExplanations = {
 };
 
 export type CandidateEvaluation = {
-  featureVersion: 1 | 2 | 3 | 4;
-  evaluationModelVersion: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
+  featureVersion: 1 | 2 | 3 | 4 | 5;
+  evaluationModelVersion: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11;
   totalCost: number;
   hardFailures: DiagnosticIssueCode[];
   explanations: CandidateEvaluationExplanations;
@@ -400,6 +400,46 @@ export type PitchContourWindowSummary = {
 export type PitchContourMotionSummary = {
   fourBeat: PitchContourWindowSummary;
   eightBeat: PitchContourWindowSummary;
+};
+
+export type LowerVoiceVocalityDetail = {
+  voice: "tenor" | "bass";
+  startTick: number;
+  durationTicks: number;
+  pitch: number;
+  role?: NoteRole;
+  metricalHarmonyIntent?: MetricalHarmonyIntent;
+  state?: FugueState;
+};
+
+export type LowerVoiceVocalityVoiceSummary = {
+  voice: "tenor" | "bass";
+  supportTransitionCount: number;
+  singableConnectionCount: number;
+  staticConnectionCount: number;
+  largeLeapConnectionCount: number;
+  connectionScore: number;
+  longSupportCount: number;
+  longSupportDurationTicks: number;
+  unvocalLongSupportCount: number;
+  unvocalLongSupportDurationTicks: number;
+  score: number;
+};
+
+export type LowerVoiceVocalitySummary = {
+  schemaVersion: 1;
+  score: number;
+  supportTransitionCount: number;
+  singableConnectionCount: number;
+  staticConnectionCount: number;
+  largeLeapConnectionCount: number;
+  connectionScore: number;
+  longSupportCount: number;
+  longSupportDurationTicks: number;
+  unvocalLongSupportCount: number;
+  unvocalLongSupportDurationTicks: number;
+  voices: LowerVoiceVocalityVoiceSummary[];
+  worstExamples: LowerVoiceVocalityDetail[];
 };
 
 export type StepwisePatternRoleSummary = {
@@ -748,6 +788,7 @@ export type GenerationDiagnostics = {
   allVoiceSilenceGapCount: number;
   soloTexture: SoloTextureSummary;
   pitchContourMotion: PitchContourMotionSummary;
+  lowerVoiceVocality: LowerVoiceVocalitySummary;
   stepwisePattern: StepwisePatternSummary;
   phase11Review: Phase11ReviewSummary;
   phase12Review: Phase12ReviewSummary;

@@ -19,6 +19,7 @@ const EVALUATION_WEIGHTS = {
   melody: {
     leapRecoveryMiss: 35,
     melodicStagnation: 25,
+    lowerVoiceUnvocalLongSupportQuarter: 18,
     freeCounterpointStepwiseRunRatio: 8,
     freeCounterpointMonotoneStepRun: 2,
     freeCounterpointContour: 12,
@@ -120,6 +121,8 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
     cost:
       diagnostics.leapRecoveryMisses * EVALUATION_WEIGHTS.melody.leapRecoveryMiss +
       diagnostics.melodicStagnationWarnings * EVALUATION_WEIGHTS.melody.melodicStagnation +
+      (diagnostics.lowerVoiceVocality.unvocalLongSupportDurationTicks / TICKS_PER_QUARTER) *
+        EVALUATION_WEIGHTS.melody.lowerVoiceUnvocalLongSupportQuarter +
       freeCounterpointStepwiseFixationCost,
     reward:
       diagnostics.freeCounterpointContourScore * EVALUATION_WEIGHTS.melody.freeCounterpointContour +
@@ -127,6 +130,10 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
     features: {
       leapRecoveryMisses: diagnostics.leapRecoveryMisses,
       melodicStagnationWarnings: diagnostics.melodicStagnationWarnings,
+      lowerVoiceVocalityScore: diagnostics.lowerVoiceVocality.score,
+      lowerVoiceUnvocalLongSupportCount: diagnostics.lowerVoiceVocality.unvocalLongSupportCount,
+      lowerVoiceUnvocalLongSupportQuarters:
+        diagnostics.lowerVoiceVocality.unvocalLongSupportDurationTicks / TICKS_PER_QUARTER,
       freeCounterpointContourScore: diagnostics.freeCounterpointContourScore,
       freeCounterpointStepwiseRunRatio: freeCounterpointStepwise.stepwiseRunRatio,
       freeCounterpointMaxMonotoneStepRun: freeCounterpointStepwise.maxMonotoneStepRun,
@@ -321,8 +328,8 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
     form.reward;
 
   return {
-    featureVersion: 4,
-    evaluationModelVersion: 10,
+    featureVersion: 5,
+    evaluationModelVersion: 11,
     totalCost: Math.round(totalCost * 1000) / 1000,
     hardFailures,
     explanations,

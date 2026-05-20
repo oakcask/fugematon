@@ -110,6 +110,10 @@ test("public diagnostics expose finite candidate score dimensions", () => {
   assert.equal(output.diagnostics.phase13RReview.selectionModel, output.diagnostics.selectionModel);
   assert.ok(Array.isArray(output.diagnostics.phase13RReview.findings));
   assert.equal(typeof output.diagnostics.phase13RReview.reviewRequired, "boolean");
+  assert.equal(output.diagnostics.lowerVoiceVocality.schemaVersion, 1);
+  assert.ok(output.diagnostics.lowerVoiceVocality.score >= 0);
+  assert.ok(output.diagnostics.lowerVoiceVocality.score <= 1);
+  assert.equal(output.diagnostics.lowerVoiceVocality.voices.length, 2);
 
   for (const issue of output.diagnostics.issues) {
     assert.equal(issue.severity, "warning");
@@ -146,8 +150,8 @@ test("public subject entry diagnostics correspond to emitted entry notes", () =>
 });
 
 function assertCandidateEvaluation(evaluation: CandidateEvaluation): void {
-  assert.equal(evaluation.featureVersion, 4);
-  assert.equal(evaluation.evaluationModelVersion, 10);
+  assert.equal(evaluation.featureVersion, 5);
+  assert.equal(evaluation.evaluationModelVersion, 11);
   assert.ok(Number.isFinite(evaluation.totalCost));
   assert.ok(evaluation.explanations.entries.length > 0);
   assert.ok(evaluation.explanations.voicePairs.length > 0);

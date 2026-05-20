@@ -472,18 +472,46 @@ export function fillAllVoiceSilenceGaps(notes: Exposition["notes"], keySignature
     if (hasActiveNote) {
       continue;
     }
+    addGapFillerLine(notes, {
+      voice: VOICE_ENTRY_ORDER[index % VOICE_ENTRY_ORDER.length]!,
+      localKey: keySignature,
+      startTick,
+      durationTicks: endTick - startTick,
+      degreeOffset: index,
+    });
+  }
+}
+
+function addGapFillerLine(
+  notes: Exposition["notes"],
+  input: {
+    voice: Voice;
+    localKey: KeySignature;
+    startTick: number;
+    durationTicks: number;
+    degreeOffset: number;
+  },
+): void {
+  const degrees = rotateContinuityDegrees(freeCounterpointDegreesForMode(input.localKey.mode), input.degreeOffset);
+  let elapsedTicks = 0;
+  let index = 0;
+
+  while (elapsedTicks < input.durationTicks) {
+    const durationTicks = Math.min(TICKS_PER_QUARTER, input.durationTicks - elapsedTicks);
     addTextureNote(
       notes,
       {
-        voice: VOICE_ENTRY_ORDER[index % VOICE_ENTRY_ORDER.length]!,
-        localKey: keySignature,
+        voice: input.voice,
+        localKey: input.localKey,
         velocity: 54,
         role: "free-counterpoint",
       },
-      freeCounterpointDegreesForMode(keySignature.mode)[index % FREE_COUNTERPOINT_DEGREES.length]!,
-      startTick,
-      endTick - startTick,
+      degrees[index % degrees.length]!,
+      input.startTick + elapsedTicks,
+      durationTicks,
     );
+    elapsedTicks += durationTicks;
+    index += 1;
   }
 }
 
@@ -497,21 +525,14 @@ export function addFunctionalThinningSupport(notes: Exposition["notes"], section
 
     const anchor = nearestHarmonicAnchor(run.startTick, [plan]);
     const degree = anchor === undefined ? 0 : rootDegreeForFunction(anchor.function);
-    const durationTicks = run.endTick - run.startTick;
-    addTextureNote(
-      notes,
-      {
-        voice: supportVoice,
-        localKey: plan.targetKey,
-        velocity: 50,
-        role: "free-counterpoint",
-        harmonicPlan: plan,
-        metricalHarmonyIntent: supportVoice === "bass" ? "structural-root-support" : "structural-chord-tone",
-      },
-      degree,
-      run.startTick,
-      durationTicks,
-    );
+    addFunctionalSupportLine(notes, {
+      voice: supportVoice,
+      localKey: plan.targetKey,
+      harmonicPlan: plan,
+      rootDegree: degree,
+      startTick: run.startTick,
+      durationTicks: run.endTick - run.startTick,
+    });
   }
 
   repairTextureVoiceCrossings(
@@ -519,6 +540,55 @@ export function addFunctionalThinningSupport(notes: Exposition["notes"], section
     Math.min(...sectionPlans.map((plan) => plan.startTick)),
     Math.max(...sectionPlans.map((plan) => plan.startTick + plan.durationTicks)),
   );
+}
+
+function addFunctionalSupportLine(
+  notes: Exposition["notes"],
+  input: {
+    voice: Voice;
+    localKey: KeySignature;
+    harmonicPlan: HarmonicPlan;
+    rootDegree: number;
+    startTick: number;
+    durationTicks: number;
+  },
+): void {
+  const lineDegrees = functionalSupportLineDegrees(input.voice, input.rootDegree);
+  const maxNoteTicks = TICKS_PER_QUARTER;
+  let elapsedTicks = 0;
+  let index = 0;
+
+  while (elapsedTicks < input.durationTicks) {
+    const durationTicks = Math.min(maxNoteTicks, input.durationTicks - elapsedTicks);
+    const degree = lineDegrees[index % lineDegrees.length]!;
+    addTextureNote(
+      notes,
+      {
+        voice: input.voice,
+        localKey: input.localKey,
+        velocity: 50,
+        role: "free-counterpoint",
+        harmonicPlan: input.harmonicPlan,
+        metricalHarmonyIntent:
+          input.voice === "bass" && degree === input.rootDegree ? "structural-root-support" : "structural-chord-tone",
+      },
+      degree,
+      input.startTick + elapsedTicks,
+      durationTicks,
+    );
+    elapsedTicks += durationTicks;
+    index += 1;
+  }
+}
+
+function functionalSupportLineDegrees(voice: Voice, rootDegree: number): readonly number[] {
+  if (voice === "bass") {
+    return [rootDegree, rootDegree + 2, rootDegree + 4, rootDegree + 2];
+  }
+  if (voice === "tenor") {
+    return [rootDegree + 2, rootDegree + 4, rootDegree + 3, rootDegree + 2];
+  }
+  return [rootDegree + 4, rootDegree + 2, rootDegree + 5, rootDegree + 3];
 }
 
 function findUnsupportedThinningRuns(

@@ -6,6 +6,8 @@ import type {
   EntrySupportSevereIntervalSummary,
   HarmonicPlan,
   KeySignature,
+  LowerVoiceVocalitySummary,
+  LowerVoiceVocalityVoiceSummary,
   NoteEvent,
   NoteRole,
   OrnamentPlacementReasons,
@@ -69,6 +71,7 @@ export function analyzeScore(
   allVoiceSilenceGapCount: number;
   soloTexture: SoloTextureSummary;
   pitchContourMotion: PitchContourMotionSummary;
+  lowerVoiceVocality: LowerVoiceVocalitySummary;
   stepwisePattern: StepwisePatternSummary;
   phase11Review: Phase11ReviewSummary;
   phase12Review: Phase12ReviewSummary;
@@ -283,6 +286,7 @@ function analyzeTextureDiagnostics(
     allVoiceSilenceGapCount: countAllVoiceSilenceGaps(notes),
     soloTexture: analyzeSoloTexture(notes, sectionPlans),
     pitchContourMotion: analyzePitchContourMotion(notes),
+    lowerVoiceVocality: analyzeLowerVoiceVocality(notes, sectionPlans),
     stepwisePattern: analyzeStepwisePattern(notes, sectionPlans),
     phase11Review: analyzePhase11ReviewSummary(notes, subjectEntries, sectionPlans),
     phase12Review: analyzePhase12ReviewSummary(subjectEntries, sectionPlans),
@@ -1401,6 +1405,179 @@ function activePitchForVoiceAt(notes: readonly NoteEvent[], voice: Voice, tick: 
   return notes.find(
     (note) => note.voice === voice && note.startTick <= tick && tick < note.startTick + note.durationTicks,
   )?.pitch;
+}
+
+function analyzeLowerVoiceVocality(
+  notes: readonly NoteEvent[],
+  sectionPlans: readonly HarmonicPlan[],
+): LowerVoiceVocalitySummary {
+  const voices = (["tenor", "bass"] as const).map((voice) => summarizeLowerVoiceVocality(notes, sectionPlans, voice));
+  const supportTransitionCount = voices.reduce((sum, voice) => sum + voice.supportTransitionCount, 0);
+  const singableConnectionCount = voices.reduce((sum, voice) => sum + voice.singableConnectionCount, 0);
+  const staticConnectionCount = voices.reduce((sum, voice) => sum + voice.staticConnectionCount, 0);
+  const largeLeapConnectionCount = voices.reduce((sum, voice) => sum + voice.largeLeapConnectionCount, 0);
+  const longSupportCount = voices.reduce((sum, voice) => sum + voice.longSupportCount, 0);
+  const longSupportDurationTicks = voices.reduce((sum, voice) => sum + voice.longSupportDurationTicks, 0);
+  const unvocalLongSupportCount = voices.reduce((sum, voice) => sum + voice.unvocalLongSupportCount, 0);
+  const unvocalLongSupportDurationTicks = voices.reduce((sum, voice) => sum + voice.unvocalLongSupportDurationTicks, 0);
+  const connectionScore = lowerVoiceConnectionScore(singableConnectionCount, supportTransitionCount);
+  const longSupportScore = lowerVoiceLongSupportScore(unvocalLongSupportDurationTicks, longSupportDurationTicks);
+  const worstExamples = lowerVoiceLongSupportNotes(notes)
+    .filter((note) => !hasVocalLowerVoiceContext(note, notes, sectionPlans))
+    .sort((left, right) => right.durationTicks - left.durationTicks || left.startTick - right.startTick)
+    .slice(0, 8)
+    .map((note) => ({
+      voice: note.voice as "tenor" | "bass",
+      startTick: note.startTick,
+      durationTicks: note.durationTicks,
+      pitch: note.pitch,
+      role: note.role,
+      metricalHarmonyIntent: note.metricalHarmonyIntent,
+      state: sectionPlanForTick(sectionPlans, note.startTick)?.state,
+    }));
+
+  return {
+    schemaVersion: 1,
+    score: roundRatio(Math.min(longSupportScore, connectionScore)),
+    supportTransitionCount,
+    singableConnectionCount,
+    staticConnectionCount,
+    largeLeapConnectionCount,
+    connectionScore,
+    longSupportCount,
+    longSupportDurationTicks,
+    unvocalLongSupportCount,
+    unvocalLongSupportDurationTicks,
+    voices,
+    worstExamples,
+  };
+}
+
+function summarizeLowerVoiceVocality(
+  notes: readonly NoteEvent[],
+  sectionPlans: readonly HarmonicPlan[],
+  voice: "tenor" | "bass",
+): LowerVoiceVocalityVoiceSummary {
+  const supportTransitions = lowerVoiceSupportTransitions(notes, voice);
+  const longSupportNotes = lowerVoiceLongSupportNotes(notes).filter((note) => note.voice === voice);
+  const unvocalNotes = longSupportNotes.filter((note) => !hasVocalLowerVoiceContext(note, notes, sectionPlans));
+  const longSupportDurationTicks = longSupportNotes.reduce((sum, note) => sum + note.durationTicks, 0);
+  const unvocalLongSupportDurationTicks = unvocalNotes.reduce((sum, note) => sum + note.durationTicks, 0);
+  const singableConnectionCount = supportTransitions.filter((transition) =>
+    isSingableLowerVoiceInterval(transition),
+  ).length;
+  const staticConnectionCount = supportTransitions.filter(
+    (transition) => lowerVoiceTransitionInterval(transition) === 0,
+  ).length;
+  const largeLeapConnectionCount = supportTransitions.filter(
+    (transition) => lowerVoiceTransitionInterval(transition) > 5,
+  ).length;
+  const connectionScore = lowerVoiceConnectionScore(singableConnectionCount, supportTransitions.length);
+  const longSupportScore = lowerVoiceLongSupportScore(unvocalLongSupportDurationTicks, longSupportDurationTicks);
+
+  return {
+    voice,
+    supportTransitionCount: supportTransitions.length,
+    singableConnectionCount,
+    staticConnectionCount,
+    largeLeapConnectionCount,
+    connectionScore,
+    longSupportCount: longSupportNotes.length,
+    longSupportDurationTicks,
+    unvocalLongSupportCount: unvocalNotes.length,
+    unvocalLongSupportDurationTicks,
+    score: roundRatio(Math.min(longSupportScore, connectionScore)),
+  };
+}
+
+function lowerVoiceSupportTransitions(
+  notes: readonly NoteEvent[],
+  voice: "tenor" | "bass",
+): { left: NoteEvent; right: NoteEvent }[] {
+  const supportNotes = notes
+    .filter((note) => note.voice === voice && (note.role === "counter-subject" || note.role === "free-counterpoint"))
+    .sort(compareNoteEvents);
+  const transitions: { left: NoteEvent; right: NoteEvent }[] = [];
+  for (let index = 1; index < supportNotes.length; index += 1) {
+    const left = supportNotes[index - 1]!;
+    const right = supportNotes[index]!;
+    const gapTicks = right.startTick - (left.startTick + left.durationTicks);
+    if (gapTicks >= 0 && gapTicks <= TICKS_PER_QUARTER / 2) {
+      transitions.push({ left, right });
+    }
+  }
+  return transitions;
+}
+
+function lowerVoiceLongSupportNotes(notes: readonly NoteEvent[]): NoteEvent[] {
+  return notes.filter(
+    (note) =>
+      (note.voice === "tenor" || note.voice === "bass") &&
+      (note.role === "counter-subject" || note.role === "free-counterpoint") &&
+      note.durationTicks >= TICKS_PER_QUARTER * 2,
+  );
+}
+
+function hasVocalLowerVoiceContext(
+  note: NoteEvent,
+  notes: readonly NoteEvent[],
+  sectionPlans: readonly HarmonicPlan[],
+): boolean {
+  const voiceNotes = notes.filter((candidate) => candidate.voice === note.voice).sort(compareNoteEvents);
+  const noteIndex = voiceNotes.findIndex(
+    (candidate) =>
+      candidate.startTick === note.startTick &&
+      candidate.durationTicks === note.durationTicks &&
+      candidate.pitch === note.pitch,
+  );
+  const previous = noteIndex <= 0 ? undefined : voiceNotes[noteIndex - 1];
+  const next = noteIndex < 0 ? undefined : voiceNotes[noteIndex + 1];
+  const hasApproach = previous !== undefined && isMelodicLowerVoiceConnection(previous, note);
+  const hasRelease = next !== undefined && isMelodicLowerVoiceConnection(note, next);
+  const boundarySupported =
+    hasNearbyPhraseSupport(note.startTick, sectionPlans) ||
+    hasNearbyPhraseSupport(note.startTick + note.durationTicks, sectionPlans);
+
+  if (hasApproach && hasRelease) {
+    return true;
+  }
+  if (note.durationTicks < TICKS_PER_QUARTER * 4 && (hasApproach || hasRelease)) {
+    return true;
+  }
+  return boundarySupported && (hasApproach || hasRelease);
+}
+
+function isMelodicLowerVoiceConnection(left: NoteEvent, right: NoteEvent): boolean {
+  const gapTicks = right.startTick - (left.startTick + left.durationTicks);
+  const interval = Math.abs(right.pitch - left.pitch);
+  return gapTicks >= 0 && gapTicks <= TICKS_PER_QUARTER / 2 && interval > 0 && interval <= 5;
+}
+
+function isSingableLowerVoiceInterval(transition: { left: NoteEvent; right: NoteEvent }): boolean {
+  const interval = lowerVoiceTransitionInterval(transition);
+  return interval > 0 && interval <= 5;
+}
+
+function lowerVoiceTransitionInterval(transition: { left: NoteEvent; right: NoteEvent }): number {
+  return Math.abs(transition.right.pitch - transition.left.pitch);
+}
+
+function lowerVoiceConnectionScore(singableConnectionCount: number, supportTransitionCount: number): number {
+  if (supportTransitionCount === 0) {
+    return 1;
+  }
+  return roundRatio(singableConnectionCount / supportTransitionCount);
+}
+
+function lowerVoiceLongSupportScore(unvocalLongSupportDurationTicks: number, longSupportDurationTicks: number): number {
+  if (longSupportDurationTicks === 0) {
+    return 1;
+  }
+  return roundRatio(Math.max(0, 1 - unvocalLongSupportDurationTicks / longSupportDurationTicks));
+}
+
+function sectionPlanForTick(sectionPlans: readonly HarmonicPlan[], tick: number): HarmonicPlan | undefined {
+  return sectionPlans.find((plan) => plan.startTick <= tick && tick < plan.startTick + plan.durationTicks);
 }
 
 const STEPWISE_PATTERN_DEGREE_LENGTH = 4;
