@@ -2,7 +2,7 @@
 
 Phase 13R is inserted after Phase 13Q and before Phase 8. Its purpose is to make the improved generator the actual default path heard through core, CLI, MIDI, and Web UI, then repair the remaining tendency for long continuations to converge on the same subject fragments and short section cycles.
 
-Status: implemented with residual repair required. Automatic default-baseline adoption, cross-seed subject-diversity diagnostics, first conservative generator repair, and the post-listening follow-up repair are implemented. A later audit found that the current 22 seed review bundle still reports bundle-level `subject-fragment-vocabulary-collapse`, and generated listening templates remain `not-reviewed`. Phase 13S now supersedes the old Phase 8 handoff: Phase 8 may not use this as an accepted operational baseline until the music-beauty-first review has handled subject rhythm, entry friction, voice lockstep, counter-subject identity, and metric explanation gaps.
+Status: implemented with residual repair required. Automatic default-baseline adoption, cross-seed subject-diversity diagnostics, first conservative generator repair, and the post-listening follow-up repair are implemented. Later audits found bundle-level `subject-fragment-vocabulary-collapse`, entry-sonority, voice lockstep, pitch-class unison, and modal counter-subject risks. Phase 13S superseded the old Phase 8 handoff, and Phase 13T now supersedes the Phase 13S handoff: Phase 8 may not use this as an accepted operational baseline until the current beauty blockers are repaired and re-reviewed.
 
 Use [quality metrics reference](../reference/quality-metrics.md) for diagnostics and adoption policy meanings. Use [Phase 13R convergence review](../reviews/phase-13r-convergence-review.md) for the seed evidence that triggered this reordering.
 
@@ -132,7 +132,7 @@ The automatic baseline is no longer enough to restart the operational lane. Befo
 * re-review affected representative, boundary, rotation, and adversarial seeds after each fix;
 * record whether remaining subject similarity or other symptoms are function-bearing recurrence, false positives, or still blockers.
 
-This follow-up has recorded its evidence and fixed the confirmed per-score mechanical subject-fragment convergence and abrupt three-part silence symptoms. Phase 13S inherits the remaining residual vocabulary and listening-review signals and broadens the repair to musical beauty itself. Phase 8/9 may not use Worker fallback, deadlines, playback controls, or visualizer stability work to mask future subject-family collapse, phrase convergence, counterpoint regressions, harmony defects, or listening-fatigue symptoms.
+This follow-up has recorded its evidence and fixed the confirmed per-score mechanical subject-fragment convergence and abrupt three-part silence symptoms. Phase 13S inherited the remaining residual vocabulary and listening-review signals; Phase 13T now inherits the remaining entry-sonority, voice-independence, fragment-function, and modal counter-subject blockers. Phase 8/9 may not use Worker fallback, deadlines, playback controls, or visualizer stability work to mask future subject-family collapse, phrase convergence, counterpoint regressions, harmony defects, or listening-fatigue symptoms.
 
 ## Residual Repair Plan
 
