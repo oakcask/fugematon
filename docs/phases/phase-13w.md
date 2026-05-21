@@ -84,8 +84,8 @@ Phase 13W is complete as of the completion review.
 * The 22 seed review bundle has `unpreparedSynchronizedResetSeedCount: 0` and `continuitySupportedSeedCount: 22`.
 * Focused windows for `bach-001`, `fugue-smoke`, `bright-answer`, `contrary-answer`, and `dense-modal` keep the bass entry while delaying at least one upper voice by half a beat, so the entry is no longer a three-outside-voice mechanical restart.
 * `organ-default` and `strict-counterpoint` review bundles were generated for the same 22 seed length. The score-level onset pattern is the same in both profiles; playback articulation still uses normal note attacks, so the repair is in the score rather than hidden by rendering.
-* Phase 13V review summaries remain visible through `qualityVector.phase13VReview`; any remaining line-agency, entry-formula, counter-subject, or long-window review signal remains Phase 13X/Phase 13Y/Phase 8 input rather than a Phase 13W blocker.
+* Phase 13V review summaries remain visible through `qualityVector.phase13VReview`; any remaining line-agency, entry-formula, counter-subject, or long-window review signal remains Phase 13X/Phase 13Y/Phase 13Z/Phase 8 input rather than a Phase 13W blocker.
 
-## Phase 8 Handoff
+## Later Handoff
 
-Phase 13X should keep the post-exposition `entryBoundaryContinuity` evidence from this phase, but it must add first-bass-entry evidence before handing off to Phase 13Y. Infinite playback and visualizer work may proceed only after Phase 13Y generalizes entry continuity beyond bass-specific windows; segment design must not hide a future `synchronized-reset` finding behind playback smoothing or UI boundary effects.
+Phase 13X should keep the post-exposition `entryBoundaryContinuity` evidence from this phase, but it must add first-bass-entry evidence before handing off to Phase 13Y. Phase 13Y must generalize entry continuity beyond bass-specific windows before Phase 13Z starts long-run phrase repair. Infinite playback and visualizer work may proceed only after Phase 13Z also records phrase-development evidence; segment design must not hide future `synchronized-reset` or same-family phrase-fatigue findings behind playback smoothing or UI boundary effects.

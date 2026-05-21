@@ -1,8 +1,8 @@
 # Phase 13Y: Generalized Entry Continuity
 
-Phase 13Y is inserted after Phase 13X and before Phase 8. Its purpose is to generalize the entry-boundary continuity model so it is not tied to the current `alto -> soprano -> tenor -> bass` exposition order or to bass entries only.
+Phase 13Y is inserted after Phase 13X and before Phase 13Z. Its purpose is to generalize the entry-boundary continuity model so it is not tied to the current `alto -> soprano -> tenor -> bass` exposition order or to bass entries only.
 
-Status: planned. Phase 8 is deferred until Phase 13Y records score-window and focused listening evidence.
+Status: planned. Phase 8 is deferred until Phase 13Y records score-window and focused listening evidence, then Phase 13Z records long-run phrase-development evidence.
 
 Planning review: [Phase 13Y entry-continuity generalization review](../reviews/phase-13y-entry-continuity-generalization.md).
 
@@ -48,8 +48,8 @@ The durable problem is broader:
 3. Add non-bass entry-window tests that fail when all already-entered outside voices cut and restart without preparation.
 4. Generalize continuity-preserving support candidates and scoring beyond bass entries.
 5. Re-run the 22 seed review bundle and record score-window examples for first-bass, non-bass exposition, and post-exposition entries.
-6. Update Phase 8 handoff only after the generalized model shows that future entry-order changes will not hide the same boundary-reset symptom under another voice name.
+6. Update Phase 13Z handoff only after the generalized model shows that future entry-order changes will not hide the same boundary-reset symptom under another voice name.
 
-## Phase 8 Handoff
+## Phase 13Z Handoff
 
-Phase 8 may resume only after Phase 13Y records generalized entry-continuity evidence. Infinite playback and visualizer work must preserve entry-continuity diagnostics as review signals and must not make a fixed entry order, playback profile, or segment boundary hide synchronized-reset findings.
+Phase 13Z may start only after Phase 13Y records generalized entry-continuity evidence. Phase 13Z must preserve entry-continuity diagnostics as review signals while it repairs long-run phrase convergence. Infinite playback and visualizer work remain deferred until Phase 13Z also records phrase-development evidence.
