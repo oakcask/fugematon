@@ -88,7 +88,7 @@ Project response: insert Phase 13S before Phase 8/9. The phase should allow brea
 
 ## Plan Change
 
-Phase 8/9 should not resume yet. The next phase is Phase 13S: music-beauty-first generator rewrite and metric recalibration.
+This planning review originally stopped Phase 8/9 and inserted Phase 13S: music-beauty-first generator rewrite and metric recalibration. The completion review below records the Phase 13S outcome and the remaining risks that Phase 8 must keep visible.
 
 Phase 13S priorities:
 
@@ -104,3 +104,50 @@ Remaining gaps:
 * No `strict-counterpoint` playback pass.
 * No exact-edition literature citations.
 * No implementation repair yet; this review only changes phase scope and priorities.
+
+## Completion Review
+
+Phase 13S completion evidence uses the same 22 seed set and regenerated bundles under both `organ-default` and `strict-counterpoint`. The two performance profiles produce the same score diagnostics because Phase 13S changes `ScoreEvent` generation, not rendering.
+
+### Accepted repairs
+
+Subject rhetoric is no longer collapsed to one equal-pulse middle-climax design. The completion bundle reports 4 initial subject rhythm patterns, 3 local climax indexes, and 7 initial subject families. Representative score-window checks:
+
+* `fugue-smoke`: held opening rhythm, early local climax at index 3, and lower unresolved entry friction than the planning review.
+* `bach-001`: middle-held rhythm with late climax at index 5, giving the opening subject a different accent profile from `fugue-smoke`.
+* `minor-entry`, `sparse-cadence`, `restless-line`, and `quiet-cadence`: tail-held rhythm with middle climax retained where entry harmony risk benefits from the less disruptive subject shape.
+
+Entry friction improved materially. The Phase 13S planning review recorded 306 unresolved entry severe interval quarters. The completion regression records 151 unresolved entry severe interval quarters across the 22 seeds. This does not remove all 2度/7度 pressure, but the largest improvement is in exposed representative and boundary seeds where the new subject rhythm avoids repeating the same entry-support clash.
+
+Counter-subject identity remains recognizable enough for the focused modal and angular seeds. The completion values are `modal-answer` 0.545, `dense-modal` 0.571, `modal-cadence` 0.573, `modal-dorian` 0.632, and `angular-answer` 0.591. These preserve the Phase 13R floor while allowing non-modal subject rhetoric to change more aggressively.
+
+### Accepted tradeoffs
+
+The top subject-fragment family share is 0.545, improved from 0.682 but still above the old collapse threshold. This is accepted for Phase 13S because the repeated fragment now functions inside a wider subject-rhythm and climax vocabulary. It remains a review signal for Phase 8 listening, not a reason to restore the equal-pulse subject model.
+
+Voice-pair independence is still the main risk. Duration-based lockstep and pitch-class unison remain outside the quality profile for all 22 seeds, and the held-subject rewrite can expose longer support spans. The musical rationale for accepting this tradeoff is that Phase 13S repaired the upstream subject sameness and unresolved entry friction first; Phase 8 must not hide the remaining lockstep/unison risk behind continuous playback or visualizer choices.
+
+### Focused Listening Notes
+
+`organ-default`:
+
+* `bach-001` and `fugue-smoke`: pass for subject memorability and entry clarity compared with the planning review; needs-work for long-run voice-pair independence.
+* `minor-entry`, `sparse-cadence`, `restless-line`, `ornament-test`, and `modal-cadence`: improved entry-friction evidence, but `modal-cadence` still needs-work for unresolved entry pressure.
+* `modal-answer`, `dense-modal`, `modal-cadence`, and `modal-dorian`: counter-subject recognition is preserved at the Phase 13R floor; modal color is not treated as a reason to weaken the identity further.
+
+`strict-counterpoint`:
+
+* Representative and entry-harmony seeds remain needs-work for exposed pitch-class unison and lockstep, especially in long-run listening.
+* The stricter profile does not contradict the claimed subject-rhetoric and entry-friction improvements; it reinforces that remaining voice independence must stay visible in Phase 8 review notes.
+
+### Structural Hypothesis
+
+Symptom: the Phase 13R generator sounded like variants of one subject rhetoric, and that sameness made entry-support clashes feel structural rather than local.
+
+Repeated pattern: equal-pulse subjects with the same local climax index drove similar answer and support formulas across the 22 seeds.
+
+Theory basis: common-practice fugue subjects can share compact motivic cells, but a generated corpus needs varied rhythm, accent, climax placement, and tail shape so repeated fragments are heard as development rather than mechanical reuse.
+
+Evidence strength: confirmed for subject rhythm/climax and plausible for entry friction. Voice-pair independence remains only partly addressed.
+
+Project response: keep `generatorVersion` 4 and the new subject profiles. Carry voice-pair lockstep and pitch-class unison into Phase 8 as explicit review/listening signals instead of reverting the subject rewrite.

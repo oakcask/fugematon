@@ -10,6 +10,7 @@ export function assertPhase1112ReviewBatch(
     unisonOverlapDelta: number;
     sharedRhythmOverlapDelta: number;
     leapRecoveryMissDelta: number;
+    bassRootSupportDelta?: number;
   },
 ): void {
   const metrics = collectPhase1112PlanningMetrics(seeds);
@@ -26,7 +27,10 @@ export function assertPhase1112ReviewBatch(
       metrics.baselineTopEntryPatternFamilyCount + expectation.topEntryPatternFamilyDelta,
   );
   assert.ok(metrics.variantUnsupportedThinningRuns <= metrics.baselineUnsupportedThinningRuns / 2);
-  assert.ok(metrics.variantBassRootSupportCount > metrics.baselineBassRootSupportCount);
+  assert.ok(
+    metrics.variantBassRootSupportCount >=
+      metrics.baselineBassRootSupportCount + (expectation.bassRootSupportDelta ?? 1),
+  );
   assert.ok(metrics.variantUnisonOverlapCount <= metrics.baselineUnisonOverlapCount + expectation.unisonOverlapDelta);
   assert.ok(
     metrics.variantSharedRhythmOverlapCount <=

@@ -99,7 +99,7 @@
 
 ### Phase 8: 無限再生セッション
 
-* Phase 8 は Phase 13S の music-beauty-first rewrite 後に戻る operational lane とする。Phase 6-7 の美しさ metric と聴取 gate の完全 pass は開始条件にしないが、Phase 13S の score-window evidence、focused listening、そこで見つかった音楽的問題の修正 evidence は開始条件にする。細かな操作 UI が音楽的な退屈さを隠す設計にならないよう、generator quality、rendering boundary、model adoption evidence を前提にする。
+* Phase 8 は Phase 13S の music-beauty-first rewrite 後に戻る operational lane とする。Phase 13S は完了済みで、主題リズムと entry friction の修正 evidence、focused listening note、残る voice-pair lockstep / pitch-class unison tradeoff を記録した。Phase 6-7 の美しさ metric と聴取 gate の完全 pass は開始条件にしないが、細かな操作 UI が音楽的な退屈さを隠す設計にならないよう、generator quality、rendering boundary、model adoption evidence を前提にする。
 * 生成済みイベントをメモリ上のリングバッファに保存する。
 * 保存済み範囲内では event replay により巻き戻して再生し直せるようにする。
 * continuous fugue、endless program、regenerative cycle を同じ状態遷移 model の異なる境界表現として扱う。
@@ -146,7 +146,7 @@
 * Phase 13Q は、Phase 13 の review/adoption model を使って candidate diversity、voice independence、entry harmony を生成側で改善した。
 * Phase 13R は automatic adoption complete として、通常生成経路を採用済み baseline へ揃え、後半 phrase convergence を修正した。legacy `baseline` は比較 model として残すが、CLI、MIDI、Web UI は暗黙に古い path を鳴らさない。
 * Phase 8/9 は、Phase 13R の automatic default path だけでは戻らないという判断により一度延期された。focused listening、seed 横断 subject-diversity follow-up、その follow-up で見つかった mechanical subject-fragment convergence と abrupt three-part silence の修正を完了し、`subjectFamilyDiversity` review summary、A/B delta、`buildSubject` 候補拡張、修正後 re-review の evidence を残した。
-* Phase 13S は、Phase 13R 後の 22 seed 譜面レビューにより挿入する。音楽的美しさをプロジェクトの核心として扱い、主題リズム、対主題、entry 対位法、声部独立、フーガ形式、指標の説明力を再設計する。既存モデル互換性、旧 guardrail margin、旧 expected values は、譜面上の美しさと矛盾する場合は採用条件にしない。現在は Phase 13S が Phase 8/9 前の実装対象である。
+* Phase 13S は完了済みである。音楽的美しさをプロジェクトの核心として扱い、主題リズム、entry friction、指標の説明力を互換性制約なしに再設計した。既存モデル互換性、旧 guardrail margin、旧 expected values は、譜面上の美しさと矛盾する場合は採用条件にしない。現在は Phase 8 が実装対象である。
 
 ## 内部表現
 

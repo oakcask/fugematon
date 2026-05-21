@@ -2,7 +2,7 @@
 
 Phase 8 は、Phase 13S の music-beauty-first rewrite 後に戻る operational lane である。目的は細かな生成パラメータ UI を増やすことではなく、長時間聴ける無限再生セッションを成立させ、内部状態を鑑賞用 visualizer として見せることである。
 
-Phase 8 はまだ開始しない。先に [Phase 13S](phase-13s.md) で、主題リズム、対主題、entry 対位法、声部独立、フーガ形式、指標の説明力を、譜面レビューと focused listening に基づいて再設計する。
+Phase 13S は完了した。Phase 8 は、Phase 13S で記録した remaining voice-pair lockstep と pitch-class unison risk を UI や境界設計で隠さず、review signal と listening note として見える状態にして開始する。
 
 詳細な route は [Phase 7+ 再編計画](phase-7-plus-reorg.md) を読む。品質指標の意味は [quality metrics reference](../reference/quality-metrics.md) を読む。
 
@@ -20,7 +20,7 @@ Phase 8 はまだ開始しない。先に [Phase 13S](phase-13s.md) で、主題
 * 巻き戻し地点から別分岐して生成する branch mode。
 * Worker fallback、deadline tuning、AudioWorklet。
 * 無限再生の聴感問題、特に subject sameness、entry friction、voice lockstep、weak fugal development を UI 操作で隠して採用すること。
-* Phase 13S を未完了のまま、境界設計や visualizer で seed 横断 subject-family collapse、phrase convergence、counterpoint / harmony defects、聴取疲労を見えにくくすること。
+* Phase 13S の残課題である voice-pair lockstep、pitch-class unison、長時間聴取疲労を、境界設計や visualizer で見えにくくすること。
 
 ## Completion Conditions
 
