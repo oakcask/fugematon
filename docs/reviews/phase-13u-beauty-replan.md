@@ -152,4 +152,32 @@ Remaining gaps:
 
 * No human pairwise listening was performed in this pass.
 * Literature claims are source-family level, not edition-cited.
-* Phase 13U is a plan change only; no generator repair has been implemented yet.
+* At planning time, no generator repair had been implemented yet.
+
+## Completion Addendum
+
+Phase 13U closes as a score-window truthfulness update, not as a generator adoption.
+
+Implemented evidence:
+
+* `entryFormulaRecurrences` groups repeated entry formulas by entry voice, section role, beat strength, support voices, sonority kinds, and resolution direction.
+* `voicePairSpans` localizes exposed exact collision, pitch-class reinforcement, color doubling, subject support, cadence support, sequence support, and mechanical coupling spans.
+* `fragmentFunctionEvidence.transformationClaims` separates transform, sequence, cadence, and mode evidence from the older aggregate function labels.
+* `counterSubjectWindows.preservationJudgement` separates preserved windows from weak windows and accepted tradeoffs.
+
+22 seed score-window summary:
+
+* repeated entry formula summaries: 189 total, 144 `review-required`;
+* localized voice-pair spans: 396 total;
+* fragment transformation claims: 110 total;
+* counter-subject preservation windows: 80 preserved, 839 tradeoff, 30 weak.
+
+Rejected experiment:
+
+* A generator-side free-counterpoint pitch repair was tested as a local response to repeated entry friction. It locally reduced some rough support intervals, but it worsened older guardrails including leap recovery, bass-root support, entry-pattern concentration, and counter-subject retention. The experiment is rejected because Phase 13U requires score-level musical improvement, not metric movement that damages older musical evidence.
+
+Adoption decision:
+
+* Generated `ScoreEvent` output remains stable; `generatorVersion` is unchanged.
+* `qualityVector.schemaVersion` 3 / `modelVersion` 3 is adopted as a review truthfulness layer.
+* Phase 8 may resume, but it must keep repeated entry formulas, voice-pair spans, fragment transformation claims, and modal counter-subject tradeoffs visible instead of presenting playback or visualizer boundaries as musical acceptance.

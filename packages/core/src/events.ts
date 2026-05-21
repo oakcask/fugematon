@@ -708,6 +708,19 @@ export type Phase13TEntrySonoritySummary = {
   resolutionDeadlineTicks: number;
 };
 
+export type Phase13UEntryFormulaSummary = {
+  formulaKey: string;
+  recurrenceCount: number;
+  representativeTick: number;
+  entryVoice: Voice;
+  state: FugueState;
+  beatStrength: "strong" | "weak";
+  supportVoices: Voice[];
+  kinds: Phase13TEntrySonorityKind[];
+  resolutionDirection: "up" | "down" | "mixed" | "none";
+  judgement: "reduced" | "review-required" | "functionally-justified";
+};
+
 export type Phase13TFragmentFunctionEvidence = {
   fragmentSectionCount: number;
   uniqueFunctionCount: number;
@@ -716,6 +729,12 @@ export type Phase13TFragmentFunctionEvidence = {
     functionKey: string;
     count: number;
     share: number;
+  }[];
+  transformationClaims: {
+    functionKey: string;
+    count: number;
+    transformationKinds: string[];
+    judgement: "developed" | "underdeveloped" | "review-required";
   }[];
 };
 
@@ -727,6 +746,26 @@ export type Phase13TCounterSubjectWindowSummary = {
   rhythmPattern: number[];
   contourClass: string;
   supportCollisionCount: number;
+  preservationJudgement: "preserved" | "tradeoff" | "weak";
+};
+
+export type Phase13UVoicePairSpanClassification =
+  | "mechanical-coupling"
+  | "pitch-class-reinforcement"
+  | "exact-collision"
+  | "cadence-support"
+  | "sequence-support"
+  | "subject-support"
+  | "color-doubling";
+
+export type Phase13UVoicePairSpanSummary = {
+  leftVoice: Voice;
+  rightVoice: Voice;
+  startTick: number;
+  durationTicks: number;
+  sectionRole: FugueState | "mixed";
+  classification: Phase13UVoicePairSpanClassification;
+  symptom: string;
 };
 
 export type Phase13TMetricExplanationSummary = {
@@ -756,17 +795,20 @@ export type Phase13LocalSentinelSummary = {
   voice?: Voice;
   sectionRole: FugueState | "mixed";
   symptom: string;
+  classification?: Phase13UVoicePairSpanClassification;
 };
 
 export type Phase13QualityVector = {
-  schemaVersion: 2;
-  modelVersion: 2;
+  schemaVersion: 3;
+  modelVersion: 3;
   axes: Phase13QualityVectorAxisSummary[];
   voicePairUnisons: Phase13VoicePairUnisonSummary[];
   voicePairFunctions: Phase13TVoicePairFunctionSummary[];
+  voicePairSpans: Phase13UVoicePairSpanSummary[];
   sopranoRepeatedNotePressure: Phase13SopranoRepeatedNotePressureSummary;
   entrySevereIntervals: Phase13EntrySevereIntervalDurationSummary[];
   entrySonorities: Phase13TEntrySonoritySummary[];
+  entryFormulaRecurrences: Phase13UEntryFormulaSummary[];
   fragmentFunctionEvidence: Phase13TFragmentFunctionEvidence;
   counterSubjectWindows: Phase13TCounterSubjectWindowSummary[];
   metricExplanations: Phase13TMetricExplanationSummary[];

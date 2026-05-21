@@ -4,6 +4,7 @@ import type {
   Phase13EntrySevereIntervalDurationSummary,
   Phase13TEntrySonorityKind,
   Phase13TEntrySonoritySummary,
+  Phase13UEntryFormulaSummary,
   PlannedEntry,
 } from "../events.js";
 import { positiveModulo } from "./shared.js";
@@ -59,6 +60,76 @@ export function summarizeEntrySonorities(
   subjectEntries: readonly PlannedEntry[],
 ): Phase13TEntrySonoritySummary[] {
   return subjectEntries.map((entry) => summarizeEntrySonority(notes, entry));
+}
+
+export function summarizeEntryFormulaRecurrences(
+  entrySonorities: readonly Phase13TEntrySonoritySummary[],
+): Phase13UEntryFormulaSummary[] {
+  const formulas = new Map<
+    string,
+    {
+      summary: Phase13UEntryFormulaSummary;
+      unresolvedCount: number;
+      justifiedCount: number;
+    }
+  >();
+
+  for (const sonority of entrySonorities.filter((entry) => !entry.kinds.includes("open-consonance"))) {
+    const formulaKey = entryFormulaKey(sonority);
+    const existing = formulas.get(formulaKey);
+    const unresolved = Number(sonority.unresolvedAccentedClashCount > 0);
+    const justified = Number(sonority.preparedOrPassingCount > 0);
+    if (existing === undefined) {
+      formulas.set(formulaKey, {
+        summary: {
+          formulaKey,
+          recurrenceCount: 1,
+          representativeTick: sonority.representativeTick,
+          entryVoice: sonority.voice,
+          state: sonority.state,
+          beatStrength: sonority.beatStrength,
+          supportVoices: sonority.supportVoices,
+          kinds: sonority.kinds,
+          resolutionDirection: sonority.resolutionDirection,
+          judgement: "reduced",
+        },
+        unresolvedCount: unresolved,
+        justifiedCount: justified,
+      });
+    } else {
+      existing.summary.recurrenceCount += 1;
+      existing.unresolvedCount += unresolved;
+      existing.justifiedCount += justified;
+    }
+  }
+
+  return [...formulas.values()]
+    .map(({ summary, unresolvedCount, justifiedCount }) => ({
+      ...summary,
+      judgement: entryFormulaJudgement(summary.recurrenceCount, unresolvedCount, justifiedCount),
+    }))
+    .filter((summary) => summary.recurrenceCount >= 2 || summary.judgement === "review-required")
+    .sort(
+      (left, right) => right.recurrenceCount - left.recurrenceCount || left.formulaKey.localeCompare(right.formulaKey),
+    )
+    .slice(0, 12);
+}
+
+function entryFormulaJudgement(
+  recurrenceCount: number,
+  unresolvedCount: number,
+  justifiedCount: number,
+): Phase13UEntryFormulaSummary["judgement"] {
+  if (recurrenceCount < 2) {
+    return "reduced";
+  }
+  if (unresolvedCount > 0) {
+    return "review-required";
+  }
+  if (justifiedCount > 0) {
+    return "functionally-justified";
+  }
+  return "review-required";
 }
 
 function summarizeEntrySonority(notes: readonly NoteEvent[], entry: PlannedEntry): Phase13TEntrySonoritySummary {
@@ -147,6 +218,17 @@ function summarizeEntrySonority(notes: readonly NoteEvent[], entry: PlannedEntry
     resolutionDirection: resolutionDirection(notes, entry, representativeTick),
     resolutionDeadlineTicks: TICKS_PER_QUARTER,
   };
+}
+
+function entryFormulaKey(sonority: Phase13TEntrySonoritySummary): string {
+  return [
+    sonority.voice,
+    sonority.state,
+    sonority.beatStrength,
+    sonority.supportVoices.join("+"),
+    sonority.kinds.join("+"),
+    sonority.resolutionDirection,
+  ].join(":");
 }
 
 function entrySupportCheckpoints(notes: readonly NoteEvent[], entry: PlannedEntry): number[] {

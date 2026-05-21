@@ -2,7 +2,7 @@
 
 Phase 13U is inserted after Phase 13T and before Phase 8. Its purpose is to make musical beauty the planning center again after the current score review found that the metrics locate defects but still do not prove that the generated fugues are beautiful enough for infinite playback.
 
-Status: planned. Phase 8 is deferred until Phase 13U has score-window review evidence and accepted tradeoffs recorded.
+Status: complete. Phase 13U records score-window review evidence and accepted tradeoffs. Phase 8 may resume with the handoff constraints below.
 
 Starting review: [Phase 13U beauty replan review](../reviews/phase-13u-beauty-replan.md).
 
@@ -97,6 +97,23 @@ Phase 13U is complete only when:
 * `organ-default` and `strict-counterpoint` review notes describe concrete score symptoms and accepted tradeoffs;
 * Phase 8 handoff states which remaining review signals are acceptable for infinite playback and why.
 
+Completion record:
+
+* `qualityVector.schemaVersion` 3 / `modelVersion` 3 adds reusable entry formula recurrences, localized voice-pair spans, fragment transformation claims, counter-subject preservation judgements, and voice-pair sentinel classifications.
+* The 22 seed bundle records 189 repeated entry formula summaries, including 144 `review-required` formula recurrences. These are detected and kept as Phase 8 listening/review signals rather than hidden behind green aggregate status.
+* The bundle records 396 localized voice-pair spans. Long pitch-class and exact-unison sentinels now point to representative span starts when available instead of only broad section starts.
+* Fragment recurrence has 110 transformation claims. Current claims are diagnostic evidence, not proof of beauty; no claim is treated as a generator improvement without score-window support.
+* Counter-subject windows record preservation judgement: 80 preserved, 839 tradeoff, and 30 weak windows across the 22 seed bundle. Modal and angular seeds remain accepted tradeoffs for Phase 8 display and listening review, not erased issues.
+* A generator-side free-counterpoint pitch-repair experiment was rejected. It reduced some entry friction locally, but it worsened older musical guardrails including leap recovery, bass-root support, entry-pattern concentration, and counter-subject retention. Because Phase 13U requires score-level beauty rather than metric-only movement, this experiment is not adopted.
+* `organ-default` and `strict-counterpoint` use the same score-window evidence. Remaining review signals are composition-model tradeoffs; performance profile differences do not turn them into acceptance proof.
+
 ## Handoff To Phase 8
 
 Phase 8 may resume only after Phase 13U records score-window beauty evidence. Phase 8 must not use boundary design, playback mode, visualizer presentation, Worker fallback, or performance profile to hide unresolved entry formulas, voice coupling, fragment sameness, or weak counter-subject identity.
+
+Acceptable Phase 8 residual signals:
+
+* Repeated entry formulas may remain visible when they are explicitly marked `review-required` or functionally justified in score-window evidence.
+* Voice-pair coupling may remain when localized spans classify cadence, sequence, subject support, or color doubling; mechanical or reinforcement spans must stay visible to reviewers.
+* Fragment recurrence may remain when transformation claims identify transform, sequence, cadence, and mode context, but UI copy must not present labels as proof of development.
+* Modal and angular counter-subject weakness may remain as an audible tradeoff while Phase 8 focuses on infinite playback boundaries, provided the windows retain rhythm, contour, collision, and preservation evidence.

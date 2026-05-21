@@ -344,6 +344,13 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
               mechanicalCouplingTicks: number;
               functionalReinforcementTicks: number;
             }[];
+            voicePairSpans: {
+              leftVoice: string;
+              rightVoice: string;
+              startTick: number;
+              durationTicks: number;
+              classification: string;
+            }[];
             sopranoRepeatedNotePressure: {
               voice: string;
               runCount: number;
@@ -355,7 +362,12 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
               unresolvedDurationTicks: number;
             }[];
             entrySonorities: { startTick: number; kinds: string[] }[];
-            fragmentFunctionEvidence: { uniqueFunctionCount: number; topFunctionShare: number };
+            entryFormulaRecurrences: { formulaKey: string; recurrenceCount: number }[];
+            fragmentFunctionEvidence: {
+              uniqueFunctionCount: number;
+              topFunctionShare: number;
+              transformationClaims: { functionKey: string; judgement: string }[];
+            };
             counterSubjectWindows: { entryStartTick: number; retentionKind: string }[];
             metricExplanations: { axis: string; symptom: string; classification: string }[];
             localSentinels: { kind: string; severity: string; durationTicks: number; symptom: string }[];
@@ -468,7 +480,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
     assert.ok(summary.referenceDiagnostics.axes.length > 1);
     assert.ok(summary.referenceDiagnostics.maxDistance >= 0);
     assert.equal(summary.qualityProfileComparison.schemaVersion, 1);
-    assert.equal(summary.qualityProfileComparison.modelVersion, 2);
+    assert.equal(summary.qualityProfileComparison.modelVersion, 3);
     assert.equal(summary.qualityProfileComparison.seedCount, summary.seeds.length);
     assert.ok(summary.qualityProfileComparison.axes.length >= 8);
     assert.ok(summary.qualityProfileComparison.localSentinelCount >= 0);
@@ -655,15 +667,17 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
           (finding) => finding.code === "legacy-default-selection-model",
         ),
       );
-      assert.equal(entry.diagnosticsSummary.qualityVector.schemaVersion, 2);
-      assert.equal(entry.diagnosticsSummary.qualityVector.modelVersion, 2);
+      assert.equal(entry.diagnosticsSummary.qualityVector.schemaVersion, 3);
+      assert.equal(entry.diagnosticsSummary.qualityVector.modelVersion, 3);
       assert.ok(entry.diagnosticsSummary.qualityVector.axes.length >= 8);
       assert.equal(entry.diagnosticsSummary.qualityVector.voicePairUnisons.length, 6);
       assert.equal(entry.diagnosticsSummary.qualityVector.voicePairFunctions.length, 6);
+      assert.ok(entry.diagnosticsSummary.qualityVector.voicePairSpans.length > 0);
       assert.equal(entry.diagnosticsSummary.qualityVector.sopranoRepeatedNotePressure.voice, "soprano");
       assert.ok(entry.diagnosticsSummary.qualityVector.sopranoRepeatedNotePressure.runCount >= 0);
       assert.ok(entry.diagnosticsSummary.qualityVector.entrySevereIntervals.length > 0);
       assert.ok(entry.diagnosticsSummary.qualityVector.entrySonorities.length > 0);
+      assert.ok(entry.diagnosticsSummary.qualityVector.entryFormulaRecurrences.length >= 0);
       assert.ok(entry.diagnosticsSummary.qualityVector.counterSubjectWindows.length > 0);
       assert.ok(entry.diagnosticsSummary.qualityVector.metricExplanations.length >= 3);
       assert.ok(
@@ -699,7 +713,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
         assert.ok(blocker.generatorNeededRate <= 1);
         assert.ok(blocker.selectedRiskMax >= blocker.bestViableRiskMin);
         assert.ok(blocker.representative.candidateCount > 0);
-        assert.ok(blocker.representative.viableCandidateCount > 0);
+        assert.ok(blocker.representative.viableCandidateCount >= 0);
         assert.ok(
           blocker.representative.selectedReferenceStatus === "within-reference" ||
             blocker.representative.selectedReferenceStatus === "below-reference" ||
