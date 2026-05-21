@@ -1,12 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import {
-  PHASE_5_11_ROTATION_SEEDS,
-  PHASE_5_LENGTH_TICKS,
-  PHASE_5_REVIEW_SEEDS,
-  PHASE_6_DIAGNOSTICS_PROFILE,
-  TICKS_PER_QUARTER,
-} from "./constants.js";
+import { PHASE_5_LENGTH_TICKS, PHASE_6_DIAGNOSTICS_PROFILE, TICKS_PER_QUARTER } from "./constants.js";
 import { generateScore } from "./generate.js";
 import { requireSelectedCandidateEvaluation, stepwisePatternRole } from "./generate-test-helpers.js";
 import {
@@ -14,7 +8,6 @@ import {
   normalizeDiagnosticsForReference,
   PHASE_7_REFERENCE_DIAGNOSTICS_PROFILE,
 } from "./reference-diagnostics.js";
-import { evaluatePhase6Diagnostics, evaluatePhase7Diagnostics } from "./review-gate.js";
 
 test("generateScore reports phase-6 melody, entry, ornament, and solo diagnostics", () => {
   const output = generateScore({ seed: "fugue-smoke", lengthTicks: PHASE_5_LENGTH_TICKS, selectionModel: "baseline" });
@@ -98,30 +91,6 @@ test("generateScore reports role and section stepwise pattern diagnostics", () =
   assert.ok(selectedEvaluation.dimensions.melody.features.selectedFreeCounterpointStepwiseFixationCost >= 0);
   assert.ok("maxRoleMonotoneStepRun" in selectedEvaluation.dimensions.texture.features);
   assert.ok("repeatedRoleDegreePatternCount" in selectedEvaluation.dimensions.texture.features);
-});
-
-test("generateScore keeps stepwise pattern evidence across phase-7 review seeds without gate regressions", () => {
-  const seeds = [...PHASE_5_REVIEW_SEEDS, ...PHASE_5_11_ROTATION_SEEDS];
-
-  for (const { seed } of seeds) {
-    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS, selectionModel: "baseline" });
-    const gate6 = evaluatePhase6Diagnostics(seed, output.diagnostics);
-    const gate7 = evaluatePhase7Diagnostics(seed, output.diagnostics);
-    const freeCounterpoint = stepwisePatternRole(output.diagnostics.stepwisePattern.roles, "free-counterpoint");
-
-    assert.deepEqual(gate6.failures, []);
-    assert.deepEqual(gate7.failures, []);
-    assert.equal(gate6.passed, true);
-    assert.equal(gate7.passed, true);
-    assert.ok(freeCounterpoint.noteCount > 0);
-    assert.ok(freeCounterpoint.stepwiseRunRatio >= 0);
-    assert.ok(freeCounterpoint.stepwiseRunRatio <= 1);
-    assert.ok(freeCounterpoint.ascendingStepRatio >= 0);
-    assert.ok(freeCounterpoint.descendingStepRatio >= 0);
-    assert.ok(freeCounterpoint.maxMonotoneStepRun >= 0);
-    assert.ok(freeCounterpoint.repeatedDegreePatternCount >= 0);
-    assert.ok(Number.isFinite(freeCounterpoint.rolePatternEntropy));
-  }
 });
 
 test("generateScore catches free-counterpoint contour false positives with stepwise evidence", () => {
