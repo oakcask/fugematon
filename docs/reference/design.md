@@ -99,7 +99,7 @@
 
 ### Phase 8: 無限再生セッション
 
-* Phase 8 は Phase 13U の score-window beauty rewrite 後に戻る operational lane とする。Phase 13T は entry sonority evidence を改善したが、現行 default の再レビューで repeated entry formula、voice coupling、fragment transformation 不足、modal counter-subject weakness、metric false readiness が Phase 8 前 blocker と確認された。Phase 6-7 の美しさ metric と聴取 gate の完全 pass は開始条件にしないが、細かな操作 UI が音楽的な退屈さを隠す設計にならないよう、generator quality、rendering boundary、model adoption evidence を前提にする。
+* Phase 8 は Phase 13V の line-agency and long-run beauty rewrite 後に戻る operational lane とする。Phase 13U は score-window truthfulness evidence を改善したが、post-13U の譜面レビューで line agency、entry formula recurrence、counter-subject survivability、long-run development、metric false acceptance が Phase 8 前 blocker と確認された。Phase 6-7 の美しさ metric と聴取 gate の完全 pass は開始条件にしないが、細かな操作 UI が音楽的な退屈さを隠す設計にならないよう、generator quality、rendering boundary、model adoption evidence を前提にする。
 * 生成済みイベントをメモリ上のリングバッファに保存する。
 * 保存済み範囲内では event replay により巻き戻して再生し直せるようにする。
 * continuous fugue、endless program、regenerative cycle を同じ状態遷移 model の異なる境界表現として扱う。
@@ -109,7 +109,7 @@
 
 ### Phase 9: Worker 化と安定化
 
-* Phase 9 は Phase 13U と Phase 8 後に戻る deferred operational lane とする。
+* Phase 9 は Phase 13V と Phase 8 後に戻る deferred operational lane とする。
 * 生成探索を Dedicated Web Worker に移し、メインスレッドの描画と操作を安定させる。
 * AudioWorklet は、標準 WebAudio ノードでは音声処理が不足した場合に導入する。
 * OffscreenCanvas、SharedWorker、Service Worker は必要性が明確になってから検討する。
@@ -146,7 +146,7 @@
 * Phase 13Q は、Phase 13 の review/adoption model を使って candidate diversity、voice independence、entry harmony を生成側で改善した。
 * Phase 13R は automatic adoption complete として、通常生成経路を採用済み baseline へ揃え、後半 phrase convergence を修正した。legacy `baseline` は比較 model として残すが、CLI、MIDI、Web UI は暗黙に古い path を鳴らさない。
 * Phase 8/9 は、Phase 13R の automatic default path だけでは戻らないという判断により一度延期された。focused listening、seed 横断 subject-diversity follow-up、その follow-up で見つかった mechanical subject-fragment convergence と abrupt three-part silence の修正を完了し、`subjectFamilyDiversity` review summary、A/B delta、`buildSubject` 候補拡張、修正後 re-review の evidence を残した。
-* Phase 13T は完了済みだが、Phase 8 handoff は Phase 13U に supersede された。音楽的美しさをプロジェクトの核心として扱い、現行 default の再レビューで見つかった repeated entry formula、voice coupling、fragment transformation 不足、modal counter-subject weakness、metric false readiness を Phase 13U で先に修正する。既存モデル互換性、旧 guardrail margin、旧 expected values は、譜面上の美しさと矛盾する場合は採用条件にしない。現在は Phase 13U が実装対象である。
+* Phase 13U は完了済みだが、Phase 8 handoff は Phase 13V に supersede された。音楽的美しさをプロジェクトの核心として扱い、post-13U の譜面レビューで見つかった line agency、entry formula recurrence、counter-subject survivability、long-run development、metric false acceptance を Phase 13V で先に修正する。既存モデル互換性、旧 guardrail margin、旧 expected values は、譜面上の美しさと矛盾する場合は採用条件にしない。現在は Phase 13V が実装対象である。
 
 ## 内部表現
 
