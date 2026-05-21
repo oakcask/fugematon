@@ -65,20 +65,21 @@ type SubjectFamilySeed = {
   };
 };
 
+type InitialSubjectRhetoricDiversity = {
+  uniqueRhythmPatternCount: number;
+  uniqueClimaxIndexCount: number;
+};
+
 export function summarizeSubjectFamilyDiversity(seeds: readonly SubjectFamilySeed[]): SubjectFamilyDiversitySummary {
   const initialSubjectFamilies = summarizeInitialSubjectFamilies(seeds);
   const subjectFragmentFamilies = summarizeSubjectFragmentFamilies(seeds);
-  const uniqueInitialSubjectRhythmPatternCount = new Set(
-    seeds.map((seed) => seed.initialSubjectProfile.rhythmPattern.join("-")),
-  ).size;
-  const uniqueInitialSubjectClimaxIndexCount = new Set(seeds.map((seed) => seed.initialSubjectProfile.localClimaxIndex))
-    .size;
+  const initialSubjectRhetoric = summarizeInitialSubjectRhetoric(seeds);
   const topInitialSubjectFamilyShare = initialSubjectFamilies[0]?.share ?? 0;
   const topInitialSubjectFragmentFamilyShare = subjectFragmentFamilies[0]?.share ?? 0;
   const findings = summarizeFindings({
     uniqueInitialSubjectFamilyCount: initialSubjectFamilies.length,
-    uniqueInitialSubjectRhythmPatternCount,
-    uniqueInitialSubjectClimaxIndexCount,
+    uniqueInitialSubjectRhythmPatternCount: initialSubjectRhetoric.uniqueRhythmPatternCount,
+    uniqueInitialSubjectClimaxIndexCount: initialSubjectRhetoric.uniqueClimaxIndexCount,
     topInitialSubjectFamilyShare,
     topInitialSubjectFragmentFamilyShare,
   });
@@ -87,8 +88,8 @@ export function summarizeSubjectFamilyDiversity(seeds: readonly SubjectFamilySee
     schemaVersion: 1,
     seedCount: seeds.length,
     uniqueInitialSubjectFamilyCount: initialSubjectFamilies.length,
-    uniqueInitialSubjectRhythmPatternCount,
-    uniqueInitialSubjectClimaxIndexCount,
+    uniqueInitialSubjectRhythmPatternCount: initialSubjectRhetoric.uniqueRhythmPatternCount,
+    uniqueInitialSubjectClimaxIndexCount: initialSubjectRhetoric.uniqueClimaxIndexCount,
     topInitialSubjectFamilyShare,
     topInitialSubjectFragmentFamilyShare,
     initialSubjectFamilyEntropy: roundRatio(
@@ -154,13 +155,7 @@ function summarizeInitialSubjectFamilies(seeds: readonly SubjectFamilySeed[]): S
 
   for (const seed of seeds) {
     const profile = seed.initialSubjectProfile;
-    const key = [
-      profile.degreePattern.join("-"),
-      profile.rhythmPattern.join("-"),
-      profile.localClimaxIndex,
-      profile.tailMotion,
-      profile.contourClass,
-    ].join("|");
+    const key = initialSubjectFamilyKey(profile);
     const current = counts.get(key);
     if (current === undefined) {
       counts.set(key, {
@@ -193,6 +188,23 @@ function summarizeInitialSubjectFamilies(seeds: readonly SubjectFamilySeed[]): S
       (left, right) =>
         right.seedCount - left.seedCount || left.degreePattern.join("-").localeCompare(right.degreePattern.join("-")),
     );
+}
+
+function summarizeInitialSubjectRhetoric(seeds: readonly SubjectFamilySeed[]): InitialSubjectRhetoricDiversity {
+  return {
+    uniqueRhythmPatternCount: new Set(seeds.map((seed) => seed.initialSubjectProfile.rhythmPattern.join("-"))).size,
+    uniqueClimaxIndexCount: new Set(seeds.map((seed) => seed.initialSubjectProfile.localClimaxIndex)).size,
+  };
+}
+
+function initialSubjectFamilyKey(profile: InitialSubjectProfile): string {
+  return [
+    profile.degreePattern.join("-"),
+    profile.rhythmPattern.join("-"),
+    profile.localClimaxIndex,
+    profile.tailMotion,
+    profile.contourClass,
+  ].join("|");
 }
 
 function summarizeSubjectFragmentFamilies(seeds: readonly SubjectFamilySeed[]): SubjectFragmentFamilySummary[] {
