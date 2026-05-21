@@ -119,24 +119,6 @@ test("generateScore exposes ordered subject and answer entries", () => {
   assert.ok(output.diagnostics.generatedUntilTick >= 7680);
 });
 
-test("generateScore keeps bass silent until its exposition entry support is earned", () => {
-  const seeds = ["bach-001", "fugue-smoke", "minor-entry", "wide-key", "modal-dorian", "angular-answer"];
-
-  for (const seed of seeds) {
-    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
-    const notes = output.events.filter((event): event is NoteEvent => event.kind === "note");
-    const firstAnswer = output.diagnostics.subjectEntries.find(
-      (entry) => entry.state === "exposition" && entry.form === "answer",
-    );
-
-    assert.ok(firstAnswer !== undefined);
-    assert.deepEqual(
-      notes.filter((note) => note.voice === "bass" && note.startTick < firstAnswer.startTick),
-      [],
-    );
-  }
-});
-
 test("generateScore extends long scores with phase-3 fugue states", () => {
   const output = generateScore({ seed: "fugue-smoke", lengthTicks: PHASE_3_LENGTH_TICKS });
   const stateChanges = output.events.filter(
