@@ -39,7 +39,9 @@ Review signal へ降格するもの:
 
 Completed exception: Phase 13S は、Phase 13R 後の score review で確認した主題リズムの同型化、entry friction、voice lockstep、counter-subject identity、form metric の説明不足を Phase 8/9 前の開始条件へ昇格しました。この例外は、旧 Phase 6/7 beauty gate を復活させるものではなく、音楽的美しさを project core として扱い、metric が譜面上の良さを表現できているかを再検証するためです。既存モデル互換性、旧 guardrail margin、旧 expected values は、譜面上の改善と矛盾する場合は採用条件にしません。
 
-Current exception: Phase 13T は、Phase 13S 後の current beauty audit で確認した entry sonority、voice-pair lockstep、pitch-class unison、fragment function、modal counter-subject identity を Phase 8/9 前の開始条件へ昇格します。全 seed にまたがる review signal は Phase 8 の表示課題へ降格せず、score-window evidence と focused listening が metric の説明力を確認するまで作曲モデル側の blocker として扱います。Phase 13T は generator repair と同じ優先度で metric reconstruction も扱い、既存 axis が音楽的原因を隠す場合は分割、改名、降格、削除、または local sentinel 化します。
+Completed exception: Phase 13T は、Phase 13S 後の current beauty audit で確認した entry sonority、voice-pair lockstep、pitch-class unison、fragment function、modal counter-subject identity を Phase 8/9 前の開始条件へ昇格しました。全 seed にまたがる review signal は Phase 8 の表示課題へ降格せず、score-window evidence と focused listening が metric の説明力を確認するまで作曲モデル側の blocker として扱います。Phase 13T は generator repair と同じ優先度で metric reconstruction も扱い、既存 axis が音楽的原因を隠す場合は分割、改名、降格、削除、または local sentinel 化します。
+
+Current exception: Phase 13U は、Phase 13T 後の current beauty replan review で確認した repeated entry formula、voice coupling、fragment transformation 不足、modal counter-subject weakness、metric false readiness を Phase 8/9 前の開始条件へ昇格します。Reference aggregate の green state や diagnostic reclassification は、譜面上の美しさを示す score-window evidence なしには採用根拠にしません。既存モデル互換性、旧 guardrail margin、旧 expected values は、譜面上の改善と矛盾する場合は採用条件にしません。
 
 ## A/B Review
 
@@ -54,6 +56,7 @@ Model adoption では、A/B summary の次の項目を合わせて読む。
 * Phase 13R subject-diversity repair では `subjectFamilyDiversity` の unique family count、top initial subject family share、top subject-fragment family share が改善または説明可能な tradeoff を示す。
 * Phase 13S では subject rhythm / climax diversity、counter-subject family、entry-local dissonance role、voice-pair score windows、episode / stretto phrase function が、metric 改善の具体的な譜面症状を説明する。
 * Phase 13T では entry-window sonority、voice-pair independence、fragment function、modal counter-subject windows、focused listening notes が、metric 改善または metric reconstruction の具体的な譜面症状を説明する。
+* Phase 13U では reusable entry formula、voice-pair coupling span、fragment transformation、modal counter-subject preservation、metric truthfulness が、metric movement ではなく生成譜面の改善として説明される。
 * metric reconstruction がある場合は、old axis と new axis を同じ改善量として扱わず、何が reclassification で何が generated score の改善かを分けて記録する。
 * manual listening gap が残る場合は、採用根拠として未実施であることを明記する。
 

@@ -136,4 +136,4 @@ Phase 8/9 は削除しない。ただし Phase 10 後の譜面レビューで、
 * Phase 8: ring buffer replay、rewind、MVP sliders、parameter-change meta event。
 * Phase 9: Dedicated Web Worker、deadline、best-so-far fallback。
 
-Phase 8/9 へ戻る条件は後続 Phase で更新され、Phase 13S の music-beauty-first rewrite は完了した。現在は Phase 13T で、現行 default の entry sonority、voice-pair independence、fragment function、modal counter-subject identity を Phase 8 前に扱う。
+Phase 8/9 へ戻る条件は後続 Phase で更新され、Phase 13S の music-beauty-first rewrite と Phase 13T の entry-sonority evidence は完了した。現在は Phase 13U で、現行 default の repeated entry formula、voice coupling、fragment transformation、modal counter-subject weakness、metric truthfulness を Phase 8 前に扱う。
