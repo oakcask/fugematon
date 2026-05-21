@@ -28,6 +28,15 @@ export type Phase13SMusicBeautyMetrics = {
   counterSubjectIdentityRetentionTotal: number;
 };
 
+export type Phase13TCurrentBlockerMetrics = {
+  seedCount: number;
+  durationBasedLockstepReviewSeedCount: number;
+  pitchClassUnisonReviewSeedCount: number;
+  unresolvedEntrySevereIntervalSentinelCount: number;
+  topSubjectFragmentFamilyShare: number;
+  lowModalCounterSubjectIdentitySeedCount: number;
+};
+
 export function collectPhase13SMusicBeautyMetrics(seeds: readonly string[]): Phase13SMusicBeautyMetrics {
   const rhythmPatterns = new Set<string>();
   const climaxIndexes = new Set<number>();
@@ -66,6 +75,49 @@ export function collectPhase13SMusicBeautyMetrics(seeds: readonly string[]): Pha
   };
 }
 
+export function collectPhase13TCurrentBlockerMetrics(seeds: readonly string[]): Phase13TCurrentBlockerMetrics {
+  const topSubjectFragments = new Map<string, number>();
+  let durationBasedLockstepReviewSeedCount = 0;
+  let pitchClassUnisonReviewSeedCount = 0;
+  let unresolvedEntrySevereIntervalSentinelCount = 0;
+  let lowModalCounterSubjectIdentitySeedCount = 0;
+
+  for (const seed of seeds) {
+    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
+    const axes = new Map(output.diagnostics.qualityVector.axes.map((axis) => [axis.axis, axis]));
+    if (axes.get("durationBasedLockstep")?.status === "review-required") {
+      durationBasedLockstepReviewSeedCount += 1;
+    }
+    if (axes.get("pitchClassUnisonDuration")?.status === "review-required") {
+      pitchClassUnisonReviewSeedCount += 1;
+    }
+    unresolvedEntrySevereIntervalSentinelCount += output.diagnostics.qualityVector.localSentinels.filter(
+      (sentinel) => sentinel.kind === "unresolved-entry-severe-interval",
+    ).length;
+
+    const topSubjectFragment = output.diagnostics.phase12Review.subjectStemFamilies.find(
+      (family) => family.form === "subject-fragment",
+    );
+    if (topSubjectFragment !== undefined) {
+      const key = topSubjectFragment.pattern.join("-");
+      topSubjectFragments.set(key, (topSubjectFragments.get(key) ?? 0) + 1);
+    }
+
+    if (isModalCounterSubjectRiskSeed(seed) && output.diagnostics.counterSubjectIdentityRetention < 0.65) {
+      lowModalCounterSubjectIdentitySeedCount += 1;
+    }
+  }
+
+  return {
+    seedCount: seeds.length,
+    durationBasedLockstepReviewSeedCount,
+    pitchClassUnisonReviewSeedCount,
+    unresolvedEntrySevereIntervalSentinelCount,
+    topSubjectFragmentFamilyShare: Math.max(0, ...topSubjectFragments.values()) / seeds.length,
+    lowModalCounterSubjectIdentitySeedCount,
+  };
+}
+
 function initialSubjectRhythmPattern(output: GenerationOutput, voice: Voice, startTick: number): string {
   const subjectLength = output.diagnostics.subjectEntries.find(
     (entry) => entry.voice === voice && entry.startTick === startTick,
@@ -79,6 +131,16 @@ function initialSubjectRhythmPattern(output: GenerationOutput, voice: Voice, sta
     .slice(0, subjectLength)
     .map((note) => Math.round(note.durationTicks / TICKS_PER_QUARTER))
     .join("-");
+}
+
+function isModalCounterSubjectRiskSeed(seed: string): boolean {
+  return (
+    seed === "modal-answer" ||
+    seed === "dense-modal" ||
+    seed === "modal-cadence" ||
+    seed === "angular-answer" ||
+    seed === "modal-dorian"
+  );
 }
 
 function localClimaxIndex(pattern: readonly number[]): number {
