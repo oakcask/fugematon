@@ -95,6 +95,15 @@ pnpm ui:inspect
 
 The inspection starts the Vite development server, checks desktop and mobile Chromium viewports, captures screenshots, and fails on browser console errors.
 
+Run the same smoke inspection against the production bundle:
+
+```sh
+pnpm build
+pnpm ui:inspect:prod
+```
+
+The production inspection serves `packages/web/app-dist` with Vite preview and is used as the pre-deploy GitHub Pages gate.
+
 Create a production web build:
 
 ```sh
