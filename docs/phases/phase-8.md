@@ -1,8 +1,8 @@
 # Phase 8: 無限再生セッション MVP
 
-Phase 8 は、Phase 13S の music-beauty-first rewrite 後に戻る operational lane である。目的は細かな生成パラメータ UI を増やすことではなく、長時間聴ける無限再生セッションを成立させ、内部状態を鑑賞用 visualizer として見せることである。
+Phase 8 は、Phase 13T の voice-independence and entry-sonority rewrite 後に戻る operational lane である。目的は細かな生成パラメータ UI を増やすことではなく、長時間聴ける無限再生セッションを成立させ、内部状態を鑑賞用 visualizer として見せることである。
 
-Phase 13S は完了した。Phase 8 は、Phase 13S で記録した remaining voice-pair lockstep と pitch-class unison risk を UI や境界設計で隠さず、review signal と listening note として見える状態にして開始する。
+Phase 13S は完了したが、現行 default の再レビューで entry sonority、voice-pair lockstep、pitch-class unison、fragment function、modal counter-subject identity が Phase 8 前 blocker と確認された。Phase 8 は Phase 13T 完了後に再開する。
 
 詳細な route は [Phase 7+ 再編計画](phase-7-plus-reorg.md) を読む。品質指標の意味は [quality metrics reference](../reference/quality-metrics.md) を読む。
 
@@ -20,7 +20,7 @@ Phase 13S は完了した。Phase 8 は、Phase 13S で記録した remaining vo
 * 巻き戻し地点から別分岐して生成する branch mode。
 * Worker fallback、deadline tuning、AudioWorklet。
 * 無限再生の聴感問題、特に subject sameness、entry friction、voice lockstep、weak fugal development を UI 操作で隠して採用すること。
-* Phase 13S の残課題である voice-pair lockstep、pitch-class unison、長時間聴取疲労を、境界設計や visualizer で見えにくくすること。
+* Phase 13T の対象である entry friction、voice-pair lockstep、pitch-class unison、mechanical fragment recurrence、modal counter-subject weakness、長時間聴取疲労を、境界設計や visualizer で見えにくくすること。
 
 ## Completion Conditions
 
@@ -31,4 +31,4 @@ Phase 13S は完了した。Phase 8 は、Phase 13S で記録した remaining vo
 * visualizer が内部状態を過度な数値パネルではなく、色、透明度、ハイライト、軌跡、境界演出として見せる。
 * manual listening note では、境界が隠れるべき箇所と終止すべき箇所を分けて記録する。
 * 通常生成経路が [Phase 13R](phase-13r.md) で採用した default model と一致し、legacy `baseline` へ暗黙に戻っていないことを確認する。
-* Phase 13S の score-window evidence、focused manual listening、検出された音楽的問題の修正と再レビューが完了している。
+* Phase 13T の score-window evidence、focused manual listening、検出された音楽的問題の修正と再レビューが完了している。
