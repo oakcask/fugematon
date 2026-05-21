@@ -30,7 +30,7 @@
 | `entrySupportInstabilityCount` | subject / answer entry 周辺の支え声部が和声的に不安定な箇所。 | root、chord member、avoid note、解決先を entry 単位で読む。 |
 | `severeEntryIntervalCount` | entry 周辺の m2、M2、m7、M7 など聴感上目立つ interval。 | count だけでなく duration と解決文脈を見る。 |
 | `unresolvedSevereEntryIntervalCount` | severe interval が resolution deadline までに説明されない箇所。 | entry harmony の主要 review signal。Phase 13 以降は duration axis も見る。 |
-| `entryBoundaryContinuity` | bass subject / answer entry 境界で、外声が同時に再発音しているか、delayed / carried support があるかを読む summary。 | Phase 13W 以降は `synchronizedResetCount` を Phase 8 の review signal として扱い、playback smoothing ではなく score continuity で説明する。 |
+| `entryBoundaryContinuity` | bass subject / answer entry 境界で、外声が同時に再発音しているか、delayed / carried support があるかを読む summary。 | Phase 13X 以降は初回 bass entry と post-exposition bass entry を分けて読み、playback smoothing ではなく score continuity で説明する。 |
 
 ## Melody And Texture
 
@@ -58,7 +58,7 @@
 | `candidatePoolOracle` | selected candidate と alternatives を比べ、selection model で直せる問題か、generator / section planner が足りない問題かを切り分ける。Phase 13Q 以降は viable candidate diversity も出す。 |
 | `phase11Review` | register、functional thinning、state grammar、metrical harmony の summary。 |
 | `phase12Review` | subject stem、answer transform、fragment derivation、phrase function、section-state pattern の反復 summary。 |
-| `entryBoundaryContinuity` | Phase 13W の bass-entry boundary summary。outside onset、delayed support、carried support、synchronized reset classification を持つ。 |
+| `entryBoundaryContinuity` | Phase 13W/13X の bass-entry boundary summary。first bass entry window、post-exposition windows、outside onset、entry で切れた外声、delayed support、carried support、synchronized reset classification を持つ。 |
 | `qualityVector` | Phase 13 以降の normalized review/adoption signal。詳細は [quality vector](quality-vector.md)。 |
 | `phase13QReview` | Phase 13 local sentinel を selected candidate explanation の section、entry、voice pair、resolution deadline へ戻す review-only bridge。 |
 | `phase13RReview` | Phase 13R の per-score convergence review signal。Seed 横断の主題語彙崩壊は bundle-level `subjectFamilyDiversity` と合わせて読む。 |
