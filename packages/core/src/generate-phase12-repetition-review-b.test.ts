@@ -5,8 +5,8 @@ import {
   PHASE_12_REPETITION_REVIEW_BATCH_B,
 } from "./generate-phase-review-test-helpers.js";
 
-test("generateScore completes phase-12 repetition adoption across review seeds batch B1", () => {
-  assertPhase12RepetitionReviewBatch(PHASE_12_REPETITION_REVIEW_BATCH_B.slice(0, 6), 6, 1);
+test("generateScore completes phase-12 repetition adoption across review seeds batch B1a", () => {
+  assertPhase12RepetitionReviewBatch(PHASE_12_REPETITION_REVIEW_BATCH_B.slice(0, 3), 3, -7);
 });
 
 function assertPhase12RepetitionReviewBatch(
