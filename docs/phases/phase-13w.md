@@ -2,7 +2,7 @@
 
 Phase 13W is inserted after Phase 13V and before Phase 13X. Its purpose is to fix the audible reset at post-exposition bass entries where the three outside voices restart together instead of carrying independent continuity into the entry.
 
-Status: complete for post-exposition bass entries. Phase 13X supersedes the direct Phase 8 handoff because the exposition first bass answer was outside this phase's review scope.
+Status: complete for post-exposition bass entries. Phase 13X supersedes the direct Phase 8 handoff because the exposition first bass answer was outside this phase's review scope, and Phase 13Y then generalizes entry continuity beyond bass-specific windows.
 
 Starting review: [Phase 13W entry-boundary review](../reviews/phase-13w-entry-boundary-review.md).
 Completion review: [Phase 13W completion review](../reviews/phase-13w-completion-review.md).
@@ -10,7 +10,7 @@ Superseding review: [Phase 13X first bass entry review](../reviews/phase-13x-fir
 
 ## Rationale
 
-Phase 13V improved entry rhetoric, line-agency scoring, and counter-subject survivability, but it did not model continuity across entry boundaries. A focused 22 seed inspection showed that the first bass entry window has all three outside voices starting a new support note at the same tick. The texture is therefore not silent in event data, but it sounds like a stop because all non-bass voices re-articulate together when the bass enters.
+Phase 13V improved entry rhetoric, line-agency scoring, and counter-subject survivability, but it did not model continuity across entry boundaries. A focused 22 seed inspection showed that post-exposition bass entry windows had all three outside voices starting a new support note at the same tick. The texture is therefore not silent in event data, but it sounds like a stop because all non-bass voices re-articulate together when the bass enters.
 
 The source is structural:
 
@@ -69,7 +69,7 @@ Use the 22 seed review set from Phase 13V as the minimum bundle. Focused windows
 
 Phase 13W is complete only when:
 
-* the 22 seed bundle no longer has unprepared three-outside-voice synchronized onset at the first bass entry window;
+* the 22 seed bundle no longer has unprepared three-outside-voice synchronized onset at the reviewed post-exposition bass entry windows;
 * focused score-window review shows at least one outside voice carrying, delaying, resolving, or preparing across the bass entry in representative and risk seeds;
 * counter-subject identity does not regress into generic support;
 * Phase 13V review summaries remain visible and any regressions are explained as musical tradeoffs;
@@ -84,8 +84,8 @@ Phase 13W is complete as of the completion review.
 * The 22 seed review bundle has `unpreparedSynchronizedResetSeedCount: 0` and `continuitySupportedSeedCount: 22`.
 * Focused windows for `bach-001`, `fugue-smoke`, `bright-answer`, `contrary-answer`, and `dense-modal` keep the bass entry while delaying at least one upper voice by half a beat, so the entry is no longer a three-outside-voice mechanical restart.
 * `organ-default` and `strict-counterpoint` review bundles were generated for the same 22 seed length. The score-level onset pattern is the same in both profiles; playback articulation still uses normal note attacks, so the repair is in the score rather than hidden by rendering.
-* Phase 13V review summaries remain visible through `qualityVector.phase13VReview`; any remaining line-agency, entry-formula, counter-subject, or long-window review signal remains Phase 13X/Phase 8 input rather than a Phase 13W blocker.
+* Phase 13V review summaries remain visible through `qualityVector.phase13VReview`; any remaining line-agency, entry-formula, counter-subject, or long-window review signal remains Phase 13X/Phase 13Y/Phase 8 input rather than a Phase 13W blocker.
 
 ## Phase 8 Handoff
 
-Phase 13X should keep the post-exposition `entryBoundaryContinuity` evidence from this phase, but it must add first-bass-entry evidence before Phase 8 resumes. Infinite playback and visualizer work may proceed only after Phase 13X; segment design must not hide a future `synchronized-reset` finding behind playback smoothing or UI boundary effects.
+Phase 13X should keep the post-exposition `entryBoundaryContinuity` evidence from this phase, but it must add first-bass-entry evidence before handing off to Phase 13Y. Infinite playback and visualizer work may proceed only after Phase 13Y generalizes entry continuity beyond bass-specific windows; segment design must not hide a future `synchronized-reset` finding behind playback smoothing or UI boundary effects.

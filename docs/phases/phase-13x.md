@@ -1,10 +1,11 @@
 # Phase 13X: First Bass Entry Continuity Repair
 
-Phase 13X is inserted after Phase 13W and before Phase 8. Its purpose is to fix the exposition bass answer where soprano, alto, and tenor all reset at the same tick as the first bass entry.
+Phase 13X is inserted after Phase 13W and before Phase 13Y. Its purpose is to fix the exposition bass answer where soprano, alto, and tenor all reset at the same tick as the first bass entry.
 
-Status: planned. Phase 8 is deferred until Phase 13X records score-window and focused listening evidence.
+Status: planned. Phase 8 is deferred until Phase 13Y records generalized entry-continuity evidence.
 
 Starting review: [Phase 13X first bass entry review](../reviews/phase-13x-first-bass-entry-review.md).
+Follow-up generalization: [Phase 13Y](phase-13y.md).
 
 ## Rationale
 
@@ -15,6 +16,8 @@ The problem is musical, not only diagnostic:
 * a fugal exposition should preserve line continuity in already-entered voices unless a cadence or tutti gesture prepares a collective articulation;
 * the generated windows do not carry, suspend, resolve, or stagger any outside voice through the first bass answer;
 * aggregate quality metrics can look ready while a structurally central score window remains unconvincing.
+
+Phase 13X is intentionally narrow. It repairs the confirmed blocker in the current fixed exposition order. Phase 13Y generalizes the same entry-continuity rule so future entry orders or non-bass entries cannot hide the same synchronized reset under another voice name.
 
 ## Scope
 
@@ -28,6 +31,7 @@ The problem is musical, not only diagnostic:
 
 * Playback smoothing, MIDI articulation masking, or WebAudio envelope changes as substitutes for score continuity.
 * Visualizer or segment-boundary design that hides the first bass-entry reset.
+* Generalizing entry-boundary continuity to every important entry or alternate exposition order. Phase 13Y handles that after this confirmed first-bass-answer repair.
 * Treating legacy guardrail margins or existing expected values as adoption blockers when generated score windows improve musically.
 * Branching, Worker fallback, and Phase 8 operational UI work.
 
@@ -46,8 +50,8 @@ The problem is musical, not only diagnostic:
 2. Thread previous-note boundary context into exposition support generation before the bass answer.
 3. Add continuity-preserving support candidates for held voices, prepared suspensions, staggered counter-subject continuation, and cadentially justified tutti.
 4. Update candidate scoring to prefer musically prepared continuity over same-tick support reset.
-5. Regenerate the 22 seed review bundle and document score-window examples before Phase 8 resumes.
+5. Regenerate the 22 seed review bundle and document score-window examples before Phase 13Y generalization starts.
 
 ## Phase 8 Handoff
 
-Phase 8 must not resume from Phase 13W alone. It can resume only after Phase 13X shows that the first bass entry and later bass returns are musically prepared score events rather than artifacts hidden by diagnostics, playback, or UI presentation.
+Phase 8 must not resume from Phase 13W or Phase 13X alone. Phase 13X should hand off a repaired first-bass-answer baseline to Phase 13Y, which must generalize the entry-continuity model beyond bass-specific windows before infinite playback resumes.

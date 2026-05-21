@@ -17,7 +17,7 @@ Phase 9 は Phase 8 後の operational lane である。目的は生成探索を
 * Worker 化と同時に生成品質の大きな採用判断を変えること。
 * AudioWorklet、OffscreenCanvas、SharedWorker、Service Worker の導入。必要性が明確になってから別途扱う。
 * 細かな生成パラメータ UI を増やすこと。
-* Phase 13V / Phase 13W / Phase 13X の音楽美 repair を Worker fallback や deadline policy で代替すること。
+* Phase 13V / Phase 13W / Phase 13X / Phase 13Y の音楽美 repair を Worker fallback や deadline policy で代替すること。
 
 ## Completion Conditions
 
@@ -25,4 +25,4 @@ Phase 9 は Phase 8 後の operational lane である。目的は生成探索を
 * timeout や fallback が reference diagnostics、review signal、quality vector の記録を消さない。
 * 長時間再生で replay、state-change history、boundary history が壊れない。
 * 生成、描画、再生、内部状態 visualizer が分離されても、操作感と音声が安定する。
-* Phase 13X の score-window evidence、focused manual listening、検出された音楽的問題の修正と再レビューを Phase 8 baseline として維持している。
+* Phase 13X の first-bass score-window evidence と Phase 13Y の generalized entry-continuity evidence、focused manual listening、検出された音楽的問題の修正と再レビューを Phase 8 baseline として維持している。

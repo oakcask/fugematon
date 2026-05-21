@@ -1,8 +1,8 @@
 # Phase 8: 無限再生セッション MVP
 
-Phase 8 は、Phase 13X の first bass entry continuity repair 後に戻る operational lane である。目的は細かな生成パラメータ UI を増やすことではなく、長時間聴ける無限再生セッションを成立させ、内部状態を鑑賞用 visualizer として見せることである。
+Phase 8 は、Phase 13Y の generalized entry-continuity repair 後に戻る operational lane である。目的は細かな生成パラメータ UI を増やすことではなく、長時間聴ける無限再生セッションを成立させ、内部状態を鑑賞用 visualizer として見せることである。
 
-Phase 13W は post-exposition bass entry の同時再発音を修正したが、exposition の初回 bass answer は review scope から外れていた。Phase 13X はこの初回 bass entry blocker を扱う。Phase 8 は Phase 13X の review signal を segment 境界設計で隠さず、修正 evidence 後に無限再生 operational lane を再開する。
+Phase 13W は post-exposition bass entry の同時再発音を修正したが、exposition の初回 bass answer は review scope から外れていた。Phase 13X はこの初回 bass entry blocker を扱う。Phase 13Y は、その修理を bass 固有の規則に閉じず、entry voice、entry order、already-entered voices に基づく一般的な entry-boundary continuity model へ広げる。Phase 8 は Phase 13Y の review signal を segment 境界設計で隠さず、修正 evidence 後に無限再生 operational lane を再開する。
 
 詳細な route は [Phase 7+ 再編計画](phase-7-plus-reorg.md) を読む。品質指標の意味は [quality metrics reference](../reference/quality-metrics.md) を読む。
 
@@ -20,7 +20,7 @@ Phase 13W は post-exposition bass entry の同時再発音を修正したが、
 * 巻き戻し地点から別分岐して生成する branch mode。
 * Worker fallback、deadline tuning、AudioWorklet。
 * 無限再生の聴感問題、特に subject sameness、entry friction、voice lockstep、weak fugal development を UI 操作で隠して採用すること。
-* Phase 13V の対象である line agency、entry formula recurrence、counter-subject survivability、fragment sameness、long-run development、metric false acceptance、長時間聴取疲労や、Phase 13W / Phase 13X の対象である bass entry 境界の外声同時再発音を、境界設計や visualizer で見えにくくすること。
+* Phase 13V の対象である line agency、entry formula recurrence、counter-subject survivability、fragment sameness、long-run development、metric false acceptance、長時間聴取疲労や、Phase 13W / Phase 13X / Phase 13Y の対象である entry 境界の外声同時再発音を、境界設計や visualizer で見えにくくすること。
 
 ## Completion Conditions
 
@@ -32,3 +32,4 @@ Phase 13W は post-exposition bass entry の同時再発音を修正したが、
 * manual listening note では、境界が隠れるべき箇所と終止すべき箇所を分けて記録する。
 * 通常生成経路が [Phase 13R](phase-13r.md) で採用した default model と一致し、legacy `baseline` へ暗黙に戻っていないことを確認する。
 * Phase 13X の first bass entry score-window evidence、focused manual listening、検出された entry-boundary continuity 問題の修正と再レビューが完了している。
+* Phase 13Y の generalized entry-continuity evidence、non-bass entry-window review、alternate entry-order stress review、focused listening が完了している。

@@ -28,7 +28,7 @@ Musical judgement: this is not a convincing fugal exposition texture. A bass ans
 
 Current diagnostics coverage: inadequate before this PR. Phase 13W inspected only post-exposition bass entries by filtering out `state === "exposition"`, so its completion evidence did not cover the user-visible first bass entry.
 
-Project response: Phase 13X must precede Phase 8. The first bass-entry window is now exposed in `entryBoundaryContinuity` as separate evidence, but generation still needs a repair.
+Project response: Phase 13X must precede Phase 13Y. The first bass-entry window is now exposed in `entryBoundaryContinuity` as separate evidence, but generation still needs a repair. Phase 13Y then generalizes the entry-continuity model beyond bass-specific windows before Phase 8 resumes.
 
 ### 2. Phase 13W improved a narrower problem than its docs implied
 
@@ -36,7 +36,7 @@ Phase 13W correctly targeted post-exposition bass subject or answer boundaries. 
 
 Post-exposition review still deserves caution. The current 22 seed inspection shows 18 of 22 first post-exposition bass-entry windows have only two outside voices active at the bass attack, and 21 of 22 have no outside voice carried through the attack. Delayed outside support is present, so this is not the exact Phase 13W three-voice synchronized reset. Musically, though, it can still sound like a thin restart when delay is used as a metric escape rather than as prepared counterpoint.
 
-Project response: keep the Phase 13W repair, but demote its completion evidence from a Phase 8 unblocker to a narrower baseline. Phase 13X should judge both the initial exposition bass answer and the later bass returns by score-window continuity, not by the absence of one old classifier.
+Project response: keep the Phase 13W repair, but demote its completion evidence from a Phase 8 unblocker to a narrower baseline. Phase 13X should judge both the initial exposition bass answer and the later bass returns by score-window continuity, not by the absence of one old classifier. Phase 13Y should then make that judgement entry-role and entry-order aware.
 
 ### 3. The metric was truthful but scoped to the wrong question
 
@@ -60,11 +60,11 @@ Theory basis: a fugal exposition should distinguish the answering voice from the
 
 Evidence strength: confirmed across 22 seeds by ScoreEvent inspection and review bundle generation. Human listening remains a gap, but the score-level evidence is strong enough to block Phase 8.
 
-Project response: generator change, scoring change, and diagnostic truthfulness change. Do not solve this in MIDI articulation, WebAudio envelopes, or visualizer boundary design.
+Project response: generator change, scoring change, and diagnostic truthfulness change. Do not solve this in MIDI articulation, WebAudio envelopes, or visualizer boundary design. Do not let the bass-specific repair become the durable music-model boundary; Phase 13Y generalizes the rule after the confirmed blocker is fixed.
 
 ## Phase 13X Plan
 
-Phase 13X is inserted after Phase 13W and before Phase 8.
+Phase 13X is inserted after Phase 13W and before Phase 13Y. Phase 13Y is inserted before Phase 8 to generalize entry-boundary continuity beyond bass-specific windows.
 
 Completion conditions:
 
@@ -81,8 +81,8 @@ Implementation order:
 2. Make exposition support generation previous-note-aware before the bass answer enters.
 3. Add continuation candidates for held upper voice, prepared suspension, staggered counter-subject continuation, and cadentially justified tutti.
 4. Score first-bass-entry support by line continuity, counter-subject identity, dissonance preparation, and answer clarity.
-5. Regenerate the 22 seed bundle and record score-window examples before updating Phase 8 handoff.
+5. Regenerate the 22 seed bundle and record score-window examples before handing off to Phase 13Y.
 
 ## Open Gaps
 
-No human listening pass was completed in this review. The generated MIDI files are available in the review sample directory for focused listening, but the planning decision does not depend on completed listening because the score-level same-tick reset is deterministic across all reviewed seeds.
+No human listening pass was completed in this review. The generated MIDI files are available in the review sample directory for focused listening, but the planning decision does not depend on completed listening because the score-level same-tick reset is deterministic across all reviewed seeds. Non-bass entry-window review and alternate entry-order stress cases remain Phase 13Y work.
