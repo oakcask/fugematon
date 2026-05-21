@@ -20,6 +20,18 @@ Make music-theory review reproducible enough that an agent can find problems, co
 7. Separate findings into source-backed rules, project policy, and inference from generated artifacts.
 8. Update docs when the review changes phase scope, gate rationale, diagnostics priorities, seed selection, or music-quality expectations.
 
+## Human Feedback Ambiguity Rules
+
+When a review starts from human feedback, first preserve the user's wording as the symptom and then make its possible score meanings explicit before choosing metrics or scope.
+
+For each ambiguous phrase, record the possible interpretations and test at least the high-risk ones against ScoreEvent windows. Examples include:
+
+* "first entry" could mean first chronological entry, first entry by a voice, first entry after exposition, first subject return, or first audible problem location.
+* "voices stop" could mean literal silence, note endings at the same tick, same-tick re-articulation, texture thinning, loss of line agency, or playback-envelope attack.
+* "bass entry" could mean exposition bass answer, post-exposition bass subject, bass answer fallback, subject-fragment, or later return.
+
+Do not let a diagnostic helper or existing phase scope silently choose one interpretation. If the review intentionally narrows the meaning, state the excluded cases in the review and add a focused check for the excluded high-risk case when it could match the user's symptom.
+
 ## Literature Rules
 
 Use [references/literature-map.md](references/literature-map.md) to choose source families. Do not treat it as exhaustive.
