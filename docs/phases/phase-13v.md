@@ -2,7 +2,7 @@
 
 Phase 13V is inserted after Phase 13U and before Phase 8. Its purpose is to make musical beauty the planning center again after the post-13U score review showed that truthful metrics still do not prove beautiful fugue writing.
 
-Status: complete. Phase 8 may resume from the Phase 13V evidence baseline.
+Status: complete. Phase 13W supersedes the direct Phase 8 handoff by adding an entry-boundary continuity repair for bass entries.
 
 Starting review: [Phase 13V score beauty audit](../reviews/phase-13v-score-beauty-audit.md).
 Completion review: [Phase 13V completion review](../reviews/phase-13v-completion-review.md).
@@ -88,7 +88,7 @@ Phase 13V is complete only when:
 * counter-subject preservation increases in representative, modal, and long-arc seeds without hiding weak windows;
 * fragment recurrences show adjacent-section and long-window contrast, not only transformation labels;
 * `organ-default` and `strict-counterpoint` focused listening notes describe concrete score symptoms and accepted tradeoffs;
-* Phase 8 handoff states which remaining review signals are acceptable for infinite playback and why.
+* Phase 13W handoff states which remaining review signals are acceptable for entry-boundary repair and why.
 
 ## Completion Evidence
 
@@ -101,6 +101,8 @@ Phase 13V records generator-side improvement across the 22 seed bundle:
 
 The quality vector now carries `phase13VReview` as schema/model version 4 evidence, and selected-candidate evaluations use feature/model versions 6/12.
 
-## Handoff To Phase 8
+## Handoff To Phase 13W
 
-Phase 8 may resume with the Phase 13V review baseline. It must not use boundary design, playback mode, visualizer presentation, Worker fallback, or performance profile to hide unresolved formula recurrence, line coupling, fragment sameness, or weak counter-subject identity.
+Phase 13V remains the review baseline for line agency, entry-formula novelty, counter-subject survivability, and long-window development. Phase 13W must keep that evidence visible while fixing the newly confirmed entry-boundary reset where outside voices re-articulate together at bass entries.
+
+Phase 8 may resume only after Phase 13W records score-window and focused listening evidence for entry-boundary continuity. It must not use boundary design, playback mode, visualizer presentation, Worker fallback, or performance profile to hide unresolved formula recurrence, line coupling, fragment sameness, weak counter-subject identity, or synchronized outside-voice entry resets.

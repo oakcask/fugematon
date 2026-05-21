@@ -67,7 +67,7 @@ For Phase 13T and later, broad `durationBasedLockstep` or `pitchClassUnisonDurat
 
 Phase 13U adds a stricter adoption expectation on top of these fields: metric explanations must be checked against score-window musical judgement. A reference-profile pass or diagnostic reclassification does not prove beauty when repeated entry formulas, voice coupling, fragment sameness, or weak counter-subject identity remain audible or visible in the generated score.
 
-Phase 13U completion keeps generated score output stable and records rejected generator repair evidence. A local entry-support pitch repair was not adopted because it worsened older musical guardrails. Reviewers should treat schema 3 as a truthfulness layer for Phase 8 handoff, not as a claim that every remaining review signal has been fixed.
+Phase 13U completion keeps generated score output stable and records rejected generator repair evidence. A local entry-support pitch repair was not adopted because it worsened older musical guardrails. Reviewers should treat schema 3 as a truthfulness layer for later handoff, not as a claim that every remaining review signal has been fixed.
 
 `qualityVector.schemaVersion` 4 / `modelVersion` 4 adds Phase 13V completion evidence:
 
@@ -76,7 +76,9 @@ Phase 13U completion keeps generated score output stable and records rejected ge
 * `phase13VReview.counterSubjectSurvivability`: preserved, accepted-tradeoff, weak, and ratio summaries for counter-subject windows.
 * `phase13VReview.longWindowDevelopment`: fragment transformation claim counts and top function share for long-window contrast review.
 
-Phase 13V treats these fields as generator-side adoption evidence, not only explanation. The completion baseline improves entry formula novelty, line agency, counter-subject preservation, and fragment-function concentration while keeping remaining review signals visible for Phase 8.
+Phase 13V treats these fields as generator-side adoption evidence, not only explanation. The completion baseline improves entry formula novelty, line agency, counter-subject preservation, and fragment-function concentration while keeping remaining review signals visible for Phase 13W and Phase 8.
+
+Phase 13W adds a planned expectation, not yet a schema field: entry-boundary continuity evidence must identify synchronized outside-voice onsets at entry ticks and distinguish prepared rhetorical entries from mechanical section resets.
 
 ## Review Status
 

@@ -71,11 +71,11 @@ Repeated pattern: the problem appeared across the 22 seed bundle rather than one
 
 Evidence strength: confirmed for generated diagnostics, selected-candidate evaluation fields, quality-vector summaries, and focused score-window listening. Human pairwise listening remains a Phase 8 evidence gap.
 
-Project response: Phase 13V is complete. Phase 8 may resume with `qualityVector.schemaVersion` 4 / `modelVersion` 4 and selected-candidate `featureVersion` 6 / `evaluationModelVersion` 12. Phase 8 must preserve the Phase 13V review evidence in infinite playback, boundary review, and visualizer work.
+Project response: Phase 13V is complete, but the direct Phase 8 handoff is superseded by Phase 13W. Phase 13W starts from `qualityVector.schemaVersion` 4 / `modelVersion` 4 and selected-candidate `featureVersion` 6 / `evaluationModelVersion` 12, then fixes entry-boundary continuity before Phase 8 resumes. Phase 8 must preserve the Phase 13V and Phase 13W review evidence in infinite playback, boundary review, and visualizer work.
 
-## Phase 8 Handoff
+## Phase 13W Handoff
 
-Phase 8 can start because Phase 13V records generator-side movement and focused listening evidence for the four completion axes:
+Phase 13W can start because Phase 13V records generator-side movement and focused listening evidence for the four completion axes:
 
 | Axis | Pre | Post | Handoff |
 | --- | ---: | ---: | --- |
