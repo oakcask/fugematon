@@ -2,6 +2,7 @@ import { TICKS_PER_QUARTER, VOICE_RANGES } from "../constants.js";
 import type {
   DiagnosticIssue,
   DurationDistribution,
+  EntryBoundaryContinuitySummary,
   EntrySupportInstabilitySummary,
   EntrySupportSevereIntervalSummary,
   HarmonicPlan,
@@ -75,6 +76,7 @@ export function analyzeScore(
   stepwisePattern: StepwisePatternSummary;
   phase11Review: Phase11ReviewSummary;
   phase12Review: Phase12ReviewSummary;
+  entryBoundaryContinuity: EntryBoundaryContinuitySummary;
   qualityVector: Phase13QualityVector;
   ornamentCandidateCount: number;
   ornamentDensity: number;
@@ -290,10 +292,64 @@ function analyzeTextureDiagnostics(
     stepwisePattern: analyzeStepwisePattern(notes, sectionPlans),
     phase11Review: analyzePhase11ReviewSummary(notes, subjectEntries, sectionPlans),
     phase12Review: analyzePhase12ReviewSummary(subjectEntries, sectionPlans),
+    entryBoundaryContinuity: analyzeEntryBoundaryContinuity(notes, subjectEntries),
     qualityVector: analyzePhase13QualityVector(notes, subjectEntries, sectionPlans),
     ornamentCandidateCount,
     ornamentDensity: roundRatio(ornamentCandidateCount / supportNoteCount),
     ornamentPlacementReasons: analyzeOrnamentPlacementReasons(notes, subjectEntries, sectionPlans),
+  };
+}
+
+function analyzeEntryBoundaryContinuity(
+  notes: readonly NoteEvent[],
+  subjectEntries: readonly PlannedEntry[],
+): EntryBoundaryContinuitySummary {
+  const windows = subjectEntries
+    .filter((entry) => entry.voice === "bass" && entry.state !== "exposition" && entry.form !== "subject-fragment")
+    .map((entry) => {
+      const outsideVoices = VOICE_ENTRY_ORDER.filter((voice) => voice !== entry.voice);
+      const outsideOnsetVoices = outsideVoices.filter((voice) =>
+        notes.some((note) => note.voice === voice && note.startTick === entry.startTick),
+      );
+      const carriedOutsideVoices = outsideVoices.filter((voice) =>
+        notes.some(
+          (note) =>
+            note.voice === voice &&
+            note.startTick < entry.startTick &&
+            entry.startTick < note.startTick + note.durationTicks,
+        ),
+      );
+      const delayedOutsideVoices = outsideVoices.filter((voice) =>
+        notes.some(
+          (note) =>
+            note.voice === voice &&
+            entry.startTick < note.startTick &&
+            note.startTick <= entry.startTick + TICKS_PER_QUARTER / 2,
+        ),
+      );
+      const classification: "continuity-supported" | "synchronized-reset" =
+        outsideOnsetVoices.length >= 3 && carriedOutsideVoices.length === 0 && delayedOutsideVoices.length === 0
+          ? "synchronized-reset"
+          : "continuity-supported";
+
+      return {
+        entryVoice: entry.voice,
+        form: entry.form,
+        state: entry.state,
+        startTick: entry.startTick,
+        outsideOnsetVoices,
+        carriedOutsideVoices,
+        delayedOutsideVoices,
+        classification,
+      };
+    });
+
+  return {
+    schemaVersion: 1,
+    bassEntryWindowCount: windows.length,
+    synchronizedResetCount: windows.filter((window) => window.classification === "synchronized-reset").length,
+    continuitySupportedCount: windows.filter((window) => window.classification === "continuity-supported").length,
+    windows,
   };
 }
 

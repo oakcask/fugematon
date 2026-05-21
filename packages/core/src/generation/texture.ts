@@ -1,5 +1,13 @@
 import { TICKS_PER_QUARTER, VOICE_RANGES } from "../constants.js";
-import type { HarmonicPlan, KeyMode, KeySignature, MetricalHarmonyIntent, NoteEvent, Voice } from "../events.js";
+import type {
+  HarmonicPlan,
+  KeyMode,
+  KeySignature,
+  MetricalHarmonyIntent,
+  NoteEvent,
+  PlannedEntry,
+  Voice,
+} from "../events.js";
 import { metricalHarmonyIntentForDegree, nearestHarmonicAnchor, rootDegreeForFunction } from "./harmony.js";
 import { isModalMode } from "./key.js";
 import { melodicRoleForScaleDegree, scaleDegreePitchClass } from "./pitch.js";
@@ -112,6 +120,91 @@ function addEntryFreeCounterpoint(
       harmonicPlan: entry.harmonicPlan,
     });
   }
+}
+
+export function softenBassEntryBoundaryResets(
+  notes: Exposition["notes"],
+  entries: readonly PlannedEntry[],
+  previousNotes: readonly NoteEvent[],
+): void {
+  for (const entry of entries) {
+    if (entry.voice !== "bass" || entry.state === "exposition" || entry.form === "subject-fragment") {
+      continue;
+    }
+    softenBassEntryBoundaryReset(notes, entry.startTick, previousNotes);
+  }
+}
+
+function softenBassEntryBoundaryReset(
+  notes: Exposition["notes"],
+  entryStartTick: number,
+  previousNotes: readonly NoteEvent[],
+): void {
+  const outsideStartingNotes = notes.filter(
+    (note) => note.voice !== "bass" && note.startTick === entryStartTick && isTextureRole(note.role),
+  );
+  if (new Set(outsideStartingNotes.map((note) => note.voice)).size < 3) {
+    return;
+  }
+
+  const note = chooseBoundaryResetNoteToDelay(outsideStartingNotes, previousNotes, entryStartTick);
+  if (note === undefined) {
+    return;
+  }
+
+  const delayTicks = Math.min(TICKS_PER_QUARTER / 2, Math.floor(note.durationTicks / 2));
+  if (delayTicks <= 0) {
+    return;
+  }
+
+  const carriedNote = notes
+    .filter(
+      (candidate) =>
+        candidate.voice === note.voice &&
+        candidate.startTick < entryStartTick &&
+        candidate.startTick + candidate.durationTicks === entryStartTick,
+    )
+    .sort(compareNoteEvents)
+    .at(-1);
+  if (carriedNote !== undefined) {
+    carriedNote.durationTicks += delayTicks;
+  }
+  note.startTick += delayTicks;
+  note.durationTicks -= delayTicks;
+}
+
+function chooseBoundaryResetNoteToDelay(
+  notes: readonly NoteEvent[],
+  previousNotes: readonly NoteEvent[],
+  entryStartTick: number,
+): NoteEvent | undefined {
+  return [...notes].sort((left, right) => {
+    const rolePriority = Number(left.role === "counter-subject") - Number(right.role === "counter-subject");
+    if (rolePriority !== 0) {
+      return rolePriority;
+    }
+
+    return (
+      latestPreviousVoiceDistance(previousNotes, left.voice, entryStartTick) -
+      latestPreviousVoiceDistance(previousNotes, right.voice, entryStartTick)
+    );
+  })[0];
+}
+
+function latestPreviousVoiceDistance(
+  previousNotes: readonly NoteEvent[],
+  voice: Voice,
+  entryStartTick: number,
+): number {
+  const previous = previousNotes
+    .filter((note) => note.voice === voice && note.startTick < entryStartTick)
+    .sort(compareNoteEvents)
+    .at(-1);
+  if (previous === undefined) {
+    return Number.POSITIVE_INFINITY;
+  }
+
+  return Math.abs(entryStartTick - (previous.startTick + previous.durationTicks));
 }
 
 export function chooseTextureVoice(

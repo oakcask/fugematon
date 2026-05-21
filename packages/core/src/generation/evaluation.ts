@@ -45,6 +45,7 @@ const EVALUATION_WEIGHTS = {
     outerVoiceContraryMotion: 1,
     phase13VLineAgency: 2,
     phase13VEntryFormulaNovelty: 3,
+    phase13WEntryBoundaryReset: 0,
   },
   subjectClarity: {
     subjectIdentityViolation: 10_000,
@@ -156,6 +157,7 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
     diagnostics.qualityVector.phase13VReview.lineAgency.reviewRequiredSpanCount * 2;
   const phase13VEntryFormulaNoveltyCost =
     diagnostics.qualityVector.phase13VReview.entryFormulaNovelty.reviewRequiredFormulaCount;
+  const phase13WEntryBoundaryResetCost = diagnostics.entryBoundaryContinuity.synchronizedResetCount;
   const texture = {
     cost:
       diagnostics.samePitchOverlapCount * EVALUATION_WEIGHTS.texture.samePitchOverlap +
@@ -171,7 +173,8 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
       diagnostics.sharedRhythmOverlapCount * EVALUATION_WEIGHTS.texture.sharedRhythmOverlap +
       diagnostics.allVoiceSilenceGapCount * EVALUATION_WEIGHTS.texture.allVoiceSilenceGap +
       phase13VLineAgencyCost * EVALUATION_WEIGHTS.texture.phase13VLineAgency +
-      phase13VEntryFormulaNoveltyCost * EVALUATION_WEIGHTS.texture.phase13VEntryFormulaNovelty,
+      phase13VEntryFormulaNoveltyCost * EVALUATION_WEIGHTS.texture.phase13VEntryFormulaNovelty +
+      phase13WEntryBoundaryResetCost * EVALUATION_WEIGHTS.texture.phase13WEntryBoundaryReset,
     reward:
       diagnostics.rhythmicIndependenceScore * EVALUATION_WEIGHTS.texture.rhythmicIndependence +
       diagnostics.supportTextureRepetitionScore * EVALUATION_WEIGHTS.texture.supportTextureRepetition +
@@ -208,6 +211,7 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
       qualityVectorDurationBasedLockstep: qualityVectorAxisValue(diagnostics, "durationBasedLockstep"),
       phase13VLineAgencyCost,
       phase13VEntryFormulaNoveltyCost,
+      phase13WEntryBoundaryResetCost,
       shortStrongBeatEntryNoteCount: diagnostics.shortStrongBeatEntryNoteCount,
       entrySupportInstabilityCount: diagnostics.entrySupportInstabilityCount,
       allVoiceSilenceGapCount: diagnostics.allVoiceSilenceGapCount,

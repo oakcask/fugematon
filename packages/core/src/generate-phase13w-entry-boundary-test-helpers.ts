@@ -1,4 +1,9 @@
-import { PHASE_5_LENGTH_TICKS, TICKS_PER_QUARTER } from "./constants.js";
+import {
+  PHASE_5_11_ROTATION_SEEDS,
+  PHASE_5_LENGTH_TICKS,
+  PHASE_5_REVIEW_SEEDS,
+  TICKS_PER_QUARTER,
+} from "./constants.js";
 import type { NoteEvent, PlannedEntry, Voice } from "./events.js";
 import { generateScore } from "./generate.js";
 
@@ -10,6 +15,12 @@ export const PHASE_13W_FOCUSED_ENTRY_BOUNDARY_SEEDS = [
   "dense-modal",
 ] as const;
 
+export const PHASE_13W_REVIEW_SEEDS = [...PHASE_5_REVIEW_SEEDS, ...PHASE_5_11_ROTATION_SEEDS].map(({ seed }) => seed);
+export const PHASE_13W_REVIEW_BATCH_A = PHASE_13W_REVIEW_SEEDS.slice(0, 6);
+export const PHASE_13W_REVIEW_BATCH_B = PHASE_13W_REVIEW_SEEDS.slice(6, 12);
+export const PHASE_13W_REVIEW_BATCH_C = PHASE_13W_REVIEW_SEEDS.slice(12, 17);
+export const PHASE_13W_REVIEW_BATCH_D = PHASE_13W_REVIEW_SEEDS.slice(17);
+
 export type Phase13WEntryBoundaryWindow = {
   seed: string;
   state: PlannedEntry["state"];
@@ -18,12 +29,13 @@ export type Phase13WEntryBoundaryWindow = {
   startQuarter: number;
   outsideOnsetVoices: Voice[];
   carriedOutsideVoices: Voice[];
+  delayedOutsideVoices: Voice[];
 };
 
 export type Phase13WEntryBoundaryMetrics = {
   seedCount: number;
-  synchronizedOutsideOnsetSeedCount: number;
-  carriedOutsideVoiceSeedCount: number;
+  unpreparedSynchronizedResetSeedCount: number;
+  continuitySupportedSeedCount: number;
   windows: Phase13WEntryBoundaryWindow[];
 };
 
@@ -38,19 +50,28 @@ export function collectPhase13WEntryBoundaryMetrics(seeds: readonly string[]): P
 
   return {
     seedCount: seeds.length,
-    synchronizedOutsideOnsetSeedCount: windows.filter((window) => window.outsideOnsetVoices.length === 3).length,
-    carriedOutsideVoiceSeedCount: windows.filter((window) => window.carriedOutsideVoices.length > 0).length,
+    unpreparedSynchronizedResetSeedCount: windows.filter(
+      (window) =>
+        window.outsideOnsetVoices.length >= 3 &&
+        window.carriedOutsideVoices.length === 0 &&
+        window.delayedOutsideVoices.length === 0,
+    ).length,
+    continuitySupportedSeedCount: windows.filter(
+      (window) => window.carriedOutsideVoices.length > 0 || window.delayedOutsideVoices.length > 0,
+    ).length,
     windows,
   };
 }
 
 function findFirstBassSubjectOrAnswerEntry(entries: readonly PlannedEntry[]): PlannedEntry {
-  const entry = entries.find(
+  const subjectOrAnswerEntry = entries.find(
     (candidate) =>
       candidate.voice === "bass" && candidate.state !== "exposition" && candidate.form !== "subject-fragment",
   );
+  const entry =
+    subjectOrAnswerEntry ?? entries.find((candidate) => candidate.voice === "bass" && candidate.state !== "exposition");
   if (entry === undefined) {
-    throw new Error("missing post-exposition bass subject or answer entry");
+    throw new Error("missing post-exposition bass entry");
   }
 
   return entry;
@@ -72,6 +93,14 @@ function summarizeEntryBoundaryWindow(
         entry.startTick < note.startTick + note.durationTicks,
     )
     .map((note) => note.voice);
+  const delayedOutsideVoices = notes
+    .filter(
+      (note) =>
+        note.voice !== entry.voice &&
+        entry.startTick < note.startTick &&
+        note.startTick <= entry.startTick + TICKS_PER_QUARTER / 2,
+    )
+    .map((note) => note.voice);
 
   return {
     seed,
@@ -81,5 +110,6 @@ function summarizeEntryBoundaryWindow(
     startQuarter: entry.startTick / TICKS_PER_QUARTER,
     outsideOnsetVoices: [...new Set(outsideVoices)],
     carriedOutsideVoices: [...new Set(carriedOutsideVoices)],
+    delayedOutsideVoices: [...new Set(delayedOutsideVoices)],
   };
 }

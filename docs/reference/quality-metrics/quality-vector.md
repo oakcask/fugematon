@@ -78,7 +78,7 @@ Phase 13U completion keeps generated score output stable and records rejected ge
 
 Phase 13V treats these fields as generator-side adoption evidence, not only explanation. The completion baseline improves entry formula novelty, line agency, counter-subject preservation, and fragment-function concentration while keeping remaining review signals visible for Phase 13W and Phase 8.
 
-Phase 13W adds a planned expectation, not yet a schema field: entry-boundary continuity evidence must identify synchronized outside-voice onsets at entry ticks and distinguish prepared rhetorical entries from mechanical section resets.
+Phase 13W keeps the quality vector schema at version 4 and adds `entryBoundaryContinuity` beside it in `GenerationDiagnostics`. Entry-boundary continuity evidence identifies synchronized outside-voice onsets at bass entry ticks and distinguishes delayed or carried support from mechanical section resets.
 
 ## Review Status
 

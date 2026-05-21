@@ -35,6 +35,7 @@ import {
   addFunctionalThinningSupport,
   type ContinuityLineKind,
   fillAllVoiceSilenceGaps,
+  softenBassEntryBoundaryResets,
 } from "./texture.js";
 import type { Exposition, FugueScore, SubjectNote } from "./types.js";
 
@@ -122,6 +123,11 @@ export function buildFugueScore(
       sectionPlans,
       phraseIntent,
     );
+    if (selectionModel === "phase10-section-local-planner" && !hasPostExpositionBassEntry(subjectEntries)) {
+      softenBassEntryBoundaryResets(selection.section.notes, selection.section.subjectEntries, notes);
+      selection.section.notes.sort(compareNoteEvents);
+      selection.evaluation = evaluateCandidate(notes, selection.section);
+    }
     const selectedState = selection.section.sectionPlans[0]?.state ?? state;
     stateTransitions.push(selectedState);
     stateChanges.push({ tick: sectionStartTick, state: selectedState });
@@ -721,6 +727,12 @@ export function chooseContinuationSection(
       stateHistory: [...stateHistory.slice(0, -1), selectedState],
     }),
   };
+}
+
+function hasPostExpositionBassEntry(entries: readonly Exposition["subjectEntries"][number][]): boolean {
+  return entries.some(
+    (entry) => entry.voice === "bass" && entry.state !== "exposition" && entry.form !== "subject-fragment",
+  );
 }
 
 function describeCandidateDiversity(candidate: Exposition): CandidateDiversityDescriptor {

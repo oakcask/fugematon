@@ -2,6 +2,7 @@ import type {
   CandidateEvaluation,
   CandidatePoolOracleSummary,
   DurationDistribution,
+  EntryBoundaryContinuitySummary,
   EntrySupportInstabilitySummary,
   EntrySupportSevereIntervalSummary,
   FugueState,
@@ -98,6 +99,7 @@ export type TextureDiagnostics = {
   stepwisePattern: StepwisePatternSummary;
   phase11Review: Phase11ReviewSummary;
   phase12Review: Phase12ReviewSummary;
+  entryBoundaryContinuity: EntryBoundaryContinuitySummary;
   qualityVector: Phase13QualityVector;
   ornamentCandidateCount: number;
   ornamentDensity: number;

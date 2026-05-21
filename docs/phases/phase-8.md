@@ -2,7 +2,7 @@
 
 Phase 8 は、Phase 13W の entry-boundary continuity repair 後に戻る operational lane である。目的は細かな生成パラメータ UI を増やすことではなく、長時間聴ける無限再生セッションを成立させ、内部状態を鑑賞用 visualizer として見せることである。
 
-Phase 13V は完了したが、post-13V の focused inspection で bass entry 境界の外声 3 声同時再発音が Phase 8 前 blocker と確認された。Phase 8 は Phase 13W 完了後に再開する。
+Phase 13W は完了し、post-13V の focused inspection で確認された bass entry 境界の外声 3 声同時再発音は、entry-boundary continuity diagnostic と delayed outside-voice support で修正済みである。Phase 8 はこの review signal を segment 境界設計で隠さず、無限再生 operational lane を再開する。
 
 詳細な route は [Phase 7+ 再編計画](phase-7-plus-reorg.md) を読む。品質指標の意味は [quality metrics reference](../reference/quality-metrics.md) を読む。
 
