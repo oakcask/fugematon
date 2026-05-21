@@ -4,6 +4,8 @@ import type {
   HarmonicPlan,
   NoteEvent,
   Phase13TVoicePairFunctionSummary,
+  Phase13UVoicePairSpanClassification,
+  Phase13UVoicePairSpanSummary,
   Phase13VoicePairUnisonSummary,
   StyleProfile,
   Voice,
@@ -168,8 +170,129 @@ export function summarizeVoicePairFunctions(
   });
 }
 
+export function summarizeVoicePairSpans(
+  notes: readonly NoteEvent[],
+  sectionPlans: readonly HarmonicPlan[],
+): Phase13UVoicePairSpanSummary[] {
+  const checkpoints = noteCheckpoints(notes);
+  const spans: Phase13UVoicePairSpanSummary[] = [];
+
+  for (const [leftVoice, rightVoice] of PHASE_13_VOICE_PAIRS) {
+    let currentSpan: Phase13UVoicePairSpanSummary | undefined;
+
+    for (let index = 0; index < checkpoints.length - 1; index += 1) {
+      const startTick = checkpoints[index]!;
+      const endTick = checkpoints[index + 1]!;
+      const durationTicks = endTick - startTick;
+      const left = activeNoteForVoiceAt(notes, leftVoice, startTick);
+      const right = activeNoteForVoiceAt(notes, rightVoice, startTick);
+      const classification =
+        left === undefined || right === undefined
+          ? undefined
+          : classifyVoicePairSpan(left, right, sectionPlanAt(sectionPlans, startTick), startTick);
+
+      if (durationTicks <= 0 || classification === undefined) {
+        if (currentSpan !== undefined) {
+          spans.push(currentSpan);
+          currentSpan = undefined;
+        }
+        continue;
+      }
+
+      const sectionRole = sectionPlanAt(sectionPlans, startTick)?.state ?? "mixed";
+      if (
+        currentSpan !== undefined &&
+        currentSpan.startTick + currentSpan.durationTicks === startTick &&
+        currentSpan.classification === classification &&
+        currentSpan.sectionRole === sectionRole
+      ) {
+        currentSpan.durationTicks += durationTicks;
+      } else {
+        if (currentSpan !== undefined) {
+          spans.push(currentSpan);
+        }
+        currentSpan = {
+          leftVoice,
+          rightVoice,
+          startTick,
+          durationTicks,
+          sectionRole,
+          classification,
+          symptom: voicePairSpanSymptom(classification),
+        };
+      }
+    }
+
+    if (currentSpan !== undefined) {
+      spans.push(currentSpan);
+    }
+  }
+
+  return spans
+    .filter((span) => span.durationTicks >= TICKS_PER_QUARTER)
+    .sort(
+      (left, right) =>
+        right.durationTicks - left.durationTicks ||
+        left.startTick - right.startTick ||
+        voicePairLabel(left).localeCompare(voicePairLabel(right)),
+    )
+    .slice(0, 18);
+}
+
 function isEntryRole(role: NoteEvent["role"]): boolean {
   return role === "subject" || role === "answer" || role === "subject-fragment";
+}
+
+function classifyVoicePairSpan(
+  left: Pick<NoteEvent, "pitch" | "role" | "startTick" | "durationTicks">,
+  right: Pick<NoteEvent, "pitch" | "role" | "startTick" | "durationTicks">,
+  section: HarmonicPlan | undefined,
+  tick: number,
+): Phase13UVoicePairSpanClassification | undefined {
+  const pitchClassUnison = positiveModulo(left.pitch, 12) === positiveModulo(right.pitch, 12);
+  const durationLockstep = left.startTick === right.startTick && left.durationTicks === right.durationTicks;
+  if (left.pitch === right.pitch) {
+    return "exact-collision";
+  }
+  if (pitchClassUnison && isFunctionalReinforcement(left.role, right.role, section)) {
+    return "pitch-class-reinforcement";
+  }
+  if (pitchClassUnison) {
+    return "color-doubling";
+  }
+  if (!durationLockstep) {
+    return undefined;
+  }
+  if (isEntryRole(left.role) || isEntryRole(right.role)) {
+    return "subject-support";
+  }
+  if (isCadenceSupport(section, tick)) {
+    return "cadence-support";
+  }
+  if (isSequenceSupport(section)) {
+    return "sequence-support";
+  }
+  return "mechanical-coupling";
+}
+
+function voicePairSpanSymptom(classification: Phase13UVoicePairSpanClassification): string {
+  if (classification === "mechanical-coupling") {
+    return "voices share duration grids without a local contrapuntal role";
+  }
+  if (classification === "pitch-class-reinforcement") {
+    return "same-timbre voices reinforce the same pitch class around active material";
+  }
+  if (classification === "exact-collision") {
+    return "voices collide on the exact same pitch";
+  }
+  if (classification === "color-doubling") {
+    return "voices double the same pitch class as color rather than independent counterpoint";
+  }
+  return "voice-pair support has an identifiable local function";
+}
+
+function voicePairLabel(span: Pick<Phase13UVoicePairSpanSummary, "leftVoice" | "rightVoice">): string {
+  return `${span.leftVoice}-${span.rightVoice}`;
 }
 
 function isFunctionalReinforcement(

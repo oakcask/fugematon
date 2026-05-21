@@ -37,7 +37,26 @@ export function summarizeFragmentFunctionEvidence(
     uniqueFunctionCount: counts.size,
     topFunctionShare: topFunctions[0]?.share ?? 0,
     topFunctions,
+    transformationClaims: topFunctions.map((summary) => {
+      const transformationKinds = fragmentTransformationKinds(summary.functionKey);
+      return {
+        functionKey: summary.functionKey,
+        count: summary.count,
+        transformationKinds,
+        judgement: transformationClaimJudgement(transformationKinds.length, summary.share),
+      };
+    }),
   };
+}
+
+function transformationClaimJudgement(
+  transformationKindCount: number,
+  share: number,
+): Phase13TFragmentFunctionEvidence["transformationClaims"][number]["judgement"] {
+  if (transformationKindCount >= 3) {
+    return "developed";
+  }
+  return share >= 0.35 ? "review-required" : "underdeveloped";
 }
 
 export function summarizeCounterSubjectWindows(
@@ -76,8 +95,30 @@ export function summarizeCounterSubjectWindows(
       rhythmPattern: counterSubjectNotes.slice(0, 8).map((note) => Math.round(note.durationTicks / TICKS_PER_QUARTER)),
       contourClass: contourClass(counterSubjectNotes),
       supportCollisionCount,
+      preservationJudgement: counterSubjectPreservationJudgement(
+        counterSubjectRetentionKind(counterSubjectNotes),
+        supportCollisionCount,
+      ),
     };
   });
+}
+
+function fragmentTransformationKinds(functionKey: string): string[] {
+  const [transform, sequencePattern, cadenceKind, mode] = functionKey.split(":");
+  const kinds = new Set<string>();
+  if (transform !== undefined && transform !== "none") {
+    kinds.add(`transform:${transform}`);
+  }
+  if (sequencePattern !== undefined && sequencePattern !== "no-sequence") {
+    kinds.add(`sequence:${sequencePattern}`);
+  }
+  if (cadenceKind !== undefined) {
+    kinds.add(`cadence:${cadenceKind}`);
+  }
+  if (mode !== undefined) {
+    kinds.add(`mode:${mode}`);
+  }
+  return [...kinds].sort();
 }
 
 function counterSubjectRetentionKind(
@@ -92,6 +133,19 @@ function counterSubjectRetentionKind(
     return "altered";
   }
   return "weak";
+}
+
+function counterSubjectPreservationJudgement(
+  retentionKind: Phase13TCounterSubjectWindowSummary["retentionKind"],
+  supportCollisionCount: number,
+): Phase13TCounterSubjectWindowSummary["preservationJudgement"] {
+  if (retentionKind === "recognizable" && supportCollisionCount <= 2) {
+    return "preserved";
+  }
+  if (retentionKind === "weak") {
+    return "weak";
+  }
+  return "tradeoff";
 }
 
 function contourClass(notes: readonly NoteEvent[]): string {

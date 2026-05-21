@@ -11,16 +11,25 @@ import type {
   Phase13SopranoRepeatedNotePressureSummary,
   Phase13TMetricExplanationSummary,
   Phase13TVoicePairFunctionSummary,
+  Phase13UVoicePairSpanSummary,
   Phase13VoicePairUnisonSummary,
   PlannedEntry,
 } from "../events.js";
-import { summarizeEntrySevereIntervalDurations, summarizeEntrySonorities } from "./quality-vector-entry-windows.js";
+import {
+  summarizeEntryFormulaRecurrences,
+  summarizeEntrySevereIntervalDurations,
+  summarizeEntrySonorities,
+} from "./quality-vector-entry-windows.js";
 import { sectionPlanAt, voicePairKey } from "./quality-vector-shared.js";
 import {
   summarizeCounterSubjectWindows,
   summarizeFragmentFunctionEvidence,
 } from "./quality-vector-subject-material.js";
-import { summarizeVoicePairFunctions, summarizeVoicePairUnisons } from "./quality-vector-voice-pairs.js";
+import {
+  summarizeVoicePairFunctions,
+  summarizeVoicePairSpans,
+  summarizeVoicePairUnisons,
+} from "./quality-vector-voice-pairs.js";
 
 const PHASE_13_EXPECTED_MAX: Record<Phase13QualityVectorAxis, number> = {
   exactSamePitchUnisonDuration: 12,
@@ -51,27 +60,32 @@ export function analyzePhase13QualityVector(
 ): Phase13QualityVector {
   const voicePairUnisons = summarizeVoicePairUnisons(notes, sectionPlans);
   const voicePairFunctions = summarizeVoicePairFunctions(notes, sectionPlans);
+  const voicePairSpans = summarizeVoicePairSpans(notes, sectionPlans);
   const sopranoRepeatedNotePressure = summarizeSopranoRepeatedNotePressure(notes);
   const entrySevereIntervals = summarizeEntrySevereIntervalDurations(notes, subjectEntries);
   const entrySonorities = summarizeEntrySonorities(notes, subjectEntries);
+  const entryFormulaRecurrences = summarizeEntryFormulaRecurrences(entrySonorities);
   const fragmentFunctionEvidence = summarizeFragmentFunctionEvidence(sectionPlans);
   const counterSubjectWindows = summarizeCounterSubjectWindows(notes, subjectEntries);
   const localSentinels = summarizeLocalSentinels(
     voicePairUnisons,
+    voicePairSpans,
     sopranoRepeatedNotePressure,
     entrySevereIntervals,
     sectionPlans,
   );
 
   return {
-    schemaVersion: 2,
-    modelVersion: 2,
+    schemaVersion: 3,
+    modelVersion: 3,
     axes: summarizeAxes(voicePairUnisons, sopranoRepeatedNotePressure, entrySevereIntervals),
     voicePairUnisons,
     voicePairFunctions,
+    voicePairSpans,
     sopranoRepeatedNotePressure,
     entrySevereIntervals,
     entrySonorities,
+    entryFormulaRecurrences,
     fragmentFunctionEvidence,
     counterSubjectWindows,
     metricExplanations: summarizeMetricExplanations(
@@ -202,6 +216,7 @@ function summarizeAxes(
 
 function summarizeLocalSentinels(
   voicePairUnisons: readonly Phase13VoicePairUnisonSummary[],
+  voicePairSpans: readonly Phase13UVoicePairSpanSummary[],
   sopranoRepeatedNotePressure: Phase13SopranoRepeatedNotePressureSummary,
   entrySevereIntervals: readonly Phase13EntrySevereIntervalDurationSummary[],
   sectionPlans: readonly HarmonicPlan[],
@@ -210,26 +225,30 @@ function summarizeLocalSentinels(
 
   for (const summary of voicePairUnisons) {
     const voicePair = voicePairKey(summary);
+    const exactSpan = longestVoicePairSpan(voicePairSpans, voicePair, "exact-collision");
+    const pitchClassSpan = longestVoicePairSpan(voicePairSpans, voicePair, "pitch-class-reinforcement");
     if (summary.longestExactSamePitchSpanTicks >= TICKS_PER_QUARTER * 2) {
       sentinels.push({
         kind: "long-exact-same-pitch-unison",
         severity: "review-required",
-        startTick: 0,
-        durationTicks: summary.longestExactSamePitchSpanTicks,
+        startTick: exactSpan?.startTick ?? 0,
+        durationTicks: exactSpan?.durationTicks ?? summary.longestExactSamePitchSpanTicks,
         voicePair,
-        sectionRole: summary.sectionRole,
+        sectionRole: exactSpan?.sectionRole ?? summary.sectionRole,
         symptom: "long exact same-pitch unison span by voice pair",
+        classification: "exact-collision",
       });
     }
     if (summary.longestPitchClassUnisonSpanTicks >= TICKS_PER_QUARTER * 4) {
       sentinels.push({
         kind: "long-pitch-class-unison",
         severity: "review-required",
-        startTick: 0,
-        durationTicks: summary.longestPitchClassUnisonSpanTicks,
+        startTick: pitchClassSpan?.startTick ?? 0,
+        durationTicks: pitchClassSpan?.durationTicks ?? summary.longestPitchClassUnisonSpanTicks,
         voicePair,
-        sectionRole: summary.sectionRole,
+        sectionRole: pitchClassSpan?.sectionRole ?? summary.sectionRole,
         symptom: "long pitch-class unison span by voice pair",
+        classification: pitchClassSpan?.classification ?? "pitch-class-reinforcement",
       });
     }
   }
@@ -262,6 +281,16 @@ function summarizeLocalSentinels(
   }
 
   return sentinels;
+}
+
+function longestVoicePairSpan(
+  voicePairSpans: readonly Phase13UVoicePairSpanSummary[],
+  voicePair: string,
+  classification: Phase13UVoicePairSpanSummary["classification"],
+): Phase13UVoicePairSpanSummary | undefined {
+  return voicePairSpans
+    .filter((span) => voicePairKey(span) === voicePair && span.classification === classification)
+    .sort((left, right) => right.durationTicks - left.durationTicks || left.startTick - right.startTick)[0];
 }
 
 function summarizeMetricExplanations(
