@@ -1,8 +1,8 @@
 # Phase 13T: Voice Independence And Entry Sonority Rewrite
 
-Phase 13T is inserted after Phase 13S and before Phase 8. Its purpose is to treat the current remaining beauty problems as generator problems, not as Phase 8 visualization or playback risks. The phase starts from [Phase 13T current beauty audit](../reviews/phase-13t-current-beauty-audit.md).
+Phase 13T was inserted after Phase 13S as a quality phase before the operational lane. Its purpose was to treat the then-current remaining beauty problems as generator problems, not as Phase 8 visualization or playback risks. The phase starts from [Phase 13T current beauty audit](../reviews/phase-13t-current-beauty-audit.md).
 
-Status: completed. Phase 8 may resume with the score-window evidence, focused listening notes, and accepted tradeoffs recorded in [Phase 13T completion review](../reviews/phase-13t-completion-review.md).
+Status: completed, superseded for handoff. Phase 13T evidence is recorded in [Phase 13T completion review](../reviews/phase-13t-completion-review.md), but later score-window review inserted [Phase 13U](phase-13u.md) before Phase 8.
 
 ## Rationale
 
@@ -108,4 +108,6 @@ Phase 13T is complete. Completion evidence:
 
 ## Handoff To Phase 8
 
-Phase 8 may resume after Phase 13T. Phase 8 must use the Phase 13T evidence fields when reviewing long-running playback and must not use ring buffers, boundary semantics, visualizer presentation, performance profile, Worker fallback, or UI choices to mask unresolved entry friction, voice lockstep, pitch-class unison, mechanical fragments, or weak counter-subject identity.
+Phase 13T no longer hands directly to Phase 8. The next phase is [Phase 13U](phase-13u.md), based on the score-window replan review in [Phase 13U beauty replan review](../reviews/phase-13u-beauty-replan.md).
+
+Phase 8 may resume only after Phase 13U records repaired score-window beauty evidence and accepted tradeoffs. Phase 8 must use the Phase 13T and Phase 13U evidence fields when reviewing long-running playback and must not use ring buffers, boundary semantics, visualizer presentation, performance profile, Worker fallback, or UI choices to mask unresolved entry friction, voice lockstep, pitch-class unison, mechanical fragments, or weak counter-subject identity.

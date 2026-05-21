@@ -2,7 +2,7 @@
 
 Phase 13S is inserted after Phase 13R and before Phase 8. Its purpose is to treat musical beauty as the project core, not as a compatibility-constrained quality lane. The phase starts from the score review in [Phase 13S music beauty review](../reviews/phase-13s-music-beauty-review.md).
 
-Status: complete, superseded for handoff. Phase 13S repaired the confirmed subject-rhetoric collapse and reduced entry friction, but the later Phase 13T audit found that remaining voice-pair independence, pitch-class unison, entry-sonority, fragment-function, and modal counter-subject risks must be repaired before Phase 8 resumes.
+Status: complete, superseded for handoff. Phase 13S repaired the confirmed subject-rhetoric collapse and reduced entry friction, but later Phase 13T and Phase 13U reviews found that remaining voice-pair independence, pitch-class unison, entry formula, fragment transformation, and modal counter-subject risks must be repaired before Phase 8 resumes.
 
 ## Rationale
 
@@ -122,8 +122,8 @@ Accepted tradeoffs:
 8. Re-run the 22 seed review bundle and focused `organ-default` / `strict-counterpoint` listening templates.
 9. Update quality metric docs and regression expectations to match the new musical baseline.
 
-## Handoff To Phase 13T
+## Handoff To Phase 13T And Later
 
 Phase 13S no longer hands directly to Phase 8. The next phase is [Phase 13T](phase-13t.md), based on the current beauty audit in [Phase 13T current beauty audit](../reviews/phase-13t-current-beauty-audit.md).
 
-Phase 8 may resume only after Phase 13T records repaired score-window evidence, metric movement, focused listening notes, and any accepted tradeoffs.
+Phase 8 may resume only after Phase 13U records repaired score-window evidence, metric movement, focused listening notes, and any accepted tradeoffs.

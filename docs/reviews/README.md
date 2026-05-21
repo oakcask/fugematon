@@ -19,9 +19,11 @@ music-quality gate、diagnostics threshold、generator model、candidate scoring
 * [Phase 13S music beauty review](phase-13s-music-beauty-review.md): Phase 13R 後の 22 seed 譜面レビューと Phase 13S 完了 evidence。指標ではなく楽譜を読み、主題リズムの同型化、entry friction、voice lockstep、counter-subject identity、form metric の説明不足を Phase 8/9 前 blocker とした根拠と、Phase 8 へ持ち越す tradeoff を記録する。
 * [Phase 13T current beauty audit](phase-13t-current-beauty-audit.md): Phase 13S 後の現行 default を再レビューし、entry sonority、voice lockstep、pitch-class unison、fragment function、modal counter-subject identity を Phase 8 前 blocker として再編した根拠。
 * [Phase 13T completion review](phase-13t-completion-review.md): Phase 13T 完了 evidence。entry-support rhythm repair、quality-vector schema 2、entry sonority classifier、voice-pair function split、fragment-function evidence、modal counter-subject window review、focused listening notes を記録する。
+* [Phase 13U beauty replan review](phase-13u-beauty-replan.md): Phase 13T 後の現行 default を再レビューし、reference aggregate の false readiness、反復 entry formula、全 seed voice coupling、fragment transformation 不足、modal counter-subject weakness を Phase 8 前 blocker として再編した根拠。
 * [Phase 13R](../phases/phase-13r.md): Phase 13Q 後、Phase 8 前に通常生成経路、後半 phrase convergence、follow-up で見つかった音楽的問題を修正した完了記録。
 * [Phase 13S](../phases/phase-13s.md): 音楽的美しさを互換性制約より優先して再設計した完了済み品質フェーズ。
 * [Phase 13T](../phases/phase-13t.md): 完了済み。Phase 13S 後に残る voice-pair independence と entry sonority を作曲モデル側で修正した。
+* [Phase 13U](../phases/phase-13u.md): planned。Phase 13T 後も残る score-window beauty blockers を、指標の再分類ではなく生成譜面の改善として扱う。
 * [Phase 12P](../phases/phase-12-performance-profile.md): Phase 13 の前に、MIDI と WebAudio が共有する演奏プロファイル境界を組み込む計画。
 * [Phase 13Q](../phases/phase-13q.md): Phase 13 の quality vector evidence を生成改善へつなぐ計画。
 * [Phase 13](../phases/phase-13.md): Phase 12 後の repeated-note / unison defects を quality vector と統計的 review/adoption model で扱った完了記録。
@@ -48,7 +50,7 @@ music-quality gate、diagnostics threshold、generator model、candidate scoring
 
 ## 読む判断
 
-* 最新の品質方針を見る場合は Phase 13T completion review、Phase 13T、Phase 13T current beauty audit、Phase 13S music beauty review、Phase 13S、Phase 13R の完了 evidence、Phase 13R convergence review、Phase 13R subject diversity follow-up、Phase 7+ 再編計画を先に読む。現在の実装対象は Phase 8。必要に応じて Phase 13Q planning review、Phase 13Q、Phase 13 quality vector review へ戻る。Phase 11 の実装済み観察軸を見る場合は Phase 11 review summary diagnostics を読む。Phase 7 以降の gate 再構成を見る場合は Phase 7 参照作品 diagnostics 計画を読む。Phase 12 挿入前の blocker evidence を見る場合は Phase 11 post-completion score review を読む。
+* 最新の品質方針を見る場合は Phase 13U beauty replan review、Phase 13U、Phase 13T completion review、Phase 13T、Phase 13T current beauty audit、Phase 13S music beauty review、Phase 13S、Phase 13R の完了 evidence、Phase 13R convergence review、Phase 13R subject diversity follow-up、Phase 7+ 再編計画を先に読む。現在の実装対象は Phase 13U。必要に応じて Phase 13Q planning review、Phase 13Q、Phase 13 quality vector review へ戻る。Phase 11 の実装済み観察軸を見る場合は Phase 11 review summary diagnostics を読む。Phase 7 以降の gate 再構成を見る場合は Phase 7 参照作品 diagnostics 計画を読む。Phase 12 挿入前の blocker evidence を見る場合は Phase 11 post-completion score review を読む。
 * 概形の並行・反行を扱う場合は Phase 6 概形進行レビューも読む。
 * ある gate がなぜ追加されたかを追う場合だけ、古いレビューへ戻る。
 * diagnostics の閾値や seed セットを変更する場合は、該当レビュー、[../reference/quality-metrics.md](../reference/quality-metrics.md)、[../reference/technical-plan.md](../reference/technical-plan.md) を合わせて確認する。

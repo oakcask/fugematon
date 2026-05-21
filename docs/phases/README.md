@@ -4,11 +4,12 @@
 
 ## 現在読むもの
 
-* [Phase 7+ 再編計画](phase-7-plus-reorg.md): Phase 12 後に Phase 12P、Phase 13、Phase 13Q、Phase 13R、Phase 13S、Phase 13T を挟み、音楽美を Phase 8/9 より優先する現在計画を確認する。
-* [Phase 8](phase-8.md): 現在の次フェーズ。Phase 13T 完了後の operational lane。無限再生セッション、境界設計、内部状態 visualizer の MVP を扱う。
+* [Phase 7+ 再編計画](phase-7-plus-reorg.md): Phase 12 後に Phase 12P、Phase 13、Phase 13Q、Phase 13R、Phase 13S、Phase 13T、Phase 13U を挟み、音楽美を Phase 8/9 より優先する現在計画を確認する。
+* [Phase 13U](phase-13u.md): 現在の次フェーズ。Phase 13T 後の譜面レビューで見つかった repeated entry formula、voice coupling、fragment transformation、modal counter-subject weakness を Phase 8 前に扱う。
+* [Phase 8](phase-8.md): Phase 13U 後の operational lane。無限再生セッション、境界設計、内部状態 visualizer の MVP を扱う。
 * [Phase 13T](phase-13t.md): 完了済みの品質フェーズ。Phase 13S 後の再レビューで見つかった entry sonority、voice lockstep、pitch-class unison、fragment function、modal counter-subject identity を Phase 8 前に修正した。
 * [Phase 13S](phase-13s.md): 完了済みの品質フェーズ。音楽的美しさを核心として、主題リズム、entry friction、指標の説明力を互換性制約なしに再設計した。Phase 13T の入力になる remaining voice-pair lockstep と pitch-class unison も記録する。
-* [Phase 9](phase-9.md): Phase 13T、Phase 8 後の Worker 化、生成期限、fallback、長時間 visualizer stability。
+* [Phase 9](phase-9.md): Phase 13U、Phase 8 後の Worker 化、生成期限、fallback、長時間 visualizer stability。
 * [Phase 13R](phase-13r.md): default-baseline adoption と post-listening repair は実装済み。Phase 13S の入力になる subject-fragment vocabulary collapse と listening artifact gap もここで確認する。
 * [Phase 13Q](phase-13q.md): automatic adoption complete; manual listening follow-up remains open。Phase 13R の前に、candidate diversity、voice independence、entry harmony を改善した品質フェーズ。
 * [Phase 13](phase-13.md): 完了済み。Phase 12 human feedback 後の、quality vector と統計的 review/adoption model。
@@ -30,7 +31,7 @@
 
 ## 読む判断
 
-* 現在の実装対象を見る場合は [Phase 8](phase-8.md) を読む。Phase 13T の完了 evidence は [Phase 13T](phase-13t.md) と [../reviews/phase-13t-completion-review.md](../reviews/phase-13t-completion-review.md) を読む。Phase 13T の計画根拠は [../reviews/phase-13t-current-beauty-audit.md](../reviews/phase-13t-current-beauty-audit.md) を読む。直前の Phase 13S 完了 evidence は [Phase 13S](phase-13s.md) と [../reviews/phase-13s-music-beauty-review.md](../reviews/phase-13s-music-beauty-review.md) を読む。Phase 13R の完了 evidence、residual repair plan、post-listening blocker repair の根拠を見る場合は [Phase 13R](phase-13r.md)、[../reviews/phase-13r-convergence-review.md](../reviews/phase-13r-convergence-review.md)、[../reviews/phase-13r-subject-diversity-follow-up.md](../reviews/phase-13r-subject-diversity-follow-up.md) を読む。Phase 13Q の完了 evidence は [Phase 13Q](phase-13q.md) と [../reviews/phase-13q-voice-pair-support-review.md](../reviews/phase-13q-voice-pair-support-review.md)、quality vector の完了 evidence は [Phase 13](phase-13.md) と [../reviews/phase-13-quality-vector-review.md](../reviews/phase-13-quality-vector-review.md) を読む。
+* 現在の実装対象を見る場合は [Phase 13U](phase-13u.md) を読む。Phase 13U の計画根拠は [../reviews/phase-13u-beauty-replan.md](../reviews/phase-13u-beauty-replan.md) を読む。Phase 8 は Phase 13U 後に読む。Phase 13T の完了 evidence は [Phase 13T](phase-13t.md) と [../reviews/phase-13t-completion-review.md](../reviews/phase-13t-completion-review.md) を読む。Phase 13T の計画根拠は [../reviews/phase-13t-current-beauty-audit.md](../reviews/phase-13t-current-beauty-audit.md) を読む。直前の Phase 13S 完了 evidence は [Phase 13S](phase-13s.md) と [../reviews/phase-13s-music-beauty-review.md](../reviews/phase-13s-music-beauty-review.md) を読む。Phase 13R の完了 evidence、residual repair plan、post-listening blocker repair の根拠を見る場合は [Phase 13R](phase-13r.md)、[../reviews/phase-13r-convergence-review.md](../reviews/phase-13r-convergence-review.md)、[../reviews/phase-13r-subject-diversity-follow-up.md](../reviews/phase-13r-subject-diversity-follow-up.md) を読む。Phase 13Q の完了 evidence は [Phase 13Q](phase-13q.md) と [../reviews/phase-13q-voice-pair-support-review.md](../reviews/phase-13q-voice-pair-support-review.md)、quality vector の完了 evidence は [Phase 13](phase-13.md) と [../reviews/phase-13-quality-vector-review.md](../reviews/phase-13-quality-vector-review.md) を読む。
 * Phase 10 の完了条件、採用条件、review evidence、残る listening gap を見る場合は [Phase 10](phase-10.md) を読む。
 * 実装対象の Phase が分かっている場合は、その Phase だけ読む。
 * Phase 5 の品質根拠が必要な場合は、本文中のリンクから該当レビューへ進む。
