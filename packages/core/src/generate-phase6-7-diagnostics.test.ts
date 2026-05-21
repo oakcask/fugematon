@@ -46,11 +46,11 @@ test("generateScore reports phase-7 contour motion diagnostics", () => {
   assert.ok(fourBeat.outerVoiceSameDirectionRatio >= 0);
   assert.ok(fourBeat.outerVoiceContraryRatio >= 0);
   assert.ok(output.diagnostics.selectedCandidateEvaluations.length > 0);
-  assert.equal(output.diagnostics.selectedCandidateEvaluations[0]!.featureVersion, 5);
+  assert.equal(output.diagnostics.selectedCandidateEvaluations[0]!.featureVersion, 6);
   assert.ok(output.diagnostics.selectedCandidateEvaluations[0]!.explanations.entries.length > 0);
   assert.ok(output.diagnostics.selectedCandidateEvaluations[0]!.explanations.voicePairs.length > 0);
   assert.ok(output.diagnostics.selectedCandidateEvaluations[0]!.explanations.sections.length > 0);
-  assert.equal(output.diagnostics.selectedCandidateEvaluations[0]!.evaluationModelVersion, 11);
+  assert.equal(output.diagnostics.selectedCandidateEvaluations[0]!.evaluationModelVersion, 12);
   assert.ok(
     "fourBeatBassUpperSameDirectionRatio" in
       output.diagnostics.selectedCandidateEvaluations[0]!.dimensions.texture.features,

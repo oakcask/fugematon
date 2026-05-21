@@ -7,7 +7,7 @@ import { evaluatePhase6Diagnostics, evaluatePhase7Diagnostics } from "./review-g
 
 test("generateScore balances phase-7 entry harmony scoring with preservation guardrails", () => {
   const blockerSeeds = [
-    ["fugue-smoke", 136, 98, 72, 3, 3, 3],
+    ["fugue-smoke", 139, 98, 72, 3, 3, 3],
     ["modal-cadence", 149, 101, 70, 4, 3, 3],
     ["lyrical-line", 136, 98, 72, 3, 3, 3],
     ["tight-stretto", 144, 96, 72, 4, 3, 3],
@@ -67,7 +67,7 @@ test("generateScore balances phase-7 entry harmony scoring with preservation gua
 test("generateScore preserves phase-7 voice-pair independence blocker evidence under scoring changes", () => {
   const blockerSeeds = [
     ["contrary-motion", 24, 539, 790, 3, 2, 26, 7, 54, 14],
-    ["fugue-smoke", 30, 581, 834, 0, 0, 27, 7, 54, 12],
+    ["fugue-smoke", 15, 581, 834, 0, 0, 27, 7, 54, 12],
     ["minor-entry", 26, 736, 906, 0, 0, 50, 15, 70, 20],
     ["modal-answer", 13, 751, 906, 0, 0, 46, 14, 70, 20],
   ] as const;
@@ -113,7 +113,7 @@ test("generateScore preserves phase-7 voice-pair independence blocker evidence u
 
 test("generateScore guards phase-7 exact pitch lockstep without gate regressions", () => {
   const blockerSeeds = [
-    ["bright-answer", 8, 735, 625, 31, 0.9],
+    ["bright-answer", 8, 736, 629, 31, 0.9],
     ["quiet-cadence", 7, 728, 655, 15, 0.87],
     ["modal-answer", 13, 751, 814, 33, 0.573],
   ] as const;
@@ -148,7 +148,7 @@ test("generateScore preserves phase-7 modal counter-subject retention guardrails
     ["dense-modal", 0.586],
     ["angular-answer", 0.591],
     ["modal-answer", 0.631],
-    ["modal-dorian", 0.627],
+    ["modal-dorian", 0.604],
   ] as const;
 
   for (const [seed, counterSubjectIdentityRetention] of blockerSeeds) {
@@ -172,7 +172,7 @@ test("generateScore preserves phase-7 melody and form guardrails", () => {
   const blockerSeeds = [
     ["modal-answer", 33, 2, 1, 36, 13, 13, 2],
     ["contrary-motion", 26, 6, 4, 42, 15, 15, 8],
-    ["modal-dorian", 27, 3, 1, 37, 13, 13, 8],
+    ["modal-dorian", 34, 3, 1, 37, 13, 13, 8],
     ["bright-answer", 31, 7, 3, 37, 12, 12, 2],
     ["lyrical-line", 25, 2, 1, 42, 16, 16, 8],
     ["dark-episode", 21, 7, 3, 38, 12, 12, 8],

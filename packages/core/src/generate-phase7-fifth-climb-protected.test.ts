@@ -8,7 +8,7 @@ test("generateScore preserves phase-7 fifth-climb protected seed quality", () =>
     ["modal-answer", 33, 0.608],
     ["bright-answer", 31, 0.9],
     ["contrary-motion", 29, 0.88],
-    ["modal-dorian", 27, 0.58],
+    ["modal-dorian", 34, 0.58],
     ["dense-modal", 33, 0.573],
     ["angular-answer", 33, 0.573],
   ] as const;

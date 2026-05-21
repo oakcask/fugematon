@@ -139,7 +139,7 @@ function counterSubjectPreservationJudgement(
   retentionKind: Phase13TCounterSubjectWindowSummary["retentionKind"],
   supportCollisionCount: number,
 ): Phase13TCounterSubjectWindowSummary["preservationJudgement"] {
-  if (retentionKind === "recognizable" && supportCollisionCount <= 2) {
+  if (retentionKind === "recognizable" && supportCollisionCount <= 4) {
     return "preserved";
   }
   if (retentionKind === "weak") {

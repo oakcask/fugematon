@@ -240,8 +240,8 @@ export type CandidateEvaluationExplanations = {
 };
 
 export type CandidateEvaluation = {
-  featureVersion: 1 | 2 | 3 | 4 | 5;
-  evaluationModelVersion: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11;
+  featureVersion: 1 | 2 | 3 | 4 | 5 | 6;
+  evaluationModelVersion: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
   totalCost: number;
   hardFailures: DiagnosticIssueCode[];
   explanations: CandidateEvaluationExplanations;
@@ -779,6 +779,34 @@ export type Phase13TMetricExplanationSummary = {
   adoptionMeaning: "musical-improvement" | "diagnostic-reclassification" | "review-required";
 };
 
+export type Phase13VReviewSummary = {
+  schemaVersion: 1;
+  lineAgency: {
+    independentSpanCount: number;
+    reinforcingSpanCount: number;
+    reviewRequiredSpanCount: number;
+    agencyRatio: number;
+  };
+  entryFormulaNovelty: {
+    totalFormulaCount: number;
+    reviewRequiredFormulaCount: number;
+    justifiedFormulaCount: number;
+    noveltyRatio: number;
+  };
+  counterSubjectSurvivability: {
+    preservedWindowCount: number;
+    tradeoffWindowCount: number;
+    weakWindowCount: number;
+    preservationRatio: number;
+  };
+  longWindowDevelopment: {
+    fragmentClaimCount: number;
+    developedClaimCount: number;
+    reviewRequiredClaimCount: number;
+    topFunctionShare: number;
+  };
+};
+
 export type Phase13LocalSentinelKind =
   | "long-exact-same-pitch-unison"
   | "long-pitch-class-unison"
@@ -799,8 +827,8 @@ export type Phase13LocalSentinelSummary = {
 };
 
 export type Phase13QualityVector = {
-  schemaVersion: 3;
-  modelVersion: 3;
+  schemaVersion: 4;
+  modelVersion: 4;
   axes: Phase13QualityVectorAxisSummary[];
   voicePairUnisons: Phase13VoicePairUnisonSummary[];
   voicePairFunctions: Phase13TVoicePairFunctionSummary[];
@@ -812,6 +840,7 @@ export type Phase13QualityVector = {
   fragmentFunctionEvidence: Phase13TFragmentFunctionEvidence;
   counterSubjectWindows: Phase13TCounterSubjectWindowSummary[];
   metricExplanations: Phase13TMetricExplanationSummary[];
+  phase13VReview: Phase13VReviewSummary;
   localSentinels: Phase13LocalSentinelSummary[];
 };
 

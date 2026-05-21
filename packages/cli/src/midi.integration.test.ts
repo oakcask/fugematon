@@ -370,6 +370,13 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
             };
             counterSubjectWindows: { entryStartTick: number; retentionKind: string }[];
             metricExplanations: { axis: string; symptom: string; classification: string }[];
+            phase13VReview: {
+              schemaVersion: number;
+              lineAgency: { agencyRatio: number };
+              entryFormulaNovelty: { noveltyRatio: number };
+              counterSubjectSurvivability: { preservationRatio: number };
+              longWindowDevelopment: { topFunctionShare: number };
+            };
             localSentinels: { kind: string; severity: string; durationTicks: number; symptom: string }[];
           };
         };
@@ -480,7 +487,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
     assert.ok(summary.referenceDiagnostics.axes.length > 1);
     assert.ok(summary.referenceDiagnostics.maxDistance >= 0);
     assert.equal(summary.qualityProfileComparison.schemaVersion, 1);
-    assert.equal(summary.qualityProfileComparison.modelVersion, 3);
+    assert.equal(summary.qualityProfileComparison.modelVersion, 4);
     assert.equal(summary.qualityProfileComparison.seedCount, summary.seeds.length);
     assert.ok(summary.qualityProfileComparison.axes.length >= 8);
     assert.ok(summary.qualityProfileComparison.localSentinelCount >= 0);
@@ -667,8 +674,8 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
           (finding) => finding.code === "legacy-default-selection-model",
         ),
       );
-      assert.equal(entry.diagnosticsSummary.qualityVector.schemaVersion, 3);
-      assert.equal(entry.diagnosticsSummary.qualityVector.modelVersion, 3);
+      assert.equal(entry.diagnosticsSummary.qualityVector.schemaVersion, 4);
+      assert.equal(entry.diagnosticsSummary.qualityVector.modelVersion, 4);
       assert.ok(entry.diagnosticsSummary.qualityVector.axes.length >= 8);
       assert.equal(entry.diagnosticsSummary.qualityVector.voicePairUnisons.length, 6);
       assert.equal(entry.diagnosticsSummary.qualityVector.voicePairFunctions.length, 6);
@@ -680,6 +687,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       assert.ok(entry.diagnosticsSummary.qualityVector.entryFormulaRecurrences.length >= 0);
       assert.ok(entry.diagnosticsSummary.qualityVector.counterSubjectWindows.length > 0);
       assert.ok(entry.diagnosticsSummary.qualityVector.metricExplanations.length >= 3);
+      assert.equal(entry.diagnosticsSummary.qualityVector.phase13VReview.schemaVersion, 1);
       assert.ok(
         entry.diagnosticsSummary.qualityVector.axes.some(
           (axis) =>
@@ -747,8 +755,8 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
     }
     for (const seed of ["fugue-smoke", "modal-cadence", "modal-answer"] as const) {
       const candidateEvaluation = findReviewSeed(summary.seeds, seed).diagnosticsSummary.candidateEvaluation;
-      assert.equal(candidateEvaluation.featureVersion, 5);
-      assert.equal(candidateEvaluation.evaluationModelVersion, 11);
+      assert.equal(candidateEvaluation.featureVersion, 6);
+      assert.equal(candidateEvaluation.evaluationModelVersion, 12);
       assert.ok(candidateEvaluation.selectedCandidateEvaluationCount > 0);
       assert.ok(candidateEvaluation.totalSectionExplanationCount > 0);
       assert.equal(candidateEvaluation.sectionSoloTextureRiskWarningThreshold, 6);

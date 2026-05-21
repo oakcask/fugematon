@@ -43,12 +43,15 @@ const EVALUATION_WEIGHTS = {
     expositionEntryStagger: 10,
     bassUpperContraryMotion: 1,
     outerVoiceContraryMotion: 1,
+    phase13VLineAgency: 2,
+    phase13VEntryFormulaNovelty: 3,
   },
   subjectClarity: {
     subjectIdentityViolation: 10_000,
     answerPlanViolation: 1_000,
     counterSubjectIdentityRetention: 30,
     modalCounterSubjectIdentitySelection: 20,
+    phase13VCounterSubjectSurvivability: 0,
   },
   harmony: {
     entryInstability: 1,
@@ -72,6 +75,7 @@ const EVALUATION_WEIGHTS = {
     formRepetition: 50,
     episodeDirection: 10,
     strettoClarity: 10,
+    phase13VLongWindowDevelopment: 2,
   },
 } as const;
 
@@ -147,6 +151,11 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
     diagnostics.unisonOverlapCount * EVALUATION_WEIGHTS.texture.voiceIndependenceSelectionUnisonOverlap +
     diagnostics.sharedRhythmOverlapCount * EVALUATION_WEIGHTS.texture.voiceIndependenceSelectionSharedRhythmOverlap;
   const voicePairLockstepSelectionCost = scoreVoicePairLockstepRisk(riskContexts, diagnostics.modalContextCount);
+  const phase13VLineAgencyCost =
+    diagnostics.qualityVector.phase13VReview.lineAgency.reinforcingSpanCount +
+    diagnostics.qualityVector.phase13VReview.lineAgency.reviewRequiredSpanCount * 2;
+  const phase13VEntryFormulaNoveltyCost =
+    diagnostics.qualityVector.phase13VReview.entryFormulaNovelty.reviewRequiredFormulaCount;
   const texture = {
     cost:
       diagnostics.samePitchOverlapCount * EVALUATION_WEIGHTS.texture.samePitchOverlap +
@@ -160,7 +169,9 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
       diagnostics.pitchContourMotion.fourBeat.outerVoiceSameDirectionRatio *
         EVALUATION_WEIGHTS.texture.fourBeatOuterVoiceSameDirection +
       diagnostics.sharedRhythmOverlapCount * EVALUATION_WEIGHTS.texture.sharedRhythmOverlap +
-      diagnostics.allVoiceSilenceGapCount * EVALUATION_WEIGHTS.texture.allVoiceSilenceGap,
+      diagnostics.allVoiceSilenceGapCount * EVALUATION_WEIGHTS.texture.allVoiceSilenceGap +
+      phase13VLineAgencyCost * EVALUATION_WEIGHTS.texture.phase13VLineAgency +
+      phase13VEntryFormulaNoveltyCost * EVALUATION_WEIGHTS.texture.phase13VEntryFormulaNovelty,
     reward:
       diagnostics.rhythmicIndependenceScore * EVALUATION_WEIGHTS.texture.rhythmicIndependence +
       diagnostics.supportTextureRepetitionScore * EVALUATION_WEIGHTS.texture.supportTextureRepetition +
@@ -195,6 +206,8 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
       selectedVoicePairLockstepSelectionCost: voicePairLockstepSelectionCost,
       qualityVectorPitchClassUnisonDuration: qualityVectorAxisValue(diagnostics, "pitchClassUnisonDuration"),
       qualityVectorDurationBasedLockstep: qualityVectorAxisValue(diagnostics, "durationBasedLockstep"),
+      phase13VLineAgencyCost,
+      phase13VEntryFormulaNoveltyCost,
       shortStrongBeatEntryNoteCount: diagnostics.shortStrongBeatEntryNoteCount,
       entrySupportInstabilityCount: diagnostics.entrySupportInstabilityCount,
       allVoiceSilenceGapCount: diagnostics.allVoiceSilenceGapCount,
@@ -220,7 +233,12 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
   const subjectClarity = {
     cost:
       diagnostics.subjectIdentityViolations * EVALUATION_WEIGHTS.subjectClarity.subjectIdentityViolation +
-      diagnostics.answerPlanViolations * EVALUATION_WEIGHTS.subjectClarity.answerPlanViolation,
+      diagnostics.answerPlanViolations * EVALUATION_WEIGHTS.subjectClarity.answerPlanViolation +
+      diagnostics.qualityVector.phase13VReview.counterSubjectSurvivability.tradeoffWindowCount *
+        EVALUATION_WEIGHTS.subjectClarity.phase13VCounterSubjectSurvivability +
+      diagnostics.qualityVector.phase13VReview.counterSubjectSurvivability.weakWindowCount *
+        EVALUATION_WEIGHTS.subjectClarity.phase13VCounterSubjectSurvivability *
+        2,
     reward:
       diagnostics.counterSubjectIdentityRetention * EVALUATION_WEIGHTS.subjectClarity.counterSubjectIdentityRetention +
       modalCounterSubjectIdentitySelectionReward(
@@ -235,6 +253,10 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
         diagnostics.counterSubjectIdentityRetention,
         diagnostics.modalContextCount,
       ),
+      phase13VCounterSubjectTradeoffWindowCount:
+        diagnostics.qualityVector.phase13VReview.counterSubjectSurvivability.tradeoffWindowCount,
+      phase13VCounterSubjectWeakWindowCount:
+        diagnostics.qualityVector.phase13VReview.counterSubjectSurvivability.weakWindowCount,
     },
   };
   const modalCadenceEntrySupportRiskCost = scoreModalCadenceEntrySupportRisk(candidate, riskContexts);
@@ -296,7 +318,13 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
     },
   };
   const form = {
-    cost: diagnostics.formRepetitionWarnings * EVALUATION_WEIGHTS.form.formRepetition,
+    cost:
+      diagnostics.formRepetitionWarnings * EVALUATION_WEIGHTS.form.formRepetition +
+      diagnostics.qualityVector.phase13VReview.longWindowDevelopment.reviewRequiredClaimCount *
+        EVALUATION_WEIGHTS.form.phase13VLongWindowDevelopment +
+      Math.max(0, diagnostics.qualityVector.phase13VReview.longWindowDevelopment.topFunctionShare - 0.34) *
+        100 *
+        EVALUATION_WEIGHTS.form.phase13VLongWindowDevelopment,
     reward:
       diagnostics.episodeDirectionScore * EVALUATION_WEIGHTS.form.episodeDirection +
       diagnostics.strettoClarityScore * EVALUATION_WEIGHTS.form.strettoClarity,
@@ -308,6 +336,10 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
         diagnostics.phase11Review.stateGrammarRepetition.mostRepeatedPatternCount,
       phase11StateGrammarUniquePatternCount: diagnostics.phase11Review.stateGrammarRepetition.uniquePatternCount,
       phase11TopEntryPatternFamilyCount: diagnostics.phase11Review.entryPatternFamilies[0]?.count ?? 0,
+      phase13VLongWindowReviewRequiredClaimCount:
+        diagnostics.qualityVector.phase13VReview.longWindowDevelopment.reviewRequiredClaimCount,
+      phase13VLongWindowTopFunctionShare:
+        diagnostics.qualityVector.phase13VReview.longWindowDevelopment.topFunctionShare,
     },
   };
   const totalCost =
@@ -328,8 +360,8 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
     form.reward;
 
   return {
-    featureVersion: 5,
-    evaluationModelVersion: 11,
+    featureVersion: 6,
+    evaluationModelVersion: 12,
     totalCost: Math.round(totalCost * 1000) / 1000,
     hardFailures,
     explanations,

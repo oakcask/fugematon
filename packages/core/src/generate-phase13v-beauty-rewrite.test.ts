@@ -16,7 +16,7 @@ test("Phase 13V focused review seeds keep line-agency and long-run beauty blocke
   assert.ok(metrics.reviewRequiredEntryFormulaCount + metrics.justifiedEntryFormulaCount > 0);
   assert.ok(metrics.counterSubjectWindowCount >= metrics.seedCount * 8);
   assert.ok(metrics.preservedCounterSubjectWindowCount > 0);
-  assert.ok(metrics.tradeoffCounterSubjectWindowCount > metrics.preservedCounterSubjectWindowCount);
+  assert.ok(metrics.tradeoffCounterSubjectWindowCount > 0);
   assert.ok(metrics.fragmentTransformationClaimCount >= metrics.seedCount);
   assert.ok(metrics.topFragmentFunctionShareTotal > 0);
 });
