@@ -32,19 +32,21 @@ export type ContinuityTexturePlan = ContinuityCounterpointInput & {
 
 export type ContinuityLineKind = "linear" | "oblique-support";
 
+type EntryCounterpointTextureInput = {
+  enteringVoice: Voice;
+  startTick: number;
+  durationTicks: number;
+  localKey: KeySignature;
+  eligibleVoices?: readonly Voice[];
+  harmonicPlan?: HarmonicPlan;
+};
+
 export function addCounterpointTexture(
   notes: Exposition["notes"],
   subject: readonly SubjectNote[],
-  entry: {
-    enteringVoice: Voice;
-    startTick: number;
-    durationTicks: number;
-    localKey: KeySignature;
-    eligibleVoices?: readonly Voice[];
-    harmonicPlan?: HarmonicPlan;
-  },
+  entry: EntryCounterpointTextureInput,
 ): void {
-  const eligibleVoices = entry.eligibleVoices ?? VOICE_ENTRY_ORDER.filter((voice) => voice !== entry.enteringVoice);
+  const eligibleVoices = entry.eligibleVoices ?? defaultEntryTextureVoices(entry.enteringVoice);
   const counterSubjectVoice = chooseTextureVoice(
     notes,
     entry.enteringVoice,
@@ -52,19 +54,48 @@ export function addCounterpointTexture(
     entry.durationTicks,
     eligibleVoices,
   );
-  if (counterSubjectVoice !== undefined) {
-    addPatternCounterpoint(notes, subject, {
-      voice: counterSubjectVoice,
-      startTick: entry.startTick,
-      maxDurationTicks: entry.durationTicks,
-      localKey: entry.localKey,
-      degrees: entryCounterSubjectDegrees(subject, entry.localKey.mode),
-      velocity: 70,
-      role: "counter-subject",
-      harmonicPlan: entry.harmonicPlan,
-    });
+
+  addEntryCounterSubject(notes, subject, entry, counterSubjectVoice);
+  addEntryFreeCounterpoint(notes, subject, entry, eligibleVoices, counterSubjectVoice);
+
+  if (entry.eligibleVoices !== undefined) {
+    repairTextureVoiceCrossings(notes, entry.startTick, entry.durationTicks);
+  }
+}
+
+function defaultEntryTextureVoices(enteringVoice: Voice): Voice[] {
+  return VOICE_ENTRY_ORDER.filter((voice) => voice !== enteringVoice);
+}
+
+function addEntryCounterSubject(
+  notes: Exposition["notes"],
+  subject: readonly SubjectNote[],
+  entry: EntryCounterpointTextureInput,
+  counterSubjectVoice: Voice | undefined,
+): void {
+  if (counterSubjectVoice === undefined) {
+    return;
   }
 
+  addPatternCounterpoint(notes, subject, {
+    voice: counterSubjectVoice,
+    startTick: entry.startTick,
+    maxDurationTicks: entry.durationTicks,
+    localKey: entry.localKey,
+    degrees: entryCounterSubjectDegrees(subject, entry.localKey.mode),
+    velocity: 70,
+    role: "counter-subject",
+    harmonicPlan: entry.harmonicPlan,
+  });
+}
+
+function addEntryFreeCounterpoint(
+  notes: Exposition["notes"],
+  subject: readonly SubjectNote[],
+  entry: EntryCounterpointTextureInput,
+  eligibleVoices: readonly Voice[],
+  counterSubjectVoice: Voice | undefined,
+): void {
   for (const voice of eligibleVoices) {
     if (voice === entry.enteringVoice || voice === counterSubjectVoice) {
       continue;
@@ -80,10 +111,6 @@ export function addCounterpointTexture(
       role: "free-counterpoint",
       harmonicPlan: entry.harmonicPlan,
     });
-  }
-
-  if (entry.eligibleVoices !== undefined) {
-    repairTextureVoiceCrossings(notes, entry.startTick, entry.durationTicks);
   }
 }
 
