@@ -69,6 +69,15 @@ Phase 13U adds a stricter adoption expectation on top of these fields: metric ex
 
 Phase 13U completion keeps generated score output stable and records rejected generator repair evidence. A local entry-support pitch repair was not adopted because it worsened older musical guardrails. Reviewers should treat schema 3 as a truthfulness layer for Phase 8 handoff, not as a claim that every remaining review signal has been fixed.
 
+`qualityVector.schemaVersion` 4 / `modelVersion` 4 adds Phase 13V completion evidence:
+
+* `phase13VReview.lineAgency`: independent, reinforcing, review-required, and ratio summaries for localized voice-pair spans.
+* `phase13VReview.entryFormulaNovelty`: total, review-required, justified, and ratio summaries for repeated entry formulas.
+* `phase13VReview.counterSubjectSurvivability`: preserved, accepted-tradeoff, weak, and ratio summaries for counter-subject windows.
+* `phase13VReview.longWindowDevelopment`: fragment transformation claim counts and top function share for long-window contrast review.
+
+Phase 13V treats these fields as generator-side adoption evidence, not only explanation. The completion baseline improves entry formula novelty, line agency, counter-subject preservation, and fragment-function concentration while keeping remaining review signals visible for Phase 8.
+
 ## Review Status
 
 `quality-review-required` は失敗ではありません。Phase 13 は review/adoption model の整備であり、selected output を直接変えません。Phase 13Q 以降の生成変更では、quality vector distance、local sentinel regression、reference profile、manual listening gap を合わせて A/B adoption を判断します。

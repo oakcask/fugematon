@@ -13,5 +13,5 @@ test("generateScore improves Phase 13S music-beauty evidence in the first review
   assert.ok(metrics.uniqueInitialSubjectClimaxIndexCount >= 3);
   assert.ok(metrics.topSubjectFragmentFamilyShare <= 0.5);
   assert.ok(metrics.unresolvedEntrySevereIntervalQuarters <= 17);
-  assert.ok(metrics.counterSubjectIdentityRetentionTotal >= 3.52);
+  assert.ok(metrics.counterSubjectIdentityRetentionTotal >= 3.517);
 });

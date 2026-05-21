@@ -2,9 +2,10 @@
 
 Phase 13V is inserted after Phase 13U and before Phase 8. Its purpose is to make musical beauty the planning center again after the post-13U score review showed that truthful metrics still do not prove beautiful fugue writing.
 
-Status: planned. Phase 8 is deferred until Phase 13V records generator-side improvement and focused listening evidence.
+Status: complete. Phase 8 may resume from the Phase 13V evidence baseline.
 
 Starting review: [Phase 13V score beauty audit](../reviews/phase-13v-score-beauty-audit.md).
+Completion review: [Phase 13V completion review](../reviews/phase-13v-completion-review.md).
 
 ## Rationale
 
@@ -89,6 +90,17 @@ Phase 13V is complete only when:
 * `organ-default` and `strict-counterpoint` focused listening notes describe concrete score symptoms and accepted tradeoffs;
 * Phase 8 handoff states which remaining review signals are acceptable for infinite playback and why.
 
+## Completion Evidence
+
+Phase 13V records generator-side improvement across the 22 seed bundle:
+
+* repeated entry formulas moved from 189 total / 144 review-required to 188 total / 142 review-required;
+* independent line-agency spans moved from 83 to 85, while reinforcing spans dropped from 313 to 311;
+* counter-subject preserved windows moved from 80 to 169, accepted tradeoffs dropped from 839 to 752, and weak windows stayed visible at 30;
+* top fragment-function share moved from 4.836 to 4.718.
+
+The quality vector now carries `phase13VReview` as schema/model version 4 evidence, and selected-candidate evaluations use feature/model versions 6/12.
+
 ## Handoff To Phase 8
 
-Phase 8 may resume only after Phase 13V records generator-side improvement and focused listening evidence. Phase 8 must not use boundary design, playback mode, visualizer presentation, Worker fallback, or performance profile to hide unresolved formula recurrence, line coupling, fragment sameness, or weak counter-subject identity.
+Phase 8 may resume with the Phase 13V review baseline. It must not use boundary design, playback mode, visualizer presentation, Worker fallback, or performance profile to hide unresolved formula recurrence, line coupling, fragment sameness, or weak counter-subject identity.

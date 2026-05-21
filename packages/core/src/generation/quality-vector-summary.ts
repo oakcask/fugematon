@@ -8,11 +8,15 @@ import type {
   Phase13QualityVectorAxisSummary,
   Phase13QualityVectorGroupingKey,
   Phase13SopranoRepeatedNotePressureSummary,
+  Phase13TCounterSubjectWindowSummary,
   Phase13TEntrySonoritySummary,
+  Phase13TFragmentFunctionEvidence,
   Phase13TMetricExplanationSummary,
   Phase13TVoicePairFunctionSummary,
+  Phase13UEntryFormulaSummary,
   Phase13UVoicePairSpanSummary,
   Phase13VoicePairUnisonSummary,
+  Phase13VReviewSummary,
 } from "../events.js";
 import { sectionPlanAt, voicePairKey } from "./quality-vector-shared.js";
 
@@ -275,6 +279,81 @@ export function summarizeMetricExplanations(
       adoptionMeaning: worstEntry.unresolvedDurationTicks > 0 ? "review-required" : "musical-improvement",
     },
   ];
+}
+
+export function summarizePhase13VReview(input: {
+  entryFormulaRecurrences: readonly Phase13UEntryFormulaSummary[];
+  voicePairSpans: readonly Phase13UVoicePairSpanSummary[];
+  fragmentFunctionEvidence: Phase13TFragmentFunctionEvidence;
+  counterSubjectWindows: readonly Phase13TCounterSubjectWindowSummary[];
+}): Phase13VReviewSummary {
+  const independentSpanCount = input.voicePairSpans.filter(
+    (span) =>
+      span.classification === "cadence-support" ||
+      span.classification === "sequence-support" ||
+      span.classification === "subject-support",
+  ).length;
+  const reinforcingSpanCount = input.voicePairSpans.filter(
+    (span) =>
+      span.classification === "pitch-class-reinforcement" ||
+      span.classification === "color-doubling" ||
+      span.classification === "exact-collision",
+  ).length;
+  const reviewRequiredSpanCount = input.voicePairSpans.filter(
+    (span) => span.classification === "mechanical-coupling" || span.classification === "exact-collision",
+  ).length;
+  const reviewRequiredFormulaCount = input.entryFormulaRecurrences.filter(
+    (summary) => summary.judgement === "review-required",
+  ).length;
+  const justifiedFormulaCount = input.entryFormulaRecurrences.filter(
+    (summary) => summary.judgement === "functionally-justified",
+  ).length;
+  const preservedWindowCount = input.counterSubjectWindows.filter(
+    (window) => window.preservationJudgement === "preserved",
+  ).length;
+  const tradeoffWindowCount = input.counterSubjectWindows.filter(
+    (window) => window.preservationJudgement === "tradeoff",
+  ).length;
+  const weakWindowCount = input.counterSubjectWindows.filter(
+    (window) => window.preservationJudgement === "weak",
+  ).length;
+  const developedClaimCount = input.fragmentFunctionEvidence.transformationClaims.filter(
+    (claim) => claim.judgement === "developed",
+  ).length;
+  const reviewRequiredClaimCount = input.fragmentFunctionEvidence.transformationClaims.filter(
+    (claim) => claim.judgement === "review-required",
+  ).length;
+
+  return {
+    schemaVersion: 1,
+    lineAgency: {
+      independentSpanCount,
+      reinforcingSpanCount,
+      reviewRequiredSpanCount,
+      agencyRatio: roundRatio(independentSpanCount / Math.max(1, input.voicePairSpans.length)),
+    },
+    entryFormulaNovelty: {
+      totalFormulaCount: input.entryFormulaRecurrences.length,
+      reviewRequiredFormulaCount,
+      justifiedFormulaCount,
+      noveltyRatio: roundRatio(
+        (input.entryFormulaRecurrences.length - reviewRequiredFormulaCount) /
+          Math.max(1, input.entryFormulaRecurrences.length),
+      ),
+    },
+    counterSubjectSurvivability: {
+      preservedWindowCount,
+      tradeoffWindowCount,
+      weakWindowCount,
+      preservationRatio: roundRatio(preservedWindowCount / Math.max(1, input.counterSubjectWindows.length)),
+    },
+    longWindowDevelopment: {
+      fragmentClaimCount: input.fragmentFunctionEvidence.transformationClaims.length,
+      developedClaimCount,
+      reviewRequiredClaimCount,
+      topFunctionShare: input.fragmentFunctionEvidence.topFunctionShare,
+    },
+  };
 }
 
 function longestVoicePairSpan(

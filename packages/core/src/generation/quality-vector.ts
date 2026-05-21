@@ -12,6 +12,7 @@ import {
   summarizeAxes,
   summarizeLocalSentinels,
   summarizeMetricExplanations,
+  summarizePhase13VReview,
   summarizeSopranoRepeatedNotePressure,
 } from "./quality-vector-summary.js";
 import {
@@ -41,10 +42,16 @@ export function analyzePhase13QualityVector(
     entrySevereIntervals,
     sectionPlans,
   );
+  const phase13VReview = summarizePhase13VReview({
+    entryFormulaRecurrences,
+    voicePairSpans,
+    fragmentFunctionEvidence,
+    counterSubjectWindows,
+  });
 
   return {
-    schemaVersion: 3,
-    modelVersion: 3,
+    schemaVersion: 4,
+    modelVersion: 4,
     axes: summarizeAxes(voicePairUnisons, sopranoRepeatedNotePressure, entrySevereIntervals),
     voicePairUnisons,
     voicePairFunctions,
@@ -62,6 +69,7 @@ export function analyzePhase13QualityVector(
       entrySonorities,
       sectionPlans,
     ),
+    phase13VReview,
     localSentinels,
   };
 }
