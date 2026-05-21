@@ -338,6 +338,12 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
               longestExactSamePitchSpanTicks: number;
               longestPitchClassUnisonSpanTicks: number;
             }[];
+            voicePairFunctions: {
+              leftVoice: string;
+              rightVoice: string;
+              mechanicalCouplingTicks: number;
+              functionalReinforcementTicks: number;
+            }[];
             sopranoRepeatedNotePressure: {
               voice: string;
               runCount: number;
@@ -348,6 +354,10 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
               severeIntervalDurationTicks: number;
               unresolvedDurationTicks: number;
             }[];
+            entrySonorities: { startTick: number; kinds: string[] }[];
+            fragmentFunctionEvidence: { uniqueFunctionCount: number; topFunctionShare: number };
+            counterSubjectWindows: { entryStartTick: number; retentionKind: string }[];
+            metricExplanations: { axis: string; symptom: string; classification: string }[];
             localSentinels: { kind: string; severity: string; durationTicks: number; symptom: string }[];
           };
         };
@@ -443,7 +453,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       comparisons: unknown[];
     };
 
-    assert.equal(summary.schemaVersion, 13);
+    assert.equal(summary.schemaVersion, 14);
     assert.equal(summary.lengthTicks, 9600);
     assert.equal(summary.selectionModel, "phase10-section-local-planner");
     assert.deepEqual(summary.performanceProfile, { id: "organ-default", version: 1 });
@@ -458,7 +468,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
     assert.ok(summary.referenceDiagnostics.axes.length > 1);
     assert.ok(summary.referenceDiagnostics.maxDistance >= 0);
     assert.equal(summary.qualityProfileComparison.schemaVersion, 1);
-    assert.equal(summary.qualityProfileComparison.modelVersion, 1);
+    assert.equal(summary.qualityProfileComparison.modelVersion, 2);
     assert.equal(summary.qualityProfileComparison.seedCount, summary.seeds.length);
     assert.ok(summary.qualityProfileComparison.axes.length >= 8);
     assert.ok(summary.qualityProfileComparison.localSentinelCount >= 0);
@@ -645,13 +655,17 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
           (finding) => finding.code === "legacy-default-selection-model",
         ),
       );
-      assert.equal(entry.diagnosticsSummary.qualityVector.schemaVersion, 1);
-      assert.equal(entry.diagnosticsSummary.qualityVector.modelVersion, 1);
+      assert.equal(entry.diagnosticsSummary.qualityVector.schemaVersion, 2);
+      assert.equal(entry.diagnosticsSummary.qualityVector.modelVersion, 2);
       assert.ok(entry.diagnosticsSummary.qualityVector.axes.length >= 8);
       assert.equal(entry.diagnosticsSummary.qualityVector.voicePairUnisons.length, 6);
+      assert.equal(entry.diagnosticsSummary.qualityVector.voicePairFunctions.length, 6);
       assert.equal(entry.diagnosticsSummary.qualityVector.sopranoRepeatedNotePressure.voice, "soprano");
       assert.ok(entry.diagnosticsSummary.qualityVector.sopranoRepeatedNotePressure.runCount >= 0);
       assert.ok(entry.diagnosticsSummary.qualityVector.entrySevereIntervals.length > 0);
+      assert.ok(entry.diagnosticsSummary.qualityVector.entrySonorities.length > 0);
+      assert.ok(entry.diagnosticsSummary.qualityVector.counterSubjectWindows.length > 0);
+      assert.ok(entry.diagnosticsSummary.qualityVector.metricExplanations.length >= 3);
       assert.ok(
         entry.diagnosticsSummary.qualityVector.axes.some(
           (axis) =>

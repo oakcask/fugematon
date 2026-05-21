@@ -1,7 +1,9 @@
+import { TICKS_PER_QUARTER } from "../constants.js";
 import type {
   FugueState,
   HarmonicPlan,
   NoteEvent,
+  Phase13TVoicePairFunctionSummary,
   Phase13VoicePairUnisonSummary,
   StyleProfile,
   Voice,
@@ -95,4 +97,114 @@ export function summarizeVoicePairUnisons(
       styleProfile: dominantMapKey(styleProfileTicks) ?? "mixed",
     };
   });
+}
+
+export function summarizeVoicePairFunctions(
+  notes: readonly NoteEvent[],
+  sectionPlans: readonly HarmonicPlan[],
+): Phase13TVoicePairFunctionSummary[] {
+  const checkpoints = noteCheckpoints(notes);
+
+  return PHASE_13_VOICE_PAIRS.map(([leftVoice, rightVoice]) => {
+    const summary: Phase13TVoicePairFunctionSummary = {
+      leftVoice,
+      rightVoice,
+      subjectSupportLockstepTicks: 0,
+      cadenceSupportLockstepTicks: 0,
+      sequencePatternLockstepTicks: 0,
+      pedalLikeSupportLockstepTicks: 0,
+      mechanicalCouplingTicks: 0,
+      exactCollisionTicks: 0,
+      pitchClassColorDoublingTicks: 0,
+      functionalReinforcementTicks: 0,
+    };
+
+    for (let index = 0; index < checkpoints.length - 1; index += 1) {
+      const startTick = checkpoints[index]!;
+      const endTick = checkpoints[index + 1]!;
+      const durationTicks = endTick - startTick;
+      if (durationTicks <= 0) {
+        continue;
+      }
+
+      const left = activeNoteForVoiceAt(notes, leftVoice, startTick);
+      const right = activeNoteForVoiceAt(notes, rightVoice, startTick);
+      if (left === undefined || right === undefined) {
+        continue;
+      }
+
+      const section = sectionPlanAt(sectionPlans, startTick);
+      const pitchClassUnison = positiveModulo(left.pitch, 12) === positiveModulo(right.pitch, 12);
+      const durationLockstep = left.startTick === right.startTick && left.durationTicks === right.durationTicks;
+
+      if (left.pitch === right.pitch) {
+        summary.exactCollisionTicks += durationTicks;
+      }
+      if (pitchClassUnison && left.pitch !== right.pitch) {
+        if (isFunctionalReinforcement(left.role, right.role, section)) {
+          summary.functionalReinforcementTicks += durationTicks;
+        } else {
+          summary.pitchClassColorDoublingTicks += durationTicks;
+        }
+      }
+      if (!durationLockstep) {
+        continue;
+      }
+
+      if (isEntryRole(left.role) || isEntryRole(right.role)) {
+        summary.subjectSupportLockstepTicks += durationTicks;
+      } else if (isCadenceSupport(section, startTick)) {
+        summary.cadenceSupportLockstepTicks += durationTicks;
+      } else if (isSequenceSupport(section)) {
+        summary.sequencePatternLockstepTicks += durationTicks;
+      } else if (isPedalLikeSupport(left, right)) {
+        summary.pedalLikeSupportLockstepTicks += durationTicks;
+      } else {
+        summary.mechanicalCouplingTicks += durationTicks;
+      }
+    }
+
+    return summary;
+  });
+}
+
+function isEntryRole(role: NoteEvent["role"]): boolean {
+  return role === "subject" || role === "answer" || role === "subject-fragment";
+}
+
+function isFunctionalReinforcement(
+  leftRole: NoteEvent["role"],
+  rightRole: NoteEvent["role"],
+  section: HarmonicPlan | undefined,
+): boolean {
+  return (
+    section !== undefined &&
+    (isEntryRole(leftRole) ||
+      isEntryRole(rightRole) ||
+      leftRole === "counter-subject" ||
+      rightRole === "counter-subject" ||
+      section.state === "subject-return")
+  );
+}
+
+function isCadenceSupport(section: HarmonicPlan | undefined, tick: number): boolean {
+  return (
+    section?.anchors.some((anchor) => anchor.cadenceTarget && Math.abs(anchor.tick - tick) <= TICKS_PER_QUARTER * 2) ??
+    false
+  );
+}
+
+function isSequenceSupport(section: HarmonicPlan | undefined): boolean {
+  return section?.sequencePattern !== undefined || section?.fragmentTransform !== undefined;
+}
+
+function isPedalLikeSupport(
+  left: Pick<NoteEvent, "pitch" | "role" | "durationTicks">,
+  right: Pick<NoteEvent, "pitch" | "role" | "durationTicks">,
+): boolean {
+  return (
+    (left.role === "free-counterpoint" || right.role === "free-counterpoint") &&
+    (left.durationTicks >= TICKS_PER_QUARTER * 2 || right.durationTicks >= TICKS_PER_QUARTER * 2) &&
+    Math.abs(left.pitch - right.pitch) % 12 === 0
+  );
 }

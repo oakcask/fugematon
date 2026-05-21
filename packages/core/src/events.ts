@@ -644,6 +644,19 @@ export type Phase13VoicePairUnisonSummary = {
   styleProfile: StyleProfile | "mixed";
 };
 
+export type Phase13TVoicePairFunctionSummary = {
+  leftVoice: Voice;
+  rightVoice: Voice;
+  subjectSupportLockstepTicks: number;
+  cadenceSupportLockstepTicks: number;
+  sequencePatternLockstepTicks: number;
+  pedalLikeSupportLockstepTicks: number;
+  mechanicalCouplingTicks: number;
+  exactCollisionTicks: number;
+  pitchClassColorDoublingTicks: number;
+  functionalReinforcementTicks: number;
+};
+
 export type Phase13SopranoRepeatedNotePressureSummary = {
   voice: Extract<Voice, "soprano">;
   runCount: number;
@@ -666,6 +679,67 @@ export type Phase13EntrySevereIntervalDurationSummary = {
   representativeTick: number;
 };
 
+export type Phase13TEntrySonorityKind =
+  | "open-consonance"
+  | "pitch-class-unison-stack"
+  | "adjacent-second-friction"
+  | "exposed-seventh"
+  | "tritone-exposure"
+  | "passing-neighbor-motion"
+  | "prepared-suspension"
+  | "unresolved-accented-clash";
+
+export type Phase13TEntrySonoritySummary = {
+  voice: Voice;
+  form: EntryForm;
+  state: FugueState;
+  startTick: number;
+  representativeTick: number;
+  beatStrength: "strong" | "weak";
+  supportVoices: Voice[];
+  kinds: Phase13TEntrySonorityKind[];
+  pitchClassUnisonStackCount: number;
+  adjacentSecondFrictionCount: number;
+  exposedSeventhCount: number;
+  tritoneExposureCount: number;
+  preparedOrPassingCount: number;
+  unresolvedAccentedClashCount: number;
+  resolutionDirection: "up" | "down" | "mixed" | "none";
+  resolutionDeadlineTicks: number;
+};
+
+export type Phase13TFragmentFunctionEvidence = {
+  fragmentSectionCount: number;
+  uniqueFunctionCount: number;
+  topFunctionShare: number;
+  topFunctions: {
+    functionKey: string;
+    count: number;
+    share: number;
+  }[];
+};
+
+export type Phase13TCounterSubjectWindowSummary = {
+  entryStartTick: number;
+  entryVoice: Voice;
+  counterSubjectVoice?: Voice;
+  retentionKind: "recognizable" | "altered" | "weak";
+  rhythmPattern: number[];
+  contourClass: string;
+  supportCollisionCount: number;
+};
+
+export type Phase13TMetricExplanationSummary = {
+  axis: Phase13QualityVectorAxis;
+  representativeTick: number;
+  sectionRole: FugueState | "mixed";
+  voicePair?: string;
+  voice?: Voice;
+  symptom: string;
+  classification: string;
+  adoptionMeaning: "musical-improvement" | "diagnostic-reclassification" | "review-required";
+};
+
 export type Phase13LocalSentinelKind =
   | "long-exact-same-pitch-unison"
   | "long-pitch-class-unison"
@@ -685,12 +759,17 @@ export type Phase13LocalSentinelSummary = {
 };
 
 export type Phase13QualityVector = {
-  schemaVersion: 1;
-  modelVersion: 1;
+  schemaVersion: 2;
+  modelVersion: 2;
   axes: Phase13QualityVectorAxisSummary[];
   voicePairUnisons: Phase13VoicePairUnisonSummary[];
+  voicePairFunctions: Phase13TVoicePairFunctionSummary[];
   sopranoRepeatedNotePressure: Phase13SopranoRepeatedNotePressureSummary;
   entrySevereIntervals: Phase13EntrySevereIntervalDurationSummary[];
+  entrySonorities: Phase13TEntrySonoritySummary[];
+  fragmentFunctionEvidence: Phase13TFragmentFunctionEvidence;
+  counterSubjectWindows: Phase13TCounterSubjectWindowSummary[];
+  metricExplanations: Phase13TMetricExplanationSummary[];
   localSentinels: Phase13LocalSentinelSummary[];
 };
 

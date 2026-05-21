@@ -9,12 +9,16 @@ import type {
   Phase13QualityVectorAxisSummary,
   Phase13QualityVectorGroupingKey,
   Phase13SopranoRepeatedNotePressureSummary,
+  Phase13TCounterSubjectWindowSummary,
+  Phase13TFragmentFunctionEvidence,
+  Phase13TMetricExplanationSummary,
+  Phase13TVoicePairFunctionSummary,
   Phase13VoicePairUnisonSummary,
   PlannedEntry,
 } from "../events.js";
-import { summarizeEntrySevereIntervalDurations } from "./quality-vector-entry-windows.js";
+import { summarizeEntrySevereIntervalDurations, summarizeEntrySonorities } from "./quality-vector-entry-windows.js";
 import { sectionPlanAt, voicePairKey } from "./quality-vector-shared.js";
-import { summarizeVoicePairUnisons } from "./quality-vector-voice-pairs.js";
+import { summarizeVoicePairFunctions, summarizeVoicePairUnisons } from "./quality-vector-voice-pairs.js";
 
 const PHASE_13_EXPECTED_MAX: Record<Phase13QualityVectorAxis, number> = {
   exactSamePitchUnisonDuration: 12,
@@ -44,8 +48,12 @@ export function analyzePhase13QualityVector(
   sectionPlans: readonly HarmonicPlan[],
 ): Phase13QualityVector {
   const voicePairUnisons = summarizeVoicePairUnisons(notes, sectionPlans);
+  const voicePairFunctions = summarizeVoicePairFunctions(notes, sectionPlans);
   const sopranoRepeatedNotePressure = summarizeSopranoRepeatedNotePressure(notes);
   const entrySevereIntervals = summarizeEntrySevereIntervalDurations(notes, subjectEntries);
+  const entrySonorities = summarizeEntrySonorities(notes, subjectEntries);
+  const fragmentFunctionEvidence = summarizeFragmentFunctionEvidence(sectionPlans);
+  const counterSubjectWindows = summarizeCounterSubjectWindows(notes, subjectEntries);
   const localSentinels = summarizeLocalSentinels(
     voicePairUnisons,
     sopranoRepeatedNotePressure,
@@ -54,12 +62,23 @@ export function analyzePhase13QualityVector(
   );
 
   return {
-    schemaVersion: 1,
-    modelVersion: 1,
+    schemaVersion: 2,
+    modelVersion: 2,
     axes: summarizeAxes(voicePairUnisons, sopranoRepeatedNotePressure, entrySevereIntervals),
     voicePairUnisons,
+    voicePairFunctions,
     sopranoRepeatedNotePressure,
     entrySevereIntervals,
+    entrySonorities,
+    fragmentFunctionEvidence,
+    counterSubjectWindows,
+    metricExplanations: summarizeMetricExplanations(
+      voicePairUnisons,
+      voicePairFunctions,
+      entrySevereIntervals,
+      entrySonorities,
+      sectionPlans,
+    ),
     localSentinels,
   };
 }
@@ -241,6 +260,160 @@ function summarizeLocalSentinels(
   }
 
   return sentinels;
+}
+
+function summarizeFragmentFunctionEvidence(sectionPlans: readonly HarmonicPlan[]): Phase13TFragmentFunctionEvidence {
+  const fragmentPlans = sectionPlans.filter((plan) => plan.state === "episode" && plan.fragmentTransform !== undefined);
+  const counts = new Map<string, number>();
+
+  for (const plan of fragmentPlans) {
+    const key = [
+      plan.fragmentTransform ?? "none",
+      plan.sequencePattern ?? "no-sequence",
+      plan.cadenceKind,
+      plan.targetKey.mode,
+    ].join(":");
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+
+  const topFunctions = [...counts.entries()]
+    .map(([functionKey, count]) => ({
+      functionKey,
+      count,
+      share: roundRatio(count / Math.max(1, fragmentPlans.length)),
+    }))
+    .sort((left, right) => right.count - left.count || left.functionKey.localeCompare(right.functionKey))
+    .slice(0, 5);
+
+  return {
+    fragmentSectionCount: fragmentPlans.length,
+    uniqueFunctionCount: counts.size,
+    topFunctionShare: topFunctions[0]?.share ?? 0,
+    topFunctions,
+  };
+}
+
+function summarizeCounterSubjectWindows(
+  notes: readonly NoteEvent[],
+  subjectEntries: readonly PlannedEntry[],
+): Phase13TCounterSubjectWindowSummary[] {
+  return subjectEntries.map((entry) => {
+    const windowEndTick = entry.startTick + TICKS_PER_QUARTER * 8;
+    const counterSubjectNotes = notes
+      .filter(
+        (note) =>
+          note.role === "counter-subject" &&
+          note.startTick < windowEndTick &&
+          entry.startTick < note.startTick + note.durationTicks,
+      )
+      .sort(compareNotes);
+    const supportCollisionCount = counterSubjectNotes.reduce(
+      (count, counterSubject) =>
+        count +
+        notes.filter(
+          (note) =>
+            note.role === "free-counterpoint" &&
+            note.voice !== counterSubject.voice &&
+            note.startTick < counterSubject.startTick + counterSubject.durationTicks &&
+            counterSubject.startTick < note.startTick + note.durationTicks &&
+            Math.abs(note.pitch - counterSubject.pitch) % 12 <= 2,
+        ).length,
+      0,
+    );
+
+    return {
+      entryStartTick: entry.startTick,
+      entryVoice: entry.voice,
+      counterSubjectVoice: counterSubjectNotes[0]?.voice,
+      retentionKind: counterSubjectRetentionKind(counterSubjectNotes),
+      rhythmPattern: counterSubjectNotes.slice(0, 8).map((note) => Math.round(note.durationTicks / TICKS_PER_QUARTER)),
+      contourClass: contourClass(counterSubjectNotes),
+      supportCollisionCount,
+    };
+  });
+}
+
+function counterSubjectRetentionKind(
+  notes: readonly NoteEvent[],
+): Phase13TCounterSubjectWindowSummary["retentionKind"] {
+  const uniqueDurations = new Set(notes.slice(0, 8).map((note) => note.durationTicks));
+  const contour = contourClass(notes);
+  if (notes.length >= 6 && uniqueDurations.size >= 2 && contour.includes("u") && contour.includes("d")) {
+    return "recognizable";
+  }
+  if (notes.length >= 4 && contour.length > 0) {
+    return "altered";
+  }
+  return "weak";
+}
+
+function contourClass(notes: readonly NoteEvent[]): string {
+  return notes
+    .slice(1, 8)
+    .map((note, index) => {
+      const previous = notes[index]!;
+      if (note.pitch > previous.pitch) {
+        return "u";
+      }
+      if (note.pitch < previous.pitch) {
+        return "d";
+      }
+      return "r";
+    })
+    .join("");
+}
+
+function summarizeMetricExplanations(
+  voicePairUnisons: readonly Phase13VoicePairUnisonSummary[],
+  voicePairFunctions: readonly Phase13TVoicePairFunctionSummary[],
+  entrySevereIntervals: readonly Phase13EntrySevereIntervalDurationSummary[],
+  entrySonorities: ReturnType<typeof summarizeEntrySonorities>,
+  sectionPlans: readonly HarmonicPlan[],
+): Phase13TMetricExplanationSummary[] {
+  const mostPitchClassPair = maximumBy(voicePairUnisons, (summary) => summary.pitchClassUnisonDurationTicks);
+  const mostLockstepPair = maximumBy(voicePairUnisons, (summary) => summary.durationBasedLockstepTicks);
+  const lockstepFunction = voicePairFunctions.find(
+    (summary) => voicePairKey(summary) === voicePairKey(mostLockstepPair),
+  );
+  const worstEntry = maximumBy(entrySevereIntervals, (entry) => entry.unresolvedDurationTicks);
+  const worstSonority = entrySonorities.find((entry) => entry.startTick === worstEntry.startTick);
+
+  return [
+    {
+      axis: "pitchClassUnisonDuration",
+      representativeTick: 0,
+      sectionRole: mostPitchClassPair.sectionRole,
+      voicePair: voicePairKey(mostPitchClassPair),
+      symptom: "pitch-class unison is now split between exact collision, color doubling, and reinforcement",
+      classification:
+        mostPitchClassPair.exactSamePitchDurationTicks > 0 ? "contains exact collisions" : "register-separated color",
+      adoptionMeaning: "diagnostic-reclassification",
+    },
+    {
+      axis: "durationBasedLockstep",
+      representativeTick: 0,
+      sectionRole: mostLockstepPair.sectionRole,
+      voicePair: voicePairKey(mostLockstepPair),
+      symptom: "duration lockstep is interpreted by entry, cadence, sequence, pedal, or mechanical role",
+      classification:
+        (lockstepFunction?.mechanicalCouplingTicks ?? 0) > TICKS_PER_QUARTER * 4
+          ? "mechanical coupling remains"
+          : "mostly functional support",
+      adoptionMeaning:
+        (lockstepFunction?.mechanicalCouplingTicks ?? 0) > TICKS_PER_QUARTER * 4
+          ? "review-required"
+          : "diagnostic-reclassification",
+    },
+    {
+      axis: "unresolvedEntrySevereIntervalDuration",
+      representativeTick: worstEntry.representativeTick,
+      sectionRole: sectionPlanAt(sectionPlans, worstEntry.representativeTick)?.state ?? worstEntry.state,
+      voice: worstEntry.voice,
+      symptom: "entry severe intervals are classified by local sonority and resolution path",
+      classification: worstSonority?.kinds.join("+") ?? "unclassified",
+      adoptionMeaning: worstEntry.unresolvedDurationTicks > 0 ? "review-required" : "musical-improvement",
+    },
+  ];
 }
 
 function axisSummary(

@@ -5,7 +5,7 @@ import { generateScore } from "./generate.js";
 
 test("generateScore keeps phase-13 local sentinels traceable to selected candidate sections", () => {
   const output = generateScore({
-    seed: "bach-001",
+    seed: "circle-fifths",
     lengthTicks: PHASE_5_LENGTH_TICKS,
     selectionModel: "phase10-section-local-planner",
   });
