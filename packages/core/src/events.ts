@@ -807,6 +807,25 @@ export type Phase13VReviewSummary = {
   };
 };
 
+export type EntryBoundaryContinuityWindow = {
+  entryVoice: Voice;
+  form: EntryForm;
+  state: FugueState;
+  startTick: number;
+  outsideOnsetVoices: Voice[];
+  carriedOutsideVoices: Voice[];
+  delayedOutsideVoices: Voice[];
+  classification: "continuity-supported" | "synchronized-reset";
+};
+
+export type EntryBoundaryContinuitySummary = {
+  schemaVersion: 1;
+  bassEntryWindowCount: number;
+  synchronizedResetCount: number;
+  continuitySupportedCount: number;
+  windows: EntryBoundaryContinuityWindow[];
+};
+
 export type Phase13LocalSentinelKind =
   | "long-exact-same-pitch-unison"
   | "long-pitch-class-unison"
@@ -942,6 +961,7 @@ export type GenerationDiagnostics = {
   stepwisePattern: StepwisePatternSummary;
   phase11Review: Phase11ReviewSummary;
   phase12Review: Phase12ReviewSummary;
+  entryBoundaryContinuity: EntryBoundaryContinuitySummary;
   qualityVector: Phase13QualityVector;
   phase13QReview: Phase13QReviewSummary;
   phase13RReview: Phase13RReviewSummary;

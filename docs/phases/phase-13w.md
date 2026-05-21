@@ -2,9 +2,10 @@
 
 Phase 13W is inserted after Phase 13V and before Phase 8. Its purpose is to fix the audible reset at bass entries where the three outside voices restart together instead of carrying independent continuity into the entry.
 
-Status: planned. Phase 8 is blocked until this repair and review are complete.
+Status: complete. Phase 8 may resume using the entry-boundary review signals added here.
 
 Starting review: [Phase 13W entry-boundary review](../reviews/phase-13w-entry-boundary-review.md).
+Completion review: [Phase 13W completion review](../reviews/phase-13w-completion-review.md).
 
 ## Rationale
 
@@ -73,3 +74,17 @@ Phase 13W is complete only when:
 * Phase 13V review summaries remain visible and any regressions are explained as musical tradeoffs;
 * `organ-default` and `strict-counterpoint` focused listening notes confirm that the bass entry no longer sounds like the other voices stopped;
 * Phase 8 handoff explicitly states the remaining entry-boundary review signals, if any.
+
+## Completion Evidence
+
+Phase 13W is complete as of the completion review.
+
+* `entryBoundaryContinuity` diagnostics report bass subject/answer entry windows, outside-voice onsets, delayed outside voices, carried voices, and synchronized-reset classification.
+* The 22 seed review bundle has `unpreparedSynchronizedResetSeedCount: 0` and `continuitySupportedSeedCount: 22`.
+* Focused windows for `bach-001`, `fugue-smoke`, `bright-answer`, `contrary-answer`, and `dense-modal` keep the bass entry while delaying at least one upper voice by half a beat, so the entry is no longer a three-outside-voice mechanical restart.
+* `organ-default` and `strict-counterpoint` review bundles were generated for the same 22 seed length. The score-level onset pattern is the same in both profiles; playback articulation still uses normal note attacks, so the repair is in the score rather than hidden by rendering.
+* Phase 13V review summaries remain visible through `qualityVector.phase13VReview`; any remaining line-agency, entry-formula, counter-subject, or long-window review signal remains Phase 8 input rather than a Phase 13W blocker.
+
+## Phase 8 Handoff
+
+Phase 8 should treat `entryBoundaryContinuity` as a segment-boundary review signal. Infinite playback and visualizer work may proceed, but segment design must not hide a future `synchronized-reset` finding behind playback smoothing or UI boundary effects.

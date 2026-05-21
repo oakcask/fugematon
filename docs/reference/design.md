@@ -99,7 +99,7 @@
 
 ### Phase 8: 無限再生セッション
 
-* Phase 8 は Phase 13W の entry-boundary continuity repair 後に戻る operational lane とする。Phase 13V は line agency、entry formula novelty、counter-subject survivability、long-window development の generator-side evidence と focused listening note を記録した。Phase 13W は bass entry 境界の外声同時再発音を generator-side blocker として扱う。Phase 6-7 の美しさ metric と聴取 gate の完全 pass は開始条件にしないが、細かな操作 UI が音楽的な退屈さを隠す設計にならないよう、generator quality、rendering boundary、model adoption evidence を前提にする。
+* Phase 8 は Phase 13W の entry-boundary continuity repair 後に戻る operational lane とする。Phase 13V は line agency、entry formula novelty、counter-subject survivability、long-window development の generator-side evidence と focused listening note を記録した。Phase 13W は bass entry 境界の外声同時再発音を generator-side blocker として修正し、`entryBoundaryContinuity` を Phase 8 の review signal として残した。Phase 6-7 の美しさ metric と聴取 gate の完全 pass は開始条件にしないが、細かな操作 UI が音楽的な退屈さを隠す設計にならないよう、generator quality、rendering boundary、model adoption evidence を前提にする。
 * 生成済みイベントをメモリ上のリングバッファに保存する。
 * 保存済み範囲内では event replay により巻き戻して再生し直せるようにする。
 * continuous fugue、endless program、regenerative cycle を同じ状態遷移 model の異なる境界表現として扱う。
