@@ -16,11 +16,16 @@ test("generateScore exposes phase-13 quality vector diagnostics", () => {
   });
   const qualityVector = output.diagnostics.qualityVector;
 
-  assert.equal(qualityVector.schemaVersion, 1);
-  assert.equal(qualityVector.modelVersion, 1);
+  assert.equal(qualityVector.schemaVersion, 2);
+  assert.equal(qualityVector.modelVersion, 2);
   assert.equal(qualityVector.voicePairUnisons.length, 6);
+  assert.equal(qualityVector.voicePairFunctions.length, 6);
   assert.equal(qualityVector.sopranoRepeatedNotePressure.voice, "soprano");
   assert.ok(qualityVector.entrySevereIntervals.length > 0);
+  assert.equal(qualityVector.entrySonorities.length, qualityVector.entrySevereIntervals.length);
+  assert.ok(qualityVector.fragmentFunctionEvidence.uniqueFunctionCount >= 0);
+  assert.ok(qualityVector.counterSubjectWindows.length > 0);
+  assert.ok(qualityVector.metricExplanations.length >= 3);
   assert.ok(qualityVector.axes.some((axis) => axis.axis === "exactSamePitchUnisonDuration"));
   assert.ok(qualityVector.axes.some((axis) => axis.axis === "sopranoRepeatedNotePressure"));
   assert.ok(qualityVector.axes.every((axis) => Number.isFinite(axis.normalizedValue)));

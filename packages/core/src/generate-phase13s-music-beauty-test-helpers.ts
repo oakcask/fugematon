@@ -33,6 +33,10 @@ export type Phase13TCurrentBlockerMetrics = {
   durationBasedLockstepReviewSeedCount: number;
   pitchClassUnisonReviewSeedCount: number;
   unresolvedEntrySevereIntervalSentinelCount: number;
+  classifiedEntrySonorityCount: number;
+  fragmentFunctionEvidenceTotal: number;
+  recognizableOrAlteredCounterSubjectWindowCount: number;
+  functionAwareLockstepSeedCount: number;
   topSubjectFragmentFamilyShare: number;
   lowModalCounterSubjectIdentitySeedCount: number;
 };
@@ -80,6 +84,10 @@ export function collectPhase13TCurrentBlockerMetrics(seeds: readonly string[]): 
   let durationBasedLockstepReviewSeedCount = 0;
   let pitchClassUnisonReviewSeedCount = 0;
   let unresolvedEntrySevereIntervalSentinelCount = 0;
+  let classifiedEntrySonorityCount = 0;
+  let fragmentFunctionEvidenceTotal = 0;
+  let recognizableOrAlteredCounterSubjectWindowCount = 0;
+  let functionAwareLockstepSeedCount = 0;
   let lowModalCounterSubjectIdentitySeedCount = 0;
 
   for (const seed of seeds) {
@@ -94,6 +102,25 @@ export function collectPhase13TCurrentBlockerMetrics(seeds: readonly string[]): 
     unresolvedEntrySevereIntervalSentinelCount += output.diagnostics.qualityVector.localSentinels.filter(
       (sentinel) => sentinel.kind === "unresolved-entry-severe-interval",
     ).length;
+    classifiedEntrySonorityCount += output.diagnostics.qualityVector.entrySonorities.filter(
+      (sonority) => sonority.kinds.length > 0,
+    ).length;
+    fragmentFunctionEvidenceTotal += output.diagnostics.qualityVector.fragmentFunctionEvidence.uniqueFunctionCount;
+    recognizableOrAlteredCounterSubjectWindowCount += output.diagnostics.qualityVector.counterSubjectWindows.filter(
+      (window) => window.retentionKind === "recognizable" || window.retentionKind === "altered",
+    ).length;
+    if (
+      output.diagnostics.qualityVector.voicePairFunctions.some(
+        (summary) =>
+          summary.subjectSupportLockstepTicks +
+            summary.cadenceSupportLockstepTicks +
+            summary.sequencePatternLockstepTicks +
+            summary.pedalLikeSupportLockstepTicks >
+          0,
+      )
+    ) {
+      functionAwareLockstepSeedCount += 1;
+    }
 
     const topSubjectFragment = output.diagnostics.phase12Review.subjectStemFamilies.find(
       (family) => family.form === "subject-fragment",
@@ -113,6 +140,10 @@ export function collectPhase13TCurrentBlockerMetrics(seeds: readonly string[]): 
     durationBasedLockstepReviewSeedCount,
     pitchClassUnisonReviewSeedCount,
     unresolvedEntrySevereIntervalSentinelCount,
+    classifiedEntrySonorityCount,
+    fragmentFunctionEvidenceTotal,
+    recognizableOrAlteredCounterSubjectWindowCount,
+    functionAwareLockstepSeedCount,
     topSubjectFragmentFamilyShare: Math.max(0, ...topSubjectFragments.values()) / seeds.length,
     lowModalCounterSubjectIdentitySeedCount,
   };

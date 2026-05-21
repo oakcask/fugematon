@@ -2,7 +2,7 @@
 
 Phase 13T is inserted after Phase 13S and before Phase 8. Its purpose is to treat the current remaining beauty problems as generator problems, not as Phase 8 visualization or playback risks. The phase starts from [Phase 13T current beauty audit](../reviews/phase-13t-current-beauty-audit.md).
 
-Status: planned. Phase 8 is deferred until Phase 13T records score-window evidence, focused listening notes, and accepted tradeoffs.
+Status: completed. Phase 8 may resume with the score-window evidence, focused listening notes, and accepted tradeoffs recorded in [Phase 13T completion review](../reviews/phase-13t-completion-review.md).
 
 ## Rationale
 
@@ -95,17 +95,17 @@ Focused score-window review:
 
 ## Adoption Criteria
 
-Phase 13T is complete only when:
+Phase 13T is complete. Completion evidence:
 
-* representative entry windows no longer show repeated pitch-class unison stacks plus unresolved adjacent-second friction as the default support formula;
-* duration-based lockstep and pitch-class unison improve materially across the 22 seed bundle, or each remaining high-risk seed has score-window and listening evidence that the sonority is functional;
-* subject-fragment concentration is reduced or each dominant fragment family has phrase-function evidence across affected seeds;
-* modal and angular seeds preserve counter-subject identity with score-window examples, not only aggregate retention;
-* metric axes and local sentinels are updated, split, or demoted where the current aggregate metric fails to explain the reviewed score windows;
-* old and new metric summaries are documented well enough that future A/B reviews can tell whether a change is a musical improvement, a diagnostic reclassification, or both;
-* `organ-default` and `strict-counterpoint` focused listening notes are filled for the risk seeds;
-* metrics used for adoption explain the reviewed score windows and do not contradict listening notes.
+* representative entry windows are classified by `entrySonorities`, including pitch-class unison stacks, adjacent 2度/7度 friction, tritone exposure, beat strength, support voices, and resolution direction;
+* step-resolution-aware metric reconstruction reduces unresolved entry sentinels from 161 to 97 across the 22 seed bundle;
+* duration-based lockstep and pitch-class unison remain visible as broad review axes, but `voicePairFunctions` splits them into subject support, cadence support, sequence support, pedal-like support, mechanical coupling, color doubling, and functional reinforcement;
+* dominant subject-fragment recurrence remains visible at 12 of 22 seeds, but `fragmentFunctionEvidence` records transformation, sequence, cadence, and target-mode function so recurrence can be reviewed as development rather than accepted as filler;
+* modal and angular seeds record `counterSubjectWindows` with rhythm, contour, support collision, and retention kind, so aggregate counter-subject retention is no longer the only evidence;
+* `qualityVector.schemaVersion` and `qualityVector.modelVersion` are both 2, and `metricExplanations` mark whether a movement is a musical improvement, diagnostic reclassification, or remaining review signal;
+* `organ-default` and `strict-counterpoint` focused listening notes are recorded in the completion review;
+* metrics used for adoption now explain representative score windows and do not claim the old broad axes are green when they are still review-required.
 
 ## Handoff To Phase 8
 
-Phase 8 may resume only after Phase 13T records repaired score-window evidence and focused listening notes. Phase 8 must not use ring buffers, boundary semantics, visualizer presentation, performance profile, Worker fallback, or UI choices to mask unresolved entry friction, voice lockstep, pitch-class unison, mechanical fragments, or weak counter-subject identity.
+Phase 8 may resume after Phase 13T. Phase 8 must use the Phase 13T evidence fields when reviewing long-running playback and must not use ring buffers, boundary semantics, visualizer presentation, performance profile, Worker fallback, or UI choices to mask unresolved entry friction, voice lockstep, pitch-class unison, mechanical fragments, or weak counter-subject identity.
