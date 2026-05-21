@@ -1,8 +1,8 @@
 # Phase 13U: Score-Window Beauty Rewrite
 
-Phase 13U is inserted after Phase 13T and before Phase 8. Its purpose is to make musical beauty the planning center again after the current score review found that the metrics locate defects but still do not prove that the generated fugues are beautiful enough for infinite playback.
+Phase 13U was inserted after Phase 13T and before Phase 8. Its purpose was to make musical beauty the planning center again after the current score review found that the metrics locate defects but still do not prove that the generated fugues are beautiful enough for infinite playback.
 
-Status: complete. Phase 13U records score-window review evidence and accepted tradeoffs. Phase 8 may resume with the handoff constraints below.
+Status: complete, superseded for handoff by Phase 13V. Phase 13U records score-window review evidence and accepted tradeoffs, but the post-13U score beauty audit found that truthfulness evidence is not sufficient for Phase 8.
 
 Starting review: [Phase 13U beauty replan review](../reviews/phase-13u-beauty-replan.md).
 
@@ -107,11 +107,11 @@ Completion record:
 * A generator-side free-counterpoint pitch-repair experiment was rejected. It reduced some entry friction locally, but it worsened older musical guardrails including leap recovery, bass-root support, entry-pattern concentration, and counter-subject retention. Because Phase 13U requires score-level beauty rather than metric-only movement, this experiment is not adopted.
 * `organ-default` and `strict-counterpoint` use the same score-window evidence. Remaining review signals are composition-model tradeoffs; performance profile differences do not turn them into acceptance proof.
 
-## Handoff To Phase 8
+## Superseded Handoff
 
-Phase 8 may resume only after Phase 13U records score-window beauty evidence. Phase 8 must not use boundary design, playback mode, visualizer presentation, Worker fallback, or performance profile to hide unresolved entry formulas, voice coupling, fragment sameness, or weak counter-subject identity.
+Phase 13U originally allowed Phase 8 to resume after score-window beauty evidence was recorded. That handoff is now superseded by [Phase 13V](phase-13v.md), because the post-13U review found that truthful metrics still do not prove enough line agency, entry-formula novelty, counter-subject survivability, or long-run development for infinite playback.
 
-Acceptable Phase 8 residual signals:
+Phase 13U residual signals now become Phase 13V inputs:
 
 * Repeated entry formulas may remain visible when they are explicitly marked `review-required` or functionally justified in score-window evidence.
 * Voice-pair coupling may remain when localized spans classify cadence, sequence, subject support, or color doubling; mechanical or reinforcement spans must stay visible to reviewers.
