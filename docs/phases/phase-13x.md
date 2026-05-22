@@ -2,7 +2,7 @@
 
 Phase 13X is inserted after Phase 13W and before Phase 13Y. Its purpose is to fix the exposition bass answer where soprano, alto, and tenor all reset at the same tick as the first bass entry.
 
-Status: planned. Phase 8 is deferred until Phase 13Y records generalized entry-continuity evidence and Phase 13Z records long-run phrase-development evidence.
+Status: planned. Phase 8 is deferred until Phase 13Y records generalized entry-continuity evidence, Phase 13Z records long-run phrase-development evidence, and Phase 14 records score-led beauty evidence.
 
 Starting review: [Phase 13X first bass entry review](../reviews/phase-13x-first-bass-entry-review.md).
 Follow-up generalization: [Phase 13Y](phase-13y.md).
