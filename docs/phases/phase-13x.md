@@ -2,11 +2,12 @@
 
 Phase 13X is inserted after Phase 13W and before Phase 13Y. Its purpose is to fix the exposition bass answer where soprano, alto, and tenor all reset at the same tick as the first bass entry.
 
-Status: complete. Phase 13Y is now the current follow-up for generalized entry-continuity evidence. Phase 8 remains deferred until Phase 13Y records generalized entry-continuity evidence, Phase 13Z records long-run phrase-development evidence, and Phase 14 records score-led beauty evidence.
+Status: complete for the entry-boundary reset target. Phase 13X2 is now the current follow-up because the user-reported bass-answer symptom is likely post-bass-answer free-counterpoint tail thinning rather than only same-tick entry reset. Phase 8 remains deferred until Phase 13X2 records bass-answer-tail repair evidence, Phase 13Y records generalized entry-continuity evidence, Phase 13Z records long-run phrase-development evidence, and Phase 14 records score-led beauty evidence.
 
 Starting review: [Phase 13X first bass entry review](../reviews/phase-13x-first-bass-entry-review.md).
 Completion review: [Phase 13X completion review](../reviews/phase-13x-completion-review.md).
 Follow-up generalization: [Phase 13Y](phase-13y.md).
+Symptom reinterpretation follow-up: [Phase 13X2](phase-13x2.md).
 
 ## Rationale
 
@@ -66,3 +67,5 @@ The repair keeps the exposition bass answer at quarter 12, but no reviewed seed 
 Accepted tradeoff: previous-note-aware support slightly changes legacy metric baselines. The most direct musical cost is a small increase in shared-rhythm and related review ceilings around some review seeds, such as the close-imitation shared-rhythm boundary moving from 814 to 817 and the review-set maximum moving from 906 to 909. This is accepted because the score-window failure was a structural exposition reset, while the changed counts are localized review signals that remain within the hard readiness model and are documented for later Phase 13Y/13Z/14 review.
 
 Phase 13Y must not treat this bass-specific repair as a general solution. It should use the Phase 13X evidence as a baseline, then generalize entry continuity by entry voice, entry order, already-entered voices, and prepared collective articulation.
+
+Follow-up clarification: Phase 13X repaired a real entry-boundary defect, but later review shows the original listening report was probably pointing to first-bass-answer tail thinning. Phase 13X2 handles that corrected symptom before Phase 13Y generalizes entry continuity.

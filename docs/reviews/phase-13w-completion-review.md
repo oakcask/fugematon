@@ -32,7 +32,7 @@ Representative windows:
 
 Theory basis: a bass entry may be emphatic, but at least one outside voice should imply line continuity through delay, preparation, or suspension unless a full tutti reset is musically prepared. The repaired windows no longer make all three outside voices attack as an unprepared block.
 
-Project response: keep `entryBoundaryContinuity.synchronizedResetCount` visible as a Phase 13X, Phase 13Y, and Phase 8 review signal.
+Project response: keep `entryBoundaryContinuity.synchronizedResetCount` visible as a Phase 13X, Phase 13X2, Phase 13Y, and Phase 8 review signal.
 
 ### 2. Counter-subject identity remains reviewable
 

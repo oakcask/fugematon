@@ -105,7 +105,7 @@ Project response: add Phase 14 after Phase 13Z and before Phase 8. Phase 14 is n
 
 ## Plan Impact
 
-Phase 13X, Phase 13Y, and Phase 13Z stay in the route because they each address confirmed local blockers. They are not enough for Phase 8.
+Phase 13X, Phase 13X2, Phase 13Y, and Phase 13Z stay in the route because they each address confirmed local blockers. They are not enough for Phase 8.
 
 Phase 14 becomes the new Phase 8 prerequisite:
 

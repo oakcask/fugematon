@@ -1,14 +1,17 @@
 # Phase 13Y: Generalized Entry Continuity
 
-Phase 13Y is inserted after Phase 13X and before Phase 13Z. Its purpose is to generalize the entry-boundary continuity model so it is not tied to the current `alto -> soprano -> tenor -> bass` exposition order or to bass entries only.
+Phase 13Y is inserted after Phase 13X2 and before Phase 13Z. Its purpose is to generalize the entry-boundary continuity model so it is not tied to the current `alto -> soprano -> tenor -> bass` exposition order or to bass entries only.
 
-Status: planned. Phase 8 is deferred until Phase 13Y records score-window and focused listening evidence, then Phase 13Z records long-run phrase-development evidence and Phase 14 records score-led beauty evidence.
+Status: planned after Phase 13X2. Phase 8 is deferred until Phase 13X2 records bass-answer-tail repair evidence, Phase 13Y records score-window and focused listening evidence, then Phase 13Z records long-run phrase-development evidence and Phase 14 records score-led beauty evidence.
 
 Planning review: [Phase 13Y entry-continuity generalization review](../reviews/phase-13y-entry-continuity-generalization.md).
+Prerequisite correction: [Phase 13X2](phase-13x2.md).
 
 ## Rationale
 
 Phase 13X should remain a narrow repair for the deterministic first-bass-answer blocker found in the current generator. That blocker is real, but it should not become a permanent music-model assumption that bass is the only voice requiring entry-boundary continuity.
+
+Phase 13X2 must complete first because the clarified user symptom points to post-bass-answer tail thinning and review observability, not only entry-boundary reset. Phase 13Y should preserve the new bass-answer-tail evidence while it generalizes entry continuity.
 
 The durable problem is broader:
 
@@ -37,6 +40,7 @@ The durable problem is broader:
 * `entryBoundaryContinuity` exposes generalized windows for important subject and answer entries, not only bass-entry windows.
 * Representative, boundary, rotation, modal, and adversarial seeds show that non-bass entries and alternate entry-order assumptions are reviewed for line continuity.
 * The current first-bass-answer repair from Phase 13X remains intact.
+* The Phase 13X2 bass-answer-tail thinning repair remains intact and visible as a separate review signal.
 * Post-exposition entries remain reviewed for prepared delayed support, not only for absence of three-outside-voice synchronized reset.
 * Diagnostics distinguish synchronized reset, prepared collective articulation, carried support, suspension/resolution, delayed support, and unsupported entry-local thinning.
 * Focused `organ-default` and `strict-counterpoint` listening notes include at least one non-bass entry-continuity window and one repaired first-bass-answer window.
@@ -48,7 +52,7 @@ The durable problem is broader:
 3. Add non-bass entry-window tests that fail when all already-entered outside voices cut and restart without preparation.
 4. Generalize continuity-preserving support candidates and scoring beyond bass entries.
 5. Re-run the 22 seed review bundle and record score-window examples for first-bass, non-bass exposition, and post-exposition entries.
-6. Update Phase 13Z handoff only after the generalized model shows that future entry-order changes will not hide the same boundary-reset symptom under another voice name.
+6. Update Phase 13Z handoff only after the generalized model shows that future entry-order changes will not hide the same boundary-reset symptom under another voice name, and after the Phase 13X2 tail-thinning evidence remains clean.
 
 ## Phase 13Z Handoff
 
