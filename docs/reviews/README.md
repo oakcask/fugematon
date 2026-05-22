@@ -6,6 +6,8 @@
 
 music-quality gate、diagnostics threshold、generator model、candidate scoring model、evaluation weights、section/planner model を変える場合、agent は人間の聴取完了を待たずに、関連する複数 seed の生成譜面を楽典的にレビューしてください。代表 seed、境界 seed、rotation seed、adversarial seed から変更リスクに合う小集合を選び、レビューした seed、楽典上の所見、影響 metric、tradeoff、未実施の聴取 gap を該当 Phase または review doc に残してください。
 
+seed や metric を追加、削除、昇格、降格するレビューでは、[CI and review scope](../reference/quality-metrics/ci-review-scope.md) に従って、CI で検査するもの、review bundle で見るもの、manual listening に残すもの、削除または archive するものを分類してください。
+
 指標の一般的な意味、正規化、採否 policy は [../reference/quality-metrics.md](../reference/quality-metrics.md) に置く。Review docs は seed evidence、音楽的症状、tradeoff、計画変更の根拠を残す場所です。
 
 ## 優先
