@@ -8,7 +8,7 @@
     "@fugematon/performance": "workspace:*"
   },
   "devDependencies": {
-    "vite": "^8.0.13"
+    "vite": "^8.0.14"
   },
   "scripts": {
     "dev": "vite --host 127.0.0.1",
