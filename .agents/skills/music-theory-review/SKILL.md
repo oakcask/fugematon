@@ -17,8 +17,9 @@ Make music-theory review reproducible enough that an agent can find problems, co
 4. Do a literature pass before making strong theory claims. Use Fux/species counterpoint as the default counterpoint baseline, then check broader classical, jazz, and popular-music sources when the issue touches harmony, rhythm, form, phrase design, texture, or style.
 5. Generate or inspect evidence across the relevant review seeds. Prefer existing review bundles and diagnostics when they answer the question; otherwise regenerate a bundle under `samples/<review-name>` or derive focused metrics from ScoreEvent data.
 6. When a symptom repeats across seeds, test whether it comes from a generator pattern, not only from the local diagnostics. Compare subject degree patterns, answer transforms, entry spacing, role assignments, section states, voice/register placement, and support-texture formulas against the affected metrics.
-7. Separate findings into source-backed rules, project policy, and inference from generated artifacts.
-8. Update docs when the review changes phase scope, gate rationale, diagnostics priorities, seed selection, or music-quality expectations.
+7. If the review touches seed or metric scope, classify each affected item with `docs/reference/quality-metrics/ci-review-scope.md` before recommending CI expansion. Default uncertain beauty signals to `review-required`, not CI blocking.
+8. Separate findings into source-backed rules, project policy, and inference from generated artifacts.
+9. Update docs when the review changes phase scope, gate rationale, diagnostics priorities, seed selection, or music-quality expectations.
 
 ## Human Feedback Ambiguity Rules
 
@@ -63,6 +64,8 @@ For each finding, record:
 * whether current diagnostics already detect it;
 * the proposed project response: new metric, changed threshold, scoring change, generation change, manual-listening rubric, or no action.
 
+When proposing a new or changed seed/metric, also record its CI / review scope classification: `ci-blocking`, `ci-observed`, `review-required`, `manual-listening`, or `remove-or-archive`. Include the reason and the action so review-only concerns do not silently become permanent CI cost.
+
 Prefer quantitative checks for repeated structural concerns: ratios, counts, per-seed maxima, windowed contour measures, entry-local intervals, role pairs, voice pairs, section-state grouping, and before/after comparisons. Pair this with listening judgement when the issue is aesthetic or style-dependent.
 
 Do not stop at reporting top-level diagnostics when a musical failure repeats. Ask what generative choice made the failure likely. Useful checks include:
@@ -102,11 +105,14 @@ Use these axes as prompts, not as a mandatory checklist for every task.
 * Put concrete review evidence in `docs/reviews/`.
 * Put durable music-model policy in `docs/reference/design.md`.
 * Put implementation order, diagnostics, gates, and phase scope in `docs/reference/technical-plan.md` or the relevant phase doc.
+* Put stable seed/metric CI classification policy in `docs/reference/quality-metrics/ci-review-scope.md`.
 * Keep generated MIDI, diagnostics bundles, and one-off analysis outputs out of committed docs unless the repo already treats them as source artifacts.
 * Do not include local machine paths, usernames, private links, or other environment-specific details in review text.
 
 ## Output Shape
 
 Lead with findings. For each finding, include the affected seeds and the theory basis. Then give the recommended follow-up and the docs changed or still needing change.
+
+If seed or metric scope changed, include a short `CI / review scope` note that lists the classification, reason, and action for each affected seed or metric.
 
 If the evidence is incomplete, say exactly what is missing: unavailable source, no listening pass, insufficient seeds, missing diagnostics, or ungenerated review bundle.

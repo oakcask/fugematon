@@ -367,6 +367,8 @@ pnpm fugematon diagnose --seed bach-001 --ticks 7680
 
 ## CI 検証方針
 
+CI に入れる seed と metric は [CI and review scope](quality-metrics/ci-review-scope.md) の分類に従う。音楽的美しさ、metric truthfulness、長時間疲労、style fit は、CI に広げる前に review bundle と music-theory review で処理する。
+
 * 完全一致のスナップショットテストだけに依存しない。
   * 生成アルゴリズムの改善でイベント列が変わりやすいため、音楽的性質を検証するテストを中心にする。
 * seed 再現性の検証では、同一 input に対する output の完全一致を確認する。
