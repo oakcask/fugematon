@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { PHASE_5_11_ROTATION_SEEDS, PHASE_5_LENGTH_TICKS, PHASE_5_REVIEW_SEEDS } from "./constants.js";
+import type { PlannedEntry, Voice } from "./events.js";
 import { generateScore } from "./generate.js";
 
 export const PHASE_13X_FIRST_BASS_ENTRY_REVIEW_SEEDS = [...PHASE_5_REVIEW_SEEDS, ...PHASE_5_11_ROTATION_SEEDS].map(
@@ -11,23 +12,81 @@ export const PHASE_13X_FIRST_BASS_ENTRY_REVIEW_BATCH_B = PHASE_13X_FIRST_BASS_EN
 export const PHASE_13X_FIRST_BASS_ENTRY_REVIEW_BATCH_C = PHASE_13X_FIRST_BASS_ENTRY_REVIEW_SEEDS.slice(12, 17);
 export const PHASE_13X_FIRST_BASS_ENTRY_REVIEW_BATCH_D = PHASE_13X_FIRST_BASS_ENTRY_REVIEW_SEEDS.slice(17);
 
-export function assertPhase13XFirstBassEntryResetEvidence(seeds: readonly string[]): void {
-  const resetSeeds = seeds.filter((seed) => {
-    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
+type Phase13XFirstBassEntryWindow = {
+  seed: string;
+  state: PlannedEntry["state"];
+  form: PlannedEntry["form"];
+  entryVoice: Voice;
+  startTick: number;
+  outsideOnsetVoices: readonly Voice[];
+  outsideEndedAtEntryVoices: readonly Voice[];
+  carriedOutsideVoices: readonly Voice[];
+  delayedOutsideVoices: readonly Voice[];
+};
+
+export type Phase13XFirstBassEntryMetrics = {
+  seedCount: number;
+  firstBassEntryResetSeedCount: number;
+  postExpositionWindowCount: number;
+  postExpositionSynchronizedResetCount: number;
+  windows: Phase13XFirstBassEntryWindow[];
+};
+
+export function collectPhase13XFirstBassEntryMetrics(seeds: readonly string[]): Phase13XFirstBassEntryMetrics {
+  const outputs = seeds.map((seed) => ({ seed, output: generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS }) }));
+  const windows = outputs.map(({ seed, output }) => {
     const firstBassEntryWindow = output.diagnostics.entryBoundaryContinuity.firstBassEntryWindow;
+    assert.ok(firstBassEntryWindow !== undefined, `${seed} should expose the first bass entry window`);
 
-    assert.equal(firstBassEntryWindow?.entryVoice, "bass", `${seed} should expose the first bass entry`);
-    assert.equal(firstBassEntryWindow.state, "exposition", `${seed} should expose the exposition bass answer`);
-    assert.equal(firstBassEntryWindow.form, "answer", `${seed} should expose the exposition bass answer`);
-
-    return (
-      output.diagnostics.entryBoundaryContinuity.firstBassEntrySynchronizedReset &&
-      firstBassEntryWindow.outsideOnsetVoices.length === 3 &&
-      firstBassEntryWindow.outsideEndedAtEntryVoices.length === 3 &&
-      firstBassEntryWindow.carriedOutsideVoices.length === 0 &&
-      firstBassEntryWindow.entryVoice === "bass"
-    );
+    return { seed, ...firstBassEntryWindow };
   });
 
+  return {
+    seedCount: seeds.length,
+    firstBassEntryResetSeedCount: outputs.filter(
+      ({ output }) => output.diagnostics.entryBoundaryContinuity.firstBassEntrySynchronizedReset,
+    ).length,
+    postExpositionWindowCount: outputs.reduce(
+      (sum, { output }) => sum + output.diagnostics.entryBoundaryContinuity.bassEntryWindowCount,
+      0,
+    ),
+    postExpositionSynchronizedResetCount: outputs.reduce(
+      (sum, { output }) => sum + output.diagnostics.entryBoundaryContinuity.synchronizedResetCount,
+      0,
+    ),
+    windows,
+  };
+}
+
+export function assertPhase13XFirstBassEntryResetEvidence(seeds: readonly string[]): void {
+  const metrics = collectPhase13XFirstBassEntryMetrics(seeds);
+  const resetSeeds = metrics.windows
+    .filter((firstBassEntryWindow) => {
+      assert.equal(
+        firstBassEntryWindow.entryVoice,
+        "bass",
+        `${firstBassEntryWindow.seed} should expose the first bass entry`,
+      );
+      assert.equal(
+        firstBassEntryWindow.state,
+        "exposition",
+        `${firstBassEntryWindow.seed} should expose the exposition bass answer`,
+      );
+      assert.equal(
+        firstBassEntryWindow.form,
+        "answer",
+        `${firstBassEntryWindow.seed} should expose the exposition bass answer`,
+      );
+
+      return (
+        firstBassEntryWindow.outsideOnsetVoices.length === 3 &&
+        firstBassEntryWindow.outsideEndedAtEntryVoices.length === 3 &&
+        firstBassEntryWindow.carriedOutsideVoices.length === 0 &&
+        firstBassEntryWindow.entryVoice === "bass"
+      );
+    })
+    .map((window) => window.seed);
+
   assert.deepEqual(resetSeeds, seeds);
+  assert.equal(metrics.firstBassEntryResetSeedCount, seeds.length);
 }
