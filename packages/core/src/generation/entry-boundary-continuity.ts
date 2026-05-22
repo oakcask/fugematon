@@ -11,26 +11,55 @@ export function analyzeEntryBoundaryContinuity(
   notes: readonly NoteEvent[],
   subjectEntries: readonly PlannedEntry[],
 ): EntryBoundaryContinuitySummary {
-  const firstBassEntry = subjectEntries.find((entry) => entry.voice === "bass" && entry.state === "exposition");
+  const firstBassEntry = subjectEntries.find(isFirstBassExpositionEntry);
   const firstBassEntryWindow =
     firstBassEntry === undefined ? undefined : summarizeEntryBoundaryContinuityWindow(notes, firstBassEntry);
-  const windows = subjectEntries
-    .filter((entry) => entry.voice === "bass" && entry.state !== "exposition" && entry.form !== "subject-fragment")
-    .map((entry) => summarizeEntryBoundaryContinuityWindow(notes, entry));
+  const windows = summarizeEntryBoundaryContinuityWindows(notes, subjectEntries);
+  const synchronizedResetCount = countWindowsByClassification(windows, "synchronized-reset");
+  const continuitySupportedCount = countWindowsByClassification(windows, "continuity-supported");
 
   return {
     schemaVersion: 2,
     firstBassEntryWindow,
-    firstBassEntrySynchronizedReset:
-      firstBassEntryWindow !== undefined &&
-      firstBassEntryWindow.outsideOnsetVoices.length >= 3 &&
-      firstBassEntryWindow.outsideEndedAtEntryVoices.length >= 3 &&
-      firstBassEntryWindow.carriedOutsideVoices.length === 0,
+    firstBassEntrySynchronizedReset: firstBassEntryWindowHasSynchronizedReset(firstBassEntryWindow),
     bassEntryWindowCount: windows.length,
-    synchronizedResetCount: windows.filter((window) => window.classification === "synchronized-reset").length,
-    continuitySupportedCount: windows.filter((window) => window.classification === "continuity-supported").length,
+    synchronizedResetCount,
+    continuitySupportedCount,
     windows,
   };
+}
+
+function summarizeEntryBoundaryContinuityWindows(
+  notes: readonly NoteEvent[],
+  subjectEntries: readonly PlannedEntry[],
+): EntryBoundaryContinuityWindow[] {
+  return subjectEntries
+    .filter(isReviewedPostExpositionBassEntry)
+    .map((entry) => summarizeEntryBoundaryContinuityWindow(notes, entry));
+}
+
+function isFirstBassExpositionEntry(entry: PlannedEntry): boolean {
+  return entry.voice === "bass" && entry.state === "exposition";
+}
+
+function isReviewedPostExpositionBassEntry(entry: PlannedEntry): boolean {
+  return entry.voice === "bass" && entry.state !== "exposition" && entry.form !== "subject-fragment";
+}
+
+function countWindowsByClassification(
+  windows: readonly EntryBoundaryContinuityWindow[],
+  classification: EntryBoundaryContinuityWindow["classification"],
+): number {
+  return windows.filter((window) => window.classification === classification).length;
+}
+
+function firstBassEntryWindowHasSynchronizedReset(window: EntryBoundaryContinuityWindow | undefined): boolean {
+  return (
+    window !== undefined &&
+    window.outsideOnsetVoices.length >= 3 &&
+    window.outsideEndedAtEntryVoices.length >= 3 &&
+    window.carriedOutsideVoices.length === 0
+  );
 }
 
 function summarizeEntryBoundaryContinuityWindow(
