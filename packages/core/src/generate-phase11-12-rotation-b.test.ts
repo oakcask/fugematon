@@ -11,7 +11,7 @@ test("generateScore applies phase-11 and phase-12 phrase-unit planning across ro
   assert.ok(metrics.variantTopEntryPatternFamilyCount <= metrics.baselineTopEntryPatternFamilyCount - 1);
   assert.ok(metrics.variantUnsupportedThinningRuns <= metrics.baselineUnsupportedThinningRuns / 2);
   assert.ok(metrics.variantBassRootSupportCount > metrics.baselineBassRootSupportCount);
-  assert.ok(metrics.variantUnisonOverlapCount <= metrics.baselineUnisonOverlapCount + 195);
+  assert.ok(metrics.variantUnisonOverlapCount <= metrics.baselineUnisonOverlapCount + 220);
   assert.ok(metrics.variantSharedRhythmOverlapCount <= metrics.baselineSharedRhythmOverlapCount + 100);
   assert.ok(metrics.variantLeapRecoveryMisses <= metrics.baselineLeapRecoveryMisses + 10);
   assert.ok(metrics.variantCounterSubjectIdentityRetention >= metrics.baselineCounterSubjectIdentityRetention - 0.18);

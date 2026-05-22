@@ -58,9 +58,9 @@ export function collectPhase13XFirstBassEntryMetrics(seeds: readonly string[]): 
   };
 }
 
-export function assertPhase13XFirstBassEntryResetEvidence(seeds: readonly string[]): void {
+export function assertPhase13XFirstBassEntryContinuityEvidence(seeds: readonly string[]): void {
   const metrics = collectPhase13XFirstBassEntryMetrics(seeds);
-  const resetSeeds = metrics.windows
+  const continuitySeeds = metrics.windows
     .filter((firstBassEntryWindow) => {
       assert.equal(
         firstBassEntryWindow.entryVoice,
@@ -79,14 +79,14 @@ export function assertPhase13XFirstBassEntryResetEvidence(seeds: readonly string
       );
 
       return (
-        firstBassEntryWindow.outsideOnsetVoices.length === 3 &&
-        firstBassEntryWindow.outsideEndedAtEntryVoices.length === 3 &&
-        firstBassEntryWindow.carriedOutsideVoices.length === 0 &&
-        firstBassEntryWindow.entryVoice === "bass"
+        firstBassEntryWindow.entryVoice === "bass" &&
+        firstBassEntryWindow.outsideOnsetVoices.length < 3 &&
+        firstBassEntryWindow.outsideEndedAtEntryVoices.length < 3 &&
+        firstBassEntryWindow.carriedOutsideVoices.length + firstBassEntryWindow.delayedOutsideVoices.length > 0
       );
     })
     .map((window) => window.seed);
 
-  assert.deepEqual(resetSeeds, seeds);
-  assert.equal(metrics.firstBassEntryResetSeedCount, seeds.length);
+  assert.deepEqual(continuitySeeds, seeds);
+  assert.equal(metrics.firstBassEntryResetSeedCount, 0);
 }

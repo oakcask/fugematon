@@ -7,8 +7,8 @@ import { evaluatePhase6Diagnostics, evaluatePhase7Diagnostics } from "./review-g
 
 test("generateScore nudges non-modal stepwise pattern fixation without modal guardrail regressions", () => {
   const blockerSeeds = [
-    ["fugue-smoke", 0.741, 5, 566, 27],
-    ["lyrical-line", 0.725, 4, 589, 19],
+    ["fugue-smoke", 0.743, 5, 570, 28],
+    ["lyrical-line", 0.73, 4, 589, 20],
     ["contrary-answer", 0.731, 5, 549, 31],
   ] as const;
 

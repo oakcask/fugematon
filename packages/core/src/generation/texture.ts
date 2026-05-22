@@ -135,8 +135,21 @@ export function softenBassEntryBoundaryResets(
   }
 }
 
+export function softenFirstBassEntryBoundaryReset(notes: Exposition["notes"], entries: readonly PlannedEntry[]): void {
+  const entry = entries.find(isFirstExpositionBassAnswerEntry);
+  if (entry === undefined) {
+    return;
+  }
+
+  softenBassEntryBoundaryResetAt(notes, entry.startTick, notes);
+}
+
 function isPostExpositionBassSubjectOrAnswerEntry(entry: PlannedEntry): boolean {
   return entry.voice === "bass" && entry.state !== "exposition" && entry.form !== "subject-fragment";
+}
+
+function isFirstExpositionBassAnswerEntry(entry: PlannedEntry): boolean {
+  return entry.voice === "bass" && entry.state === "exposition" && entry.form === "answer";
 }
 
 function softenBassEntryBoundaryResetAt(
@@ -144,7 +157,7 @@ function softenBassEntryBoundaryResetAt(
   entryStartTick: number,
   previousNotes: readonly NoteEvent[],
 ): void {
-  const outsideStartingNotes = outsideTextureOnsetsAtBassEntry(notes, entryStartTick);
+  const outsideStartingNotes = outsideVoiceOnsetsAtBassEntry(notes, entryStartTick);
   if (!hasThreeOutsideVoiceOnsets(outsideStartingNotes)) {
     return;
   }
@@ -167,8 +180,8 @@ function softenBassEntryBoundaryResetAt(
   note.durationTicks -= delayTicks;
 }
 
-function outsideTextureOnsetsAtBassEntry(notes: readonly NoteEvent[], entryStartTick: number): NoteEvent[] {
-  return notes.filter((note) => note.voice !== "bass" && note.startTick === entryStartTick && isTextureRole(note.role));
+function outsideVoiceOnsetsAtBassEntry(notes: readonly NoteEvent[], entryStartTick: number): NoteEvent[] {
+  return notes.filter((note) => note.voice !== "bass" && note.startTick === entryStartTick);
 }
 
 function hasThreeOutsideVoiceOnsets(notes: readonly NoteEvent[]): boolean {
@@ -201,7 +214,7 @@ function chooseBoundaryResetNoteToDelay(
   entryStartTick: number,
 ): NoteEvent | undefined {
   return [...notes].sort((left, right) => {
-    const rolePriority = Number(left.role === "counter-subject") - Number(right.role === "counter-subject");
+    const rolePriority = boundaryResetRolePriority(left.role) - boundaryResetRolePriority(right.role);
     if (rolePriority !== 0) {
       return rolePriority;
     }
@@ -211,6 +224,19 @@ function chooseBoundaryResetNoteToDelay(
       latestPreviousVoiceDistance(previousNotes, right.voice, entryStartTick)
     );
   })[0];
+}
+
+function boundaryResetRolePriority(role: NoteEvent["role"] | undefined): number {
+  if (role === "free-counterpoint") {
+    return 0;
+  }
+  if (role === "counter-subject") {
+    return 1;
+  }
+  if (role === undefined) {
+    return 2;
+  }
+  return 3;
 }
 
 function latestPreviousVoiceDistance(
