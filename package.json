@@ -1,7 +1,7 @@
 {
   "name": "fugematon",
   "private": true,
-  "packageManager": "pnpm@11.2.2",
+  "packageManager": "pnpm@11.1.2",
   "type": "module",
   "scripts": {
     "build": "tsc -b && pnpm --filter @fugematon/web build:bundle",
