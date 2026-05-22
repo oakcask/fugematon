@@ -128,22 +128,24 @@ export function softenBassEntryBoundaryResets(
   previousNotes: readonly NoteEvent[],
 ): void {
   for (const entry of entries) {
-    if (entry.voice !== "bass" || entry.state === "exposition" || entry.form === "subject-fragment") {
+    if (!isPostExpositionBassSubjectOrAnswerEntry(entry)) {
       continue;
     }
-    softenBassEntryBoundaryReset(notes, entry.startTick, previousNotes);
+    softenBassEntryBoundaryResetAt(notes, entry.startTick, previousNotes);
   }
 }
 
-function softenBassEntryBoundaryReset(
+function isPostExpositionBassSubjectOrAnswerEntry(entry: PlannedEntry): boolean {
+  return entry.voice === "bass" && entry.state !== "exposition" && entry.form !== "subject-fragment";
+}
+
+function softenBassEntryBoundaryResetAt(
   notes: Exposition["notes"],
   entryStartTick: number,
   previousNotes: readonly NoteEvent[],
 ): void {
-  const outsideStartingNotes = notes.filter(
-    (note) => note.voice !== "bass" && note.startTick === entryStartTick && isTextureRole(note.role),
-  );
-  if (new Set(outsideStartingNotes.map((note) => note.voice)).size < 3) {
+  const outsideStartingNotes = outsideTextureOnsetsAtBassEntry(notes, entryStartTick);
+  if (!hasThreeOutsideVoiceOnsets(outsideStartingNotes)) {
     return;
   }
 
@@ -152,25 +154,45 @@ function softenBassEntryBoundaryReset(
     return;
   }
 
-  const delayTicks = Math.min(TICKS_PER_QUARTER / 2, Math.floor(note.durationTicks / 2));
+  const delayTicks = boundaryResetDelayTicks(note);
   if (delayTicks <= 0) {
     return;
   }
 
-  const carriedNote = notes
-    .filter(
-      (candidate) =>
-        candidate.voice === note.voice &&
-        candidate.startTick < entryStartTick &&
-        candidate.startTick + candidate.durationTicks === entryStartTick,
-    )
-    .sort(compareNoteEvents)
-    .at(-1);
+  const carriedNote = latestNoteEndingAtBoundary(notes, note.voice, entryStartTick);
   if (carriedNote !== undefined) {
     carriedNote.durationTicks += delayTicks;
   }
   note.startTick += delayTicks;
   note.durationTicks -= delayTicks;
+}
+
+function outsideTextureOnsetsAtBassEntry(notes: readonly NoteEvent[], entryStartTick: number): NoteEvent[] {
+  return notes.filter((note) => note.voice !== "bass" && note.startTick === entryStartTick && isTextureRole(note.role));
+}
+
+function hasThreeOutsideVoiceOnsets(notes: readonly NoteEvent[]): boolean {
+  return new Set(notes.map((note) => note.voice)).size >= 3;
+}
+
+function boundaryResetDelayTicks(note: NoteEvent): number {
+  return Math.min(TICKS_PER_QUARTER / 2, Math.floor(note.durationTicks / 2));
+}
+
+function latestNoteEndingAtBoundary(
+  notes: readonly NoteEvent[],
+  voice: Voice,
+  entryStartTick: number,
+): NoteEvent | undefined {
+  return notes
+    .filter(
+      (candidate) =>
+        candidate.voice === voice &&
+        candidate.startTick < entryStartTick &&
+        candidate.startTick + candidate.durationTicks === entryStartTick,
+    )
+    .sort(compareNoteEvents)
+    .at(-1);
 }
 
 function chooseBoundaryResetNoteToDelay(
