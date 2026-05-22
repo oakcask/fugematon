@@ -1,8 +1,9 @@
-import type { Voice } from "@fugematon/core";
+import type { NoteRole, Voice } from "@fugematon/core";
 import type { PlaybackEntry, PlaybackModel } from "./score.js";
 
 export type PianoRollNoteLayout = {
   voice: Voice;
+  role?: NoteRole;
   entry?: PlaybackEntry;
   x: number;
   y: number;
@@ -26,6 +27,22 @@ const ENTRY_STROKES: Record<PlaybackEntry["form"], string> = {
   subject: "#f8fbf2",
   answer: "#15130f",
   "subject-fragment": "#eef0c8",
+};
+const ROLE_STROKES: Record<NoteRole, string> = {
+  subject: "#f8fbf2",
+  answer: "#15130f",
+  "subject-fragment": "#eef0c8",
+  "counter-subject": "#0e6655",
+  "free-counterpoint": "#f4d35e",
+  fallback: "#7f4f24",
+};
+const ROLE_DASHES: Record<NoteRole, number[]> = {
+  subject: [],
+  answer: [5, 3],
+  "subject-fragment": [2, 3],
+  "counter-subject": [],
+  "free-counterpoint": [3, 4],
+  fallback: [6, 3, 2, 3],
 };
 const ACTIVE_NOTE_STROKE = "#007c91";
 const ACTIVE_NOTE_GLOW = "rgba(0, 124, 145, 0.48)";
@@ -97,6 +114,7 @@ export function computePianoRollLayout(
     return [
       {
         voice: note.voice,
+        role: note.role,
         entry: note.entry,
         x: LEFT_GUTTER + ((visibleStartSecond - viewport.startSecond) / viewportDuration) * usableWidth,
         y: TOP_GUTTER + (1 - normalizedPitch) * usableHeight,
@@ -150,11 +168,11 @@ export function drawPianoRoll(canvas: HTMLCanvasElement, model: PlaybackModel, p
     roundRect(context, note.x, note.y, note.width, note.height, 5);
     context.fill();
     context.shadowBlur = 0;
-    if (note.entry !== undefined) {
+    if (note.role !== undefined) {
       context.globalAlpha = 0.94;
-      context.strokeStyle = ENTRY_STROKES[note.entry.form];
-      context.lineWidth = note.entry.state === "stretto-like" ? 3 : 2;
-      context.setLineDash(note.entry.answerKind === "tonal" ? [5, 3] : []);
+      context.strokeStyle = note.entry === undefined ? ROLE_STROKES[note.role] : ENTRY_STROKES[note.entry.form];
+      context.lineWidth = note.entry?.state === "stretto-like" || note.role === "counter-subject" ? 3 : 2;
+      context.setLineDash(note.entry?.answerKind === "tonal" ? [5, 3] : ROLE_DASHES[note.role]);
       context.stroke();
       context.setLineDash([]);
     }

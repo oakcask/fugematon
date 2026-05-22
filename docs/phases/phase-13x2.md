@@ -2,9 +2,10 @@
 
 Phase 13X2 is inserted after Phase 13X and before Phase 13Y. Its purpose is to fix the user-reported bass-answer symptom as post-bass-answer texture thinning, not only as an entry-boundary synchronized reset.
 
-Status: planned. Phase 13Y is deferred until Phase 13X2 records score-window evidence that the first bass answer and its following free-counterpoint tail no longer make the other parts sound as if they stop.
+Status: complete. Phase 13Y may proceed with generalized entry-continuity work while preserving the new bass-answer-tail texture evidence and role-visible review output.
 
 Planning review: [Phase 13X2 bass answer texture review](../reviews/phase-13x2-bass-answer-texture-review.md).
+Completion review: [Phase 13X2 completion review](../reviews/phase-13x2-completion-review.md).
 Follow-up generalization: [Phase 13Y](phase-13y.md).
 
 ## Rationale
@@ -57,4 +58,6 @@ The review also shows a feedback-observability problem: the piano roll does not 
 
 ## Phase 13Y Handoff
 
-Phase 13Y may start only after Phase 13X2 records that the corrected user symptom is repaired. Phase 13Y should then generalize entry continuity without losing the new bass-answer-tail thinning evidence or the piano-roll role visibility needed for future feedback.
+Phase 13Y may start. The Phase 13X2 completion baseline has no reviewed first-bass-answer tail with zero outside voices or bass-only free counterpoint, and Phase 13X first/post bass-entry synchronized reset evidence remains at 0.
+
+Phase 13Y should generalize entry continuity without losing the new `bassAnswerTailTexture` evidence, the remaining one-outside tail review signal, or the piano-roll role visibility needed for future feedback.

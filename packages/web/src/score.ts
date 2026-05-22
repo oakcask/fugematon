@@ -2,6 +2,7 @@ import type {
   FugueState,
   GenerationOutput,
   MetaEvent,
+  NoteRole,
   PlannedEntry,
   ScoreEvent,
   TimeSignature,
@@ -27,6 +28,7 @@ export type PlaybackNote = {
   durationSecond: number;
   pitch: number;
   velocity: number;
+  role?: NoteRole;
   volume: number;
   gain: number;
   pan: number;
@@ -84,6 +86,7 @@ export function createPlaybackModel(
       durationSecond,
       pitch: note.pitch,
       velocity: note.velocity,
+      role: note.role,
       volume: note.volume,
       gain: note.gain,
       pan: note.pan,

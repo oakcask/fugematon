@@ -1,4 +1,4 @@
-import type { ScoreEvent, Voice } from "@fugematon/core";
+import type { NoteRole, ScoreEvent, Voice } from "@fugematon/core";
 import { VOICES } from "@fugematon/core";
 
 export type PerformanceProfileId = "organ-default" | "strict-counterpoint";
@@ -47,6 +47,7 @@ export type PerformanceEvent = {
   durationTicks: number;
   pitch: number;
   velocity: number;
+  role?: NoteRole;
   trackName: string;
   channel: number;
   program: number;
@@ -128,6 +129,7 @@ export function scoreToPerformanceEvents(input: PerformanceConversionInput): Per
         durationTicks,
         pitch: event.pitch,
         velocity: applyVelocityCurve(event.velocity, settings.velocityCurve),
+        role: event.role,
         trackName: settings.trackName,
         channel: settings.channel,
         program: settings.program,

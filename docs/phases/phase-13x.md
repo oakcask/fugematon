@@ -2,7 +2,7 @@
 
 Phase 13X is inserted after Phase 13W and before Phase 13Y. Its purpose is to fix the exposition bass answer where soprano, alto, and tenor all reset at the same tick as the first bass entry.
 
-Status: complete for the entry-boundary reset target. Phase 13X2 is now the current follow-up because the user-reported bass-answer symptom is likely post-bass-answer free-counterpoint tail thinning rather than only same-tick entry reset. Phase 8 remains deferred until Phase 13X2 records bass-answer-tail repair evidence, Phase 13Y records generalized entry-continuity evidence, Phase 13Z records long-run phrase-development evidence, and Phase 14 records score-led beauty evidence.
+Status: complete for the entry-boundary reset target. Phase 13X2 completed the corrected bass-answer tail follow-up. Phase 8 remains deferred until Phase 13Y records generalized entry-continuity evidence, Phase 13Z records long-run phrase-development evidence, and Phase 14 records score-led beauty evidence.
 
 Starting review: [Phase 13X first bass entry review](../reviews/phase-13x-first-bass-entry-review.md).
 Completion review: [Phase 13X completion review](../reviews/phase-13x-completion-review.md).

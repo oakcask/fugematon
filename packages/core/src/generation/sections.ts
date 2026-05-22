@@ -30,6 +30,7 @@ import {
   VOICE_ENTRY_ORDER,
 } from "./shared.js";
 import {
+  addBassAnswerTailTextureSupport,
   addContinuityCounterpoint,
   addCounterpointTexture,
   addFunctionalThinningSupport,
@@ -150,6 +151,7 @@ export function buildFugueScore(
   fillAllVoiceSilenceGaps(notes, keySignature);
   if (selectionModel === "phase10-section-local-planner") {
     addFunctionalThinningSupport(notes, sectionPlans);
+    addBassAnswerTailTextureSupport(notes, subjectEntries, sectionPlans);
   }
   notes.sort(compareNoteEvents);
 

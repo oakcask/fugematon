@@ -26,6 +26,8 @@ export {
 export type {
   AmbiguityIntent,
   AnswerKind,
+  BassAnswerTailTextureSummary,
+  BassAnswerTailTextureWindow,
   CadenceKind,
   CandidateDiversityDescriptor,
   CandidateDiversityFacet,

@@ -2,7 +2,7 @@
 
 Phase 13Y is inserted after Phase 13X2 and before Phase 13Z. Its purpose is to generalize the entry-boundary continuity model so it is not tied to the current `alto -> soprano -> tenor -> bass` exposition order or to bass entries only.
 
-Status: planned after Phase 13X2. Phase 8 is deferred until Phase 13X2 records bass-answer-tail repair evidence, Phase 13Y records score-window and focused listening evidence, then Phase 13Z records long-run phrase-development evidence and Phase 14 records score-led beauty evidence.
+Status: current implementation target. Phase 8 is deferred until Phase 13Y records score-window and focused listening evidence, then Phase 13Z records long-run phrase-development evidence and Phase 14 records score-led beauty evidence.
 
 Planning review: [Phase 13Y entry-continuity generalization review](../reviews/phase-13y-entry-continuity-generalization.md).
 Prerequisite correction: [Phase 13X2](phase-13x2.md).
@@ -11,7 +11,7 @@ Prerequisite correction: [Phase 13X2](phase-13x2.md).
 
 Phase 13X should remain a narrow repair for the deterministic first-bass-answer blocker found in the current generator. That blocker is real, but it should not become a permanent music-model assumption that bass is the only voice requiring entry-boundary continuity.
 
-Phase 13X2 must complete first because the clarified user symptom points to post-bass-answer tail thinning and review observability, not only entry-boundary reset. Phase 13Y should preserve the new bass-answer-tail evidence while it generalizes entry continuity.
+Phase 13X2 completed first because the clarified user symptom points to post-bass-answer tail thinning and review observability, not only entry-boundary reset. Phase 13Y should preserve the new bass-answer-tail evidence while it generalizes entry continuity.
 
 The durable problem is broader:
 

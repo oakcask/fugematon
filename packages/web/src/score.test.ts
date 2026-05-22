@@ -27,6 +27,8 @@ test("createPlaybackModel extracts timing metadata and notes", () => {
   assert.deepEqual(model.performanceProfile, { id: "organ-default", version: 1 });
   assert.ok(model.notes.some((note) => note.entry?.state === "exposition"));
   assert.ok(model.notes.some((note) => note.entry?.answerKind === "tonal"));
+  assert.ok(model.notes.some((note) => note.role === "counter-subject"));
+  assert.ok(model.notes.some((note) => note.role === "free-counterpoint"));
   assert.ok(model.notes.every((note) => note.entry === undefined || note.entry.localKey.tonic.length > 0));
   assert.ok(
     model.notes.every(

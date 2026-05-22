@@ -829,6 +829,28 @@ export type EntryBoundaryContinuitySummary = {
   windows: EntryBoundaryContinuityWindow[];
 };
 
+export type BassAnswerTailTextureWindow = {
+  seed?: string;
+  firstBassAnswerStartTick: number;
+  firstBassAnswerEndTick: number;
+  windowEndTick: number;
+  zeroOutsideVoiceTicks: number;
+  bassOnlyFreeCounterpointTicks: number;
+  oneOutsideVoiceTicks: number;
+  minOutsideVoiceCount: number;
+  activeOutsideVoices: Voice[];
+  classification: "supported-tail" | "review-required";
+};
+
+export type BassAnswerTailTextureSummary = {
+  schemaVersion: 1;
+  reviewRequired: boolean;
+  bassOnlyFreeCounterpointWindowCount: number;
+  zeroOutsideVoiceWindowCount: number;
+  oneOutsideVoiceWindowCount: number;
+  windows: BassAnswerTailTextureWindow[];
+};
+
 export type Phase13LocalSentinelKind =
   | "long-exact-same-pitch-unison"
   | "long-pitch-class-unison"
@@ -965,6 +987,7 @@ export type GenerationDiagnostics = {
   phase11Review: Phase11ReviewSummary;
   phase12Review: Phase12ReviewSummary;
   entryBoundaryContinuity: EntryBoundaryContinuitySummary;
+  bassAnswerTailTexture: BassAnswerTailTextureSummary;
   qualityVector: Phase13QualityVector;
   phase13QReview: Phase13QReviewSummary;
   phase13RReview: Phase13RReviewSummary;

@@ -1,5 +1,6 @@
 import { TICKS_PER_QUARTER, VOICE_RANGES } from "../constants.js";
 import type {
+  BassAnswerTailTextureSummary,
   DiagnosticIssue,
   DurationDistribution,
   EntryBoundaryContinuitySummary,
@@ -24,6 +25,7 @@ import type {
   StepwisePatternSummary,
   Voice,
 } from "../events.js";
+import { analyzeBassAnswerTailTexture } from "./bass-answer-tail-texture.js";
 import { analyzeEntryBoundaryContinuity } from "./entry-boundary-continuity.js";
 import { chordTonePitchClasses, nearestHarmonicAnchor, rootDegreeForFunction } from "./harmony.js";
 import { analyzeHarmonicPlans } from "./harmony-diagnostics.js";
@@ -78,6 +80,7 @@ export function analyzeScore(
   phase11Review: Phase11ReviewSummary;
   phase12Review: Phase12ReviewSummary;
   entryBoundaryContinuity: EntryBoundaryContinuitySummary;
+  bassAnswerTailTexture: BassAnswerTailTextureSummary;
   qualityVector: Phase13QualityVector;
   ornamentCandidateCount: number;
   ornamentDensity: number;
@@ -294,6 +297,7 @@ function analyzeTextureDiagnostics(
     phase11Review: analyzePhase11ReviewSummary(notes, subjectEntries, sectionPlans),
     phase12Review: analyzePhase12ReviewSummary(subjectEntries, sectionPlans),
     entryBoundaryContinuity: analyzeEntryBoundaryContinuity(notes, subjectEntries),
+    bassAnswerTailTexture: analyzeBassAnswerTailTexture(notes, subjectEntries),
     qualityVector: analyzePhase13QualityVector(notes, subjectEntries, sectionPlans),
     ornamentCandidateCount,
     ornamentDensity: roundRatio(ornamentCandidateCount / supportNoteCount),

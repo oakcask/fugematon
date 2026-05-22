@@ -22,10 +22,13 @@ type BassAnswerTailWindow = {
   firstBassAnswerStartTick: number;
   firstBassAnswerEndTick: number;
   windowEndTick: number;
+  zeroOutsideVoiceTicks: number;
   bassOnlyFreeCounterpointTicks: number;
   oneOrZeroOutsideVoiceTicks: number;
   minOutsideVoiceCount: number;
   outsideVoices: readonly Voice[];
+  diagnosticReviewRequired?: boolean;
+  diagnosticBassOnlyFreeCounterpointWindowCount?: number;
 };
 
 export type Phase13X2BassAnswerTailMetrics = {
@@ -44,7 +47,12 @@ export function collectPhase13X2BassAnswerTailMetrics(seeds: readonly string[]):
     const firstBassAnswer = output.diagnostics.subjectEntries.find(isFirstBassAnswerEntry);
     assert.ok(firstBassAnswer !== undefined, `${seed} should expose the first bass answer`);
 
-    return summarizeBassAnswerTailWindow(seed, notes, firstBassAnswer);
+    return {
+      ...summarizeBassAnswerTailWindow(seed, notes, firstBassAnswer),
+      diagnosticReviewRequired: output.diagnostics.bassAnswerTailTexture.reviewRequired,
+      diagnosticBassOnlyFreeCounterpointWindowCount:
+        output.diagnostics.bassAnswerTailTexture.bassOnlyFreeCounterpointWindowCount,
+    };
   });
 
   return {
@@ -55,26 +63,22 @@ export function collectPhase13X2BassAnswerTailMetrics(seeds: readonly string[]):
   };
 }
 
-export function assertPhase13X2CurrentBassAnswerTailEvidence(
-  seeds: readonly string[],
-  expected: {
-    bassOnlySeeds: readonly string[];
-    oneOrZeroOutsideSeeds: readonly string[];
-  },
-): void {
+export function assertPhase13X2BassAnswerTailRepair(seeds: readonly string[]): void {
   const metrics = collectPhase13X2BassAnswerTailMetrics(seeds);
   const bassOnlySeeds = metrics.windows
     .filter((window) => window.bassOnlyFreeCounterpointTicks > 0)
     .map((window) => window.seed);
-  const oneOrZeroOutsideSeeds = metrics.windows
-    .filter((window) => window.oneOrZeroOutsideVoiceTicks > 0)
+  const zeroOutsideSeeds = metrics.windows
+    .filter((window) => window.zeroOutsideVoiceTicks > 0)
     .map((window) => window.seed);
 
   assert.equal(metrics.seedCount, seeds.length);
-  assert.deepEqual(bassOnlySeeds, expected.bassOnlySeeds);
-  assert.equal(metrics.bassOnlyFreeCounterpointSeedCount, expected.bassOnlySeeds.length);
-  assert.deepEqual(oneOrZeroOutsideSeeds, expected.oneOrZeroOutsideSeeds);
-  assert.equal(metrics.oneOrZeroOutsideVoiceSeedCount, expected.oneOrZeroOutsideSeeds.length);
+  assert.deepEqual(bassOnlySeeds, []);
+  assert.deepEqual(zeroOutsideSeeds, []);
+  assert.equal(metrics.bassOnlyFreeCounterpointSeedCount, 0);
+  assert.ok(metrics.windows.every((window) => window.minOutsideVoiceCount >= 1));
+  assert.ok(metrics.windows.every((window) => window.diagnosticReviewRequired === false));
+  assert.ok(metrics.windows.every((window) => window.diagnosticBassOnlyFreeCounterpointWindowCount === 0));
 }
 
 function isFirstBassAnswerEntry(entry: PlannedEntry): boolean {
@@ -89,6 +93,7 @@ function summarizeBassAnswerTailWindow(
   const firstBassAnswerEndTick = firstBassAnswerEnd(notes, firstBassAnswer);
   const windowEndTick = firstBassAnswerEndTick + TAIL_WINDOW_TICKS;
   let bassOnlyFreeCounterpointTicks = 0;
+  let zeroOutsideVoiceTicks = 0;
   let oneOrZeroOutsideVoiceTicks = 0;
   let minOutsideVoiceCount = Number.POSITIVE_INFINITY;
   const outsideVoices = new Set<Voice>();
@@ -107,6 +112,9 @@ function summarizeBassAnswerTailWindow(
     }
     minOutsideVoiceCount = Math.min(minOutsideVoiceCount, activeOutsideVoices.length);
 
+    if (activeOutsideVoices.length === 0) {
+      zeroOutsideVoiceTicks += segmentTicks;
+    }
     if (
       activeVoices.size === 1 &&
       activeVoices.has("bass") &&
@@ -124,6 +132,7 @@ function summarizeBassAnswerTailWindow(
     firstBassAnswerStartTick: firstBassAnswer.startTick,
     firstBassAnswerEndTick,
     windowEndTick,
+    zeroOutsideVoiceTicks,
     bassOnlyFreeCounterpointTicks,
     oneOrZeroOutsideVoiceTicks,
     minOutsideVoiceCount: Number.isFinite(minOutsideVoiceCount) ? minOutsideVoiceCount : 0,
