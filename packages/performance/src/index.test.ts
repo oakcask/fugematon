@@ -17,6 +17,8 @@ test("scoreToPerformanceEvents resolves deterministic default performance events
   assert.deepEqual(first, second);
   assert.equal(first.length, score.diagnostics.noteCount);
   assert.deepEqual(new Set(first.map((event) => event.voice)), new Set(VOICES));
+  assert.ok(first.some((event) => event.role === "counter-subject"));
+  assert.ok(first.some((event) => event.role === "free-counterpoint"));
   assert.ok(first.every((event) => event.durationTicks > 0));
   assert.ok(first.every((event) => event.velocity >= 1 && event.velocity <= 127));
 });

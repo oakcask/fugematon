@@ -1,4 +1,5 @@
 import type {
+  BassAnswerTailTextureSummary,
   CandidateEvaluation,
   CandidatePoolOracleSummary,
   DurationDistribution,
@@ -100,6 +101,7 @@ export type TextureDiagnostics = {
   phase11Review: Phase11ReviewSummary;
   phase12Review: Phase12ReviewSummary;
   entryBoundaryContinuity: EntryBoundaryContinuitySummary;
+  bassAnswerTailTexture: BassAnswerTailTextureSummary;
   qualityVector: Phase13QualityVector;
   ornamentCandidateCount: number;
   ornamentDensity: number;

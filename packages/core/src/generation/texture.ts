@@ -710,6 +710,36 @@ export function addFunctionalThinningSupport(notes: Exposition["notes"], section
   );
 }
 
+export function addBassAnswerTailTextureSupport(
+  notes: Exposition["notes"],
+  subjectEntries: readonly PlannedEntry[],
+  sectionPlans: readonly HarmonicPlan[],
+): void {
+  for (const run of findBassAnswerTailSupportRuns(notes, subjectEntries)) {
+    const plan = sectionPlanForTick(sectionPlans, run.startTick);
+    const supportVoice = tailSupportVoice(notes, run);
+    if (plan === undefined || supportVoice === undefined) {
+      continue;
+    }
+
+    const anchor = nearestHarmonicAnchor(run.startTick, [plan]);
+    addFunctionalSupportLine(notes, {
+      voice: supportVoice,
+      localKey: plan.targetKey,
+      harmonicPlan: plan,
+      rootDegree: anchor === undefined ? 0 : rootDegreeForFunction(anchor.function),
+      startTick: run.startTick,
+      durationTicks: run.endTick - run.startTick,
+    });
+  }
+
+  repairTextureVoiceCrossings(
+    notes,
+    Math.min(...sectionPlans.map((plan) => plan.startTick)),
+    Math.max(...sectionPlans.map((plan) => plan.startTick + plan.durationTicks)),
+  );
+}
+
 function addFunctionalSupportLine(
   notes: Exposition["notes"],
   input: {
@@ -800,6 +830,68 @@ function findUnsupportedThinningRuns(
   return runs.filter((run) => run.endTick - run.startTick >= TICKS_PER_QUARTER);
 }
 
+function findBassAnswerTailSupportRuns(
+  notes: readonly NoteEvent[],
+  subjectEntries: readonly PlannedEntry[],
+): { startTick: number; endTick: number }[] {
+  const firstBassAnswer = subjectEntries.find(
+    (entry) => entry.voice === "bass" && entry.state === "exposition" && entry.form === "answer",
+  );
+  if (firstBassAnswer === undefined) {
+    return [];
+  }
+
+  const startTick = firstBassAnswerEnd(notes, firstBassAnswer);
+  const endTick = startTick + TICKS_PER_QUARTER * 9;
+  const runs: { startTick: number; endTick: number }[] = [];
+  let currentRun: { startTick: number; endTick: number } | undefined;
+
+  for (let tick = startTick; tick < endTick; tick += TICKS_PER_QUARTER / 2) {
+    const segmentEndTick = Math.min(endTick, tick + TICKS_PER_QUARTER / 2);
+    if (isBassOnlyFreeCounterpointSegment(notes, tick, segmentEndTick)) {
+      if (currentRun?.endTick === tick) {
+        currentRun.endTick = segmentEndTick;
+      } else {
+        if (currentRun !== undefined) {
+          runs.push(currentRun);
+        }
+        currentRun = { startTick: tick, endTick: segmentEndTick };
+      }
+    } else if (currentRun !== undefined) {
+      runs.push(currentRun);
+      currentRun = undefined;
+    }
+  }
+  if (currentRun !== undefined) {
+    runs.push(currentRun);
+  }
+
+  return runs;
+}
+
+function isBassOnlyFreeCounterpointSegment(notes: readonly NoteEvent[], startTick: number, endTick: number): boolean {
+  const activeNotes = notes.filter(
+    (note) => note.startTick < endTick && startTick < note.startTick + note.durationTicks,
+  );
+  const activeVoices = new Set(activeNotes.map((note) => note.voice));
+  return (
+    activeVoices.size === 1 &&
+    activeVoices.has("bass") &&
+    activeNotes.some((note) => note.voice === "bass" && note.role === "free-counterpoint")
+  );
+}
+
+function firstBassAnswerEnd(notes: readonly NoteEvent[], firstBassAnswer: PlannedEntry): number {
+  const answerNotes = notes.filter(
+    (note) =>
+      note.voice === "bass" &&
+      note.role === "answer" &&
+      firstBassAnswer.startTick <= note.startTick &&
+      note.startTick < firstBassAnswer.startTick + TICKS_PER_QUARTER * 8,
+  );
+  return Math.max(firstBassAnswer.startTick, ...answerNotes.map((note) => note.startTick + note.durationTicks));
+}
+
 function isUnsupportedThinningSegment(input: {
   activeVoices: readonly Voice[];
   startTick: number;
@@ -849,6 +941,12 @@ function functionalSupportVoice(
   run: { startTick: number; endTick: number },
 ): Voice | undefined {
   return (["bass", "tenor", "alto"] as const).find(
+    (voice) => !hasOverlap(notes, voice, run.startTick, run.endTick - run.startTick),
+  );
+}
+
+function tailSupportVoice(notes: readonly NoteEvent[], run: { startTick: number; endTick: number }): Voice | undefined {
+  return (["soprano", "alto", "tenor"] as const).find(
     (voice) => !hasOverlap(notes, voice, run.startTick, run.endTick - run.startTick),
   );
 }

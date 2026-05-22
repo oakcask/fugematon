@@ -39,7 +39,7 @@
 | `leapRecoveryMisses` | 大跳躍後に反行または順次進行で回収されない箇所。 | 旋律線の歌いやすさの signal。安全な順次型に偏りすぎていないかも確認する。 |
 | `repeatedPitchRunCount` | 同じ pitch の反復 run。 | 高声部では耳につきやすい。Phase 13 の soprano repeated-note pressure と合わせて読む。 |
 | `soloTexture` | cadence や phrase boundary で説明できない薄い texture。 | unsupported solo run、abrupt texture drop、solo voice imbalance を分けて読む。 |
-| `bassAnswerTailTexture` | 初回 bass answer 後の continuation / free-counterpoint tail が bass-only や one-outside-voice へ不自然に薄くなるかを見る focused summary。 | Phase 13X2 で追加予定。`allVoiceSilenceGapCount` が 0 でも、他パートが止まったように聞こえる post-answer thinning を separate review signal として読む。 |
+| `bassAnswerTailTexture` | 初回 bass answer 後の continuation / free-counterpoint tail が bass-only、zero-outside、one-outside-voice へ薄くなるかを見る focused summary。 | Phase 13X2 で追加。`allVoiceSilenceGapCount` が 0 でも、他パートが止まったように聞こえる post-answer thinning を separate review signal として読む。completion baseline は zero-outside / bass-only を blocker とし、one-outside は Phase 13Y/13Z/14 で隠してはいけない review signal として残す。 |
 | `stepwisePattern` | 長い順次進行や同じ degree pattern の横断反復。 | 自然な旋律運動と mechanical filler を区別する。 |
 | `pitchContourMotion` | bass-upper / outer-voice の同方向、反行、概形 motion。 | Phase 7B 以降は hard failure ではなく review signal。 |
 | `lowerVoiceVocality` | bass/tenor の support line が歌える線としてつながっているか。 | 長い support note が前後の小さな melodic connection、cadence、phrase boundary で説明できるかと、短い support 同士が同音保持や大きい跳躍に偏らないかを読む。 |

@@ -137,6 +137,7 @@ export function generateScore(input: GenerationInput): GenerationOutput {
       phase11Review: diagnostics.phase11Review,
       phase12Review: diagnostics.phase12Review,
       entryBoundaryContinuity: diagnostics.entryBoundaryContinuity,
+      bassAnswerTailTexture: diagnostics.bassAnswerTailTexture,
       qualityVector: diagnostics.qualityVector,
       phase13QReview,
       phase13RReview,
