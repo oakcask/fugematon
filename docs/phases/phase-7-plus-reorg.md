@@ -266,9 +266,13 @@ Phase 13X は、Phase 13W 後の first bass entry review で確認した exposit
 * `entryBoundaryContinuity` が first bass entry evidence と post-exposition evidence を分けて出す。
 * `organ-default` と `strict-counterpoint` の focused listening note が score-window 症状と残る fatigue を記録する。
 
-### Phase 13Y: generalized entry continuity
+### Phase 13X2: bass answer tail texture repair
 
-Phase 13Y は、Phase 13X 後に entry-boundary continuity を bass-specific な first-bass / post-exposition-bass windows から、entry voice、entry order、entry form、section state、already-entered voices を持つ一般モデルへ広げる品質フェーズである。詳細は [Phase 13Y](phase-13y.md) に置く。計画根拠は [Phase 13Y entry-continuity generalization review](../reviews/phase-13y-entry-continuity-generalization.md) に置く。
+Phase 13X2 は、Phase 13X 後にユーザー報告を再解釈し、first bass answer 後の free-counterpoint tail thinning と role visibility を Phase 13Y 前に扱う品質フェーズである。詳細は [Phase 13X2](phase-13x2.md) に置く。計画根拠は [Phase 13X2 bass answer texture review](../reviews/phase-13x2-bass-answer-texture-review.md) に置く。
+
+### Phase 13Y: generalized entry-continuity repair
+
+Phase 13Y は、Phase 13X2 後に entry-boundary continuity を bass-specific な first-bass / post-exposition-bass windows から、entry voice、entry order、entry form、section state、already-entered voices を持つ一般モデルへ広げる品質フェーズである。詳細は [Phase 13Y](phase-13y.md) に置く。計画根拠は [Phase 13Y entry-continuity generalization review](../reviews/phase-13y-entry-continuity-generalization.md) に置く。
 
 完了条件:
 
@@ -286,7 +290,7 @@ Phase 13Z は、Phase 13Y 後に初期主題の多様性改善後も残る long-
 
 * subject-return、episode、stretto-like recurrence を section label ではなく、subject stem、fragment derivation、entry voice、cadence target、density arc、phrase function から review する。
 * `seed-0zereox-1v729ih` と focused seed sweep で same-family phrase fatigue が改善したことを score-window evidence で記録する。
-* Phase 13X / Phase 13Y の entry-continuity evidence と Phase 13V の line-agency / long-window evidence を隠さない。
+* Phase 13X / Phase 13X2 / Phase 13Y の entry-continuity and tail-texture evidence と Phase 13V の line-agency / long-window evidence を隠さない。
 * `organ-default` と `strict-counterpoint` の focused listening note が、repaired long-run window と function-bearing recurrence を区別する。
 
 ### Phase 14: score-led musical beauty rebuild
