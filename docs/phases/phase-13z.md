@@ -2,7 +2,7 @@
 
 Phase 13Z is inserted after Phase 13Y and before Phase 14. Its purpose is to repair the long-run phrase convergence that remains after initial subject diversity improved: later continuation sections can still sound like repeated phrases because subject returns, stretto-like entries, and episode fragments reuse a small set of subject-stem families.
 
-Status: planned. Phase 8 is deferred until Phase 13Z records score-window, diagnostics, and focused listening evidence for long-run phrase development, then Phase 14 records score-led beauty evidence that current metrics actually explain the accepted score windows.
+Status: current implementation target. Phase 8 is deferred until Phase 13Z records score-window, diagnostics, and focused listening evidence for long-run phrase development, then Phase 14 records score-led beauty evidence that current metrics actually explain the accepted score windows.
 
 Planning review: [Phase 13Z long-run phrase review](../reviews/phase-13z-long-run-phrase-review.md).
 

@@ -2,9 +2,10 @@
 
 Phase 13Y is inserted after Phase 13X2 and before Phase 13Z. Its purpose is to generalize the entry-boundary continuity model so it is not tied to the current `alto -> soprano -> tenor -> bass` exposition order or to bass entries only.
 
-Status: current implementation target. Phase 8 is deferred until Phase 13Y records score-window and focused listening evidence, then Phase 13Z records long-run phrase-development evidence and Phase 14 records score-led beauty evidence.
+Status: complete. Phase 8 is still deferred until Phase 13Z records long-run phrase-development evidence and Phase 14 records score-led beauty evidence.
 
 Planning review: [Phase 13Y entry-continuity generalization review](../reviews/phase-13y-entry-continuity-generalization.md).
+Completion review: [Phase 13Y completion review](../reviews/phase-13y-completion-review.md).
 Prerequisite correction: [Phase 13X2](phase-13x2.md).
 
 ## Rationale
@@ -44,6 +45,16 @@ The durable problem is broader:
 * Post-exposition entries remain reviewed for prepared delayed support, not only for absence of three-outside-voice synchronized reset.
 * Diagnostics distinguish synchronized reset, prepared collective articulation, carried support, suspension/resolution, delayed support, and unsupported entry-local thinning.
 * Focused `organ-default` and `strict-counterpoint` listening notes include at least one non-bass entry-continuity window and one repaired first-bass-answer window.
+
+## Completion Evidence
+
+Phase 13Y is complete as of the completion review.
+
+* `entryBoundaryContinuity` schema version 3 records `entryVoice`, `entryOrderIndex`, `alreadyEnteredVoices`, carried support, suspension/resolution, delayed support, staggered continuation, prepared collective articulation, unsupported entry-local thinning, and classification for important subject and answer entries.
+* The 22 seed review set reports 666 important entry windows, including 478 non-bass windows, with 0 synchronized resets and 0 unsupported entry-local thinning windows.
+* The Phase 13X first-bass repair remains intact with 0 `firstBassEntrySynchronizedReset` seeds.
+* The Phase 13X2 tail repair remains intact with 0 `bassAnswerTailTexture.reviewRequired` seeds.
+* Focused profile notes in the completion review cover repaired first-bass-answer windows and non-bass entry windows.
 
 ## Implementation Order
 

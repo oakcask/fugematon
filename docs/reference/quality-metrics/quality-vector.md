@@ -82,7 +82,7 @@ Phase 13W keeps the quality vector schema at version 4 and adds `entryBoundaryCo
 
 Phase 13X keeps the quality vector schema at version 4 and expands `entryBoundaryContinuity` to schema version 2 so first-bass-entry evidence is separate from post-exposition bass-entry evidence. This prevents post-exposition aggregate readiness from hiding the exposition bass-answer reset.
 
-Phase 13Y keeps the quality vector schema at version 4 unless implementation evidence requires another schema bump, and generalizes `entryBoundaryContinuity` beyond bass-specific windows. The review focus is entry voice, entry order, already-entered voices, prepared collective articulation, carried support, suspension/resolution, delayed support, and staggered continuation.
+Phase 13Y keeps the quality vector schema at version 4 and generalizes `entryBoundaryContinuity` to schema version 3. The review focus is entry voice, entry order, already-entered voices, prepared collective articulation, carried support, suspension/resolution, delayed support, staggered continuation, synchronized reset, and unsupported entry-local thinning.
 
 ## Review Status
 

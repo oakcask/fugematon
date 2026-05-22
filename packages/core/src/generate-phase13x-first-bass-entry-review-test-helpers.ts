@@ -51,7 +51,14 @@ export function collectPhase13XFirstBassEntryMetrics(seeds: readonly string[]): 
       0,
     ),
     postExpositionSynchronizedResetCount: outputs.reduce(
-      (sum, { output }) => sum + output.diagnostics.entryBoundaryContinuity.synchronizedResetCount,
+      (sum, { output }) =>
+        sum +
+        output.diagnostics.entryBoundaryContinuity.windows.filter(
+          (window) =>
+            window.entryVoice === "bass" &&
+            window.state !== "exposition" &&
+            window.classification === "synchronized-reset",
+        ).length,
       0,
     ),
     windows,

@@ -131,7 +131,7 @@ export function softenBassEntryBoundaryResets(
     if (!isPostExpositionBassSubjectOrAnswerEntry(entry)) {
       continue;
     }
-    softenBassEntryBoundaryResetAt(notes, entry.startTick, previousNotes);
+    softenEntryBoundaryResetAt(notes, entry.voice, entry.startTick, previousNotes);
   }
 }
 
@@ -141,7 +141,20 @@ export function softenFirstBassEntryBoundaryReset(notes: Exposition["notes"], en
     return;
   }
 
-  softenBassEntryBoundaryResetAt(notes, entry.startTick, notes);
+  softenEntryBoundaryResetAt(notes, entry.voice, entry.startTick, notes);
+}
+
+export function softenImportantEntryBoundaryResets(
+  notes: Exposition["notes"],
+  entries: readonly PlannedEntry[],
+  previousNotes: readonly NoteEvent[],
+): void {
+  for (const entry of entries) {
+    if (entry.form === "subject-fragment") {
+      continue;
+    }
+    softenEntryBoundaryResetAt(notes, entry.voice, entry.startTick, previousNotes);
+  }
 }
 
 function isPostExpositionBassSubjectOrAnswerEntry(entry: PlannedEntry): boolean {
@@ -152,12 +165,13 @@ function isFirstExpositionBassAnswerEntry(entry: PlannedEntry): boolean {
   return entry.voice === "bass" && entry.state === "exposition" && entry.form === "answer";
 }
 
-function softenBassEntryBoundaryResetAt(
+function softenEntryBoundaryResetAt(
   notes: Exposition["notes"],
+  entryVoice: Voice,
   entryStartTick: number,
   previousNotes: readonly NoteEvent[],
 ): void {
-  const outsideStartingNotes = outsideVoiceOnsetsAtBassEntry(notes, entryStartTick);
+  const outsideStartingNotes = outsideVoiceOnsetsAtEntry(notes, entryVoice, entryStartTick);
   if (!hasThreeOutsideVoiceOnsets(outsideStartingNotes)) {
     return;
   }
@@ -180,8 +194,12 @@ function softenBassEntryBoundaryResetAt(
   note.durationTicks -= delayTicks;
 }
 
-function outsideVoiceOnsetsAtBassEntry(notes: readonly NoteEvent[], entryStartTick: number): NoteEvent[] {
-  return notes.filter((note) => note.voice !== "bass" && note.startTick === entryStartTick);
+function outsideVoiceOnsetsAtEntry(
+  notes: readonly NoteEvent[],
+  entryVoice: Voice,
+  entryStartTick: number,
+): NoteEvent[] {
+  return notes.filter((note) => note.voice !== entryVoice && note.startTick === entryStartTick);
 }
 
 function hasThreeOutsideVoiceOnsets(notes: readonly NoteEvent[]): boolean {
