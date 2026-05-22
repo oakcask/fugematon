@@ -104,12 +104,19 @@ test("public diagnostics expose finite candidate score dimensions", () => {
   assert.ok(output.diagnostics.phase12Review.answerTransformFamilies.length > 0);
   assert.ok(output.diagnostics.phase12Review.phraseFunctions.length > 0);
   assert.ok(output.diagnostics.phase12Review.sectionStatePatterns.topPatterns.length > 0);
-  assert.equal(output.diagnostics.entryBoundaryContinuity.schemaVersion, 2);
+  assert.equal(output.diagnostics.entryBoundaryContinuity.schemaVersion, 3);
   assert.equal(typeof output.diagnostics.entryBoundaryContinuity.firstBassEntrySynchronizedReset, "boolean");
   assert.equal(output.diagnostics.entryBoundaryContinuity.firstBassEntryWindow?.entryVoice, "bass");
+  assert.equal(typeof output.diagnostics.entryBoundaryContinuity.importantEntryWindowCount, "number");
+  assert.equal(typeof output.diagnostics.entryBoundaryContinuity.nonBassEntryWindowCount, "number");
   assert.ok(Array.isArray(output.diagnostics.entryBoundaryContinuity.firstBassEntryWindow?.outsideEndedAtEntryVoices));
   assert.equal(typeof output.diagnostics.entryBoundaryContinuity.synchronizedResetCount, "number");
   assert.ok(Array.isArray(output.diagnostics.entryBoundaryContinuity.windows));
+  assert.ok(
+    output.diagnostics.entryBoundaryContinuity.windows.every(
+      (window) => Number.isSafeInteger(window.entryOrderIndex) && Array.isArray(window.alreadyEnteredVoices),
+    ),
+  );
   assert.equal(output.diagnostics.bassAnswerTailTexture.schemaVersion, 1);
   assert.equal(typeof output.diagnostics.bassAnswerTailTexture.reviewRequired, "boolean");
   assert.equal(typeof output.diagnostics.bassAnswerTailTexture.bassOnlyFreeCounterpointWindowCount, "number");

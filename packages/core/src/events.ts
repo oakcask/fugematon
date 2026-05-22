@@ -809,23 +809,37 @@ export type Phase13VReviewSummary = {
 
 export type EntryBoundaryContinuityWindow = {
   entryVoice: Voice;
+  entryOrderIndex: number;
   form: EntryForm;
   state: FugueState;
   startTick: number;
+  alreadyEnteredVoices: Voice[];
   outsideOnsetVoices: Voice[];
   outsideEndedAtEntryVoices: Voice[];
   carriedOutsideVoices: Voice[];
+  suspendedOrResolvingOutsideVoices: Voice[];
   delayedOutsideVoices: Voice[];
-  classification: "continuity-supported" | "synchronized-reset";
+  staggeredContinuationVoices: Voice[];
+  preparedCollectiveArticulation: boolean;
+  unsupportedEntryLocalThinning: boolean;
+  classification:
+    | "continuity-supported"
+    | "synchronized-reset"
+    | "prepared-collective-articulation"
+    | "unsupported-entry-local-thinning";
 };
 
 export type EntryBoundaryContinuitySummary = {
-  schemaVersion: 2;
+  schemaVersion: 3;
   firstBassEntryWindow?: EntryBoundaryContinuityWindow;
   firstBassEntrySynchronizedReset: boolean;
   bassEntryWindowCount: number;
+  importantEntryWindowCount: number;
+  nonBassEntryWindowCount: number;
   synchronizedResetCount: number;
   continuitySupportedCount: number;
+  preparedCollectiveArticulationCount: number;
+  unsupportedEntryLocalThinningCount: number;
   windows: EntryBoundaryContinuityWindow[];
 };
 

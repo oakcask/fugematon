@@ -59,7 +59,7 @@
 | `candidatePoolOracle` | selected candidate と alternatives を比べ、selection model で直せる問題か、generator / section planner が足りない問題かを切り分ける。Phase 13Q 以降は viable candidate diversity も出す。 |
 | `phase11Review` | register、functional thinning、state grammar、metrical harmony の summary。 |
 | `phase12Review` | subject stem、answer transform、fragment derivation、phrase function、section-state pattern の反復 summary。 |
-| `entryBoundaryContinuity` | Phase 13W/13X の bass-entry boundary summary から、Phase 13Y で generalized entry-continuity summary へ広げる。first bass entry window、post-exposition windows、generalized entry windows、outside onset、entry で切れた外声、delayed support、carried support、synchronized reset classification を持つ。 |
+| `entryBoundaryContinuity` | Phase 13W/13X の bass-entry boundary summary から、Phase 13Y で generalized entry-continuity summary へ広げた。first bass entry window、post-exposition bass compatibility count、generalized important-entry windows、entry voice、entry order、already-entered voices、outside onset、entry で切れた外声、carried support、suspension/resolution、delayed support、staggered continuation、prepared collective articulation、unsupported entry-local thinning、synchronized reset classification を持つ。 |
 | `qualityVector` | Phase 13 以降の normalized review/adoption signal。詳細は [quality vector](quality-vector.md)。 |
 | `phase13QReview` | Phase 13 local sentinel を selected candidate explanation の section、entry、voice pair、resolution deadline へ戻す review-only bridge。 |
 | `phase13RReview` | Phase 13R の per-score convergence review signal。Seed 横断の主題語彙崩壊は bundle-level `subjectFamilyDiversity` と合わせて読む。 |
