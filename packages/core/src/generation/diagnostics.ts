@@ -2,8 +2,8 @@ import { TICKS_PER_QUARTER, VOICE_RANGES } from "../constants.js";
 import type {
   DiagnosticIssue,
   DurationDistribution,
-  EntryBoundaryContinuityWindow,
   EntryBoundaryContinuitySummary,
+  EntryBoundaryContinuityWindow,
   EntrySupportInstabilitySummary,
   EntrySupportSevereIntervalSummary,
   HarmonicPlan,
@@ -341,7 +341,9 @@ function summarizeEntryBoundaryContinuityWindow(
   const carriedOutsideVoices = outsideVoices.filter((voice) =>
     notes.some(
       (note) =>
-        note.voice === voice && note.startTick < entry.startTick && entry.startTick < note.startTick + note.durationTicks,
+        note.voice === voice &&
+        note.startTick < entry.startTick &&
+        entry.startTick < note.startTick + note.durationTicks,
     ),
   );
   const delayedOutsideVoices = outsideVoices.filter((voice) =>
