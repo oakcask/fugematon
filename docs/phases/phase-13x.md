@@ -2,9 +2,10 @@
 
 Phase 13X is inserted after Phase 13W and before Phase 13Y. Its purpose is to fix the exposition bass answer where soprano, alto, and tenor all reset at the same tick as the first bass entry.
 
-Status: planned. Phase 8 is deferred until Phase 13Y records generalized entry-continuity evidence, Phase 13Z records long-run phrase-development evidence, and Phase 14 records score-led beauty evidence.
+Status: complete. Phase 13Y is now the current follow-up for generalized entry-continuity evidence. Phase 8 remains deferred until Phase 13Y records generalized entry-continuity evidence, Phase 13Z records long-run phrase-development evidence, and Phase 14 records score-led beauty evidence.
 
 Starting review: [Phase 13X first bass entry review](../reviews/phase-13x-first-bass-entry-review.md).
+Completion review: [Phase 13X completion review](../reviews/phase-13x-completion-review.md).
 Follow-up generalization: [Phase 13Y](phase-13y.md).
 
 ## Rationale
@@ -55,3 +56,13 @@ Phase 13X is intentionally narrow. It repairs the confirmed blocker in the curre
 ## Phase 8 Handoff
 
 Phase 8 must not resume from Phase 13W or Phase 13X alone. Phase 13X should hand off a repaired first-bass-answer baseline to Phase 13Y, which must generalize the entry-continuity model beyond bass-specific windows before infinite playback resumes.
+
+## Completion Record
+
+Phase 13X is complete as of the completion review.
+
+The repair keeps the exposition bass answer at quarter 12, but no reviewed seed now has soprano, alto, and tenor all ending and restarting at that tick. Across the 22 seed review set, `firstBassEntrySynchronizedReset` is 0 and post-exposition bass-entry `synchronizedResetCount` is also 0 across 166 reviewed windows. Representative, modal, rotation, and adversarial seeds carry or stagger an outside voice across the bass answer while keeping the bass answer readable.
+
+Accepted tradeoff: previous-note-aware support slightly changes legacy metric baselines. The most direct musical cost is a small increase in shared-rhythm and related review ceilings around some review seeds, such as the close-imitation shared-rhythm boundary moving from 814 to 817 and the review-set maximum moving from 906 to 909. This is accepted because the score-window failure was a structural exposition reset, while the changed counts are localized review signals that remain within the hard readiness model and are documented for later Phase 13Y/13Z/14 review.
+
+Phase 13Y must not treat this bass-specific repair as a general solution. It should use the Phase 13X evidence as a baseline, then generalize entry continuity by entry voice, entry order, already-entered voices, and prepared collective articulation.

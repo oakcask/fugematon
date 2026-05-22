@@ -36,6 +36,7 @@ import {
   type ContinuityLineKind,
   fillAllVoiceSilenceGaps,
   softenBassEntryBoundaryResets,
+  softenFirstBassEntryBoundaryReset,
 } from "./texture.js";
 import type { Exposition, FugueScore, SubjectNote } from "./types.js";
 
@@ -123,7 +124,7 @@ export function buildFugueScore(
       sectionPlans,
       phraseIntent,
     );
-    if (selectionModel === "phase10-section-local-planner" && !hasPostExpositionBassEntry(subjectEntries)) {
+    if (selectionModel === "phase10-section-local-planner") {
       softenBassEntryBoundaryResets(selection.section.notes, selection.section.subjectEntries, notes);
       selection.section.notes.sort(compareNoteEvents);
       selection.evaluation = evaluateCandidate(notes, selection.section);
@@ -607,6 +608,7 @@ export function buildExposition(subject: readonly SubjectNote[], keySignature: K
     });
   }
 
+  softenFirstBassEntryBoundaryReset(notes, subjectEntries);
   notes.sort(compareNoteEvents);
 
   return {
@@ -727,12 +729,6 @@ export function chooseContinuationSection(
       stateHistory: [...stateHistory.slice(0, -1), selectedState],
     }),
   };
-}
-
-function hasPostExpositionBassEntry(entries: readonly Exposition["subjectEntries"][number][]): boolean {
-  return entries.some(
-    (entry) => entry.voice === "bass" && entry.state !== "exposition" && entry.form !== "subject-fragment",
-  );
 }
 
 function describeCandidateDiversity(candidate: Exposition): CandidateDiversityDescriptor {

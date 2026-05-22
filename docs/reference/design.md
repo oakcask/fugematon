@@ -99,7 +99,7 @@
 
 ### Phase 8: 無限再生セッション
 
-* Phase 8 は Phase 13Y の generalized entry-continuity repair、Phase 13Z の long-run phrase-development repair、Phase 14 の score-led musical beauty rebuild 後に戻る operational lane とする。Phase 13V は line agency、entry formula novelty、counter-subject survivability、long-window development の generator-side evidence と focused listening note を記録した。Phase 13W は post-exposition bass entry 境界の外声同時再発音を generator-side blocker として修正した。Phase 13X は exposition 初回 bass answer の外声同時切断と再発音を generator-side blocker として扱う。Phase 13Y は `entryBoundaryContinuity` を bass 固有ではなく、entry voice、entry order、already-entered voices に基づく review signal として一般化する。Phase 13Z は subject-return、episode、stretto-like の same-family phrase fatigue を長時間再生前に扱う。Phase 14 は指標の pass ではなく譜面上の美しさを採用条件にし、entry continuity、line agency、counter-subject survivability、phrase development、metric truthfulness を統合して扱う。Phase 6-7 の美しさ metric と聴取 gate の完全 pass は開始条件にしないが、細かな操作 UI が音楽的な退屈さを隠す設計にならないよう、generator quality、rendering boundary、model adoption evidence を前提にする。
+* Phase 8 は Phase 13Y の generalized entry-continuity repair、Phase 13Z の long-run phrase-development repair、Phase 14 の score-led musical beauty rebuild 後に戻る operational lane とする。Phase 13V は line agency、entry formula novelty、counter-subject survivability、long-window development の generator-side evidence と focused listening note を記録した。Phase 13W は post-exposition bass entry 境界の外声同時再発音を generator-side blocker として修正した。Phase 13X は exposition 初回 bass answer の外声同時切断と再発音を generator-side blocker として修正した。Phase 13Y は `entryBoundaryContinuity` を bass 固有ではなく、entry voice、entry order、already-entered voices に基づく review signal として一般化する。Phase 13Z は subject-return、episode、stretto-like の same-family phrase fatigue を長時間再生前に扱う。Phase 14 は指標の pass ではなく譜面上の美しさを採用条件にし、entry continuity、line agency、counter-subject survivability、phrase development、metric truthfulness を統合して扱う。Phase 6-7 の美しさ metric と聴取 gate の完全 pass は開始条件にしないが、細かな操作 UI が音楽的な退屈さを隠す設計にならないよう、generator quality、rendering boundary、model adoption evidence を前提にする。
 * 生成済みイベントをメモリ上のリングバッファに保存する。
 * 保存済み範囲内では event replay により巻き戻して再生し直せるようにする。
 * continuous fugue、endless program、regenerative cycle を同じ状態遷移 model の異なる境界表現として扱う。
@@ -146,7 +146,7 @@
 * Phase 13Q は、Phase 13 の review/adoption model を使って candidate diversity、voice independence、entry harmony を生成側で改善した。
 * Phase 13R は automatic adoption complete として、通常生成経路を採用済み baseline へ揃え、後半 phrase convergence を修正した。legacy `baseline` は比較 model として残すが、CLI、MIDI、Web UI は暗黙に古い path を鳴らさない。
 * Phase 8/9 は、Phase 13R の automatic default path だけでは戻らないという判断により一度延期された。focused listening、seed 横断 subject-diversity follow-up、その follow-up で見つかった mechanical subject-fragment convergence と abrupt three-part silence の修正を完了し、`subjectFamilyDiversity` review summary、A/B delta、`buildSubject` 候補拡張、修正後 re-review の evidence を残した。
-* Phase 13V は完了済みで、Phase 13W baseline になった。音楽的美しさをプロジェクトの核心として扱い、post-13U の譜面レビューで見つかった line agency、entry formula recurrence、counter-subject survivability、long-run development、metric false acceptance を Phase 13V で先に修正した。既存モデル互換性、旧 guardrail margin、旧 expected values は、譜面上の美しさと矛盾する場合は採用条件にしない。現在は Phase 13X が実装対象で、Phase 13Y がその後の一般化計画である。
+* Phase 13V は完了済みで、Phase 13W baseline になった。音楽的美しさをプロジェクトの核心として扱い、post-13U の譜面レビューで見つかった line agency、entry formula recurrence、counter-subject survivability、long-run development、metric false acceptance を Phase 13V で先に修正した。Phase 13X は exposition 初回 bass answer の外声同時再発音を修正した。既存モデル互換性、旧 guardrail margin、旧 expected values は、譜面上の美しさと矛盾する場合は採用条件にしない。現在は Phase 13Y が実装対象である。
 
 ## 内部表現
 

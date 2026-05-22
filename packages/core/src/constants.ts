@@ -142,7 +142,7 @@ export const PHASE_5_9_DIAGNOSTICS_PROFILE = {
   minRhythmicIndependenceScore: 0.08,
   maxUnisonOverlapCount: 762,
   maxSameDirectionMotionCount: 663,
-  maxSharedRhythmOverlapCount: 906,
+  maxSharedRhythmOverlapCount: 909,
   maxLeapRecoveryMisses: 34,
   maxSelectedCandidateTextureCost: 1069,
   maxAverageSelectedCandidateTextureCost: 823,
@@ -157,7 +157,7 @@ export const PHASE_5_9_DIAGNOSTICS_PROFILE = {
     },
     "close-imitation": {
       minCounterSubjectIdentityRetention: 0.84,
-      maxSharedRhythmOverlapCount: 814,
+      maxSharedRhythmOverlapCount: 817,
     },
     "sparse-cadence": {
       maxLeapRecoveryMisses: 13,
@@ -174,7 +174,7 @@ export const PHASE_5_10_DIAGNOSTICS_PROFILE = {
   minRhythmicIndependenceScore: 0.08,
   maxUnisonOverlapCount: 762,
   maxSameDirectionMotionCount: 663,
-  maxSharedRhythmOverlapCount: 906,
+  maxSharedRhythmOverlapCount: 909,
   maxShortStrongBeatEntryNoteCount: 33,
   maxEntrySupportInstabilityCount: 146,
   boundarySeeds: {
@@ -188,7 +188,7 @@ export const PHASE_5_10_DIAGNOSTICS_PROFILE = {
     },
     "close-imitation": {
       maxShortStrongBeatEntryNoteCount: 31,
-      maxSharedRhythmOverlapCount: 814,
+      maxSharedRhythmOverlapCount: 817,
     },
   },
 } as const;
@@ -198,7 +198,7 @@ export const PHASE_5_11_DIAGNOSTICS_PROFILE = {
   minRhythmicIndependenceScore: 0.079,
   maxUnisonOverlapCount: 762,
   maxSameDirectionMotionCount: 814,
-  maxSharedRhythmOverlapCount: 906,
+  maxSharedRhythmOverlapCount: 909,
   maxLeapRecoveryMisses: 34,
   maxShortStrongBeatEntryNoteCount: 33,
   maxEntrySupportInstabilityCount: 160,

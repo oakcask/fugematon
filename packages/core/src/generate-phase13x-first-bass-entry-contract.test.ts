@@ -9,8 +9,8 @@ test("Phase 13X first-bass evidence is separate from post-exposition bass-entry 
   const metrics = collectPhase13XFirstBassEntryMetrics(PHASE_13X_FIRST_BASS_ENTRY_REVIEW_BATCH_A);
 
   assert.equal(metrics.seedCount, PHASE_13X_FIRST_BASS_ENTRY_REVIEW_BATCH_A.length);
-  assert.equal(metrics.firstBassEntryResetSeedCount, metrics.seedCount);
-  assert.ok(metrics.postExpositionSynchronizedResetCount > 0);
+  assert.equal(metrics.firstBassEntryResetSeedCount, 0);
+  assert.equal(metrics.postExpositionSynchronizedResetCount, 0);
   assert.ok(metrics.postExpositionWindowCount >= metrics.seedCount);
   assert.ok(
     metrics.windows.every(
@@ -19,9 +19,9 @@ test("Phase 13X first-bass evidence is separate from post-exposition bass-entry 
         window.form === "answer" &&
         window.entryVoice === "bass" &&
         window.startTick === 5760 &&
-        window.outsideOnsetVoices.length === 3 &&
-        window.outsideEndedAtEntryVoices.length === 3 &&
-        window.carriedOutsideVoices.length === 0,
+        window.outsideOnsetVoices.length < 3 &&
+        window.outsideEndedAtEntryVoices.length < 3 &&
+        window.carriedOutsideVoices.length + window.delayedOutsideVoices.length > 0,
     ),
   );
 });

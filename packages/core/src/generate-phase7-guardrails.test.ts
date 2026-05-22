@@ -66,10 +66,10 @@ test("generateScore balances phase-7 entry harmony scoring with preservation gua
 
 test("generateScore preserves phase-7 voice-pair independence blocker evidence under scoring changes", () => {
   const blockerSeeds = [
-    ["contrary-motion", 24, 539, 790, 3, 2, 26, 7, 54, 14],
-    ["fugue-smoke", 15, 581, 834, 0, 0, 27, 7, 54, 12],
-    ["minor-entry", 26, 736, 906, 0, 0, 50, 15, 70, 20],
-    ["modal-answer", 13, 751, 906, 0, 0, 46, 14, 70, 20],
+    ["contrary-motion", 24, 539, 793, 3, 2, 26, 7, 57, 15],
+    ["fugue-smoke", 15, 581, 837, 0, 0, 27, 7, 57, 13],
+    ["minor-entry", 26, 736, 909, 0, 0, 50, 15, 73, 20],
+    ["modal-answer", 13, 752, 909, 0, 0, 47, 14, 73, 20],
   ] as const;
 
   for (const [
@@ -113,9 +113,9 @@ test("generateScore preserves phase-7 voice-pair independence blocker evidence u
 
 test("generateScore guards phase-7 exact pitch lockstep without gate regressions", () => {
   const blockerSeeds = [
-    ["bright-answer", 8, 736, 629, 31, 0.9],
-    ["quiet-cadence", 7, 728, 655, 15, 0.87],
-    ["modal-answer", 13, 751, 814, 33, 0.573],
+    ["bright-answer", 8, 736, 630, 31, 0.9],
+    ["quiet-cadence", 7, 728, 656, 15, 0.87],
+    ["modal-answer", 13, 752, 814, 33, 0.573],
   ] as const;
 
   for (const [
@@ -170,13 +170,13 @@ test("generateScore preserves phase-7 modal counter-subject retention guardrails
 
 test("generateScore preserves phase-7 melody and form guardrails", () => {
   const blockerSeeds = [
-    ["modal-answer", 33, 2, 1, 36, 13, 13, 2],
+    ["modal-answer", 33, 2, 1, 38, 13, 13, 2],
     ["contrary-motion", 26, 6, 4, 42, 15, 15, 8],
-    ["modal-dorian", 34, 3, 1, 37, 13, 13, 8],
-    ["bright-answer", 31, 7, 3, 37, 12, 12, 2],
+    ["modal-dorian", 34, 3, 1, 41, 13, 13, 8],
+    ["bright-answer", 31, 7, 3, 38, 12, 12, 2],
     ["lyrical-line", 25, 2, 1, 42, 16, 16, 8],
     ["dark-episode", 21, 7, 3, 38, 12, 12, 8],
-    ["contrary-answer", 31, 3, 2, 42, 16, 16, 8],
+    ["contrary-answer", 31, 3, 2, 43, 16, 16, 8],
   ] as const;
 
   for (const [
