@@ -813,13 +813,16 @@ export type EntryBoundaryContinuityWindow = {
   state: FugueState;
   startTick: number;
   outsideOnsetVoices: Voice[];
+  outsideEndedAtEntryVoices: Voice[];
   carriedOutsideVoices: Voice[];
   delayedOutsideVoices: Voice[];
   classification: "continuity-supported" | "synchronized-reset";
 };
 
 export type EntryBoundaryContinuitySummary = {
-  schemaVersion: 1;
+  schemaVersion: 2;
+  firstBassEntryWindow?: EntryBoundaryContinuityWindow;
+  firstBassEntrySynchronizedReset: boolean;
   bassEntryWindowCount: number;
   synchronizedResetCount: number;
   continuitySupportedCount: number;

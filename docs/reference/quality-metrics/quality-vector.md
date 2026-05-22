@@ -76,9 +76,13 @@ Phase 13U completion keeps generated score output stable and records rejected ge
 * `phase13VReview.counterSubjectSurvivability`: preserved, accepted-tradeoff, weak, and ratio summaries for counter-subject windows.
 * `phase13VReview.longWindowDevelopment`: fragment transformation claim counts and top function share for long-window contrast review.
 
-Phase 13V treats these fields as generator-side adoption evidence, not only explanation. The completion baseline improves entry formula novelty, line agency, counter-subject preservation, and fragment-function concentration while keeping remaining review signals visible for Phase 13W and Phase 8.
+Phase 13V treats these fields as generator-side adoption evidence, not only explanation. The completion baseline improves entry formula novelty, line agency, counter-subject preservation, and fragment-function concentration while keeping remaining review signals visible for Phase 13W, Phase 13X, Phase 13Y, and Phase 8.
 
 Phase 13W keeps the quality vector schema at version 4 and adds `entryBoundaryContinuity` beside it in `GenerationDiagnostics`. Entry-boundary continuity evidence identifies synchronized outside-voice onsets at bass entry ticks and distinguishes delayed or carried support from mechanical section resets.
+
+Phase 13X keeps the quality vector schema at version 4 and expands `entryBoundaryContinuity` to schema version 2 so first-bass-entry evidence is separate from post-exposition bass-entry evidence. This prevents post-exposition aggregate readiness from hiding the exposition bass-answer reset.
+
+Phase 13Y keeps the quality vector schema at version 4 unless implementation evidence requires another schema bump, and generalizes `entryBoundaryContinuity` beyond bass-specific windows. The review focus is entry voice, entry order, already-entered voices, prepared collective articulation, carried support, suspension/resolution, delayed support, and staggered continuation.
 
 ## Review Status
 

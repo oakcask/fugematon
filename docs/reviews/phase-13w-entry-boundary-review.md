@@ -61,7 +61,7 @@ Theory basis: independent contrapuntal lines need continuity, preparation, and o
 
 Evidence strength: confirmed from ScoreEvent inspection across the standard 22 seed set. Human listening is still pending.
 
-Project response: Phase 13W should change generator behavior and diagnostics before Phase 8 resumes.
+Project response: Phase 13W should change generator behavior and diagnostics, then hand off remaining first-bass and generalized entry-continuity work to Phase 13X and Phase 13Y before Phase 8 resumes.
 
 ## Implementation Order
 
