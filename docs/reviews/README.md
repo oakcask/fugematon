@@ -24,6 +24,7 @@ music-quality gate、diagnostics threshold、generator model、candidate scoring
 * [Phase 13X first bass entry review](phase-13x-first-bass-entry-review.md): Phase 13W が除外していた exposition の初回 bass answer で、外声 3 声が同時に切れて再発音する問題を 22 seed 譜面レビューで確認し、Phase 13Y 前 blocker として再編した根拠。
 * [Phase 13Y entry-continuity generalization review](phase-13y-entry-continuity-generalization.md): Phase 13X 後に、entry-boundary continuity を bass 固有ではなく entry voice、entry order、already-entered voices に基づく一般モデルへ広げる根拠。
 * [Phase 13Z long-run phrase review](phase-13z-long-run-phrase-review.md): Phase 13Y 後に、初期主題の多様性改善後も残る long-run phrase convergence を subject-return / episode / stretto-like の発展不足として Phase 8 前 blocker へ再編する根拠。
+* [Phase 14 score-led beauty review](phase-14-score-led-beauty-review.md): Phase 13Z 後に、指標ではなく譜面を読み、reference aggregate の false acceptance、entry continuity、line agency、counter-subject survivability、phrase development を Phase 8 前の統合 blocker として再編する根拠。
 * [Phase 13W completion review](phase-13w-completion-review.md): Phase 13W 完了 evidence。entry-boundary continuity diagnostic、delayed outside-voice support、22 seed score-window evidence、focused playback profile review を記録する。
 * [Phase 13W entry-boundary review](phase-13w-entry-boundary-review.md): Phase 13V 後に確認された bass entry 境界の外声 3 声同時再発音を、Phase 8 前 blocker として再編した根拠。
 * [Phase 13X](../phases/phase-13x.md): 現在の実装対象。初回 bass entry continuity repair を扱う。
@@ -32,7 +33,8 @@ music-quality gate、diagnostics threshold、generator model、candidate scoring
 * [Phase 13W](../phases/phase-13w.md): 完了済み。entry-boundary continuity diagnostic、previous-note-aware entry support、candidate review model、focused playback review を扱った。
 * [Phase 13V completion review](phase-13v-completion-review.md): Phase 13V 完了 evidence。line agency、entry formula novelty、counter-subject survivability、long-window development の pre/post、focused listening notes、Phase 13W で引き継ぐ baseline を記録する。
 * [Phase 13V](../phases/phase-13v.md): 完了済み。Phase 13U 後も残る line agency、entry formula recurrence、counter-subject survivability、long-run development を、指標の説明ではなく生成譜面の改善として扱った。
-* [Phase 8](../phases/phase-8.md): Phase 13Z 後の operational lane。Phase 13X、Phase 13Y、Phase 13Z の evidence baseline を前提に無限再生 operational lane を再開する。
+* [Phase 14](../phases/phase-14.md): Phase 13Z 後の計画。score-window musical acceptance を metric acceptance より優先する生成モデル再設計。
+* [Phase 8](../phases/phase-8.md): Phase 14 後の operational lane。Phase 13X、Phase 13Y、Phase 13Z、Phase 14 の evidence baseline を前提に無限再生 operational lane を再開する。
 * [Phase 13R](../phases/phase-13r.md): Phase 13Q 後、Phase 8 前に通常生成経路、後半 phrase convergence、follow-up で見つかった音楽的問題を修正した完了記録。
 * [Phase 13S](../phases/phase-13s.md): 音楽的美しさを互換性制約より優先して再設計した完了済み品質フェーズ。
 * [Phase 13T](../phases/phase-13t.md): 完了済み。Phase 13S 後に残る voice-pair independence と entry sonority を作曲モデル側で修正した。
@@ -63,7 +65,7 @@ music-quality gate、diagnostics threshold、generator model、candidate scoring
 
 ## 読む判断
 
-* 最新の品質方針を見る場合は Phase 13X first bass entry review、Phase 13X、Phase 13Y entry-continuity generalization review、Phase 13Y、Phase 13Z long-run phrase review、Phase 13Z、Phase 13W completion review、Phase 13W entry-boundary review、Phase 13W、Phase 13V completion review、Phase 13V、Phase 13V score beauty audit、Phase 13U beauty replan review、Phase 13U、Phase 13T completion review、Phase 13T、Phase 13T current beauty audit、Phase 13S music beauty review、Phase 13S、Phase 13R の完了 evidence、Phase 13R convergence review、Phase 13R subject diversity follow-up、Phase 7+ 再編計画を先に読む。現在の実装対象は Phase 13X、その後の計画対象は Phase 13Y と Phase 13Z。必要に応じて Phase 13Q planning review、Phase 13Q、Phase 13 quality vector review へ戻る。Phase 11 の実装済み観察軸を見る場合は Phase 11 review summary diagnostics を読む。Phase 7 以降の gate 再構成を見る場合は Phase 7 参照作品 diagnostics 計画を読む。Phase 12 挿入前の blocker evidence を見る場合は Phase 11 post-completion score review を読む。
+* 最新の品質方針を見る場合は Phase 14 score-led beauty review、Phase 14、Phase 13X first bass entry review、Phase 13X、Phase 13Y entry-continuity generalization review、Phase 13Y、Phase 13Z long-run phrase review、Phase 13Z、Phase 13W completion review、Phase 13W entry-boundary review、Phase 13W、Phase 13V completion review、Phase 13V、Phase 13V score beauty audit、Phase 13U beauty replan review、Phase 13U、Phase 13T completion review、Phase 13T、Phase 13T current beauty audit、Phase 13S music beauty review、Phase 13S、Phase 13R の完了 evidence、Phase 13R convergence review、Phase 13R subject diversity follow-up、Phase 7+ 再編計画を先に読む。現在の実装対象は Phase 13X、その後の計画対象は Phase 13Y、Phase 13Z、Phase 14。必要に応じて Phase 13Q planning review、Phase 13Q、Phase 13 quality vector review へ戻る。Phase 11 の実装済み観察軸を見る場合は Phase 11 review summary diagnostics を読む。Phase 7 以降の gate 再構成を見る場合は Phase 7 参照作品 diagnostics 計画を読む。Phase 12 挿入前の blocker evidence を見る場合は Phase 11 post-completion score review を読む。
 * 概形の並行・反行を扱う場合は Phase 6 概形進行レビューも読む。
 * ある gate がなぜ追加されたかを追う場合だけ、古いレビューへ戻る。
 * diagnostics の閾値や seed セットを変更する場合は、該当レビュー、[../reference/quality-metrics.md](../reference/quality-metrics.md)、[../reference/technical-plan.md](../reference/technical-plan.md) を合わせて確認する。

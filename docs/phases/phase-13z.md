@@ -1,8 +1,8 @@
 # Phase 13Z: Long-Run Phrase Development Repair
 
-Phase 13Z is inserted after Phase 13Y and before Phase 8. Its purpose is to repair the long-run phrase convergence that remains after initial subject diversity improved: later continuation sections can still sound like repeated phrases because subject returns, stretto-like entries, and episode fragments reuse a small set of subject-stem families.
+Phase 13Z is inserted after Phase 13Y and before Phase 14. Its purpose is to repair the long-run phrase convergence that remains after initial subject diversity improved: later continuation sections can still sound like repeated phrases because subject returns, stretto-like entries, and episode fragments reuse a small set of subject-stem families.
 
-Status: planned. Phase 8 is deferred until Phase 13Z records score-window, diagnostics, and focused listening evidence for long-run phrase development.
+Status: planned. Phase 8 is deferred until Phase 13Z records score-window, diagnostics, and focused listening evidence for long-run phrase development, then Phase 14 records score-led beauty evidence that current metrics actually explain the accepted score windows.
 
 Planning review: [Phase 13Z long-run phrase review](../reviews/phase-13z-long-run-phrase-review.md).
 
@@ -47,6 +47,6 @@ Fugue material should recur recognizably, but recurrence needs a changed role: n
 5. Correct or justify the section-local planner scoring around solo texture before accepting any long-run phrase improvement that increases thinning fatigue.
 6. Re-run focused and 22 seed review evidence, then record accepted tradeoffs and focused listening notes in the completion review.
 
-## Phase 8 Handoff
+## Phase 14 Handoff
 
-Phase 8 may resume only after Phase 13Z records long-run phrase-development evidence. Infinite playback and visualizer work must preserve phrase-recurrence diagnostics as review signals and must not use segment boundaries, playback smoothing, or UI controls to make same-family fatigue less visible.
+Phase 14 may start only after Phase 13Z records long-run phrase-development evidence. Phase 14 must preserve phrase-recurrence diagnostics as review signals while it checks whether entry continuity, line agency, counter-subject survivability, and phrase development are beautiful in the generated score. Phase 8 may resume only after Phase 14 records that score-led evidence.

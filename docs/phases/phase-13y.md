@@ -2,7 +2,7 @@
 
 Phase 13Y is inserted after Phase 13X and before Phase 13Z. Its purpose is to generalize the entry-boundary continuity model so it is not tied to the current `alto -> soprano -> tenor -> bass` exposition order or to bass entries only.
 
-Status: planned. Phase 8 is deferred until Phase 13Y records score-window and focused listening evidence, then Phase 13Z records long-run phrase-development evidence.
+Status: planned. Phase 8 is deferred until Phase 13Y records score-window and focused listening evidence, then Phase 13Z records long-run phrase-development evidence and Phase 14 records score-led beauty evidence.
 
 Planning review: [Phase 13Y entry-continuity generalization review](../reviews/phase-13y-entry-continuity-generalization.md).
 
