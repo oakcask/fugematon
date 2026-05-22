@@ -44,7 +44,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
       - name: Distribute test files
         id: parallel-test
-        uses: int128/parallel-test-action@27a17b32204e5b7ab0cef7b10f084c82c1ac9a6d # v1.99.0
+        uses: int128/parallel-test-action@855f739530478c9e5bd5c347b46ded2ea292114e # v1.100.0
         with:
           test-files: |
             packages/*/src/**/*.test.ts
