@@ -168,27 +168,28 @@ function summarizeEntrySonority(notes: readonly NoteEvent[], entry: PlannedEntry
     }
 
     for (const supportNote of supportNotes) {
-      const intervalClass = Math.abs(entryNote.pitch - supportNote.pitch) % 12;
-      if (intervalClass === 1 || intervalClass === 2) {
+      const intervalClass = entrySupportIntervalClass(entryNote, supportNote);
+      const resolves = resolvesByStep(notes, entry, tick);
+      if (isAdjacentSecondFriction(intervalClass)) {
         adjacentSecondFrictionCount += 1;
         kinds.add("adjacent-second-friction");
-        if (resolvesByStep(notes, entry, tick)) {
+        if (resolves) {
           preparedOrPassingCount += 1;
-          kinds.add(index === 0 ? "prepared-suspension" : "passing-neighbor-motion");
-        } else if (isStrongBeat(tick)) {
+          kinds.add(preparedOrPassingEntryKind(index));
+        } else if (isUnresolvedAccentedEntryClash(intervalClass, resolves, tick)) {
           unresolvedAccentedClashCount += 1;
           kinds.add("unresolved-accented-clash");
         }
         representativeTick = tick;
-      } else if (intervalClass === 10 || intervalClass === 11) {
+      } else if (isExposedSeventh(intervalClass)) {
         exposedSeventhCount += 1;
         kinds.add("exposed-seventh");
-        if (!resolvesByStep(notes, entry, tick) && isStrongBeat(tick)) {
+        if (isUnresolvedAccentedEntryClash(intervalClass, resolves, tick)) {
           unresolvedAccentedClashCount += 1;
           kinds.add("unresolved-accented-clash");
         }
         representativeTick = tick;
-      } else if (intervalClass === 6) {
+      } else if (isTritoneExposure(intervalClass)) {
         tritoneExposureCount += 1;
         kinds.add("tritone-exposure");
         representativeTick = tick;
@@ -251,9 +252,35 @@ function hasSevereEntryIntervalAt(notes: readonly NoteEvent[], entry: PlannedEnt
   }
 
   return entrySupportNotesAt(notes, entry, tick).some((supportNote) => {
-    const intervalClass = Math.abs(entryNote.pitch - supportNote.pitch) % 12;
-    return intervalClass === 1 || intervalClass === 2 || intervalClass === 10 || intervalClass === 11;
+    const intervalClass = entrySupportIntervalClass(entryNote, supportNote);
+    return isAdjacentSecondFriction(intervalClass) || isExposedSeventh(intervalClass);
   });
+}
+
+function entrySupportIntervalClass(entryNote: NoteEvent, supportNote: NoteEvent): number {
+  return Math.abs(entryNote.pitch - supportNote.pitch) % 12;
+}
+
+function isAdjacentSecondFriction(intervalClass: number): boolean {
+  return intervalClass === 1 || intervalClass === 2;
+}
+
+function isExposedSeventh(intervalClass: number): boolean {
+  return intervalClass === 10 || intervalClass === 11;
+}
+
+function isTritoneExposure(intervalClass: number): boolean {
+  return intervalClass === 6;
+}
+
+function isUnresolvedAccentedEntryClash(intervalClass: number, resolves: boolean, tick: number): boolean {
+  return (
+    (isAdjacentSecondFriction(intervalClass) || isExposedSeventh(intervalClass)) && !resolves && isStrongBeat(tick)
+  );
+}
+
+function preparedOrPassingEntryKind(index: number): Phase13TEntrySonorityKind {
+  return index === 0 ? "prepared-suspension" : "passing-neighbor-motion";
 }
 
 function entryNoteAt(notes: readonly NoteEvent[], entry: PlannedEntry, tick: number): NoteEvent | undefined {
