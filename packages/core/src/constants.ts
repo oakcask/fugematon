@@ -63,9 +63,9 @@ export const PHASE_4_DIAGNOSTICS_PROFILE = {
 
 export const PHASE_4_REPRESENTATIVE_SEEDS = PHASE_3_REPRESENTATIVE_SEEDS;
 
-export const PHASE_5_LENGTH_TICKS = TICKS_PER_QUARTER * 270;
+export const REVIEW_LENGTH_TICKS = TICKS_PER_QUARTER * 270;
 
-export const PHASE_5_REVIEW_SEEDS = [
+export const REPRESENTATIVE_REVIEW_SEEDS = [
   { seed: "bach-001", category: "representative" },
   { seed: "fugue-smoke", category: "representative" },
   { seed: "minor-entry", category: "boundary" },
@@ -82,7 +82,7 @@ export const PHASE_5_REVIEW_SEEDS = [
   { seed: "contrary-motion", category: "review" },
 ] as const;
 
-export const PHASE_5_11_ROTATION_SEEDS = [
+export const ROTATION_REVIEW_SEEDS = [
   { seed: "restless-line", category: "rotation" },
   { seed: "tight-stretto", category: "rotation" },
   { seed: "quiet-cadence", category: "rotation" },
@@ -92,6 +92,10 @@ export const PHASE_5_11_ROTATION_SEEDS = [
   { seed: "contrary-answer", category: "adversarial" },
   { seed: "dense-modal", category: "adversarial" },
 ] as const;
+
+export const PHASE_5_LENGTH_TICKS = REVIEW_LENGTH_TICKS;
+export const PHASE_5_REVIEW_SEEDS = REPRESENTATIVE_REVIEW_SEEDS;
+export const PHASE_5_11_ROTATION_SEEDS = ROTATION_REVIEW_SEEDS;
 
 export const PHASE_5_DIAGNOSTICS_PROFILE = {
   rangeViolations: 0,
@@ -137,7 +141,7 @@ export const PHASE_5_7_DIAGNOSTICS_PROFILE = {
   maxTonalCadenceOveruseWarnings: 0,
 } as const;
 
-export const PHASE_5_9_DIAGNOSTICS_PROFILE = {
+export const BASELINE_BEAUTY_DIAGNOSTICS_PROFILE = {
   minCounterSubjectIdentityRetention: 0.58,
   minRhythmicIndependenceScore: 0.08,
   maxUnisonOverlapCount: 763,
@@ -170,7 +174,7 @@ export const PHASE_5_9_DIAGNOSTICS_PROFILE = {
   },
 } as const;
 
-export const PHASE_5_10_DIAGNOSTICS_PROFILE = {
+export const VOICE_INDEPENDENCE_DIAGNOSTICS_PROFILE = {
   minRhythmicIndependenceScore: 0.08,
   maxUnisonOverlapCount: 763,
   maxSameDirectionMotionCount: 663,
@@ -193,7 +197,7 @@ export const PHASE_5_10_DIAGNOSTICS_PROFILE = {
   },
 } as const;
 
-export const PHASE_5_11_DIAGNOSTICS_PROFILE = {
+export const ROTATION_ROBUSTNESS_DIAGNOSTICS_PROFILE = {
   minCounterSubjectIdentityRetention: 0.573,
   minRhythmicIndependenceScore: 0.079,
   maxUnisonOverlapCount: 763,
@@ -235,7 +239,7 @@ export const PHASE_5_11_DIAGNOSTICS_PROFILE = {
   },
 } as const;
 
-export const PHASE_6_DIAGNOSTICS_PROFILE = {
+export const MELODY_TEXTURE_DIAGNOSTICS_PROFILE = {
   maxLeapRecoveryMisses: 34,
   maxSamePitchOverlapCount: 40,
   maxSevereEntryIntervalCount: 108,
@@ -248,7 +252,7 @@ export const PHASE_6_DIAGNOSTICS_PROFILE = {
   maxFirstContinuationStartTick: TICKS_PER_QUARTER * 20,
 } as const;
 
-export const PHASE_7_DIAGNOSTICS_PROFILE = {
+export const CONTOUR_MOTION_DIAGNOSTICS_PROFILE = {
   maxFourBeatBassUpperSameDirectionRatio: 0.724,
   minFourBeatBassUpperContraryRatio: 0.276,
   maxEightBeatBassUpperSameDirectionRatio: 0.65,
@@ -257,3 +261,9 @@ export const PHASE_7_DIAGNOSTICS_PROFILE = {
   minFourBeatOuterVoiceContraryRatio: 0.25,
   minContourComparisonCount: 1,
 } as const;
+
+export const PHASE_5_9_DIAGNOSTICS_PROFILE = BASELINE_BEAUTY_DIAGNOSTICS_PROFILE;
+export const PHASE_5_10_DIAGNOSTICS_PROFILE = VOICE_INDEPENDENCE_DIAGNOSTICS_PROFILE;
+export const PHASE_5_11_DIAGNOSTICS_PROFILE = ROTATION_ROBUSTNESS_DIAGNOSTICS_PROFILE;
+export const PHASE_6_DIAGNOSTICS_PROFILE = MELODY_TEXTURE_DIAGNOSTICS_PROFILE;
+export const PHASE_7_DIAGNOSTICS_PROFILE = CONTOUR_MOTION_DIAGNOSTICS_PROFILE;
