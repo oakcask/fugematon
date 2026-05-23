@@ -9,7 +9,7 @@
 * [Phase 13X2](phase-13x2.md): 完了済み。Phase 13X が直した entry 境界ではなく、ユーザー報告の本命と見られる first bass answer 後の free-counterpoint tail thinning と、piano-roll role visibility を扱った。
 * [Phase 13X](phase-13x.md): 完了済み。Phase 13W が除外していた exposition の初回 bass answer で外声 3 声が同時に切れて再発音する問題を扱った。
 * [Phase 13Z](phase-13z.md): 現在の実装対象。Phase 13Y 後に、初期主題の多様性改善後も残る long-run phrase convergence を、subject-return / episode / stretto-like の発展不足として Phase 8 前に扱う。
-* [Phase 14](phase-14.md): Phase 13Z 後の計画対象。指標が譜面上の美しさを証明していない問題を、score-window musical acceptance、entry continuity、line agency、counter-subject survivability、phrase development の統合再設計として扱う。
+* [Phase 14](phase-14.md): Phase 13Z 後の計画対象。指標が譜面上の美しさを証明していない問題を、score-window musical acceptance を先に置く beauty trunk として扱い、entry continuity、line agency、counter-subject survivability、phrase development、metric truthfulness / CI scope cleanup を再編する。
 * [Phase 8](phase-8.md): Phase 14 後の operational lane。無限再生セッション、境界設計、内部状態 visualizer の MVP を扱う。
 * [Phase 13W](phase-13w.md): 完了済みだが Phase 13X に handoff を supersede された。Phase 13V 後に確認された post-exposition bass entry 境界で外声 3 声が同時に再発音する問題を generator と diagnostics で修正した。
 * [Phase 13V](phase-13v.md): 完了済み。Phase 13U 後の譜面レビューで見つかった line agency、entry formula recurrence、counter-subject survivability、long-run development の問題を Phase 8 前に扱った。Phase 13W が entry-boundary continuity を追加で扱う。

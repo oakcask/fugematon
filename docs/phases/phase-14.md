@@ -8,18 +8,21 @@ Planning review: [Phase 14 score-led beauty review](../reviews/phase-14-score-le
 
 ## Rationale
 
-The latest 22 seed review bundle plus `random-listen-check` and `seed-0zereox-1v729ih` shows that current metrics still fail to express musical beauty. The reference aggregate can be green while every inspected seed still has review-required pitch-class unison and duration lockstep. Important entry windows still sound like texture resets or block support. Counter-subject material often does not survive as an independent musical idea.
+The latest 22 seed review bundle plus `random-listen-check` and `seed-0zereox-1v729ih` shows that current metrics still fail to express musical beauty. The reference aggregate can be green while every inspected seed still has review-required pitch-class unison and duration lockstep. The first bass answer no longer has the old all-voice reset, but all 24 inspected first-bass windows still count as `continuity-supported` while two outside voices end and re-articulate at the entry. Counter-subject material often does not survive as an independent musical idea, and phrase recurrence still reads as continuation more often than development.
 
 Phase 13X, Phase 13X2, Phase 13Y, and Phase 13Z are still useful, but they are narrow repairs. Phase 14 treats the shared cause: the generator often chooses score windows that satisfy local constraints without creating living contrapuntal lines, durable counter-subject identity, or function-bearing development.
+
+Phase 14 is therefore the beauty trunk before Phase 8. It may change generator behavior, expected values, metric classifications, and guardrail margins when score-window review shows that the old values preserve less beautiful music.
 
 ## Scope
 
 * Replace metric-first adoption with score-window musical acceptance for entry, line-agency, counter-subject, and phrase-development changes.
-* Rebuild important-entry support so at least one outside voice normally carries, suspends, resolves, or staggers through the entry unless a cadence or tutti articulation is prepared.
+* Rebuild important-entry support so enough outside material carries, suspends, resolves, or staggers through the entry to create audible continuity; one carried voice is not automatically sufficient when other voices reset together.
 * Rebuild voice-pair and support-texture generation so independent rhythm, contour, register, contrary/oblique motion, and dissonance preparation are generated alternatives, not only diagnostics.
 * Make counter-subject survivability a generator objective across exposition, subject-return, episode, and stretto-like windows.
 * Link phrase recurrence to function-bearing development: contour change, inversion, sequence direction, cadence target, density arc, register transfer, voice assignment, and contrapuntal tension.
 * Reclassify metrics that cannot explain representative score windows. Metrics that remain should point to seed, tick, voices, role, theory basis, and musical response.
+* Keep seed and metric scope classified under [CI and review scope](../reference/quality-metrics/ci-review-scope.md): uncertain beauty signals stay `review-required`, not PR CI blockers.
 * Use `organ-default` and `strict-counterpoint` focused listening notes as adoption evidence after score-window inspection.
 
 ## Out Of Scope
@@ -32,22 +35,35 @@ Phase 13X, Phase 13X2, Phase 13Y, and Phase 13Z are still useful, but they are n
 ## Completion Conditions
 
 * A focused seed set including representative, boundary, rotation, modal, adversarial, ad hoc listening, and user-reported seeds is reviewed from ScoreEvent windows before metrics are accepted.
-* The 22 seed review bundle no longer has universal review-required pitch-class unison and duration lockstep without a score-window explanation.
-* Important entry windows show audible continuity: carried, suspended, resolving, staggered, or prepared collective articulation is visible in the score.
+* The 22 seed review bundle no longer has universal review-required pitch-class unison and duration lockstep without a score-window explanation and a musical response.
+* Important entry windows show audible continuity: carried, suspended, resolving, staggered, or prepared collective articulation is visible in the score, and the review distinguishes one-voice carry from real contrapuntal continuity.
 * Counter-subject windows are preserved or transformed recognizably; "tradeoff" is not the default outcome.
 * Subject-return, episode, and stretto-like recurrence is accepted only when the repeated material changes musical function or developmental pressure.
-* Reference aggregate, quality vector, and Phase 7B policy output are documented as safety/context signals, not as top-level beauty acceptance.
+* Reference aggregate and Phase 7B policy output are documented as safety/context signals, not as top-level beauty acceptance. Quality vector axes remain review inputs unless the score window confirms the musical symptom and response.
+* The review records CI / review scope for every seed or metric addition, removal, promotion, demotion, or archival decision.
 * Focused `organ-default` and `strict-counterpoint` listening notes include repaired entry windows, line-agency windows, counter-subject survival windows, and long-run phrase-development windows.
 
-## Implementation Order
+## Workstreams
 
-1. Add a score-window review harness that reports important entries, active voice pairs, counter-subject windows, and phrase-development windows before aggregate metrics.
-2. Tighten entry-continuity classification so delayed support alone is not enough when no outside voice carries through the entry.
-3. Add generation candidates for carried support, suspensions, prepared resolutions, staggered continuation, and independent counter-subject preservation.
-4. Add line-agency and counter-subject objectives to candidate generation and selection, then re-run focused score-window review.
-5. Rebuild phrase-development selection so recurrence must show a changed role, not only a changed state label.
-6. Reclassify or remove metrics that cannot explain the accepted score windows.
-7. Regenerate the 22 seed bundle and the focused seed set, then record focused listening notes and accepted tradeoffs.
+### 14A: Score-window acceptance harness
+
+Add review output that reports important entries, active voice-pair spans, counter-subject windows, phrase-development windows, and metric explanations before aggregate metrics. The harness should name seed, tick, voices, roles, section state, theory basis, and proposed response.
+
+### 14B: Entry and line-agency generation
+
+Tighten entry-continuity classification so one delayed or carried support line is not enough when the rest of the texture resets. Add generation candidates for carried support, suspensions, prepared resolutions, staggered continuation, contrary/oblique support, and independent rhythmic motion.
+
+### 14C: Counter-subject and phrase-development generation
+
+Make counter-subject preservation and transformation selectable objectives. Rebuild phrase-development selection so recurrence must show changed role, register, cadence target, contour, density, or contrapuntal pressure, not only a changed state label.
+
+### 14D: Metric truthfulness and scope cleanup
+
+Reclassify or remove metrics that cannot explain the accepted score windows. Keep reference aggregate and Phase 7B readiness as `ci-observed` or safety/context evidence, not beauty acceptance. Keep pitch-class unison, lockstep, entry severe interval, line agency, counter-subject survivability, entry formula novelty, and subject-stem concentration as `review-required` until score-window evidence, fix target, and runtime justify CI promotion.
+
+### 14E: Bundle and listening evidence
+
+Regenerate the 22 seed bundle and the focused seed set, then record focused `organ-default` and `strict-counterpoint` listening notes and accepted tradeoffs. The completion review must state which signals remain review-only, which are CI-observed, and which old expected values are removed or archived.
 
 ## Phase 8 Handoff
 

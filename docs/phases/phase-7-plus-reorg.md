@@ -297,12 +297,15 @@ Phase 13Z は、Phase 13Y 後に初期主題の多様性改善後も残る long-
 
 Phase 14 は、Phase 13Z 後に指標が譜面上の美しさを証明していない問題を Phase 8/9 の前に扱う品質フェーズである。詳細は [Phase 14](phase-14.md) に置く。計画根拠は [Phase 14 score-led beauty review](../reviews/phase-14-score-led-beauty-review.md) に置く。
 
+Phase 14 は metric tuning ではなく、score-window acceptance を先に置く beauty trunk とする。最新の 24 seed review では reference aggregate が通っても pitch-class unison と duration lockstep は全 seed で review-required になり、first bass answer は 1 声 carry を得た後も 2 外声が entry tick で切れて再発音し、10 seed で counter-subject preserved window が 0 だった。Phase 14 はこの証拠に基づき、14A score-window harness、14B entry and line-agency generation、14C counter-subject and phrase-development generation、14D metric truthfulness and scope cleanup、14E bundle/listening evidence の順に進める。
+
 完了条件:
 
 * reference aggregate、quality vector、Phase 7B readiness を top-level beauty acceptance として使わず、score-window musical acceptance を先に記録する。
 * entry continuity、line agency、counter-subject survivability、phrase development を seed、tick、voice、role、theory basis、musical response へ戻して確認する。
 * generated score が改善していない metric reclassification は採用しない。
 * 代表、境界、rotation、modal、adversarial、ad hoc listening、user-reported seed の focused set を review する。
+* seed や metric の追加、削除、CI 昇格、review-only 降格は [CI and review scope](../reference/quality-metrics/ci-review-scope.md) に従って分類し、uncertain beauty signals は `review-required` に残す。
 * `organ-default` と `strict-counterpoint` の focused listening note が repaired score windows を確認する。
 
 ### Phase 8: 無限再生セッション MVP
