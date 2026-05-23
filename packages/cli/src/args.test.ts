@@ -67,7 +67,7 @@ test("parseArgs parses review-ab command", () => {
       "--ticks",
       "960",
       "--out",
-      "phase10-review",
+      "selection-review",
       "--baseline-label",
       "current",
       "--variant-label",
@@ -78,7 +78,7 @@ test("parseArgs parses review-ab command", () => {
     {
       name: "review-ab",
       lengthTicks: 960,
-      out: "phase10-review",
+      out: "selection-review",
       baselineLabel: "current",
       variantLabel: "candidate",
       baselineModel: "baseline",
@@ -86,10 +86,10 @@ test("parseArgs parses review-ab command", () => {
       performanceProfileId: DEFAULT_PERFORMANCE_PROFILE_ID,
     },
   );
-  assert.deepEqual(parseArgs(["review-ab", "--out", "phase10-review"]), {
+  assert.deepEqual(parseArgs(["review-ab", "--out", "selection-review"]), {
     name: "review-ab",
     lengthTicks: 129600,
-    out: "phase10-review",
+    out: "selection-review",
     baselineLabel: "baseline",
     variantLabel: "variant",
     baselineModel: "baseline",
@@ -98,23 +98,18 @@ test("parseArgs parses review-ab command", () => {
   });
 });
 
-test("parseArgs normalizes legacy review-ab model names", () => {
-  const command = parseArgs([
-    "review-ab",
-    "--out",
-    "phase10-review",
-    "--baseline-model",
-    "phase10-oracle-selection",
-    "--variant-model",
-    "phase10-section-local-planner",
-  ]);
-
-  assert.equal(command.name, "review-ab");
-  assert.equal(command.baselineModel, "candidate-oracle-selection");
-  assert.equal(command.variantModel, "section-local-planner");
+test("parseArgs rejects removed review-ab model names", () => {
+  assert.throws(
+    () => parseArgs(["review-ab", "--out", "selection-review", "--baseline-model", "removed-oracle-selection"]),
+    /--baseline-model/,
+  );
+  assert.throws(
+    () => parseArgs(["review-ab", "--out", "selection-review", "--variant-model", "removed-section-local-planner"]),
+    /--variant-model/,
+  );
 });
 
-test("helpText includes the Phase 10 A/B review command", () => {
+test("helpText includes the selection A/B review command", () => {
   assert.match(helpText(), /fugematon review-ab --out <directory>/);
   assert.match(helpText(), /--baseline-label <label>/);
   assert.match(helpText(), /--variant-label <label>/);

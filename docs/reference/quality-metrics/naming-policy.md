@@ -118,12 +118,13 @@ Candidate evaluation feature keys follow the same rule: current keys name the mu
 
 ## Selection Model Values
 
-Selection model values also use current names in CLI help, generated diagnostics, review bundles, and new tests. Legacy values remain accepted as input aliases during the compatibility window.
+Selection model values use current names in CLI help, generated diagnostics, review bundles, and new tests. Historical input aliases are outside the compatibility window and should be rejected by current code.
 
-| Historical value | Current value | Meaning |
-| --- | --- | --- |
-| `phase10-oracle-selection` | `candidate-oracle-selection` | Selection-model risk adjustment over the existing candidate pool. |
-| `phase10-section-local-planner` | `section-local-planner` | Adopted section-local planner with section grammar and phrase-family candidates. |
+| Current value | Meaning |
+| --- | --- |
+| `baseline` | Baseline selection behavior. |
+| `candidate-oracle-selection` | Selection-model risk adjustment over the existing candidate pool. |
+| `section-local-planner` | Adopted section-local planner with section grammar and phrase-family candidates. |
 
 ## Compatibility
 

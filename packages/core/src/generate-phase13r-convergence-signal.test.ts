@@ -40,17 +40,6 @@ test("generateScore uses the adopted planner as the normal phase-13R default pat
   );
 });
 
-test("generateScore normalizes legacy planner selection model names", () => {
-  const output = generateScore({
-    seed: "bach-001",
-    lengthTicks: REVIEW_LENGTH_TICKS,
-    selectionModel: "phase10-section-local-planner",
-  });
-
-  assert.equal(output.diagnostics.selectionModel, "section-local-planner");
-  assert.equal(output.diagnostics.phraseConvergenceReview.selectionModel, "section-local-planner");
-});
-
 test("phase-13R focused seeds keep default planner convergence comparable in CI", () => {
   for (const seed of PHASE_13R_FOCUSED_SEEDS) {
     const legacy = generateScore({ seed, lengthTicks: REVIEW_LENGTH_TICKS, selectionModel: "baseline" });

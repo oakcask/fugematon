@@ -133,13 +133,7 @@ export function helpText(): string {
 }
 
 function parseSelectionModel(value: string, optionName: string): SelectionModel {
-  if (
-    value === "baseline" ||
-    value === "candidate-oracle-selection" ||
-    value === "section-local-planner" ||
-    value === "phase10-oracle-selection" ||
-    value === "phase10-section-local-planner"
-  ) {
+  if (value === "baseline" || value === "candidate-oracle-selection" || value === "section-local-planner") {
     return normalizeSelectionModel(value);
   }
 
