@@ -23,6 +23,7 @@ Use GitHub CLI in a way that preserves repository approval rules and avoids acci
 - Prefer direct GitHub CLI commands so command-prefix approval rules can match them.
 - When requesting escalation for `gh pr create` or `gh pr edit`, suggest only the stable prefix rule `["gh", "pr", "create"]` or `["gh", "pr", "edit"]`. Do not include repository, branch, title, body, label, or draft arguments in the suggested prefix rule.
 - Avoid GitHub mention syntax in PR descriptions unless deliberately notifying a user or team.
+- In PR descriptions, every command line must be wrapped in inline backticks or a fenced code block so command text containing `@` cannot create accidental mentions.
 - In PR descriptions, prefer root scripts such as `pnpm build`, package directory names such as `packages/web`, or escaped scoped package names.
 
 ## Output
