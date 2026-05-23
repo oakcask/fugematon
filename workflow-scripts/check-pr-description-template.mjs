@@ -5,7 +5,9 @@ const requiredSections = ["Intent", "Consequences", "Risks", "Verification"];
 const isGitHubActions = process.env.GITHUB_ACTIONS === "true";
 
 if (isMainModule()) {
-  const result = validatePullRequestDescription(process.env.PR_BODY ?? "");
+  const result = validatePullRequestDescription(process.env.PR_BODY ?? "", {
+    title: process.env.PR_TITLE ?? "",
+  });
 
   if (!result.valid) {
     const message = [
@@ -27,7 +29,7 @@ if (isMainModule()) {
   console.log("Pull request description matches .github/pull_request_template.md.");
 }
 
-export function validatePullRequestDescription(body) {
+export function validatePullRequestDescription(body, { title = "" } = {}) {
   const errors = [];
   const sections = parseMarkdownH2Sections(body);
   const actualSectionTitles = sections.map((section) => section.title);
@@ -52,10 +54,24 @@ export function validatePullRequestDescription(body) {
     }
   }
 
+  if (isBreakingConventionalSubject(title) && !hasBreakingChangeLine(body)) {
+    errors.push(
+      "PRs marked breaking with ! in the title must include a BREAKING CHANGE: line describing the compatibility impact.",
+    );
+  }
+
   return {
     errors,
     valid: errors.length === 0,
   };
+}
+
+function isBreakingConventionalSubject(subject) {
+  return /^[a-z]+(?:\([a-z0-9._-]+\))?!: .+$/.test(subject);
+}
+
+function hasBreakingChangeLine(body) {
+  return /^BREAKING CHANGE:[ \t]*\S.+$/m.test(stripTemplateComments(body));
 }
 
 export function parseMarkdownH2Sections(body) {

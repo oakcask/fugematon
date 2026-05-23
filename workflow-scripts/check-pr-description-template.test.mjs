@@ -28,6 +28,89 @@ test("accepts the PR template sections with optional stack preface", () => {
   assert.equal(result.valid, true);
 });
 
+test("accepts a breaking PR title when the description explains the breaking change", () => {
+  const result = validatePullRequestDescription(
+    [
+      "## Intent",
+      "",
+      "Replace the compatibility aliases with the semantic fields.",
+      "",
+      "## Consequences",
+      "",
+      "Consumers must read the semantic diagnostic fields.",
+      "",
+      "BREAKING CHANGE: Generated diagnostics no longer emit the old phase-numbered aliases.",
+      "",
+      "## Risks",
+      "",
+      "Downstream callers may still read the removed aliases.",
+      "",
+      "## Verification",
+      "",
+      "- pnpm test",
+    ].join("\n"),
+    { title: "refactor(core)!: remove phase diagnostic aliases" },
+  );
+
+  assert.equal(result.valid, true);
+});
+
+test("rejects a breaking PR title without a BREAKING CHANGE line", () => {
+  const result = validatePullRequestDescription(
+    [
+      "## Intent",
+      "",
+      "Replace the compatibility aliases with the semantic fields.",
+      "",
+      "## Consequences",
+      "",
+      "Consumers must read the semantic diagnostic fields.",
+      "",
+      "## Risks",
+      "",
+      "This is a breaking API cleanup.",
+      "",
+      "## Verification",
+      "",
+      "- pnpm test",
+    ].join("\n"),
+    { title: "refactor(core)!: remove phase diagnostic aliases" },
+  );
+
+  assert.equal(result.valid, false);
+  assert.deepEqual(result.errors, [
+    "PRs marked breaking with ! in the title must include a BREAKING CHANGE: line describing the compatibility impact.",
+  ]);
+});
+
+test("rejects an empty BREAKING CHANGE line for a breaking PR title", () => {
+  const result = validatePullRequestDescription(
+    [
+      "## Intent",
+      "",
+      "Replace the compatibility aliases with the semantic fields.",
+      "",
+      "## Consequences",
+      "",
+      "BREAKING CHANGE:",
+      "",
+      "## Risks",
+      "",
+      "Downstream callers may still read the removed aliases.",
+      "",
+      "## Verification",
+      "",
+      "- pnpm test",
+    ].join("\n"),
+    { title: "refactor(core)!: remove phase diagnostic aliases" },
+  );
+
+  assert.equal(result.valid, false);
+  assert.deepEqual(result.errors, [
+    "PRs marked breaking with ! in the title must include a BREAKING CHANGE: line describing the compatibility impact.",
+  ]);
+});
+
 test("rejects the old summary and tests section format", () => {
   const result = validatePullRequestDescription(
     [

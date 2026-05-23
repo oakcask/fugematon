@@ -76,6 +76,8 @@ Prefer this structure when no repository template exists:
 
 Adapt headings to the repository's existing template. If a template asks for "Summary", use that section to describe intent and impact, not just implementation.
 
+When a pull request changes public behavior or compatibility, mark the PR title with `!` and include a `BREAKING CHANGE: ...` line in the description. Put the line where the repository template discusses compatibility or consequences, and explain the removed, changed, or incompatible contract from the consumer's point of view.
+
 ## Decision Records in Change Descriptions
 
 Use a pull request description as a lightweight decision record when the change makes a durable project choice, such as enabling or disabling a lint rule, adopting or rejecting a dependency, changing an API contract, choosing a compatibility policy, or accepting a known maintenance tradeoff.

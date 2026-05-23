@@ -14,6 +14,8 @@ Focus on why this change should exist now, not a file-by-file summary.
 <!--
 Describe expected effects on behavior, compatibility, workflow, performance, security, maintainability,
 data, or deployment. Use "None" when there are no meaningful consequences.
+For breaking PRs marked with "!" in the title, include a reviewer-facing line:
+BREAKING CHANGE: describe the removed, changed, or incompatible public contract.
 -->
 
 ## Risks
