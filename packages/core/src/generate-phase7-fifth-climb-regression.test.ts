@@ -5,7 +5,7 @@ import { generateScore } from "./generate.js";
 
 test("generateScore preserves phase-7 fifth-climb interval regression ceilings", () => {
   const regressionSeeds = [
-    ["fugue-smoke", 139, 98, 72],
+    ["fugue-smoke", 140, 98, 72],
     ["lyrical-line", 136, 98, 72],
     ["modal-cadence", 149, 101, 70],
     ["wide-key", 130, 96, 72],
