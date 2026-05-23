@@ -10,6 +10,7 @@
 - Keep git commands noninteractive when they might open an editor, unless interactive editor behavior is explicitly requested.
 - Do not pass Markdown commit messages or PR descriptions with backticks through shell-interpreted inline strings; pass them through message/body files.
 - Keep `AGENTS.md` as a short entry point. Move task-specific procedures, commands, checklists, and troubleshooting into skills, leaving only always-on rules or skill links here.
+- Design CI failures, exceptions, warnings, and logs so the message includes a searchable error id, why the failure matters, and the action needed to fix it.
 
 ## Project Context
 
@@ -27,6 +28,7 @@
 - Keep PR-sized refactors in prerequisite stacked PRs when they prepare later feature, fix, or scoring work.
 - If a change affects a public contract, generated output shape, or planned behavior, update the relevant tests and docs.
 - When renaming or removing symbols, fields, exported types, JSON keys, CLI output keys, metrics, diagnostics names, or aliases, use `symbol-rename-audit` before reporting the work complete.
+- Follow `docs/reference/error-message-guidelines.md` when adding or changing CI, exception, warning, or log messages.
 - Place scripts invoked from GitHub Workflows under `workflow-scripts/`.
 
 ## Task-Specific Skills

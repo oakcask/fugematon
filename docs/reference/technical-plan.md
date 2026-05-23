@@ -15,6 +15,7 @@
 * 無限再生モード、内部状態可視化、限定操作、テスト、diagnostics 閾値。指標の意味と CI / review scope は [quality-metrics.md](quality-metrics.md) に置く。
 * 調性的処理、主題 entry、教会旋法。
 * 生成エンジン API、CLI、パッケージ構成、依存ルール、performance profile、CI。
+* CI failure、例外、警告、ログのメッセージ設計は [error-message-guidelines.md](error-message-guidelines.md) に置く。
 * 代表 seed、MIDI export、再現データ形式、フェーズ別実装順序。
 * 生成期限、フォールバック、フェーズ別検証観点。
 
@@ -22,6 +23,7 @@
 
 * 実装順序や Phase scope を変える場合は、詳細本文の「フェーズ別実装順序案」と該当 Phase メモを読む。
 * diagnostics、seed、CI gate を変える場合は、詳細本文の diagnostics と CI 周辺、および [quality-metrics.md](quality-metrics.md) を読む。CI に入れるか review-only にするかの分類は quality metrics の CI / review scope を優先する。
+* CI failure、例外、警告、ログの文言を変える場合は [error-message-guidelines.md](error-message-guidelines.md) を読む。
 * API、CLI、パッケージ境界を変える場合は、詳細本文の該当 section だけ読む。
 * MIDI export、pan、volume、program、演奏 profile を変える場合は、詳細本文の「パッケージ構成」と「MIDI エクスポート方針」を読む。
 * 音楽モデル自体の方針を変える場合は、先に [design.md](design.md) を読む。
