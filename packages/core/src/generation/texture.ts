@@ -176,22 +176,19 @@ function softenEntryBoundaryResetAt(
     return;
   }
 
-  const note = chooseBoundaryResetNoteToDelay(outsideStartingNotes, previousNotes, entryStartTick);
-  if (note === undefined) {
-    return;
-  }
+  for (const note of chooseBoundaryResetNotesToDelay(outsideStartingNotes, previousNotes, entryStartTick)) {
+    const delayTicks = boundaryResetDelayTicks(note);
+    if (delayTicks <= 0) {
+      continue;
+    }
 
-  const delayTicks = boundaryResetDelayTicks(note);
-  if (delayTicks <= 0) {
-    return;
+    const carriedNote = latestNoteEndingAtBoundary(notes, note.voice, entryStartTick);
+    if (carriedNote !== undefined) {
+      carriedNote.durationTicks += delayTicks;
+    }
+    note.startTick += delayTicks;
+    note.durationTicks -= delayTicks;
   }
-
-  const carriedNote = latestNoteEndingAtBoundary(notes, note.voice, entryStartTick);
-  if (carriedNote !== undefined) {
-    carriedNote.durationTicks += delayTicks;
-  }
-  note.startTick += delayTicks;
-  note.durationTicks -= delayTicks;
 }
 
 function outsideVoiceOnsetsAtEntry(
@@ -226,12 +223,12 @@ function latestNoteEndingAtBoundary(
     .at(-1);
 }
 
-function chooseBoundaryResetNoteToDelay(
+function chooseBoundaryResetNotesToDelay(
   notes: readonly NoteEvent[],
   previousNotes: readonly NoteEvent[],
   entryStartTick: number,
-): NoteEvent | undefined {
-  return boundaryResetDelayCandidates(notes, previousNotes, entryStartTick)[0];
+): NoteEvent[] {
+  return boundaryResetDelayCandidates(notes, previousNotes, entryStartTick).slice(0, 2);
 }
 
 function boundaryResetDelayCandidates(
