@@ -23,6 +23,7 @@ import {
   hasOverlap,
   MODAL_COUNTER_SUBJECT_DEGREES,
   MODAL_FREE_COUNTERPOINT_DEGREES,
+  pitchClassDistance,
   placePitchInRegister,
   positiveModulo,
   VOICE_ENTRY_ORDER,
@@ -505,7 +506,7 @@ function createsCounterSubjectSupportCollision(
       note.voice !== voice &&
       note.startTick < startTick + durationTicks &&
       startTick < note.startTick + note.durationTicks &&
-      Math.abs(pitch - note.pitch) % 12 <= 2,
+      pitchClassDistance(pitch, note.pitch) <= 2,
   );
 }
 

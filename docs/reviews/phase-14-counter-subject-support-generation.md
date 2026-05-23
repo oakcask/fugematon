@@ -8,7 +8,7 @@ Theory basis: Fux-like counterpoint allows prepared and resolved dissonance, but
 
 ## Generator Response
 
-Free-counterpoint note creation now checks whether the proposed support note overlaps an active counter-subject with a near pitch-class collision. When it does, the generator tries nearby pitches within a fourth or fifth, preserving range, adjacent voice order, and the existing semitone / pitch-class unison safety checks. If a harmonic anchor is available, chord-tone candidates are preferred.
+Free-counterpoint note creation now checks whether the proposed support note overlaps an active counter-subject with a near pitch-class collision. Nearness uses cyclic pitch-class distance, so descending semitone and second collisions are counted with ascending ones. When a collision is found, the generator tries nearby pitches within a fourth or fifth, preserving range, adjacent voice order, and the existing semitone / pitch-class unison safety checks. If a harmonic anchor is available, chord-tone candidates are preferred.
 
 The response is generation-side only. It does not promote counter-subject survivability to a CI-blocking beauty gate; the focused seed tests record repaired ceilings while the remaining Phase 14C line-agency and phrase-development review stays `review-required`.
 
@@ -29,17 +29,17 @@ Before this change:
 
 | Seed group | Windows | Preserved | Tradeoff | Weak | Support collisions |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| high-collision | 188 | 8 | 176 | 4 | 1,602 |
-| modal/control | 179 | 71 | 104 | 4 | 441 |
+| high-collision | 188 | 0 | 184 | 4 | 2,045 |
+| modal/control | 179 | 71 | 104 | 4 | 453 |
 
 After this change:
 
 | Seed group | Windows | Preserved | Tradeoff | Weak | Support collisions |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| high-collision | 190 | 121 | 64 | 5 | 511 |
-| modal/control | 179 | 113 | 62 | 4 | 155 |
+| high-collision | 190 | 67 | 119 | 4 | 857 |
+| modal/control | 179 | 113 | 62 | 4 | 217 |
 
-Accepted tradeoff: the repair is limited to Phase 14 long-form review generation because support pitches are now allowed to move when they obscure counter-subject material. This is accepted for Phase 14 because the change improves score-window counter-subject survivability across representative, adversarial, modal, ad hoc listening, and user-reported seeds without rewriting older Phase 5-13 regression baselines. The Phase 14 entry / weak-dissonance review ceilings move slightly and remain review-required score-window signals, not a claim that Phase 14C is complete: tradeoff windows remain, and phrase development still needs function-bearing recurrence evidence.
+Accepted tradeoff: the repair is limited to Phase 14 long-form review generation because support pitches are now allowed to move when they obscure counter-subject material. This is accepted for Phase 14 because the change improves score-window counter-subject survivability across representative, adversarial, modal, ad hoc listening, and user-reported seeds without rewriting older Phase 5-13 regression baselines. The focused entry-dissonance review now reports 16 unresolved accented entry clashes, with `tight-stretto` at 9; this is a remaining review-required symptom, not a completed entry-dissonance fix. The Phase 14 weak-dissonance review ceilings also move slightly and remain review-required score-window signals, not a claim that Phase 14C is complete: tradeoff windows remain, and phrase development still needs function-bearing recurrence evidence.
 
 CI / review scope:
 

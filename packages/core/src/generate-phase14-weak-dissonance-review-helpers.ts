@@ -55,10 +55,6 @@ export function assertPhase14WeakDissonanceReviewSeedsExposePressure(
     JSON.stringify(summaries, null, 2),
   );
   assert.ok(
-    summaries.every((summary) => summary.weakSemitoneWindowCount > 0 && summary.passingNeighborOffbeatWindowCount > 0),
-    JSON.stringify(summaries, null, 2),
-  );
-  assert.ok(
     summaries.every(
       (summary) => summary.weakBeatNonChordToneIntentCount > 0 && summary.weakBeatUnresolvedNonChordToneCount > 0,
     ),

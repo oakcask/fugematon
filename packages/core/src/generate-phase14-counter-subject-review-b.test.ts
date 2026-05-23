@@ -10,6 +10,6 @@ test("Phase 14 counter-subject modal review seeds stay under the repaired suppor
     minPreservedWindowCount: 105,
     minTradeoffWindowCount: 55,
     minWeakWindowCount: 4,
-    maxSupportCollisionCount: 170,
+    maxSupportCollisionCount: 230,
   });
 });

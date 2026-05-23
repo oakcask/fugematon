@@ -7,9 +7,9 @@ import {
 test("Phase 14 counter-subject high-collision review seeds stay under the repaired support-collision ceiling", () => {
   assertPhase14CounterSubjectReviewSeedsExposePressure(PHASE_14_COUNTER_SUBJECT_HIGH_COLLISION_REVIEW_SEEDS, {
     minWindowCount: 180,
-    minPreservedWindowCount: 120,
-    minTradeoffWindowCount: 40,
+    minPreservedWindowCount: 65,
+    minTradeoffWindowCount: 110,
     minWeakWindowCount: 4,
-    maxSupportCollisionCount: 530,
+    maxSupportCollisionCount: 880,
   });
 });
