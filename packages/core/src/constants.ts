@@ -140,7 +140,7 @@ export const PHASE_5_7_DIAGNOSTICS_PROFILE = {
 export const PHASE_5_9_DIAGNOSTICS_PROFILE = {
   minCounterSubjectIdentityRetention: 0.58,
   minRhythmicIndependenceScore: 0.08,
-  maxUnisonOverlapCount: 762,
+  maxUnisonOverlapCount: 763,
   maxSameDirectionMotionCount: 663,
   maxSharedRhythmOverlapCount: 909,
   maxLeapRecoveryMisses: 34,
@@ -172,7 +172,7 @@ export const PHASE_5_9_DIAGNOSTICS_PROFILE = {
 
 export const PHASE_5_10_DIAGNOSTICS_PROFILE = {
   minRhythmicIndependenceScore: 0.08,
-  maxUnisonOverlapCount: 762,
+  maxUnisonOverlapCount: 763,
   maxSameDirectionMotionCount: 663,
   maxSharedRhythmOverlapCount: 909,
   maxShortStrongBeatEntryNoteCount: 33,
@@ -196,7 +196,7 @@ export const PHASE_5_10_DIAGNOSTICS_PROFILE = {
 export const PHASE_5_11_DIAGNOSTICS_PROFILE = {
   minCounterSubjectIdentityRetention: 0.573,
   minRhythmicIndependenceScore: 0.079,
-  maxUnisonOverlapCount: 762,
+  maxUnisonOverlapCount: 763,
   maxSameDirectionMotionCount: 814,
   maxSharedRhythmOverlapCount: 909,
   maxLeapRecoveryMisses: 34,

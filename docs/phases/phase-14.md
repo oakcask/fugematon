@@ -77,6 +77,8 @@ Implementation note: `phase14ScoreWindowAcceptance` now combines important-entry
 
 Tighten entry-continuity classification so one delayed or carried support line is not enough when the rest of the texture resets. Add generation candidates for carried support, suspensions, prepared resolutions, staggered continuation, contrary/oblique support, and weak dissonance that resolves by step. Candidate scoring should penalize repeated pitch-class stacks plus adjacent seconds when the score window cannot explain them as prepared, passing, neighboring, cadential, or stretto-functional.
 
+Implementation note: entry-boundary reset softening now carries/delays two outside support voices when all outside voices would otherwise restart together. This removes the focused one-voice carry with outside reset windows in the Phase 14B review seeds. See the [Phase 14 entry continuity generation review](../reviews/phase-14-entry-continuity-generation.md). Broader entry dissonance scoring and weak-dissonance generation responses remain open.
+
 ### 14C: Line-agency, counter-subject, and phrase-development generation
 
 Add independent rhythmic and contour alternatives after the dissonance triage is stable. Make counter-subject preservation and transformation selectable objectives. Rebuild phrase-development selection so recurrence must show changed role, register, cadence target, contour, density, or contrapuntal pressure, not only a changed state label. Do not let phrase novelty rewards select windows that increase unprepared semitone friction. The generator should improve line agency before phrase-development rewards are trusted, because a novel phrase over block-like support is still weak fugue writing.

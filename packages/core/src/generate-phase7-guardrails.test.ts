@@ -66,10 +66,10 @@ test("generateScore balances phase-7 entry harmony scoring with preservation gua
 
 test("generateScore preserves phase-7 voice-pair independence blocker evidence under scoring changes", () => {
   const blockerSeeds = [
-    ["contrary-motion", 24, 539, 793, 3, 2, 26, 7, 57, 15],
-    ["fugue-smoke", 15, 581, 837, 0, 0, 27, 7, 57, 13],
-    ["minor-entry", 26, 736, 909, 0, 0, 50, 15, 73, 20],
-    ["modal-answer", 13, 752, 909, 0, 0, 47, 14, 73, 20],
+    ["contrary-motion", 24, 540, 786, 3, 2, 27, 8, 50, 12],
+    ["fugue-smoke", 15, 582, 830, 0, 0, 28, 7, 50, 13],
+    ["minor-entry", 26, 737, 902, 0, 0, 51, 15, 66, 21],
+    ["modal-answer", 13, 752, 902, 0, 0, 47, 14, 66, 21],
   ] as const;
 
   for (const [
@@ -113,8 +113,8 @@ test("generateScore preserves phase-7 voice-pair independence blocker evidence u
 
 test("generateScore guards phase-7 exact pitch lockstep without gate regressions", () => {
   const blockerSeeds = [
-    ["bright-answer", 8, 736, 630, 31, 0.9],
-    ["quiet-cadence", 7, 728, 656, 15, 0.87],
+    ["bright-answer", 8, 737, 630, 31, 0.9],
+    ["quiet-cadence", 8, 729, 656, 15, 0.87],
     ["modal-answer", 13, 752, 814, 33, 0.573],
   ] as const;
 

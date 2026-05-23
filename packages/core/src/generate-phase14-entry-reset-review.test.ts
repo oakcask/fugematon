@@ -10,7 +10,7 @@ const PHASE_14_ENTRY_RESET_REVIEW_SEEDS = [
   "seed-0zereox-1v729ih",
 ] as const;
 
-test("Phase 14 entry-reset review seeds expose one-voice carry windows with outside resets", () => {
+test("Phase 14 entry-reset review seeds avoid one-voice carry windows with outside resets", () => {
   const summaries = PHASE_14_ENTRY_RESET_REVIEW_SEEDS.map((seed) => {
     const diagnostics = generateScore({ seed, lengthTicks: TICKS_PER_QUARTER * 288 }).diagnostics;
     const oneVoiceCarryWindows = diagnostics.entryBoundaryContinuity.windows.filter(
@@ -33,7 +33,7 @@ test("Phase 14 entry-reset review seeds expose one-voice carry windows with outs
   });
 
   assert.ok(
-    summaries.some((summary) => summary.oneVoiceCarryWithOutsideResetCount > 0),
+    summaries.every((summary) => summary.oneVoiceCarryWithOutsideResetCount === 0),
     JSON.stringify(summaries, null, 2),
   );
   assert.ok(
