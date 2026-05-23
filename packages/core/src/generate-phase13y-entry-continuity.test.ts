@@ -52,6 +52,27 @@ test("entry-boundary continuity accepts carried or delayed support at post-expos
   assert.deepEqual(window?.delayedOutsideVoices, ["soprano"]);
 });
 
+test("entry-boundary continuity exposes one-voice carry with two outside resets at first bass answer", () => {
+  const entryStartTick = TICKS_PER_QUARTER * 12;
+  const summary = analyzeEntryBoundaryContinuity(
+    [
+      boundaryNote("soprano", entryStartTick - TICKS_PER_QUARTER, TICKS_PER_QUARTER * 2),
+      boundaryNote("alto", entryStartTick - TICKS_PER_QUARTER, TICKS_PER_QUARTER),
+      boundaryNote("tenor", entryStartTick - TICKS_PER_QUARTER, TICKS_PER_QUARTER),
+      boundaryNote("alto", entryStartTick, TICKS_PER_QUARTER),
+      boundaryNote("tenor", entryStartTick, TICKS_PER_QUARTER),
+    ],
+    [entry("bass", "answer", "exposition", entryStartTick)],
+  );
+
+  const window = summary.firstBassEntryWindow;
+  assert.equal(summary.firstBassEntrySynchronizedReset, false);
+  assert.equal(window?.classification, "continuity-supported");
+  assert.deepEqual(window?.carriedOutsideVoices, ["soprano"]);
+  assert.deepEqual(window?.outsideEndedAtEntryVoices.sort(), ["alto", "tenor"]);
+  assert.deepEqual(window?.outsideOnsetVoices.sort(), ["alto", "tenor"]);
+});
+
 test("entry-boundary continuity still flags unprepared post-exposition bass resets", () => {
   const entryStartTick = TICKS_PER_QUARTER * 28;
   const summary = analyzeEntryBoundaryContinuity(
