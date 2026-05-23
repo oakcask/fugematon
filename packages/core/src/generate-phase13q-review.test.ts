@@ -1,12 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { PHASE_5_LENGTH_TICKS } from "./constants.js";
+import { REVIEW_LENGTH_TICKS } from "./constants.js";
 import { generateScore } from "./generate.js";
 
 test("generateScore links unresolved entry sentinels to selected entry context and deadlines", () => {
   const output = generateScore({
     seed: "modal-cadence",
-    lengthTicks: PHASE_5_LENGTH_TICKS,
+    lengthTicks: REVIEW_LENGTH_TICKS,
     selectionModel: "section-local-planner",
   });
   const unresolvedEntrySentinels = output.diagnostics.qualityVector.localSentinels.filter(
@@ -34,7 +34,7 @@ test("generateScore links unresolved entry sentinels to selected entry context a
 test("generateScore exposes phase-13Q quality-vector features in selected candidate evaluations", () => {
   const output = generateScore({
     seed: "modal-cadence",
-    lengthTicks: PHASE_5_LENGTH_TICKS,
+    lengthTicks: REVIEW_LENGTH_TICKS,
     selectionModel: "section-local-planner",
   });
   const selected = output.diagnostics.selectedCandidateEvaluations.at(-1);

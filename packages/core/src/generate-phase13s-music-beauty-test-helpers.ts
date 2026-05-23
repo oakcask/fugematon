@@ -1,14 +1,14 @@
 import assert from "node:assert/strict";
 import {
-  PHASE_5_11_ROTATION_SEEDS,
-  PHASE_5_LENGTH_TICKS,
-  PHASE_5_REVIEW_SEEDS,
+  REPRESENTATIVE_REVIEW_SEEDS,
+  REVIEW_LENGTH_TICKS,
+  ROTATION_REVIEW_SEEDS,
   TICKS_PER_QUARTER,
 } from "./constants.js";
 import type { GenerationOutput, NoteEvent, Voice } from "./events.js";
 import { generateScore } from "./generate.js";
 
-const PHASE_13S_REVIEW_SEEDS = [...PHASE_5_REVIEW_SEEDS, ...PHASE_5_11_ROTATION_SEEDS].map(({ seed }) => seed);
+const PHASE_13S_REVIEW_SEEDS = [...REPRESENTATIVE_REVIEW_SEEDS, ...ROTATION_REVIEW_SEEDS].map(({ seed }) => seed);
 
 export const PHASE_13S_MUSIC_BEAUTY_BATCHES = {
   first: PHASE_13S_REVIEW_SEEDS.slice(0, 4),
@@ -49,7 +49,7 @@ export function collectPhase13SMusicBeautyMetrics(seeds: readonly string[]): Pha
   let counterSubjectIdentityRetentionTotal = 0;
 
   for (const seed of seeds) {
-    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
+    const output = generateScore({ seed, lengthTicks: REVIEW_LENGTH_TICKS });
     const initialSubject = output.diagnostics.subjectEntries.find((entry) => entry.form === "subject");
     assert.ok(initialSubject);
 
@@ -91,7 +91,7 @@ export function collectPhase13TCurrentBlockerMetrics(seeds: readonly string[]): 
   let lowModalCounterSubjectIdentitySeedCount = 0;
 
   for (const seed of seeds) {
-    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
+    const output = generateScore({ seed, lengthTicks: REVIEW_LENGTH_TICKS });
     const axes = new Map(output.diagnostics.qualityVector.axes.map((axis) => [axis.axis, axis]));
     if (axes.get("durationBasedLockstep")?.status === "review-required") {
       durationBasedLockstepReviewSeedCount += 1;

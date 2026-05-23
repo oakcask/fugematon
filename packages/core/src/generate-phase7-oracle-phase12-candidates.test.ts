@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { PHASE_5_LENGTH_TICKS } from "./constants.js";
+import { REVIEW_LENGTH_TICKS } from "./constants.js";
 import { generateScore } from "./generate.js";
 
 test("generateScore keeps phase-12 phrase family candidates traceable when selectable", () => {
@@ -9,7 +9,7 @@ test("generateScore keeps phase-12 phrase family candidates traceable when selec
   for (const seed of reviewSeeds) {
     const output = generateScore({
       seed,
-      lengthTicks: PHASE_5_LENGTH_TICKS,
+      lengthTicks: REVIEW_LENGTH_TICKS,
       selectionModel: "section-local-planner",
     });
     const oracle = output.diagnostics.candidatePoolOracle;

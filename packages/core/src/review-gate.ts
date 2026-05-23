@@ -31,9 +31,6 @@ export type BaselineBeautyGateResult = {
   };
 };
 
-export type Phase59GateFailure = ReviewGateFailure;
-export type Phase59GateResult = BaselineBeautyGateResult;
-
 export type VoiceIndependenceGateResult = {
   passed: boolean;
   failures: ReviewGateFailure[];
@@ -46,13 +43,9 @@ export type VoiceIndependenceGateResult = {
   };
 };
 
-export type Phase510GateResult = VoiceIndependenceGateResult;
-
 export type RotationRobustnessGateResult = VoiceIndependenceGateResult & {
   followUps: ReviewGateFailure[];
 };
-
-export type Phase511GateResult = RotationRobustnessGateResult;
 
 export type MelodyTextureGateResult = {
   passed: boolean;
@@ -70,8 +63,6 @@ export type MelodyTextureGateResult = {
   };
 };
 
-export type Phase6GateResult = MelodyTextureGateResult;
-
 export type ContourMotionGateResult = {
   passed: boolean;
   failures: ReviewGateFailure[];
@@ -86,8 +77,6 @@ export type ContourMotionGateResult = {
     eightBeatBassUpperComparisonCount: number;
   };
 };
-
-export type Phase7GateResult = ContourMotionGateResult;
 
 export type ManualListeningJudgement = "pass" | "needs-work" | "fail" | "not-reviewed";
 
@@ -107,13 +96,12 @@ export type ReviewGatePolicyOptions = {
 
 export type ReviewGatePolicyResult = {
   policy: {
-    schemaVersion: 2;
+    schemaVersion: 3;
     name: "review-gate-policy";
   };
   passed: boolean;
   hardConstraintPassed: boolean;
   adoptionReady: boolean;
-  phase8Ready: boolean;
   findings: ClassifiedReviewGateFinding[];
   hardFailures: ClassifiedReviewGateFinding[];
   reviewSignals: ClassifiedReviewGateFinding[];
@@ -125,11 +113,7 @@ export type ReviewGatePolicyResult = {
     diagnosticsWarningCount: number;
   };
   contourMotionGate: ContourMotionGateResult;
-  legacyPhase7Gate: ContourMotionGateResult;
 };
-
-export type Phase7BPolicyOptions = ReviewGatePolicyOptions;
-export type Phase7BGatePolicyResult = ReviewGatePolicyResult;
 
 export function evaluateBaselineBeautyGate(seed: string, diagnostics: GenerationDiagnostics): BaselineBeautyGateResult {
   const textureCosts = diagnostics.selectedCandidateEvaluations.map((evaluation) => evaluation.dimensions.texture.cost);
@@ -220,10 +204,6 @@ export function evaluateBaselineBeautyGate(seed: string, diagnostics: Generation
   };
 }
 
-export function evaluatePhase59Diagnostics(seed: string, diagnostics: GenerationDiagnostics): Phase59GateResult {
-  return evaluateBaselineBeautyGate(seed, diagnostics);
-}
-
 export function evaluateVoiceIndependenceGate(
   seed: string,
   diagnostics: GenerationDiagnostics,
@@ -289,10 +269,6 @@ export function evaluateVoiceIndependenceGate(
     failures,
     metrics,
   };
-}
-
-export function evaluatePhase510Diagnostics(seed: string, diagnostics: GenerationDiagnostics): Phase510GateResult {
-  return evaluateVoiceIndependenceGate(seed, diagnostics);
 }
 
 export function evaluateRotationRobustnessGate(
@@ -387,10 +363,6 @@ export function evaluateRotationRobustnessGate(
   };
 }
 
-export function evaluatePhase511Diagnostics(seed: string, diagnostics: GenerationDiagnostics): Phase511GateResult {
-  return evaluateRotationRobustnessGate(seed, diagnostics);
-}
-
 export function evaluateMelodyTextureGate(seed: string, diagnostics: GenerationDiagnostics): MelodyTextureGateResult {
   const rotationRobustnessGate = evaluateRotationRobustnessGate(seed, diagnostics);
   const expositionPlan = diagnostics.sectionPlans.find((plan) => plan.state === "exposition");
@@ -477,10 +449,6 @@ export function evaluateMelodyTextureGate(seed: string, diagnostics: GenerationD
   };
 }
 
-export function evaluatePhase6Diagnostics(seed: string, diagnostics: GenerationDiagnostics): Phase6GateResult {
-  return evaluateMelodyTextureGate(seed, diagnostics);
-}
-
 export function evaluateContourMotionGate(seed: string, diagnostics: GenerationDiagnostics): ContourMotionGateResult {
   const melodyTextureGate = evaluateMelodyTextureGate(seed, diagnostics);
   const { fourBeat, eightBeat } = diagnostics.pitchContourMotion;
@@ -553,20 +521,12 @@ export function evaluateContourMotionGate(seed: string, diagnostics: GenerationD
   };
 }
 
-export function evaluatePhase7Diagnostics(seed: string, diagnostics: GenerationDiagnostics): Phase7GateResult {
-  return evaluateContourMotionGate(seed, diagnostics);
-}
-
 export function manualListeningBlockers(category: string, judgement: ManualListeningJudgement): string[] {
   if ((category === "representative" || category === "boundary") && judgement !== "pass") {
     return ["manual listening judgement must be pass before melody texture review"];
   }
 
   return [];
-}
-
-export function phase59ManualListeningBlockers(category: string, judgement: ManualListeningJudgement): string[] {
-  return manualListeningBlockers(category, judgement);
 }
 
 export function evaluateReviewGatePolicy(
@@ -588,13 +548,12 @@ export function evaluateReviewGatePolicy(
 
   return {
     policy: {
-      schemaVersion: 2,
+      schemaVersion: 3,
       name: "review-gate-policy",
     },
     passed: adoptionReady,
     hardConstraintPassed,
     adoptionReady,
-    phase8Ready: adoptionReady,
     findings,
     hardFailures,
     reviewSignals,
@@ -607,16 +566,7 @@ export function evaluateReviewGatePolicy(
       diagnosticsWarningCount: diagnostics.warnings.length,
     },
     contourMotionGate,
-    legacyPhase7Gate: contourMotionGate,
   };
-}
-
-export function evaluatePhase7BGatePolicy(
-  seed: string,
-  diagnostics: GenerationDiagnostics,
-  options: Phase7BPolicyOptions = {},
-): Phase7BGatePolicyResult {
-  return evaluateReviewGatePolicy(seed, diagnostics, options);
 }
 
 function addBoundaryFailures(

@@ -1,20 +1,20 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { PHASE_5_11_ROTATION_SEEDS, PHASE_5_LENGTH_TICKS, PHASE_5_REVIEW_SEEDS } from "./constants.js";
+import { REPRESENTATIVE_REVIEW_SEEDS, REVIEW_LENGTH_TICKS, ROTATION_REVIEW_SEEDS } from "./constants.js";
 import { generateScore } from "./generate.js";
 import { summarizeContinuationPatterns } from "./generate-test-helpers.js";
-import { evaluatePhase6Diagnostics, evaluatePhase7Diagnostics } from "./review-gate.js";
+import { evaluateContourMotionGate, evaluateMelodyTextureGate } from "./review-gate.js";
 
 test("generateScore rotates long-run continuation patterns without gate regressions", () => {
-  const seeds = [...PHASE_5_REVIEW_SEEDS, ...PHASE_5_11_ROTATION_SEEDS];
+  const seeds = [...REPRESENTATIVE_REVIEW_SEEDS, ...ROTATION_REVIEW_SEEDS];
   let highSelectedSectionSoloTextureRiskCount = 0;
   let uniqueContinuationPatternCount = 0;
   let maxRepeatedContinuationPatternCount = 0;
 
   for (const { seed } of seeds) {
-    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS, selectionModel: "baseline" });
-    const gate6 = evaluatePhase6Diagnostics(seed, output.diagnostics);
-    const gate7 = evaluatePhase7Diagnostics(seed, output.diagnostics);
+    const output = generateScore({ seed, lengthTicks: REVIEW_LENGTH_TICKS, selectionModel: "baseline" });
+    const gate6 = evaluateMelodyTextureGate(seed, output.diagnostics);
+    const gate7 = evaluateContourMotionGate(seed, output.diagnostics);
     const selectedSectionRisks = output.diagnostics.selectedCandidateEvaluations.flatMap((evaluation) =>
       evaluation.explanations.sections.map((section) => section.soloTextureRisk),
     );

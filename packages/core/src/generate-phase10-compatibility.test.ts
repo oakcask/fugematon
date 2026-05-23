@@ -1,19 +1,19 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { PHASE_5_LENGTH_TICKS } from "./constants.js";
+import { REVIEW_LENGTH_TICKS } from "./constants.js";
 import { generateScore } from "./generate.js";
 import { assertPhase10CompletionCompatibility } from "./generate-phase10-compatibility-test-helpers.js";
-import { evaluatePhase6Diagnostics } from "./review-gate.js";
+import { evaluateMelodyTextureGate } from "./review-gate.js";
 
 test("generateScore can compare the phase-10 oracle selection model against baseline", () => {
-  const baseline = generateScore({ seed: "bach-001", lengthTicks: PHASE_5_LENGTH_TICKS, selectionModel: "baseline" });
+  const baseline = generateScore({ seed: "bach-001", lengthTicks: REVIEW_LENGTH_TICKS, selectionModel: "baseline" });
   const variant = generateScore({
     seed: "bach-001",
-    lengthTicks: PHASE_5_LENGTH_TICKS,
+    lengthTicks: REVIEW_LENGTH_TICKS,
     selectionModel: "candidate-oracle-selection",
   });
-  const baselineGate = evaluatePhase6Diagnostics("bach-001", baseline.diagnostics);
-  const variantGate = evaluatePhase6Diagnostics("bach-001", variant.diagnostics);
+  const baselineGate = evaluateMelodyTextureGate("bach-001", baseline.diagnostics);
+  const variantGate = evaluateMelodyTextureGate("bach-001", variant.diagnostics);
 
   assert.deepEqual(baselineGate.failures, []);
   assert.deepEqual(variantGate.failures, []);

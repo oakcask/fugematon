@@ -1,14 +1,14 @@
 import assert from "node:assert/strict";
 import {
-  PHASE_5_11_ROTATION_SEEDS,
-  PHASE_5_LENGTH_TICKS,
-  PHASE_5_REVIEW_SEEDS,
+  REPRESENTATIVE_REVIEW_SEEDS,
+  REVIEW_LENGTH_TICKS,
+  ROTATION_REVIEW_SEEDS,
   TICKS_PER_QUARTER,
 } from "./constants.js";
 import type { NoteEvent, PlannedEntry, Voice } from "./events.js";
 import { generateScore } from "./generate.js";
 
-export const PHASE_13X2_BASS_ANSWER_TAIL_REVIEW_SEEDS = [...PHASE_5_REVIEW_SEEDS, ...PHASE_5_11_ROTATION_SEEDS].map(
+export const PHASE_13X2_BASS_ANSWER_TAIL_REVIEW_SEEDS = [...REPRESENTATIVE_REVIEW_SEEDS, ...ROTATION_REVIEW_SEEDS].map(
   ({ seed }) => seed,
 );
 
@@ -42,7 +42,7 @@ const TAIL_WINDOW_TICKS = TICKS_PER_QUARTER * 9;
 
 export function collectPhase13X2BassAnswerTailMetrics(seeds: readonly string[]): Phase13X2BassAnswerTailMetrics {
   const windows = seeds.map((seed) => {
-    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
+    const output = generateScore({ seed, lengthTicks: REVIEW_LENGTH_TICKS });
     const notes = output.events.filter((event): event is NoteEvent => event.kind === "note");
     const firstBassAnswer = output.diagnostics.subjectEntries.find(isFirstBassAnswerEntry);
     assert.ok(firstBassAnswer !== undefined, `${seed} should expose the first bass answer`);

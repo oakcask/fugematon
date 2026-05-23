@@ -4,8 +4,8 @@ import {
   GENERATOR_VERSION,
   TICKS_PER_QUARTER,
 } from "./constants.js";
-import { normalizeSelectionModel } from "./events.js";
 import type { GenerationInput, GenerationOutput, GenerationParameters, ScoreEvent } from "./events.js";
+import { normalizeSelectionModel } from "./events.js";
 import { analyzeScore } from "./generation/diagnostics.js";
 import { chooseKeySignature, chooseTempo, chooseTimeSignature } from "./generation/key.js";
 import { buildLocalSentinelCandidateTraceSummary } from "./generation/local-sentinel-candidate-trace.js";

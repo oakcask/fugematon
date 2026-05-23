@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { PHASE_5_LENGTH_TICKS } from "./constants.js";
+import { REVIEW_LENGTH_TICKS } from "./constants.js";
 import { generateScore } from "./generate.js";
 
 test("generateScore preserves phase-7 fifth-climb interval regression ceilings", () => {
@@ -14,7 +14,7 @@ test("generateScore preserves phase-7 fifth-climb interval regression ceilings",
   ] as const;
 
   for (const [seed, maxInstabilityCount, maxSevereIntervalCount, maxUnresolvedSevereIntervalCount] of regressionSeeds) {
-    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS, selectionModel: "baseline" });
+    const output = generateScore({ seed, lengthTicks: REVIEW_LENGTH_TICKS, selectionModel: "baseline" });
 
     assert.ok(output.diagnostics.entrySupportInstabilityCount <= maxInstabilityCount);
     assert.ok(output.diagnostics.severeEntryIntervalCount <= maxSevereIntervalCount);

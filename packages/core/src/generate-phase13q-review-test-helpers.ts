@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
-import { PHASE_5_LENGTH_TICKS } from "./constants.js";
+import { REVIEW_LENGTH_TICKS } from "./constants.js";
 import type { CandidatePoolOracleBlocker } from "./events.js";
 import { generateScore } from "./generate.js";
-import { evaluatePhase7BGatePolicy } from "./review-gate.js";
+import { evaluateReviewGatePolicy } from "./review-gate.js";
 
 export function assertPhase13QAdoptionSeedsReady(seeds: readonly string[]): void {
   const expectedBlockers: readonly CandidatePoolOracleBlocker[] = [
@@ -14,20 +14,20 @@ export function assertPhase13QAdoptionSeedsReady(seeds: readonly string[]): void
   for (const seed of seeds) {
     const baseline = generateScore({
       seed,
-      lengthTicks: PHASE_5_LENGTH_TICKS,
+      lengthTicks: REVIEW_LENGTH_TICKS,
       selectionModel: "candidate-oracle-selection",
     });
     const variant = generateScore({
       seed,
-      lengthTicks: PHASE_5_LENGTH_TICKS,
+      lengthTicks: REVIEW_LENGTH_TICKS,
       selectionModel: "section-local-planner",
     });
     const repeated = generateScore({
       seed,
-      lengthTicks: PHASE_5_LENGTH_TICKS,
+      lengthTicks: REVIEW_LENGTH_TICKS,
       selectionModel: "section-local-planner",
     });
-    const gate = evaluatePhase7BGatePolicy(seed, variant.diagnostics);
+    const gate = evaluateReviewGatePolicy(seed, variant.diagnostics);
     const oracle = variant.diagnostics.candidatePoolOracle;
     const blockerNames = new Set(oracle.blockerClassifications.map((blocker) => blocker.blocker));
     const phase13QBlockers = oracle.blockerClassifications.filter((blocker) =>
@@ -36,7 +36,7 @@ export function assertPhase13QAdoptionSeedsReady(seeds: readonly string[]): void
 
     assert.deepEqual(repeated.events, variant.events);
     assert.deepEqual(repeated.diagnostics, variant.diagnostics);
-    assert.equal(gate.phase8Ready, true);
+    assert.equal(gate.adoptionReady, true);
     assert.equal(gate.hardConstraintPassed, true);
     assert.deepEqual(gate.hardFailures, []);
     assert.equal(oracle.schemaVersion, 5);

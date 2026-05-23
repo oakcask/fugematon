@@ -347,8 +347,7 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
       topEntryPatternFamilyCount: diagnostics.texturePlanningReview.entryPatternFamilies[0]?.count ?? 0,
       longWindowReviewRequiredClaimCount:
         diagnostics.qualityVector.scoreBeautyEvidence.longWindowDevelopment.reviewRequiredClaimCount,
-      longWindowTopFunctionShare:
-        diagnostics.qualityVector.scoreBeautyEvidence.longWindowDevelopment.topFunctionShare,
+      longWindowTopFunctionShare: diagnostics.qualityVector.scoreBeautyEvidence.longWindowDevelopment.topFunctionShare,
     },
   };
   const totalCost =

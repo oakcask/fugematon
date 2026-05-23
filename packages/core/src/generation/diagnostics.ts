@@ -27,11 +27,11 @@ import type {
   Voice,
 } from "../events.js";
 import { analyzeBassAnswerTailTexture } from "./bass-answer-tail-texture.js";
+import { analyzeDissonanceTriage } from "./dissonance-triage.js";
 import { analyzeEntryBoundaryContinuity } from "./entry-boundary-continuity.js";
 import { chordTonePitchClasses, nearestHarmonicAnchor, rootDegreeForFunction } from "./harmony.js";
 import { analyzeHarmonicPlans } from "./harmony-diagnostics.js";
 import { isModalMode, tonicPitchClass } from "./key.js";
-import { analyzeDissonanceTriage } from "./dissonance-triage.js";
 import { scaleDegreePitchClass } from "./pitch.js";
 import { analyzeQualityVector } from "./quality-vector.js";
 import {

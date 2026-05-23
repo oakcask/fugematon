@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { PHASE_5_11_ROTATION_SEEDS, PHASE_5_LENGTH_TICKS, PHASE_5_REVIEW_SEEDS } from "./constants.js";
+import { REPRESENTATIVE_REVIEW_SEEDS, REVIEW_LENGTH_TICKS, ROTATION_REVIEW_SEEDS } from "./constants.js";
 import { generateScore } from "./generate.js";
-import { evaluatePhase6Diagnostics, evaluatePhase7Diagnostics } from "./review-gate.js";
+import { evaluateContourMotionGate, evaluateMelodyTextureGate } from "./review-gate.js";
 
 test("generateScore reduces phase-7 stepwise fifth-climb subject pressure", () => {
-  const seeds = [...PHASE_5_REVIEW_SEEDS, ...PHASE_5_11_ROTATION_SEEDS];
+  const seeds = [...REPRESENTATIVE_REVIEW_SEEDS, ...ROTATION_REVIEW_SEEDS];
   const exactStepwiseFifthClimbPattern = "0-1-2-3-4-3-2-1";
   const turnbackFifthClimbPattern = "0-1-2-3-4-3-1-2";
   let exactStepwiseFifthClimbCount = 0;
@@ -14,9 +14,9 @@ test("generateScore reduces phase-7 stepwise fifth-climb subject pressure", () =
   let turnbackFifthClimbUnresolvedSevereIntervalCount = 0;
 
   for (const { seed } of seeds) {
-    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS, selectionModel: "baseline" });
-    const gate6 = evaluatePhase6Diagnostics(seed, output.diagnostics);
-    const gate7 = evaluatePhase7Diagnostics(seed, output.diagnostics);
+    const output = generateScore({ seed, lengthTicks: REVIEW_LENGTH_TICKS, selectionModel: "baseline" });
+    const gate6 = evaluateMelodyTextureGate(seed, output.diagnostics);
+    const gate7 = evaluateContourMotionGate(seed, output.diagnostics);
     const subjectPattern = output.diagnostics.subjectEntries[0]?.expectedDegreePattern.join("-");
 
     if (subjectPattern === exactStepwiseFifthClimbPattern) {

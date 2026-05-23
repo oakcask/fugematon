@@ -1,12 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { PHASE_5_LENGTH_TICKS } from "./constants.js";
+import { REVIEW_LENGTH_TICKS } from "./constants.js";
 import { generateScore } from "./generate.js";
 
 test("generateScore keeps phase-13 local sentinels traceable to selected candidate sections", () => {
   const output = generateScore({
     seed: "circle-fifths",
-    lengthTicks: PHASE_5_LENGTH_TICKS,
+    lengthTicks: REVIEW_LENGTH_TICKS,
     selectionModel: "section-local-planner",
   });
   const selectedSections = output.diagnostics.selectedCandidateEvaluations.flatMap(

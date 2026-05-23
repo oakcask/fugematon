@@ -47,32 +47,32 @@ Every Phase-name removal uses the symbol rename audit workflow before it is repo
 
 | Historical name | Current name | Compatibility policy |
 | --- | --- | --- |
-| `PHASE_5_LENGTH_TICKS` | `REVIEW_LENGTH_TICKS` | Temporary exported alias, then remove. |
-| `PHASE_5_REVIEW_SEEDS` | `REPRESENTATIVE_REVIEW_SEEDS` | Temporary exported alias, then remove. |
-| `PHASE_5_11_ROTATION_SEEDS` | `ROTATION_REVIEW_SEEDS` | Temporary exported alias, then remove. |
-| `PHASE_5_9_DIAGNOSTICS_PROFILE` | `BASELINE_BEAUTY_DIAGNOSTICS_PROFILE` | Temporary exported alias, then remove. |
-| `PHASE_5_10_DIAGNOSTICS_PROFILE` | `VOICE_INDEPENDENCE_DIAGNOSTICS_PROFILE` | Temporary exported alias, then remove. |
-| `PHASE_5_11_DIAGNOSTICS_PROFILE` | `ROTATION_ROBUSTNESS_DIAGNOSTICS_PROFILE` | Temporary exported alias, then remove. |
-| `PHASE_6_DIAGNOSTICS_PROFILE` | `MELODY_TEXTURE_DIAGNOSTICS_PROFILE` | Temporary exported alias, then remove. |
-| `PHASE_7_DIAGNOSTICS_PROFILE` | `CONTOUR_MOTION_DIAGNOSTICS_PROFILE` | Temporary exported alias, then remove. |
-| `PHASE_7_REFERENCE_DIAGNOSTICS_PROFILE` | `REFERENCE_DIAGNOSTICS_PROFILE` | Temporary exported alias, then remove. |
-| `PHASE_10_REFERENCE_CORPUS_MANIFEST` | `REFERENCE_CORPUS_MANIFEST` | Temporary exported alias, then remove. |
-| `Phase59GateFailure` | `ReviewGateFailure` | Temporary exported alias, then remove. |
-| `Phase59GateResult` | `BaselineBeautyGateResult` | Temporary exported alias, then remove. |
-| `Phase510GateResult` | `VoiceIndependenceGateResult` | Temporary exported alias, then remove. |
-| `Phase511GateResult` | `RotationRobustnessGateResult` | Temporary exported alias, then remove. |
-| `Phase6GateResult` | `MelodyTextureGateResult` | Temporary exported alias, then remove. |
-| `Phase7GateResult` | `ContourMotionGateResult` | Temporary exported alias, then remove. |
-| `Phase7BPolicyOptions` | `ReviewGatePolicyOptions` | Temporary exported alias, then remove. |
-| `Phase7BGatePolicyResult` | `ReviewGatePolicyResult` | Temporary exported alias, then remove. |
-| `evaluatePhase59Diagnostics` | `evaluateBaselineBeautyGate` | Temporary exported alias, then remove. |
-| `evaluatePhase510Diagnostics` | `evaluateVoiceIndependenceGate` | Temporary exported alias, then remove. |
-| `evaluatePhase511Diagnostics` | `evaluateRotationRobustnessGate` | Temporary exported alias, then remove. |
-| `evaluatePhase6Diagnostics` | `evaluateMelodyTextureGate` | Temporary exported alias, then remove. |
-| `evaluatePhase7Diagnostics` | `evaluateContourMotionGate` | Temporary exported alias, then remove. |
-| `evaluatePhase7BGatePolicy` | `evaluateReviewGatePolicy` | Temporary exported alias, then remove. |
-| `phase8Ready` | `adoptionReady` | Public JSON schema bump required before old field removal. |
-| `legacyPhase7Gate` | `contourMotionGate` | Public JSON schema bump required before old field removal. |
+| `PHASE_5_LENGTH_TICKS` | `REVIEW_LENGTH_TICKS` | Removed from current exports. |
+| `PHASE_5_REVIEW_SEEDS` | `REPRESENTATIVE_REVIEW_SEEDS` | Removed from current exports. |
+| `PHASE_5_11_ROTATION_SEEDS` | `ROTATION_REVIEW_SEEDS` | Removed from current exports. |
+| `PHASE_5_9_DIAGNOSTICS_PROFILE` | `BASELINE_BEAUTY_DIAGNOSTICS_PROFILE` | Removed from current exports. |
+| `PHASE_5_10_DIAGNOSTICS_PROFILE` | `VOICE_INDEPENDENCE_DIAGNOSTICS_PROFILE` | Removed from current exports. |
+| `PHASE_5_11_DIAGNOSTICS_PROFILE` | `ROTATION_ROBUSTNESS_DIAGNOSTICS_PROFILE` | Removed from current exports. |
+| `PHASE_6_DIAGNOSTICS_PROFILE` | `MELODY_TEXTURE_DIAGNOSTICS_PROFILE` | Removed from current exports. |
+| `PHASE_7_DIAGNOSTICS_PROFILE` | `CONTOUR_MOTION_DIAGNOSTICS_PROFILE` | Removed from current exports. |
+| `PHASE_7_REFERENCE_DIAGNOSTICS_PROFILE` | `REFERENCE_DIAGNOSTICS_PROFILE` | Removed from current exports. |
+| `PHASE_10_REFERENCE_CORPUS_MANIFEST` | `REFERENCE_CORPUS_MANIFEST` | Removed from current exports. |
+| `Phase59GateFailure` | `ReviewGateFailure` | Removed from current exports. |
+| `Phase59GateResult` | `BaselineBeautyGateResult` | Removed from current exports. |
+| `Phase510GateResult` | `VoiceIndependenceGateResult` | Removed from current exports. |
+| `Phase511GateResult` | `RotationRobustnessGateResult` | Removed from current exports. |
+| `Phase6GateResult` | `MelodyTextureGateResult` | Removed from current exports. |
+| `Phase7GateResult` | `ContourMotionGateResult` | Removed from current exports. |
+| `Phase7BPolicyOptions` | `ReviewGatePolicyOptions` | Removed from current exports. |
+| `Phase7BGatePolicyResult` | `ReviewGatePolicyResult` | Removed from current exports. |
+| `evaluatePhase59Diagnostics` | `evaluateBaselineBeautyGate` | Removed from current exports. |
+| `evaluatePhase510Diagnostics` | `evaluateVoiceIndependenceGate` | Removed from current exports. |
+| `evaluatePhase511Diagnostics` | `evaluateRotationRobustnessGate` | Removed from current exports. |
+| `evaluatePhase6Diagnostics` | `evaluateMelodyTextureGate` | Removed from current exports. |
+| `evaluatePhase7Diagnostics` | `evaluateContourMotionGate` | Removed from current exports. |
+| `evaluatePhase7BGatePolicy` | `evaluateReviewGatePolicy` | Removed from current exports. |
+| `phase8Ready` | `adoptionReady` | Removed from current policy result schema. |
+| `legacyPhase7Gate` | `contourMotionGate` | Removed from current policy result schema. |
 
 ## Staged Refactor Order
 

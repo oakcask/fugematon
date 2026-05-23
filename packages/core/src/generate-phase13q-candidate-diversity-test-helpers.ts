@@ -1,12 +1,12 @@
 import assert from "node:assert/strict";
-import { PHASE_5_LENGTH_TICKS } from "./constants.js";
+import { REVIEW_LENGTH_TICKS } from "./constants.js";
 import { generateScore } from "./generate.js";
 
 export function assertPhase13QCandidateDiversitySeedsReady(seeds: readonly string[]): void {
   for (const seed of seeds) {
     const output = generateScore({
       seed,
-      lengthTicks: PHASE_5_LENGTH_TICKS,
+      lengthTicks: REVIEW_LENGTH_TICKS,
       selectionModel: "section-local-planner",
     });
     const oracle = output.diagnostics.candidatePoolOracle;

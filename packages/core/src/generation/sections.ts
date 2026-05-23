@@ -743,9 +743,7 @@ export function chooseContinuationSection(
       selectedCandidateIndex: bestIndex,
       candidateDiversityDescriptors: candidates.map(describeCandidateDiversity),
       phraseFamilyCandidateCount:
-        selectionModel === "section-local-planner"
-          ? candidates.length - selectionWindow.phraseFamilyCandidateStart
-          : 0,
+        selectionModel === "section-local-planner" ? candidates.length - selectionWindow.phraseFamilyCandidateStart : 0,
       stateHistory: [...stateHistory.slice(0, -1), selectedState],
     }),
   };
