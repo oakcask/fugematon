@@ -92,14 +92,14 @@ const markup = `<!doctype html>
       </div>
     </div>
     <script type="module">
-      import { DEFAULT_SELECTION_MODEL, generateScore, PHASE_3_LENGTH_TICKS } from "@fugematon/core";
+      import { DEFAULT_SELECTION_MODEL, FUGUE_FORM_REVIEW_LENGTH_TICKS, generateScore } from "@fugematon/core";
       import { DEFAULT_PERFORMANCE_PROFILE_ID } from "@fugematon/performance";
       import { drawPianoRoll } from "/src/piano-roll.ts";
       import { createPlaybackModel } from "/src/score.ts";
 
       const output = generateScore({
         seed: "fugue-smoke",
-        lengthTicks: PHASE_3_LENGTH_TICKS,
+        lengthTicks: FUGUE_FORM_REVIEW_LENGTH_TICKS,
         selectionModel: DEFAULT_SELECTION_MODEL,
       });
       const model = createPlaybackModel(output, DEFAULT_PERFORMANCE_PROFILE_ID);
