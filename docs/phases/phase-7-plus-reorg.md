@@ -295,9 +295,9 @@ Phase 13Z は、Phase 13Y 後に初期主題の多様性改善後も残る long-
 
 ### Phase 14: score-led musical beauty rebuild
 
-Phase 14 は、Phase 13Z 後に指標が譜面上の美しさを証明していない問題を Phase 8/9 の前に扱う品質フェーズである。詳細は [Phase 14](phase-14.md) に置く。計画根拠は [Phase 14 score-led beauty review](../reviews/phase-14-score-led-beauty-review.md) に置く。
+Phase 14 は、Phase 13Z 後に指標が譜面上の美しさを証明していない問題を Phase 8/9 の前に扱う品質フェーズである。詳細は [Phase 14](phase-14.md) に置く。最新の計画根拠は [Phase 14 beauty replan review](../reviews/phase-14-beauty-replan-2026-05.md) に置き、初期根拠は [Phase 14 score-led beauty review](../reviews/phase-14-score-led-beauty-review.md) に残す。
 
-Phase 14 は metric tuning ではなく、score-window acceptance を先に置く beauty trunk とする。最新の 24 seed review では reference aggregate が通っても pitch-class unison と duration lockstep は全 seed で review-required になり、first bass answer は 1 声 carry を得た後も 2 外声が entry tick で切れて再発音し、10 seed で counter-subject preserved window が 0 だった。Phase 14 はこの証拠に基づき、14A score-window harness、14B entry and line-agency generation、14C counter-subject and phrase-development generation、14D metric truthfulness and scope cleanup、14E bundle/listening evidence の順に進める。
+Phase 14 は metric tuning ではなく、score-window acceptance を先に置く beauty trunk とする。最新の 24 seed review では reference aggregate が通っても pitch-class unison と duration lockstep は全 seed で review-required になり、22 seed が Phase 7B ready のまま 288 local sentinel を出し、first bass answer は 1 声 carry を得た後も 2 外声が entry tick で切れて再発音し、10 seed で counter-subject preserved window が 0 だった。Phase 14 はこの証拠に基づき、14A0 post-13Z dissonance triage、14A score-window harness、14B entry dissonance and continuity generation、14C line-agency / counter-subject / phrase-development generation、14D metric truthfulness and scope cleanup、14E bundle/listening evidence の順に進める。
 
 完了条件:
 

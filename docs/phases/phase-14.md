@@ -4,17 +4,28 @@ Phase 14 is inserted after Phase 13Z and before Phase 8. Its purpose is to make 
 
 Status: planned. Phase 8 is deferred until Phase 14 records score-window, diagnostics, and focused listening evidence that the generated music is beautiful as counterpoint and fugue, not merely metric-ready.
 
-Planning review: [Phase 14 score-led beauty review](../reviews/phase-14-score-led-beauty-review.md).
+Planning reviews:
+
+* [Phase 14 beauty replan review](../reviews/phase-14-beauty-replan-2026-05.md): latest 22 seed + focused seed review and CI / review scope classification.
+* [Phase 14 score-led beauty review](../reviews/phase-14-score-led-beauty-review.md): initial score-led audit after Phase 13Z.
 
 ## Rationale
 
-The latest 22 seed review bundle plus `random-listen-check` and `seed-0zereox-1v729ih` shows that current metrics still fail to express musical beauty. The reference aggregate can be green while every inspected seed still has review-required pitch-class unison and duration lockstep. The first bass answer no longer has the old all-voice reset, but all 24 inspected first-bass windows still count as `continuity-supported` while two outside voices end and re-articulate at the entry. Counter-subject material often does not survive as an independent musical idea, and phrase recurrence still reads as continuation more often than development.
+The latest 22 seed review bundle plus `random-listen-check` and `seed-0zereox-1v729ih` shows that current metrics still fail to express musical beauty. The reference aggregate can be green while every inspected seed still has review-required pitch-class unison and duration lockstep. The refreshed bundle has 288 local sentinels, including 219 unresolved entry severe intervals and 69 long pitch-class unison spans, while all 22 bundle seeds remain Phase 7B ready. The first bass answer no longer has the old all-voice reset, but all 24 inspected first-bass windows still count as `continuity-supported` while two outside voices end and re-articulate at the entry. Counter-subject material often does not survive as an independent musical idea, and phrase recurrence still reads as continuation more often than development.
 
 A focused post-Phase 13Z inspection also shows an uneven passing-tone semitone-clash tradeoff. Phase 13Z remains complete because it repaired long-run phrase convergence, but Phase 14 must now treat the new local dissonance distribution as the first score-window risk: `contrary-motion` gained a clear weak-passing semitone-clash increase, `tight-stretto` gained broader passing/neighbor clashes and unresolved accented entry clashes, while `circle-fifths`, `modal-cadence`, and `dense-modal` improved or moved mixed signals.
 
 Phase 13X, Phase 13X2, Phase 13Y, and Phase 13Z are still useful, but they are narrow repairs. Phase 14 treats the shared cause: the generator often chooses score windows that satisfy local constraints without creating living contrapuntal lines, durable counter-subject identity, or function-bearing development.
 
 Phase 14 is therefore the beauty trunk before Phase 8. It may change generator behavior, expected values, metric classifications, and guardrail margins when score-window review shows that the old values preserve less beautiful music.
+
+The acceptance order is:
+
+1. Local entry dissonance and continuity must be acceptable in the score.
+2. Independent line agency must be generated, not only diagnosed.
+3. Counter-subject material must survive or transform recognizably.
+4. Phrase development must improve musical function without worsening the first three layers.
+5. Aggregate metrics may support adoption only after the score-window evidence is accepted.
 
 ## Scope
 
@@ -52,7 +63,7 @@ Phase 14 is therefore the beauty trunk before Phase 8. It may change generator b
 
 ### 14A0: Post-13Z dissonance triage
 
-Before changing generator weights again, record a small before/current review for Phase 13Z tradeoffs. Treat `contrary-motion` and `tight-stretto` as high-risk seeds, with `circle-fifths`, `modal-cadence`, and `dense-modal` as mixed/control seeds. The output should identify whether the response belongs in generator candidate construction, candidate scoring, diagnostics classification, or accepted tradeoff documentation.
+Before changing generator weights again, record a small before/current review for Phase 13Z tradeoffs. Treat `contrary-motion` and `tight-stretto` as high-risk seeds, with `circle-fifths`, `modal-cadence`, and `dense-modal` as mixed/control seeds. The output should identify whether the response belongs in generator candidate construction, candidate scoring, diagnostics classification, or accepted tradeoff documentation. This workstream stays first because phrase novelty must not be allowed to make entry dissonance or weak-passing semitone friction worse.
 
 ### 14A: Score-window acceptance harness
 
@@ -64,7 +75,7 @@ Tighten entry-continuity classification so one delayed or carried support line i
 
 ### 14C: Line-agency, counter-subject, and phrase-development generation
 
-Add independent rhythmic and contour alternatives after the dissonance triage is stable. Make counter-subject preservation and transformation selectable objectives. Rebuild phrase-development selection so recurrence must show changed role, register, cadence target, contour, density, or contrapuntal pressure, not only a changed state label. Do not let phrase novelty rewards select windows that increase unprepared semitone friction.
+Add independent rhythmic and contour alternatives after the dissonance triage is stable. Make counter-subject preservation and transformation selectable objectives. Rebuild phrase-development selection so recurrence must show changed role, register, cadence target, contour, density, or contrapuntal pressure, not only a changed state label. Do not let phrase novelty rewards select windows that increase unprepared semitone friction. The generator should improve line agency before phrase-development rewards are trusted, because a novel phrase over block-like support is still weak fugue writing.
 
 ### 14D: Metric truthfulness and scope cleanup
 
