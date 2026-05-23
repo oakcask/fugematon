@@ -104,6 +104,12 @@ pnpm ui:inspect:prod
 
 The production inspection serves `packages/web/app-dist` with Vite preview and is used as the pre-deploy GitHub Pages gate.
 
+Regenerate the Open Graph preview image:
+
+```sh
+pnpm web:og-image
+```
+
 Create a production web build:
 
 ```sh

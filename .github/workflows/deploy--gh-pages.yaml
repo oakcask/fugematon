@@ -58,6 +58,10 @@ jobs:
         run: pnpm build
       - name: Install Playwright browser
         run: pnpm exec playwright install --with-deps chromium
+      - name: Generate Open Graph preview image
+        run: pnpm web:og-image:app-dist
+      - name: Verify Open Graph preview image
+        run: test -s packages/web/app-dist/og-image.png
       - name: Run production UI smoke inspection
         run: pnpm ui:inspect:prod
       - name: Upload Playwright output

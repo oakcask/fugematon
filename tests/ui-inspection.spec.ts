@@ -30,6 +30,28 @@ for (const viewport of VIEWPORTS) {
     await page.setViewportSize(viewport.size);
     await page.goto("/");
 
+    await expect(page).toHaveTitle("Fugematon");
+    await expect(page.locator('meta[name="description"]')).toHaveAttribute(
+      "content",
+      "Fugematon generates deterministic four-voice fugue states for browser playback.",
+    );
+    await expect(page.locator('meta[property="og:type"]')).toHaveAttribute("content", "website");
+    await expect(page.locator('meta[property="og:url"]')).toHaveAttribute(
+      "content",
+      "https://oakcask.github.io/fugematon/",
+    );
+    await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
+      "content",
+      "https://oakcask.github.io/fugematon/og-image.png",
+    );
+    await expect(page.locator('meta[property="og:image:width"]')).toHaveAttribute("content", "1200");
+    await expect(page.locator('meta[property="og:image:height"]')).toHaveAttribute("content", "630");
+    await expect(page.locator('meta[property="og:image:alt"]')).toHaveAttribute(
+      "content",
+      "Fugematon title card with a piano roll visualization.",
+    );
+    await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute("content", "summary_large_image");
+
     await expect(page.getByRole("heading", { name: "Fugematon" })).toBeVisible();
     const seedInput = page.getByLabel("Seed");
     await expect(seedInput).toHaveValue("fugue-smoke");
