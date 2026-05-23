@@ -231,6 +231,14 @@ function chooseBoundaryResetNoteToDelay(
   previousNotes: readonly NoteEvent[],
   entryStartTick: number,
 ): NoteEvent | undefined {
+  return boundaryResetDelayCandidates(notes, previousNotes, entryStartTick)[0];
+}
+
+function boundaryResetDelayCandidates(
+  notes: readonly NoteEvent[],
+  previousNotes: readonly NoteEvent[],
+  entryStartTick: number,
+): NoteEvent[] {
   return [...notes].sort((left, right) => {
     const rolePriority = boundaryResetRolePriority(left.role) - boundaryResetRolePriority(right.role);
     if (rolePriority !== 0) {
@@ -241,7 +249,7 @@ function chooseBoundaryResetNoteToDelay(
       latestPreviousVoiceDistance(previousNotes, left.voice, entryStartTick) -
       latestPreviousVoiceDistance(previousNotes, right.voice, entryStartTick)
     );
-  })[0];
+  });
 }
 
 function boundaryResetRolePriority(role: NoteEvent["role"] | undefined): number {
