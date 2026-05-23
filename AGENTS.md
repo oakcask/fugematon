@@ -7,6 +7,7 @@
 - Treat gitignored files the same way: do not quote, copy, summarize, or expose their contents unless explicitly requested and sanitized.
 - Avoid absolute local paths, usernames, hostnames, machine names, local repository locations, private tokens, email addresses, and other personally identifying details.
 - Use generic placeholders or relative paths when such information is necessary for explanation.
+- When running git subcommands that may open an editor, set `GIT_EDITOR=/bin/true` unless interactive editor behavior is explicitly requested.
 - Keep `AGENTS.md` as a short entry point. Move task-specific procedures, commands, checklists, and troubleshooting into skills, leaving only always-on rules or skill links here.
 
 ## Project Context
