@@ -82,7 +82,7 @@ function subjectProfileChoices(
     { value: subjectProfile(SUBJECT_THIRD_LEAP_DEGREES, SUBJECT_DURATIONS), weight: 2 },
   ];
 
-  if (selectionModel !== "phase10-section-local-planner") {
+  if (selectionModel !== "section-local-planner") {
     return legacyChoices;
   }
 

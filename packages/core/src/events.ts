@@ -161,7 +161,21 @@ export type GenerationParameters = {
   subjectPresence: number;
 };
 
-export type SelectionModel = "baseline" | "phase10-oracle-selection" | "phase10-section-local-planner";
+export type CurrentSelectionModel = "baseline" | "candidate-oracle-selection" | "section-local-planner";
+
+export type LegacySelectionModel = "phase10-oracle-selection" | "phase10-section-local-planner";
+
+export type SelectionModel = CurrentSelectionModel | LegacySelectionModel;
+
+export function normalizeSelectionModel(selectionModel: SelectionModel): CurrentSelectionModel {
+  if (selectionModel === "phase10-oracle-selection") {
+    return "candidate-oracle-selection";
+  }
+  if (selectionModel === "phase10-section-local-planner") {
+    return "section-local-planner";
+  }
+  return selectionModel;
+}
 
 export type GenerationInput = {
   seed: string;

@@ -123,6 +123,7 @@ export type {
   VoicePairSpanSummary,
   VoicePairUnisonSummary,
 } from "./events.js";
+export { normalizeSelectionModel } from "./events.js";
 export { generateScore, normalizeParameters } from "./generate.js";
 export { seedToUint32State, Xoshiro128StarStar } from "./prng.js";
 export type {

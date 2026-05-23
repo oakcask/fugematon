@@ -4,6 +4,7 @@ import {
   GENERATOR_VERSION,
   TICKS_PER_QUARTER,
 } from "./constants.js";
+import { normalizeSelectionModel } from "./events.js";
 import type { GenerationInput, GenerationOutput, GenerationParameters, ScoreEvent } from "./events.js";
 import { analyzeScore } from "./generation/diagnostics.js";
 import { chooseKeySignature, chooseTempo, chooseTimeSignature } from "./generation/key.js";
@@ -23,7 +24,7 @@ export function generateScore(input: GenerationInput): GenerationOutput {
   const keySignature = chooseKeySignature(rng, input.seed);
   const timeSignature = chooseTimeSignature(rng);
   const bpm = chooseTempo(rng);
-  const selectionModel = input.selectionModel ?? DEFAULT_SELECTION_MODEL;
+  const selectionModel = normalizeSelectionModel(input.selectionModel ?? DEFAULT_SELECTION_MODEL);
   const subject = buildSubject(rng, keySignature, selectionModel);
   const score = buildFugueScore(subject, keySignature, input.lengthTicks, rng, selectionModel);
   const diagnostics = analyzeScore(score.notes, score.subjectEntries, score.sectionPlans);

@@ -50,7 +50,7 @@ test("diagnose command writes diagnostics JSON to stdout", async () => {
 
   assert.equal(diagnostics.seed, "bach-001");
   assert.equal(diagnostics.lengthTicks, 960);
-  assert.equal(diagnostics.selectionModel, "phase10-section-local-planner");
+  assert.equal(diagnostics.selectionModel, "section-local-planner");
   assert.ok(diagnostics.eventCount > 0);
   assert.ok(diagnostics.noteCount > 0);
   assert.equal(diagnostics.phraseConvergenceReview.selectionModel, diagnostics.selectionModel);
@@ -486,7 +486,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
 
     assert.equal(summary.schemaVersion, 15);
     assert.equal(summary.lengthTicks, 9600);
-    assert.equal(summary.selectionModel, "phase10-section-local-planner");
+    assert.equal(summary.selectionModel, "section-local-planner");
     assert.deepEqual(summary.performanceProfile, { id: "organ-default", version: 1 });
     assert.ok(summary.seeds.length > 1);
     assert.equal(summary.referenceDiagnostics.profile.profileId, "phase-7-fugue-reference-profile");
@@ -1014,7 +1014,7 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
       label: "candidate",
       directory: "variant",
       summaryFile: "variant/summary.json",
-      selectionModel: "phase10-oracle-selection",
+      selectionModel: "candidate-oracle-selection",
       performanceProfile: { id: "strict-counterpoint", version: 1 },
     });
     assert.equal(comparison.subjectFamilyDiversity.baseline.seedCount, comparison.seeds.length);
@@ -1130,7 +1130,7 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
       assert.equal(entry.baseline.label, "current");
       assert.equal(entry.variant.label, "candidate");
       assert.equal(entry.baseline.selectionModel, "baseline");
-      assert.equal(entry.variant.selectionModel, "phase10-oracle-selection");
+      assert.equal(entry.variant.selectionModel, "candidate-oracle-selection");
       assert.match(entry.baseline.diagnosticsFile, /^baseline\/.+\.diagnostics\.json$/);
       assert.match(entry.baseline.midiFile, /^baseline\/.+\.mid$/);
       assert.match(entry.variant.diagnosticsFile, /^variant\/.+\.diagnostics\.json$/);

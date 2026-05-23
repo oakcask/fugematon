@@ -15,17 +15,17 @@ export function assertPhase13QAdoptionSeedsReady(seeds: readonly string[]): void
     const baseline = generateScore({
       seed,
       lengthTicks: PHASE_5_LENGTH_TICKS,
-      selectionModel: "phase10-oracle-selection",
+      selectionModel: "candidate-oracle-selection",
     });
     const variant = generateScore({
       seed,
       lengthTicks: PHASE_5_LENGTH_TICKS,
-      selectionModel: "phase10-section-local-planner",
+      selectionModel: "section-local-planner",
     });
     const repeated = generateScore({
       seed,
       lengthTicks: PHASE_5_LENGTH_TICKS,
-      selectionModel: "phase10-section-local-planner",
+      selectionModel: "section-local-planner",
     });
     const gate = evaluatePhase7BGatePolicy(seed, variant.diagnostics);
     const oracle = variant.diagnostics.candidatePoolOracle;

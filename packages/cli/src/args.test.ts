@@ -73,7 +73,7 @@ test("parseArgs parses review-ab command", () => {
       "--variant-label",
       "candidate",
       "--variant-model",
-      "phase10-section-local-planner",
+      "section-local-planner",
     ]),
     {
       name: "review-ab",
@@ -82,7 +82,7 @@ test("parseArgs parses review-ab command", () => {
       baselineLabel: "current",
       variantLabel: "candidate",
       baselineModel: "baseline",
-      variantModel: "phase10-section-local-planner",
+      variantModel: "section-local-planner",
       performanceProfileId: DEFAULT_PERFORMANCE_PROFILE_ID,
     },
   );
@@ -93,16 +93,32 @@ test("parseArgs parses review-ab command", () => {
     baselineLabel: "baseline",
     variantLabel: "variant",
     baselineModel: "baseline",
-    variantModel: "phase10-oracle-selection",
+    variantModel: "candidate-oracle-selection",
     performanceProfileId: DEFAULT_PERFORMANCE_PROFILE_ID,
   });
+});
+
+test("parseArgs normalizes legacy review-ab model names", () => {
+  const command = parseArgs([
+    "review-ab",
+    "--out",
+    "phase10-review",
+    "--baseline-model",
+    "phase10-oracle-selection",
+    "--variant-model",
+    "phase10-section-local-planner",
+  ]);
+
+  assert.equal(command.name, "review-ab");
+  assert.equal(command.baselineModel, "candidate-oracle-selection");
+  assert.equal(command.variantModel, "section-local-planner");
 });
 
 test("helpText includes the Phase 10 A/B review command", () => {
   assert.match(helpText(), /fugematon review-ab --out <directory>/);
   assert.match(helpText(), /--baseline-label <label>/);
   assert.match(helpText(), /--variant-label <label>/);
-  assert.match(helpText(), /--variant-model baseline\|phase10-oracle-selection\|phase10-section-local-planner/);
+  assert.match(helpText(), /--variant-model baseline\|candidate-oracle-selection\|section-local-planner/);
   assert.match(helpText(), /--performance-profile organ-default\|strict-counterpoint/);
 });
 

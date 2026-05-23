@@ -5,7 +5,7 @@ import type {
   SelectionModel,
 } from "../events.js";
 
-const ADOPTED_DEFAULT_SELECTION_MODEL: SelectionModel = "phase10-section-local-planner";
+const ADOPTED_DEFAULT_SELECTION_MODEL: SelectionModel = "section-local-planner";
 const MAX_REPEATED_FOUR_SECTION_PATTERN_COUNT = 5;
 const MIN_UNIQUE_FOUR_SECTION_PATTERN_COUNT = 7;
 const MAX_TOP_ENTRY_PATTERN_FAMILY_SHARE = 0.42;

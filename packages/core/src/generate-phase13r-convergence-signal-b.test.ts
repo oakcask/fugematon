@@ -11,7 +11,7 @@ test("phase-13R rotation seeds keep default planner convergence comparable in CI
     const current = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
 
     assert.equal(legacy.diagnostics.phraseConvergenceReview.selectionModel, "baseline");
-    assert.equal(current.diagnostics.phraseConvergenceReview.selectionModel, "phase10-section-local-planner");
+    assert.equal(current.diagnostics.phraseConvergenceReview.selectionModel, "section-local-planner");
     assert.ok(
       legacy.diagnostics.phraseConvergenceReview.findings.some(
         (finding) => finding.code === "legacy-default-selection-model",

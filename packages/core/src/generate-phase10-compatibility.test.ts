@@ -10,7 +10,7 @@ test("generateScore can compare the phase-10 oracle selection model against base
   const variant = generateScore({
     seed: "bach-001",
     lengthTicks: PHASE_5_LENGTH_TICKS,
-    selectionModel: "phase10-oracle-selection",
+    selectionModel: "candidate-oracle-selection",
   });
   const baselineGate = evaluatePhase6Diagnostics("bach-001", baseline.diagnostics);
   const variantGate = evaluatePhase6Diagnostics("bach-001", variant.diagnostics);

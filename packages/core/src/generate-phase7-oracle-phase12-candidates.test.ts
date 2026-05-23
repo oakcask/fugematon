@@ -10,7 +10,7 @@ test("generateScore keeps phase-12 phrase family candidates traceable when selec
     const output = generateScore({
       seed,
       lengthTicks: PHASE_5_LENGTH_TICKS,
-      selectionModel: "phase10-section-local-planner",
+      selectionModel: "section-local-planner",
     });
     const oracle = output.diagnostics.candidatePoolOracle;
 
