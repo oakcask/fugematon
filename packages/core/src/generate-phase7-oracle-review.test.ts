@@ -11,7 +11,7 @@ test("generateScore exposes phase-7 candidate pool oracle classifications", () =
   assert.equal(oracle.schemaVersion, 5);
   assert.ok(oracle.sectionCount > 0);
   assert.ok(oracle.candidateCount >= oracle.sectionCount);
-  assert.equal(oracle.phase12PhraseFamilyCandidateCount, 0);
+  assert.equal(oracle.phraseFamilyCandidateCount, 0);
   assert.ok(oracle.viableCandidateCount > 0);
   assert.ok(oracle.hardFailureRejectedCandidateCount >= 0);
   assert.equal(oracle.candidateDiversity.length, 7);

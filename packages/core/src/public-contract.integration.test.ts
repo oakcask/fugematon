@@ -54,7 +54,7 @@ test("public API emits the stable score metadata envelope", () => {
   assert.equal(output.diagnostics.noteCount, notes.length);
   assert.equal(output.diagnostics.candidatePoolOracle.schemaVersion, 5);
   assert.ok(output.diagnostics.candidatePoolOracle.sectionCount >= 0);
-  assert.ok(output.diagnostics.candidatePoolOracle.phase12PhraseFamilyCandidateCount >= 0);
+  assert.ok(output.diagnostics.candidatePoolOracle.phraseFamilyCandidateCount >= 0);
   assert.equal(output.diagnostics.generatorVersion, GENERATOR_VERSION);
   assert.equal(output.diagnostics.selectionModel, DEFAULT_SELECTION_MODEL);
   assert.equal(output.diagnostics.seed, "public-contract");
@@ -86,16 +86,16 @@ test("public diagnostics expose finite candidate score dimensions", () => {
   assert.ok(selectedEvaluation !== undefined);
   assertCandidateEvaluation(selectedEvaluation);
   assert.equal(
-    selectedEvaluation.dimensions.texture.features.wideAdjacentVoiceSpacingCount,
-    selectedEvaluation.dimensions.texture.features.phase11AdjacentVoiceOverOctaveCount,
+    Object.hasOwn(selectedEvaluation.dimensions.texture.features, "phase11AdjacentVoiceOverOctaveCount"),
+    false,
   );
   assert.equal(
-    selectedEvaluation.dimensions.texture.features.nonCadentialFunctionalThinningRunCount,
-    selectedEvaluation.dimensions.texture.features.phase11FunctionalThinningNonCadentialRunCount,
+    Object.hasOwn(selectedEvaluation.dimensions.texture.features, "phase11FunctionalThinningNonCadentialRunCount"),
+    false,
   );
   assert.equal(
-    selectedEvaluation.dimensions.form.features.stateGrammarMostRepeatedPatternCount,
-    selectedEvaluation.dimensions.form.features.phase11StateGrammarMostRepeatedPatternCount,
+    Object.hasOwn(selectedEvaluation.dimensions.form.features, "phase11StateGrammarMostRepeatedPatternCount"),
+    false,
   );
   assert.equal(output.diagnostics.rangeViolations, PHASE_5_DIAGNOSTICS_PROFILE.rangeViolations);
   assert.equal(output.diagnostics.voiceCrossings, PHASE_5_DIAGNOSTICS_PROFILE.voiceCrossings);

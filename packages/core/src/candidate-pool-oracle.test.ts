@@ -149,7 +149,7 @@ test("candidate pool oracle reports phase-11 blocker families and upper-bound ev
   const bassRootSupport = summary.blockerClassifications.find((blocker) => blocker.blocker === "bass-root-support");
 
   assert.equal(summary.schemaVersion, 5);
-  assert.equal(summary.phase12PhraseFamilyCandidateCount, 0);
+  assert.equal(summary.phraseFamilyCandidateCount, 0);
   assert.equal(phase11Blockers.length, 5);
   assert.ok(phase11Blockers.every((blocker) => blocker.classification === "selection-model"));
   assert.ok(phase11Blockers.every((blocker) => blocker.selectionOnlyUpperBoundRiskReduction > 0));
@@ -230,7 +230,7 @@ test("candidate pool oracle keeps phase-12 phrase family evidence traceable per 
       evaluations: [selected, alternative],
       selectedCandidateIndex: 0,
       candidateDiversityDescriptors: [candidateDiversity("stem-a"), candidateDiversity("stem-b")],
-      phase12PhraseFamilyCandidateCount: 3,
+      phraseFamilyCandidateCount: 3,
     }),
     classifyCandidatePoolOracleSection({
       state: "subject-return",
@@ -239,14 +239,14 @@ test("candidate pool oracle keeps phase-12 phrase family evidence traceable per 
       evaluations: [selected, alternative],
       selectedCandidateIndex: 0,
       candidateDiversityDescriptors: [candidateDiversity("stem-a"), candidateDiversity("stem-a")],
-      phase12PhraseFamilyCandidateCount: 5,
+      phraseFamilyCandidateCount: 5,
     }),
   ]);
   const entryHarmony = summary.blockerClassifications.find((blocker) => blocker.blocker === "entry-harmony");
   const subjectStemDiversity = summary.candidateDiversity.find((diversity) => diversity.facet === "subjectStem");
 
-  assert.equal(summary.phase12PhraseFamilyCandidateCount, 8);
-  assert.equal(entryHarmony?.representative.phase12PhraseFamilyCandidateCount, 3);
+  assert.equal(summary.phraseFamilyCandidateCount, 8);
+  assert.equal(entryHarmony?.representative.phraseFamilyCandidateCount, 3);
   assert.equal(entryHarmony?.representative.candidateCount, 2);
   assert.equal(entryHarmony?.representative.viableCandidateCount, 2);
   assert.equal(subjectStemDiversity?.candidateCount, 4);
@@ -333,12 +333,6 @@ function candidateEvaluation(input: {
         nonCadentialFunctionalThinningRunCount: phase11.functionalThinningRisk ?? 0,
         oneVoiceFunctionalThinningRunCount: 0,
         functionalThinningMaxDurationQuarters: 0,
-        phase11AdjacentVoiceOverOctaveCount: phase11.registerBlendingRisk ?? 0,
-        phase11AdjacentVoiceWideP75SemitoneExcess: 0,
-        phase11RegisterSpanSemitoneTotal: 0,
-        phase11FunctionalThinningNonCadentialRunCount: phase11.functionalThinningRisk ?? 0,
-        phase11FunctionalThinningOneVoiceRunCount: 0,
-        phase11FunctionalThinningMaxDurationQuarters: 0,
       }),
       subjectClarity: dimension({
         subjectIdentityViolations: 0,
@@ -356,8 +350,6 @@ function candidateEvaluation(input: {
         formRepetitionWarnings: phase11.sectionGrammarRisk ?? 0,
         stateGrammarMostRepeatedPatternCount: 1,
         topEntryPatternFamilyCount: 1,
-        phase11StateGrammarMostRepeatedPatternCount: 1,
-        phase11TopEntryPatternFamilyCount: 1,
       }),
     },
   };

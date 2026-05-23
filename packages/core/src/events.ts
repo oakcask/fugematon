@@ -288,7 +288,7 @@ export type CandidatePoolOracleRepresentative = {
   startTick: number;
   durationTicks: number;
   candidateCount: number;
-  phase12PhraseFamilyCandidateCount: number;
+  phraseFamilyCandidateCount: number;
   selectedCandidateIndex: number;
   viableCandidateCount: number;
   hardFailureRejectedCandidateCount: number;
@@ -349,7 +349,7 @@ export type CandidatePoolOracleSummary = {
   schemaVersion: 2 | 3 | 4 | 5;
   sectionCount: number;
   candidateCount: number;
-  phase12PhraseFamilyCandidateCount: number;
+  phraseFamilyCandidateCount: number;
   viableCandidateCount: number;
   hardFailureRejectedCandidateCount: number;
   candidateDiversity: CandidateDiversityFacetSummary[];
