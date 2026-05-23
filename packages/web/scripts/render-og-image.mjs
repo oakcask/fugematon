@@ -21,7 +21,9 @@ const markup = `<!doctype html>
         overflow: hidden;
         color: #24190f;
         background: linear-gradient(135deg, #f5ead7 0%, #e4d1af 44%, #b9c0a1 100%);
-        font-family: Alegreya, "Iowan Old Style", "Palatino Linotype", serif;
+        font-family: "Alegreya", "Iowan Old Style", "Palatino Linotype", serif;
+        font-synthesis: none;
+        text-rendering: optimizeLegibility;
       }
 
       .wrap {
@@ -82,9 +84,9 @@ const markup = `<!doctype html>
   </head>
   <body>
     <div class="wrap">
-      <p class="eyebrow">seeded counterpoint machine</p>
+      <p class="eyebrow">deterministic counterpoint machine</p>
       <h1 class="title">Fugematon</h1>
-      <p class="lede">Deterministic four-voice fugue generation for browser playback.</p>
+      <p class="lede">Generate four-voices fugue for browser playback.</p>
       <div class="visualizer">
         <canvas id="piano-roll"></canvas>
       </div>
