@@ -90,11 +90,37 @@ Current diagnostics coverage: partial. Phase 13R/13Z can see stem-family concent
 
 Project response: Phase 13Z remains the long-run repair, but Phase 14 should unify phrase development with line agency and counter-subject survival. Development cannot be accepted by section-label diversity alone.
 
+### 6. Phase 13Z improved phrase recurrence but shifted some semitone-clash risk
+
+Affected seeds: `contrary-motion`, `tight-stretto`, `circle-fifths`, `modal-cadence`, and `dense-modal`.
+
+A focused post-13Z inspection compared the current generator with the pre-13Z baseline for weak-passing semitone clashes and broader passing/neighbor/offbeat semitone clashes. This does not invalidate Phase 13Z: the long-run phrase-development repair still stands. It does show that Phase 14 should start with local dissonance triage before adding broader line-agency or phrase-development scoring.
+
+| Seed | Weak-passing semitone clashes | Passing/neighbor/offbeat semitone clashes | Entry adjacent-second friction | Entry unresolved accented clash |
+| --- | ---: | ---: | ---: | ---: |
+| `modal-cadence` | `30.5 -> 30.75` quarters | `51 -> 44.25` quarters | `70 -> 65` | `4 -> 11` |
+| `circle-fifths` | `49 -> 51.5` quarters | `90.75 -> 82.75` quarters | `142 -> 122` | `55 -> 37` |
+| `tight-stretto` | `34.5 -> 35.5` quarters | `41.75 -> 57.75` quarters | `96 -> 60` | `8 -> 27` |
+| `contrary-motion` | `36 -> 52.5` quarters | `76.25 -> 84.75` quarters | `42 -> 97` | `33 -> 32` |
+| `dense-modal` | `24 -> 23` quarters | `39.5 -> 38.5` quarters | `60 -> 62` | `10 -> 2` |
+
+Representative symptoms:
+
+* `contrary-motion`: subject-return and stretto-like windows repeatedly pair subject or counter-subject material with weak-passing support at a semitone. Entry windows around quarters 71, 109, 219, and 237 combine adjacent-second friction, exposed sevenths, pitch-class stacks, and unresolved accented clashes.
+* `tight-stretto`: the narrow weak-passing count is nearly flat, but broader passing/neighbor/offbeat semitone friction rises sharply. Episode quarter 21 places free counterpoint and subject-fragment material in simultaneous weak-passing semitone motion, and later bass/tenor entries combine passing-neighbor motion with unresolved accented clashes.
+* `circle-fifths`, `modal-cadence`, and `dense-modal`: the evidence is mixed or improved, so the response should not be a blanket rollback of Phase 13Z phrase variation.
+
+Theory basis: Fux/species counterpoint permits weak passing and neighboring dissonance when it is controlled by stepwise preparation and resolution. Fugue entry practice also requires the subject to remain intelligible; repeated pitch-class stacks plus semitone friction around entries can obscure the entry even when individual notes are labelled as weak passing or offbeat motion.
+
+Current diagnostics coverage: partial. `entrySonorities` locates adjacent-second friction and unresolved accented clashes, while metrical harmony diagnostics count weak non-chord tones. The missing focused view is a score-window table that links weak-passing or passing/neighbor semitone clashes to seed, section state, voice pair, role, intent, and resolution behavior.
+
+Project response: Reorder Phase 14 so the first implementation slice is post-13Z dissonance triage. Preserve Phase 13Z's phrase-development improvement, but add review output and candidate scoring that reject repeated weak-passing semitone clashes unless the local window shows prepared, passing, neighboring, suspended, cadential, or stretto-functional voice leading.
+
 ## Structural Hypothesis
 
 Symptom: the music often looks competent by aggregate diagnostics but is not yet beautiful as fugue. It has recognizable subject entries, acceptable hard constraints, and green reference aggregate signals, yet it lacks living line continuity, durable counter-subject identity, and developmental contrast.
 
-Repeated pattern: support generation and candidate scoring repeatedly choose short, same-rhythm, pitch-class-reinforcing support around entries. Section planning changes state labels, keys, and cadence labels faster than it changes the actual contrapuntal role of the material. Metrics localize some symptoms, but adoption still allows green aggregate readiness to coexist with unconvincing score windows.
+Repeated pattern: support generation and candidate scoring repeatedly choose short, same-rhythm, pitch-class-reinforcing support around entries. Phase 13Z's stem variation can reduce long-run phrase sameness while shifting some local dissonance into weak-passing and offbeat semitone clashes. Section planning changes state labels, keys, and cadence labels faster than it changes the actual contrapuntal role of the material. Metrics localize some symptoms, but adoption still allows green aggregate readiness to coexist with unconvincing score windows.
 
 Theory basis: Fux/species counterpoint for line independence and dissonance treatment; Bach/fugue source family for counter-subject identity, entry continuity, episode function, and stretto development; common-practice phrase theory for function-bearing recurrence.
 
@@ -114,6 +140,7 @@ Touched seeds and metrics:
 | `referenceDiagnostics.outsideReferenceSeedCount` / Phase 7B readiness as beauty acceptance | `remove-or-archive` for beauty acceptance; `ci-observed` for safety context | It passes while score-window beauty still fails. It remains useful for compatibility and coarse profile context, but not for musical acceptance. | Demote from acceptance evidence. Keep observed summaries only. |
 | `pitchClassUnisonDuration` and `durationBasedLockstep` | `review-required` | All inspected seeds trip them, but the musical meaning depends on cadence, support function, register, and role. | Keep as review signals and score-window localization inputs. Do not CI-block on aggregate value. |
 | `entrySevereIntervalDuration` | `review-required` | Severe intervals may be expressive preparation, passing friction, or unresolved clash; the aggregate cannot decide beauty. | Keep score-window review. Use unresolved/localized variants for future focused sentinel work. |
+| Weak-passing and passing/neighbor semitone-clash review | `review-required` | The concern is musical and context-sensitive: some weak dissonance is valid, but repeated unprepared semitone friction around entries is not. | Keep as Phase 14 review evidence first. Do not add a PR CI blocker until a focused deterministic sentinel and repair target exist. |
 | `entryBoundaryContinuity.continuity-supported` | `review-required` | The classifier is too broad when one carried voice masks two outside-voice resets. | Refine in Phase 14 before any CI promotion. |
 | `lineAgency.agencyRatio`, `counterSubjectSurvivability.preservationRatio`, `entryFormulaNovelty.noveltyRatio`, and `topSubjectStemFamilyShare` | `review-required` | These describe beauty risks, but thresholds still require score-window judgement and listening. | Keep in review bundle and Phase 14 acceptance. Do not add PR CI blockers. |
 | Old exact expected values or guardrail margins that reject score-window improvements | `remove-or-archive` | Preserving old numbers can block musical improvement when the score improves. | Archive as historical evidence; update tests only after score-window review confirms the new baseline. |
@@ -130,9 +157,10 @@ Phase 13X, Phase 13X2, Phase 13Y, and Phase 13Z stay in the route because they e
 
 Phase 14 becomes the Phase 8 prerequisite and is organized into score-led workstreams:
 
-1. Define score-window musical acceptance before metric acceptance.
-2. Rebuild entry support so important entries show carried, suspended, resolving, staggered, or intentionally prepared collective articulation.
-3. Rebuild line-agency scoring and candidate generation so independent motion is generated, not only detected.
-4. Make counter-subject survivability a first-class generator objective.
-5. Unify phrase-development diagnostics with counter-subject and line-agency evidence.
-6. Demote reference aggregate and Phase 7B readiness to safety/context signals when they contradict score-window beauty.
+1. Triage the Phase 13Z dissonance tradeoff before changing generator weights again.
+2. Define score-window musical acceptance before metric acceptance.
+3. Rebuild entry support and weak-dissonance handling so important entries show carried, suspended, resolving, staggered, or intentionally prepared collective articulation.
+4. Rebuild line-agency scoring and candidate generation so independent motion is generated, not only detected.
+5. Make counter-subject survivability a first-class generator objective.
+6. Unify phrase-development diagnostics with counter-subject and line-agency evidence without rewarding phrase novelty that creates unprepared semitone friction.
+7. Demote reference aggregate and Phase 7B readiness to safety/context signals when they contradict score-window beauty.
