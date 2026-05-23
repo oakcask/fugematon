@@ -260,9 +260,11 @@ async function startPlayback(): Promise<void> {
     }
 
     transportStatus.textContent = "Playing score";
+    setPlaybackFeedback(true);
     startVisualizerLoop();
   } catch (error) {
     if (!controller.signal.aborted) {
+      setPlaybackFeedback(false);
       transportStatus.textContent = error instanceof Error ? error.message : "Playback failed";
     }
   } finally {
@@ -281,6 +283,7 @@ function cancelPlayback(): void {
   startButton.disabled = false;
   player?.stop();
   cancelVisualizerLoop();
+  setPlaybackFeedback(false);
 }
 
 function startVisualizerLoop(): void {
@@ -297,6 +300,7 @@ function startVisualizerLoop(): void {
     }
 
     animationFrame = undefined;
+    setPlaybackFeedback(false);
     transportStatus.textContent = "Playback complete";
   };
 
@@ -308,6 +312,10 @@ function cancelVisualizerLoop(): void {
     window.cancelAnimationFrame(animationFrame);
     animationFrame = undefined;
   }
+}
+
+function setPlaybackFeedback(isPlaying: boolean): void {
+  document.body.classList.toggle("is-playing", isPlaying);
 }
 
 function requireElement<TElement extends Element>(element: TElement | null, name: string): TElement {

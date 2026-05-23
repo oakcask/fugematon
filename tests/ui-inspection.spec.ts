@@ -94,6 +94,20 @@ test("syncs the seed with the URL query string", async ({ page }) => {
   expect(new URL(page.url()).searchParams.get("seed")).toBe("url-smoke");
 });
 
+test("animates the background only while playback is active", async ({ page }) => {
+  await page.goto("/");
+
+  const body = page.locator("body");
+  await expect(body).not.toHaveClass(/is-playing/);
+
+  await page.getByRole("button", { name: "Play score" }).click();
+  await expect(body).toHaveClass(/is-playing/);
+  await expect(body).toHaveCSS("animation-name", "playback-background-flow");
+
+  await page.getByRole("button", { name: "Stop" }).click();
+  await expect(body).not.toHaveClass(/is-playing/);
+});
+
 test("cancels pending playback before regenerating the score", async ({ page }) => {
   await page.addInitScript(() => {
     const testState = {
