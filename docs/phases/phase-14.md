@@ -65,6 +65,8 @@ The acceptance order is:
 
 Before changing generator weights again, record a small before/current review for Phase 13Z tradeoffs. Treat `contrary-motion` and `tight-stretto` as high-risk seeds, with `circle-fifths`, `modal-cadence`, and `dense-modal` as mixed/control seeds. The output should identify whether the response belongs in generator candidate construction, candidate scoring, diagnostics classification, or accepted tradeoff documentation. This workstream stays first because phrase novelty must not be allowed to make entry dissonance or weak-passing semitone friction worse.
 
+Implementation note: `phase14DissonanceTriage` now records the focused seed set's weak-passing, passing-neighbor/offbeat, entry adjacent-second, and unresolved accented-clash evidence as review-required score-window diagnostics. See the [Phase 14 dissonance triage implementation review](../reviews/phase-14-dissonance-triage-implementation.md). This completes the diagnostics-harness part of 14A0; generator candidate construction and scoring responses remain in 14B/14C.
+
 ### 14A: Score-window acceptance harness
 
 Add review output that reports important entries, weak-passing and passing/neighbor semitone clashes, active voice-pair spans, counter-subject windows, phrase-development windows, and metric explanations before aggregate metrics. The harness should name seed, tick, voices, roles, intent, section state, theory basis, and proposed response.

@@ -148,6 +148,7 @@ export function generateScore(input: GenerationInput): GenerationOutput {
       phase13QReview,
       phase13RReview,
       phase13ZReview,
+      phase14DissonanceTriage: diagnostics.phase14DissonanceTriage,
       ornamentCandidateCount: diagnostics.ornamentCandidateCount,
       ornamentDensity: diagnostics.ornamentDensity,
       ornamentPlacementReasons: diagnostics.ornamentPlacementReasons,

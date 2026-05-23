@@ -984,6 +984,29 @@ export type Phase13ZReviewSummary = {
   windows: Phase13ZPhraseDevelopmentWindow[];
 };
 
+export type Phase14DissonanceTriageWindow = {
+  startTick: number;
+  state: FugueState | "mixed";
+  voices: Voice[];
+  roles: NoteRole[];
+  metricalHarmonyIntents: MetricalHarmonyIntent[];
+  classification:
+    | "weak-passing-semitone-clash"
+    | "passing-neighbor-offbeat-semitone-clash"
+    | "entry-adjacent-second-friction"
+    | "unresolved-accented-entry-clash";
+  response: "review-required";
+};
+
+export type Phase14DissonanceTriageSummary = {
+  schemaVersion: 1;
+  weakPassingSemitoneClashTicks: number;
+  passingNeighborOffbeatSemitoneClashTicks: number;
+  entryAdjacentSecondFrictionCount: number;
+  unresolvedAccentedEntryClashCount: number;
+  windows: Phase14DissonanceTriageWindow[];
+};
+
 export type GenerationDiagnostics = {
   generatorVersion: number;
   selectionModel: SelectionModel;
@@ -1037,6 +1060,7 @@ export type GenerationDiagnostics = {
   phase13QReview: Phase13QReviewSummary;
   phase13RReview: Phase13RReviewSummary;
   phase13ZReview: Phase13ZReviewSummary;
+  phase14DissonanceTriage: Phase14DissonanceTriageSummary;
   ornamentCandidateCount: number;
   ornamentDensity: number;
   ornamentPlacementReasons: OrnamentPlacementReasons;

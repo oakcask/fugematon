@@ -16,6 +16,7 @@ import type {
   Phase11ReviewSummary,
   Phase12ReviewSummary,
   Phase13QualityVector,
+  Phase14DissonanceTriageSummary,
   PitchContourMotionSummary,
   SoloTextureSummary,
   StepwisePatternSummary,
@@ -103,6 +104,7 @@ export type TextureDiagnostics = {
   entryBoundaryContinuity: EntryBoundaryContinuitySummary;
   bassAnswerTailTexture: BassAnswerTailTextureSummary;
   qualityVector: Phase13QualityVector;
+  phase14DissonanceTriage: Phase14DissonanceTriageSummary;
   ornamentCandidateCount: number;
   ornamentDensity: number;
   ornamentPlacementReasons: OrnamentPlacementReasons;
