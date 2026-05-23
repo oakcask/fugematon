@@ -777,7 +777,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
         entry.seed === "minor-entry" ||
         entry.seed === "wide-key"
       ) {
-        assert.deepEqual(entry.blockers, ["manual listening judgement must be pass before Phase 6"]);
+        assert.deepEqual(entry.blockers, ["manual listening judgement must be pass before melody texture review"]);
       } else {
         assert.deepEqual(entry.blockers, []);
       }

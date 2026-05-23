@@ -16,7 +16,7 @@ import type {
 } from "./events.js";
 import {
   compareReferenceMetricValue,
-  PHASE_7_REFERENCE_DIAGNOSTICS_PROFILE,
+  REFERENCE_DIAGNOSTICS_PROFILE,
   type ReferenceDiagnosticsProfile,
   type ReferenceMetricAxis,
 } from "./reference-diagnostics.js";
@@ -174,7 +174,7 @@ export function classifyCandidatePoolOracleSection(input: {
   const hardFailureRejectedCandidateCount = input.evaluations.filter(
     (evaluation) => evaluation.hardFailures.length > 0,
   ).length;
-  const profile = input.referenceProfile ?? PHASE_7_REFERENCE_DIAGNOSTICS_PROFILE;
+  const profile = input.referenceProfile ?? REFERENCE_DIAGNOSTICS_PROFILE;
   const context = { state: input.state, stateHistory: input.stateHistory ?? [input.state] };
 
   return {
@@ -205,11 +205,7 @@ export function classifyCandidatePoolOracleSection(input: {
           viable[index]
             ? roundOracleRisk(
                 spec.selectedRisk(evaluation, context) +
-                  sectionGrammarHistoryRisk(
-                    spec.blocker,
-                    context.stateHistory,
-                    candidateSectionState(evaluation),
-                  ),
+                  sectionGrammarHistoryRisk(spec.blocker, context.stateHistory, candidateSectionState(evaluation)),
               )
             : undefined,
         )
@@ -290,10 +286,7 @@ export function summarizeCandidatePoolOracleSections(
     schemaVersion: 5,
     sectionCount: sections.length,
     candidateCount: sections.reduce((sum, section) => sum + section.candidateCount, 0),
-    phraseFamilyCandidateCount: sections.reduce(
-      (sum, section) => sum + section.phraseFamilyCandidateCount,
-      0,
-    ),
+    phraseFamilyCandidateCount: sections.reduce((sum, section) => sum + section.phraseFamilyCandidateCount, 0),
     viableCandidateCount: sections.reduce((sum, section) => sum + section.viableCandidateCount, 0),
     hardFailureRejectedCandidateCount: sections.reduce(
       (sum, section) => sum + section.hardFailureRejectedCandidateCount,

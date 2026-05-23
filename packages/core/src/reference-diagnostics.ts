@@ -199,7 +199,7 @@ const REFERENCE_REDISTRIBUTION_POLICIES = [
   "local-import-only",
 ] as const satisfies ReferenceRedistributionPolicy[];
 
-export const PHASE_10_REFERENCE_CORPUS_MANIFEST: ReferenceCorpusManifest = {
+export const REFERENCE_CORPUS_MANIFEST: ReferenceCorpusManifest = {
   schemaVersion: 1,
   records: [
     {
@@ -223,15 +223,15 @@ export const PHASE_10_REFERENCE_CORPUS_MANIFEST: ReferenceCorpusManifest = {
   ],
 };
 
-export const PHASE_7_REFERENCE_DIAGNOSTICS_PROFILE: ReferenceDiagnosticsProfile = {
+export const REFERENCE_DIAGNOSTICS_PROFILE: ReferenceDiagnosticsProfile = {
   profileId: "phase-7-fugue-reference-profile",
   version: 1,
   styleFamily: "fugue-reference",
   createdAt: "2026-05-17",
   sourcePolicy:
     "Metadata-only manifest profile. Score files are not redistributed; each MusicXML or Humdrum import must verify license metadata before becoming source data.",
-  importManifest: PHASE_10_REFERENCE_CORPUS_MANIFEST,
-  sources: PHASE_10_REFERENCE_CORPUS_MANIFEST.records.map((record) => ({
+  importManifest: REFERENCE_CORPUS_MANIFEST,
+  sources: REFERENCE_CORPUS_MANIFEST.records.map((record) => ({
     sourceId: record.sourceId,
     composer: record.composer,
     title: record.title,
@@ -364,7 +364,7 @@ export const PHASE_7_REFERENCE_DIAGNOSTICS_PROFILE: ReferenceDiagnosticsProfile 
 } as const;
 
 export function summarizeReferenceProfile(
-  profile: ReferenceDiagnosticsProfile = PHASE_7_REFERENCE_DIAGNOSTICS_PROFILE,
+  profile: ReferenceDiagnosticsProfile = REFERENCE_DIAGNOSTICS_PROFILE,
 ): ReferenceProfileSummary {
   return {
     profileId: profile.profileId,
@@ -377,6 +377,9 @@ export function summarizeReferenceProfile(
     metricAxes: profile.metrics.map((metric) => metric.axis),
   };
 }
+
+export const PHASE_10_REFERENCE_CORPUS_MANIFEST = REFERENCE_CORPUS_MANIFEST;
+export const PHASE_7_REFERENCE_DIAGNOSTICS_PROFILE = REFERENCE_DIAGNOSTICS_PROFILE;
 
 export function parseReferenceCorpusManifest(input: unknown): ReferenceCorpusManifest {
   if (!isRecord(input)) {
@@ -492,7 +495,7 @@ export function createNormalizedReferenceDiagnostics(
 
 export function compareDiagnosticsToReferenceProfile(
   diagnostics: GenerationDiagnostics,
-  profile: ReferenceDiagnosticsProfile = PHASE_7_REFERENCE_DIAGNOSTICS_PROFILE,
+  profile: ReferenceDiagnosticsProfile = REFERENCE_DIAGNOSTICS_PROFILE,
 ): ReferenceDiagnosticsComparison {
   const values = normalizeDiagnosticsForReference(diagnostics);
   const metrics = profile.metrics.map<ReferenceMetricComparison>((metric) => {
@@ -538,7 +541,7 @@ export function compareReferenceMetricValue(
 
 export function summarizeReferenceDiagnosticsComparisons(
   comparisons: readonly ReferenceDiagnosticsComparison[],
-  profile: ReferenceDiagnosticsProfile = PHASE_7_REFERENCE_DIAGNOSTICS_PROFILE,
+  profile: ReferenceDiagnosticsProfile = REFERENCE_DIAGNOSTICS_PROFILE,
 ): ReferenceDiagnosticsAggregate {
   return {
     profile: summarizeReferenceProfile(profile),
