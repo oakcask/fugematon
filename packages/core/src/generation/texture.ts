@@ -23,6 +23,7 @@ import {
   hasOverlap,
   MODAL_COUNTER_SUBJECT_DEGREES,
   MODAL_FREE_COUNTERPOINT_DEGREES,
+  pitchClassDistance,
   placePitchInRegister,
   positiveModulo,
   VOICE_ENTRY_ORDER,
@@ -53,6 +54,7 @@ type EntryCounterpointTextureInput = {
   localKey: KeySignature;
   eligibleVoices?: readonly Voice[];
   harmonicPlan?: HarmonicPlan;
+  counterSubjectSupportRepair?: boolean;
 };
 
 export function addCounterpointTexture(
@@ -124,6 +126,7 @@ function addEntryFreeCounterpoint(
       velocity: 62,
       role: "free-counterpoint",
       harmonicPlan: entry.harmonicPlan,
+      counterSubjectSupportRepair: entry.counterSubjectSupportRepair,
     });
   }
 }
@@ -311,6 +314,7 @@ export function addPatternCounterpoint(
     velocity: number;
     role: NoteEvent["role"];
     harmonicPlan?: HarmonicPlan;
+    counterSubjectSupportRepair?: boolean;
   },
 ): void {
   let elapsedTicks = 0;
@@ -350,6 +354,7 @@ export function addTextureNote(
     role: NoteEvent["role"];
     harmonicPlan?: HarmonicPlan;
     metricalHarmonyIntent?: MetricalHarmonyIntent;
+    counterSubjectSupportRepair?: boolean;
   },
   degree: number,
   startTick: number,
@@ -369,6 +374,7 @@ export function addTextureNote(
     pitch = fitPitchNearPrevious(pitchClass, pattern.voice, previous.pitch);
   }
   pitch = weakDissonanceSafePitch(notes, pattern, startTick, durationTicks, pitch);
+  pitch = counterSubjectSafePitch(notes, pattern, startTick, durationTicks, pitch);
   notes.push({
     kind: "note",
     voice: pattern.voice,
@@ -430,6 +436,78 @@ function weakDissonanceSafePitch(
     .filter((candidatePitch) => !createsPitchClassUnisonAtTick(notes, pattern.voice, startTick, candidatePitch));
 
   return candidates.sort((left, right) => Math.abs(left - pitch) - Math.abs(right - pitch))[0] ?? pitch;
+}
+
+function counterSubjectSafePitch(
+  notes: readonly NoteEvent[],
+  pattern: Parameters<typeof addTextureNote>[1],
+  startTick: number,
+  durationTicks: number,
+  pitch: number,
+): number {
+  if (
+    pattern.role !== "free-counterpoint" ||
+    pattern.counterSubjectSupportRepair !== true ||
+    pattern.harmonicPlan === undefined ||
+    !createsCounterSubjectSupportCollision(notes, pattern.voice, startTick, durationTicks, pitch)
+  ) {
+    return pitch;
+  }
+
+  const anchor = nearestHarmonicAnchor(startTick, [pattern.harmonicPlan]);
+  if (anchor === undefined) {
+    return pitch;
+  }
+  const chordTonePitchClassesAtTick = chordTonePitchClasses(anchor.localKey, anchor.function);
+  const previous = notes
+    .filter((note) => note.voice === pattern.voice && note.startTick <= startTick)
+    .sort(compareNoteEvents)
+    .at(-1);
+  const noteShape = {
+    kind: "note",
+    voice: pattern.voice,
+    startTick,
+    durationTicks,
+    pitch,
+    velocity: pattern.velocity,
+    role: pattern.role,
+  } satisfies NoteEvent;
+  const candidates = [-5, -4, -3, -2, -1, 1, 2, 3, 4, 5]
+    .map((step) => pitch + step)
+    .filter((candidatePitch) => chordTonePitchClassesAtTick.includes(positiveModulo(candidatePitch, 12)))
+    .filter((candidatePitch) => candidatePitch >= VOICE_RANGES[pattern.voice].min)
+    .filter((candidatePitch) => candidatePitch <= VOICE_RANGES[pattern.voice].max)
+    .filter((candidatePitch) => previous === undefined || Math.abs(candidatePitch - previous.pitch) <= 4)
+    .filter((candidatePitch) => keepsAdjacentVoiceOrder(notes, noteShape, candidatePitch))
+    .filter(
+      (candidatePitch) =>
+        !createsCounterSubjectSupportCollision(notes, pattern.voice, startTick, durationTicks, candidatePitch),
+    )
+    .filter((candidatePitch) => !createsSemitoneAtTick(notes, pattern.voice, startTick, candidatePitch))
+    .filter((candidatePitch) => !createsPitchClassUnisonAtTick(notes, pattern.voice, startTick, candidatePitch));
+
+  return nearestPitch(candidates, pitch) ?? pitch;
+}
+
+function nearestPitch(candidates: readonly number[], targetPitch: number): number | undefined {
+  return [...candidates].sort((left, right) => Math.abs(left - targetPitch) - Math.abs(right - targetPitch))[0];
+}
+
+function createsCounterSubjectSupportCollision(
+  notes: readonly NoteEvent[],
+  voice: Voice,
+  startTick: number,
+  durationTicks: number,
+  pitch: number,
+): boolean {
+  return notes.some(
+    (note) =>
+      note.role === "counter-subject" &&
+      note.voice !== voice &&
+      note.startTick < startTick + durationTicks &&
+      startTick < note.startTick + note.durationTicks &&
+      pitchClassDistance(pitch, note.pitch) <= 2,
+  );
 }
 
 function createsSemitoneAtTick(notes: readonly NoteEvent[], voice: Voice, tick: number, pitch: number): boolean {

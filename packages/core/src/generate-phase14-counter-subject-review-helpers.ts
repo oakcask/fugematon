@@ -20,9 +20,11 @@ export function assertPhase14CounterSubjectReviewSeedsExposePressure(
   seeds: readonly string[],
   expectation: {
     minWindowCount: number;
+    minPreservedWindowCount?: number;
     minTradeoffWindowCount: number;
     minWeakWindowCount: number;
-    minSupportCollisionCount: number;
+    minSupportCollisionCount?: number;
+    maxSupportCollisionCount?: number;
     maxPreservedWindowCount?: number;
   },
 ): void {
@@ -53,11 +55,7 @@ export function assertPhase14CounterSubjectReviewSeedsExposePressure(
 
   assert.ok(
     summaries.every(
-      (summary) =>
-        summary.windowCount > 0 &&
-        summary.tradeoffWindowCount > 0 &&
-        summary.supportCollisionCount > 0 &&
-        summary.reviewRequiredWindowCount > 0,
+      (summary) => summary.windowCount > 0 && summary.tradeoffWindowCount > 0 && summary.reviewRequiredWindowCount > 0,
     ),
     JSON.stringify(summaries, null, 2),
   );
@@ -80,9 +78,17 @@ export function assertPhase14CounterSubjectReviewSeedsExposePressure(
   );
 
   assert.ok(totals.windowCount >= expectation.minWindowCount, JSON.stringify(summaries, null, 2));
+  if (expectation.minPreservedWindowCount !== undefined) {
+    assert.ok(totals.preservedWindowCount >= expectation.minPreservedWindowCount, JSON.stringify(summaries, null, 2));
+  }
   assert.ok(totals.tradeoffWindowCount >= expectation.minTradeoffWindowCount, JSON.stringify(summaries, null, 2));
   assert.ok(totals.weakWindowCount >= expectation.minWeakWindowCount, JSON.stringify(summaries, null, 2));
-  assert.ok(totals.supportCollisionCount >= expectation.minSupportCollisionCount, JSON.stringify(summaries, null, 2));
+  if (expectation.minSupportCollisionCount !== undefined) {
+    assert.ok(totals.supportCollisionCount >= expectation.minSupportCollisionCount, JSON.stringify(summaries, null, 2));
+  }
+  if (expectation.maxSupportCollisionCount !== undefined) {
+    assert.ok(totals.supportCollisionCount <= expectation.maxSupportCollisionCount, JSON.stringify(summaries, null, 2));
+  }
   if (expectation.maxPreservedWindowCount !== undefined) {
     assert.ok(totals.preservedWindowCount <= expectation.maxPreservedWindowCount, JSON.stringify(summaries, null, 2));
   }
