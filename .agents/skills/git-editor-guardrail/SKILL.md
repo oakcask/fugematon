@@ -21,7 +21,8 @@ Avoid git commands that can hang waiting for an editor. Prefer flags that make t
 
 Use these forms when they match the task:
 
-- `git commit -m "subject"` or `git commit -F message-file` instead of opening an editor.
+- `git commit -m "subject"` for subject-only messages, or `git commit -F message-file` for Markdown, multiline, or backtick-containing messages, instead of opening an editor.
+- Do not pass Markdown commit messages with backticks through shell-interpreted inline strings, because backticks can be evaluated before git receives the message.
 - `git commit --amend --no-edit` when preserving the existing message.
 - `GIT_EDITOR=true git commit --amend` only when git may request message editing and the default message should be accepted.
 - `GIT_EDITOR=true git rebase --continue` for continuation steps that may reopen a commit message.
