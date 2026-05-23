@@ -49,7 +49,7 @@ Current exception: Phase 13W は、Phase 13V 後の focused inspection で確認
 
 Current exception: Phase 13Z は、Phase 13Y 後に確認した long-run phrase convergence を Phase 14/8/9 前の開始条件へ昇格します。初期主題の多様性が改善しても、subject-return、episode、stretto-like が同じ subject-stem / fragment family へ戻り続ける場合、無限再生はその疲労を長時間化します。採用には windowed phrase-development diagnostics、focused seed evidence、`organ-default` / `strict-counterpoint` listening note、Phase 13X / Phase 13X2 / Phase 13Y の entry-continuity and tail-texture evidence を隠さない regression review を必要とします。
 
-Current exception: Phase 14 は、Phase 13Z 後に確認した metric false acceptance を Phase 8/9 前の開始条件へ昇格します。Reference aggregate、quality vector、Phase 7B readiness は、譜面上の entry continuity、line agency、counter-subject survivability、phrase development を説明できる場合だけ美しさの採用 evidence として扱います。採用には score-window musical acceptance、focused seed evidence、`organ-default` / `strict-counterpoint` listening note、生成譜面の改善と metric reclassification の区別を必要とします。
+Current exception: Phase 14 は、Phase 13Z 後に確認した metric false acceptance を Phase 8/9 前の開始条件へ昇格します。Reference aggregate、quality vector、Phase 7B readiness は、譜面上の entry continuity、line agency、counter-subject survivability、phrase development を説明できる場合だけ美しさの採用 evidence として扱います。採用には score-window musical acceptance、focused seed evidence、`organ-default` / `strict-counterpoint` listening note、生成譜面の改善と metric reclassification の区別、seed / metric の CI-review scope 分類を必要とします。uncertain beauty signals は CI blocking ではなく `review-required` に残します。
 
 ## A/B Review
 

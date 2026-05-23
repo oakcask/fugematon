@@ -30,7 +30,7 @@ seed や metric を追加、削除、昇格、降格するレビューでは、[
 * [Phase 13Y entry-continuity generalization review](phase-13y-entry-continuity-generalization.md): Phase 13X2 後に、entry-boundary continuity を bass 固有ではなく entry voice、entry order、already-entered voices に基づく一般モデルへ広げる根拠。
 * [Phase 13Y completion review](phase-13y-completion-review.md): Phase 13Y 完了 evidence。generalized entry-continuity schema v3、non-bass entry windows、first-bass repair、bass-answer-tail signal の維持を記録する。
 * [Phase 13Z long-run phrase review](phase-13z-long-run-phrase-review.md): Phase 13Y 後に、初期主題の多様性改善後も残る long-run phrase convergence を subject-return / episode / stretto-like の発展不足として Phase 8 前 blocker へ再編する根拠。
-* [Phase 14 score-led beauty review](phase-14-score-led-beauty-review.md): Phase 13Z 後に、指標ではなく譜面を読み、reference aggregate の false acceptance、entry continuity、line agency、counter-subject survivability、phrase development を Phase 8 前の統合 blocker として再編する根拠。
+* [Phase 14 score-led beauty review](phase-14-score-led-beauty-review.md): Phase 13Z 後に、指標ではなく譜面を読み、reference aggregate の false acceptance、entry continuity、line agency、counter-subject survivability、phrase development、CI / review scope を Phase 8 前の score-led beauty trunk として再編する根拠。
 * [Phase 13W completion review](phase-13w-completion-review.md): Phase 13W 完了 evidence。entry-boundary continuity diagnostic、delayed outside-voice support、22 seed score-window evidence、focused playback profile review を記録する。
 * [Phase 13W entry-boundary review](phase-13w-entry-boundary-review.md): Phase 13V 後に確認された bass entry 境界の外声 3 声同時再発音を、Phase 8 前 blocker として再編した根拠。
 * [Phase 13Y](../phases/phase-13y.md): 完了済み。entry-boundary continuity を bass-specific から entry-role / entry-order aware な診断へ広げた。
