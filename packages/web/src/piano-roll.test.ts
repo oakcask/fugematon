@@ -6,7 +6,12 @@ import {
   computeActivePitchMarkerLayout,
   computePianoRollLayout,
   computePianoRollViewport,
+  computeRoleBackplateLayout,
+  computeStrokeOnlyNoteRect,
   DEFAULT_VIEWPORT_SECONDS,
+  type PianoRollNoteLayout,
+  shouldDrawNoteRoleStroke,
+  shouldDrawStrokeOnlyNote,
 } from "./piano-roll.js";
 import { createPlaybackModel, type PlaybackModel } from "./score.js";
 
@@ -38,6 +43,54 @@ test("computePianoRollViewport starts at the opening and follows playback", () =
   assert.ok(following.startSecond > opening.startSecond);
   assert.ok(following.startSecond < DEFAULT_VIEWPORT_SECONDS * 2);
   assert.equal(following.endSecond - following.startSecond, DEFAULT_VIEWPORT_SECONDS);
+});
+
+test("computeRoleBackplateLayout covers nearby role note sequences", () => {
+  const notes = [
+    layoutNote({ role: "subject", x: 70, y: 40, width: 20, height: 6 }),
+    layoutNote({ role: "subject", x: 95, y: 70, width: 30, height: 6 }),
+    layoutNote({ role: "subject", x: 170, y: 58, width: 18, height: 6 }),
+    layoutNote({ role: "answer", x: 96, y: 104, width: 24, height: 6 }),
+    layoutNote({ role: "free-counterpoint", x: 98, y: 120, width: 24, height: 6 }),
+  ];
+
+  const backplates = computeRoleBackplateLayout(notes, 220, 180);
+
+  assert.equal(backplates.length, 3);
+  assert.deepEqual(backplates[0], {
+    voice: "soprano",
+    role: "subject",
+    x: 64,
+    y: 36,
+    width: 67,
+    height: 44,
+  });
+  assert.ok(backplates.some((backplate) => backplate.role === "subject" && backplate.x === 164));
+  assert.ok(backplates.some((backplate) => backplate.role === "answer"));
+  assert.ok(backplates.every((backplate) => backplate.role !== "free-counterpoint"));
+});
+
+test("shouldDrawNoteRoleStroke omits visible role outlines", () => {
+  assert.equal(shouldDrawNoteRoleStroke("subject"), false);
+  assert.equal(shouldDrawNoteRoleStroke("answer"), false);
+  assert.equal(shouldDrawNoteRoleStroke("free-counterpoint"), false);
+  assert.equal(shouldDrawNoteRoleStroke("subject-fragment"), false);
+  assert.equal(shouldDrawNoteRoleStroke("counter-subject"), false);
+  assert.equal(shouldDrawNoteRoleStroke("fallback"), false);
+  assert.equal(shouldDrawNoteRoleStroke(undefined), false);
+});
+
+test("fallback notes render as stroke-only within the same visual bounds", () => {
+  const fallback = layoutNote({ role: "fallback", x: 70, y: 40, width: 24, height: 8 });
+  const rect = computeStrokeOnlyNoteRect(fallback);
+
+  assert.equal(shouldDrawStrokeOnlyNote("fallback"), true);
+  assert.equal(shouldDrawStrokeOnlyNote("subject"), false);
+  assert.equal(rect.x, 71);
+  assert.equal(rect.y, 41);
+  assert.equal(rect.width, 22);
+  assert.equal(rect.height, 6);
+  assert.equal(rect.radius, 4);
 });
 
 test("computeActivePitches returns currently sounding pitches in ascending order", () => {
@@ -81,3 +134,21 @@ test("computeActivePitchMarkerLayout spaces nearby labels within each key lane",
     assert.ok(whiteMarkers[index]!.labelY - whiteMarkers[index - 1]!.labelY >= 11);
   }
 });
+
+function layoutNote(input: {
+  role: PianoRollNoteLayout["role"];
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}): PianoRollNoteLayout {
+  return {
+    voice: "soprano",
+    role: input.role,
+    x: input.x,
+    y: input.y,
+    width: input.width,
+    height: input.height,
+    isActive: false,
+  };
+}
