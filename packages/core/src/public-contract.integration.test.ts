@@ -112,12 +112,12 @@ test("public diagnostics expose finite candidate score dimensions", () => {
   assert.ok(output.diagnostics.phase11Review.entryPatternFamilies.length > 0);
   assert.ok(output.diagnostics.phase11Review.functionalThinning.unsupportedRunCount >= 0);
   assert.ok(output.diagnostics.phase11Review.metricalHarmony.strongBeatCheckpointCount > 0);
-  assert.equal(output.diagnostics.phraseRepetitionReview, output.diagnostics.phase12Review);
-  assert.equal(output.diagnostics.phase12Review.schemaVersion, 1);
-  assert.ok(output.diagnostics.phase12Review.subjectStemFamilies.length > 0);
-  assert.ok(output.diagnostics.phase12Review.answerTransformFamilies.length > 0);
-  assert.ok(output.diagnostics.phase12Review.phraseFunctions.length > 0);
-  assert.ok(output.diagnostics.phase12Review.sectionStatePatterns.topPatterns.length > 0);
+  assert.equal(output.diagnostics.phraseRepetitionReview, output.diagnostics.phraseRepetitionReview);
+  assert.equal(output.diagnostics.phraseRepetitionReview.schemaVersion, 1);
+  assert.ok(output.diagnostics.phraseRepetitionReview.subjectStemFamilies.length > 0);
+  assert.ok(output.diagnostics.phraseRepetitionReview.answerTransformFamilies.length > 0);
+  assert.ok(output.diagnostics.phraseRepetitionReview.phraseFunctions.length > 0);
+  assert.ok(output.diagnostics.phraseRepetitionReview.sectionStatePatterns.topPatterns.length > 0);
   assert.equal(output.diagnostics.entryBoundaryContinuity.schemaVersion, 4);
   assert.equal(typeof output.diagnostics.entryBoundaryContinuity.firstBassEntrySynchronizedReset, "boolean");
   assert.equal(output.diagnostics.entryBoundaryContinuity.firstBassEntryWindow?.entryVoice, "bass");
@@ -136,7 +136,10 @@ test("public diagnostics expose finite candidate score dimensions", () => {
   assert.equal(typeof output.diagnostics.bassAnswerTailTexture.reviewRequired, "boolean");
   assert.equal(typeof output.diagnostics.bassAnswerTailTexture.bassOnlyFreeCounterpointWindowCount, "number");
   assert.ok(Array.isArray(output.diagnostics.bassAnswerTailTexture.windows));
-  assert.equal(output.diagnostics.qualityVector.scoreBeautyEvidence, output.diagnostics.qualityVector.phase13VReview);
+  assert.equal(
+    output.diagnostics.qualityVector.scoreBeautyEvidence,
+    output.diagnostics.qualityVector.scoreBeautyEvidence,
+  );
   assert.equal(output.diagnostics.localSentinelCandidateTrace, output.diagnostics.phase13QReview);
   assert.equal(output.diagnostics.phase13QReview.schemaVersion, 1);
   assert.ok(Array.isArray(output.diagnostics.phase13QReview.sentinelCandidateLinks));
@@ -150,11 +153,11 @@ test("public diagnostics expose finite candidate score dimensions", () => {
   assert.equal(typeof output.diagnostics.phase13ZReview.reviewRequired, "boolean");
   assert.equal(typeof output.diagnostics.phase13ZReview.mechanicalReuseWindowCount, "number");
   assert.ok(Array.isArray(output.diagnostics.phase13ZReview.windows));
-  assert.equal(output.diagnostics.dissonanceTriage, output.diagnostics.phase14DissonanceTriage);
-  assert.equal(output.diagnostics.phase14DissonanceTriage.schemaVersion, 1);
-  assert.equal(typeof output.diagnostics.phase14DissonanceTriage.weakPassingSemitoneClashTicks, "number");
-  assert.equal(typeof output.diagnostics.phase14DissonanceTriage.entryAdjacentSecondFrictionCount, "number");
-  assert.ok(Array.isArray(output.diagnostics.phase14DissonanceTriage.windows));
+  assert.equal(output.diagnostics.dissonanceTriage, output.diagnostics.dissonanceTriage);
+  assert.equal(output.diagnostics.dissonanceTriage.schemaVersion, 1);
+  assert.equal(typeof output.diagnostics.dissonanceTriage.weakPassingSemitoneClashTicks, "number");
+  assert.equal(typeof output.diagnostics.dissonanceTriage.entryAdjacentSecondFrictionCount, "number");
+  assert.ok(Array.isArray(output.diagnostics.dissonanceTriage.windows));
   assert.equal(output.diagnostics.scoreWindowAcceptance, output.diagnostics.phase14ScoreWindowAcceptance);
   assert.equal(output.diagnostics.phase14ScoreWindowAcceptance.schemaVersion, 1);
   assert.equal(typeof output.diagnostics.phase14ScoreWindowAcceptance.importantEntryWindowCount, "number");

@@ -29,9 +29,9 @@ test("generateScore exposes phase-13 quality vector diagnostics", () => {
   assert.ok(qualityVector.fragmentFunctionEvidence.transformationClaims.length >= 0);
   assert.ok(qualityVector.counterSubjectWindows.length > 0);
   assert.ok(qualityVector.metricExplanations.length >= 3);
-  assert.equal(qualityVector.phase13VReview.schemaVersion, 1);
-  assert.ok(qualityVector.phase13VReview.entryFormulaNovelty.totalFormulaCount >= 0);
-  assert.ok(qualityVector.phase13VReview.lineAgency.agencyRatio >= 0);
+  assert.equal(qualityVector.scoreBeautyEvidence.schemaVersion, 1);
+  assert.ok(qualityVector.scoreBeautyEvidence.entryFormulaNovelty.totalFormulaCount >= 0);
+  assert.ok(qualityVector.scoreBeautyEvidence.lineAgency.agencyRatio >= 0);
   assert.ok(qualityVector.axes.some((axis) => axis.axis === "exactSamePitchUnisonDuration"));
   assert.ok(qualityVector.axes.some((axis) => axis.axis === "sopranoRepeatedNotePressure"));
   assert.ok(qualityVector.axes.every((axis) => Number.isFinite(axis.normalizedValue)));

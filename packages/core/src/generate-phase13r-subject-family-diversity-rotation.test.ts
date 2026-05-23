@@ -10,7 +10,9 @@ test("phase-13R default rotation subjects keep first-batch family concentration 
 
   for (const seed of PHASE_13R_ROTATION_SUBJECT_DIVERSITY_SEEDS) {
     const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
-    const topSubject = output.diagnostics.phase12Review.subjectStemFamilies.find((family) => family.form === "subject");
+    const topSubject = output.diagnostics.phraseRepetitionReview.subjectStemFamilies.find(
+      (family) => family.form === "subject",
+    );
 
     assert.ok(topSubject !== undefined, `${seed} should expose a top subject family`);
     const family = topSubject.pattern.join("-");

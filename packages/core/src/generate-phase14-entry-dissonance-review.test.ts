@@ -21,7 +21,7 @@ test("Phase 14 entry-dissonance review seeds keep unresolved accented entry clas
       (sum, sonority) => sum + sonority.unresolvedAccentedClashCount,
       0,
     );
-    const unresolvedAccentedEntryWindows = diagnostics.phase14DissonanceTriage.windows.filter(
+    const unresolvedAccentedEntryWindows = diagnostics.dissonanceTriage.windows.filter(
       (window) => window.classification === "unresolved-accented-entry-clash",
     );
 
@@ -29,8 +29,8 @@ test("Phase 14 entry-dissonance review seeds keep unresolved accented entry clas
       seed,
       entryAdjacentSecondFriction,
       unresolvedAccentedEntryClashes,
-      phase14EntryAdjacentSecondFrictionCount: diagnostics.phase14DissonanceTriage.entryAdjacentSecondFrictionCount,
-      phase14UnresolvedAccentedEntryClashCount: diagnostics.phase14DissonanceTriage.unresolvedAccentedEntryClashCount,
+      phase14EntryAdjacentSecondFrictionCount: diagnostics.dissonanceTriage.entryAdjacentSecondFrictionCount,
+      phase14UnresolvedAccentedEntryClashCount: diagnostics.dissonanceTriage.unresolvedAccentedEntryClashCount,
       unresolvedAccentedEntryWindowCount: unresolvedAccentedEntryWindows.length,
     };
   });

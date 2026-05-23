@@ -1,27 +1,27 @@
 import type {
   HarmonicPlan,
-  Phase12PhraseFunction,
-  Phase12ReviewSummary,
-  Phase13ZPhraseDevelopmentWindow,
-  Phase13ZReviewSummary,
+  PhraseDevelopmentReviewSummary,
+  PhraseDevelopmentWindow,
+  PhraseFunction,
+  PhraseRepetitionReviewSummary,
   PlannedEntry,
 } from "../events.js";
 
 const MECHANICAL_REUSE_REVIEW_WINDOW_LIMIT = 20;
 const MAX_TOP_SUBJECT_STEM_FAMILY_SHARE_WITHOUT_FUNCTION = 0.42;
 
-export function buildPhase13ZReviewSummary(
+export function buildPhraseDevelopmentReviewSummary(
   subjectEntries: readonly PlannedEntry[],
   sectionPlans: readonly HarmonicPlan[],
-  phase12Review: Phase12ReviewSummary,
-): Phase13ZReviewSummary {
+  phraseRepetitionReview: PhraseRepetitionReviewSummary,
+): PhraseDevelopmentReviewSummary {
   const windows = collectPhraseDevelopmentWindows(subjectEntries, sectionPlans);
   const mechanicalReuseWindowCount = windows.filter((window) => window.judgement === "mechanical-reuse").length;
   const functionBearingWindowCount = windows.filter(
     (window) => window.judgement === "function-bearing-recurrence",
   ).length;
-  const topSubjectStemFamilyShare = topFamilyShare(phase12Review, "subject");
-  const topSubjectFragmentFamilyShare = topFamilyShare(phase12Review, "subject-fragment");
+  const topSubjectStemFamilyShare = topFamilyShare(phraseRepetitionReview, "subject");
+  const topSubjectFragmentFamilyShare = topFamilyShare(phraseRepetitionReview, "subject-fragment");
 
   return {
     schemaVersion: 1,
@@ -41,9 +41,9 @@ export function buildPhase13ZReviewSummary(
 function collectPhraseDevelopmentWindows(
   subjectEntries: readonly PlannedEntry[],
   sectionPlans: readonly HarmonicPlan[],
-): Phase13ZPhraseDevelopmentWindow[] {
-  const previousByStem = new Map<string, Phase13ZPhraseDevelopmentWindow>();
-  const windows: Phase13ZPhraseDevelopmentWindow[] = [];
+): PhraseDevelopmentWindow[] {
+  const previousByStem = new Map<string, PhraseDevelopmentWindow>();
+  const windows: PhraseDevelopmentWindow[] = [];
 
   for (const entry of subjectEntries) {
     if (entry.state === "exposition" || (entry.form !== "subject" && entry.form !== "subject-fragment")) {
@@ -51,7 +51,7 @@ function collectPhraseDevelopmentWindows(
     }
 
     const section = sectionForEntry(sectionPlans, entry);
-    const phraseFunction = phase13ZPhraseFunction(section);
+    const phraseFunction = phraseDevelopmentFunction(section);
     const stemKey = `${entry.form}:${entry.expectedDegreePattern.join("-")}`;
     const previous = previousByStem.get(stemKey);
     const recentStemReuseCount = previous === undefined ? 0 : previous.recentStemReuseCount + 1;
@@ -60,7 +60,7 @@ function collectPhraseDevelopmentWindows(
       previous !== undefined &&
       (previous.localKey.tonic !== entry.localKey.tonic || previous.localKey.mode !== entry.localKey.mode);
     const changedPhraseFunction = previous !== undefined && previous.phraseFunction !== phraseFunction;
-    const window: Phase13ZPhraseDevelopmentWindow = {
+    const window: PhraseDevelopmentWindow = {
       startTick: entry.startTick,
       state: entry.state,
       form: entry.form,
@@ -94,7 +94,7 @@ function sectionForEntry(sectionPlans: readonly HarmonicPlan[], entry: PlannedEn
   );
 }
 
-function phase13ZPhraseFunction(section: HarmonicPlan | undefined): Phase12PhraseFunction {
+function phraseDevelopmentFunction(section: HarmonicPlan | undefined): PhraseFunction {
   if (section === undefined) {
     return "entry-preparation";
   }
@@ -113,8 +113,11 @@ function phase13ZPhraseFunction(section: HarmonicPlan | undefined): Phase12Phras
   return "entry-preparation";
 }
 
-function topFamilyShare(phase12Review: Phase12ReviewSummary, form: "subject" | "subject-fragment"): number {
-  return phase12Review.subjectStemFamilies
+function topFamilyShare(
+  phraseRepetitionReview: PhraseRepetitionReviewSummary,
+  form: "subject" | "subject-fragment",
+): number {
+  return phraseRepetitionReview.subjectStemFamilies
     .filter((family) => family.form === form)
     .reduce((maxShare, family) => Math.max(maxShare, family.share), 0);
 }

@@ -2,6 +2,7 @@ import type {
   BassAnswerTailTextureSummary,
   CandidateEvaluation,
   CandidatePoolOracleSummary,
+  DissonanceTriageSummary,
   DurationDistribution,
   EntryBoundaryContinuitySummary,
   EntrySupportInstabilitySummary,
@@ -13,13 +14,12 @@ import type {
   MetricalHarmonyIntent,
   NoteEvent,
   OrnamentPlacementReasons,
-  Phase11ReviewSummary,
-  Phase12ReviewSummary,
-  Phase13QualityVector,
-  Phase14DissonanceTriageSummary,
+  PhraseRepetitionReviewSummary,
   PitchContourMotionSummary,
+  QualityVector,
   SoloTextureSummary,
   StepwisePatternSummary,
+  TexturePlanningReviewSummary,
 } from "../events.js";
 
 export type SubjectNote = {
@@ -99,15 +99,15 @@ export type TextureDiagnostics = {
   pitchContourMotion: PitchContourMotionSummary;
   lowerVoiceVocality: LowerVoiceVocalitySummary;
   stepwisePattern: StepwisePatternSummary;
-  texturePlanningReview: Phase11ReviewSummary;
-  phraseRepetitionReview: Phase12ReviewSummary;
-  phase11Review: Phase11ReviewSummary;
-  phase12Review: Phase12ReviewSummary;
+  texturePlanningReview: TexturePlanningReviewSummary;
+  phraseRepetitionReview: PhraseRepetitionReviewSummary;
+  phase11Review: TexturePlanningReviewSummary;
+  phase12Review: PhraseRepetitionReviewSummary;
   entryBoundaryContinuity: EntryBoundaryContinuitySummary;
   bassAnswerTailTexture: BassAnswerTailTextureSummary;
-  qualityVector: Phase13QualityVector;
-  dissonanceTriage: Phase14DissonanceTriageSummary;
-  phase14DissonanceTriage: Phase14DissonanceTriageSummary;
+  qualityVector: QualityVector;
+  dissonanceTriage: DissonanceTriageSummary;
+  phase14DissonanceTriage: DissonanceTriageSummary;
   ornamentCandidateCount: number;
   ornamentDensity: number;
   ornamentPlacementReasons: OrnamentPlacementReasons;

@@ -1,37 +1,37 @@
 import type {
+  CounterSubjectWindowSummary,
+  DissonanceTriageSummary,
+  DissonanceTriageWindow,
   EntryBoundaryContinuitySummary,
   EntryBoundaryContinuityWindow,
-  Phase13QualityVector,
-  Phase13TCounterSubjectWindowSummary,
-  Phase13TMetricExplanationSummary,
-  Phase13UVoicePairSpanClassification,
-  Phase13UVoicePairSpanSummary,
-  Phase13ZPhraseDevelopmentJudgement,
-  Phase13ZPhraseDevelopmentWindow,
-  Phase13ZReviewSummary,
-  Phase14DissonanceTriageSummary,
-  Phase14DissonanceTriageWindow,
-  Phase14ScoreWindowAcceptanceResponse,
-  Phase14ScoreWindowAcceptanceSummary,
-  Phase14ScoreWindowAcceptanceWindow,
+  MetricExplanationSummary,
+  PhraseDevelopmentJudgement,
+  PhraseDevelopmentReviewSummary,
+  PhraseDevelopmentWindow,
+  QualityVector,
+  ScoreWindowAcceptanceResponse,
+  ScoreWindowAcceptanceSummary,
+  ScoreWindowAcceptanceWindow,
   Voice,
+  VoicePairSpanClassification,
+  VoicePairSpanSummary,
 } from "../events.js";
 
 const PHASE_14_ACCEPTANCE_WINDOW_LIMIT = 72;
 const VOICE_NAMES = new Set<Voice>(["soprano", "alto", "tenor", "bass"]);
 
-export function buildPhase14ScoreWindowAcceptanceSummary(
+export function buildScoreWindowAcceptanceSummary(
   entryBoundaryContinuity: EntryBoundaryContinuitySummary,
-  phase14DissonanceTriage: Phase14DissonanceTriageSummary,
-  qualityVector: Phase13QualityVector,
-  phase13ZReview: Phase13ZReviewSummary,
-): Phase14ScoreWindowAcceptanceSummary {
+  dissonanceTriage: DissonanceTriageSummary,
+  qualityVector: QualityVector,
+  phase13ZReview: PhraseDevelopmentReviewSummary,
+): ScoreWindowAcceptanceSummary {
   const importantEntryWindows = entryBoundaryContinuity.windows.filter(
     (window) => window.entryOrderIndex === 0 || window.alreadyEnteredVoices.length > 0,
   );
   const windows = [
     ...importantEntryWindows.map(scoreWindowFromEntryContinuity),
-    ...phase14DissonanceTriage.windows.map(scoreWindowFromDissonance),
+    ...dissonanceTriage.windows.map(scoreWindowFromDissonance),
     ...qualityVector.voicePairSpans.map(scoreWindowFromVoicePairSpan),
     ...qualityVector.counterSubjectWindows.map(scoreWindowFromCounterSubject),
     ...phase13ZReview.windows.map(scoreWindowFromPhraseDevelopment),
@@ -41,7 +41,7 @@ export function buildPhase14ScoreWindowAcceptanceSummary(
   return {
     schemaVersion: 1,
     importantEntryWindowCount: importantEntryWindows.length,
-    dissonanceWindowCount: phase14DissonanceTriage.windows.length,
+    dissonanceWindowCount: dissonanceTriage.windows.length,
     activeVoicePairSpanCount: qualityVector.voicePairSpans.length,
     counterSubjectWindowCount: qualityVector.counterSubjectWindows.length,
     phraseDevelopmentWindowCount: phase13ZReview.windowCount,
@@ -54,7 +54,7 @@ export function buildPhase14ScoreWindowAcceptanceSummary(
   };
 }
 
-function scoreWindowFromEntryContinuity(window: EntryBoundaryContinuityWindow): Phase14ScoreWindowAcceptanceWindow {
+function scoreWindowFromEntryContinuity(window: EntryBoundaryContinuityWindow): ScoreWindowAcceptanceWindow {
   const accepted =
     window.classification === "continuity-supported" || window.classification === "prepared-collective-articulation";
   return {
@@ -72,7 +72,7 @@ function scoreWindowFromEntryContinuity(window: EntryBoundaryContinuityWindow): 
   };
 }
 
-function scoreWindowFromDissonance(window: Phase14DissonanceTriageWindow): Phase14ScoreWindowAcceptanceWindow {
+function scoreWindowFromDissonance(window: DissonanceTriageWindow): ScoreWindowAcceptanceWindow {
   return {
     kind: "dissonance-triage",
     startTick: window.startTick,
@@ -86,7 +86,7 @@ function scoreWindowFromDissonance(window: Phase14DissonanceTriageWindow): Phase
   };
 }
 
-function scoreWindowFromVoicePairSpan(span: Phase13UVoicePairSpanSummary): Phase14ScoreWindowAcceptanceWindow {
+function scoreWindowFromVoicePairSpan(span: VoicePairSpanSummary): ScoreWindowAcceptanceWindow {
   return {
     kind: "active-voice-pair-span",
     startTick: span.startTick,
@@ -101,9 +101,7 @@ function scoreWindowFromVoicePairSpan(span: Phase13UVoicePairSpanSummary): Phase
   };
 }
 
-function scoreWindowFromCounterSubject(
-  window: Phase13TCounterSubjectWindowSummary,
-): Phase14ScoreWindowAcceptanceWindow {
+function scoreWindowFromCounterSubject(window: CounterSubjectWindowSummary): ScoreWindowAcceptanceWindow {
   const accepted = window.preservationJudgement === "preserved";
   return {
     kind: "counter-subject-survival",
@@ -125,7 +123,7 @@ function scoreWindowFromCounterSubject(
   };
 }
 
-function scoreWindowFromPhraseDevelopment(window: Phase13ZPhraseDevelopmentWindow): Phase14ScoreWindowAcceptanceWindow {
+function scoreWindowFromPhraseDevelopment(window: PhraseDevelopmentWindow): ScoreWindowAcceptanceWindow {
   return {
     kind: "phrase-development",
     startTick: window.startTick,
@@ -142,9 +140,7 @@ function scoreWindowFromPhraseDevelopment(window: Phase13ZPhraseDevelopmentWindo
   };
 }
 
-function scoreWindowFromMetricExplanation(
-  explanation: Phase13TMetricExplanationSummary,
-): Phase14ScoreWindowAcceptanceWindow {
+function scoreWindowFromMetricExplanation(explanation: MetricExplanationSummary): ScoreWindowAcceptanceWindow {
   return {
     kind: "metric-explanation",
     startTick: explanation.representativeTick,
@@ -164,9 +160,7 @@ function scoreWindowFromMetricExplanation(
   };
 }
 
-function voicePairSpanResponse(
-  classification: Phase13UVoicePairSpanClassification,
-): Phase14ScoreWindowAcceptanceResponse {
+function voicePairSpanResponse(classification: VoicePairSpanClassification): ScoreWindowAcceptanceResponse {
   if (
     classification === "mechanical-coupling" ||
     classification === "exact-collision" ||
@@ -180,9 +174,7 @@ function voicePairSpanResponse(
   return "accepted-context";
 }
 
-function phraseDevelopmentResponse(
-  judgement: Phase13ZPhraseDevelopmentJudgement,
-): Phase14ScoreWindowAcceptanceResponse {
+function phraseDevelopmentResponse(judgement: PhraseDevelopmentJudgement): ScoreWindowAcceptanceResponse {
   return judgement === "mechanical-reuse" ? "generator-response-required" : "accepted-context";
 }
 

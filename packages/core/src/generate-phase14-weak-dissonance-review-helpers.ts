@@ -23,10 +23,10 @@ export function assertPhase14WeakDissonanceReviewSeedsExposePressure(
 ): void {
   const summaries = seeds.map((seed) => {
     const diagnostics = generateScore({ seed, lengthTicks: TICKS_PER_QUARTER * 288 }).diagnostics;
-    const weakSemitoneWindows = diagnostics.phase14DissonanceTriage.windows.filter(
+    const weakSemitoneWindows = diagnostics.dissonanceTriage.windows.filter(
       (window) => window.classification === "weak-passing-semitone-clash",
     );
-    const passingNeighborOffbeatWindows = diagnostics.phase14DissonanceTriage.windows.filter(
+    const passingNeighborOffbeatWindows = diagnostics.dissonanceTriage.windows.filter(
       (window) =>
         window.classification === "weak-passing-semitone-clash" ||
         window.classification === "passing-neighbor-offbeat-semitone-clash",
@@ -34,14 +34,14 @@ export function assertPhase14WeakDissonanceReviewSeedsExposePressure(
 
     return {
       seed,
-      weakPassingSemitoneClashTicks: diagnostics.phase14DissonanceTriage.weakPassingSemitoneClashTicks,
-      passingNeighborOffbeatSemitoneClashTicks:
-        diagnostics.phase14DissonanceTriage.passingNeighborOffbeatSemitoneClashTicks,
+      weakPassingSemitoneClashTicks: diagnostics.dissonanceTriage.weakPassingSemitoneClashTicks,
+      passingNeighborOffbeatSemitoneClashTicks: diagnostics.dissonanceTriage.passingNeighborOffbeatSemitoneClashTicks,
       weakSemitoneWindowCount: weakSemitoneWindows.length,
       passingNeighborOffbeatWindowCount: passingNeighborOffbeatWindows.length,
-      weakBeatNonChordToneIntentCount: diagnostics.phase11Review.metricalHarmony.weakBeatNonChordToneIntentCount,
+      weakBeatNonChordToneIntentCount:
+        diagnostics.texturePlanningReview.metricalHarmony.weakBeatNonChordToneIntentCount,
       weakBeatUnresolvedNonChordToneCount:
-        diagnostics.phase11Review.metricalHarmony.weakBeatUnresolvedNonChordToneCount,
+        diagnostics.texturePlanningReview.metricalHarmony.weakBeatUnresolvedNonChordToneCount,
     };
   });
 

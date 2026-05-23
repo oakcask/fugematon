@@ -1,10 +1,10 @@
 import { TICKS_PER_QUARTER } from "../constants.js";
 import type {
+  EntryFormulaRecurrenceSummary,
+  EntrySevereIntervalDurationSummary,
+  EntrySonorityKind,
+  EntrySonoritySummary,
   NoteEvent,
-  Phase13EntrySevereIntervalDurationSummary,
-  Phase13TEntrySonorityKind,
-  Phase13TEntrySonoritySummary,
-  Phase13UEntryFormulaSummary,
   PlannedEntry,
 } from "../events.js";
 import { positiveModulo } from "./shared.js";
@@ -12,7 +12,7 @@ import { positiveModulo } from "./shared.js";
 export function summarizeEntrySevereIntervalDurations(
   notes: readonly NoteEvent[],
   subjectEntries: readonly PlannedEntry[],
-): Phase13EntrySevereIntervalDurationSummary[] {
+): EntrySevereIntervalDurationSummary[] {
   return subjectEntries.map((entry) => {
     const checkpoints = entrySupportCheckpoints(notes, entry);
     let severeIntervalDurationTicks = 0;
@@ -58,17 +58,17 @@ export function summarizeEntrySevereIntervalDurations(
 export function summarizeEntrySonorities(
   notes: readonly NoteEvent[],
   subjectEntries: readonly PlannedEntry[],
-): Phase13TEntrySonoritySummary[] {
+): EntrySonoritySummary[] {
   return subjectEntries.map((entry) => summarizeEntrySonority(notes, entry));
 }
 
 export function summarizeEntryFormulaRecurrences(
-  entrySonorities: readonly Phase13TEntrySonoritySummary[],
-): Phase13UEntryFormulaSummary[] {
+  entrySonorities: readonly EntrySonoritySummary[],
+): EntryFormulaRecurrenceSummary[] {
   const formulas = new Map<
     string,
     {
-      summary: Phase13UEntryFormulaSummary;
+      summary: EntryFormulaRecurrenceSummary;
       unresolvedCount: number;
       justifiedCount: number;
     }
@@ -119,7 +119,7 @@ function entryFormulaJudgement(
   recurrenceCount: number,
   unresolvedCount: number,
   justifiedCount: number,
-): Phase13UEntryFormulaSummary["judgement"] {
+): EntryFormulaRecurrenceSummary["judgement"] {
   if (recurrenceCount < 2) {
     return "reduced";
   }
@@ -132,7 +132,7 @@ function entryFormulaJudgement(
   return "review-required";
 }
 
-function summarizeEntrySonority(notes: readonly NoteEvent[], entry: PlannedEntry): Phase13TEntrySonoritySummary {
+function summarizeEntrySonority(notes: readonly NoteEvent[], entry: PlannedEntry): EntrySonoritySummary {
   const checkpoints = entrySupportCheckpoints(notes, entry);
   let representativeTick = entry.startTick;
   let pitchClassUnisonStackCount = 0;
@@ -142,7 +142,7 @@ function summarizeEntrySonority(notes: readonly NoteEvent[], entry: PlannedEntry
   let preparedOrPassingCount = 0;
   let unresolvedAccentedClashCount = 0;
   const supportVoices = new Set<NoteEvent["voice"]>();
-  const kinds = new Set<Phase13TEntrySonorityKind>();
+  const kinds = new Set<EntrySonorityKind>();
 
   for (let index = 0; index < checkpoints.length; index += 1) {
     const tick = checkpoints[index]!;
@@ -221,7 +221,7 @@ function summarizeEntrySonority(notes: readonly NoteEvent[], entry: PlannedEntry
   };
 }
 
-function entryFormulaKey(sonority: Phase13TEntrySonoritySummary): string {
+function entryFormulaKey(sonority: EntrySonoritySummary): string {
   return [
     sonority.voice,
     sonority.state,
@@ -279,7 +279,7 @@ function isUnresolvedAccentedEntryClash(intervalClass: number, resolves: boolean
   );
 }
 
-function preparedOrPassingEntryKind(index: number): Phase13TEntrySonorityKind {
+function preparedOrPassingEntryKind(index: number): EntrySonorityKind {
   return index === 0 ? "prepared-suspension" : "passing-neighbor-motion";
 }
 
@@ -333,7 +333,7 @@ function resolutionDirection(
   notes: readonly NoteEvent[],
   entry: PlannedEntry,
   tick: number,
-): Phase13TEntrySonoritySummary["resolutionDirection"] {
+): EntrySonoritySummary["resolutionDirection"] {
   const current = entryNoteAt(notes, entry, tick);
   const next = notes
     .filter((note) => note.voice === entry.voice && note.startTick > tick)

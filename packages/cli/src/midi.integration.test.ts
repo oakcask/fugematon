@@ -684,12 +684,12 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
           entry.diagnosticsSummary.phase11Review.metricalHarmony.strongBeatCheckpointCount,
       );
       assert.deepEqual(entry.diagnosticsSummary.phraseRepetitionReview, entry.diagnosticsSummary.phase12Review);
-      assert.equal(entry.diagnosticsSummary.phase12Review.schemaVersion, 1);
-      assert.ok(entry.diagnosticsSummary.phase12Review.entryPatternFamilyConcentration.entryCount > 0);
-      assert.ok(entry.diagnosticsSummary.phase12Review.subjectStemFamilies.length > 0);
-      assert.ok(entry.diagnosticsSummary.phase12Review.answerTransformFamilies.length > 0);
-      assert.ok(entry.diagnosticsSummary.phase12Review.phraseFunctions.length > 0);
-      assert.equal(entry.diagnosticsSummary.phase12Review.sectionStatePatterns.patternLength, 4);
+      assert.equal(entry.diagnosticsSummary.phraseRepetitionReview.schemaVersion, 1);
+      assert.ok(entry.diagnosticsSummary.phraseRepetitionReview.entryPatternFamilyConcentration.entryCount > 0);
+      assert.ok(entry.diagnosticsSummary.phraseRepetitionReview.subjectStemFamilies.length > 0);
+      assert.ok(entry.diagnosticsSummary.phraseRepetitionReview.answerTransformFamilies.length > 0);
+      assert.ok(entry.diagnosticsSummary.phraseRepetitionReview.phraseFunctions.length > 0);
+      assert.equal(entry.diagnosticsSummary.phraseRepetitionReview.sectionStatePatterns.patternLength, 4);
       assert.deepEqual(entry.diagnosticsSummary.phraseConvergenceReview, entry.diagnosticsSummary.phase13RReview);
       assert.equal(entry.diagnosticsSummary.phase13RReview.selectionModel, summary.selectionModel);
       assert.ok(
@@ -714,7 +714,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
         entry.diagnosticsSummary.qualityVector.scoreBeautyEvidence,
         entry.diagnosticsSummary.qualityVector.phase13VReview,
       );
-      assert.equal(entry.diagnosticsSummary.qualityVector.phase13VReview.schemaVersion, 1);
+      assert.equal(entry.diagnosticsSummary.qualityVector.scoreBeautyEvidence.schemaVersion, 1);
       assert.ok(
         entry.diagnosticsSummary.qualityVector.axes.some(
           (axis) =>

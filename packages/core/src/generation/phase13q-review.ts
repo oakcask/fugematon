@@ -1,15 +1,15 @@
 import type {
   CandidateEvaluation,
-  Phase13LocalSentinelSummary,
-  Phase13QReviewSummary,
-  Phase13QSentinelCandidateLink,
-  Phase13QualityVector,
+  LocalSentinelCandidateTraceSummary,
+  LocalSentinelSummary,
+  QualityVector,
+  SentinelCandidateLink,
 } from "../events.js";
 
-export function buildPhase13QReviewSummary(
+export function buildLocalSentinelCandidateTraceSummary(
   selectedCandidateEvaluations: readonly CandidateEvaluation[],
-  qualityVector: Phase13QualityVector,
-): Phase13QReviewSummary {
+  qualityVector: QualityVector,
+): LocalSentinelCandidateTraceSummary {
   return {
     schemaVersion: 1,
     sentinelCandidateLinks: qualityVector.localSentinels.flatMap((sentinel) =>
@@ -19,10 +19,10 @@ export function buildPhase13QReviewSummary(
 }
 
 function linkSentinelToSelectedCandidate(
-  sentinel: Phase13LocalSentinelSummary,
+  sentinel: LocalSentinelSummary,
   selectedCandidateEvaluations: readonly CandidateEvaluation[],
-  qualityVector: Phase13QualityVector,
-): Phase13QSentinelCandidateLink[] {
+  qualityVector: QualityVector,
+): SentinelCandidateLink[] {
   const section = selectedCandidateEvaluations
     .flatMap((evaluation) => evaluation.explanations.sections)
     .find((candidateSection) => sectionContainsSentinel(candidateSection, sentinel));
@@ -57,7 +57,7 @@ function linkSentinelToSelectedCandidate(
 
 function sectionContainsSentinel(
   section: CandidateEvaluation["explanations"]["sections"][number],
-  sentinel: Phase13LocalSentinelSummary,
+  sentinel: LocalSentinelSummary,
 ): boolean {
   return (
     sentinel.startTick >= section.startTick &&
@@ -69,7 +69,7 @@ function sectionContainsSentinel(
 function entryBelongsToSentinelSection(
   entry: CandidateEvaluation["explanations"]["entries"][number],
   section: CandidateEvaluation["explanations"]["sections"][number],
-  sentinel: Phase13LocalSentinelSummary,
+  sentinel: LocalSentinelSummary,
 ): boolean {
   return (
     entry.startTick >= section.startTick &&
@@ -79,8 +79,8 @@ function entryBelongsToSentinelSection(
 }
 
 function entrySevereIntervalMatchesSentinel(
-  interval: Phase13QualityVector["entrySevereIntervals"][number],
-  sentinel: Phase13LocalSentinelSummary,
+  interval: QualityVector["entrySevereIntervals"][number],
+  sentinel: LocalSentinelSummary,
 ): boolean {
   return interval.voice === sentinel.voice && interval.representativeTick === sentinel.startTick;
 }

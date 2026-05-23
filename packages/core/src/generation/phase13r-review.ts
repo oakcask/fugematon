@@ -1,4 +1,9 @@
-import type { Phase12ReviewSummary, Phase13RReviewFinding, Phase13RReviewSummary, SelectionModel } from "../events.js";
+import type {
+  PhraseConvergenceReviewFinding,
+  PhraseConvergenceReviewSummary,
+  PhraseRepetitionReviewSummary,
+  SelectionModel,
+} from "../events.js";
 
 const ADOPTED_DEFAULT_SELECTION_MODEL: SelectionModel = "phase10-section-local-planner";
 const MAX_REPEATED_FOUR_SECTION_PATTERN_COUNT = 5;
@@ -7,12 +12,12 @@ const MAX_TOP_ENTRY_PATTERN_FAMILY_SHARE = 0.42;
 const MAX_TOP_SUBJECT_STEM_FAMILY_SHARE = 0.42;
 const MAX_TOP_SUBJECT_FRAGMENT_FAMILY_SHARE = 0.42;
 
-export function buildPhase13RReviewSummary(
+export function buildPhraseConvergenceReviewSummary(
   selectionModel: SelectionModel,
-  phase12Review: Phase12ReviewSummary,
-): Phase13RReviewSummary {
-  const metrics = collectPhase13RReviewMetrics(phase12Review);
-  const findings = collectPhase13RReviewFindings(selectionModel, metrics);
+  phraseRepetitionReview: PhraseRepetitionReviewSummary,
+): PhraseConvergenceReviewSummary {
+  const metrics = collectPhraseConvergenceReviewMetrics(phraseRepetitionReview);
+  const findings = collectPhraseConvergenceReviewFindings(selectionModel, metrics);
 
   return {
     schemaVersion: 1,
@@ -23,24 +28,26 @@ export function buildPhase13RReviewSummary(
   };
 }
 
-function collectPhase13RReviewMetrics(phase12Review: Phase12ReviewSummary): Phase13RReviewSummary["metrics"] {
-  const topSubjectStemFamilyShare = topSubjectFamilyShare(phase12Review, "subject");
-  const topSubjectFragmentFamilyShare = topSubjectFamilyShare(phase12Review, "subject-fragment");
+function collectPhraseConvergenceReviewMetrics(
+  phraseRepetitionReview: PhraseRepetitionReviewSummary,
+): PhraseConvergenceReviewSummary["metrics"] {
+  const topSubjectStemFamilyShare = topSubjectFamilyShare(phraseRepetitionReview, "subject");
+  const topSubjectFragmentFamilyShare = topSubjectFamilyShare(phraseRepetitionReview, "subject-fragment");
 
   return {
-    mostRepeatedFourSectionPatternCount: phase12Review.sectionStatePatterns.mostRepeatedPatternCount,
-    uniqueFourSectionPatternCount: phase12Review.sectionStatePatterns.uniquePatternCount,
-    topEntryPatternFamilyShare: phase12Review.entryPatternFamilyConcentration.topFamilyShare,
+    mostRepeatedFourSectionPatternCount: phraseRepetitionReview.sectionStatePatterns.mostRepeatedPatternCount,
+    uniqueFourSectionPatternCount: phraseRepetitionReview.sectionStatePatterns.uniquePatternCount,
+    topEntryPatternFamilyShare: phraseRepetitionReview.entryPatternFamilyConcentration.topFamilyShare,
     topSubjectStemFamilyShare,
     topSubjectFragmentFamilyShare,
   };
 }
 
-function collectPhase13RReviewFindings(
+function collectPhraseConvergenceReviewFindings(
   selectionModel: SelectionModel,
-  metrics: Phase13RReviewSummary["metrics"],
-): Phase13RReviewFinding[] {
-  const findings: Phase13RReviewFinding[] = [];
+  metrics: PhraseConvergenceReviewSummary["metrics"],
+): PhraseConvergenceReviewFinding[] {
+  const findings: PhraseConvergenceReviewFinding[] = [];
 
   if (selectionModel === "baseline") {
     findings.push({
@@ -57,7 +64,7 @@ function collectPhase13RReviewFindings(
     findings.push({
       code: "mechanical-section-pattern-repetition",
       severity: "review-required",
-      metric: "phase12Review.sectionStatePatterns.mostRepeatedPatternCount",
+      metric: "phraseRepetitionReview.sectionStatePatterns.mostRepeatedPatternCount",
       actual: metrics.mostRepeatedFourSectionPatternCount,
       expected: `<= ${MAX_REPEATED_FOUR_SECTION_PATTERN_COUNT}`,
       message: "A four-section continuation pattern repeats often enough to risk mechanical long-run form.",
@@ -68,7 +75,7 @@ function collectPhase13RReviewFindings(
     findings.push({
       code: "low-section-pattern-diversity",
       severity: "review-required",
-      metric: "phase12Review.sectionStatePatterns.uniquePatternCount",
+      metric: "phraseRepetitionReview.sectionStatePatterns.uniquePatternCount",
       actual: metrics.uniqueFourSectionPatternCount,
       expected: `>= ${MIN_UNIQUE_FOUR_SECTION_PATTERN_COUNT}`,
       message: "Continuation state patterns have too little variety for long-run playback review.",
@@ -78,7 +85,7 @@ function collectPhase13RReviewFindings(
   addShareFinding(
     findings,
     "entry-pattern-family-concentration",
-    "phase12Review.entryPatternFamilyConcentration.topFamilyShare",
+    "phraseRepetitionReview.entryPatternFamilyConcentration.topFamilyShare",
     metrics.topEntryPatternFamilyShare,
     MAX_TOP_ENTRY_PATTERN_FAMILY_SHARE,
     "One entry pattern family dominates the generated continuation enough to require phrase-convergence review.",
@@ -86,7 +93,7 @@ function collectPhase13RReviewFindings(
   addShareFinding(
     findings,
     "subject-stem-family-concentration",
-    "phase12Review.subjectStemFamilies.topSubjectShare",
+    "phraseRepetitionReview.subjectStemFamilies.topSubjectShare",
     metrics.topSubjectStemFamilyShare,
     MAX_TOP_SUBJECT_STEM_FAMILY_SHARE,
     "One subject stem family dominates subject returns enough to require phrase-family review.",
@@ -94,7 +101,7 @@ function collectPhase13RReviewFindings(
   addShareFinding(
     findings,
     "subject-fragment-family-concentration",
-    "phase12Review.subjectStemFamilies.topSubjectFragmentShare",
+    "phraseRepetitionReview.subjectStemFamilies.topSubjectFragmentShare",
     metrics.topSubjectFragmentFamilyShare,
     MAX_TOP_SUBJECT_FRAGMENT_FAMILY_SHARE,
     "One subject-fragment family dominates episodes enough to require phrase-derivation review.",
@@ -103,15 +110,18 @@ function collectPhase13RReviewFindings(
   return findings;
 }
 
-function topSubjectFamilyShare(phase12Review: Phase12ReviewSummary, form: "subject" | "subject-fragment"): number {
-  return phase12Review.subjectStemFamilies
+function topSubjectFamilyShare(
+  phraseRepetitionReview: PhraseRepetitionReviewSummary,
+  form: "subject" | "subject-fragment",
+): number {
+  return phraseRepetitionReview.subjectStemFamilies
     .filter((family) => family.form === form)
     .reduce((maxShare, family) => Math.max(maxShare, family.share), 0);
 }
 
 function addShareFinding(
-  findings: Phase13RReviewFinding[],
-  code: Phase13RReviewFinding["code"],
+  findings: PhraseConvergenceReviewFinding[],
+  code: PhraseConvergenceReviewFinding["code"],
   metric: string,
   actual: number,
   maximum: number,

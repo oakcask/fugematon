@@ -17,7 +17,7 @@ export function assertPhase14ScoreWindowHarnessInputs(seeds: readonly string[]):
     const diagnostics = generateScore({ seed, lengthTicks: TICKS_PER_QUARTER * 288 }).diagnostics;
     const scoreWindowInputs = {
       importantEntryWindowCount: diagnostics.entryBoundaryContinuity.importantEntryWindowCount,
-      dissonanceWindowCount: diagnostics.phase14DissonanceTriage.windows.length,
+      dissonanceWindowCount: diagnostics.dissonanceTriage.windows.length,
       activeVoicePairSpanCount: diagnostics.qualityVector.voicePairSpans.length,
       counterSubjectWindowCount: diagnostics.qualityVector.counterSubjectWindows.length,
       phraseDevelopmentWindowCount: diagnostics.phase13ZReview.windowCount,

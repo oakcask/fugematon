@@ -1,6 +1,6 @@
 import type { HarmonicPlan, Voice } from "../events.js";
 
-export function phase14SectionStateAt(
+export function scoreWindowSectionStateAt(
   tick: number,
   sectionPlans: readonly HarmonicPlan[],
 ): HarmonicPlan["state"] | "mixed" {
@@ -10,7 +10,7 @@ export function phase14SectionStateAt(
   );
 }
 
-export function phase14VoicePairs(voices: readonly Voice[]): [Voice, Voice][] {
+export function scoreWindowVoicePairs(voices: readonly Voice[]): [Voice, Voice][] {
   const pairs: [Voice, Voice][] = [];
   for (let leftIndex = 0; leftIndex < voices.length; leftIndex += 1) {
     for (let rightIndex = leftIndex + 1; rightIndex < voices.length; rightIndex += 1) {

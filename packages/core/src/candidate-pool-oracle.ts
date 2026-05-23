@@ -126,11 +126,7 @@ const BLOCKER_SPECS: readonly BlockerSpec[] = [
   },
   {
     blocker: "register-blending",
-    referenceAxes: [
-      "wideAdjacentVoiceSpacingCount",
-      "adjacentVoiceWideP75SemitoneExcess",
-      "registerSpanSemitoneTotal",
-    ],
+    referenceAxes: ["wideAdjacentVoiceSpacingCount", "adjacentVoiceWideP75SemitoneExcess", "registerSpanSemitoneTotal"],
     selectedRisk: (evaluation) =>
       candidateEvaluationFeature(evaluation, "texture", "wideAdjacentVoiceSpacingCount") +
       candidateEvaluationFeature(evaluation, "texture", "adjacentVoiceWideP75SemitoneExcess") +
