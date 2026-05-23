@@ -26,12 +26,14 @@
 - When changing code, make small, nearby, behavior-preserving refactors that improve progressive disclosure within the touched ownership boundary.
 - Keep PR-sized refactors in prerequisite stacked PRs when they prepare later feature, fix, or scoring work.
 - If a change affects a public contract, generated output shape, or planned behavior, update the relevant tests and docs.
+- When renaming or removing symbols, fields, exported types, JSON keys, CLI output keys, metrics, diagnostics names, or aliases, use `symbol-rename-audit` before reporting the work complete.
 - Place scripts invoked from GitHub Workflows under `workflow-scripts/`.
 
 ## Task-Specific Skills
 
 - Use `docs-progressive-disclosure` when creating, reorganizing, splitting, merging, or maintaining documentation structure.
 - Use `repo-guardrails` when adding, revising, or evaluating agent behavior rules, repository policies, AGENTS.md instructions, workflow safety, or enforcement mechanisms.
+- Use `symbol-rename-audit` when renaming, removing, or replacing symbols, fields, exported types, JSON keys, CLI output keys, metric names, diagnostics names, or compatibility aliases.
 - Use `git-editor-guardrail` when running git commands that may open an editor or when choosing the noninteractive form of commit, amend, rebase, merge, revert, or tag operations.
 - Use `conventional-commits` when authoring commit messages or PR titles.
 - Use `change-rationale-writing` when drafting commit bodies, PR descriptions, changelog entries, release notes, or decision records.
