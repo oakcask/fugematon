@@ -31,7 +31,7 @@ import { analyzeEntryBoundaryContinuity } from "./entry-boundary-continuity.js";
 import { chordTonePitchClasses, nearestHarmonicAnchor, rootDegreeForFunction } from "./harmony.js";
 import { analyzeHarmonicPlans } from "./harmony-diagnostics.js";
 import { isModalMode, tonicPitchClass } from "./key.js";
-import { analyzeDissonanceTriage } from "./phase14-dissonance-triage.js";
+import { analyzeDissonanceTriage } from "./dissonance-triage.js";
 import { scaleDegreePitchClass } from "./pitch.js";
 import { analyzeQualityVector } from "./quality-vector.js";
 import {

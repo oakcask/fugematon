@@ -7,7 +7,7 @@ import type {
   MetricalHarmonyIntent,
   NoteRole,
 } from "../events.js";
-import { scoreWindowSectionStateAt, scoreWindowVoicePairs } from "./phase14-score-window-shared.js";
+import { scoreWindowSectionStateAt, scoreWindowVoicePairs } from "./score-window-shared.js";
 import { positiveModulo, VOICE_ENTRY_ORDER } from "./shared.js";
 import type { ActivePitch } from "./types.js";
 import { halfBeatVerticalities } from "./verticality.js";
