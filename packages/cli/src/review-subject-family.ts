@@ -61,7 +61,7 @@ type SubjectFamilySeed = {
   seed: string;
   initialSubjectProfile: InitialSubjectProfile;
   diagnosticsSummary: {
-    phase12Review: GenerationDiagnostics["phase12Review"];
+    phraseRepetitionReview: GenerationDiagnostics["phraseRepetitionReview"];
   };
 };
 
@@ -210,7 +210,7 @@ function initialSubjectFamilyKey(profile: InitialSubjectProfile): string {
 function summarizeSubjectFragmentFamilies(seeds: readonly SubjectFamilySeed[]): SubjectFragmentFamilySummary[] {
   const counts = new Map<string, { pattern: number[]; seeds: Set<string> }>();
   for (const seed of seeds) {
-    const topFragment = seed.diagnosticsSummary.phase12Review.subjectStemFamilies.find(
+    const topFragment = seed.diagnosticsSummary.phraseRepetitionReview.subjectStemFamilies.find(
       (family) => family.form === "subject-fragment",
     );
     if (topFragment === undefined) {

@@ -14,12 +14,6 @@ import {
   evaluateBaselineBeautyGate,
   evaluateContourMotionGate,
   evaluateMelodyTextureGate,
-  evaluatePhase6Diagnostics,
-  evaluatePhase7BGatePolicy,
-  evaluatePhase7Diagnostics,
-  evaluatePhase59Diagnostics,
-  evaluatePhase510Diagnostics,
-  evaluatePhase511Diagnostics,
   evaluateReviewGatePolicy,
   evaluateRotationRobustnessGate,
   evaluateVoiceIndependenceGate,
@@ -29,12 +23,6 @@ import {
   type BaselineBeautyGateResult,
   type ContourMotionGateResult,
   type MelodyTextureGateResult,
-  type Phase6GateResult,
-  type Phase7BGatePolicyResult,
-  type Phase7GateResult,
-  type Phase59GateResult,
-  type Phase510GateResult,
-  type Phase511GateResult,
   type ReviewGatePolicyResult,
   type RotationRobustnessGateResult,
   type VoiceIndependenceGateResult,
@@ -187,12 +175,12 @@ type ReviewSummarySeed = {
   melodyTextureGate: MelodyTextureGateResult;
   contourMotionGate: ContourMotionGateResult;
   reviewGatePolicy: ReviewGatePolicyResult;
-  phase59Gate: Phase59GateResult;
-  phase510Gate: Phase510GateResult;
-  phase511Gate: Phase511GateResult;
-  phase6Gate: Phase6GateResult;
-  phase7Gate: Phase7GateResult;
-  phase7BGate: Phase7BGatePolicyResult;
+  phase59Gate: BaselineBeautyGateResult;
+  phase510Gate: VoiceIndependenceGateResult;
+  phase511Gate: RotationRobustnessGateResult;
+  phase6Gate: MelodyTextureGateResult;
+  phase7Gate: ContourMotionGateResult;
+  phase7BGate: ReviewGatePolicyResult;
 };
 
 function createReviewSummarySeed({
@@ -215,6 +203,15 @@ function createReviewSummarySeed({
 } {
   const diagnostics = output.diagnostics;
   const referenceComparison = compareDiagnosticsToReferenceProfile(diagnostics);
+  const baselineBeautyGate = evaluateBaselineBeautyGate(seed, diagnostics);
+  const voiceIndependenceGate = evaluateVoiceIndependenceGate(seed, diagnostics);
+  const rotationRobustnessGate = evaluateRotationRobustnessGate(seed, diagnostics);
+  const melodyTextureGate = evaluateMelodyTextureGate(seed, diagnostics);
+  const contourMotionGate = evaluateContourMotionGate(seed, diagnostics);
+  const reviewGatePolicy = evaluateReviewGatePolicy(seed, diagnostics, {
+    manualListeningCategory: category,
+    manualListeningJudgement: "not-reviewed",
+  });
 
   return {
     referenceComparison,
@@ -227,30 +224,24 @@ function createReviewSummarySeed({
       initialSubjectProfile: summarizeInitialSubjectProfile(output),
       diagnosticsSummary: summarizeDiagnostics(diagnostics),
       referenceComparison,
-      baselineBeautyGate: evaluateBaselineBeautyGate(seed, diagnostics),
-      voiceIndependenceGate: evaluateVoiceIndependenceGate(seed, diagnostics),
-      rotationRobustnessGate: evaluateRotationRobustnessGate(seed, diagnostics),
-      melodyTextureGate: evaluateMelodyTextureGate(seed, diagnostics),
-      contourMotionGate: evaluateContourMotionGate(seed, diagnostics),
-      reviewGatePolicy: evaluateReviewGatePolicy(seed, diagnostics, {
-        manualListeningCategory: category,
-        manualListeningJudgement: "not-reviewed",
-      }),
-      phase59Gate: evaluatePhase59Diagnostics(seed, diagnostics),
-      phase510Gate: evaluatePhase510Diagnostics(seed, diagnostics),
-      phase511Gate: evaluatePhase511Diagnostics(seed, diagnostics),
-      phase6Gate: evaluatePhase6Diagnostics(seed, diagnostics),
-      phase7Gate: evaluatePhase7Diagnostics(seed, diagnostics),
-      phase7BGate: evaluatePhase7BGatePolicy(seed, diagnostics, {
-        manualListeningCategory: category,
-        manualListeningJudgement: "not-reviewed",
-      }),
+      baselineBeautyGate,
+      voiceIndependenceGate,
+      rotationRobustnessGate,
+      melodyTextureGate,
+      contourMotionGate,
+      reviewGatePolicy,
+      phase59Gate: baselineBeautyGate,
+      phase510Gate: voiceIndependenceGate,
+      phase511Gate: rotationRobustnessGate,
+      phase6Gate: melodyTextureGate,
+      phase7Gate: contourMotionGate,
+      phase7BGate: reviewGatePolicy,
     },
   };
 }
 
 type AbReviewComparisonSummary = {
-  schemaVersion: 3;
+  schemaVersion: 4;
   lengthTicks: number;
   baseline: ReviewBundleSide;
   variant: ReviewBundleSide;
@@ -287,14 +278,22 @@ type ReviewSeedComparisonSnapshot = {
   diagnosticsSummary: ReviewDiagnosticsSummary;
   referenceComparison: ReferenceDiagnosticsComparison;
   candidatePoolOracle: CandidatePoolOracleSummary;
+  reviewGatePolicy: {
+    phase8Ready: boolean;
+    hardFailureCount: number;
+    hardFailures: ReviewGatePolicyResult["hardFailures"];
+    reviewSignalCount: number;
+    reviewSignals: ReviewGatePolicyResult["reviewSignals"];
+  };
   phase7BGate: {
     phase8Ready: boolean;
     hardFailureCount: number;
-    hardFailures: Phase7BGatePolicyResult["hardFailures"];
+    hardFailures: ReviewGatePolicyResult["hardFailures"];
     reviewSignalCount: number;
-    reviewSignals: Phase7BGatePolicyResult["reviewSignals"];
+    reviewSignals: ReviewGatePolicyResult["reviewSignals"];
   };
   qualityVector: GenerationDiagnostics["qualityVector"];
+  phraseConvergenceReview: GenerationDiagnostics["phraseConvergenceReview"];
   phase13RReview: GenerationDiagnostics["phase13RReview"];
 };
 
@@ -302,10 +301,13 @@ type ReviewSeedComparisonDeltas = {
   hardConstraintFailures: number;
   referenceOutsideCount: number;
   candidatePoolViableCandidates: number;
+  reviewPolicyHardFailures: number;
+  reviewPolicyReviewSignals: number;
   phase7BHardFailures: number;
   phase7BReviewSignals: number;
   qualityVectorDistance: number;
   localSentinelCount: number;
+  phraseConvergenceReviewFindings: number;
   phase13RReviewFindings: number;
   phase8ReadyChanged: boolean;
 };
@@ -460,7 +462,7 @@ function compareReviewSummaries({
   variantSummary: ReviewSummary;
 }): AbReviewComparisonSummary {
   return {
-    schemaVersion: 3,
+    schemaVersion: 4,
     lengthTicks,
     baseline: {
       label: baselineLabel,
@@ -497,14 +499,21 @@ function compareReviewSeed(baselineSeed: ReviewSummarySeed, variantSeed: ReviewS
       variant.referenceComparison.outsideReferenceCount - baseline.referenceComparison.outsideReferenceCount,
     candidatePoolViableCandidates:
       variant.candidatePoolOracle.viableCandidateCount - baseline.candidatePoolOracle.viableCandidateCount,
-    phase7BHardFailures: variant.phase7BGate.hardFailureCount - baseline.phase7BGate.hardFailureCount,
-    phase7BReviewSignals: variant.phase7BGate.reviewSignalCount - baseline.phase7BGate.reviewSignalCount,
+    reviewPolicyHardFailures:
+      variant.reviewGatePolicy.hardFailureCount - baseline.reviewGatePolicy.hardFailureCount,
+    reviewPolicyReviewSignals:
+      variant.reviewGatePolicy.reviewSignalCount - baseline.reviewGatePolicy.reviewSignalCount,
+    phase7BHardFailures: variant.reviewGatePolicy.hardFailureCount - baseline.reviewGatePolicy.hardFailureCount,
+    phase7BReviewSignals: variant.reviewGatePolicy.reviewSignalCount - baseline.reviewGatePolicy.reviewSignalCount,
     qualityVectorDistance: roundRatio(
       qualityVectorDistance(variant.qualityVector) - qualityVectorDistance(baseline.qualityVector),
     ),
     localSentinelCount: variant.qualityVector.localSentinels.length - baseline.qualityVector.localSentinels.length,
-    phase13RReviewFindings: variant.phase13RReview.findings.length - baseline.phase13RReview.findings.length,
-    phase8ReadyChanged: variant.phase7BGate.phase8Ready !== baseline.phase7BGate.phase8Ready,
+    phraseConvergenceReviewFindings:
+      variant.phraseConvergenceReview.findings.length - baseline.phraseConvergenceReview.findings.length,
+    phase13RReviewFindings:
+      variant.phraseConvergenceReview.findings.length - baseline.phraseConvergenceReview.findings.length,
+    phase8ReadyChanged: variant.reviewGatePolicy.phase8Ready !== baseline.reviewGatePolicy.phase8Ready,
   };
 
   return {
@@ -526,19 +535,23 @@ function compareReviewSeed(baselineSeed: ReviewSummarySeed, variantSeed: ReviewS
 }
 
 function createReviewSeedSnapshot(seed: ReviewSummarySeed): ReviewSeedComparisonSnapshot {
+  const reviewGatePolicy = {
+    phase8Ready: seed.reviewGatePolicy.phase8Ready,
+    hardFailureCount: seed.reviewGatePolicy.metrics.hardFailureCount,
+    hardFailures: seed.reviewGatePolicy.hardFailures,
+    reviewSignalCount: seed.reviewGatePolicy.reviewSignals.length,
+    reviewSignals: seed.reviewGatePolicy.reviewSignals,
+  };
+
   return {
     diagnosticsSummary: seed.diagnosticsSummary,
     referenceComparison: seed.referenceComparison,
     candidatePoolOracle: seed.diagnosticsSummary.candidatePoolOracle,
-    phase7BGate: {
-      phase8Ready: seed.phase7BGate.phase8Ready,
-      hardFailureCount: seed.phase7BGate.metrics.hardFailureCount,
-      hardFailures: seed.phase7BGate.hardFailures,
-      reviewSignalCount: seed.phase7BGate.reviewSignals.length,
-      reviewSignals: seed.phase7BGate.reviewSignals,
-    },
+    reviewGatePolicy,
+    phase7BGate: reviewGatePolicy,
     qualityVector: seed.diagnosticsSummary.qualityVector,
-    phase13RReview: seed.diagnosticsSummary.phase13RReview,
+    phraseConvergenceReview: seed.diagnosticsSummary.phraseConvergenceReview,
+    phase13RReview: seed.diagnosticsSummary.phraseConvergenceReview,
   };
 }
 
@@ -551,16 +564,16 @@ function describeImprovements(
   if (deltas.hardConstraintFailures < 0) {
     improvements.push("hard constraint failures decreased");
   }
-  if (deltas.phase7BHardFailures < 0) {
-    improvements.push("Phase 7B hard failures decreased");
+  if (deltas.reviewPolicyHardFailures < 0) {
+    improvements.push("review policy hard failures decreased");
   }
-  if (!baseline.phase7BGate.phase8Ready && variant.phase7BGate.phase8Ready) {
-    improvements.push("Phase 8 readiness recovered");
+  if (!baseline.reviewGatePolicy.phase8Ready && variant.reviewGatePolicy.phase8Ready) {
+    improvements.push("operational readiness recovered");
   }
   if (deltas.referenceOutsideCount < 0) {
     improvements.push("reference comparison has fewer outside-profile axes");
   }
-  if (deltas.phase7BReviewSignals < 0) {
+  if (deltas.reviewPolicyReviewSignals < 0) {
     improvements.push("review-required signal count decreased");
   }
   if (deltas.candidatePoolViableCandidates > 0) {
@@ -572,8 +585,8 @@ function describeImprovements(
   if (deltas.localSentinelCount < 0) {
     improvements.push("local sentinel count decreased");
   }
-  if (deltas.phase13RReviewFindings < 0) {
-    improvements.push("Phase 13R convergence review findings decreased");
+  if (deltas.phraseConvergenceReviewFindings < 0) {
+    improvements.push("phrase convergence review findings decreased");
   }
 
   return improvements;
@@ -588,16 +601,16 @@ function describeRegressions(
   if (deltas.hardConstraintFailures > 0) {
     regressions.push("hard constraint failures increased");
   }
-  if (deltas.phase7BHardFailures > 0) {
-    regressions.push("Phase 7B hard failures increased");
+  if (deltas.reviewPolicyHardFailures > 0) {
+    regressions.push("review policy hard failures increased");
   }
-  if (baseline.phase7BGate.phase8Ready && !variant.phase7BGate.phase8Ready) {
-    regressions.push("Phase 8 readiness was lost");
+  if (baseline.reviewGatePolicy.phase8Ready && !variant.reviewGatePolicy.phase8Ready) {
+    regressions.push("operational readiness was lost");
   }
   if (deltas.referenceOutsideCount > 0) {
     regressions.push("reference comparison has more outside-profile axes");
   }
-  if (deltas.phase7BReviewSignals > 0) {
+  if (deltas.reviewPolicyReviewSignals > 0) {
     regressions.push("review-required signal count increased");
   }
   if (deltas.candidatePoolViableCandidates < 0) {
@@ -609,8 +622,8 @@ function describeRegressions(
   if (deltas.localSentinelCount > 0) {
     regressions.push("local sentinel count increased");
   }
-  if (deltas.phase13RReviewFindings > 0) {
-    regressions.push("Phase 13R convergence review findings increased");
+  if (deltas.phraseConvergenceReviewFindings > 0) {
+    regressions.push("phrase convergence review findings increased");
   }
 
   return regressions;
