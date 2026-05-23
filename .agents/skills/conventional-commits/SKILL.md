@@ -30,6 +30,9 @@ Use this format:
   Use `feat` only when adding product capability, and use `fix` only when
   correcting product behavior.
 - Use `chore` for agent-instruction changes, including `AGENTS.md` and skills updates.
+- When the type is `docs`, do not include a scope in commit subjects or PR
+  titles. Use `docs: clarify setup`, not `docs(readme): clarify setup`, even
+  when the changed document has a clear area.
 - Add a scope only when it names the affected component, package, subsystem, surface, or document, for example `fix(auth): handle expired tokens`.
 - Prefer scopes such as `cli`, `core`, `api`, `parser`, `readme`, or `agents` when they match the actual area changed.
 - Do not use project phases, milestones, ticket names, branch names, release labels, or vague workstream labels as scopes. Examples to avoid: `phase`, `phase-1`, `milestone`, `sprint`, `ticket-123`, `complete-phase-1`.
@@ -48,6 +51,7 @@ Before creating or amending a commit:
 3. Select the most specific conventional type and, if useful, a scope that names the changed component or surface.
    If the staged changes only affect `.github/workflows`, `workflow-scripts`, CI
    policy, or CI automation tests, use `chore(ci)`, not `feat` or `fix`.
+   If the selected type is `docs`, omit the scope.
 4. If multiple unrelated intents are staged, tell the user and either split commits when asked or choose the dominant intent.
 5. Create the commit with a Conventional Commit message.
 
@@ -58,6 +62,7 @@ Before creating or updating a PR title:
 3. Select the most specific conventional type and, if useful, a scope that names the changed component or surface.
    If the PR only changes `.github/workflows`, `workflow-scripts`, CI policy, or CI
    automation tests, use `chore(ci)`, not `feat` or `fix`.
+   If the selected type is `docs`, omit the scope.
 4. Write the PR title as a single Conventional Commit subject line.
 5. If the PR combines unrelated intents, tell the user and choose the dominant intent unless asked to split the work.
 
@@ -65,7 +70,7 @@ Before creating or updating a PR title:
 
 - `feat(cli): add dry-run option`
 - `fix(api): preserve request headers`
-- `docs(readme): clarify setup steps`
+- `docs: clarify setup steps`
 - `refactor(cache)!: replace storage format`
 - `feat: complete phase 1 validation`
-- `docs(core): document phase 1 diagnostics`
+- `docs: document phase 1 diagnostics`
