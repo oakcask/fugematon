@@ -359,31 +359,36 @@ function summarizePhase12SubjectStemFamilies(
     (entry): entry is PlannedEntry & { form: "subject" | "subject-fragment" } =>
       entry.form === "subject" || entry.form === "subject-fragment",
   );
-  const counts = new Map<string, { form: "subject" | "subject-fragment"; pattern: number[]; count: number }>();
+  const counts = new Map<
+    string,
+    { form: "subject" | "subject-fragment"; pattern: number[]; count: number; firstStartTick: number }
+  >();
 
   for (const entry of stemEntries) {
     const pattern = [...entry.expectedDegreePattern];
     const key = `${entry.form}:${pattern.join("-")}`;
     const current = counts.get(key);
     if (current === undefined) {
-      counts.set(key, { form: entry.form, pattern, count: 1 });
+      counts.set(key, { form: entry.form, pattern, count: 1, firstStartTick: entry.startTick });
     } else {
       current.count += 1;
+      current.firstStartTick = Math.min(current.firstStartTick, entry.startTick);
     }
   }
 
   return [...counts.values()]
-    .map((family) => ({
-      ...family,
-      share: roundRatio(family.count / Math.max(1, stemEntries.length)),
-    }))
     .sort(
       (left, right) =>
         right.count - left.count ||
+        left.firstStartTick - right.firstStartTick ||
         left.form.localeCompare(right.form) ||
         left.pattern.join("-").localeCompare(right.pattern.join("-")),
     )
-    .slice(0, 8);
+    .slice(0, 8)
+    .map(({ firstStartTick: _firstStartTick, ...family }) => ({
+      ...family,
+      share: roundRatio(family.count / Math.max(1, stemEntries.length)),
+    }));
 }
 
 function summarizePhase12AnswerTransformFamilies(

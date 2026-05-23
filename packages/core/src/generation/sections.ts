@@ -11,6 +11,7 @@ import type {
   HarmonicPlan,
   KeySignature,
   NoteEvent,
+  PlannedEntry,
   SelectionModel,
   SequencePattern,
   StyleProfile,
@@ -123,6 +124,7 @@ export function buildFugueScore(
       selectionModel,
       [...stateTransitions, state],
       sectionPlans,
+      subjectEntries,
       phraseIntent,
     );
     if (selectionModel === "phase10-section-local-planner") {
@@ -633,6 +635,7 @@ export function chooseContinuationSection(
   selectionModel: SelectionModel = "baseline",
   stateHistory: readonly FugueState[] = [state],
   previousSectionPlans: readonly HarmonicPlan[] = [],
+  previousSubjectEntries: readonly PlannedEntry[] = [],
   phraseIntent?: ContinuationPhraseSectionIntent,
 ): {
   section: Exposition;
@@ -683,19 +686,25 @@ export function chooseContinuationSection(
     const candidateScore =
       selectionScore(evaluation, selectionModel) +
       (selectionModel === "phase10-section-local-planner"
-        ? sectionGrammarPlannerSelectionRiskAdjustment(evaluation, historyContext, candidateBand === "section-grammar")
+        ? sectionGrammarPlannerSelectionRiskAdjustment(
+            evaluation,
+            historyContext,
+            candidateBand === "section-grammar",
+          ) + phraseDevelopmentSelectionRiskAdjustment(candidates[index]!, previousSubjectEntries, historyContext)
         : 0);
     const bestScore =
       selectionModel === "phase10-section-local-planner" && bestIndex < selectionWindow.baselineCandidateCount
         ? selectionScore(evaluations[bestIndex]!, "phase10-oracle-selection") +
-          sectionGrammarPlannerSelectionRiskAdjustment(evaluations[bestIndex]!, historyContext, false)
+          sectionGrammarPlannerSelectionRiskAdjustment(evaluations[bestIndex]!, historyContext, false) +
+          phraseDevelopmentSelectionRiskAdjustment(candidates[bestIndex]!, previousSubjectEntries, historyContext)
         : selectionScore(evaluations[bestIndex]!, selectionModel) +
           (selectionModel === "phase10-section-local-planner"
             ? sectionGrammarPlannerSelectionRiskAdjustment(
                 evaluations[bestIndex]!,
                 historyContext,
                 continuationCandidateSelectionBand(bestIndex, selectionWindow, selectionModel) === "section-grammar",
-              )
+              ) +
+              phraseDevelopmentSelectionRiskAdjustment(candidates[bestIndex]!, previousSubjectEntries, historyContext)
             : 0);
     if (candidateScore < bestScore) {
       bestIndex = index;
@@ -1031,7 +1040,7 @@ function sectionLocalPlannerSelectionRiskAdjustment(
   const highSoloTextureSections = evaluation.explanations.sections.filter((section) => section.soloTextureRisk >= 6);
   const soloTextureRisk = highSoloTextureSections.reduce((sum, section) => sum + section.soloTextureRisk, 0);
 
-  return -soloTextureRisk * 12;
+  return soloTextureRisk * 12;
 }
 
 function sectionGrammarPlannerSelectionRiskAdjustment(
@@ -1053,6 +1062,48 @@ function sectionGrammarPlannerSelectionRiskAdjustment(
   });
 
   return score * 80 + (isSectionGrammarCandidate ? -4 : 0);
+}
+
+function phraseDevelopmentSelectionRiskAdjustment(
+  candidate: Exposition,
+  previousSubjectEntries: readonly PlannedEntry[],
+  context: HistoryAwareSelectionContext,
+): number {
+  if (!context.enabled) {
+    return 0;
+  }
+
+  const candidateEntry = candidate.subjectEntries.find(
+    (entry) => entry.state !== "exposition" && (entry.form === "subject" || entry.form === "subject-fragment"),
+  );
+  if (candidateEntry === undefined) {
+    return 0;
+  }
+
+  const recentEntries = previousSubjectEntries
+    .filter((entry) => entry.state !== "exposition" && entry.form === candidateEntry.form)
+    .slice(-12);
+  const candidateStem = candidateEntry.expectedDegreePattern.join("-");
+  const sameStemCount = recentEntries.filter((entry) => entry.expectedDegreePattern.join("-") === candidateStem).length;
+  const sameStemSameVoiceCount = recentEntries.filter(
+    (entry) => entry.expectedDegreePattern.join("-") === candidateStem && entry.voice === candidateEntry.voice,
+  ).length;
+  const section = candidate.sectionPlans[0];
+  const functionBearingReward =
+    section?.cadenceKind === "authentic" ||
+    section?.cadenceKind === "modal" ||
+    section?.state === "stretto-like" ||
+    recentEntries.some(
+      (entry) =>
+        entry.expectedDegreePattern.join("-") === candidateStem &&
+        (entry.voice !== candidateEntry.voice ||
+          entry.localKey.tonic !== candidateEntry.localKey.tonic ||
+          entry.localKey.mode !== candidateEntry.localKey.mode),
+    )
+      ? 24
+      : 0;
+
+  return sameStemCount * 180 + sameStemSameVoiceCount * 90 - functionBearingReward;
 }
 
 function bestContinuationCandidateIndex(
@@ -1126,7 +1177,7 @@ export function buildContinuationCandidates(
   const sectionGrammarCandidates: Exposition[] = [];
   const phraseFamilyOracleCandidates: Exposition[] = [];
   const includeSectionLocalPlannerCandidates = selectionModel === "phase10-section-local-planner";
-  const phraseSubject = phraseSubjectForIntent(subject, state, selectionModel, phraseIntent);
+  const phraseSubject = phraseSubjectForIntent(subject, state, startTick, selectionModel, phraseIntent);
 
   if (state === "episode") {
     for (const voice of rng.shuffle(VOICE_ENTRY_ORDER)) {
@@ -1218,7 +1269,7 @@ export function buildContinuationCandidates(
     for (const firstVoice of rng.shuffle(VOICE_ENTRY_ORDER)) {
       for (const secondVoice of rng.shuffle(VOICE_ENTRY_ORDER.filter((voice) => voice !== firstVoice))) {
         candidates.push(
-          buildStrettoSection(subject.slice(0, 6), {
+          buildStrettoSection(phraseSubject.slice(0, 6), {
             state,
             firstVoice,
             secondVoice,
@@ -1264,19 +1315,42 @@ export function buildContinuationCandidates(
 function phraseSubjectForIntent(
   subject: readonly SubjectNote[],
   state: FugueState,
+  startTick: number,
   selectionModel: SelectionModel,
   phraseIntent: ContinuationPhraseSectionIntent | undefined,
 ): readonly SubjectNote[] {
-  if (selectionModel !== "phase10-section-local-planner" || phraseIntent === undefined || state !== "episode") {
+  if (selectionModel !== "phase10-section-local-planner" || phraseIntent === undefined) {
     return subject;
   }
-  if (phraseIntent.densityArc === "balanced") {
-    return deriveSubjectStem(subject, [0, 2, 1, 3, 4, 3, 2, 1]);
+  if (state === "episode") {
+    if (phraseIntent.densityArc === "balanced") {
+      return deriveSubjectStemFromSource(subject, [0, 2, 1, 3, 4, 5, 6, 7]);
+    }
+    if (phraseIntent.densityArc === "full") {
+      return deriveSubjectStemFromSource(subject, [0, 1, 3, 2, 4, 5, 6, 7]);
+    }
+    return subject;
   }
-  if (phraseIntent.densityArc === "full") {
-    return deriveSubjectStem(subject, [0, 1, 3, 2, 4, 3, 1, 2]);
+  if (state === "subject-return") {
+    const returnPatterns = [
+      [0, 2, 1, 3, 4, 2, 3, 1],
+      [0, 1, 3, 2, 4, 2, 3, 1],
+      [0, 2, 3, 1, 4, 3, 1, 2],
+    ] as const;
+    const variantIndex =
+      (phraseIntent.densityArc === "full" ? 1 : phraseIntent.densityArc === "thin" ? 2 : 0) +
+      Math.floor(startTick / (TICKS_PER_QUARTER * 16));
+    return deriveSubjectStemFromSource(subject, returnPatterns[variantIndex % returnPatterns.length]!);
   }
-  return subject;
+  const strettoPatterns = [
+    [0, 2, 1, 4, 3, 2, 1, 3],
+    [0, 1, 3, 4, 2, 1, 3, 2],
+    [0, 2, 3, 1, 4, 2, 1, 3],
+  ] as const;
+  const variantIndex =
+    (phraseIntent.densityArc === "full" ? 1 : phraseIntent.densityArc === "thin" ? 2 : 0) +
+    Math.floor(startTick / (TICKS_PER_QUARTER * 16));
+  return deriveSubjectStemFromSource(subject, strettoPatterns[variantIndex % strettoPatterns.length]!);
 }
 
 function preferredOffsets<const T extends readonly number[]>(offsets: T, preferredOffset: number | undefined): T {
@@ -1437,6 +1511,14 @@ function deriveSubjectStem(subject: readonly SubjectNote[], degreePattern: reado
       melodicRole: melodicRoleForScaleDegree(scaleDegree),
     };
   });
+}
+
+function deriveSubjectStemFromSource(subject: readonly SubjectNote[], sourceIndexes: readonly number[]): SubjectNote[] {
+  const sourceDegrees = subject.map((note) => note.scaleDegree);
+  return deriveSubjectStem(
+    subject,
+    sourceIndexes.map((sourceIndex) => sourceDegrees[Math.min(sourceIndex, sourceDegrees.length - 1)] ?? 0),
+  );
 }
 
 function buildEpisodeGrammarOracleCandidates(

@@ -7,8 +7,8 @@ test("generateScore applies phase-11 and phase-12 phrase-unit planning across re
     uniqueContinuationPatternRatio: 3.4,
     sectionGrammarRiskRatio: 0.2,
     topEntryPatternFamilyDelta: -3,
-    unisonOverlapDelta: 208,
-    sharedRhythmOverlapDelta: 160,
-    leapRecoveryMissDelta: 35,
+    unisonOverlapDelta: 150,
+    sharedRhythmOverlapDelta: 140,
+    leapRecoveryMissDelta: 44,
   });
 });

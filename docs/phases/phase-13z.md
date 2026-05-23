@@ -2,9 +2,10 @@
 
 Phase 13Z is inserted after Phase 13Y and before Phase 14. Its purpose is to repair the long-run phrase convergence that remains after initial subject diversity improved: later continuation sections can still sound like repeated phrases because subject returns, stretto-like entries, and episode fragments reuse a small set of subject-stem families.
 
-Status: current implementation target. Phase 8 is deferred until Phase 13Z records score-window, diagnostics, and focused listening evidence for long-run phrase development, then Phase 14 records score-led beauty evidence that current metrics actually explain the accepted score windows.
+Status: complete. Phase 13Z records score-window, diagnostics, and focused listening evidence for long-run phrase development. Phase 8 remains deferred until Phase 14 records score-led beauty evidence that current metrics actually explain the accepted score windows.
 
 Planning review: [Phase 13Z long-run phrase review](../reviews/phase-13z-long-run-phrase-review.md).
+Completion review: [Phase 13Z completion review](../reviews/phase-13z-completion-review.md).
 
 ## Rationale
 
@@ -49,4 +50,4 @@ Fugue material should recur recognizably, but recurrence needs a changed role: n
 
 ## Phase 14 Handoff
 
-Phase 14 may start only after Phase 13Z records long-run phrase-development evidence. Phase 14 must preserve phrase-recurrence diagnostics as review signals while it checks whether entry continuity, line agency, counter-subject survivability, and phrase development are beautiful in the generated score. Phase 8 may resume only after Phase 14 records that score-led evidence.
+Phase 14 may start. It must preserve `phase13ZReview` phrase-recurrence diagnostics as review signals while it checks whether entry continuity, line agency, counter-subject survivability, and phrase development are beautiful in the generated score. Remaining mechanical-reuse windows are accepted for Phase 13Z only as review signals under the completion-review budget. Phase 8 may resume only after Phase 14 records that score-led evidence.

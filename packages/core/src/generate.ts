@@ -9,6 +9,7 @@ import { analyzeScore } from "./generation/diagnostics.js";
 import { chooseKeySignature, chooseTempo, chooseTimeSignature } from "./generation/key.js";
 import { buildPhase13QReviewSummary } from "./generation/phase13q-review.js";
 import { buildPhase13RReviewSummary } from "./generation/phase13r-review.js";
+import { buildPhase13ZReviewSummary } from "./generation/phase13z-review.js";
 import { buildFugueScore } from "./generation/sections.js";
 import { buildSubject } from "./generation/subject.js";
 import { Xoshiro128StarStar } from "./prng.js";
@@ -27,6 +28,11 @@ export function generateScore(input: GenerationInput): GenerationOutput {
   const diagnostics = analyzeScore(score.notes, score.subjectEntries, score.sectionPlans);
   const phase13QReview = buildPhase13QReviewSummary(score.selectedCandidateEvaluations, diagnostics.qualityVector);
   const phase13RReview = buildPhase13RReviewSummary(selectionModel, diagnostics.phase12Review);
+  const phase13ZReview = buildPhase13ZReviewSummary(
+    score.subjectEntries,
+    score.sectionPlans,
+    diagnostics.phase12Review,
+  );
   const generatedUntilTick = Math.max(input.lengthTicks, score.endTick);
 
   const events: ScoreEvent[] = [
@@ -141,6 +147,7 @@ export function generateScore(input: GenerationInput): GenerationOutput {
       qualityVector: diagnostics.qualityVector,
       phase13QReview,
       phase13RReview,
+      phase13ZReview,
       ornamentCandidateCount: diagnostics.ornamentCandidateCount,
       ornamentDensity: diagnostics.ornamentDensity,
       ornamentPlacementReasons: diagnostics.ornamentPlacementReasons,
