@@ -7,8 +7,7 @@
 - Treat gitignored files the same way: do not quote, copy, summarize, or expose their contents unless explicitly requested and sanitized.
 - Avoid absolute local paths, usernames, hostnames, machine names, local repository locations, private tokens, email addresses, and other personally identifying details.
 - Use generic placeholders or relative paths when such information is necessary for explanation.
-- Set `GIT_EDITOR=/bin/true` only for git command forms that may open an editor, unless interactive editor behavior is explicitly requested.
-- Examples that may need it: `git commit` without `-m` or `-F`, `git commit --amend` without `--no-edit`, `-m`, or `-F`, `git rebase -i`, `git rebase --continue`, `git merge` or `git merge --continue` when a merge commit message may be edited, `git revert` without `--no-edit`, and `git tag -a` or `git tag -s` without `-m` or `-F`.
+- Keep git commands noninteractive when they might open an editor, unless interactive editor behavior is explicitly requested.
 - Keep `AGENTS.md` as a short entry point. Move task-specific procedures, commands, checklists, and troubleshooting into skills, leaving only always-on rules or skill links here.
 
 ## Project Context
@@ -32,6 +31,7 @@
 
 - Use `docs-progressive-disclosure` when creating, reorganizing, splitting, merging, or maintaining documentation structure.
 - Use `repo-guardrails` when adding, revising, or evaluating agent behavior rules, repository policies, AGENTS.md instructions, workflow safety, or enforcement mechanisms.
+- Use `git-editor-guardrail` when running git commands that may open an editor or when choosing the noninteractive form of commit, amend, rebase, merge, revert, or tag operations.
 - Use `conventional-commits` when authoring commit messages or PR titles.
 - Use `change-rationale-writing` when drafting commit bodies, PR descriptions, changelog entries, release notes, or decision records.
 - Use `github-pr-operations` when creating, editing, or managing pull requests with GitHub CLI.
