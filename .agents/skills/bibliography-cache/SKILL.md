@@ -7,6 +7,18 @@ description: Define and maintain a local bibliography cache for references, cita
 
 Use this skill to keep reference metadata reusable, auditable, and cheap to retrieve. Store cache data under `.bibliography-cache/` in the current project unless the user specifies another cache root.
 
+## Project Citation Governance
+
+For this repository, `.bibliography-cache/` is a working cache, not the durable review surface. When a reference affects implementation direction, phase scope, quality gates, review acceptance, or license/redistribution policy, promote the sanitized citation information into `docs/reference/bibliography/` using `docs/reference/bibliography/citation-governance.md`.
+
+Keep these responsibilities separate:
+
+- External reference metadata belongs in `docs/reference/bibliography/references.md`.
+- Source-family groupings belong in `docs/reference/bibliography/source-families.md`.
+- Project-specific claims and policy decisions belong in `docs/reference/bibliography/claim-map.md`.
+
+Do not copy raw cache notes, gitignored file contents, full copyrighted text, long excerpts, or score contents into docs. Use ref ids, source-family ids, and claim ids from the bibliography docs when updating phase, review, or reference docs.
+
 ## Layout
 
 Create this structure as needed:
