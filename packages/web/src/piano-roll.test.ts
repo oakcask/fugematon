@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { generateScore, PHASE_3_LENGTH_TICKS } from "@fugematon/core";
+import { FUGUE_FORM_REVIEW_LENGTH_TICKS, generateScore } from "@fugematon/core";
 import {
   computeActivePitches,
   computeActivePitchMarkerLayout,
@@ -16,7 +16,9 @@ import {
 import { createPlaybackModel, type PlaybackModel } from "./score.js";
 
 test("computePianoRollLayout maps visible notes into canvas bounds", () => {
-  const model = createPlaybackModel(generateScore({ seed: "fugue-smoke", lengthTicks: PHASE_3_LENGTH_TICKS }));
+  const model = createPlaybackModel(
+    generateScore({ seed: "fugue-smoke", lengthTicks: FUGUE_FORM_REVIEW_LENGTH_TICKS }),
+  );
   const viewport = computePianoRollViewport(model, 0);
   const layout = computePianoRollLayout(model, 960, 360, viewport, 0);
 
@@ -34,7 +36,9 @@ test("computePianoRollLayout maps visible notes into canvas bounds", () => {
 });
 
 test("computePianoRollViewport starts at the opening and follows playback", () => {
-  const model = createPlaybackModel(generateScore({ seed: "fugue-smoke", lengthTicks: PHASE_3_LENGTH_TICKS }));
+  const model = createPlaybackModel(
+    generateScore({ seed: "fugue-smoke", lengthTicks: FUGUE_FORM_REVIEW_LENGTH_TICKS }),
+  );
   const opening = computePianoRollViewport(model, 0);
   const following = computePianoRollViewport(model, DEFAULT_VIEWPORT_SECONDS * 2);
 
@@ -94,7 +98,9 @@ test("fallback notes render as stroke-only within the same visual bounds", () =>
 });
 
 test("computeActivePitches returns currently sounding pitches in ascending order", () => {
-  const model = createPlaybackModel(generateScore({ seed: "fugue-smoke", lengthTicks: PHASE_3_LENGTH_TICKS }));
+  const model = createPlaybackModel(
+    generateScore({ seed: "fugue-smoke", lengthTicks: FUGUE_FORM_REVIEW_LENGTH_TICKS }),
+  );
   const firstChordSecond = model.notes[0]!.startSecond;
   const firstNotePitches = model.notes
     .filter((note) => note.startSecond <= firstChordSecond && firstChordSecond < note.startSecond + note.durationSecond)

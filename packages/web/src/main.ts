@@ -1,4 +1,4 @@
-import { DEFAULT_SELECTION_MODEL, generateScore, PHASE_3_LENGTH_TICKS } from "@fugematon/core";
+import { DEFAULT_SELECTION_MODEL, FUGUE_FORM_REVIEW_LENGTH_TICKS, generateScore } from "@fugematon/core";
 import {
   DEFAULT_PERFORMANCE_PROFILE_ID,
   listPerformanceProfiles,
@@ -17,7 +17,7 @@ import {
 
 const DEFAULT_SEED = "fugue-smoke";
 const URL_SEED_PARAM = "seed";
-const SCORE_LENGTH_TICKS = PHASE_3_LENGTH_TICKS;
+const SCORE_LENGTH_TICKS = FUGUE_FORM_REVIEW_LENGTH_TICKS;
 
 type UrlUpdateMode = "push" | "replace" | "none";
 

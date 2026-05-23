@@ -224,7 +224,7 @@ export const REFERENCE_CORPUS_MANIFEST: ReferenceCorpusManifest = {
 };
 
 export const REFERENCE_DIAGNOSTICS_PROFILE: ReferenceDiagnosticsProfile = {
-  profileId: "phase-7-fugue-reference-profile",
+  profileId: "fugue-reference-profile",
   version: 1,
   styleFamily: "fugue-reference",
   createdAt: "2026-05-17",

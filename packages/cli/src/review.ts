@@ -90,7 +90,7 @@ export async function writeReviewBundle(
   }
 
   const summary: ReviewSummary = {
-    schemaVersion: 17,
+    schemaVersion: 18,
     lengthTicks,
     selectionModel,
     performanceProfile,
@@ -150,7 +150,7 @@ export async function writeAbReviewBundle(
 }
 
 type ReviewSummary = {
-  schemaVersion: 17;
+  schemaVersion: 18;
   lengthTicks: number;
   selectionModel: SelectionModel;
   performanceProfile: PerformanceProfileMetadata;

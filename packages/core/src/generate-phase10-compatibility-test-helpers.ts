@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { REVIEW_LENGTH_TICKS } from "./constants.js";
 import type { SelectionModel } from "./events.js";
 import { generateScore } from "./generate.js";
-import { assertPhase10CandidatePoolOracleShape, requireSelectedCandidateEvaluation } from "./generate-test-helpers.js";
+import { assertCandidatePoolOracleShape, requireSelectedCandidateEvaluation } from "./generate-test-helpers.js";
 import {
   compareDiagnosticsToReferenceProfile,
   REFERENCE_DIAGNOSTICS_PROFILE,
@@ -44,7 +44,7 @@ export function assertPhase10CompletionCompatibility(
     assert.equal(output.diagnostics.keyMetadataMismatches, 0);
     assert.equal(output.diagnostics.unresolvedDissonanceCount, 0);
     assert.equal(output.diagnostics.allVoiceSilenceGapCount, 0);
-    assertPhase10CandidatePoolOracleShape(output.diagnostics.candidatePoolOracle);
+    assertCandidatePoolOracleShape(output.diagnostics.candidatePoolOracle);
     assert.equal(referenceComparison.seed, seed);
     assert.equal(referenceComparison.profileVersion, REFERENCE_DIAGNOSTICS_PROFILE.version);
     assert.equal(referenceComparison.metrics.length, REFERENCE_DIAGNOSTICS_PROFILE.metrics.length);
