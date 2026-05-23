@@ -8,6 +8,7 @@
 - Avoid absolute local paths, usernames, hostnames, machine names, local repository locations, private tokens, email addresses, and other personally identifying details.
 - Use generic placeholders or relative paths when such information is necessary for explanation.
 - Keep git commands noninteractive when they might open an editor, unless interactive editor behavior is explicitly requested.
+- Do not pass Markdown commit messages or PR descriptions with backticks through shell-interpreted inline strings; pass them through message/body files.
 - Keep `AGENTS.md` as a short entry point. Move task-specific procedures, commands, checklists, and troubleshooting into skills, leaving only always-on rules or skill links here.
 
 ## Project Context
