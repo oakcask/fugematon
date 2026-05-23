@@ -70,7 +70,6 @@ export function analyzeQualityVector(
       sectionPlans,
     ),
     scoreBeautyEvidence,
-    phase13VReview: scoreBeautyEvidence,
     localSentinels,
   };
 }

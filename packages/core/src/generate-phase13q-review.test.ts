@@ -12,7 +12,7 @@ test("generateScore links unresolved entry sentinels to selected entry context a
   const unresolvedEntrySentinels = output.diagnostics.qualityVector.localSentinels.filter(
     (sentinel) => sentinel.kind === "unresolved-entry-severe-interval",
   );
-  const unresolvedEntryLinks = output.diagnostics.phase13QReview.sentinelCandidateLinks.filter(
+  const unresolvedEntryLinks = output.diagnostics.localSentinelCandidateTrace.sentinelCandidateLinks.filter(
     (link) => link.sentinelKind === "unresolved-entry-severe-interval",
   );
 

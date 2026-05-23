@@ -20,14 +20,14 @@ export function assertPhase14ScoreWindowHarnessInputs(seeds: readonly string[]):
       dissonanceWindowCount: diagnostics.dissonanceTriage.windows.length,
       activeVoicePairSpanCount: diagnostics.qualityVector.voicePairSpans.length,
       counterSubjectWindowCount: diagnostics.qualityVector.counterSubjectWindows.length,
-      phraseDevelopmentWindowCount: diagnostics.phase13ZReview.windowCount,
+      phraseDevelopmentWindowCount: diagnostics.phraseDevelopmentReview.windowCount,
       metricExplanationCount: diagnostics.qualityVector.metricExplanations.length,
     };
-    const acceptance = diagnostics.phase14ScoreWindowAcceptance;
+    const acceptance = diagnostics.scoreWindowAcceptance;
 
     assert.equal(
-      diagnostics.phase13ZReview.windowCount,
-      diagnostics.phase13ZReview.windows.length,
+      diagnostics.phraseDevelopmentReview.windowCount,
+      diagnostics.phraseDevelopmentReview.windows.length,
       `${seed} phrase-development window count should match exposed windows`,
     );
     assert.equal(acceptance.importantEntryWindowCount, scoreWindowInputs.importantEntryWindowCount);

@@ -13,7 +13,7 @@ const PHASE_13R_FOLLOWUP_CONVERGENCE_SEEDS_A = [
 
 test("phase-13R follow-up representative seeds repair mechanical subject-fragment convergence", () => {
   const seedsWithFragmentFindings = PHASE_13R_FOLLOWUP_CONVERGENCE_SEEDS_A.filter((seed) =>
-    generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS }).diagnostics.phase13RReview.findings.some(
+    generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS }).diagnostics.phraseConvergenceReview.findings.some(
       (finding) => finding.code === "subject-fragment-family-concentration",
     ),
   );

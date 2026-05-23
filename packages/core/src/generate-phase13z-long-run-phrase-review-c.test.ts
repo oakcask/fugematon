@@ -11,14 +11,14 @@ test("Phase 13Z user-reported seed no longer has one dominant late subject-stem 
 
   assert.ok(subjectFamily !== undefined);
   assert.ok(subjectFamily.share <= 0.42);
-  assert.equal(output.diagnostics.phase13ZReview.reviewRequired, false);
-  assert.ok(output.diagnostics.phase13ZReview.functionBearingWindowCount > 0);
+  assert.equal(output.diagnostics.phraseDevelopmentReview.reviewRequired, false);
+  assert.ok(output.diagnostics.phraseDevelopmentReview.functionBearingWindowCount > 0);
   assert.ok(
-    output.diagnostics.phase13ZReview.functionBearingWindowCount >
-      output.diagnostics.phase13ZReview.mechanicalReuseWindowCount,
+    output.diagnostics.phraseDevelopmentReview.functionBearingWindowCount >
+      output.diagnostics.phraseDevelopmentReview.mechanicalReuseWindowCount,
   );
   assert.ok(
-    output.diagnostics.phase13ZReview.windows.some(
+    output.diagnostics.phraseDevelopmentReview.windows.some(
       (window) =>
         window.judgement === "function-bearing-recurrence" &&
         (window.changedEntryVoice || window.changedLocalKey || window.changedPhraseFunction),

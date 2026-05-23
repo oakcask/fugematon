@@ -48,8 +48,8 @@ export function assertPhase14CounterSubjectReviewSeedsExposePressure(
       weakWindowCount,
       supportCollisionCount,
       counterSubjectIdentityRetention: diagnostics.counterSubjectIdentityRetention,
-      generatorResponseWindowCount: diagnostics.phase14ScoreWindowAcceptance.generatorResponseWindowCount,
-      reviewRequiredWindowCount: diagnostics.phase14ScoreWindowAcceptance.reviewRequiredWindowCount,
+      generatorResponseWindowCount: diagnostics.scoreWindowAcceptance.generatorResponseWindowCount,
+      reviewRequiredWindowCount: diagnostics.scoreWindowAcceptance.reviewRequiredWindowCount,
     };
   });
 

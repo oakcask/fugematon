@@ -41,7 +41,7 @@ test("diagnose command writes diagnostics JSON to stdout", async () => {
     selectionModel: string;
     eventCount: number;
     noteCount: number;
-    phase13RReview: {
+    phraseConvergenceReview: {
       selectionModel: string;
       reviewRequired: boolean;
       findings: { code: string }[];
@@ -53,8 +53,10 @@ test("diagnose command writes diagnostics JSON to stdout", async () => {
   assert.equal(diagnostics.selectionModel, "phase10-section-local-planner");
   assert.ok(diagnostics.eventCount > 0);
   assert.ok(diagnostics.noteCount > 0);
-  assert.equal(diagnostics.phase13RReview.selectionModel, diagnostics.selectionModel);
-  assert.ok(!diagnostics.phase13RReview.findings.some((finding) => finding.code === "legacy-default-selection-model"));
+  assert.equal(diagnostics.phraseConvergenceReview.selectionModel, diagnostics.selectionModel);
+  assert.ok(
+    !diagnostics.phraseConvergenceReview.findings.some((finding) => finding.code === "legacy-default-selection-model"),
+  );
 });
 
 test("midi command writes a valid standard MIDI file", async () => {
@@ -279,10 +281,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
               };
             }[];
           };
-          texturePlanningReview: unknown;
-          phraseRepetitionReview: unknown;
-          phraseConvergenceReview: unknown;
-          phase11Review: {
+          texturePlanningReview: {
             schemaVersion: number;
             adjacentVoiceIntervals: { checkpointCount: number; medianSemitones: number; overOctaveCount: number }[];
             registerSpans: { noteCount: number; spanSemitones: number }[];
@@ -300,7 +299,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
               weakBeatCheckpointCount: number;
             };
           };
-          phase12Review: {
+          phraseRepetitionReview: {
             schemaVersion: number;
             entryPatternFamilyConcentration: {
               entryCount: number;
@@ -318,7 +317,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
               mostRepeatedPatternCount: number;
             };
           };
-          phase13RReview: {
+          phraseConvergenceReview: {
             selectionModel: string;
             reviewRequired: boolean;
             findings: { code: string }[];
@@ -373,8 +372,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
             };
             counterSubjectWindows: { entryStartTick: number; retentionKind: string }[];
             metricExplanations: { axis: string; symptom: string; classification: string }[];
-            scoreBeautyEvidence: unknown;
-            phase13VReview: {
+            scoreBeautyEvidence: {
               schemaVersion: number;
               lineAgency: { agencyRatio: number };
               entryFormulaNovelty: { noveltyRatio: number };
@@ -665,35 +663,41 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       assert.ok(entry.diagnosticsSummary.candidatePoolOracle.viableCandidateCount >= 0);
       assert.ok(entry.diagnosticsSummary.candidatePoolOracle.hardFailureRejectedCandidateCount >= 0);
       assert.ok(entry.diagnosticsSummary.candidatePoolOracle.blockerClassifications.length >= 0);
-      assert.deepEqual(entry.diagnosticsSummary.texturePlanningReview, entry.diagnosticsSummary.phase11Review);
-      assert.equal(entry.diagnosticsSummary.phase11Review.schemaVersion, 1);
-      assert.equal(entry.diagnosticsSummary.phase11Review.adjacentVoiceIntervals.length, 3);
-      assert.equal(entry.diagnosticsSummary.phase11Review.registerSpans.length, 4);
-      assert.ok(entry.diagnosticsSummary.phase11Review.functionalThinning.nonCadentialRunCount >= 0);
-      assert.equal(entry.diagnosticsSummary.phase11Review.stateGrammarRepetition.patternLength, 4);
-      assert.ok(entry.diagnosticsSummary.phase11Review.stateGrammarRepetition.uniquePatternCount >= 0);
-      assert.ok(entry.diagnosticsSummary.phase11Review.entryPatternFamilies.length > 0);
-      assert.ok(entry.diagnosticsSummary.phase11Review.metricalHarmony.strongBeatCheckpointCount > 0);
-      assert.ok(entry.diagnosticsSummary.phase11Review.metricalHarmony.weakBeatCheckpointCount > 0);
+      assert.deepEqual(entry.diagnosticsSummary.texturePlanningReview, entry.diagnosticsSummary.texturePlanningReview);
+      assert.equal(entry.diagnosticsSummary.texturePlanningReview.schemaVersion, 1);
+      assert.equal(entry.diagnosticsSummary.texturePlanningReview.adjacentVoiceIntervals.length, 3);
+      assert.equal(entry.diagnosticsSummary.texturePlanningReview.registerSpans.length, 4);
+      assert.ok(entry.diagnosticsSummary.texturePlanningReview.functionalThinning.nonCadentialRunCount >= 0);
+      assert.equal(entry.diagnosticsSummary.texturePlanningReview.stateGrammarRepetition.patternLength, 4);
+      assert.ok(entry.diagnosticsSummary.texturePlanningReview.stateGrammarRepetition.uniquePatternCount >= 0);
+      assert.ok(entry.diagnosticsSummary.texturePlanningReview.entryPatternFamilies.length > 0);
+      assert.ok(entry.diagnosticsSummary.texturePlanningReview.metricalHarmony.strongBeatCheckpointCount > 0);
+      assert.ok(entry.diagnosticsSummary.texturePlanningReview.metricalHarmony.weakBeatCheckpointCount > 0);
       assert.ok(
-        entry.diagnosticsSummary.phase11Review.metricalHarmony.strongBeatChordToneSupportCount <=
-          entry.diagnosticsSummary.phase11Review.metricalHarmony.strongBeatCheckpointCount,
+        entry.diagnosticsSummary.texturePlanningReview.metricalHarmony.strongBeatChordToneSupportCount <=
+          entry.diagnosticsSummary.texturePlanningReview.metricalHarmony.strongBeatCheckpointCount,
       );
       assert.ok(
-        entry.diagnosticsSummary.phase11Review.metricalHarmony.strongBeatBassRootSupportCount <=
-          entry.diagnosticsSummary.phase11Review.metricalHarmony.strongBeatCheckpointCount,
+        entry.diagnosticsSummary.texturePlanningReview.metricalHarmony.strongBeatBassRootSupportCount <=
+          entry.diagnosticsSummary.texturePlanningReview.metricalHarmony.strongBeatCheckpointCount,
       );
-      assert.deepEqual(entry.diagnosticsSummary.phraseRepetitionReview, entry.diagnosticsSummary.phase12Review);
+      assert.deepEqual(
+        entry.diagnosticsSummary.phraseRepetitionReview,
+        entry.diagnosticsSummary.phraseRepetitionReview,
+      );
       assert.equal(entry.diagnosticsSummary.phraseRepetitionReview.schemaVersion, 1);
       assert.ok(entry.diagnosticsSummary.phraseRepetitionReview.entryPatternFamilyConcentration.entryCount > 0);
       assert.ok(entry.diagnosticsSummary.phraseRepetitionReview.subjectStemFamilies.length > 0);
       assert.ok(entry.diagnosticsSummary.phraseRepetitionReview.answerTransformFamilies.length > 0);
       assert.ok(entry.diagnosticsSummary.phraseRepetitionReview.phraseFunctions.length > 0);
       assert.equal(entry.diagnosticsSummary.phraseRepetitionReview.sectionStatePatterns.patternLength, 4);
-      assert.deepEqual(entry.diagnosticsSummary.phraseConvergenceReview, entry.diagnosticsSummary.phase13RReview);
-      assert.equal(entry.diagnosticsSummary.phase13RReview.selectionModel, summary.selectionModel);
+      assert.deepEqual(
+        entry.diagnosticsSummary.phraseConvergenceReview,
+        entry.diagnosticsSummary.phraseConvergenceReview,
+      );
+      assert.equal(entry.diagnosticsSummary.phraseConvergenceReview.selectionModel, summary.selectionModel);
       assert.ok(
-        !entry.diagnosticsSummary.phase13RReview.findings.some(
+        !entry.diagnosticsSummary.phraseConvergenceReview.findings.some(
           (finding) => finding.code === "legacy-default-selection-model",
         ),
       );
@@ -712,7 +716,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       assert.ok(entry.diagnosticsSummary.qualityVector.metricExplanations.length >= 3);
       assert.deepEqual(
         entry.diagnosticsSummary.qualityVector.scoreBeautyEvidence,
-        entry.diagnosticsSummary.qualityVector.phase13VReview,
+        entry.diagnosticsSummary.qualityVector.scoreBeautyEvidence,
       );
       assert.equal(entry.diagnosticsSummary.qualityVector.scoreBeautyEvidence.schemaVersion, 1);
       assert.ok(
@@ -879,7 +883,6 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
             hardConstraintFailures: number;
             candidatePoolOracle: { schemaVersion: number; viableCandidateCount: number };
             phraseConvergenceReview: { findings: unknown[] };
-            phase13RReview: { findings: unknown[] };
           };
           referenceComparison: { reviewStatus: string; outsideReferenceCount: number };
           candidatePoolOracle: { schemaVersion: number; viableCandidateCount: number };
@@ -907,7 +910,6 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
             hardConstraintFailures: number;
             candidatePoolOracle: { schemaVersion: number; viableCandidateCount: number };
             phraseConvergenceReview: { findings: unknown[] };
-            phase13RReview: { findings: unknown[] };
           };
           referenceComparison: { reviewStatus: string; outsideReferenceCount: number };
           candidatePoolOracle: { schemaVersion: number; viableCandidateCount: number };
@@ -941,7 +943,6 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
           qualityVectorDistance: number;
           localSentinelCount: number;
           phraseConvergenceReviewFindings: number;
-          phase13RReviewFindings: number;
           phase8ReadyChanged: boolean;
         };
         improvements: string[];
@@ -1104,11 +1105,11 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
         entry.variant.diagnosticsSummary.phraseConvergenceReview.findings.length -
           entry.baseline.diagnosticsSummary.phraseConvergenceReview.findings.length,
       );
-      assert.equal(entry.deltas.phraseConvergenceReviewFindings, entry.deltas.phase13RReviewFindings);
+      assert.equal(entry.deltas.phraseConvergenceReviewFindings, entry.deltas.phraseConvergenceReviewFindings);
       assert.equal(
-        entry.deltas.phase13RReviewFindings,
-        entry.variant.diagnosticsSummary.phase13RReview.findings.length -
-          entry.baseline.diagnosticsSummary.phase13RReview.findings.length,
+        entry.deltas.phraseConvergenceReviewFindings,
+        entry.variant.diagnosticsSummary.phraseConvergenceReview.findings.length -
+          entry.baseline.diagnosticsSummary.phraseConvergenceReview.findings.length,
       );
       assert.equal(typeof entry.deltas.qualityVectorDistance, "number");
       assert.equal(

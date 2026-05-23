@@ -16,7 +16,7 @@ test("Phase 13Z focused seeds preserve hard constraints and repair subject-stem 
   for (const seed of PHASE_13Z_FOCUSED_REVIEW_SEEDS) {
     const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
     const gate = evaluatePhase7BGatePolicy(seed, output.diagnostics);
-    const hasSubjectStemConcentration = output.diagnostics.phase13RReview.findings.some(
+    const hasSubjectStemConcentration = output.diagnostics.phraseConvergenceReview.findings.some(
       (finding) => finding.code === "subject-stem-family-concentration",
     );
 

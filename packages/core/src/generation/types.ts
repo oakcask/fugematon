@@ -101,13 +101,10 @@ export type TextureDiagnostics = {
   stepwisePattern: StepwisePatternSummary;
   texturePlanningReview: TexturePlanningReviewSummary;
   phraseRepetitionReview: PhraseRepetitionReviewSummary;
-  phase11Review: TexturePlanningReviewSummary;
-  phase12Review: PhraseRepetitionReviewSummary;
   entryBoundaryContinuity: EntryBoundaryContinuitySummary;
   bassAnswerTailTexture: BassAnswerTailTextureSummary;
   qualityVector: QualityVector;
   dissonanceTriage: DissonanceTriageSummary;
-  phase14DissonanceTriage: DissonanceTriageSummary;
   ornamentCandidateCount: number;
   ornamentDensity: number;
   ornamentPlacementReasons: OrnamentPlacementReasons;

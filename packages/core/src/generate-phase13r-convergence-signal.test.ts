@@ -7,7 +7,7 @@ const PHASE_13R_FOCUSED_SEEDS = ["bach-001", "fugue-smoke", "modal-cadence"] as 
 
 test("generateScore exposes phase-13R review signals for the explicit legacy baseline path", () => {
   const output = generateScore({ seed: "fugue-smoke", lengthTicks: PHASE_5_LENGTH_TICKS, selectionModel: "baseline" });
-  const review = output.diagnostics.phase13RReview;
+  const review = output.diagnostics.phraseConvergenceReview;
 
   assert.equal(output.diagnostics.selectionModel, "baseline");
   assert.equal(review.schemaVersion, 1);
@@ -32,9 +32,11 @@ test("generateScore uses the adopted planner as the normal phase-13R default pat
   const output = generateScore({ seed: "bach-001", lengthTicks: PHASE_5_LENGTH_TICKS });
 
   assert.equal(output.diagnostics.selectionModel, "phase10-section-local-planner");
-  assert.equal(output.diagnostics.phase13RReview.selectionModel, "phase10-section-local-planner");
+  assert.equal(output.diagnostics.phraseConvergenceReview.selectionModel, "phase10-section-local-planner");
   assert.ok(
-    !output.diagnostics.phase13RReview.findings.some((finding) => finding.code === "legacy-default-selection-model"),
+    !output.diagnostics.phraseConvergenceReview.findings.some(
+      (finding) => finding.code === "legacy-default-selection-model",
+    ),
   );
 });
 
@@ -43,23 +45,27 @@ test("phase-13R focused seeds keep default planner convergence comparable in CI"
     const legacy = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS, selectionModel: "baseline" });
     const current = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
 
-    assert.equal(legacy.diagnostics.phase13RReview.selectionModel, "baseline");
-    assert.equal(current.diagnostics.phase13RReview.selectionModel, "phase10-section-local-planner");
+    assert.equal(legacy.diagnostics.phraseConvergenceReview.selectionModel, "baseline");
+    assert.equal(current.diagnostics.phraseConvergenceReview.selectionModel, "phase10-section-local-planner");
     assert.ok(
-      legacy.diagnostics.phase13RReview.findings.some((finding) => finding.code === "legacy-default-selection-model"),
+      legacy.diagnostics.phraseConvergenceReview.findings.some(
+        (finding) => finding.code === "legacy-default-selection-model",
+      ),
     );
     assert.ok(
-      !current.diagnostics.phase13RReview.findings.some((finding) => finding.code === "legacy-default-selection-model"),
+      !current.diagnostics.phraseConvergenceReview.findings.some(
+        (finding) => finding.code === "legacy-default-selection-model",
+      ),
     );
     assert.ok(
-      current.diagnostics.phase13RReview.metrics.mostRepeatedFourSectionPatternCount <=
-        legacy.diagnostics.phase13RReview.metrics.mostRepeatedFourSectionPatternCount,
+      current.diagnostics.phraseConvergenceReview.metrics.mostRepeatedFourSectionPatternCount <=
+        legacy.diagnostics.phraseConvergenceReview.metrics.mostRepeatedFourSectionPatternCount,
     );
     assert.ok(
-      current.diagnostics.phase13RReview.metrics.uniqueFourSectionPatternCount >=
-        legacy.diagnostics.phase13RReview.metrics.uniqueFourSectionPatternCount,
+      current.diagnostics.phraseConvergenceReview.metrics.uniqueFourSectionPatternCount >=
+        legacy.diagnostics.phraseConvergenceReview.metrics.uniqueFourSectionPatternCount,
     );
-    assert.ok(current.diagnostics.phase13RReview.metrics.topSubjectStemFamilyShare > 0);
-    assert.ok(current.diagnostics.phase13RReview.metrics.topSubjectFragmentFamilyShare > 0);
+    assert.ok(current.diagnostics.phraseConvergenceReview.metrics.topSubjectStemFamilyShare > 0);
+    assert.ok(current.diagnostics.phraseConvergenceReview.metrics.topSubjectFragmentFamilyShare > 0);
   }
 });

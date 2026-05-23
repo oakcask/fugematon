@@ -294,7 +294,6 @@ type ReviewSeedComparisonSnapshot = {
   };
   qualityVector: GenerationDiagnostics["qualityVector"];
   phraseConvergenceReview: GenerationDiagnostics["phraseConvergenceReview"];
-  phase13RReview: GenerationDiagnostics["phase13RReview"];
 };
 
 type ReviewSeedComparisonDeltas = {
@@ -308,7 +307,6 @@ type ReviewSeedComparisonDeltas = {
   qualityVectorDistance: number;
   localSentinelCount: number;
   phraseConvergenceReviewFindings: number;
-  phase13RReviewFindings: number;
   phase8ReadyChanged: boolean;
 };
 
@@ -377,9 +375,6 @@ type ReviewDiagnosticsSummary = {
   texturePlanningReview: GenerationDiagnostics["texturePlanningReview"];
   phraseRepetitionReview: GenerationDiagnostics["phraseRepetitionReview"];
   phraseConvergenceReview: GenerationDiagnostics["phraseConvergenceReview"];
-  phase11Review: GenerationDiagnostics["phase11Review"];
-  phase12Review: GenerationDiagnostics["phase12Review"];
-  phase13RReview: GenerationDiagnostics["phase13RReview"];
   qualityVector: GenerationDiagnostics["qualityVector"];
 };
 
@@ -509,8 +504,6 @@ function compareReviewSeed(baselineSeed: ReviewSummarySeed, variantSeed: ReviewS
     localSentinelCount: variant.qualityVector.localSentinels.length - baseline.qualityVector.localSentinels.length,
     phraseConvergenceReviewFindings:
       variant.phraseConvergenceReview.findings.length - baseline.phraseConvergenceReview.findings.length,
-    phase13RReviewFindings:
-      variant.phraseConvergenceReview.findings.length - baseline.phraseConvergenceReview.findings.length,
     phase8ReadyChanged: variant.reviewGatePolicy.phase8Ready !== baseline.reviewGatePolicy.phase8Ready,
   };
 
@@ -549,7 +542,6 @@ function createReviewSeedSnapshot(seed: ReviewSummarySeed): ReviewSeedComparison
     phase7BGate: reviewGatePolicy,
     qualityVector: seed.diagnosticsSummary.qualityVector,
     phraseConvergenceReview: seed.diagnosticsSummary.phraseConvergenceReview,
-    phase13RReview: seed.diagnosticsSummary.phraseConvergenceReview,
   };
 }
 
@@ -793,9 +785,6 @@ function summarizeDiagnostics(diagnostics: GenerationDiagnostics): ReviewDiagnos
     texturePlanningReview: diagnostics.texturePlanningReview,
     phraseRepetitionReview: diagnostics.phraseRepetitionReview,
     phraseConvergenceReview: diagnostics.phraseConvergenceReview,
-    phase11Review: diagnostics.phase11Review,
-    phase12Review: diagnostics.phase12Review,
-    phase13RReview: diagnostics.phase13RReview,
     qualityVector: diagnostics.qualityVector,
   };
 }

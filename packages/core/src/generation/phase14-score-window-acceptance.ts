@@ -24,7 +24,7 @@ export function buildScoreWindowAcceptanceSummary(
   entryBoundaryContinuity: EntryBoundaryContinuitySummary,
   dissonanceTriage: DissonanceTriageSummary,
   qualityVector: QualityVector,
-  phase13ZReview: PhraseDevelopmentReviewSummary,
+  phraseDevelopmentReview: PhraseDevelopmentReviewSummary,
 ): ScoreWindowAcceptanceSummary {
   const importantEntryWindows = entryBoundaryContinuity.windows.filter(
     (window) => window.entryOrderIndex === 0 || window.alreadyEnteredVoices.length > 0,
@@ -34,7 +34,7 @@ export function buildScoreWindowAcceptanceSummary(
     ...dissonanceTriage.windows.map(scoreWindowFromDissonance),
     ...qualityVector.voicePairSpans.map(scoreWindowFromVoicePairSpan),
     ...qualityVector.counterSubjectWindows.map(scoreWindowFromCounterSubject),
-    ...phase13ZReview.windows.map(scoreWindowFromPhraseDevelopment),
+    ...phraseDevelopmentReview.windows.map(scoreWindowFromPhraseDevelopment),
     ...qualityVector.metricExplanations.map(scoreWindowFromMetricExplanation),
   ];
 
@@ -44,7 +44,7 @@ export function buildScoreWindowAcceptanceSummary(
     dissonanceWindowCount: dissonanceTriage.windows.length,
     activeVoicePairSpanCount: qualityVector.voicePairSpans.length,
     counterSubjectWindowCount: qualityVector.counterSubjectWindows.length,
-    phraseDevelopmentWindowCount: phase13ZReview.windowCount,
+    phraseDevelopmentWindowCount: phraseDevelopmentReview.windowCount,
     metricExplanationCount: qualityVector.metricExplanations.length,
     reviewRequiredWindowCount: windows.filter((window) => window.response === "review-required").length,
     generatorResponseWindowCount: windows.filter((window) => window.response === "generator-response-required").length,
