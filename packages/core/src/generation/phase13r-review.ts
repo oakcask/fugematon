@@ -11,15 +11,35 @@ export function buildPhase13RReviewSummary(
   selectionModel: SelectionModel,
   phase12Review: Phase12ReviewSummary,
 ): Phase13RReviewSummary {
+  const metrics = collectPhase13RReviewMetrics(phase12Review);
+  const findings = collectPhase13RReviewFindings(selectionModel, metrics);
+
+  return {
+    schemaVersion: 1,
+    selectionModel,
+    reviewRequired: findings.length > 0,
+    metrics,
+    findings,
+  };
+}
+
+function collectPhase13RReviewMetrics(phase12Review: Phase12ReviewSummary): Phase13RReviewSummary["metrics"] {
   const topSubjectStemFamilyShare = topSubjectFamilyShare(phase12Review, "subject");
   const topSubjectFragmentFamilyShare = topSubjectFamilyShare(phase12Review, "subject-fragment");
-  const metrics = {
+
+  return {
     mostRepeatedFourSectionPatternCount: phase12Review.sectionStatePatterns.mostRepeatedPatternCount,
     uniqueFourSectionPatternCount: phase12Review.sectionStatePatterns.uniquePatternCount,
     topEntryPatternFamilyShare: phase12Review.entryPatternFamilyConcentration.topFamilyShare,
     topSubjectStemFamilyShare,
     topSubjectFragmentFamilyShare,
   };
+}
+
+function collectPhase13RReviewFindings(
+  selectionModel: SelectionModel,
+  metrics: Phase13RReviewSummary["metrics"],
+): Phase13RReviewFinding[] {
   const findings: Phase13RReviewFinding[] = [];
 
   if (selectionModel === "baseline") {
@@ -80,13 +100,7 @@ export function buildPhase13RReviewSummary(
     "One subject-fragment family dominates episodes enough to require phrase-derivation review.",
   );
 
-  return {
-    schemaVersion: 1,
-    selectionModel,
-    reviewRequired: findings.length > 0,
-    metrics,
-    findings,
-  };
+  return findings;
 }
 
 function topSubjectFamilyShare(phase12Review: Phase12ReviewSummary, form: "subject" | "subject-fragment"): number {
