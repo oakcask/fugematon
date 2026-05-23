@@ -21,7 +21,7 @@ export function analyzeEntryBoundaryContinuity(
   const continuitySupportedCount = countWindowsByClassification(windows, "continuity-supported");
 
   return {
-    schemaVersion: 3,
+    schemaVersion: 4,
     firstBassEntryWindow,
     firstBassEntrySynchronizedReset: firstBassEntryWindowHasSynchronizedReset(firstBassEntryWindow),
     bassEntryWindowCount: windows.filter(isPostExpositionBassWindow).length,
@@ -29,6 +29,7 @@ export function analyzeEntryBoundaryContinuity(
     nonBassEntryWindowCount: windows.filter((window) => window.entryVoice !== "bass").length,
     synchronizedResetCount,
     continuitySupportedCount,
+    oneVoiceCarryWithOutsideResetCount: countWindowsByClassification(windows, "one-voice-carry-with-outside-reset"),
     preparedCollectiveArticulationCount: countWindowsByClassification(windows, "prepared-collective-articulation"),
     unsupportedEntryLocalThinningCount: countWindowsByClassification(windows, "unsupported-entry-local-thinning"),
     windows,
@@ -242,6 +243,14 @@ function classifyEntryContinuityWindow(input: {
     input.staggeredContinuationVoices.length === 0
   ) {
     return "synchronized-reset";
+  }
+  if (
+    input.reviewVoices.length >= 2 &&
+    input.carriedOutsideVoices.length === 1 &&
+    input.reviewVoices.filter((voice) => input.outsideOnsetVoices.includes(voice)).length >= 2 &&
+    input.reviewVoices.filter((voice) => input.outsideEndedAtEntryVoices.includes(voice)).length >= 2
+  ) {
+    return "one-voice-carry-with-outside-reset";
   }
   if (input.preparedCollectiveArticulation) {
     return "prepared-collective-articulation";

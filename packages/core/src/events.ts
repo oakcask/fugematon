@@ -824,13 +824,14 @@ export type EntryBoundaryContinuityWindow = {
   unsupportedEntryLocalThinning: boolean;
   classification:
     | "continuity-supported"
+    | "one-voice-carry-with-outside-reset"
     | "synchronized-reset"
     | "prepared-collective-articulation"
     | "unsupported-entry-local-thinning";
 };
 
 export type EntryBoundaryContinuitySummary = {
-  schemaVersion: 3;
+  schemaVersion: 4;
   firstBassEntryWindow?: EntryBoundaryContinuityWindow;
   firstBassEntrySynchronizedReset: boolean;
   bassEntryWindowCount: number;
@@ -838,6 +839,7 @@ export type EntryBoundaryContinuitySummary = {
   nonBassEntryWindowCount: number;
   synchronizedResetCount: number;
   continuitySupportedCount: number;
+  oneVoiceCarryWithOutsideResetCount: number;
   preparedCollectiveArticulationCount: number;
   unsupportedEntryLocalThinningCount: number;
   windows: EntryBoundaryContinuityWindow[];

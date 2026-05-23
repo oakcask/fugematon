@@ -67,7 +67,8 @@ test("entry-boundary continuity exposes one-voice carry with two outside resets 
 
   const window = summary.firstBassEntryWindow;
   assert.equal(summary.firstBassEntrySynchronizedReset, false);
-  assert.equal(window?.classification, "continuity-supported");
+  assert.equal(window?.classification, "one-voice-carry-with-outside-reset");
+  assert.equal(summary.oneVoiceCarryWithOutsideResetCount, 1);
   assert.deepEqual(window?.carriedOutsideVoices, ["soprano"]);
   assert.deepEqual(window?.outsideEndedAtEntryVoices.sort(), ["alto", "tenor"]);
   assert.deepEqual(window?.outsideOnsetVoices.sort(), ["alto", "tenor"]);
