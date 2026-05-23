@@ -63,7 +63,7 @@ function subjectSeed(
 ): {
   seed: string;
   initialSubjectProfile: InitialSubjectProfile;
-  diagnosticsSummary: { phase12Review: GenerationDiagnostics["phase12Review"] };
+  diagnosticsSummary: { phraseRepetitionReview: GenerationDiagnostics["phraseRepetitionReview"] };
 } {
   return {
     seed,
@@ -77,7 +77,7 @@ function subjectSeed(
       answerCompatibility: "tonal-answer",
     },
     diagnosticsSummary: {
-      phase12Review: {
+      phraseRepetitionReview: {
         schemaVersion: 1,
         entryPatternFamilyConcentration: {
           entryCount: 0,

@@ -878,10 +878,18 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
           diagnosticsSummary: {
             hardConstraintFailures: number;
             candidatePoolOracle: { schemaVersion: number; viableCandidateCount: number };
+            phraseConvergenceReview: { findings: unknown[] };
             phase13RReview: { findings: unknown[] };
           };
           referenceComparison: { reviewStatus: string; outsideReferenceCount: number };
           candidatePoolOracle: { schemaVersion: number; viableCandidateCount: number };
+          reviewGatePolicy: {
+            phase8Ready: boolean;
+            hardFailureCount: number;
+            hardFailures: unknown[];
+            reviewSignalCount: number;
+            reviewSignals: unknown[];
+          };
           phase7BGate: {
             phase8Ready: boolean;
             hardFailureCount: number;
@@ -898,10 +906,18 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
           diagnosticsSummary: {
             hardConstraintFailures: number;
             candidatePoolOracle: { schemaVersion: number; viableCandidateCount: number };
+            phraseConvergenceReview: { findings: unknown[] };
             phase13RReview: { findings: unknown[] };
           };
           referenceComparison: { reviewStatus: string; outsideReferenceCount: number };
           candidatePoolOracle: { schemaVersion: number; viableCandidateCount: number };
+          reviewGatePolicy: {
+            phase8Ready: boolean;
+            hardFailureCount: number;
+            hardFailures: unknown[];
+            reviewSignalCount: number;
+            reviewSignals: unknown[];
+          };
           phase7BGate: {
             phase8Ready: boolean;
             hardFailureCount: number;
@@ -918,10 +934,13 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
           hardConstraintFailures: number;
           referenceOutsideCount: number;
           candidatePoolViableCandidates: number;
+          reviewPolicyHardFailures: number;
+          reviewPolicyReviewSignals: number;
           phase7BHardFailures: number;
           phase7BReviewSignals: number;
           qualityVectorDistance: number;
           localSentinelCount: number;
+          phraseConvergenceReviewFindings: number;
           phase13RReviewFindings: number;
           phase8ReadyChanged: boolean;
         };
@@ -981,7 +1000,7 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
     assert.equal(pairwisePreferences.manualListeningGap.unlistened, true);
     assert.match(pairwisePreferences.manualListeningGap.note, /no preference judgement/);
     assert.equal(pairwisePreferences.comparisons.length, comparison.seeds.length);
-    assert.equal(comparison.schemaVersion, 3);
+    assert.equal(comparison.schemaVersion, 4);
     assert.equal(comparison.lengthTicks, 960);
     assert.deepEqual(comparison.baseline, {
       label: "current",
@@ -1033,6 +1052,8 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
       assert.deepEqual(entry.variant.candidatePoolOracle, entry.variant.diagnosticsSummary.candidatePoolOracle);
       assert.equal(typeof entry.baseline.phase7BGate.phase8Ready, "boolean");
       assert.equal(typeof entry.variant.phase7BGate.phase8Ready, "boolean");
+      assert.deepEqual(entry.baseline.reviewGatePolicy, entry.baseline.phase7BGate);
+      assert.deepEqual(entry.variant.reviewGatePolicy, entry.variant.phase7BGate);
       assert.ok(entry.baseline.phase7BGate.hardFailureCount >= 0);
       assert.ok(entry.variant.phase7BGate.hardFailureCount >= 0);
       assert.ok(Array.isArray(entry.baseline.phase7BGate.hardFailures));
@@ -1057,9 +1078,19 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
           entry.baseline.candidatePoolOracle.viableCandidateCount,
       );
       assert.equal(
+        entry.deltas.reviewPolicyHardFailures,
+        entry.variant.reviewGatePolicy.hardFailureCount - entry.baseline.reviewGatePolicy.hardFailureCount,
+      );
+      assert.equal(entry.deltas.reviewPolicyHardFailures, entry.deltas.phase7BHardFailures);
+      assert.equal(
         entry.deltas.phase7BHardFailures,
         entry.variant.phase7BGate.hardFailureCount - entry.baseline.phase7BGate.hardFailureCount,
       );
+      assert.equal(
+        entry.deltas.reviewPolicyReviewSignals,
+        entry.variant.reviewGatePolicy.reviewSignalCount - entry.baseline.reviewGatePolicy.reviewSignalCount,
+      );
+      assert.equal(entry.deltas.reviewPolicyReviewSignals, entry.deltas.phase7BReviewSignals);
       assert.equal(
         entry.deltas.phase7BReviewSignals,
         entry.variant.phase7BGate.reviewSignalCount - entry.baseline.phase7BGate.reviewSignalCount,
@@ -1068,6 +1099,12 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
         entry.deltas.localSentinelCount,
         entry.variant.qualityVector.localSentinels.length - entry.baseline.qualityVector.localSentinels.length,
       );
+      assert.equal(
+        entry.deltas.phraseConvergenceReviewFindings,
+        entry.variant.diagnosticsSummary.phraseConvergenceReview.findings.length -
+          entry.baseline.diagnosticsSummary.phraseConvergenceReview.findings.length,
+      );
+      assert.equal(entry.deltas.phraseConvergenceReviewFindings, entry.deltas.phase13RReviewFindings);
       assert.equal(
         entry.deltas.phase13RReviewFindings,
         entry.variant.diagnosticsSummary.phase13RReview.findings.length -
