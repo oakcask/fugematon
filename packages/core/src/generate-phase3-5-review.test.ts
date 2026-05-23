@@ -1,15 +1,15 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
-  PHASE_3_DIAGNOSTICS_PROFILE,
-  PHASE_3_LENGTH_TICKS,
-  PHASE_3_REPRESENTATIVE_SEEDS,
-  PHASE_4_DIAGNOSTICS_PROFILE,
-  PHASE_4_REPRESENTATIVE_SEEDS,
-  PHASE_5_6_DIAGNOSTICS_PROFILE,
-  PHASE_5_7_DIAGNOSTICS_PROFILE,
-  PHASE_5_DIAGNOSTICS_PROFILE,
+  BEAUTY_TEXTURE_DIAGNOSTICS_PROFILE,
+  COUNTERPOINT_HARMONY_DIAGNOSTICS_PROFILE,
+  FUGUE_FORM_DIAGNOSTICS_PROFILE,
+  FUGUE_FORM_REPRESENTATIVE_SEEDS,
+  FUGUE_FORM_REVIEW_LENGTH_TICKS,
+  MODAL_CONTEXT_DIAGNOSTICS_PROFILE,
   REVIEW_LENGTH_TICKS,
+  SUBJECT_ANSWER_PLAN_DIAGNOSTICS_PROFILE,
+  SUBJECT_ANSWER_PLAN_REPRESENTATIVE_SEEDS,
   TICKS_PER_QUARTER,
 } from "./constants.js";
 import type { MetaEvent, NoteEvent } from "./events.js";
@@ -19,28 +19,28 @@ import { cpuUsageMilliseconds, positiveModulo, scoreMinutes } from "./generate-t
 test("generateScore validates representative phase-3 seeds", () => {
   const startCpuUsage = process.cpuUsage();
 
-  for (const { seed, category } of PHASE_3_REPRESENTATIVE_SEEDS) {
-    const output = generateScore({ seed, lengthTicks: PHASE_3_LENGTH_TICKS, selectionModel: "baseline" });
+  for (const { seed, category } of FUGUE_FORM_REPRESENTATIVE_SEEDS) {
+    const output = generateScore({ seed, lengthTicks: FUGUE_FORM_REVIEW_LENGTH_TICKS, selectionModel: "baseline" });
     const subjectReturns = output.diagnostics.subjectEntries.filter(
       (entry) => entry.state === "subject-return" && entry.form === "subject",
     ).length;
     const strettoEntries = output.diagnostics.subjectEntries.filter((entry) => entry.state === "stretto-like").length;
     const totalMinutes = scoreMinutes(output.diagnostics.generatedUntilTick);
-    const maxParallelPerfects = Math.ceil(totalMinutes * PHASE_3_DIAGNOSTICS_PROFILE.maxParallelPerfectsPerMinute);
+    const maxParallelPerfects = Math.ceil(totalMinutes * FUGUE_FORM_DIAGNOSTICS_PROFILE.maxParallelPerfectsPerMinute);
 
     assert.ok(category === "fixed" || category === "boundary");
-    assert.ok(output.diagnostics.generatedUntilTick >= PHASE_3_LENGTH_TICKS);
-    assert.equal(output.diagnostics.rangeViolations, PHASE_3_DIAGNOSTICS_PROFILE.rangeViolations);
-    assert.equal(output.diagnostics.voiceCrossings, PHASE_3_DIAGNOSTICS_PROFILE.voiceCrossings);
+    assert.ok(output.diagnostics.generatedUntilTick >= FUGUE_FORM_REVIEW_LENGTH_TICKS);
+    assert.equal(output.diagnostics.rangeViolations, FUGUE_FORM_DIAGNOSTICS_PROFILE.rangeViolations);
+    assert.equal(output.diagnostics.voiceCrossings, FUGUE_FORM_DIAGNOSTICS_PROFILE.voiceCrossings);
     assert.ok(output.diagnostics.parallelPerfects <= maxParallelPerfects);
-    assert.ok(subjectReturns >= PHASE_3_DIAGNOSTICS_PROFILE.minSubjectReturns);
-    assert.ok(strettoEntries >= PHASE_3_DIAGNOSTICS_PROFILE.minStrettoEntries);
+    assert.ok(subjectReturns >= FUGUE_FORM_DIAGNOSTICS_PROFILE.minSubjectReturns);
+    assert.ok(strettoEntries >= FUGUE_FORM_DIAGNOSTICS_PROFILE.minStrettoEntries);
     assert.ok(output.diagnostics.candidateEvaluations > 0);
   }
 
   const elapsedCpuMilliseconds = cpuUsageMilliseconds(process.cpuUsage(startCpuUsage));
   const maxGenerationCpuMilliseconds =
-    PHASE_3_DIAGNOSTICS_PROFILE.maxGenerationMilliseconds * PHASE_3_REPRESENTATIVE_SEEDS.length * 1.5;
+    FUGUE_FORM_DIAGNOSTICS_PROFILE.maxGenerationMilliseconds * FUGUE_FORM_REPRESENTATIVE_SEEDS.length * 1.5;
   assert.ok(
     elapsedCpuMilliseconds < maxGenerationCpuMilliseconds,
     `phase-3 representative generation used ${elapsedCpuMilliseconds.toFixed(
@@ -50,15 +50,21 @@ test("generateScore validates representative phase-3 seeds", () => {
 });
 
 test("generateScore validates representative phase-4 seeds", () => {
-  for (const { seed, category } of PHASE_4_REPRESENTATIVE_SEEDS) {
-    const output = generateScore({ seed, lengthTicks: PHASE_3_LENGTH_TICKS, selectionModel: "baseline" });
+  for (const { seed, category } of SUBJECT_ANSWER_PLAN_REPRESENTATIVE_SEEDS) {
+    const output = generateScore({ seed, lengthTicks: FUGUE_FORM_REVIEW_LENGTH_TICKS, selectionModel: "baseline" });
 
     assert.ok(category === "fixed" || category === "boundary");
-    assert.equal(output.diagnostics.rangeViolations, PHASE_4_DIAGNOSTICS_PROFILE.rangeViolations);
-    assert.equal(output.diagnostics.voiceCrossings, PHASE_4_DIAGNOSTICS_PROFILE.voiceCrossings);
-    assert.equal(output.diagnostics.subjectIdentityViolations, PHASE_4_DIAGNOSTICS_PROFILE.subjectIdentityViolations);
-    assert.equal(output.diagnostics.answerPlanViolations, PHASE_4_DIAGNOSTICS_PROFILE.answerPlanViolations);
-    assert.equal(output.diagnostics.keyMetadataMismatches, PHASE_4_DIAGNOSTICS_PROFILE.keyMetadataMismatches);
+    assert.equal(output.diagnostics.rangeViolations, SUBJECT_ANSWER_PLAN_DIAGNOSTICS_PROFILE.rangeViolations);
+    assert.equal(output.diagnostics.voiceCrossings, SUBJECT_ANSWER_PLAN_DIAGNOSTICS_PROFILE.voiceCrossings);
+    assert.equal(
+      output.diagnostics.subjectIdentityViolations,
+      SUBJECT_ANSWER_PLAN_DIAGNOSTICS_PROFILE.subjectIdentityViolations,
+    );
+    assert.equal(output.diagnostics.answerPlanViolations, SUBJECT_ANSWER_PLAN_DIAGNOSTICS_PROFILE.answerPlanViolations);
+    assert.equal(
+      output.diagnostics.keyMetadataMismatches,
+      SUBJECT_ANSWER_PLAN_DIAGNOSTICS_PROFILE.keyMetadataMismatches,
+    );
     assert.ok(
       output.diagnostics.subjectEntries.some(
         (entry) =>
@@ -76,9 +82,15 @@ test("generateScore validates representative phase-4 seeds", () => {
 });
 
 test("generateScore reports phase-5 counterpoint texture metrics", () => {
-  const output = generateScore({ seed: "lyrical-line", lengthTicks: PHASE_3_LENGTH_TICKS, selectionModel: "baseline" });
+  const output = generateScore({
+    seed: "lyrical-line",
+    lengthTicks: FUGUE_FORM_REVIEW_LENGTH_TICKS,
+    selectionModel: "baseline",
+  });
   const totalMinutes = scoreMinutes(output.diagnostics.generatedUntilTick);
-  const maxLeapRecoveryMisses = Math.ceil(totalMinutes * PHASE_5_DIAGNOSTICS_PROFILE.maxLeapRecoveryMissesPerMinute);
+  const maxLeapRecoveryMisses = Math.ceil(
+    totalMinutes * COUNTERPOINT_HARMONY_DIAGNOSTICS_PROFILE.maxLeapRecoveryMissesPerMinute,
+  );
 
   assert.ok(output.diagnostics.counterSubjectCoverage >= 0.5);
   assert.ok(output.diagnostics.freeCounterpointCoverage >= 0.5);
@@ -134,25 +146,32 @@ test("generateScore reports phase-5.6 beauty and texture diagnostics", () => {
   ]);
   assert.equal(
     output.diagnostics.expositionEntryStaggerScore,
-    PHASE_5_6_DIAGNOSTICS_PROFILE.minExpositionEntryStaggerScore,
+    BEAUTY_TEXTURE_DIAGNOSTICS_PROFILE.minExpositionEntryStaggerScore,
   );
   assert.ok(
     output.diagnostics.counterSubjectIdentityRetention >=
-      PHASE_5_6_DIAGNOSTICS_PROFILE.minCounterSubjectIdentityRetention,
+      BEAUTY_TEXTURE_DIAGNOSTICS_PROFILE.minCounterSubjectIdentityRetention,
   );
   assert.ok(
     output.diagnostics.counterSubjectInvertibilityScore >=
-      PHASE_5_6_DIAGNOSTICS_PROFILE.minCounterSubjectInvertibilityScore,
+      BEAUTY_TEXTURE_DIAGNOSTICS_PROFILE.minCounterSubjectInvertibilityScore,
   );
   assert.ok(
-    output.diagnostics.freeCounterpointContourScore >= PHASE_5_6_DIAGNOSTICS_PROFILE.minFreeCounterpointContourScore,
+    output.diagnostics.freeCounterpointContourScore >=
+      BEAUTY_TEXTURE_DIAGNOSTICS_PROFILE.minFreeCounterpointContourScore,
   );
-  assert.ok(output.diagnostics.rhythmicIndependenceScore >= PHASE_5_6_DIAGNOSTICS_PROFILE.minRhythmicIndependenceScore);
   assert.ok(
-    output.diagnostics.supportTextureRepetitionScore >= PHASE_5_6_DIAGNOSTICS_PROFILE.minSupportTextureRepetitionScore,
+    output.diagnostics.rhythmicIndependenceScore >= BEAUTY_TEXTURE_DIAGNOSTICS_PROFILE.minRhythmicIndependenceScore,
   );
-  assert.equal(output.diagnostics.allVoiceSilenceGapCount, PHASE_5_6_DIAGNOSTICS_PROFILE.maxAllVoiceSilenceGapCount);
-  assert.ok(output.diagnostics.ornamentDensity >= PHASE_5_6_DIAGNOSTICS_PROFILE.minOrnamentDensity);
+  assert.ok(
+    output.diagnostics.supportTextureRepetitionScore >=
+      BEAUTY_TEXTURE_DIAGNOSTICS_PROFILE.minSupportTextureRepetitionScore,
+  );
+  assert.equal(
+    output.diagnostics.allVoiceSilenceGapCount,
+    BEAUTY_TEXTURE_DIAGNOSTICS_PROFILE.maxAllVoiceSilenceGapCount,
+  );
+  assert.ok(output.diagnostics.ornamentDensity >= BEAUTY_TEXTURE_DIAGNOSTICS_PROFILE.minOrnamentDensity);
   assert.ok(output.diagnostics.durationDistribution.quarter > 0);
   assert.ok(output.diagnostics.durationDistribution.eighth > 0);
 });
@@ -169,13 +188,13 @@ test("generateScore reports phase-5.7 modal context diagnostics", () => {
   assert.ok(
     output.diagnostics.sectionPlans.some((plan) => plan.cadenceKind === "modal" && plan.targetKey.mode === "dorian"),
   );
-  assert.ok(output.diagnostics.modalContextCount >= PHASE_5_7_DIAGNOSTICS_PROFILE.minModalContextCount);
+  assert.ok(output.diagnostics.modalContextCount >= MODAL_CONTEXT_DIAGNOSTICS_PROFILE.minModalContextCount);
   assert.ok(
-    output.diagnostics.modalCharacteristicToneHits >= PHASE_5_7_DIAGNOSTICS_PROFILE.minModalCharacteristicToneHits,
+    output.diagnostics.modalCharacteristicToneHits >= MODAL_CONTEXT_DIAGNOSTICS_PROFILE.minModalCharacteristicToneHits,
   );
-  assert.ok(output.diagnostics.modalCadenceHits >= PHASE_5_7_DIAGNOSTICS_PROFILE.minModalCadenceHits);
+  assert.ok(output.diagnostics.modalCadenceHits >= MODAL_CONTEXT_DIAGNOSTICS_PROFILE.minModalCadenceHits);
   assert.equal(
     output.diagnostics.tonalCadenceOveruseWarnings,
-    PHASE_5_7_DIAGNOSTICS_PROFILE.maxTonalCadenceOveruseWarnings,
+    MODAL_CONTEXT_DIAGNOSTICS_PROFILE.maxTonalCadenceOveruseWarnings,
   );
 });

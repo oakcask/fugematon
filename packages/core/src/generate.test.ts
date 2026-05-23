@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
-  PHASE_1_DIAGNOSTICS_PROFILE,
-  PHASE_1_REPRESENTATIVE_SEEDS,
-  PHASE_3_LENGTH_TICKS,
+  EXPOSITION_DIAGNOSTICS_PROFILE,
+  EXPOSITION_REPRESENTATIVE_SEEDS,
+  FUGUE_FORM_REVIEW_LENGTH_TICKS,
   REVIEW_LENGTH_TICKS,
   VOICES,
 } from "./constants.js";
@@ -120,13 +120,13 @@ test("generateScore exposes ordered subject and answer entries", () => {
 });
 
 test("generateScore extends long scores with phase-3 fugue states", () => {
-  const output = generateScore({ seed: "fugue-smoke", lengthTicks: PHASE_3_LENGTH_TICKS });
+  const output = generateScore({ seed: "fugue-smoke", lengthTicks: FUGUE_FORM_REVIEW_LENGTH_TICKS });
   const stateChanges = output.events.filter(
     (event): event is Extract<MetaEvent, { type: "state-change" }> =>
       event.kind === "meta" && event.type === "state-change",
   );
 
-  assert.ok(output.diagnostics.generatedUntilTick >= PHASE_3_LENGTH_TICKS);
+  assert.ok(output.diagnostics.generatedUntilTick >= FUGUE_FORM_REVIEW_LENGTH_TICKS);
   assert.ok(output.diagnostics.stateTransitions.includes("episode"));
   assert.ok(output.diagnostics.stateTransitions.includes("subject-return"));
   assert.ok(output.diagnostics.stateTransitions.includes("stretto-like"));
@@ -176,7 +176,7 @@ test("generateScore emits section plans with bounded harmonic anchors", () => {
 });
 
 test("generateScore validates representative phase-1 seeds", () => {
-  for (const { seed, category } of PHASE_1_REPRESENTATIVE_SEEDS) {
+  for (const { seed, category } of EXPOSITION_REPRESENTATIVE_SEEDS) {
     const output = generateScore({ seed, lengthTicks: 7680 });
     const notes = output.events.filter((event): event is NoteEvent => event.kind === "note");
 
@@ -184,8 +184,8 @@ test("generateScore validates representative phase-1 seeds", () => {
     assert.ok(output.diagnostics.generatedUntilTick >= 7680);
     assert.equal(output.diagnostics.subjectEntries.length, 4);
     assert.deepEqual(new Set(notes.map((note) => note.voice)), new Set(VOICES));
-    assert.equal(output.diagnostics.rangeViolations, PHASE_1_DIAGNOSTICS_PROFILE.rangeViolations);
-    assert.equal(output.diagnostics.voiceCrossings, PHASE_1_DIAGNOSTICS_PROFILE.voiceCrossings);
+    assert.equal(output.diagnostics.rangeViolations, EXPOSITION_DIAGNOSTICS_PROFILE.rangeViolations);
+    assert.equal(output.diagnostics.voiceCrossings, EXPOSITION_DIAGNOSTICS_PROFILE.voiceCrossings);
     assert.equal(countIssues(output.diagnostics.issues, "range-violation"), 0);
     assert.equal(countIssues(output.diagnostics.issues, "voice-crossing"), 0);
     for (const issue of output.diagnostics.issues) {

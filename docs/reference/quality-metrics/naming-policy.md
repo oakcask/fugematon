@@ -73,6 +73,17 @@ Every Phase-name removal uses the symbol rename audit workflow before it is repo
 | `evaluatePhase7BGatePolicy` | `evaluateReviewGatePolicy` | Removed from current exports. |
 | `phase8Ready` | `adoptionReady` | Removed from current policy result schema. |
 | `legacyPhase7Gate` | `contourMotionGate` | Removed from current policy result schema. |
+| `PHASE_1_DIAGNOSTICS_PROFILE` | `EXPOSITION_DIAGNOSTICS_PROFILE` | Removed from current exports. |
+| `PHASE_1_REPRESENTATIVE_SEEDS` | `EXPOSITION_REPRESENTATIVE_SEEDS` | Removed from current exports. |
+| `PHASE_3_LENGTH_TICKS` | `FUGUE_FORM_REVIEW_LENGTH_TICKS` | Removed from current exports. |
+| `PHASE_3_DIAGNOSTICS_PROFILE` | `FUGUE_FORM_DIAGNOSTICS_PROFILE` | Removed from current exports. |
+| `PHASE_3_REPRESENTATIVE_SEEDS` | `FUGUE_FORM_REPRESENTATIVE_SEEDS` | Removed from current exports. |
+| `PHASE_4_DIAGNOSTICS_PROFILE` | `SUBJECT_ANSWER_PLAN_DIAGNOSTICS_PROFILE` | Removed from current exports. |
+| `PHASE_4_REPRESENTATIVE_SEEDS` | `SUBJECT_ANSWER_PLAN_REPRESENTATIVE_SEEDS` | Removed from current exports. |
+| `PHASE_5_DIAGNOSTICS_PROFILE` | `COUNTERPOINT_HARMONY_DIAGNOSTICS_PROFILE` | Removed from current exports. |
+| `PHASE_5_6_DIAGNOSTICS_PROFILE` | `BEAUTY_TEXTURE_DIAGNOSTICS_PROFILE` | Removed from current exports. |
+| `PHASE_5_7_DIAGNOSTICS_PROFILE` | `MODAL_CONTEXT_DIAGNOSTICS_PROFILE` | Removed from current exports. |
+| `phase-7-fugue-reference-profile` | `fugue-reference-profile` | Removed from current reference profile output. |
 
 ## Staged Refactor Order
 

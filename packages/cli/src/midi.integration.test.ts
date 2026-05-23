@@ -478,12 +478,12 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       comparisons: unknown[];
     };
 
-    assert.equal(summary.schemaVersion, 17);
+    assert.equal(summary.schemaVersion, 18);
     assert.equal(summary.lengthTicks, 9600);
     assert.equal(summary.selectionModel, "section-local-planner");
     assert.deepEqual(summary.performanceProfile, { id: "organ-default", version: 1 });
     assert.ok(summary.seeds.length > 1);
-    assert.equal(summary.referenceDiagnostics.profile.profileId, "phase-7-fugue-reference-profile");
+    assert.equal(summary.referenceDiagnostics.profile.profileId, "fugue-reference-profile");
     assert.equal(summary.referenceDiagnostics.profile.sources[0]?.sourceFormat, "profile-fixture");
     assert.equal(summary.referenceDiagnostics.profile.sources[0]?.scoreFileRedistributed, false);
     assert.ok(summary.referenceDiagnostics.profile.ingestionPlan.supportedFormats.includes("musicxml"));
@@ -547,7 +547,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       assert.notEqual(entry.initialSubjectProfile.contourClass, "");
       assert.ok(!entry.midiFile.includes(directory));
       assert.ok(entry.diagnosticsSummary.hardConstraintFailures >= 0);
-      assert.equal(entry.referenceComparison.profileId, "phase-7-fugue-reference-profile");
+      assert.equal(entry.referenceComparison.profileId, "fugue-reference-profile");
       assert.equal(entry.referenceComparison.seed, entry.seed);
       assert.ok(entry.referenceComparison.normalizers.scoreQuarterNotes > 0);
       assert.ok(entry.referenceComparison.normalizers.estimatedActiveVoicePairQuarterNotes > 0);

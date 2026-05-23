@@ -314,8 +314,8 @@ function analyzeTextureDiagnostics(
   };
 }
 
-const PHASE_11_STATE_PATTERN_LENGTH = 4;
-const PHASE_11_ADJACENT_VOICE_PAIRS: readonly [higherVoice: Voice, lowerVoice: Voice][] = [
+const SECTION_STATE_PATTERN_LENGTH = 4;
+const ADJACENT_VOICE_INTERVAL_PAIRS: readonly [higherVoice: Voice, lowerVoice: Voice][] = [
   ["soprano", "alto"],
   ["alto", "tenor"],
   ["tenor", "bass"],
@@ -492,7 +492,7 @@ function summarizeSectionStatePatterns(
   sectionPlans: readonly HarmonicPlan[],
 ): PhraseRepetitionReviewSummary["sectionStatePatterns"] {
   const states = sectionPlans.filter((plan) => plan.state !== "exposition").map((plan) => plan.state);
-  const patterns = countPatterns(states, PHASE_11_STATE_PATTERN_LENGTH);
+  const patterns = countPatterns(states, SECTION_STATE_PATTERN_LENGTH);
   const totalPatternCount = [...patterns.values()].reduce((sum, count) => sum + count, 0);
   const topPatterns = [...patterns.entries()]
     .map(([pattern, count]) => ({
@@ -504,7 +504,7 @@ function summarizeSectionStatePatterns(
     .slice(0, 5);
 
   return {
-    patternLength: PHASE_11_STATE_PATTERN_LENGTH,
+    patternLength: SECTION_STATE_PATTERN_LENGTH,
     uniquePatternCount: patterns.size,
     mostRepeatedPatternCount: maximum(topPatterns.map((pattern) => pattern.count)),
     topPatterns,
@@ -530,7 +530,7 @@ function phraseFunctionForPlan(plan: HarmonicPlan): PhraseFunction {
 function summarizeAdjacentVoiceIntervals(
   verticalities: readonly HalfBeatVerticality[],
 ): TexturePlanningReviewSummary["adjacentVoiceIntervals"] {
-  return PHASE_11_ADJACENT_VOICE_PAIRS.map(([higherVoice, lowerVoice]) => {
+  return ADJACENT_VOICE_INTERVAL_PAIRS.map(([higherVoice, lowerVoice]) => {
     const intervals = verticalities.flatMap((verticality) => {
       const higherPitch = verticality.active.get(higherVoice)?.pitch;
       const lowerPitch = verticality.active.get(lowerVoice)?.pitch;
@@ -661,14 +661,14 @@ function summarizeStateGrammarRepetition(
   sectionPlans: readonly HarmonicPlan[],
 ): TexturePlanningReviewSummary["stateGrammarRepetition"] {
   const states = sectionPlans.filter((plan) => plan.state !== "exposition").map((plan) => plan.state);
-  const patterns = countPatterns(states, PHASE_11_STATE_PATTERN_LENGTH);
+  const patterns = countPatterns(states, SECTION_STATE_PATTERN_LENGTH);
   const topPatterns = [...patterns.entries()]
     .map(([pattern, count]) => ({ pattern: pattern.split(">") as HarmonicPlan["state"][], count }))
     .sort((left, right) => right.count - left.count || left.pattern.join(">").localeCompare(right.pattern.join(">")))
     .slice(0, 3);
 
   return {
-    patternLength: PHASE_11_STATE_PATTERN_LENGTH,
+    patternLength: SECTION_STATE_PATTERN_LENGTH,
     uniquePatternCount: patterns.size,
     mostRepeatedPatternCount: maximum(topPatterns.map((pattern) => pattern.count)),
     topPatterns,

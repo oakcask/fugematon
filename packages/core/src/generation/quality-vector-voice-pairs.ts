@@ -13,7 +13,7 @@ import type {
 import { activeNoteForVoiceAt, dominantMapKey, noteCheckpoints, sectionPlanAt } from "./quality-vector-shared.js";
 import { positiveModulo } from "./shared.js";
 
-const PHASE_13_VOICE_PAIRS: readonly [Voice, Voice][] = [
+const QUALITY_VECTOR_VOICE_PAIRS: readonly [Voice, Voice][] = [
   ["soprano", "alto"],
   ["soprano", "tenor"],
   ["soprano", "bass"],
@@ -28,7 +28,7 @@ export function summarizeVoicePairUnisons(
 ): VoicePairUnisonSummary[] {
   const checkpoints = noteCheckpoints(notes);
 
-  return PHASE_13_VOICE_PAIRS.map(([leftVoice, rightVoice]) => {
+  return QUALITY_VECTOR_VOICE_PAIRS.map(([leftVoice, rightVoice]) => {
     let activeDurationTicks = 0;
     let exactSamePitchDurationTicks = 0;
     let pitchClassUnisonDurationTicks = 0;
@@ -107,7 +107,7 @@ export function summarizeVoicePairFunctions(
 ): VoicePairFunctionSummary[] {
   const checkpoints = noteCheckpoints(notes);
 
-  return PHASE_13_VOICE_PAIRS.map(([leftVoice, rightVoice]) => {
+  return QUALITY_VECTOR_VOICE_PAIRS.map(([leftVoice, rightVoice]) => {
     const summary: VoicePairFunctionSummary = {
       leftVoice,
       rightVoice,
@@ -177,7 +177,7 @@ export function summarizeVoicePairSpans(
   const checkpoints = noteCheckpoints(notes);
   const spans: VoicePairSpanSummary[] = [];
 
-  for (const [leftVoice, rightVoice] of PHASE_13_VOICE_PAIRS) {
+  for (const [leftVoice, rightVoice] of QUALITY_VECTOR_VOICE_PAIRS) {
     let currentSpan: VoicePairSpanSummary | undefined;
 
     for (let index = 0; index < checkpoints.length - 1; index += 1) {
