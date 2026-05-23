@@ -40,6 +40,7 @@ import {
   VOICE_ENTRY_ORDER,
 } from "./shared.js";
 import type { ActivePitch, ActiveVerticality, TextureDiagnostics } from "./types.js";
+import { type HalfBeatVerticality, halfBeatVerticalities } from "./verticality.js";
 
 export function analyzeScore(
   notes: readonly NoteEvent[],
@@ -519,7 +520,7 @@ function phase12PhraseFunctionForPlan(plan: HarmonicPlan): Phase12PhraseFunction
 }
 
 function summarizeAdjacentVoiceIntervals(
-  verticalities: readonly Phase11Verticality[],
+  verticalities: readonly HalfBeatVerticality[],
 ): Phase11ReviewSummary["adjacentVoiceIntervals"] {
   return PHASE_11_ADJACENT_VOICE_PAIRS.map(([higherVoice, lowerVoice]) => {
     const intervals = verticalities.flatMap((verticality) => {
@@ -556,7 +557,7 @@ function summarizeRegisterSpans(notes: readonly NoteEvent[]): Phase11ReviewSumma
 }
 
 function summarizeFunctionalThinning(
-  verticalities: readonly Phase11Verticality[],
+  verticalities: readonly HalfBeatVerticality[],
   sectionPlans: readonly HarmonicPlan[],
 ): Phase11ReviewSummary["functionalThinning"] {
   const runs: { activeVoiceCount: number; startTick: number; endTick: number; voices: Set<Voice> }[] = [];
@@ -691,7 +692,7 @@ function summarizeEntryPatternFamilies(
 
 function summarizeMetricalHarmony(
   notes: readonly NoteEvent[],
-  verticalities: readonly Phase11Verticality[],
+  verticalities: readonly HalfBeatVerticality[],
   sectionPlans: readonly HarmonicPlan[],
 ): Phase11ReviewSummary["metricalHarmony"] {
   let strongBeatCheckpointCount = 0;
@@ -774,52 +775,6 @@ function summarizeMetricalHarmony(
     weakBeatResolvedNonChordToneCount,
     weakBeatUnresolvedNonChordToneCount,
   };
-}
-
-type Phase11Verticality = {
-  tick: number;
-  active: ActiveVerticality;
-};
-
-function halfBeatVerticalities(notes: readonly NoteEvent[]): Phase11Verticality[] {
-  const endTick = Math.max(0, ...notes.map((note) => note.startTick + note.durationTicks));
-  const notesByVoice = Object.fromEntries(
-    VOICE_ENTRY_ORDER.map((voice) => [voice, notes.filter((note) => note.voice === voice).sort(compareNoteEvents)]),
-  ) as Record<Voice, NoteEvent[]>;
-  const indexes: Record<Voice, number> = {
-    soprano: 0,
-    alto: 0,
-    tenor: 0,
-    bass: 0,
-  };
-  const verticalities: Phase11Verticality[] = [];
-
-  for (let tick = 0; tick < endTick; tick += TICKS_PER_QUARTER / 2) {
-    const active: ActiveVerticality = new Map();
-    for (const voice of VOICE_ENTRY_ORDER) {
-      const voiceNotes = notesByVoice[voice];
-      while (
-        indexes[voice] < voiceNotes.length &&
-        voiceNotes[indexes[voice]]!.startTick + voiceNotes[indexes[voice]]!.durationTicks <= tick
-      ) {
-        indexes[voice] += 1;
-      }
-
-      const note = voiceNotes[indexes[voice]];
-      if (note !== undefined && note.startTick <= tick && tick < note.startTick + note.durationTicks) {
-        active.set(voice, {
-          pitch: note.pitch,
-          role: note.role,
-          metricalHarmonyIntent: note.metricalHarmonyIntent,
-          startTick: note.startTick,
-          durationTicks: note.durationTicks,
-        });
-      }
-    }
-    verticalities.push({ tick, active });
-  }
-
-  return verticalities;
 }
 
 function weakBeatNonChordToneResolves(
