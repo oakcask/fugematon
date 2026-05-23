@@ -21,12 +21,12 @@ import {
   evaluateVoiceIndependenceGate,
   generateScore,
   type MelodyTextureGateResult,
-  PHASE_5_11_ROTATION_SEEDS,
-  PHASE_5_REVIEW_SEEDS,
-  phase59ManualListeningBlockers,
+  manualListeningBlockers,
+  REPRESENTATIVE_REVIEW_SEEDS,
   type ReferenceDiagnosticsAggregate,
   type ReferenceDiagnosticsComparison,
   type ReviewGatePolicyResult,
+  ROTATION_REVIEW_SEEDS,
   type RotationRobustnessGateResult,
   summarizeReferenceDiagnosticsComparisons,
   TICKS_PER_QUARTER,
@@ -65,7 +65,7 @@ export async function writeReviewBundle(
   const listeningReview = createListeningReview(lengthTicks);
   const pairwisePreferences = createPairwisePreferences(lengthTicks, performanceProfile);
 
-  for (const { seed, category } of [...PHASE_5_REVIEW_SEEDS, ...PHASE_5_11_ROTATION_SEEDS]) {
+  for (const { seed, category } of [...REPRESENTATIVE_REVIEW_SEEDS, ...ROTATION_REVIEW_SEEDS]) {
     const output = generateScore({ seed, lengthTicks, selectionModel });
     const safeSeed = seed.replaceAll(/[^a-z0-9-]/gi, "-");
     const diagnosticsFile = `${safeSeed}.diagnostics.json`;
@@ -90,7 +90,7 @@ export async function writeReviewBundle(
   }
 
   const summary: ReviewSummary = {
-    schemaVersion: 15,
+    schemaVersion: 16,
     lengthTicks,
     selectionModel,
     performanceProfile,
@@ -150,7 +150,7 @@ export async function writeAbReviewBundle(
 }
 
 type ReviewSummary = {
-  schemaVersion: 15;
+  schemaVersion: 16;
   lengthTicks: number;
   selectionModel: SelectionModel;
   performanceProfile: PerformanceProfileMetadata;
@@ -175,12 +175,6 @@ type ReviewSummarySeed = {
   melodyTextureGate: MelodyTextureGateResult;
   contourMotionGate: ContourMotionGateResult;
   reviewGatePolicy: ReviewGatePolicyResult;
-  phase59Gate: BaselineBeautyGateResult;
-  phase510Gate: VoiceIndependenceGateResult;
-  phase511Gate: RotationRobustnessGateResult;
-  phase6Gate: MelodyTextureGateResult;
-  phase7Gate: ContourMotionGateResult;
-  phase7BGate: ReviewGatePolicyResult;
 };
 
 function createReviewSummarySeed({
@@ -230,18 +224,12 @@ function createReviewSummarySeed({
       melodyTextureGate,
       contourMotionGate,
       reviewGatePolicy,
-      phase59Gate: baselineBeautyGate,
-      phase510Gate: voiceIndependenceGate,
-      phase511Gate: rotationRobustnessGate,
-      phase6Gate: melodyTextureGate,
-      phase7Gate: contourMotionGate,
-      phase7BGate: reviewGatePolicy,
     },
   };
 }
 
 type AbReviewComparisonSummary = {
-  schemaVersion: 4;
+  schemaVersion: 5;
   lengthTicks: number;
   baseline: ReviewBundleSide;
   variant: ReviewBundleSide;
@@ -279,14 +267,7 @@ type ReviewSeedComparisonSnapshot = {
   referenceComparison: ReferenceDiagnosticsComparison;
   candidatePoolOracle: CandidatePoolOracleSummary;
   reviewGatePolicy: {
-    phase8Ready: boolean;
-    hardFailureCount: number;
-    hardFailures: ReviewGatePolicyResult["hardFailures"];
-    reviewSignalCount: number;
-    reviewSignals: ReviewGatePolicyResult["reviewSignals"];
-  };
-  phase7BGate: {
-    phase8Ready: boolean;
+    adoptionReady: boolean;
     hardFailureCount: number;
     hardFailures: ReviewGatePolicyResult["hardFailures"];
     reviewSignalCount: number;
@@ -302,12 +283,10 @@ type ReviewSeedComparisonDeltas = {
   candidatePoolViableCandidates: number;
   reviewPolicyHardFailures: number;
   reviewPolicyReviewSignals: number;
-  phase7BHardFailures: number;
-  phase7BReviewSignals: number;
   qualityVectorDistance: number;
   localSentinelCount: number;
   phraseConvergenceReviewFindings: number;
-  phase8ReadyChanged: boolean;
+  adoptionReadyChanged: boolean;
 };
 
 type ReviewDiagnosticsSummary = {
@@ -457,7 +436,7 @@ function compareReviewSummaries({
   variantSummary: ReviewSummary;
 }): AbReviewComparisonSummary {
   return {
-    schemaVersion: 4,
+    schemaVersion: 5,
     lengthTicks,
     baseline: {
       label: baselineLabel,
@@ -496,15 +475,13 @@ function compareReviewSeed(baselineSeed: ReviewSummarySeed, variantSeed: ReviewS
       variant.candidatePoolOracle.viableCandidateCount - baseline.candidatePoolOracle.viableCandidateCount,
     reviewPolicyHardFailures: variant.reviewGatePolicy.hardFailureCount - baseline.reviewGatePolicy.hardFailureCount,
     reviewPolicyReviewSignals: variant.reviewGatePolicy.reviewSignalCount - baseline.reviewGatePolicy.reviewSignalCount,
-    phase7BHardFailures: variant.reviewGatePolicy.hardFailureCount - baseline.reviewGatePolicy.hardFailureCount,
-    phase7BReviewSignals: variant.reviewGatePolicy.reviewSignalCount - baseline.reviewGatePolicy.reviewSignalCount,
     qualityVectorDistance: roundRatio(
       qualityVectorDistance(variant.qualityVector) - qualityVectorDistance(baseline.qualityVector),
     ),
     localSentinelCount: variant.qualityVector.localSentinels.length - baseline.qualityVector.localSentinels.length,
     phraseConvergenceReviewFindings:
       variant.phraseConvergenceReview.findings.length - baseline.phraseConvergenceReview.findings.length,
-    phase8ReadyChanged: variant.reviewGatePolicy.phase8Ready !== baseline.reviewGatePolicy.phase8Ready,
+    adoptionReadyChanged: variant.reviewGatePolicy.adoptionReady !== baseline.reviewGatePolicy.adoptionReady,
   };
 
   return {
@@ -527,7 +504,7 @@ function compareReviewSeed(baselineSeed: ReviewSummarySeed, variantSeed: ReviewS
 
 function createReviewSeedSnapshot(seed: ReviewSummarySeed): ReviewSeedComparisonSnapshot {
   const reviewGatePolicy = {
-    phase8Ready: seed.reviewGatePolicy.phase8Ready,
+    adoptionReady: seed.reviewGatePolicy.adoptionReady,
     hardFailureCount: seed.reviewGatePolicy.metrics.hardFailureCount,
     hardFailures: seed.reviewGatePolicy.hardFailures,
     reviewSignalCount: seed.reviewGatePolicy.reviewSignals.length,
@@ -539,7 +516,6 @@ function createReviewSeedSnapshot(seed: ReviewSummarySeed): ReviewSeedComparison
     referenceComparison: seed.referenceComparison,
     candidatePoolOracle: seed.diagnosticsSummary.candidatePoolOracle,
     reviewGatePolicy,
-    phase7BGate: reviewGatePolicy,
     qualityVector: seed.diagnosticsSummary.qualityVector,
     phraseConvergenceReview: seed.diagnosticsSummary.phraseConvergenceReview,
   };
@@ -557,7 +533,7 @@ function describeImprovements(
   if (deltas.reviewPolicyHardFailures < 0) {
     improvements.push("review policy hard failures decreased");
   }
-  if (!baseline.reviewGatePolicy.phase8Ready && variant.reviewGatePolicy.phase8Ready) {
+  if (!baseline.reviewGatePolicy.adoptionReady && variant.reviewGatePolicy.adoptionReady) {
     improvements.push("operational readiness recovered");
   }
   if (deltas.referenceOutsideCount < 0) {
@@ -594,7 +570,7 @@ function describeRegressions(
   if (deltas.reviewPolicyHardFailures > 0) {
     regressions.push("review policy hard failures increased");
   }
-  if (baseline.reviewGatePolicy.phase8Ready && !variant.reviewGatePolicy.phase8Ready) {
+  if (baseline.reviewGatePolicy.adoptionReady && !variant.reviewGatePolicy.adoptionReady) {
     regressions.push("operational readiness was lost");
   }
   if (deltas.referenceOutsideCount > 0) {
@@ -940,7 +916,7 @@ function createListeningSeedReview(
       longRunInterest: "not-reviewed",
     },
     notes: "",
-    blockers: phase59ManualListeningBlockers(category, "not-reviewed"),
+    blockers: manualListeningBlockers(category, "not-reviewed"),
   };
 }
 
