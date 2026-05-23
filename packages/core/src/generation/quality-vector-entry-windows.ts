@@ -36,7 +36,7 @@ export function summarizeEntrySevereIntervalDurations(
             candidateTick > startTick &&
             candidateTick <= resolutionDeadlineTick &&
             !hasSevereEntryIntervalAt(notes, entry, candidateTick),
-        ) || resolvesByStep(notes, entry, startTick);
+        ) || entryLineResolvesByStep(notes, entry, startTick);
       if (!resolvesBeforeDeadline) {
         unresolvedDurationTicks += durationTicks;
       }
@@ -169,7 +169,7 @@ function summarizeEntrySonority(notes: readonly NoteEvent[], entry: PlannedEntry
 
     for (const supportNote of supportNotes) {
       const intervalClass = entrySupportIntervalClass(entryNote, supportNote);
-      const resolves = resolvesByStep(notes, entry, tick);
+      const resolves = entrySupportPairResolvesByStep(notes, entry, entryNote, supportNote, tick);
       if (isAdjacentSecondFriction(intervalClass)) {
         adjacentSecondFrictionCount += 1;
         kinds.add("adjacent-second-friction");
@@ -303,17 +303,30 @@ function entrySupportNotesAt(notes: readonly NoteEvent[], entry: PlannedEntry, t
   );
 }
 
-function resolvesByStep(notes: readonly NoteEvent[], entry: PlannedEntry, tick: number): boolean {
-  const current = entryNoteAt(notes, entry, tick);
-  const next = notes
-    .filter((note) => note.voice === entry.voice && note.startTick > tick)
-    .sort((left, right) => left.startTick - right.startTick)[0];
+function entrySupportPairResolvesByStep(
+  notes: readonly NoteEvent[],
+  entry: PlannedEntry,
+  entryNote: NoteEvent,
+  supportNote: NoteEvent,
+  tick: number,
+): boolean {
   return (
-    current !== undefined &&
-    next !== undefined &&
-    next.startTick <= tick + TICKS_PER_QUARTER &&
-    Math.abs(next.pitch - current.pitch) <= 2
+    entryLineResolvesByStep(notes, entry, tick) ||
+    noteResolvesByStep(notes, entryNote, tick) ||
+    noteResolvesByStep(notes, supportNote, tick)
   );
+}
+
+function entryLineResolvesByStep(notes: readonly NoteEvent[], entry: PlannedEntry, tick: number): boolean {
+  const current = entryNoteAt(notes, entry, tick);
+  return current !== undefined && noteResolvesByStep(notes, current, tick);
+}
+
+function noteResolvesByStep(notes: readonly NoteEvent[], current: NoteEvent, tick: number): boolean {
+  const next = notes
+    .filter((note) => note.voice === current.voice && note.startTick > tick)
+    .sort((left, right) => left.startTick - right.startTick)[0];
+  return next !== undefined && next.startTick <= tick + TICKS_PER_QUARTER && Math.abs(next.pitch - current.pitch) <= 2;
 }
 
 function resolutionDirection(

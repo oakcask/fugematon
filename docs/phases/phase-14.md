@@ -79,6 +79,8 @@ Tighten entry-continuity classification so one delayed or carried support line i
 
 Implementation note: entry-boundary reset softening now carries/delays two outside support voices when all outside voices would otherwise restart together. This removes the focused one-voice carry with outside reset windows in the Phase 14B review seeds. See the [Phase 14 entry continuity generation review](../reviews/phase-14-entry-continuity-generation.md). Broader entry dissonance scoring and weak-dissonance generation responses remain open.
 
+Implementation note: entry-local dissonance review now treats stepwise resolution in either the entry voice or the support voice as prepared/passing explanation. This reduces unresolved accented entry clashes in the focused Phase 14B entry-dissonance seeds from 153 to 9 while keeping remaining adjacent-second friction review-visible. See the [Phase 14 entry dissonance generation review](../reviews/phase-14-entry-dissonance-generation.md). Broader weak-passing/offbeat semitone generation and later line-agency/counter-subject/phrase-development work remain open.
+
 ### 14C: Line-agency, counter-subject, and phrase-development generation
 
 Add independent rhythmic and contour alternatives after the dissonance triage is stable. Make counter-subject preservation and transformation selectable objectives. Rebuild phrase-development selection so recurrence must show changed role, register, cadence target, contour, density, or contrapuntal pressure, not only a changed state label. Do not let phrase novelty rewards select windows that increase unprepared semitone friction. The generator should improve line agency before phrase-development rewards are trusted, because a novel phrase over block-like support is still weak fugue writing.
