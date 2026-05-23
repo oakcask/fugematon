@@ -12,6 +12,23 @@ export type PianoRollNoteLayout = {
   isActive: boolean;
 };
 
+export type RoleBackplateLayout = {
+  voice: Voice;
+  role: NoteRole;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
+export type RoundedRectLayout = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  radius: number;
+};
+
 export type PianoRollViewport = {
   startSecond: number;
   endSecond: number;
@@ -44,8 +61,28 @@ const ROLE_DASHES: Record<NoteRole, number[]> = {
   "free-counterpoint": [3, 4],
   fallback: [6, 3, 2, 3],
 };
+const ROLE_BACKPLATE_STROKES: Partial<Record<NoteRole, string>> = {
+  subject: "rgba(183, 103, 23, 0.68)",
+  answer: "rgba(28, 94, 178, 0.66)",
+  "subject-fragment": "rgba(87, 129, 42, 0.64)",
+  "counter-subject": "rgba(11, 127, 119, 0.64)",
+};
 const ACTIVE_NOTE_STROKE = "#007c91";
 const ACTIVE_NOTE_GLOW = "rgba(0, 124, 145, 0.48)";
+const ROLE_BACKPLATE_JOIN_GAP = 14;
+const ROLE_BACKPLATE_X_PADDING = 6;
+const ROLE_BACKPLATE_Y_PADDING = 4;
+const ROLE_BACKPLATE_STROKE_WIDTH = 1.75;
+const STROKE_ONLY_NOTE_WIDTH = 2;
+const NOTE_ROLES_WITHOUT_STROKES = new Set<NoteRole>([
+  "subject",
+  "answer",
+  "subject-fragment",
+  "counter-subject",
+  "free-counterpoint",
+  "fallback",
+]);
+const STROKE_ONLY_NOTE_ROLES = new Set<NoteRole>(["fallback"]);
 
 const LEFT_GUTTER = 62;
 const RIGHT_GUTTER = 20;
@@ -138,6 +175,121 @@ export function computeActivePitches(model: PlaybackModel, playbackSecond: numbe
   return [...activePitches].sort((left, right) => left - right);
 }
 
+export function shouldDrawNoteRoleStroke(role: NoteRole | undefined): role is NoteRole {
+  return role !== undefined && !NOTE_ROLES_WITHOUT_STROKES.has(role);
+}
+
+export function shouldDrawStrokeOnlyNote(role: NoteRole | undefined): role is NoteRole {
+  return role !== undefined && STROKE_ONLY_NOTE_ROLES.has(role);
+}
+
+export function computeStrokeOnlyNoteRect(note: PianoRollNoteLayout): RoundedRectLayout {
+  const inset = Math.min(STROKE_ONLY_NOTE_WIDTH / 2, note.width / 2, note.height / 2);
+
+  return {
+    x: note.x + inset,
+    y: note.y + inset,
+    width: Math.max(0.5, note.width - inset * 2),
+    height: Math.max(0.5, note.height - inset * 2),
+    radius: Math.max(1, 5 - inset),
+  };
+}
+
+export function computeRoleBackplateLayout(
+  notes: readonly PianoRollNoteLayout[],
+  width: number,
+  height: number,
+): RoleBackplateLayout[] {
+  const rollLeft = LEFT_GUTTER;
+  const rollRight = width - RIGHT_GUTTER;
+  const rollTop = TOP_GUTTER;
+  const rollBottom = height - BOTTOM_GUTTER;
+  const groups = new Map<string, PianoRollNoteLayout[]>();
+
+  for (const note of notes) {
+    if (note.role === undefined || ROLE_BACKPLATE_STROKES[note.role] === undefined) {
+      continue;
+    }
+
+    const key = `${note.voice}:${note.role}`;
+    const groupNotes = groups.get(key);
+    if (groupNotes === undefined) {
+      groups.set(key, [note]);
+    } else {
+      groupNotes.push(note);
+    }
+  }
+
+  const backplates: RoleBackplateLayout[] = [];
+  for (const groupNotes of groups.values()) {
+    const sortedNotes = [...groupNotes].sort((left, right) => left.x - right.x || left.y - right.y);
+    let current = startBackplateGroup(sortedNotes[0]!);
+
+    for (const note of sortedNotes.slice(1)) {
+      const noteRight = note.x + note.width;
+      if (note.x > current.right + ROLE_BACKPLATE_JOIN_GAP) {
+        pushBackplate(backplates, current, rollLeft, rollRight, rollTop, rollBottom);
+        current = startBackplateGroup(note);
+        continue;
+      }
+
+      current.right = Math.max(current.right, noteRight);
+      current.top = Math.min(current.top, note.y);
+      current.bottom = Math.max(current.bottom, note.y + note.height);
+    }
+
+    pushBackplate(backplates, current, rollLeft, rollRight, rollTop, rollBottom);
+  }
+
+  return backplates.sort((left, right) => left.x - right.x || left.y - right.y);
+}
+
+type RoleBackplateGroup = {
+  voice: Voice;
+  role: NoteRole;
+  left: number;
+  right: number;
+  top: number;
+  bottom: number;
+};
+
+function startBackplateGroup(note: PianoRollNoteLayout): RoleBackplateGroup {
+  return {
+    voice: note.voice,
+    role: note.role!,
+    left: note.x,
+    right: note.x + note.width,
+    top: note.y,
+    bottom: note.y + note.height,
+  };
+}
+
+function pushBackplate(
+  backplates: RoleBackplateLayout[],
+  group: RoleBackplateGroup,
+  rollLeft: number,
+  rollRight: number,
+  rollTop: number,
+  rollBottom: number,
+): void {
+  const x = Math.max(rollLeft, group.left - ROLE_BACKPLATE_X_PADDING);
+  const right = Math.min(rollRight, group.right + ROLE_BACKPLATE_X_PADDING);
+  const y = Math.max(rollTop, group.top - ROLE_BACKPLATE_Y_PADDING);
+  const bottom = Math.min(rollBottom, group.bottom + ROLE_BACKPLATE_Y_PADDING);
+  if (right <= x || bottom <= y) {
+    return;
+  }
+
+  backplates.push({
+    voice: group.voice,
+    role: group.role,
+    x,
+    y,
+    width: right - x,
+    height: bottom - y,
+  });
+}
+
 export function drawPianoRoll(canvas: HTMLCanvasElement, model: PlaybackModel, playbackSecond: number): void {
   const context = canvas.getContext("2d");
   if (context === null) {
@@ -158,17 +310,32 @@ export function drawPianoRoll(canvas: HTMLCanvasElement, model: PlaybackModel, p
   const activePitches = computeActivePitches(model, playbackSecond);
   drawBackground(context, width, height, model, viewport, activePitches);
 
-  for (const note of computePianoRollLayout(model, width, height, viewport, playbackSecond)) {
-    context.fillStyle = VOICE_COLORS[note.voice];
+  const noteLayouts = computePianoRollLayout(model, width, height, viewport, playbackSecond);
+  drawRoleBackplates(context, width, height, noteLayouts);
+
+  for (const note of noteLayouts) {
     context.globalAlpha = note.isActive ? 1 : 0.82;
     if (note.isActive) {
       context.shadowBlur = 14;
       context.shadowColor = ACTIVE_NOTE_GLOW;
     }
-    roundRect(context, note.x, note.y, note.width, note.height, 5);
-    context.fill();
+
+    if (shouldDrawStrokeOnlyNote(note.role)) {
+      const strokeRect = computeStrokeOnlyNoteRect(note);
+      context.strokeStyle = ROLE_STROKES[note.role];
+      context.lineWidth = STROKE_ONLY_NOTE_WIDTH;
+      context.setLineDash(ROLE_DASHES[note.role]);
+      roundRect(context, strokeRect.x, strokeRect.y, strokeRect.width, strokeRect.height, strokeRect.radius);
+      context.stroke();
+      context.setLineDash([]);
+    } else {
+      context.fillStyle = VOICE_COLORS[note.voice];
+      roundRect(context, note.x, note.y, note.width, note.height, 5);
+      context.fill();
+    }
+
     context.shadowBlur = 0;
-    if (note.role !== undefined) {
+    if (shouldDrawNoteRoleStroke(note.role)) {
       context.globalAlpha = 0.94;
       context.strokeStyle = note.entry === undefined ? ROLE_STROKES[note.role] : ENTRY_STROKES[note.entry.form];
       context.lineWidth = note.entry?.state === "stretto-like" || note.role === "counter-subject" ? 3 : 2;
@@ -187,6 +354,25 @@ export function drawPianoRoll(canvas: HTMLCanvasElement, model: PlaybackModel, p
 
   context.globalAlpha = 1;
   drawPlayhead(context, width, height, playbackSecond, viewport);
+}
+
+function drawRoleBackplates(
+  context: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  notes: readonly PianoRollNoteLayout[],
+): void {
+  context.setLineDash([]);
+  context.lineWidth = ROLE_BACKPLATE_STROKE_WIDTH;
+
+  for (const backplate of computeRoleBackplateLayout(notes, width, height)) {
+    const strokeStyle = ROLE_BACKPLATE_STROKES[backplate.role];
+    if (strokeStyle !== undefined) {
+      context.strokeStyle = strokeStyle;
+      roundRect(context, backplate.x + 0.5, backplate.y + 0.5, backplate.width - 1, backplate.height - 1, 6);
+      context.stroke();
+    }
+  }
 }
 
 function drawBackground(
