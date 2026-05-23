@@ -8,7 +8,12 @@ import type {
   PlannedEntry,
   Voice,
 } from "../events.js";
-import { metricalHarmonyIntentForDegree, nearestHarmonicAnchor, rootDegreeForFunction } from "./harmony.js";
+import {
+  chordTonePitchClasses,
+  metricalHarmonyIntentForDegree,
+  nearestHarmonicAnchor,
+  rootDegreeForFunction,
+} from "./harmony.js";
 import { isModalMode } from "./key.js";
 import { melodicRoleForScaleDegree, scaleDegreePitchClass } from "./pitch.js";
 import {
@@ -19,6 +24,7 @@ import {
   MODAL_COUNTER_SUBJECT_DEGREES,
   MODAL_FREE_COUNTERPOINT_DEGREES,
   placePitchInRegister,
+  positiveModulo,
   VOICE_ENTRY_ORDER,
   VOICE_REGISTER_TARGETS,
 } from "./shared.js";
@@ -362,6 +368,7 @@ export function addTextureNote(
   if (previous !== undefined && (pattern.role === "free-counterpoint" || pattern.role === "counter-subject")) {
     pitch = fitPitchNearPrevious(pitchClass, pattern.voice, previous.pitch);
   }
+  pitch = weakDissonanceSafePitch(notes, pattern, startTick, durationTicks, pitch);
   notes.push({
     kind: "note",
     voice: pattern.voice,
@@ -378,6 +385,80 @@ export function addTextureNote(
         voice: pattern.voice,
         harmonicPlan: pattern.harmonicPlan,
       }),
+  });
+}
+
+function weakDissonanceSafePitch(
+  notes: readonly NoteEvent[],
+  pattern: Parameters<typeof addTextureNote>[1],
+  startTick: number,
+  durationTicks: number,
+  pitch: number,
+): number {
+  if (
+    pattern.role !== "free-counterpoint" ||
+    pattern.harmonicPlan === undefined ||
+    startTick < pattern.harmonicPlan.startTick + TICKS_PER_QUARTER * 6 ||
+    startTick % (TICKS_PER_QUARTER * 2) === 0 ||
+    !createsSemitoneAtTick(notes, pattern.voice, startTick, pitch)
+  ) {
+    return pitch;
+  }
+
+  const anchor = nearestHarmonicAnchor(startTick, [pattern.harmonicPlan]);
+  if (anchor === undefined) {
+    return pitch;
+  }
+
+  const chordTonePitchClassesAtTick = chordTonePitchClasses(anchor.localKey, anchor.function);
+  const noteShape = {
+    kind: "note",
+    voice: pattern.voice,
+    startTick,
+    durationTicks,
+    pitch,
+    velocity: pattern.velocity,
+    role: pattern.role,
+  } satisfies NoteEvent;
+  const candidates = [-4, -3, -2, -1, 1, 2, 3, 4]
+    .map((step) => pitch + step)
+    .filter((candidatePitch) => chordTonePitchClassesAtTick.includes(positiveModulo(candidatePitch, 12)))
+    .filter((candidatePitch) => candidatePitch >= VOICE_RANGES[pattern.voice].min)
+    .filter((candidatePitch) => candidatePitch <= VOICE_RANGES[pattern.voice].max)
+    .filter((candidatePitch) => keepsAdjacentVoiceOrder(notes, noteShape, candidatePitch))
+    .filter((candidatePitch) => !createsSemitoneAtTick(notes, pattern.voice, startTick, candidatePitch))
+    .filter((candidatePitch) => !createsPitchClassUnisonAtTick(notes, pattern.voice, startTick, candidatePitch));
+
+  return candidates.sort((left, right) => Math.abs(left - pitch) - Math.abs(right - pitch))[0] ?? pitch;
+}
+
+function createsSemitoneAtTick(notes: readonly NoteEvent[], voice: Voice, tick: number, pitch: number): boolean {
+  return VOICE_ENTRY_ORDER.some((otherVoice) => {
+    if (otherVoice === voice) {
+      return false;
+    }
+    const other = activeNoteAt(notes, otherVoice, tick);
+    return other !== undefined && isSemitoneInterval(pitch, other.pitch);
+  });
+}
+
+function isSemitoneInterval(leftPitch: number, rightPitch: number): boolean {
+  const interval = positiveModulo(leftPitch - rightPitch, 12);
+  return interval === 1 || interval === 11;
+}
+
+function createsPitchClassUnisonAtTick(
+  notes: readonly NoteEvent[],
+  voice: Voice,
+  tick: number,
+  pitch: number,
+): boolean {
+  return VOICE_ENTRY_ORDER.some((otherVoice) => {
+    if (otherVoice === voice) {
+      return false;
+    }
+    const other = activeNoteAt(notes, otherVoice, tick);
+    return other !== undefined && positiveModulo(pitch - other.pitch, 12) === 0;
   });
 }
 

@@ -7,12 +7,12 @@ import { evaluatePhase6Diagnostics, evaluatePhase7Diagnostics } from "./review-g
 
 test("generateScore balances phase-7 entry harmony scoring with preservation guardrails", () => {
   const blockerSeeds = [
-    ["fugue-smoke", 139, 98, 72, 3, 3, 3],
+    ["fugue-smoke", 140, 98, 72, 4, 3, 3],
     ["modal-cadence", 149, 101, 70, 4, 3, 3],
-    ["lyrical-line", 136, 98, 72, 3, 3, 3],
+    ["lyrical-line", 136, 98, 72, 4, 3, 3],
     ["tight-stretto", 144, 96, 72, 4, 3, 3],
     ["wide-key", 130, 96, 72, 3, 3, 3],
-    ["contrary-answer", 137, 96, 72, 3, 3, 3],
+    ["contrary-answer", 137, 96, 72, 4, 3, 3],
   ] as const;
 
   for (const [
@@ -66,9 +66,9 @@ test("generateScore balances phase-7 entry harmony scoring with preservation gua
 
 test("generateScore preserves phase-7 voice-pair independence blocker evidence under scoring changes", () => {
   const blockerSeeds = [
-    ["contrary-motion", 24, 540, 786, 3, 2, 27, 8, 50, 12],
-    ["fugue-smoke", 15, 582, 830, 0, 0, 28, 7, 50, 13],
-    ["minor-entry", 26, 737, 902, 0, 0, 51, 15, 66, 21],
+    ["contrary-motion", 24, 534, 786, 2, 2, 21, 7, 50, 12],
+    ["fugue-smoke", 15, 576, 830, 0, 0, 22, 7, 50, 12],
+    ["minor-entry", 26, 731, 902, 0, 0, 45, 15, 66, 20],
     ["modal-answer", 13, 752, 902, 0, 0, 47, 14, 66, 21],
   ] as const;
 

@@ -5,7 +5,7 @@ import { assertPhase1112RotationBatch } from "./generate-phase11-12-rotation-tes
 test("generateScore applies phase-11 and phase-12 phrase-unit planning across rotation seed batch A", () => {
   assertPhase1112RotationBatch(PHASE_11_12_ROTATION_SEEDS.slice(0, 2), {
     topEntryPatternFamilyDelta: 4,
-    leapRecoveryMissDelta: 20,
+    leapRecoveryMissDelta: 21,
     unisonOverlapDelta: 205,
     sharedRhythmOverlapDelta: 195,
   });
