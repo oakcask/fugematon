@@ -86,7 +86,7 @@ const markup = `<!doctype html>
     <div class="wrap">
       <p class="eyebrow">deterministic counterpoint machine</p>
       <h1 class="title">Fugematon</h1>
-      <p class="lede">Generate four-voices fugue for browser playback.</p>
+      <p class="lede">Generate four-voice fugue for browser playback.</p>
       <div class="visualizer">
         <canvas id="piano-roll"></canvas>
       </div>

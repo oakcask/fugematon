@@ -36,7 +36,7 @@ app.innerHTML = `
     <div class="hero">
       <p class="eyebrow">deterministic counterpoint machine</p>
       <h1>Fugematon</h1>
-      <p class="lede">Generate four-voices fugue for browser playback.</p>
+      <p class="lede">Generate four-voice fugue for browser playback.</p>
     </div>
     <form class="control-card" id="seed-form">
       <label for="seed">Seed</label>

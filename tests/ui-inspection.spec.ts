@@ -33,9 +33,13 @@ for (const viewport of VIEWPORTS) {
     await expect(page).toHaveTitle("Fugematon");
     await expect(page.locator('meta[name="description"]')).toHaveAttribute(
       "content",
-      "generate four-voices fugue for playback.",
+      "Fugematon generates four-voice fugue for playback.",
     );
     await expect(page.locator('meta[property="og:type"]')).toHaveAttribute("content", "website");
+    await expect(page.locator('meta[property="og:description"]')).toHaveAttribute(
+      "content",
+      "Fugematon generates four-voice fugue for playback.",
+    );
     await expect(page.locator('meta[property="og:url"]')).toHaveAttribute(
       "content",
       "https://oakcask.github.io/fugematon/",
@@ -51,10 +55,14 @@ for (const viewport of VIEWPORTS) {
       "Fugematon title card with a piano roll visualization.",
     );
     await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute("content", "summary_large_image");
+    await expect(page.locator('meta[name="twitter:description"]')).toHaveAttribute(
+      "content",
+      "Fugematon generates four-voice fugue for playback.",
+    );
 
     await expect(page.getByRole("heading", { name: "Fugematon" })).toBeVisible();
     await expect(page.getByText("deterministic counterpoint machine")).toBeVisible();
-    await expect(page.getByText("Generate four-voices fugue for browser playback.")).toBeVisible();
+    await expect(page.getByText("Generate four-voice fugue for browser playback.")).toBeVisible();
     const seedInput = page.getByLabel("Seed");
     await expect(seedInput).toHaveValue("fugue-smoke");
     await expect(page).toHaveURL(/[?&]seed=fugue-smoke(?:&|$)/);
