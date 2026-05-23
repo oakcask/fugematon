@@ -478,7 +478,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       comparisons: unknown[];
     };
 
-    assert.equal(summary.schemaVersion, 16);
+    assert.equal(summary.schemaVersion, 17);
     assert.equal(summary.lengthTicks, 9600);
     assert.equal(summary.selectionModel, "section-local-planner");
     assert.deepEqual(summary.performanceProfile, { id: "organ-default", version: 1 });
@@ -595,7 +595,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       assert.ok(Array.isArray(entry.melodyTextureGate.failures));
       assert.equal(typeof entry.contourMotionGate.passed, "boolean");
       assert.ok(Array.isArray(entry.contourMotionGate.failures));
-      assert.equal(entry.reviewGatePolicy.policy.schemaVersion, 2);
+      assert.equal(entry.reviewGatePolicy.policy.schemaVersion, 3);
       assert.equal(entry.reviewGatePolicy.policy.name, "review-gate-policy");
       assert.equal(typeof entry.reviewGatePolicy.passed, "boolean");
       assert.equal(typeof entry.reviewGatePolicy.hardConstraintPassed, "boolean");

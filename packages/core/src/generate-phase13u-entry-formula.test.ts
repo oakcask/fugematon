@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { PHASE_5_LENGTH_TICKS } from "./constants.js";
+import { REVIEW_LENGTH_TICKS } from "./constants.js";
 import { generateScore } from "./generate.js";
 import { ENTRY_FORMULA_REVIEW_SEEDS } from "./generate-phase13u-beauty-rewrite-test-helpers.js";
 
@@ -8,7 +8,7 @@ test("Phase 13U entry formula review seeds expose score-window sonority evidence
   const recurrentFormulaKeys = new Map<string, number>();
 
   for (const seed of ENTRY_FORMULA_REVIEW_SEEDS) {
-    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
+    const output = generateScore({ seed, lengthTicks: REVIEW_LENGTH_TICKS });
     const reviewedWindows = output.diagnostics.qualityVector.entrySonorities.filter(
       (sonority) => !sonority.kinds.includes("open-consonance"),
     );

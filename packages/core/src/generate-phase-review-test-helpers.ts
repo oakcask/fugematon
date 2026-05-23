@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
-import { PHASE_5_11_ROTATION_SEEDS, PHASE_5_LENGTH_TICKS, PHASE_5_REVIEW_SEEDS } from "./constants.js";
+import { REPRESENTATIVE_REVIEW_SEEDS, REVIEW_LENGTH_TICKS, ROTATION_REVIEW_SEEDS } from "./constants.js";
 import type { CandidatePoolOracleBlocker } from "./events.js";
 import { generateScore } from "./generate.js";
-import { evaluatePhase7BGatePolicy } from "./review-gate.js";
+import { evaluateReviewGatePolicy } from "./review-gate.js";
 
-export const PHASE_11_12_REVIEW_SEEDS = PHASE_5_REVIEW_SEEDS.map(({ seed }) => seed);
+export const PHASE_11_12_REVIEW_SEEDS = REPRESENTATIVE_REVIEW_SEEDS.map(({ seed }) => seed);
 export const PHASE_11_12_REVIEW_BATCH_A = [
   "bach-001",
   "fugue-smoke",
@@ -23,7 +23,7 @@ export const PHASE_11_12_REVIEW_BATCH_B = [
   "long-arc",
   "contrary-motion",
 ] as const;
-export const PHASE_11_12_ROTATION_SEEDS = PHASE_5_11_ROTATION_SEEDS.map(({ seed }) => seed);
+export const PHASE_11_12_ROTATION_SEEDS = ROTATION_REVIEW_SEEDS.map(({ seed }) => seed);
 export const PHASE_12_REPETITION_FOCUSED_SEEDS = [
   "angular-answer",
   "modal-dorian",
@@ -55,7 +55,7 @@ export const PHASE_13Q_FOCUSED_SEEDS = [
   "contrary-motion",
 ] as const;
 
-const PHASE_12_REPETITION_REVIEW_SEEDS = [...PHASE_5_REVIEW_SEEDS, ...PHASE_5_11_ROTATION_SEEDS].map(
+const PHASE_12_REPETITION_REVIEW_SEEDS = [...REPRESENTATIVE_REVIEW_SEEDS, ...ROTATION_REVIEW_SEEDS].map(
   ({ seed }) => seed,
 );
 
@@ -120,15 +120,15 @@ export function collectPhase1112PlanningMetrics(seeds: readonly string[]): Phase
   for (const seed of seeds) {
     const baseline = generateScore({
       seed,
-      lengthTicks: PHASE_5_LENGTH_TICKS,
+      lengthTicks: REVIEW_LENGTH_TICKS,
       selectionModel: "candidate-oracle-selection",
     });
     const variant = generateScore({
       seed,
-      lengthTicks: PHASE_5_LENGTH_TICKS,
+      lengthTicks: REVIEW_LENGTH_TICKS,
       selectionModel: "section-local-planner",
     });
-    const gate = evaluatePhase7BGatePolicy(seed, variant.diagnostics);
+    const gate = evaluateReviewGatePolicy(seed, variant.diagnostics);
     const baselineStats = summarizeContinuationPatterns(baseline.diagnostics.stateTransitions);
     const variantStats = summarizeContinuationPatterns(variant.diagnostics.stateTransitions);
     const baselineGrammar = requireOracleBlocker(
@@ -137,7 +137,7 @@ export function collectPhase1112PlanningMetrics(seeds: readonly string[]): Phase
     );
     const variantGrammar = requireOracleBlocker(variant.diagnostics.candidatePoolOracle, "section-grammar-repetition");
 
-    assert.equal(gate.phase8Ready, true);
+    assert.equal(gate.adoptionReady, true);
     assert.equal(gate.hardConstraintPassed, true);
     assert.deepEqual(gate.hardFailures, []);
     if (
@@ -179,17 +179,17 @@ export function assertPhase12FocusedRepetitionAdoption(seeds: readonly string[])
   for (const seed of seeds) {
     const baseline = generateScore({
       seed,
-      lengthTicks: PHASE_5_LENGTH_TICKS,
+      lengthTicks: REVIEW_LENGTH_TICKS,
       selectionModel: "candidate-oracle-selection",
     });
     const variant = generateScore({
       seed,
-      lengthTicks: PHASE_5_LENGTH_TICKS,
+      lengthTicks: REVIEW_LENGTH_TICKS,
       selectionModel: "section-local-planner",
     });
-    const gate = evaluatePhase7BGatePolicy(seed, variant.diagnostics);
+    const gate = evaluateReviewGatePolicy(seed, variant.diagnostics);
 
-    assert.equal(gate.phase8Ready, true);
+    assert.equal(gate.adoptionReady, true);
     assert.equal(gate.hardConstraintPassed, true);
     assert.deepEqual(gate.hardFailures, []);
     assert.ok(
@@ -211,19 +211,19 @@ export function assertPhase13ReviewPreconditions(seeds: readonly string[]): void
 
     const first = generateScore({
       seed,
-      lengthTicks: PHASE_5_LENGTH_TICKS,
+      lengthTicks: REVIEW_LENGTH_TICKS,
       selectionModel: "section-local-planner",
     });
     const repeated = generateScore({
       seed,
-      lengthTicks: PHASE_5_LENGTH_TICKS,
+      lengthTicks: REVIEW_LENGTH_TICKS,
       selectionModel: "section-local-planner",
     });
-    const gate = evaluatePhase7BGatePolicy(seed, first.diagnostics);
+    const gate = evaluateReviewGatePolicy(seed, first.diagnostics);
 
     assert.deepEqual(repeated.events, first.events);
     assert.deepEqual(repeated.diagnostics, first.diagnostics);
-    assert.equal(gate.phase8Ready, true);
+    assert.equal(gate.adoptionReady, true);
     assert.equal(gate.hardConstraintPassed, true);
     assert.deepEqual(gate.hardFailures, []);
     assert.equal(first.diagnostics.rangeViolations, 0);
@@ -250,12 +250,12 @@ export function collectPhase12RepetitionMetrics(seeds: readonly string[]): Phase
   for (const seed of seeds) {
     const baseline = generateScore({
       seed,
-      lengthTicks: PHASE_5_LENGTH_TICKS,
+      lengthTicks: REVIEW_LENGTH_TICKS,
       selectionModel: "candidate-oracle-selection",
     });
     const variant = generateScore({
       seed,
-      lengthTicks: PHASE_5_LENGTH_TICKS,
+      lengthTicks: REVIEW_LENGTH_TICKS,
       selectionModel: "section-local-planner",
     });
 

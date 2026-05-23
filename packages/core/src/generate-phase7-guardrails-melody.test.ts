@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { PHASE_5_LENGTH_TICKS } from "./constants.js";
+import { REVIEW_LENGTH_TICKS } from "./constants.js";
 import { generateScore } from "./generate.js";
 import { maximum, requireSelectedCandidateEvaluation, roundMetric } from "./generate-test-helpers.js";
-import { evaluatePhase6Diagnostics, evaluatePhase7Diagnostics } from "./review-gate.js";
+import { evaluateContourMotionGate, evaluateMelodyTextureGate } from "./review-gate.js";
 
 test("generateScore preserves phase-7 modal counter-subject retention guardrails", () => {
   const blockerSeeds = [
@@ -15,9 +15,9 @@ test("generateScore preserves phase-7 modal counter-subject retention guardrails
   ] as const;
 
   for (const [seed, counterSubjectIdentityRetention] of blockerSeeds) {
-    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS, selectionModel: "baseline" });
-    const gate6 = evaluatePhase6Diagnostics(seed, output.diagnostics);
-    const gate7 = evaluatePhase7Diagnostics(seed, output.diagnostics);
+    const output = generateScore({ seed, lengthTicks: REVIEW_LENGTH_TICKS, selectionModel: "baseline" });
+    const gate6 = evaluateMelodyTextureGate(seed, output.diagnostics);
+    const gate7 = evaluateContourMotionGate(seed, output.diagnostics);
     const selectedEvaluation = requireSelectedCandidateEvaluation(output.diagnostics.selectedCandidateEvaluations);
 
     assert.deepEqual(gate6.failures, []);
@@ -52,7 +52,7 @@ test("generateScore preserves phase-7 melody and form guardrails", () => {
     abruptTextureDropCount,
     selectedSectionSoloTextureRisk,
   ] of blockerSeeds) {
-    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS, selectionModel: "baseline" });
+    const output = generateScore({ seed, lengthTicks: REVIEW_LENGTH_TICKS, selectionModel: "baseline" });
     const selectedEvaluation = requireSelectedCandidateEvaluation(output.diagnostics.selectedCandidateEvaluations);
 
     assert.ok(output.diagnostics.leapRecoveryMisses <= leapRecoveryMisses);

@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { PHASE_5_LENGTH_TICKS } from "./constants.js";
+import { REVIEW_LENGTH_TICKS } from "./constants.js";
 import { generateScore } from "./generate.js";
 
 test("Phase 13Z user-reported seed no longer has one dominant late subject-stem family", () => {
-  const output = generateScore({ seed: "seed-0zereox-1v729ih", lengthTicks: PHASE_5_LENGTH_TICKS });
+  const output = generateScore({ seed: "seed-0zereox-1v729ih", lengthTicks: REVIEW_LENGTH_TICKS });
   const subjectFamily = output.diagnostics.phraseRepetitionReview.subjectStemFamilies.find(
     (family) => family.form === "subject",
   );

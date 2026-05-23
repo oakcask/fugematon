@@ -1,14 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { PHASE_5_LENGTH_TICKS } from "./constants.js";
+import { REVIEW_LENGTH_TICKS } from "./constants.js";
 import { generateScore } from "./generate.js";
 
 const PHASE_13R_FOCUSED_SEEDS = ["dense-modal", "angular-answer", "modal-answer"] as const;
 
 test("phase-13R rotation seeds keep default planner convergence comparable in CI", () => {
   for (const seed of PHASE_13R_FOCUSED_SEEDS) {
-    const legacy = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS, selectionModel: "baseline" });
-    const current = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
+    const legacy = generateScore({ seed, lengthTicks: REVIEW_LENGTH_TICKS, selectionModel: "baseline" });
+    const current = generateScore({ seed, lengthTicks: REVIEW_LENGTH_TICKS });
 
     assert.equal(legacy.diagnostics.phraseConvergenceReview.selectionModel, "baseline");
     assert.equal(current.diagnostics.phraseConvergenceReview.selectionModel, "section-local-planner");

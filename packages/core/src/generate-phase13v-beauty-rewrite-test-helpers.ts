@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
-import { PHASE_5_11_ROTATION_SEEDS, PHASE_5_REVIEW_SEEDS, TICKS_PER_QUARTER } from "./constants.js";
+import { REPRESENTATIVE_REVIEW_SEEDS, ROTATION_REVIEW_SEEDS, TICKS_PER_QUARTER } from "./constants.js";
 import { generateScore } from "./generate.js";
-import { evaluatePhase7BGatePolicy } from "./review-gate.js";
+import { evaluateReviewGatePolicy } from "./review-gate.js";
 
-export const PHASE_13V_REVIEW_SEEDS = [...PHASE_5_REVIEW_SEEDS, ...PHASE_5_11_ROTATION_SEEDS].map(({ seed }) => seed);
+export const PHASE_13V_REVIEW_SEEDS = [...REPRESENTATIVE_REVIEW_SEEDS, ...ROTATION_REVIEW_SEEDS].map(
+  ({ seed }) => seed,
+);
 
 export const PHASE_13V_FOCUSED_REVIEW_SEEDS = ["bach-001", "modal-cadence"] as const;
 
@@ -42,11 +44,11 @@ export function collectPhase13VBeautyReviewMetrics(seeds: readonly string[]): Ph
 
   for (const seed of seeds) {
     const output = generateScore({ seed, lengthTicks: PHASE_13V_SMOKE_LENGTH_TICKS });
-    const gate = evaluatePhase7BGatePolicy(seed, output.diagnostics);
+    const gate = evaluateReviewGatePolicy(seed, output.diagnostics);
     const vector = output.diagnostics.qualityVector;
     const axes = new Map(vector.axes.map((axis) => [axis.axis, axis]));
 
-    assert.equal(gate.phase8Ready, true);
+    assert.equal(gate.adoptionReady, true);
     assert.equal(gate.hardConstraintPassed, true);
     assert.deepEqual(gate.hardFailures, []);
     assert.equal(output.diagnostics.unresolvedDissonanceCount, 0);

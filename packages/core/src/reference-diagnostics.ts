@@ -378,9 +378,6 @@ export function summarizeReferenceProfile(
   };
 }
 
-export const PHASE_10_REFERENCE_CORPUS_MANIFEST = REFERENCE_CORPUS_MANIFEST;
-export const PHASE_7_REFERENCE_DIAGNOSTICS_PROFILE = REFERENCE_DIAGNOSTICS_PROFILE;
-
 export function parseReferenceCorpusManifest(input: unknown): ReferenceCorpusManifest {
   if (!isRecord(input)) {
     throw new Error("reference corpus manifest must be an object");

@@ -4,7 +4,7 @@ import {
   PHASE_1_DIAGNOSTICS_PROFILE,
   PHASE_1_REPRESENTATIVE_SEEDS,
   PHASE_3_LENGTH_TICKS,
-  PHASE_5_LENGTH_TICKS,
+  REVIEW_LENGTH_TICKS,
   VOICES,
 } from "./constants.js";
 import type { MetaEvent, NoteEvent } from "./events.js";
@@ -59,7 +59,7 @@ test("generateScore validates reproducibility inputs", () => {
 test("generateScore keeps public event and diagnostics counts aligned", () => {
   const output = generateScore({
     seed: "event-contract",
-    lengthTicks: PHASE_5_LENGTH_TICKS,
+    lengthTicks: REVIEW_LENGTH_TICKS,
     parameters: { density: 0.25, subjectPresence: 1 },
   });
   const notes = output.events.filter((event): event is NoteEvent => event.kind === "note");
@@ -144,7 +144,7 @@ test("generateScore extends long scores with phase-3 fugue states", () => {
 });
 
 test("generateScore emits section plans with bounded harmonic anchors", () => {
-  const output = generateScore({ seed: "section-plan-contract", lengthTicks: PHASE_5_LENGTH_TICKS });
+  const output = generateScore({ seed: "section-plan-contract", lengthTicks: REVIEW_LENGTH_TICKS });
   const continuationPlans = output.diagnostics.sectionPlans.filter((plan) => plan.state !== "exposition");
 
   assert.deepEqual(

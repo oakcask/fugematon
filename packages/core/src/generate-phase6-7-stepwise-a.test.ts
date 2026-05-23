@@ -1,8 +1,8 @@
 import test from "node:test";
 
-import { PHASE_5_REVIEW_SEEDS } from "./constants.js";
+import { REPRESENTATIVE_REVIEW_SEEDS } from "./constants.js";
 import { assertPhase7StepwisePatternEvidenceBatch } from "./generate-phase6-7-stepwise-batch-test-helpers.js";
 
 test("generateScore keeps stepwise pattern evidence across phase-7 review seed batch A", () => {
-  assertPhase7StepwisePatternEvidenceBatch(PHASE_5_REVIEW_SEEDS.map(({ seed }) => seed));
+  assertPhase7StepwisePatternEvidenceBatch(REPRESENTATIVE_REVIEW_SEEDS.map(({ seed }) => seed));
 });

@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { PHASE_5_LENGTH_TICKS } from "./constants.js";
+import { REVIEW_LENGTH_TICKS } from "./constants.js";
 import { generateScore } from "./generate.js";
 import { requireOracleBlocker, summarizeContinuationPatterns } from "./generate-test-helpers.js";
-import { evaluatePhase7BGatePolicy } from "./review-gate.js";
+import { evaluateReviewGatePolicy } from "./review-gate.js";
 
 test("generateScore applies history-aware section grammar planning to selected output", () => {
   const seeds = ["bach-001", "fugue-smoke", "minor-entry", "modal-cadence", "dense-modal"] as const;
@@ -18,16 +18,16 @@ test("generateScore applies history-aware section grammar planning to selected o
   for (const seed of seeds) {
     const baseline = generateScore({
       seed,
-      lengthTicks: PHASE_5_LENGTH_TICKS,
+      lengthTicks: REVIEW_LENGTH_TICKS,
       selectionModel: "candidate-oracle-selection",
     });
     const variant = generateScore({
       seed,
-      lengthTicks: PHASE_5_LENGTH_TICKS,
+      lengthTicks: REVIEW_LENGTH_TICKS,
       selectionModel: "section-local-planner",
     });
-    const baselineGate = evaluatePhase7BGatePolicy(seed, baseline.diagnostics);
-    const variantGate = evaluatePhase7BGatePolicy(seed, variant.diagnostics);
+    const baselineGate = evaluateReviewGatePolicy(seed, baseline.diagnostics);
+    const variantGate = evaluateReviewGatePolicy(seed, variant.diagnostics);
     const baselineStats = summarizeContinuationPatterns(baseline.diagnostics.stateTransitions);
     const variantStats = summarizeContinuationPatterns(variant.diagnostics.stateTransitions);
     const baselineGrammar = requireOracleBlocker(
@@ -36,8 +36,8 @@ test("generateScore applies history-aware section grammar planning to selected o
     );
     const variantGrammar = requireOracleBlocker(variant.diagnostics.candidatePoolOracle, "section-grammar-repetition");
 
-    assert.equal(baselineGate.phase8Ready, true);
-    assert.equal(variantGate.phase8Ready, true);
+    assert.equal(baselineGate.adoptionReady, true);
+    assert.equal(variantGate.adoptionReady, true);
     assert.equal(variant.diagnostics.rangeViolations, 0);
     assert.equal(variant.diagnostics.voiceCrossings, 0);
     assert.equal(variant.diagnostics.subjectIdentityViolations, 0);

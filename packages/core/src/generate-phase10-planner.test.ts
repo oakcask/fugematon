@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { PHASE_5_LENGTH_TICKS } from "./constants.js";
+import { REVIEW_LENGTH_TICKS } from "./constants.js";
 import { generateScore } from "./generate.js";
 import { requireOracleBlocker } from "./generate-test-helpers.js";
-import { evaluatePhase7BGatePolicy } from "./review-gate.js";
+import { evaluateReviewGatePolicy } from "./review-gate.js";
 
 test("generateScore adds guarded phase-10 section-local planner candidates", () => {
   const blockerSeeds = ["modal-cadence", "dense-modal"] as const;
@@ -15,16 +15,16 @@ test("generateScore adds guarded phase-10 section-local planner candidates", () 
   for (const seed of blockerSeeds) {
     const baseline = generateScore({
       seed,
-      lengthTicks: PHASE_5_LENGTH_TICKS,
+      lengthTicks: REVIEW_LENGTH_TICKS,
       selectionModel: "candidate-oracle-selection",
     });
     const variant = generateScore({
       seed,
-      lengthTicks: PHASE_5_LENGTH_TICKS,
+      lengthTicks: REVIEW_LENGTH_TICKS,
       selectionModel: "section-local-planner",
     });
-    const baselineGate = evaluatePhase7BGatePolicy(seed, baseline.diagnostics);
-    const variantGate = evaluatePhase7BGatePolicy(seed, variant.diagnostics);
+    const baselineGate = evaluateReviewGatePolicy(seed, baseline.diagnostics);
+    const variantGate = evaluateReviewGatePolicy(seed, variant.diagnostics);
     const baselineRisks = baseline.diagnostics.selectedCandidateEvaluations.flatMap((evaluation) =>
       evaluation.explanations.sections.map((section) => section.soloTextureRisk),
     );
@@ -32,8 +32,8 @@ test("generateScore adds guarded phase-10 section-local planner candidates", () 
       evaluation.explanations.sections.map((section) => section.soloTextureRisk),
     );
 
-    assert.equal(baselineGate.phase8Ready, true);
-    assert.equal(variantGate.phase8Ready, true);
+    assert.equal(baselineGate.adoptionReady, true);
+    assert.equal(variantGate.adoptionReady, true);
     assert.equal(
       variant.diagnostics.candidatePoolOracle.schemaVersion,
       baseline.diagnostics.candidatePoolOracle.schemaVersion,
@@ -68,19 +68,19 @@ test("generateScore adds register-blended section-local planner alternatives", (
   const seed = "dense-modal";
   const baseline = generateScore({
     seed,
-    lengthTicks: PHASE_5_LENGTH_TICKS,
+    lengthTicks: REVIEW_LENGTH_TICKS,
     selectionModel: "candidate-oracle-selection",
   });
   const variant = generateScore({
     seed,
-    lengthTicks: PHASE_5_LENGTH_TICKS,
+    lengthTicks: REVIEW_LENGTH_TICKS,
     selectionModel: "section-local-planner",
   });
-  const baselineGate = evaluatePhase7BGatePolicy(seed, baseline.diagnostics);
-  const variantGate = evaluatePhase7BGatePolicy(seed, variant.diagnostics);
+  const baselineGate = evaluateReviewGatePolicy(seed, baseline.diagnostics);
+  const variantGate = evaluateReviewGatePolicy(seed, variant.diagnostics);
 
-  assert.equal(baselineGate.phase8Ready, true);
-  assert.equal(variantGate.phase8Ready, true);
+  assert.equal(baselineGate.adoptionReady, true);
+  assert.equal(variantGate.adoptionReady, true);
   assert.ok(
     variant.diagnostics.candidatePoolOracle.candidateCount > baseline.diagnostics.candidatePoolOracle.candidateCount,
   );
@@ -106,12 +106,12 @@ test("generateScore adds section grammar alternatives to the oracle pool", () =>
   const seed = "dense-modal";
   const baseline = generateScore({
     seed,
-    lengthTicks: PHASE_5_LENGTH_TICKS,
+    lengthTicks: REVIEW_LENGTH_TICKS,
     selectionModel: "candidate-oracle-selection",
   });
   const variant = generateScore({
     seed,
-    lengthTicks: PHASE_5_LENGTH_TICKS,
+    lengthTicks: REVIEW_LENGTH_TICKS,
     selectionModel: "section-local-planner",
   });
   const baselineGrammar = requireOracleBlocker(baseline.diagnostics.candidatePoolOracle, "section-grammar-repetition");

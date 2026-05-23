@@ -1,7 +1,7 @@
 import {
-  PHASE_5_11_ROTATION_SEEDS,
-  PHASE_5_LENGTH_TICKS,
-  PHASE_5_REVIEW_SEEDS,
+  REPRESENTATIVE_REVIEW_SEEDS,
+  REVIEW_LENGTH_TICKS,
+  ROTATION_REVIEW_SEEDS,
   TICKS_PER_QUARTER,
 } from "./constants.js";
 import type { NoteEvent, PlannedEntry, Voice } from "./events.js";
@@ -15,7 +15,9 @@ export const PHASE_13W_FOCUSED_ENTRY_BOUNDARY_SEEDS = [
   "dense-modal",
 ] as const;
 
-export const PHASE_13W_REVIEW_SEEDS = [...PHASE_5_REVIEW_SEEDS, ...PHASE_5_11_ROTATION_SEEDS].map(({ seed }) => seed);
+export const PHASE_13W_REVIEW_SEEDS = [...REPRESENTATIVE_REVIEW_SEEDS, ...ROTATION_REVIEW_SEEDS].map(
+  ({ seed }) => seed,
+);
 export const PHASE_13W_REVIEW_BATCH_A = PHASE_13W_REVIEW_SEEDS.slice(0, 6);
 export const PHASE_13W_REVIEW_BATCH_B = PHASE_13W_REVIEW_SEEDS.slice(6, 12);
 export const PHASE_13W_REVIEW_BATCH_C = PHASE_13W_REVIEW_SEEDS.slice(12, 17);
@@ -41,7 +43,7 @@ export type Phase13WEntryBoundaryMetrics = {
 
 export function collectPhase13WEntryBoundaryMetrics(seeds: readonly string[]): Phase13WEntryBoundaryMetrics {
   const windows = seeds.map((seed) => {
-    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
+    const output = generateScore({ seed, lengthTicks: REVIEW_LENGTH_TICKS });
     const notes = output.events.filter((event): event is NoteEvent => event.kind === "note");
     const entry = findFirstBassSubjectOrAnswerEntry(output.diagnostics.subjectEntries);
 

@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
-import { PHASE_5_11_ROTATION_SEEDS, PHASE_5_LENGTH_TICKS, PHASE_5_REVIEW_SEEDS } from "./constants.js";
+import { REPRESENTATIVE_REVIEW_SEEDS, REVIEW_LENGTH_TICKS, ROTATION_REVIEW_SEEDS } from "./constants.js";
 import type { PlannedEntry, Voice } from "./events.js";
 import { generateScore } from "./generate.js";
 
-export const PHASE_13X_FIRST_BASS_ENTRY_REVIEW_SEEDS = [...PHASE_5_REVIEW_SEEDS, ...PHASE_5_11_ROTATION_SEEDS].map(
+export const PHASE_13X_FIRST_BASS_ENTRY_REVIEW_SEEDS = [...REPRESENTATIVE_REVIEW_SEEDS, ...ROTATION_REVIEW_SEEDS].map(
   ({ seed }) => seed,
 );
 
@@ -33,7 +33,7 @@ export type Phase13XFirstBassEntryMetrics = {
 };
 
 export function collectPhase13XFirstBassEntryMetrics(seeds: readonly string[]): Phase13XFirstBassEntryMetrics {
-  const outputs = seeds.map((seed) => ({ seed, output: generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS }) }));
+  const outputs = seeds.map((seed) => ({ seed, output: generateScore({ seed, lengthTicks: REVIEW_LENGTH_TICKS }) }));
   const windows = outputs.map(({ seed, output }) => {
     const firstBassEntryWindow = output.diagnostics.entryBoundaryContinuity.firstBassEntryWindow;
     assert.ok(firstBassEntryWindow !== undefined, `${seed} should expose the first bass entry window`);

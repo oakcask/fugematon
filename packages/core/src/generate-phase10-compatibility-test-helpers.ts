@@ -35,7 +35,7 @@ export function assertPhase10CompletionCompatibility(
     assert.equal(gate.adoptionReady, true, `${selectionModel} lost adoption readiness for ${category} seed ${seed}`);
     assert.equal(gate.hardConstraintPassed, true);
     assert.deepEqual(gate.hardFailures, []);
-    assert.equal(gate.policy.schemaVersion, 2);
+    assert.equal(gate.policy.schemaVersion, 3);
     assert.equal(gate.policy.name, "review-gate-policy");
     assert.equal(output.diagnostics.rangeViolations, 0);
     assert.equal(output.diagnostics.voiceCrossings, 0);

@@ -13,7 +13,7 @@
 
 ## Review Gate Policy
 
-`reviewGatePolicy` は旧 beauty gate を次のように再分類します。`phase7BGate` は互換 field として残ります。
+`reviewGatePolicy` は旧 beauty gate を次のように再分類します。現在の review bundle は `reviewGatePolicy` のみを emit します。
 
 Hard failure として残すもの:
 
@@ -56,7 +56,7 @@ Current exception: Phase 14 は、Phase 13Z 後に確認した metric false acce
 Model adoption では、A/B summary の次の項目を合わせて読む。
 
 * hard constraint failures が増えていない。
-* `reviewGatePolicy.phase8Ready` を失っていない。
+* `reviewGatePolicy.adoptionReady` を失っていない。
 * reference comparison の outside axes が説明可能である。
 * `candidatePoolOracle` が、selection-only で直せる問題か generator / planner が必要な問題かを示している。
 * `qualityVectorDistance` と axis-level contributors が改善または説明可能な tradeoff を示す。

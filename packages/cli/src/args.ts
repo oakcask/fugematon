@@ -77,7 +77,10 @@ export function parseArgs(argv: readonly string[]): CliCommand {
         baselineLabel: options.get("baseline-label") ?? "baseline",
         variantLabel: options.get("variant-label") ?? "variant",
         baselineModel: parseSelectionModel(options.get("baseline-model") ?? "baseline", "baseline-model"),
-        variantModel: parseSelectionModel(options.get("variant-model") ?? "candidate-oracle-selection", "variant-model"),
+        variantModel: parseSelectionModel(
+          options.get("variant-model") ?? "candidate-oracle-selection",
+          "variant-model",
+        ),
         performanceProfileId: parsePerformanceProfileId(options.get("performance-profile")),
       };
     }

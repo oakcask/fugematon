@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { PHASE_5_LENGTH_TICKS } from "./constants.js";
+import { REVIEW_LENGTH_TICKS } from "./constants.js";
 import { generateScore } from "./generate.js";
 import { requireSelectedCandidateEvaluation, stepwisePatternRole } from "./generate-test-helpers.js";
-import { evaluatePhase6Diagnostics, evaluatePhase7Diagnostics } from "./review-gate.js";
+import { evaluateContourMotionGate, evaluateMelodyTextureGate } from "./review-gate.js";
 
 test("generateScore nudges non-modal stepwise pattern fixation without modal guardrail regressions", () => {
   const blockerSeeds = [
@@ -19,9 +19,9 @@ test("generateScore nudges non-modal stepwise pattern fixation without modal gua
     maxRepeatedDegreePatternCount,
     maxLeapRecoveryMisses,
   ] of blockerSeeds) {
-    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS, selectionModel: "baseline" });
-    const gate6 = evaluatePhase6Diagnostics(seed, output.diagnostics);
-    const gate7 = evaluatePhase7Diagnostics(seed, output.diagnostics);
+    const output = generateScore({ seed, lengthTicks: REVIEW_LENGTH_TICKS, selectionModel: "baseline" });
+    const gate6 = evaluateMelodyTextureGate(seed, output.diagnostics);
+    const gate7 = evaluateContourMotionGate(seed, output.diagnostics);
     const freeCounterpoint = stepwisePatternRole(output.diagnostics.stepwisePattern.roles, "free-counterpoint");
     const selectedEvaluation = requireSelectedCandidateEvaluation(output.diagnostics.selectedCandidateEvaluations);
 
@@ -37,9 +37,9 @@ test("generateScore nudges non-modal stepwise pattern fixation without modal gua
   }
 
   for (const seed of ["modal-dorian", "modal-answer"] as const) {
-    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS, selectionModel: "baseline" });
-    const gate6 = evaluatePhase6Diagnostics(seed, output.diagnostics);
-    const gate7 = evaluatePhase7Diagnostics(seed, output.diagnostics);
+    const output = generateScore({ seed, lengthTicks: REVIEW_LENGTH_TICKS, selectionModel: "baseline" });
+    const gate6 = evaluateMelodyTextureGate(seed, output.diagnostics);
+    const gate7 = evaluateContourMotionGate(seed, output.diagnostics);
     const selectedEvaluation = requireSelectedCandidateEvaluation(output.diagnostics.selectedCandidateEvaluations);
 
     assert.deepEqual(gate6.failures, []);

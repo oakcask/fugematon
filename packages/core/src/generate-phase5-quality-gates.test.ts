@@ -1,14 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { PHASE_5_DIAGNOSTICS_PROFILE, PHASE_5_LENGTH_TICKS, PHASE_5_REVIEW_SEEDS } from "./constants.js";
+import { PHASE_5_DIAGNOSTICS_PROFILE, REPRESENTATIVE_REVIEW_SEEDS, REVIEW_LENGTH_TICKS } from "./constants.js";
 import { generateScore } from "./generate.js";
 import { scoreMinutes } from "./generate-test-helpers.js";
 
 test("generateScore validates phase-5 quality gate seeds", () => {
   const signatures = new Set<string>();
 
-  for (const { seed } of PHASE_5_REVIEW_SEEDS) {
-    const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS, selectionModel: "baseline" });
+  for (const { seed } of REPRESENTATIVE_REVIEW_SEEDS) {
+    const output = generateScore({ seed, lengthTicks: REVIEW_LENGTH_TICKS, selectionModel: "baseline" });
     const totalMinutes = scoreMinutes(output.diagnostics.generatedUntilTick);
     const maxLeapRecoveryMisses = Math.ceil(totalMinutes * PHASE_5_DIAGNOSTICS_PROFILE.maxLeapRecoveryMissesPerMinute);
 

@@ -64,7 +64,7 @@ test("review gate policy preserves review-signal breaches without blocking hard-
   assert.ok(policy.reviewSignals.some((finding) => finding.metric === "unsupportedSoloRunCount"));
   assert.ok(policy.reviewSignals.some((finding) => finding.metric === "fourBeatBassUpperSameDirectionRatio"));
   assert.equal(policy.contourMotionGate.passed, false);
-  assert.equal(policy.policy.schemaVersion, 2);
+  assert.equal(policy.policy.schemaVersion, 3);
   assert.equal(policy.policy.name, "review-gate-policy");
 });
 

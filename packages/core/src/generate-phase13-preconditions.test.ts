@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { PHASE_5_LENGTH_TICKS } from "./constants.js";
+import { REVIEW_LENGTH_TICKS } from "./constants.js";
 import { generateScore } from "./generate.js";
 import { assertPhase13ReviewPreconditions, PHASE_13_FOCUSED_SEEDS } from "./generate-phase-review-test-helpers.js";
 
@@ -11,7 +11,7 @@ test("generateScore keeps phase-13 focused seed batch B1 ready for review-only d
 test("generateScore exposes phase-13 quality vector diagnostics", () => {
   const output = generateScore({
     seed: "fugue-smoke",
-    lengthTicks: PHASE_5_LENGTH_TICKS,
+    lengthTicks: REVIEW_LENGTH_TICKS,
     selectionModel: "section-local-planner",
   });
   const qualityVector = output.diagnostics.qualityVector;

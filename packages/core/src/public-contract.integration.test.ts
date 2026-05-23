@@ -6,7 +6,7 @@ import {
   GENERATOR_VERSION,
   generateScore,
   PHASE_5_DIAGNOSTICS_PROFILE,
-  PHASE_5_LENGTH_TICKS,
+  REVIEW_LENGTH_TICKS,
   TICKS_PER_QUARTER,
   VOICES,
 } from "./index.js";
@@ -14,7 +14,7 @@ import {
 test("public API emits the stable score metadata envelope", () => {
   const output = generateScore({
     seed: "public-contract",
-    lengthTicks: PHASE_5_LENGTH_TICKS,
+    lengthTicks: REVIEW_LENGTH_TICKS,
     parameters: { density: 0.25, subjectPresence: 1 },
   });
   const metadata = output.events.filter((event): event is MetaEvent => event.kind === "meta");
@@ -58,11 +58,11 @@ test("public API emits the stable score metadata envelope", () => {
   assert.equal(output.diagnostics.generatorVersion, GENERATOR_VERSION);
   assert.equal(output.diagnostics.selectionModel, DEFAULT_SELECTION_MODEL);
   assert.equal(output.diagnostics.seed, "public-contract");
-  assert.equal(output.diagnostics.lengthTicks, PHASE_5_LENGTH_TICKS);
+  assert.equal(output.diagnostics.lengthTicks, REVIEW_LENGTH_TICKS);
 });
 
 test("public API keeps emitted note events within the score contract", () => {
-  const output = generateScore({ seed: "event-shape-contract", lengthTicks: PHASE_5_LENGTH_TICKS });
+  const output = generateScore({ seed: "event-shape-contract", lengthTicks: REVIEW_LENGTH_TICKS });
   const notes = output.events.filter((event): event is NoteEvent => event.kind === "note");
 
   assert.ok(notes.length > 0);
@@ -80,7 +80,7 @@ test("public API keeps emitted note events within the score contract", () => {
 });
 
 test("public diagnostics expose finite candidate score dimensions", () => {
-  const output = generateScore({ seed: "diagnostics-contract", lengthTicks: PHASE_5_LENGTH_TICKS });
+  const output = generateScore({ seed: "diagnostics-contract", lengthTicks: REVIEW_LENGTH_TICKS });
   const selectedEvaluation = output.diagnostics.selectedCandidateEvaluations[0];
 
   assert.ok(selectedEvaluation !== undefined);
@@ -175,7 +175,7 @@ test("public diagnostics expose finite candidate score dimensions", () => {
 });
 
 test("public subject entry diagnostics correspond to emitted entry notes", () => {
-  const output = generateScore({ seed: "entry-contract", lengthTicks: PHASE_5_LENGTH_TICKS });
+  const output = generateScore({ seed: "entry-contract", lengthTicks: REVIEW_LENGTH_TICKS });
   const notes = output.events.filter((event): event is NoteEvent => event.kind === "note");
 
   assert.ok(output.diagnostics.subjectEntries.length > 4);
