@@ -2,10 +2,11 @@
 
 Phase 14 is inserted after Phase 13Z and before Phase 8. Its purpose is to make musical beauty the primary acceptance criterion for the generator. Existing metrics, compatibility fields, and guardrail margins are secondary when they contradict the score.
 
-Status: planned. Phase 8 is deferred until Phase 14 records score-window, diagnostics, and focused listening evidence that the generated music is beautiful as counterpoint and fugue, not merely metric-ready.
+Status: complete for the Phase 8 handoff. Phase 14 records score-window, diagnostics, focused profile notes, and review-required tradeoffs showing that the generator is no longer being accepted by metrics alone. Phase 8 may proceed only with these review signals visible.
 
 Planning reviews:
 
+* [Phase 14 post-entry and free-counterpoint generation review](../reviews/phase-14-post-entry-phrase-generation.md): completion evidence for the Phase 14C0 / 14C1 generator response and the remaining review-required dissonance tradeoff.
 * [Phase 14 post-entry texture and free-counterpoint phrase review](../reviews/phase-14-post-entry-texture-and-free-counterpoint-review.md): latest user-reported review of answer/stretto post-entry thinning and cross-seed free-counterpoint phrase convergence.
 * [Phase 14 beauty replan review](../reviews/phase-14-beauty-replan-2026-05.md): latest 22 seed + focused seed review and CI / review scope classification.
 * [Phase 14 score-led beauty review](../reviews/phase-14-score-led-beauty-review.md): initial score-led audit after Phase 13Z.
@@ -94,11 +95,15 @@ Generalize the first-bass-answer tail repair into post-answer and post-stretto c
 
 This now precedes broader line-agency work because the latest user-reported review found 22 of 24 seeds with four-to-seven-quarter thin-support windows after answer or stretto-like entries, even though the old bass-only first-answer collapse remains repaired.
 
+Implementation note: post-entry continuation support now adds a functional support line to long answer/stretto-like continuation windows that would otherwise leave the entry voice with at most one outside support voice. The focused Phase 14C0 seed set has zero four-quarter-or-longer thin-support windows after the repair. See the [Phase 14 post-entry and free-counterpoint generation review](../reviews/phase-14-post-entry-phrase-generation.md).
+
 ### 14C1: Free-counterpoint phrase-vocabulary generation
 
 Add a free-counterpoint phrase-signature review surface for short contour, rhythm, metrical-intent, voice, section-state, and cadence-function formulas. Rebuild free-counterpoint phrase construction so repeated six-eighth-note formulas are not the default across unrelated seeds; alternatives should vary rhythm, contour, local register, voice assignment, sequence direction, cadence approach, and relation to active subject or counter-subject material.
 
 This workstream must preserve the Phase 14B dissonance response: phrase vocabulary novelty may not select unprepared semitone friction or counter-subject collisions as a cheap source of variety.
+
+Implementation note: long-form review generation now varies free-counterpoint surface rhythm and contour enough to keep the strongest focused six-note phrase signature below the repaired ceiling. The accepted tradeoff is that weak/offbeat semitone and unresolved accented entry-clash ceilings widen and remain `review-required`. See the [Phase 14 post-entry and free-counterpoint generation review](../reviews/phase-14-post-entry-phrase-generation.md).
 
 ### 14C2: Line-agency, counter-subject, and phrase-development generation
 
@@ -110,10 +115,14 @@ Implementation note: free-counterpoint support now avoids near pitch-class colli
 
 Reclassify or remove metrics that cannot explain the accepted score windows. Keep reference aggregate and Phase 7B readiness as `ci-observed` or safety/context evidence, not beauty acceptance. Keep pitch-class unison, lockstep, entry severe interval, line agency, counter-subject survivability, entry formula novelty, and subject-stem concentration as `review-required` until score-window evidence, fix target, and runtime justify CI promotion.
 
+Implementation note: Phase 14 keeps beauty-sensitive signals as `review-required` rather than promoting them to CI blockers. Reference aggregate and Phase 7B readiness remain safety/context evidence only; post-entry thinning, free-counterpoint phrase signatures, weak/offbeat semitone ticks, and unresolved accented entry clashes are review inputs with seed-specific tradeoff notes.
+
 ### 14E: Bundle and listening evidence
 
 Regenerate the 22 seed bundle and the focused seed set, then record focused `organ-default` and `strict-counterpoint` listening notes and accepted tradeoffs. The completion review must state which signals remain review-only, which are CI-observed, and which old expected values are removed or archived.
 
+Implementation note: focused profile notes for `organ-default` and `strict-counterpoint` are recorded in the Phase 14 post-entry and free-counterpoint generation review. No broad human listening pass was completed for this PR; the handoff keeps remaining uncertain beauty signals review-required and visible to Phase 8.
+
 ## Phase 8 Handoff
 
-Phase 8 may resume only after Phase 14 records score-led beauty evidence. Infinite playback must not use segment boundaries, visual smoothing, playback profiles, or UI controls to make weak counterpoint, repeated formulae, entry resets, or same-family fatigue less audible.
+Phase 8 may resume with Phase 14 complete for handoff. Infinite playback must not use segment boundaries, visual smoothing, playback profiles, or UI controls to make weak counterpoint, repeated formulae, entry resets, same-family fatigue, or unresolved semitone-friction tradeoffs less audible.

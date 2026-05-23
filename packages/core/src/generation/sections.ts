@@ -35,6 +35,7 @@ import {
   addContinuityCounterpoint,
   addCounterpointTexture,
   addFunctionalThinningSupport,
+  addPostEntryContinuationSupport,
   type ContinuityLineKind,
   fillAllVoiceSilenceGaps,
   softenBassEntryBoundaryResets,
@@ -156,6 +157,7 @@ export function buildFugueScore(
   if (selectionModel === "section-local-planner") {
     addFunctionalThinningSupport(notes, sectionPlans);
     addBassAnswerTailTextureSupport(notes, subjectEntries, sectionPlans);
+    addPostEntryContinuationSupport(notes, subjectEntries, sectionPlans);
   }
   notes.sort(compareNoteEvents);
 

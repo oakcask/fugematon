@@ -4,8 +4,8 @@
 
 ## Read First
 
-* [Phase 14](phase-14.md): 現在の実装対象。score-window musical acceptance と音楽美の acceptance ladder を先に置く beauty trunk。
-* [Phase 8](phase-8.md): Phase 14 後の operational lane。無限再生セッション、境界設計、内部状態 visualizer の MVP。
+* [Phase 8](phase-8.md): 現在の実装対象。Phase 14 後の operational lane。無限再生セッション、境界設計、内部状態 visualizer の MVP。
+* [Phase 14](phase-14.md): 完了済み handoff baseline。score-window musical acceptance と音楽美の acceptance ladder を先に置く beauty trunk。
 * [Phase 7+ 再編計画](phase-7-plus-reorg.md): Phase 12 以降の品質優先再編と Phase 8/9 defer の理由。
 
 ## Read When
