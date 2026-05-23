@@ -24,12 +24,14 @@ for (const viewport of VIEWPORTS) {
     await expect(page.getByRole("heading", { name: "Fugematon" })).toBeVisible();
     const seedInput = page.getByLabel("Seed");
     await expect(seedInput).toHaveValue("fugue-smoke");
+    await expect(page).toHaveURL(/[?&]seed=fugue-smoke(?:&|$)/);
     await expect(page.getByRole("button", { name: "Random seed" })).toBeVisible();
     await expect(page.getByText("Tempo")).toBeVisible();
     await expect(page.getByRole("button", { name: "Play score" })).toBeVisible();
 
     await page.getByRole("button", { name: "Random seed" }).click();
     await expect(seedInput).toHaveValue(/^seed-[0-9a-z]{7}-[0-9a-z]{7}$/);
+    expect(new URL(page.url()).searchParams.get("seed")).toMatch(/^seed-[0-9a-z]{7}-[0-9a-z]{7}$/);
 
     const pianoRoll = page.locator("#piano-roll");
     await expect(pianoRoll).toBeVisible();
@@ -64,3 +66,21 @@ for (const viewport of VIEWPORTS) {
     expect(browserErrors).toEqual([]);
   });
 }
+
+test("syncs the seed with the URL query string", async ({ page }) => {
+  await page.goto("/?seed=url-smoke");
+
+  const seedInput = page.getByLabel("Seed");
+  await expect(seedInput).toHaveValue("url-smoke");
+  expect(new URL(page.url()).searchParams.get("seed")).toBe("url-smoke");
+
+  await seedInput.fill("url-next");
+  await page.getByRole("button", { name: "Regenerate" }).click();
+
+  await expect(seedInput).toHaveValue("url-next");
+  expect(new URL(page.url()).searchParams.get("seed")).toBe("url-next");
+
+  await page.goBack();
+  await expect(seedInput).toHaveValue("url-smoke");
+  expect(new URL(page.url()).searchParams.get("seed")).toBe("url-smoke");
+});

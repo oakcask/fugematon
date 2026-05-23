@@ -16,7 +16,10 @@ import {
 } from "./score.js";
 
 const DEFAULT_SEED = "fugue-smoke";
+const URL_SEED_PARAM = "seed";
 const SCORE_LENGTH_TICKS = PHASE_3_LENGTH_TICKS;
+
+type UrlUpdateMode = "push" | "replace" | "none";
 
 type AppState = {
   seed: string;
@@ -26,7 +29,7 @@ type AppState = {
 
 const app = requireElement(document.querySelector<HTMLDivElement>("#app"), "app root");
 
-let state = createState(DEFAULT_SEED);
+let state = createState(readUrlSeed(DEFAULT_SEED));
 
 app.innerHTML = `
   <section class="shell">
@@ -123,6 +126,7 @@ performanceProfileSelect.value = state.performanceProfileId;
 render(state);
 drawPianoRoll(pianoRoll, state.model, 0);
 renderPlaybackPosition(0);
+writeUrlSeed(state.seed, "replace");
 
 let player: ScorePlayer | undefined;
 let animationFrame: number | undefined;
@@ -154,7 +158,11 @@ window.addEventListener("resize", () => {
   renderPlaybackPosition(playbackSecond);
 });
 
-function regenerateScore(seed: string): void {
+window.addEventListener("popstate", () => {
+  regenerateScore(readUrlSeed(DEFAULT_SEED), "none");
+});
+
+function regenerateScore(seed: string, urlUpdateMode: UrlUpdateMode = "push"): void {
   const nextSeed = seed.trim();
   if (nextSeed.length === 0) {
     seedInput.value = state.seed;
@@ -169,6 +177,7 @@ function regenerateScore(seed: string): void {
   drawPianoRoll(pianoRoll, state.model, 0);
   renderPlaybackPosition(0);
   transportStatus.textContent = "Ready to play";
+  writeUrlSeed(nextSeed, urlUpdateMode);
 }
 
 function createRandomSeed(): string {
@@ -189,6 +198,33 @@ function createState(
       performanceProfileId,
     ),
   };
+}
+
+function readUrlSeed(fallbackSeed: string): string {
+  const seed = new URLSearchParams(window.location.search).get(URL_SEED_PARAM)?.trim();
+  return seed && seed.length > 0 ? seed : fallbackSeed;
+}
+
+function writeUrlSeed(seed: string, mode: UrlUpdateMode): void {
+  if (mode === "none") {
+    return;
+  }
+
+  const url = new URL(window.location.href);
+  url.searchParams.set(URL_SEED_PARAM, seed);
+  const nextUrl = `${url.pathname}${url.search}${url.hash}`;
+  const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+
+  if (nextUrl === currentUrl) {
+    return;
+  }
+
+  if (mode === "replace") {
+    window.history.replaceState(null, "", nextUrl);
+    return;
+  }
+
+  window.history.pushState(null, "", nextUrl);
 }
 
 function render(nextState: AppState): void {
