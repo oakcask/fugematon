@@ -11,21 +11,33 @@ import type {
 } from "@fugematon/core";
 import {
   compareDiagnosticsToReferenceProfile,
+  evaluateBaselineBeautyGate,
+  evaluateContourMotionGate,
+  evaluateMelodyTextureGate,
   evaluatePhase6Diagnostics,
   evaluatePhase7BGatePolicy,
   evaluatePhase7Diagnostics,
   evaluatePhase59Diagnostics,
   evaluatePhase510Diagnostics,
   evaluatePhase511Diagnostics,
+  evaluateReviewGatePolicy,
+  evaluateRotationRobustnessGate,
+  evaluateVoiceIndependenceGate,
   generateScore,
   PHASE_5_11_ROTATION_SEEDS,
   PHASE_5_REVIEW_SEEDS,
+  type BaselineBeautyGateResult,
+  type ContourMotionGateResult,
+  type MelodyTextureGateResult,
   type Phase6GateResult,
   type Phase7BGatePolicyResult,
   type Phase7GateResult,
   type Phase59GateResult,
   type Phase510GateResult,
   type Phase511GateResult,
+  type ReviewGatePolicyResult,
+  type RotationRobustnessGateResult,
+  type VoiceIndependenceGateResult,
   phase59ManualListeningBlockers,
   type ReferenceDiagnosticsAggregate,
   type ReferenceDiagnosticsComparison,
@@ -90,7 +102,7 @@ export async function writeReviewBundle(
   }
 
   const summary: ReviewSummary = {
-    schemaVersion: 14,
+    schemaVersion: 15,
     lengthTicks,
     selectionModel,
     performanceProfile,
@@ -150,7 +162,7 @@ export async function writeAbReviewBundle(
 }
 
 type ReviewSummary = {
-  schemaVersion: 14;
+  schemaVersion: 15;
   lengthTicks: number;
   selectionModel: SelectionModel;
   performanceProfile: PerformanceProfileMetadata;
@@ -169,6 +181,12 @@ type ReviewSummarySeed = {
   initialSubjectProfile: InitialSubjectProfile;
   diagnosticsSummary: ReviewDiagnosticsSummary;
   referenceComparison: ReferenceDiagnosticsComparison;
+  baselineBeautyGate: BaselineBeautyGateResult;
+  voiceIndependenceGate: VoiceIndependenceGateResult;
+  rotationRobustnessGate: RotationRobustnessGateResult;
+  melodyTextureGate: MelodyTextureGateResult;
+  contourMotionGate: ContourMotionGateResult;
+  reviewGatePolicy: ReviewGatePolicyResult;
   phase59Gate: Phase59GateResult;
   phase510Gate: Phase510GateResult;
   phase511Gate: Phase511GateResult;
@@ -209,6 +227,15 @@ function createReviewSummarySeed({
       initialSubjectProfile: summarizeInitialSubjectProfile(output),
       diagnosticsSummary: summarizeDiagnostics(diagnostics),
       referenceComparison,
+      baselineBeautyGate: evaluateBaselineBeautyGate(seed, diagnostics),
+      voiceIndependenceGate: evaluateVoiceIndependenceGate(seed, diagnostics),
+      rotationRobustnessGate: evaluateRotationRobustnessGate(seed, diagnostics),
+      melodyTextureGate: evaluateMelodyTextureGate(seed, diagnostics),
+      contourMotionGate: evaluateContourMotionGate(seed, diagnostics),
+      reviewGatePolicy: evaluateReviewGatePolicy(seed, diagnostics, {
+        manualListeningCategory: category,
+        manualListeningJudgement: "not-reviewed",
+      }),
       phase59Gate: evaluatePhase59Diagnostics(seed, diagnostics),
       phase510Gate: evaluatePhase510Diagnostics(seed, diagnostics),
       phase511Gate: evaluatePhase511Diagnostics(seed, diagnostics),
@@ -345,6 +372,9 @@ type ReviewDiagnosticsSummary = {
     sectionSoloTextureRiskWarningThreshold: number;
   };
   candidatePoolOracle: CandidatePoolOracleSummary;
+  texturePlanningReview: GenerationDiagnostics["texturePlanningReview"];
+  phraseRepetitionReview: GenerationDiagnostics["phraseRepetitionReview"];
+  phraseConvergenceReview: GenerationDiagnostics["phraseConvergenceReview"];
   phase11Review: GenerationDiagnostics["phase11Review"];
   phase12Review: GenerationDiagnostics["phase12Review"];
   phase13RReview: GenerationDiagnostics["phase13RReview"];
@@ -749,6 +779,9 @@ function summarizeDiagnostics(diagnostics: GenerationDiagnostics): ReviewDiagnos
     },
     candidateEvaluation: summarizeCandidateEvaluation(diagnostics),
     candidatePoolOracle: diagnostics.candidatePoolOracle,
+    texturePlanningReview: diagnostics.texturePlanningReview,
+    phraseRepetitionReview: diagnostics.phraseRepetitionReview,
+    phraseConvergenceReview: diagnostics.phraseConvergenceReview,
     phase11Review: diagnostics.phase11Review,
     phase12Review: diagnostics.phase12Review,
     phase13RReview: diagnostics.phase13RReview,

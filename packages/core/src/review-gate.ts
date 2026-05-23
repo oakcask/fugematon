@@ -31,6 +31,8 @@ export type Phase59GateResult = {
   };
 };
 
+export type BaselineBeautyGateResult = Phase59GateResult;
+
 export type Phase510GateResult = {
   passed: boolean;
   failures: Phase59GateFailure[];
@@ -43,9 +45,13 @@ export type Phase510GateResult = {
   };
 };
 
+export type VoiceIndependenceGateResult = Phase510GateResult;
+
 export type Phase511GateResult = Phase510GateResult & {
   followUps: Phase59GateFailure[];
 };
+
+export type RotationRobustnessGateResult = Phase511GateResult;
 
 export type Phase6GateResult = {
   passed: boolean;
@@ -63,6 +69,8 @@ export type Phase6GateResult = {
   };
 };
 
+export type MelodyTextureGateResult = Phase6GateResult;
+
 export type Phase7GateResult = {
   passed: boolean;
   failures: Phase59GateFailure[];
@@ -77,6 +85,8 @@ export type Phase7GateResult = {
     eightBeatBassUpperComparisonCount: number;
   };
 };
+
+export type ContourMotionGateResult = Phase7GateResult;
 
 export type ManualListeningJudgement = "pass" | "needs-work" | "fail" | "not-reviewed";
 
@@ -114,6 +124,8 @@ export type Phase7BGatePolicyResult = {
   };
   legacyPhase7Gate: Phase7GateResult;
 };
+
+export type ReviewGatePolicyResult = Phase7BGatePolicyResult;
 
 export function evaluatePhase59Diagnostics(seed: string, diagnostics: GenerationDiagnostics): Phase59GateResult {
   const textureCosts = diagnostics.selectedCandidateEvaluations.map((evaluation) => evaluation.dimensions.texture.cost);
@@ -204,6 +216,10 @@ export function evaluatePhase59Diagnostics(seed: string, diagnostics: Generation
   };
 }
 
+export function evaluateBaselineBeautyGate(seed: string, diagnostics: GenerationDiagnostics): BaselineBeautyGateResult {
+  return evaluatePhase59Diagnostics(seed, diagnostics);
+}
+
 export function evaluatePhase510Diagnostics(seed: string, diagnostics: GenerationDiagnostics): Phase510GateResult {
   const phase59Gate = evaluatePhase59Diagnostics(seed, diagnostics);
   const metrics = {
@@ -266,6 +282,13 @@ export function evaluatePhase510Diagnostics(seed: string, diagnostics: Generatio
     failures,
     metrics,
   };
+}
+
+export function evaluateVoiceIndependenceGate(
+  seed: string,
+  diagnostics: GenerationDiagnostics,
+): VoiceIndependenceGateResult {
+  return evaluatePhase510Diagnostics(seed, diagnostics);
 }
 
 export function evaluatePhase511Diagnostics(seed: string, diagnostics: GenerationDiagnostics): Phase511GateResult {
@@ -357,6 +380,13 @@ export function evaluatePhase511Diagnostics(seed: string, diagnostics: Generatio
   };
 }
 
+export function evaluateRotationRobustnessGate(
+  seed: string,
+  diagnostics: GenerationDiagnostics,
+): RotationRobustnessGateResult {
+  return evaluatePhase511Diagnostics(seed, diagnostics);
+}
+
 export function evaluatePhase6Diagnostics(seed: string, diagnostics: GenerationDiagnostics): Phase6GateResult {
   const phase511Gate = evaluatePhase511Diagnostics(seed, diagnostics);
   const expositionPlan = diagnostics.sectionPlans.find((plan) => plan.state === "exposition");
@@ -443,6 +473,10 @@ export function evaluatePhase6Diagnostics(seed: string, diagnostics: GenerationD
   };
 }
 
+export function evaluateMelodyTextureGate(seed: string, diagnostics: GenerationDiagnostics): MelodyTextureGateResult {
+  return evaluatePhase6Diagnostics(seed, diagnostics);
+}
+
 export function evaluatePhase7Diagnostics(seed: string, diagnostics: GenerationDiagnostics): Phase7GateResult {
   const phase6Gate = evaluatePhase6Diagnostics(seed, diagnostics);
   const { fourBeat, eightBeat } = diagnostics.pitchContourMotion;
@@ -515,6 +549,10 @@ export function evaluatePhase7Diagnostics(seed: string, diagnostics: GenerationD
   };
 }
 
+export function evaluateContourMotionGate(seed: string, diagnostics: GenerationDiagnostics): ContourMotionGateResult {
+  return evaluatePhase7Diagnostics(seed, diagnostics);
+}
+
 export function phase59ManualListeningBlockers(category: string, judgement: ManualListeningJudgement): string[] {
   if ((category === "representative" || category === "boundary") && judgement !== "pass") {
     return ["manual listening judgement must be pass before Phase 6"];
@@ -561,6 +599,14 @@ export function evaluatePhase7BGatePolicy(
     },
     legacyPhase7Gate,
   };
+}
+
+export function evaluateReviewGatePolicy(
+  seed: string,
+  diagnostics: GenerationDiagnostics,
+  options: Phase7BPolicyOptions = {},
+): ReviewGatePolicyResult {
+  return evaluatePhase7BGatePolicy(seed, diagnostics, options);
 }
 
 function addBoundaryFailures(

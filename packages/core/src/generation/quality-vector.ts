@@ -42,7 +42,7 @@ export function analyzePhase13QualityVector(
     entrySevereIntervals,
     sectionPlans,
   );
-  const phase13VReview = summarizePhase13VReview({
+  const scoreBeautyEvidence = summarizePhase13VReview({
     entryFormulaRecurrences,
     voicePairSpans,
     fragmentFunctionEvidence,
@@ -69,7 +69,8 @@ export function analyzePhase13QualityVector(
       entrySonorities,
       sectionPlans,
     ),
-    phase13VReview,
+    scoreBeautyEvidence,
+    phase13VReview: scoreBeautyEvidence,
     localSentinels,
   };
 }

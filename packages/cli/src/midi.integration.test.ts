@@ -279,6 +279,9 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
               };
             }[];
           };
+          texturePlanningReview: unknown;
+          phraseRepetitionReview: unknown;
+          phraseConvergenceReview: unknown;
           phase11Review: {
             schemaVersion: number;
             adjacentVoiceIntervals: { checkpointCount: number; medianSemitones: number; overOctaveCount: number }[];
@@ -370,6 +373,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
             };
             counterSubjectWindows: { entryStartTick: number; retentionKind: string }[];
             metricExplanations: { axis: string; symptom: string; classification: string }[];
+            scoreBeautyEvidence: unknown;
             phase13VReview: {
               schemaVersion: number;
               lineAgency: { agencyRatio: number };
@@ -408,19 +412,28 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
             maxSelectedCandidateTextureCost: number;
           };
         };
+        baselineBeautyGate: unknown;
+        phase510Gate: {
+          passed: boolean;
+          failures: unknown[];
+        };
+        voiceIndependenceGate: unknown;
         phase511Gate: {
           passed: boolean;
           failures: unknown[];
           followUps: unknown[];
         };
+        rotationRobustnessGate: unknown;
         phase6Gate: {
           passed: boolean;
           failures: unknown[];
         };
+        melodyTextureGate: unknown;
         phase7Gate: {
           passed: boolean;
           failures: unknown[];
         };
+        contourMotionGate: unknown;
         phase7BGate: {
           policy: {
             schemaVersion: number;
@@ -444,6 +457,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
             failures: unknown[];
           };
         };
+        reviewGatePolicy: unknown;
       }[];
     };
     const listeningReview = JSON.parse(await readFile(join(directory, "listening-review.json"), "utf8")) as {
@@ -472,7 +486,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       comparisons: unknown[];
     };
 
-    assert.equal(summary.schemaVersion, 14);
+    assert.equal(summary.schemaVersion, 15);
     assert.equal(summary.lengthTicks, 9600);
     assert.equal(summary.selectionModel, "phase10-section-local-planner");
     assert.deepEqual(summary.performanceProfile, { id: "organ-default", version: 1 });
@@ -572,6 +586,12 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       );
       assert.ok(entry.diagnosticsSummary.texture.rhythmicIndependenceScore >= 0);
       assert.ok(entry.diagnosticsSummary.texture.rhythmicIndependenceScore <= 1);
+      assert.deepEqual(entry.baselineBeautyGate, entry.phase59Gate);
+      assert.deepEqual(entry.voiceIndependenceGate, entry.phase510Gate);
+      assert.deepEqual(entry.rotationRobustnessGate, entry.phase511Gate);
+      assert.deepEqual(entry.melodyTextureGate, entry.phase6Gate);
+      assert.deepEqual(entry.contourMotionGate, entry.phase7Gate);
+      assert.deepEqual(entry.reviewGatePolicy, entry.phase7BGate);
       assert.equal(typeof entry.phase59Gate.passed, "boolean");
       assert.ok(Array.isArray(entry.phase59Gate.failures));
       assert.ok(entry.phase59Gate.metrics.selectedCandidateEvaluationCount >= 0);
@@ -645,6 +665,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       assert.ok(entry.diagnosticsSummary.candidatePoolOracle.viableCandidateCount >= 0);
       assert.ok(entry.diagnosticsSummary.candidatePoolOracle.hardFailureRejectedCandidateCount >= 0);
       assert.ok(entry.diagnosticsSummary.candidatePoolOracle.blockerClassifications.length >= 0);
+      assert.deepEqual(entry.diagnosticsSummary.texturePlanningReview, entry.diagnosticsSummary.phase11Review);
       assert.equal(entry.diagnosticsSummary.phase11Review.schemaVersion, 1);
       assert.equal(entry.diagnosticsSummary.phase11Review.adjacentVoiceIntervals.length, 3);
       assert.equal(entry.diagnosticsSummary.phase11Review.registerSpans.length, 4);
@@ -662,12 +683,14 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
         entry.diagnosticsSummary.phase11Review.metricalHarmony.strongBeatBassRootSupportCount <=
           entry.diagnosticsSummary.phase11Review.metricalHarmony.strongBeatCheckpointCount,
       );
+      assert.deepEqual(entry.diagnosticsSummary.phraseRepetitionReview, entry.diagnosticsSummary.phase12Review);
       assert.equal(entry.diagnosticsSummary.phase12Review.schemaVersion, 1);
       assert.ok(entry.diagnosticsSummary.phase12Review.entryPatternFamilyConcentration.entryCount > 0);
       assert.ok(entry.diagnosticsSummary.phase12Review.subjectStemFamilies.length > 0);
       assert.ok(entry.diagnosticsSummary.phase12Review.answerTransformFamilies.length > 0);
       assert.ok(entry.diagnosticsSummary.phase12Review.phraseFunctions.length > 0);
       assert.equal(entry.diagnosticsSummary.phase12Review.sectionStatePatterns.patternLength, 4);
+      assert.deepEqual(entry.diagnosticsSummary.phraseConvergenceReview, entry.diagnosticsSummary.phase13RReview);
       assert.equal(entry.diagnosticsSummary.phase13RReview.selectionModel, summary.selectionModel);
       assert.ok(
         !entry.diagnosticsSummary.phase13RReview.findings.some(
@@ -687,6 +710,10 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       assert.ok(entry.diagnosticsSummary.qualityVector.entryFormulaRecurrences.length >= 0);
       assert.ok(entry.diagnosticsSummary.qualityVector.counterSubjectWindows.length > 0);
       assert.ok(entry.diagnosticsSummary.qualityVector.metricExplanations.length >= 3);
+      assert.deepEqual(
+        entry.diagnosticsSummary.qualityVector.scoreBeautyEvidence,
+        entry.diagnosticsSummary.qualityVector.phase13VReview,
+      );
       assert.equal(entry.diagnosticsSummary.qualityVector.phase13VReview.schemaVersion, 1);
       assert.ok(
         entry.diagnosticsSummary.qualityVector.axes.some(

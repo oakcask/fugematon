@@ -807,6 +807,8 @@ export type Phase13VReviewSummary = {
   };
 };
 
+export type ScoreBeautyEvidenceSummary = Phase13VReviewSummary;
+
 export type EntryBoundaryContinuityWindow = {
   entryVoice: Voice;
   entryOrderIndex: number;
@@ -900,6 +902,7 @@ export type Phase13QualityVector = {
   fragmentFunctionEvidence: Phase13TFragmentFunctionEvidence;
   counterSubjectWindows: Phase13TCounterSubjectWindowSummary[];
   metricExplanations: Phase13TMetricExplanationSummary[];
+  scoreBeautyEvidence: ScoreBeautyEvidenceSummary;
   phase13VReview: Phase13VReviewSummary;
   localSentinels: Phase13LocalSentinelSummary[];
 };
@@ -923,6 +926,8 @@ export type Phase13QReviewSummary = {
   schemaVersion: 1;
   sentinelCandidateLinks: Phase13QSentinelCandidateLink[];
 };
+
+export type LocalSentinelCandidateTraceSummary = Phase13QReviewSummary;
 
 export type Phase13RReviewFindingCode =
   | "legacy-default-selection-model"
@@ -955,6 +960,8 @@ export type Phase13RReviewSummary = {
   findings: Phase13RReviewFinding[];
 };
 
+export type PhraseConvergenceReviewSummary = Phase13RReviewSummary;
+
 export type Phase13ZPhraseDevelopmentJudgement = "new-material" | "function-bearing-recurrence" | "mechanical-reuse";
 
 export type Phase13ZPhraseDevelopmentWindow = {
@@ -984,6 +991,8 @@ export type Phase13ZReviewSummary = {
   windows: Phase13ZPhraseDevelopmentWindow[];
 };
 
+export type PhraseDevelopmentReviewSummary = Phase13ZReviewSummary;
+
 export type Phase14DissonanceTriageWindow = {
   startTick: number;
   state: FugueState | "mixed";
@@ -1006,6 +1015,8 @@ export type Phase14DissonanceTriageSummary = {
   unresolvedAccentedEntryClashCount: number;
   windows: Phase14DissonanceTriageWindow[];
 };
+
+export type DissonanceTriageSummary = Phase14DissonanceTriageSummary;
 
 export type Phase14ScoreWindowAcceptanceKind =
   | "important-entry-continuity"
@@ -1049,6 +1060,10 @@ export type Phase14ScoreWindowAcceptanceSummary = {
   diagnosticContextWindowCount: number;
   windows: Phase14ScoreWindowAcceptanceWindow[];
 };
+
+export type ScoreWindowAcceptanceSummary = Phase14ScoreWindowAcceptanceSummary;
+export type TexturePlanningReviewSummary = Phase11ReviewSummary;
+export type PhraseRepetitionReviewSummary = Phase12ReviewSummary;
 
 export type GenerationDiagnostics = {
   generatorVersion: number;
@@ -1095,11 +1110,18 @@ export type GenerationDiagnostics = {
   pitchContourMotion: PitchContourMotionSummary;
   lowerVoiceVocality: LowerVoiceVocalitySummary;
   stepwisePattern: StepwisePatternSummary;
+  texturePlanningReview: TexturePlanningReviewSummary;
+  phraseRepetitionReview: PhraseRepetitionReviewSummary;
   phase11Review: Phase11ReviewSummary;
   phase12Review: Phase12ReviewSummary;
   entryBoundaryContinuity: EntryBoundaryContinuitySummary;
   bassAnswerTailTexture: BassAnswerTailTextureSummary;
   qualityVector: Phase13QualityVector;
+  localSentinelCandidateTrace: LocalSentinelCandidateTraceSummary;
+  phraseConvergenceReview: PhraseConvergenceReviewSummary;
+  phraseDevelopmentReview: PhraseDevelopmentReviewSummary;
+  dissonanceTriage: DissonanceTriageSummary;
+  scoreWindowAcceptance: ScoreWindowAcceptanceSummary;
   phase13QReview: Phase13QReviewSummary;
   phase13RReview: Phase13RReviewSummary;
   phase13ZReview: Phase13ZReviewSummary;

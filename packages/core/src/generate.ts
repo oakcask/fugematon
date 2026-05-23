@@ -27,18 +27,21 @@ export function generateScore(input: GenerationInput): GenerationOutput {
   const subject = buildSubject(rng, keySignature, selectionModel);
   const score = buildFugueScore(subject, keySignature, input.lengthTicks, rng, selectionModel);
   const diagnostics = analyzeScore(score.notes, score.subjectEntries, score.sectionPlans);
-  const phase13QReview = buildPhase13QReviewSummary(score.selectedCandidateEvaluations, diagnostics.qualityVector);
-  const phase13RReview = buildPhase13RReviewSummary(selectionModel, diagnostics.phase12Review);
-  const phase13ZReview = buildPhase13ZReviewSummary(
+  const localSentinelCandidateTrace = buildPhase13QReviewSummary(
+    score.selectedCandidateEvaluations,
+    diagnostics.qualityVector,
+  );
+  const phraseConvergenceReview = buildPhase13RReviewSummary(selectionModel, diagnostics.phase12Review);
+  const phraseDevelopmentReview = buildPhase13ZReviewSummary(
     score.subjectEntries,
     score.sectionPlans,
     diagnostics.phase12Review,
   );
-  const phase14ScoreWindowAcceptance = buildPhase14ScoreWindowAcceptanceSummary(
+  const scoreWindowAcceptance = buildPhase14ScoreWindowAcceptanceSummary(
     diagnostics.entryBoundaryContinuity,
     diagnostics.phase14DissonanceTriage,
     diagnostics.qualityVector,
-    phase13ZReview,
+    phraseDevelopmentReview,
   );
   const generatedUntilTick = Math.max(input.lengthTicks, score.endTick);
 
@@ -147,16 +150,23 @@ export function generateScore(input: GenerationInput): GenerationOutput {
       pitchContourMotion: diagnostics.pitchContourMotion,
       lowerVoiceVocality: diagnostics.lowerVoiceVocality,
       stepwisePattern: diagnostics.stepwisePattern,
+      texturePlanningReview: diagnostics.phase11Review,
+      phraseRepetitionReview: diagnostics.phase12Review,
       phase11Review: diagnostics.phase11Review,
       phase12Review: diagnostics.phase12Review,
       entryBoundaryContinuity: diagnostics.entryBoundaryContinuity,
       bassAnswerTailTexture: diagnostics.bassAnswerTailTexture,
       qualityVector: diagnostics.qualityVector,
-      phase13QReview,
-      phase13RReview,
-      phase13ZReview,
+      localSentinelCandidateTrace,
+      phraseConvergenceReview,
+      phraseDevelopmentReview,
+      dissonanceTriage: diagnostics.phase14DissonanceTriage,
+      scoreWindowAcceptance,
+      phase13QReview: localSentinelCandidateTrace,
+      phase13RReview: phraseConvergenceReview,
+      phase13ZReview: phraseDevelopmentReview,
       phase14DissonanceTriage: diagnostics.phase14DissonanceTriage,
-      phase14ScoreWindowAcceptance,
+      phase14ScoreWindowAcceptance: scoreWindowAcceptance,
       ornamentCandidateCount: diagnostics.ornamentCandidateCount,
       ornamentDensity: diagnostics.ornamentDensity,
       ornamentPlacementReasons: diagnostics.ornamentPlacementReasons,
