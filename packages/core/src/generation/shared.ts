@@ -36,6 +36,11 @@ export function positiveModulo(value: number, divisor: number): number {
   return ((value % divisor) + divisor) % divisor;
 }
 
+export function pitchClassDistance(leftPitch: number, rightPitch: number): number {
+  const interval = positiveModulo(leftPitch - rightPitch, 12);
+  return Math.min(interval, 12 - interval);
+}
+
 export function subjectDuration(subject: readonly { durationTicks: number }[]): number {
   return subject.reduce((duration, note) => duration + note.durationTicks, 0);
 }

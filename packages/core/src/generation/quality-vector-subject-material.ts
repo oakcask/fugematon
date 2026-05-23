@@ -6,6 +6,7 @@ import type {
   Phase13TFragmentFunctionEvidence,
   PlannedEntry,
 } from "../events.js";
+import { pitchClassDistance } from "./shared.js";
 
 export function summarizeFragmentFunctionEvidence(
   sectionPlans: readonly HarmonicPlan[],
@@ -114,7 +115,7 @@ function notesOverlap(left: NoteEvent, right: NoteEvent): boolean {
 }
 
 function isNearPitchClassCollision(leftPitch: number, rightPitch: number): boolean {
-  return Math.abs(leftPitch - rightPitch) % 12 <= 2;
+  return pitchClassDistance(leftPitch, rightPitch) <= 2;
 }
 
 function fragmentTransformationKinds(functionKey: string): string[] {
