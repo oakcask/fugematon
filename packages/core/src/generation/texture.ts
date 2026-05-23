@@ -57,6 +57,16 @@ type EntryCounterpointTextureInput = {
   counterSubjectSupportRepair?: boolean;
 };
 
+type TextureNotePattern = {
+  voice: Voice;
+  localKey: KeySignature;
+  velocity: number;
+  role: NoteEvent["role"];
+  harmonicPlan?: HarmonicPlan;
+  metricalHarmonyIntent?: MetricalHarmonyIntent;
+  counterSubjectSupportRepair?: boolean;
+};
+
 export function addCounterpointTexture(
   notes: Exposition["notes"],
   subject: readonly SubjectNote[],
@@ -347,23 +357,12 @@ export function addPatternCounterpoint(
 
 export function addTextureNote(
   notes: Exposition["notes"],
-  pattern: {
-    voice: Voice;
-    localKey: KeySignature;
-    velocity: number;
-    role: NoteEvent["role"];
-    harmonicPlan?: HarmonicPlan;
-    metricalHarmonyIntent?: MetricalHarmonyIntent;
-    counterSubjectSupportRepair?: boolean;
-  },
+  pattern: TextureNotePattern,
   degree: number,
   startTick: number,
   durationTicks: number,
 ): void {
-  const previous = notes
-    .filter((note) => note.voice === pattern.voice && note.startTick <= startTick)
-    .sort(compareNoteEvents)
-    .at(-1);
+  const previous = previousTextureNote(notes, pattern.voice, startTick);
   let pitchClass = scaleDegreePitchClass(degree, 0, pattern.localKey);
   let pitch = placePitchInRegister(pitchClass, pattern.voice, VOICE_REGISTER_TARGETS[pattern.voice]);
   if (previous?.pitch === pitch && pattern.role === "free-counterpoint") {
@@ -396,7 +395,7 @@ export function addTextureNote(
 
 function weakDissonanceSafePitch(
   notes: readonly NoteEvent[],
-  pattern: Parameters<typeof addTextureNote>[1],
+  pattern: TextureNotePattern,
   startTick: number,
   durationTicks: number,
   pitch: number,
@@ -417,30 +416,23 @@ function weakDissonanceSafePitch(
   }
 
   const chordTonePitchClassesAtTick = chordTonePitchClasses(anchor.localKey, anchor.function);
-  const noteShape = {
-    kind: "note",
-    voice: pattern.voice,
-    startTick,
-    durationTicks,
+  const noteShape = textureNoteShape(pattern, startTick, durationTicks, pitch);
+  const candidates = nearbyChordTonePitches({
     pitch,
-    velocity: pattern.velocity,
-    role: pattern.role,
-  } satisfies NoteEvent;
-  const candidates = [-4, -3, -2, -1, 1, 2, 3, 4]
-    .map((step) => pitch + step)
-    .filter((candidatePitch) => chordTonePitchClassesAtTick.includes(positiveModulo(candidatePitch, 12)))
-    .filter((candidatePitch) => candidatePitch >= VOICE_RANGES[pattern.voice].min)
-    .filter((candidatePitch) => candidatePitch <= VOICE_RANGES[pattern.voice].max)
+    voice: pattern.voice,
+    steps: [-4, -3, -2, -1, 1, 2, 3, 4],
+    chordTonePitchClasses: chordTonePitchClassesAtTick,
+  })
     .filter((candidatePitch) => keepsAdjacentVoiceOrder(notes, noteShape, candidatePitch))
     .filter((candidatePitch) => !createsSemitoneAtTick(notes, pattern.voice, startTick, candidatePitch))
     .filter((candidatePitch) => !createsPitchClassUnisonAtTick(notes, pattern.voice, startTick, candidatePitch));
 
-  return candidates.sort((left, right) => Math.abs(left - pitch) - Math.abs(right - pitch))[0] ?? pitch;
+  return nearestPitch(candidates, pitch) ?? pitch;
 }
 
 function counterSubjectSafePitch(
   notes: readonly NoteEvent[],
-  pattern: Parameters<typeof addTextureNote>[1],
+  pattern: TextureNotePattern,
   startTick: number,
   durationTicks: number,
   pitch: number,
@@ -459,24 +451,14 @@ function counterSubjectSafePitch(
     return pitch;
   }
   const chordTonePitchClassesAtTick = chordTonePitchClasses(anchor.localKey, anchor.function);
-  const previous = notes
-    .filter((note) => note.voice === pattern.voice && note.startTick <= startTick)
-    .sort(compareNoteEvents)
-    .at(-1);
-  const noteShape = {
-    kind: "note",
-    voice: pattern.voice,
-    startTick,
-    durationTicks,
+  const previous = previousTextureNote(notes, pattern.voice, startTick);
+  const noteShape = textureNoteShape(pattern, startTick, durationTicks, pitch);
+  const candidates = nearbyChordTonePitches({
     pitch,
-    velocity: pattern.velocity,
-    role: pattern.role,
-  } satisfies NoteEvent;
-  const candidates = [-5, -4, -3, -2, -1, 1, 2, 3, 4, 5]
-    .map((step) => pitch + step)
-    .filter((candidatePitch) => chordTonePitchClassesAtTick.includes(positiveModulo(candidatePitch, 12)))
-    .filter((candidatePitch) => candidatePitch >= VOICE_RANGES[pattern.voice].min)
-    .filter((candidatePitch) => candidatePitch <= VOICE_RANGES[pattern.voice].max)
+    voice: pattern.voice,
+    steps: [-5, -4, -3, -2, -1, 1, 2, 3, 4, 5],
+    chordTonePitchClasses: chordTonePitchClassesAtTick,
+  })
     .filter((candidatePitch) => previous === undefined || Math.abs(candidatePitch - previous.pitch) <= 4)
     .filter((candidatePitch) => keepsAdjacentVoiceOrder(notes, noteShape, candidatePitch))
     .filter(
@@ -487,6 +469,44 @@ function counterSubjectSafePitch(
     .filter((candidatePitch) => !createsPitchClassUnisonAtTick(notes, pattern.voice, startTick, candidatePitch));
 
   return nearestPitch(candidates, pitch) ?? pitch;
+}
+
+function previousTextureNote(notes: readonly NoteEvent[], voice: Voice, startTick: number): NoteEvent | undefined {
+  return notes
+    .filter((note) => note.voice === voice && note.startTick <= startTick)
+    .sort(compareNoteEvents)
+    .at(-1);
+}
+
+function textureNoteShape(
+  pattern: TextureNotePattern,
+  startTick: number,
+  durationTicks: number,
+  pitch: number,
+): NoteEvent {
+  return {
+    kind: "note",
+    voice: pattern.voice,
+    startTick,
+    durationTicks,
+    pitch,
+    velocity: pattern.velocity,
+    role: pattern.role,
+  };
+}
+
+function nearbyChordTonePitches(input: {
+  pitch: number;
+  voice: Voice;
+  steps: readonly number[];
+  chordTonePitchClasses: readonly number[];
+}): number[] {
+  const range = VOICE_RANGES[input.voice];
+  return input.steps
+    .map((step) => input.pitch + step)
+    .filter((candidatePitch) => input.chordTonePitchClasses.includes(positiveModulo(candidatePitch, 12)))
+    .filter((candidatePitch) => candidatePitch >= range.min)
+    .filter((candidatePitch) => candidatePitch <= range.max);
 }
 
 function nearestPitch(candidates: readonly number[], targetPitch: number): number | undefined {
