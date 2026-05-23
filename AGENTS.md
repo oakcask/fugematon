@@ -14,6 +14,7 @@
 - When looking for project plans, implementation phases, design rationale, or open work, start with `docs/README.md`.
 - Use the docs index to choose only the relevant planning documents.
 - Before changing planned behavior or phase scope, check the relevant docs and keep them aligned with the change.
+- When literature or citation evidence affects implementation direction, phase scope, quality gates, review acceptance, or license policy, keep `.bibliography-cache/` as working cache and promote the sanitized citation or claim mapping through `docs/reference/bibliography/`.
 - When a rejected implementation, failed experiment, or decision not to proceed changes future work, record the durable lesson in the relevant phase, review, or reference doc.
 - Use `music-theory-review` before finalizing changes to generation quality, diagnostics thresholds, music-quality gates, scoring models, or section/planner behavior.
 - When handling music-quality metric regressions, do not treat the number alone as the reason to accept or reject a change. Record the affected seed or section, the concrete musical symptom, the tradeoff, and whether the response belongs in generation, scoring, diagnostics, docs, or manual listening.
