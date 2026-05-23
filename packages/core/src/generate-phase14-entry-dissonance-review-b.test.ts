@@ -3,12 +3,7 @@ import test from "node:test";
 import { TICKS_PER_QUARTER } from "./constants.js";
 import { generateScore } from "./generate.js";
 
-const PHASE_14_ENTRY_DISSONANCE_REVIEW_SEEDS = [
-  "contrary-motion",
-  "tight-stretto",
-  "circle-fifths",
-  "modal-cadence",
-] as const;
+const PHASE_14_ENTRY_DISSONANCE_REVIEW_SEEDS = ["dense-modal", "random-listen-check", "seed-0zereox-1v729ih"] as const;
 
 test("Phase 14 entry-dissonance review seeds expose unresolved accented entry clashes", () => {
   const summaries = PHASE_14_ENTRY_DISSONANCE_REVIEW_SEEDS.map((seed) => {
