@@ -2,6 +2,7 @@ import { TICKS_PER_QUARTER, VOICE_RANGES } from "../constants.js";
 import type {
   BassAnswerTailTextureSummary,
   DiagnosticIssue,
+  DissonanceTriageSummary,
   DurationDistribution,
   EntryBoundaryContinuitySummary,
   EntrySupportInstabilitySummary,
@@ -13,17 +14,16 @@ import type {
   NoteEvent,
   NoteRole,
   OrnamentPlacementReasons,
-  Phase11ReviewSummary,
-  Phase12PhraseFunction,
-  Phase12ReviewSummary,
-  Phase13QualityVector,
-  Phase14DissonanceTriageSummary,
+  PhraseFunction,
+  PhraseRepetitionReviewSummary,
   PitchContourMotionSummary,
   PitchContourWindowSummary,
   PlannedEntry,
+  QualityVector,
   SoloTextureSummary,
   StepwisePatternRoleSummary,
   StepwisePatternSummary,
+  TexturePlanningReviewSummary,
   Voice,
 } from "../events.js";
 import { analyzeBassAnswerTailTexture } from "./bass-answer-tail-texture.js";
@@ -31,9 +31,9 @@ import { analyzeEntryBoundaryContinuity } from "./entry-boundary-continuity.js";
 import { chordTonePitchClasses, nearestHarmonicAnchor, rootDegreeForFunction } from "./harmony.js";
 import { analyzeHarmonicPlans } from "./harmony-diagnostics.js";
 import { isModalMode, tonicPitchClass } from "./key.js";
-import { analyzePhase14DissonanceTriage } from "./phase14-dissonance-triage.js";
+import { analyzeDissonanceTriage } from "./phase14-dissonance-triage.js";
 import { scaleDegreePitchClass } from "./pitch.js";
-import { analyzePhase13QualityVector } from "./quality-vector.js";
+import { analyzeQualityVector } from "./quality-vector.js";
 import {
   COUNTER_SUBJECT_DEGREES,
   compareNoteEvents,
@@ -80,15 +80,15 @@ export function analyzeScore(
   pitchContourMotion: PitchContourMotionSummary;
   lowerVoiceVocality: LowerVoiceVocalitySummary;
   stepwisePattern: StepwisePatternSummary;
-  texturePlanningReview: Phase11ReviewSummary;
-  phraseRepetitionReview: Phase12ReviewSummary;
-  phase11Review: Phase11ReviewSummary;
-  phase12Review: Phase12ReviewSummary;
+  texturePlanningReview: TexturePlanningReviewSummary;
+  phraseRepetitionReview: PhraseRepetitionReviewSummary;
+  phase11Review: TexturePlanningReviewSummary;
+  phase12Review: PhraseRepetitionReviewSummary;
   entryBoundaryContinuity: EntryBoundaryContinuitySummary;
   bassAnswerTailTexture: BassAnswerTailTextureSummary;
-  qualityVector: Phase13QualityVector;
-  dissonanceTriage: Phase14DissonanceTriageSummary;
-  phase14DissonanceTriage: Phase14DissonanceTriageSummary;
+  qualityVector: QualityVector;
+  dissonanceTriage: DissonanceTriageSummary;
+  phase14DissonanceTriage: DissonanceTriageSummary;
   ornamentCandidateCount: number;
   ornamentDensity: number;
   ornamentPlacementReasons: OrnamentPlacementReasons;
@@ -267,10 +267,10 @@ function analyzeTextureDiagnostics(
   const supportNoteCount = Math.max(1, supportNotes.length);
   const entrySupportInstabilityDetails = analyzeEntrySupportInstabilities(notes, subjectEntries);
   const entrySupportSevereIntervalDetails = analyzeEntrySupportSevereIntervals(notes, subjectEntries);
-  const qualityVector = analyzePhase13QualityVector(notes, subjectEntries, sectionPlans);
-  const texturePlanningReview = analyzePhase11ReviewSummary(notes, subjectEntries, sectionPlans);
-  const phraseRepetitionReview = analyzePhase12ReviewSummary(subjectEntries, sectionPlans);
-  const dissonanceTriage = analyzePhase14DissonanceTriage(notes, sectionPlans, qualityVector.entrySonorities);
+  const qualityVector = analyzeQualityVector(notes, subjectEntries, sectionPlans);
+  const texturePlanningReview = analyzeTexturePlanningReviewSummary(notes, subjectEntries, sectionPlans);
+  const phraseRepetitionReview = analyzePhraseRepetitionReviewSummary(subjectEntries, sectionPlans);
+  const dissonanceTriage = analyzeDissonanceTriage(notes, sectionPlans, qualityVector.entrySonorities);
 
   return {
     counterSubjectIdentityRetention: counterSubjectIdentityRetention(counterSubjectNotes, sectionPlans),
@@ -327,11 +327,11 @@ const PHASE_11_ADJACENT_VOICE_PAIRS: readonly [higherVoice: Voice, lowerVoice: V
   ["tenor", "bass"],
 ] as const;
 
-function analyzePhase11ReviewSummary(
+function analyzeTexturePlanningReviewSummary(
   notes: readonly NoteEvent[],
   subjectEntries: readonly PlannedEntry[],
   sectionPlans: readonly HarmonicPlan[],
-): Phase11ReviewSummary {
+): TexturePlanningReviewSummary {
   const verticalities = halfBeatVerticalities(notes);
   return {
     schemaVersion: 1,
@@ -344,10 +344,10 @@ function analyzePhase11ReviewSummary(
   };
 }
 
-function analyzePhase12ReviewSummary(
+function analyzePhraseRepetitionReviewSummary(
   subjectEntries: readonly PlannedEntry[],
   sectionPlans: readonly HarmonicPlan[],
-): Phase12ReviewSummary {
+): PhraseRepetitionReviewSummary {
   const entryPatternFamilies = summarizeEntryPatternFamilies(subjectEntries);
   const topEntryFamilyCount = maximum(entryPatternFamilies.map((family) => family.count));
 
@@ -359,17 +359,17 @@ function analyzePhase12ReviewSummary(
       topFamilyCount: topEntryFamilyCount,
       topFamilyShare: roundRatio(topEntryFamilyCount / Math.max(1, subjectEntries.length)),
     },
-    subjectStemFamilies: summarizePhase12SubjectStemFamilies(subjectEntries),
-    answerTransformFamilies: summarizePhase12AnswerTransformFamilies(subjectEntries),
-    fragmentDerivations: summarizePhase12FragmentDerivations(sectionPlans),
-    phraseFunctions: summarizePhase12PhraseFunctions(sectionPlans),
-    sectionStatePatterns: summarizePhase12SectionStatePatterns(sectionPlans),
+    subjectStemFamilies: summarizeSubjectStemFamilies(subjectEntries),
+    answerTransformFamilies: summarizeAnswerTransformFamilies(subjectEntries),
+    fragmentDerivations: summarizeFragmentDerivations(sectionPlans),
+    phraseFunctions: summarizePhraseFunctions(sectionPlans),
+    sectionStatePatterns: summarizeSectionStatePatterns(sectionPlans),
   };
 }
 
-function summarizePhase12SubjectStemFamilies(
+function summarizeSubjectStemFamilies(
   subjectEntries: readonly PlannedEntry[],
-): Phase12ReviewSummary["subjectStemFamilies"] {
+): PhraseRepetitionReviewSummary["subjectStemFamilies"] {
   const stemEntries = subjectEntries.filter(
     (entry): entry is PlannedEntry & { form: "subject" | "subject-fragment" } =>
       entry.form === "subject" || entry.form === "subject-fragment",
@@ -406,9 +406,9 @@ function summarizePhase12SubjectStemFamilies(
     }));
 }
 
-function summarizePhase12AnswerTransformFamilies(
+function summarizeAnswerTransformFamilies(
   subjectEntries: readonly PlannedEntry[],
-): Phase12ReviewSummary["answerTransformFamilies"] {
+): PhraseRepetitionReviewSummary["answerTransformFamilies"] {
   const answerEntries = subjectEntries.filter((entry) => entry.form === "answer");
   const counts = new Map<string, { answerKind: "true" | "tonal" | "none"; pattern: number[]; count: number }>();
 
@@ -438,22 +438,22 @@ function summarizePhase12AnswerTransformFamilies(
     .slice(0, 8);
 }
 
-function summarizePhase12FragmentDerivations(
+function summarizeFragmentDerivations(
   sectionPlans: readonly HarmonicPlan[],
-): Phase12ReviewSummary["fragmentDerivations"] {
+): PhraseRepetitionReviewSummary["fragmentDerivations"] {
   const continuationPlans = sectionPlans.filter((plan) => plan.state !== "exposition");
   const counts = new Map<
     string,
     {
       transform: "sequence" | "contrary-motion" | "inversion" | "none";
-      phraseFunction: Phase12PhraseFunction;
+      phraseFunction: PhraseFunction;
       count: number;
     }
   >();
 
   for (const plan of continuationPlans) {
     const transform = plan.fragmentTransform ?? "none";
-    const phraseFunction = phase12PhraseFunctionForPlan(plan);
+    const phraseFunction = phraseFunctionForPlan(plan);
     const key = `${transform}:${phraseFunction}`;
     const current = counts.get(key);
     if (current === undefined) {
@@ -476,12 +476,12 @@ function summarizePhase12FragmentDerivations(
     );
 }
 
-function summarizePhase12PhraseFunctions(
+function summarizePhraseFunctions(
   sectionPlans: readonly HarmonicPlan[],
-): Phase12ReviewSummary["phraseFunctions"] {
-  const counts = new Map<Phase12PhraseFunction, number>();
+): PhraseRepetitionReviewSummary["phraseFunctions"] {
+  const counts = new Map<PhraseFunction, number>();
   for (const plan of sectionPlans) {
-    const phraseFunction = phase12PhraseFunctionForPlan(plan);
+    const phraseFunction = phraseFunctionForPlan(plan);
     counts.set(phraseFunction, (counts.get(phraseFunction) ?? 0) + 1);
   }
 
@@ -494,9 +494,9 @@ function summarizePhase12PhraseFunctions(
     .sort((left, right) => right.count - left.count || left.phraseFunction.localeCompare(right.phraseFunction));
 }
 
-function summarizePhase12SectionStatePatterns(
+function summarizeSectionStatePatterns(
   sectionPlans: readonly HarmonicPlan[],
-): Phase12ReviewSummary["sectionStatePatterns"] {
+): PhraseRepetitionReviewSummary["sectionStatePatterns"] {
   const states = sectionPlans.filter((plan) => plan.state !== "exposition").map((plan) => plan.state);
   const patterns = countPatterns(states, PHASE_11_STATE_PATTERN_LENGTH);
   const totalPatternCount = [...patterns.values()].reduce((sum, count) => sum + count, 0);
@@ -517,7 +517,7 @@ function summarizePhase12SectionStatePatterns(
   };
 }
 
-function phase12PhraseFunctionForPlan(plan: HarmonicPlan): Phase12PhraseFunction {
+function phraseFunctionForPlan(plan: HarmonicPlan): PhraseFunction {
   if (plan.state === "exposition") {
     return "exposition";
   }
@@ -535,7 +535,7 @@ function phase12PhraseFunctionForPlan(plan: HarmonicPlan): Phase12PhraseFunction
 
 function summarizeAdjacentVoiceIntervals(
   verticalities: readonly HalfBeatVerticality[],
-): Phase11ReviewSummary["adjacentVoiceIntervals"] {
+): TexturePlanningReviewSummary["adjacentVoiceIntervals"] {
   return PHASE_11_ADJACENT_VOICE_PAIRS.map(([higherVoice, lowerVoice]) => {
     const intervals = verticalities.flatMap((verticality) => {
       const higherPitch = verticality.active.get(higherVoice)?.pitch;
@@ -554,7 +554,7 @@ function summarizeAdjacentVoiceIntervals(
   });
 }
 
-function summarizeRegisterSpans(notes: readonly NoteEvent[]): Phase11ReviewSummary["registerSpans"] {
+function summarizeRegisterSpans(notes: readonly NoteEvent[]): TexturePlanningReviewSummary["registerSpans"] {
   return VOICE_ENTRY_ORDER.map((voice) => {
     const voiceNotes = notes.filter((note) => note.voice === voice);
     const pitches = voiceNotes.map((note) => note.pitch);
@@ -573,7 +573,7 @@ function summarizeRegisterSpans(notes: readonly NoteEvent[]): Phase11ReviewSumma
 function summarizeFunctionalThinning(
   verticalities: readonly HalfBeatVerticality[],
   sectionPlans: readonly HarmonicPlan[],
-): Phase11ReviewSummary["functionalThinning"] {
+): TexturePlanningReviewSummary["functionalThinning"] {
   const runs: { activeVoiceCount: number; startTick: number; endTick: number; voices: Set<Voice> }[] = [];
   let currentRun: { activeVoiceCount: number; startTick: number; endTick: number; voices: Set<Voice> } | undefined;
 
@@ -665,7 +665,7 @@ function functionalThinningRole(
 
 function summarizeStateGrammarRepetition(
   sectionPlans: readonly HarmonicPlan[],
-): Phase11ReviewSummary["stateGrammarRepetition"] {
+): TexturePlanningReviewSummary["stateGrammarRepetition"] {
   const states = sectionPlans.filter((plan) => plan.state !== "exposition").map((plan) => plan.state);
   const patterns = countPatterns(states, PHASE_11_STATE_PATTERN_LENGTH);
   const topPatterns = [...patterns.entries()]
@@ -683,7 +683,7 @@ function summarizeStateGrammarRepetition(
 
 function summarizeEntryPatternFamilies(
   subjectEntries: readonly PlannedEntry[],
-): Phase11ReviewSummary["entryPatternFamilies"] {
+): TexturePlanningReviewSummary["entryPatternFamilies"] {
   const counts = new Map<string, { form: PlannedEntry["form"]; pattern: number[]; count: number }>();
   for (const entry of subjectEntries) {
     const pattern = [...entry.expectedDegreePattern];
@@ -708,7 +708,7 @@ function summarizeMetricalHarmony(
   notes: readonly NoteEvent[],
   verticalities: readonly HalfBeatVerticality[],
   sectionPlans: readonly HarmonicPlan[],
-): Phase11ReviewSummary["metricalHarmony"] {
+): TexturePlanningReviewSummary["metricalHarmony"] {
   let strongBeatCheckpointCount = 0;
   let strongBeatChordToneSupportCount = 0;
   let strongBeatChordToneMismatchCount = 0;

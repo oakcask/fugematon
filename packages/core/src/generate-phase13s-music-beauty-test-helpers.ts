@@ -55,7 +55,7 @@ export function collectPhase13SMusicBeautyMetrics(seeds: readonly string[]): Pha
 
     rhythmPatterns.add(initialSubjectRhythmPattern(output, initialSubject.voice, initialSubject.startTick));
     climaxIndexes.add(localClimaxIndex(initialSubject.expectedDegreePattern));
-    const topSubjectFragment = output.diagnostics.phase12Review.subjectStemFamilies.find(
+    const topSubjectFragment = output.diagnostics.phraseRepetitionReview.subjectStemFamilies.find(
       (family) => family.form === "subject-fragment",
     );
     if (topSubjectFragment !== undefined) {
@@ -122,7 +122,7 @@ export function collectPhase13TCurrentBlockerMetrics(seeds: readonly string[]): 
       functionAwareLockstepSeedCount += 1;
     }
 
-    const topSubjectFragment = output.diagnostics.phase12Review.subjectStemFamilies.find(
+    const topSubjectFragment = output.diagnostics.phraseRepetitionReview.subjectStemFamilies.find(
       (family) => family.form === "subject-fragment",
     );
     if (topSubjectFragment !== undefined) {

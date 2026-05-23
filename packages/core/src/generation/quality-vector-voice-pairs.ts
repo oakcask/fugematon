@@ -3,12 +3,12 @@ import type {
   FugueState,
   HarmonicPlan,
   NoteEvent,
-  Phase13TVoicePairFunctionSummary,
-  Phase13UVoicePairSpanClassification,
-  Phase13UVoicePairSpanSummary,
-  Phase13VoicePairUnisonSummary,
   StyleProfile,
   Voice,
+  VoicePairFunctionSummary,
+  VoicePairSpanClassification,
+  VoicePairSpanSummary,
+  VoicePairUnisonSummary,
 } from "../events.js";
 import { activeNoteForVoiceAt, dominantMapKey, noteCheckpoints, sectionPlanAt } from "./quality-vector-shared.js";
 import { positiveModulo } from "./shared.js";
@@ -25,7 +25,7 @@ const PHASE_13_VOICE_PAIRS: readonly [Voice, Voice][] = [
 export function summarizeVoicePairUnisons(
   notes: readonly NoteEvent[],
   sectionPlans: readonly HarmonicPlan[],
-): Phase13VoicePairUnisonSummary[] {
+): VoicePairUnisonSummary[] {
   const checkpoints = noteCheckpoints(notes);
 
   return PHASE_13_VOICE_PAIRS.map(([leftVoice, rightVoice]) => {
@@ -104,11 +104,11 @@ export function summarizeVoicePairUnisons(
 export function summarizeVoicePairFunctions(
   notes: readonly NoteEvent[],
   sectionPlans: readonly HarmonicPlan[],
-): Phase13TVoicePairFunctionSummary[] {
+): VoicePairFunctionSummary[] {
   const checkpoints = noteCheckpoints(notes);
 
   return PHASE_13_VOICE_PAIRS.map(([leftVoice, rightVoice]) => {
-    const summary: Phase13TVoicePairFunctionSummary = {
+    const summary: VoicePairFunctionSummary = {
       leftVoice,
       rightVoice,
       subjectSupportLockstepTicks: 0,
@@ -173,12 +173,12 @@ export function summarizeVoicePairFunctions(
 export function summarizeVoicePairSpans(
   notes: readonly NoteEvent[],
   sectionPlans: readonly HarmonicPlan[],
-): Phase13UVoicePairSpanSummary[] {
+): VoicePairSpanSummary[] {
   const checkpoints = noteCheckpoints(notes);
-  const spans: Phase13UVoicePairSpanSummary[] = [];
+  const spans: VoicePairSpanSummary[] = [];
 
   for (const [leftVoice, rightVoice] of PHASE_13_VOICE_PAIRS) {
-    let currentSpan: Phase13UVoicePairSpanSummary | undefined;
+    let currentSpan: VoicePairSpanSummary | undefined;
 
     for (let index = 0; index < checkpoints.length - 1; index += 1) {
       const startTick = checkpoints[index]!;
@@ -248,7 +248,7 @@ function classifyVoicePairSpan(
   right: Pick<NoteEvent, "pitch" | "role" | "startTick" | "durationTicks">,
   section: HarmonicPlan | undefined,
   tick: number,
-): Phase13UVoicePairSpanClassification | undefined {
+): VoicePairSpanClassification | undefined {
   const pitchClassUnison = positiveModulo(left.pitch, 12) === positiveModulo(right.pitch, 12);
   const durationLockstep = left.startTick === right.startTick && left.durationTicks === right.durationTicks;
   if (left.pitch === right.pitch) {
@@ -275,7 +275,7 @@ function classifyVoicePairSpan(
   return "mechanical-coupling";
 }
 
-function voicePairSpanSymptom(classification: Phase13UVoicePairSpanClassification): string {
+function voicePairSpanSymptom(classification: VoicePairSpanClassification): string {
   if (classification === "mechanical-coupling") {
     return "voices share duration grids without a local contrapuntal role";
   }
@@ -291,7 +291,7 @@ function voicePairSpanSymptom(classification: Phase13UVoicePairSpanClassificatio
   return "voice-pair support has an identifiable local function";
 }
 
-function voicePairLabel(span: Pick<Phase13UVoicePairSpanSummary, "leftVoice" | "rightVoice">): string {
+function voicePairLabel(span: Pick<VoicePairSpanSummary, "leftVoice" | "rightVoice">): string {
   return `${span.leftVoice}-${span.rightVoice}`;
 }
 

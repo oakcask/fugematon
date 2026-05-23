@@ -10,6 +10,8 @@ import type {
   SelectionModel,
 } from "@fugematon/core";
 import {
+  type BaselineBeautyGateResult,
+  type ContourMotionGateResult,
   compareDiagnosticsToReferenceProfile,
   evaluateBaselineBeautyGate,
   evaluateContourMotionGate,
@@ -18,19 +20,17 @@ import {
   evaluateRotationRobustnessGate,
   evaluateVoiceIndependenceGate,
   generateScore,
+  type MelodyTextureGateResult,
   PHASE_5_11_ROTATION_SEEDS,
   PHASE_5_REVIEW_SEEDS,
-  type BaselineBeautyGateResult,
-  type ContourMotionGateResult,
-  type MelodyTextureGateResult,
-  type ReviewGatePolicyResult,
-  type RotationRobustnessGateResult,
-  type VoiceIndependenceGateResult,
   phase59ManualListeningBlockers,
   type ReferenceDiagnosticsAggregate,
   type ReferenceDiagnosticsComparison,
+  type ReviewGatePolicyResult,
+  type RotationRobustnessGateResult,
   summarizeReferenceDiagnosticsComparisons,
   TICKS_PER_QUARTER,
+  type VoiceIndependenceGateResult,
 } from "@fugematon/core";
 import { exportMidi } from "@fugematon/midi";
 import {
@@ -499,10 +499,8 @@ function compareReviewSeed(baselineSeed: ReviewSummarySeed, variantSeed: ReviewS
       variant.referenceComparison.outsideReferenceCount - baseline.referenceComparison.outsideReferenceCount,
     candidatePoolViableCandidates:
       variant.candidatePoolOracle.viableCandidateCount - baseline.candidatePoolOracle.viableCandidateCount,
-    reviewPolicyHardFailures:
-      variant.reviewGatePolicy.hardFailureCount - baseline.reviewGatePolicy.hardFailureCount,
-    reviewPolicyReviewSignals:
-      variant.reviewGatePolicy.reviewSignalCount - baseline.reviewGatePolicy.reviewSignalCount,
+    reviewPolicyHardFailures: variant.reviewGatePolicy.hardFailureCount - baseline.reviewGatePolicy.hardFailureCount,
+    reviewPolicyReviewSignals: variant.reviewGatePolicy.reviewSignalCount - baseline.reviewGatePolicy.reviewSignalCount,
     phase7BHardFailures: variant.reviewGatePolicy.hardFailureCount - baseline.reviewGatePolicy.hardFailureCount,
     phase7BReviewSignals: variant.reviewGatePolicy.reviewSignalCount - baseline.reviewGatePolicy.reviewSignalCount,
     qualityVectorDistance: roundRatio(

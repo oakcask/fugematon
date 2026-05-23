@@ -36,7 +36,7 @@ export type SectionFormTextureRiskContext = {
   sections: CandidateSectionExplanation[];
 };
 
-export type Phase7CandidateRiskContexts = {
+export type CandidateRiskContexts = {
   entryIntervalSupport: EntryIntervalSupportRiskContext;
   voicePairIndependence: VoicePairIndependenceRiskContext;
   voicePhrase: VoicePhraseRiskContext;
@@ -44,11 +44,11 @@ export type Phase7CandidateRiskContexts = {
   sectionFormTexture: SectionFormTextureRiskContext;
 };
 
-export function buildPhase7CandidateRiskContexts(
+export function buildCandidateRiskContexts(
   notes: readonly NoteEvent[],
   candidate: Exposition,
   diagnostics: CandidateDiagnostics,
-): Phase7CandidateRiskContexts {
+): CandidateRiskContexts {
   return {
     entryIntervalSupport: buildEntryIntervalSupportRisk(candidate.subjectEntries, diagnostics),
     voicePairIndependence: buildVoicePairIndependenceRisk(notes),
@@ -58,7 +58,7 @@ export function buildPhase7CandidateRiskContexts(
   };
 }
 
-export function explainCandidateRiskContexts(contexts: Phase7CandidateRiskContexts): CandidateEvaluationExplanations {
+export function explainCandidateRiskContexts(contexts: CandidateRiskContexts): CandidateEvaluationExplanations {
   return {
     entries: contexts.entryIntervalSupport.entries,
     voicePairs: contexts.voicePairIndependence.voicePairs,

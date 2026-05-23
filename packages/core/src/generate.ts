@@ -7,10 +7,10 @@ import {
 import type { GenerationInput, GenerationOutput, GenerationParameters, ScoreEvent } from "./events.js";
 import { analyzeScore } from "./generation/diagnostics.js";
 import { chooseKeySignature, chooseTempo, chooseTimeSignature } from "./generation/key.js";
-import { buildPhase13QReviewSummary } from "./generation/phase13q-review.js";
-import { buildPhase13RReviewSummary } from "./generation/phase13r-review.js";
-import { buildPhase13ZReviewSummary } from "./generation/phase13z-review.js";
-import { buildPhase14ScoreWindowAcceptanceSummary } from "./generation/phase14-score-window-acceptance.js";
+import { buildLocalSentinelCandidateTraceSummary } from "./generation/phase13q-review.js";
+import { buildPhraseConvergenceReviewSummary } from "./generation/phase13r-review.js";
+import { buildPhraseDevelopmentReviewSummary } from "./generation/phase13z-review.js";
+import { buildScoreWindowAcceptanceSummary } from "./generation/phase14-score-window-acceptance.js";
 import { buildFugueScore } from "./generation/sections.js";
 import { buildSubject } from "./generation/subject.js";
 import { Xoshiro128StarStar } from "./prng.js";
@@ -27,19 +27,22 @@ export function generateScore(input: GenerationInput): GenerationOutput {
   const subject = buildSubject(rng, keySignature, selectionModel);
   const score = buildFugueScore(subject, keySignature, input.lengthTicks, rng, selectionModel);
   const diagnostics = analyzeScore(score.notes, score.subjectEntries, score.sectionPlans);
-  const localSentinelCandidateTrace = buildPhase13QReviewSummary(
+  const localSentinelCandidateTrace = buildLocalSentinelCandidateTraceSummary(
     score.selectedCandidateEvaluations,
     diagnostics.qualityVector,
   );
-  const phraseConvergenceReview = buildPhase13RReviewSummary(selectionModel, diagnostics.phase12Review);
-  const phraseDevelopmentReview = buildPhase13ZReviewSummary(
+  const phraseConvergenceReview = buildPhraseConvergenceReviewSummary(
+    selectionModel,
+    diagnostics.phraseRepetitionReview,
+  );
+  const phraseDevelopmentReview = buildPhraseDevelopmentReviewSummary(
     score.subjectEntries,
     score.sectionPlans,
-    diagnostics.phase12Review,
+    diagnostics.phraseRepetitionReview,
   );
-  const scoreWindowAcceptance = buildPhase14ScoreWindowAcceptanceSummary(
+  const scoreWindowAcceptance = buildScoreWindowAcceptanceSummary(
     diagnostics.entryBoundaryContinuity,
-    diagnostics.phase14DissonanceTriage,
+    diagnostics.dissonanceTriage,
     diagnostics.qualityVector,
     phraseDevelopmentReview,
   );
@@ -150,22 +153,22 @@ export function generateScore(input: GenerationInput): GenerationOutput {
       pitchContourMotion: diagnostics.pitchContourMotion,
       lowerVoiceVocality: diagnostics.lowerVoiceVocality,
       stepwisePattern: diagnostics.stepwisePattern,
-      texturePlanningReview: diagnostics.phase11Review,
-      phraseRepetitionReview: diagnostics.phase12Review,
-      phase11Review: diagnostics.phase11Review,
-      phase12Review: diagnostics.phase12Review,
+      texturePlanningReview: diagnostics.texturePlanningReview,
+      phraseRepetitionReview: diagnostics.phraseRepetitionReview,
+      phase11Review: diagnostics.texturePlanningReview,
+      phase12Review: diagnostics.phraseRepetitionReview,
       entryBoundaryContinuity: diagnostics.entryBoundaryContinuity,
       bassAnswerTailTexture: diagnostics.bassAnswerTailTexture,
       qualityVector: diagnostics.qualityVector,
       localSentinelCandidateTrace,
       phraseConvergenceReview,
       phraseDevelopmentReview,
-      dissonanceTriage: diagnostics.phase14DissonanceTriage,
+      dissonanceTriage: diagnostics.dissonanceTriage,
       scoreWindowAcceptance,
       phase13QReview: localSentinelCandidateTrace,
       phase13RReview: phraseConvergenceReview,
       phase13ZReview: phraseDevelopmentReview,
-      phase14DissonanceTriage: diagnostics.phase14DissonanceTriage,
+      phase14DissonanceTriage: diagnostics.dissonanceTriage,
       phase14ScoreWindowAcceptance: scoreWindowAcceptance,
       ornamentCandidateCount: diagnostics.ornamentCandidateCount,
       ornamentDensity: diagnostics.ornamentDensity,

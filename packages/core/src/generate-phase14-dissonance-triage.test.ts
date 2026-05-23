@@ -25,17 +25,18 @@ test("Phase 14 dissonance triage seeds keep entry and weak-dissonance evidence o
 
     return {
       seed,
-      phase14WeakPassingSemitoneClashTicks: diagnostics.phase14DissonanceTriage.weakPassingSemitoneClashTicks,
+      phase14WeakPassingSemitoneClashTicks: diagnostics.dissonanceTriage.weakPassingSemitoneClashTicks,
       phase14PassingNeighborOffbeatSemitoneClashTicks:
-        diagnostics.phase14DissonanceTriage.passingNeighborOffbeatSemitoneClashTicks,
-      phase14EntryAdjacentSecondFrictionCount: diagnostics.phase14DissonanceTriage.entryAdjacentSecondFrictionCount,
-      phase14UnresolvedAccentedEntryClashCount: diagnostics.phase14DissonanceTriage.unresolvedAccentedEntryClashCount,
-      phase14WindowCount: diagnostics.phase14DissonanceTriage.windows.length,
+        diagnostics.dissonanceTriage.passingNeighborOffbeatSemitoneClashTicks,
+      phase14EntryAdjacentSecondFrictionCount: diagnostics.dissonanceTriage.entryAdjacentSecondFrictionCount,
+      phase14UnresolvedAccentedEntryClashCount: diagnostics.dissonanceTriage.unresolvedAccentedEntryClashCount,
+      phase14WindowCount: diagnostics.dissonanceTriage.windows.length,
       entryAdjacentSecondFriction,
       unresolvedAccentedEntryClashes,
-      weakBeatNonChordToneIntentCount: diagnostics.phase11Review.metricalHarmony.weakBeatNonChordToneIntentCount,
+      weakBeatNonChordToneIntentCount:
+        diagnostics.texturePlanningReview.metricalHarmony.weakBeatNonChordToneIntentCount,
       weakBeatUnresolvedNonChordToneCount:
-        diagnostics.phase11Review.metricalHarmony.weakBeatUnresolvedNonChordToneCount,
+        diagnostics.texturePlanningReview.metricalHarmony.weakBeatUnresolvedNonChordToneCount,
     };
   });
 

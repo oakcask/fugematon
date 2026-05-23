@@ -1,33 +1,33 @@
 import { TICKS_PER_QUARTER } from "../constants.js";
 import type {
+  DissonanceTriageSummary,
+  DissonanceTriageWindow,
+  EntrySonoritySummary,
   HarmonicPlan,
   MetricalHarmonyIntent,
   NoteRole,
-  Phase13TEntrySonoritySummary,
-  Phase14DissonanceTriageSummary,
-  Phase14DissonanceTriageWindow,
 } from "../events.js";
-import { phase14SectionStateAt, phase14VoicePairs } from "./phase14-score-window-shared.js";
+import { scoreWindowSectionStateAt, scoreWindowVoicePairs } from "./phase14-score-window-shared.js";
 import { positiveModulo, VOICE_ENTRY_ORDER } from "./shared.js";
 import type { ActivePitch } from "./types.js";
 import { halfBeatVerticalities } from "./verticality.js";
 
-const PHASE_14_TRIAGE_WINDOW_LIMIT = 48;
+const DISSONANCE_TRIAGE_WINDOW_LIMIT = 48;
 const PASSING_NEIGHBOR_OFFBEAT_INTENTS = new Set<MetricalHarmonyIntent>([
   "weak-passing-tone",
   "weak-neighbor-tone",
   "offbeat-motion",
 ]);
-type Phase14SemitoneClashClassification = Extract<
-  Phase14DissonanceTriageWindow["classification"],
+type SemitoneClashClassification = Extract<
+  DissonanceTriageWindow["classification"],
   "weak-passing-semitone-clash" | "passing-neighbor-offbeat-semitone-clash"
 >;
 
-export function analyzePhase14DissonanceTriage(
+export function analyzeDissonanceTriage(
   notes: Parameters<typeof halfBeatVerticalities>[0],
   sectionPlans: readonly HarmonicPlan[],
-  entrySonorities: readonly Phase13TEntrySonoritySummary[],
-): Phase14DissonanceTriageSummary {
+  entrySonorities: readonly EntrySonoritySummary[],
+): DissonanceTriageSummary {
   const semitoneWindows = summarizeSemitoneClashWindows(notes, sectionPlans);
   const entryWindows = summarizeEntrySonorityWindows(entrySonorities);
   const weakPassingSemitoneWindows = semitoneWindows.filter(
@@ -46,23 +46,23 @@ export function analyzePhase14DissonanceTriage(
       (sum, sonority) => sum + sonority.unresolvedAccentedClashCount,
       0,
     ),
-    windows: [...entryWindows, ...semitoneWindows].slice(0, PHASE_14_TRIAGE_WINDOW_LIMIT),
+    windows: [...entryWindows, ...semitoneWindows].slice(0, DISSONANCE_TRIAGE_WINDOW_LIMIT),
   };
 }
 
 function summarizeSemitoneClashWindows(
   notes: Parameters<typeof halfBeatVerticalities>[0],
   sectionPlans: readonly HarmonicPlan[],
-): Phase14DissonanceTriageWindow[] {
+): DissonanceTriageWindow[] {
   return halfBeatVerticalities(notes).flatMap(({ tick, active }) => {
     if (tick % TICKS_PER_QUARTER === 0 || active.size < 2) {
       return [];
     }
 
-    const state = phase14SectionStateAt(tick, sectionPlans);
-    const windows: Phase14DissonanceTriageWindow[] = [];
+    const state = scoreWindowSectionStateAt(tick, sectionPlans);
+    const windows: DissonanceTriageWindow[] = [];
     const activeVoices = VOICE_ENTRY_ORDER.filter((voice) => active.has(voice));
-    for (const [leftVoice, rightVoice] of phase14VoicePairs(activeVoices)) {
+    for (const [leftVoice, rightVoice] of scoreWindowVoicePairs(activeVoices)) {
       const window = semitoneClashWindowAt(tick, state, active, leftVoice, rightVoice);
       if (window !== undefined) {
         windows.push(window);
@@ -74,11 +74,11 @@ function summarizeSemitoneClashWindows(
 
 function semitoneClashWindowAt(
   tick: number,
-  state: Phase14DissonanceTriageWindow["state"],
-  active: ReadonlyMap<Phase14DissonanceTriageWindow["voices"][number], ActivePitch>,
-  leftVoice: Phase14DissonanceTriageWindow["voices"][number],
-  rightVoice: Phase14DissonanceTriageWindow["voices"][number],
-): Phase14DissonanceTriageWindow | undefined {
+  state: DissonanceTriageWindow["state"],
+  active: ReadonlyMap<DissonanceTriageWindow["voices"][number], ActivePitch>,
+  leftVoice: DissonanceTriageWindow["voices"][number],
+  rightVoice: DissonanceTriageWindow["voices"][number],
+): DissonanceTriageWindow | undefined {
   const left = active.get(leftVoice);
   const right = active.get(rightVoice);
   if (left === undefined || right === undefined || !isSemitoneClash(left, right)) {
@@ -114,7 +114,7 @@ function activePitchRoles(left: ActivePitch, right: ActivePitch): NoteRole[] {
 
 function classifySemitoneClashIntents(
   intents: readonly MetricalHarmonyIntent[],
-): Phase14SemitoneClashClassification | undefined {
+): SemitoneClashClassification | undefined {
   if (intents.includes("weak-passing-tone")) {
     return "weak-passing-semitone-clash";
   }
@@ -124,11 +124,9 @@ function classifySemitoneClashIntents(
   return undefined;
 }
 
-function summarizeEntrySonorityWindows(
-  entrySonorities: readonly Phase13TEntrySonoritySummary[],
-): Phase14DissonanceTriageWindow[] {
+function summarizeEntrySonorityWindows(entrySonorities: readonly EntrySonoritySummary[]): DissonanceTriageWindow[] {
   return entrySonorities.flatMap((sonority) => {
-    const windows: Phase14DissonanceTriageWindow[] = [];
+    const windows: DissonanceTriageWindow[] = [];
     const voices = [sonority.voice, ...sonority.supportVoices];
     if (sonority.adjacentSecondFrictionCount > 0) {
       windows.push({

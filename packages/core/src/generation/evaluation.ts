@@ -1,9 +1,9 @@
 import { TICKS_PER_QUARTER } from "../constants.js";
 import type { CandidateEvaluation, NoteEvent, NoteRole, StepwisePatternSummary } from "../events.js";
 import {
-  buildPhase7CandidateRiskContexts,
+  buildCandidateRiskContexts,
+  type CandidateRiskContexts,
   explainCandidateRiskContexts,
-  type Phase7CandidateRiskContexts,
 } from "./candidate-risk-contexts.js";
 import { analyzeScore } from "./diagnostics.js";
 import type { Exposition } from "./types.js";
@@ -84,7 +84,7 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
   const recentNotes = previousNotes.slice(-64);
   const candidateNotes = [...recentNotes, ...candidate.notes];
   const diagnostics = analyzeScore(candidateNotes, candidate.subjectEntries, candidate.sectionPlans);
-  const riskContexts = buildPhase7CandidateRiskContexts(candidateNotes, candidate, diagnostics);
+  const riskContexts = buildCandidateRiskContexts(candidateNotes, candidate, diagnostics);
   const explanations = explainCandidateRiskContexts(riskContexts);
   const upperNeighborFifthClimbContourSelectionCost =
     upperNeighborFifthClimbPatternIsPresent(candidate) *
@@ -153,10 +153,10 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
     diagnostics.sharedRhythmOverlapCount * EVALUATION_WEIGHTS.texture.voiceIndependenceSelectionSharedRhythmOverlap;
   const voicePairLockstepSelectionCost = scoreVoicePairLockstepRisk(riskContexts, diagnostics.modalContextCount);
   const phase13VLineAgencyCost =
-    diagnostics.qualityVector.phase13VReview.lineAgency.reinforcingSpanCount +
-    diagnostics.qualityVector.phase13VReview.lineAgency.reviewRequiredSpanCount * 2;
+    diagnostics.qualityVector.scoreBeautyEvidence.lineAgency.reinforcingSpanCount +
+    diagnostics.qualityVector.scoreBeautyEvidence.lineAgency.reviewRequiredSpanCount * 2;
   const phase13VEntryFormulaNoveltyCost =
-    diagnostics.qualityVector.phase13VReview.entryFormulaNovelty.reviewRequiredFormulaCount;
+    diagnostics.qualityVector.scoreBeautyEvidence.entryFormulaNovelty.reviewRequiredFormulaCount;
   const phase13WEntryBoundaryResetCost = diagnostics.entryBoundaryContinuity.synchronizedResetCount;
   const texture = {
     cost:
@@ -227,8 +227,7 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
         (sum, span) => sum + span.spanSemitones,
         0,
       ),
-      nonCadentialFunctionalThinningRunCount:
-        diagnostics.texturePlanningReview.functionalThinning.nonCadentialRunCount,
+      nonCadentialFunctionalThinningRunCount: diagnostics.texturePlanningReview.functionalThinning.nonCadentialRunCount,
       oneVoiceFunctionalThinningRunCount: diagnostics.texturePlanningReview.functionalThinning.oneVoiceRunCount,
       twoVoiceFunctionalThinningRunCount: diagnostics.texturePlanningReview.functionalThinning.twoVoiceRunCount,
       functionalThinningMaxDurationQuarters:
@@ -257,9 +256,9 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
     cost:
       diagnostics.subjectIdentityViolations * EVALUATION_WEIGHTS.subjectClarity.subjectIdentityViolation +
       diagnostics.answerPlanViolations * EVALUATION_WEIGHTS.subjectClarity.answerPlanViolation +
-      diagnostics.qualityVector.phase13VReview.counterSubjectSurvivability.tradeoffWindowCount *
+      diagnostics.qualityVector.scoreBeautyEvidence.counterSubjectSurvivability.tradeoffWindowCount *
         EVALUATION_WEIGHTS.subjectClarity.phase13VCounterSubjectSurvivability +
-      diagnostics.qualityVector.phase13VReview.counterSubjectSurvivability.weakWindowCount *
+      diagnostics.qualityVector.scoreBeautyEvidence.counterSubjectSurvivability.weakWindowCount *
         EVALUATION_WEIGHTS.subjectClarity.phase13VCounterSubjectSurvivability *
         2,
     reward:
@@ -277,9 +276,9 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
         diagnostics.modalContextCount,
       ),
       phase13VCounterSubjectTradeoffWindowCount:
-        diagnostics.qualityVector.phase13VReview.counterSubjectSurvivability.tradeoffWindowCount,
+        diagnostics.qualityVector.scoreBeautyEvidence.counterSubjectSurvivability.tradeoffWindowCount,
       phase13VCounterSubjectWeakWindowCount:
-        diagnostics.qualityVector.phase13VReview.counterSubjectSurvivability.weakWindowCount,
+        diagnostics.qualityVector.scoreBeautyEvidence.counterSubjectSurvivability.weakWindowCount,
     },
   };
   const modalCadenceEntrySupportRiskCost = scoreModalCadenceEntrySupportRisk(candidate, riskContexts);
@@ -290,9 +289,9 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
       diagnostics.unresolvedDissonanceCount * EVALUATION_WEIGHTS.harmony.unresolvedDissonance +
       diagnostics.strongBeatDissonanceCount * EVALUATION_WEIGHTS.harmony.strongBeatDissonance +
       diagnostics.harmonicFunctionMismatches * EVALUATION_WEIGHTS.harmony.harmonicFunctionMismatch +
-      diagnostics.phase11Review.metricalHarmony.strongBeatStructuralIntentMismatchCount *
+      diagnostics.texturePlanningReview.metricalHarmony.strongBeatStructuralIntentMismatchCount *
         EVALUATION_WEIGHTS.harmony.strongBeatStructuralIntentMismatch +
-      diagnostics.phase11Review.metricalHarmony.weakBeatUnresolvedNonChordToneCount *
+      diagnostics.texturePlanningReview.metricalHarmony.weakBeatUnresolvedNonChordToneCount *
         EVALUATION_WEIGHTS.harmony.weakBeatUnresolvedNonChordTone +
       diagnostics.predominantDirectionMisses * EVALUATION_WEIGHTS.harmony.predominantDirectionMiss +
       diagnostics.unresolvedAmbiguityWarnings * EVALUATION_WEIGHTS.harmony.unresolvedAmbiguity,
@@ -305,23 +304,28 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
       strongBeatDissonanceCount: diagnostics.strongBeatDissonanceCount,
       harmonicFunctionMismatches: diagnostics.harmonicFunctionMismatches,
       harmonicFunctionMatches: diagnostics.harmonicFunctionMatches,
-      strongBeatCheckpointCount: diagnostics.phase11Review.metricalHarmony.strongBeatCheckpointCount,
-      strongBeatChordToneSupportCount: diagnostics.phase11Review.metricalHarmony.strongBeatChordToneSupportCount,
-      strongBeatChordToneMismatchCount: diagnostics.phase11Review.metricalHarmony.strongBeatChordToneMismatchCount,
-      strongBeatBassRootSupportCount: diagnostics.phase11Review.metricalHarmony.strongBeatBassRootSupportCount,
+      strongBeatCheckpointCount: diagnostics.texturePlanningReview.metricalHarmony.strongBeatCheckpointCount,
+      strongBeatChordToneSupportCount:
+        diagnostics.texturePlanningReview.metricalHarmony.strongBeatChordToneSupportCount,
+      strongBeatChordToneMismatchCount:
+        diagnostics.texturePlanningReview.metricalHarmony.strongBeatChordToneMismatchCount,
+      strongBeatBassRootSupportCount: diagnostics.texturePlanningReview.metricalHarmony.strongBeatBassRootSupportCount,
       strongBeatBassRootUnsupportedCount: Math.max(
         0,
-        diagnostics.phase11Review.metricalHarmony.strongBeatCheckpointCount -
-          diagnostics.phase11Review.metricalHarmony.strongBeatBassRootSupportCount,
+        diagnostics.texturePlanningReview.metricalHarmony.strongBeatCheckpointCount -
+          diagnostics.texturePlanningReview.metricalHarmony.strongBeatBassRootSupportCount,
       ),
-      strongBeatStructuralIntentCount: diagnostics.phase11Review.metricalHarmony.strongBeatStructuralIntentCount,
+      strongBeatStructuralIntentCount:
+        diagnostics.texturePlanningReview.metricalHarmony.strongBeatStructuralIntentCount,
       strongBeatStructuralIntentMismatchCount:
-        diagnostics.phase11Review.metricalHarmony.strongBeatStructuralIntentMismatchCount,
-      weakBeatChordToneMismatchCount: diagnostics.phase11Review.metricalHarmony.weakBeatChordToneMismatchCount,
-      weakBeatNonChordToneIntentCount: diagnostics.phase11Review.metricalHarmony.weakBeatNonChordToneIntentCount,
-      weakBeatResolvedNonChordToneCount: diagnostics.phase11Review.metricalHarmony.weakBeatResolvedNonChordToneCount,
+        diagnostics.texturePlanningReview.metricalHarmony.strongBeatStructuralIntentMismatchCount,
+      weakBeatChordToneMismatchCount: diagnostics.texturePlanningReview.metricalHarmony.weakBeatChordToneMismatchCount,
+      weakBeatNonChordToneIntentCount:
+        diagnostics.texturePlanningReview.metricalHarmony.weakBeatNonChordToneIntentCount,
+      weakBeatResolvedNonChordToneCount:
+        diagnostics.texturePlanningReview.metricalHarmony.weakBeatResolvedNonChordToneCount,
       weakBeatUnresolvedNonChordToneCount:
-        diagnostics.phase11Review.metricalHarmony.weakBeatUnresolvedNonChordToneCount,
+        diagnostics.texturePlanningReview.metricalHarmony.weakBeatUnresolvedNonChordToneCount,
       predominantDirectionMisses: diagnostics.predominantDirectionMisses,
       controlledAmbiguityScore: diagnostics.controlledAmbiguityScore,
       styleModulationFit: diagnostics.styleModulationFit,
@@ -343,9 +347,9 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
   const form = {
     cost:
       diagnostics.formRepetitionWarnings * EVALUATION_WEIGHTS.form.formRepetition +
-      diagnostics.qualityVector.phase13VReview.longWindowDevelopment.reviewRequiredClaimCount *
+      diagnostics.qualityVector.scoreBeautyEvidence.longWindowDevelopment.reviewRequiredClaimCount *
         EVALUATION_WEIGHTS.form.phase13VLongWindowDevelopment +
-      Math.max(0, diagnostics.qualityVector.phase13VReview.longWindowDevelopment.topFunctionShare - 0.34) *
+      Math.max(0, diagnostics.qualityVector.scoreBeautyEvidence.longWindowDevelopment.topFunctionShare - 0.34) *
         100 *
         EVALUATION_WEIGHTS.form.phase13VLongWindowDevelopment,
     reward:
@@ -361,12 +365,13 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
       topEntryPatternFamilyCount: diagnostics.texturePlanningReview.entryPatternFamilies[0]?.count ?? 0,
       phase11StateGrammarMostRepeatedPatternCount:
         diagnostics.texturePlanningReview.stateGrammarRepetition.mostRepeatedPatternCount,
-      phase11StateGrammarUniquePatternCount: diagnostics.texturePlanningReview.stateGrammarRepetition.uniquePatternCount,
+      phase11StateGrammarUniquePatternCount:
+        diagnostics.texturePlanningReview.stateGrammarRepetition.uniquePatternCount,
       phase11TopEntryPatternFamilyCount: diagnostics.texturePlanningReview.entryPatternFamilies[0]?.count ?? 0,
       phase13VLongWindowReviewRequiredClaimCount:
-        diagnostics.qualityVector.phase13VReview.longWindowDevelopment.reviewRequiredClaimCount,
+        diagnostics.qualityVector.scoreBeautyEvidence.longWindowDevelopment.reviewRequiredClaimCount,
       phase13VLongWindowTopFunctionShare:
-        diagnostics.qualityVector.phase13VReview.longWindowDevelopment.topFunctionShare,
+        diagnostics.qualityVector.scoreBeautyEvidence.longWindowDevelopment.topFunctionShare,
     },
   };
   const totalCost =
@@ -403,7 +408,7 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
   };
 }
 
-function scoreVoicePairLockstepRisk(contexts: Phase7CandidateRiskContexts, modalContextCount: number): number {
+function scoreVoicePairLockstepRisk(contexts: CandidateRiskContexts, modalContextCount: number): number {
   if (modalContextCount > 0 || contexts.subjectIdentity.counterSubjectIdentityRetention < 0.65) {
     return 0;
   }
@@ -442,7 +447,7 @@ function modalCounterSubjectIdentitySelectionReward(
   return counterSubjectIdentityRetention * EVALUATION_WEIGHTS.subjectClarity.modalCounterSubjectIdentitySelection;
 }
 
-function scoreBalancedEntryHarmonyRisk(contexts: Phase7CandidateRiskContexts): number {
+function scoreBalancedEntryHarmonyRisk(contexts: CandidateRiskContexts): number {
   return contexts.entryIntervalSupport.entries.reduce(
     (sum, entry) =>
       sum +
@@ -453,7 +458,7 @@ function scoreBalancedEntryHarmonyRisk(contexts: Phase7CandidateRiskContexts): n
   );
 }
 
-function scoreModalCadenceEntrySupportRisk(candidate: Exposition, contexts: Phase7CandidateRiskContexts): number {
+function scoreModalCadenceEntrySupportRisk(candidate: Exposition, contexts: CandidateRiskContexts): number {
   if (!candidate.sectionPlans.some((section) => section.cadenceKind === "modal")) {
     return 0;
   }

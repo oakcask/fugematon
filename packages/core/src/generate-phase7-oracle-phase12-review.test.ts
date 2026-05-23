@@ -12,7 +12,7 @@ test("generateScore exposes phase-12 repetition family diagnostics", () => {
       lengthTicks: PHASE_5_LENGTH_TICKS,
       selectionModel: "phase10-section-local-planner",
     });
-    const summary = output.diagnostics.phase12Review;
+    const summary = output.diagnostics.phraseRepetitionReview;
 
     assert.equal(summary.schemaVersion, 1);
     assert.equal(summary.entryPatternFamilyConcentration.entryCount, output.diagnostics.subjectEntries.length);

@@ -1,4 +1,4 @@
-import type { HarmonicPlan, NoteEvent, Phase13QualityVector, PlannedEntry } from "../events.js";
+import type { HarmonicPlan, NoteEvent, PlannedEntry, QualityVector } from "../events.js";
 import {
   summarizeEntryFormulaRecurrences,
   summarizeEntrySevereIntervalDurations,
@@ -12,7 +12,7 @@ import {
   summarizeAxes,
   summarizeLocalSentinels,
   summarizeMetricExplanations,
-  summarizePhase13VReview,
+  summarizeScoreBeautyEvidence,
   summarizeSopranoRepeatedNotePressure,
 } from "./quality-vector-summary.js";
 import {
@@ -21,11 +21,11 @@ import {
   summarizeVoicePairUnisons,
 } from "./quality-vector-voice-pairs.js";
 
-export function analyzePhase13QualityVector(
+export function analyzeQualityVector(
   notes: readonly NoteEvent[],
   subjectEntries: readonly PlannedEntry[],
   sectionPlans: readonly HarmonicPlan[],
-): Phase13QualityVector {
+): QualityVector {
   const voicePairUnisons = summarizeVoicePairUnisons(notes, sectionPlans);
   const voicePairFunctions = summarizeVoicePairFunctions(notes, sectionPlans);
   const voicePairSpans = summarizeVoicePairSpans(notes, sectionPlans);
@@ -42,7 +42,7 @@ export function analyzePhase13QualityVector(
     entrySevereIntervals,
     sectionPlans,
   );
-  const scoreBeautyEvidence = summarizePhase13VReview({
+  const scoreBeautyEvidence = summarizeScoreBeautyEvidence({
     entryFormulaRecurrences,
     voicePairSpans,
     fragmentFunctionEvidence,

@@ -46,12 +46,12 @@ export function assertPhase13QAdoptionSeedsReady(seeds: readonly string[]): void
     );
     assert.ok(expectedBlockers.some((blocker) => blockerNames.has(blocker)));
     assert.ok(
-      variant.diagnostics.phase12Review.sectionStatePatterns.mostRepeatedPatternCount <=
-        baseline.diagnostics.phase12Review.sectionStatePatterns.mostRepeatedPatternCount,
+      variant.diagnostics.phraseRepetitionReview.sectionStatePatterns.mostRepeatedPatternCount <=
+        baseline.diagnostics.phraseRepetitionReview.sectionStatePatterns.mostRepeatedPatternCount,
     );
     assert.ok(
-      variant.diagnostics.phase12Review.sectionStatePatterns.uniquePatternCount >=
-        baseline.diagnostics.phase12Review.sectionStatePatterns.uniquePatternCount,
+      variant.diagnostics.phraseRepetitionReview.sectionStatePatterns.uniquePatternCount >=
+        baseline.diagnostics.phraseRepetitionReview.sectionStatePatterns.uniquePatternCount,
     );
   }
 }

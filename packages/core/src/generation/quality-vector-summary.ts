@@ -1,26 +1,26 @@
 import { TICKS_PER_QUARTER } from "../constants.js";
 import type {
+  CounterSubjectWindowSummary,
+  EntryFormulaRecurrenceSummary,
+  EntrySevereIntervalDurationSummary,
+  EntrySonoritySummary,
+  FragmentFunctionEvidenceSummary,
   HarmonicPlan,
+  LocalSentinelSummary,
+  MetricExplanationSummary,
   NoteEvent,
-  Phase13EntrySevereIntervalDurationSummary,
-  Phase13LocalSentinelSummary,
-  Phase13QualityVectorAxis,
-  Phase13QualityVectorAxisSummary,
-  Phase13QualityVectorGroupingKey,
-  Phase13SopranoRepeatedNotePressureSummary,
-  Phase13TCounterSubjectWindowSummary,
-  Phase13TEntrySonoritySummary,
-  Phase13TFragmentFunctionEvidence,
-  Phase13TMetricExplanationSummary,
-  Phase13TVoicePairFunctionSummary,
-  Phase13UEntryFormulaSummary,
-  Phase13UVoicePairSpanSummary,
-  Phase13VoicePairUnisonSummary,
-  Phase13VReviewSummary,
+  QualityVectorAxis,
+  QualityVectorAxisSummary,
+  QualityVectorGroupingKey,
+  ScoreBeautyEvidenceSummary,
+  SopranoRepeatedNotePressureSummary,
+  VoicePairFunctionSummary,
+  VoicePairSpanSummary,
+  VoicePairUnisonSummary,
 } from "../events.js";
 import { sectionPlanAt, voicePairKey } from "./quality-vector-shared.js";
 
-const PHASE_13_EXPECTED_MAX: Record<Phase13QualityVectorAxis, number> = {
+const QUALITY_VECTOR_EXPECTED_MAX: Record<QualityVectorAxis, number> = {
   exactSamePitchUnisonDuration: 12,
   pitchClassUnisonDuration: 36,
   longestExactSamePitchSpan: 4,
@@ -31,7 +31,7 @@ const PHASE_13_EXPECTED_MAX: Record<Phase13QualityVectorAxis, number> = {
   unresolvedEntrySevereIntervalDuration: 4,
 };
 
-const PHASE_13_AXIS_WEIGHTS: Record<Phase13QualityVectorAxis, number> = {
+const QUALITY_VECTOR_AXIS_WEIGHTS: Record<QualityVectorAxis, number> = {
   exactSamePitchUnisonDuration: 1.2,
   pitchClassUnisonDuration: 1,
   longestExactSamePitchSpan: 1.4,
@@ -42,9 +42,7 @@ const PHASE_13_AXIS_WEIGHTS: Record<Phase13QualityVectorAxis, number> = {
   unresolvedEntrySevereIntervalDuration: 1.5,
 };
 
-export function summarizeSopranoRepeatedNotePressure(
-  notes: readonly NoteEvent[],
-): Phase13SopranoRepeatedNotePressureSummary {
+export function summarizeSopranoRepeatedNotePressure(notes: readonly NoteEvent[]): SopranoRepeatedNotePressureSummary {
   const sopranoNotes = notes.filter((note) => note.voice === "soprano").sort(compareNotes);
   let runCount = 0;
   let highRegisterRunCount = 0;
@@ -95,10 +93,10 @@ export function summarizeSopranoRepeatedNotePressure(
 }
 
 export function summarizeAxes(
-  voicePairUnisons: readonly Phase13VoicePairUnisonSummary[],
-  sopranoRepeatedNotePressure: Phase13SopranoRepeatedNotePressureSummary,
-  entrySevereIntervals: readonly Phase13EntrySevereIntervalDurationSummary[],
-): Phase13QualityVectorAxisSummary[] {
+  voicePairUnisons: readonly VoicePairUnisonSummary[],
+  sopranoRepeatedNotePressure: SopranoRepeatedNotePressureSummary,
+  entrySevereIntervals: readonly EntrySevereIntervalDurationSummary[],
+): QualityVectorAxisSummary[] {
   const mostExactPair = maximumBy(voicePairUnisons, (summary) => summary.exactSamePitchDurationTicks);
   const mostPitchClassPair = maximumBy(voicePairUnisons, (summary) => summary.pitchClassUnisonDurationTicks);
   const longestExactPair = maximumBy(voicePairUnisons, (summary) => summary.longestExactSamePitchSpanTicks);
@@ -160,13 +158,13 @@ export function summarizeAxes(
 }
 
 export function summarizeLocalSentinels(
-  voicePairUnisons: readonly Phase13VoicePairUnisonSummary[],
-  voicePairSpans: readonly Phase13UVoicePairSpanSummary[],
-  sopranoRepeatedNotePressure: Phase13SopranoRepeatedNotePressureSummary,
-  entrySevereIntervals: readonly Phase13EntrySevereIntervalDurationSummary[],
+  voicePairUnisons: readonly VoicePairUnisonSummary[],
+  voicePairSpans: readonly VoicePairSpanSummary[],
+  sopranoRepeatedNotePressure: SopranoRepeatedNotePressureSummary,
+  entrySevereIntervals: readonly EntrySevereIntervalDurationSummary[],
   sectionPlans: readonly HarmonicPlan[],
-): Phase13LocalSentinelSummary[] {
-  const sentinels: Phase13LocalSentinelSummary[] = [];
+): LocalSentinelSummary[] {
+  const sentinels: LocalSentinelSummary[] = [];
 
   for (const summary of voicePairUnisons) {
     const voicePair = voicePairKey(summary);
@@ -229,12 +227,12 @@ export function summarizeLocalSentinels(
 }
 
 export function summarizeMetricExplanations(
-  voicePairUnisons: readonly Phase13VoicePairUnisonSummary[],
-  voicePairFunctions: readonly Phase13TVoicePairFunctionSummary[],
-  entrySevereIntervals: readonly Phase13EntrySevereIntervalDurationSummary[],
-  entrySonorities: readonly Phase13TEntrySonoritySummary[],
+  voicePairUnisons: readonly VoicePairUnisonSummary[],
+  voicePairFunctions: readonly VoicePairFunctionSummary[],
+  entrySevereIntervals: readonly EntrySevereIntervalDurationSummary[],
+  entrySonorities: readonly EntrySonoritySummary[],
   sectionPlans: readonly HarmonicPlan[],
-): Phase13TMetricExplanationSummary[] {
+): MetricExplanationSummary[] {
   const mostPitchClassPair = maximumBy(voicePairUnisons, (summary) => summary.pitchClassUnisonDurationTicks);
   const mostLockstepPair = maximumBy(voicePairUnisons, (summary) => summary.durationBasedLockstepTicks);
   const lockstepFunction = voicePairFunctions.find(
@@ -281,12 +279,12 @@ export function summarizeMetricExplanations(
   ];
 }
 
-export function summarizePhase13VReview(input: {
-  entryFormulaRecurrences: readonly Phase13UEntryFormulaSummary[];
-  voicePairSpans: readonly Phase13UVoicePairSpanSummary[];
-  fragmentFunctionEvidence: Phase13TFragmentFunctionEvidence;
-  counterSubjectWindows: readonly Phase13TCounterSubjectWindowSummary[];
-}): Phase13VReviewSummary {
+export function summarizeScoreBeautyEvidence(input: {
+  entryFormulaRecurrences: readonly EntryFormulaRecurrenceSummary[];
+  voicePairSpans: readonly VoicePairSpanSummary[];
+  fragmentFunctionEvidence: FragmentFunctionEvidenceSummary;
+  counterSubjectWindows: readonly CounterSubjectWindowSummary[];
+}): ScoreBeautyEvidenceSummary {
   const independentSpanCount = input.voicePairSpans.filter(
     (span) =>
       span.classification === "cadence-support" ||
@@ -357,21 +355,21 @@ export function summarizePhase13VReview(input: {
 }
 
 function longestVoicePairSpan(
-  voicePairSpans: readonly Phase13UVoicePairSpanSummary[],
+  voicePairSpans: readonly VoicePairSpanSummary[],
   voicePair: string,
-  classification: Phase13UVoicePairSpanSummary["classification"],
-): Phase13UVoicePairSpanSummary | undefined {
+  classification: VoicePairSpanSummary["classification"],
+): VoicePairSpanSummary | undefined {
   return voicePairSpans
     .filter((span) => voicePairKey(span) === voicePair && span.classification === classification)
     .sort((left, right) => right.durationTicks - left.durationTicks || left.startTick - right.startTick)[0];
 }
 
 function axisSummary(
-  axis: Phase13QualityVectorAxis,
+  axis: QualityVectorAxis,
   value: number,
-  groupingKey: Phase13QualityVectorGroupingKey,
-): Phase13QualityVectorAxisSummary {
-  const expectedMax = PHASE_13_EXPECTED_MAX[axis];
+  groupingKey: QualityVectorGroupingKey,
+): QualityVectorAxisSummary {
+  const expectedMax = QUALITY_VECTOR_EXPECTED_MAX[axis];
   const normalizedValue = roundRatio(value / expectedMax);
 
   return {
@@ -379,7 +377,7 @@ function axisSummary(
     value: roundRatio(value),
     normalizedValue,
     expectedMax,
-    weight: PHASE_13_AXIS_WEIGHTS[axis],
+    weight: QUALITY_VECTOR_AXIS_WEIGHTS[axis],
     status: normalizedValue > 1 ? "review-required" : "within-profile",
     groupingKey,
     topContributors: groupingKey.voicePair === undefined ? [] : [groupingKey.voicePair],

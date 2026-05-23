@@ -5,7 +5,7 @@ import { generateScore } from "./generate.js";
 
 test("Phase 13Z user-reported seed no longer has one dominant late subject-stem family", () => {
   const output = generateScore({ seed: "seed-0zereox-1v729ih", lengthTicks: PHASE_5_LENGTH_TICKS });
-  const subjectFamily = output.diagnostics.phase12Review.subjectStemFamilies.find(
+  const subjectFamily = output.diagnostics.phraseRepetitionReview.subjectStemFamilies.find(
     (family) => family.form === "subject",
   );
 

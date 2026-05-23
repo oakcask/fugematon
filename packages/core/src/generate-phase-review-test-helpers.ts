@@ -191,12 +191,12 @@ export function assertPhase12FocusedRepetitionAdoption(seeds: readonly string[])
     assert.equal(gate.hardConstraintPassed, true);
     assert.deepEqual(gate.hardFailures, []);
     assert.ok(
-      variant.diagnostics.phase12Review.sectionStatePatterns.mostRepeatedPatternCount <
-        baseline.diagnostics.phase12Review.sectionStatePatterns.mostRepeatedPatternCount,
+      variant.diagnostics.phraseRepetitionReview.sectionStatePatterns.mostRepeatedPatternCount <
+        baseline.diagnostics.phraseRepetitionReview.sectionStatePatterns.mostRepeatedPatternCount,
     );
     assert.ok(
-      variant.diagnostics.phase12Review.sectionStatePatterns.uniquePatternCount >
-        baseline.diagnostics.phase12Review.sectionStatePatterns.uniquePatternCount,
+      variant.diagnostics.phraseRepetitionReview.sectionStatePatterns.uniquePatternCount >
+        baseline.diagnostics.phraseRepetitionReview.sectionStatePatterns.uniquePatternCount,
     );
   }
 }
@@ -232,7 +232,7 @@ export function assertPhase13ReviewPreconditions(seeds: readonly string[]): void
     assert.equal(first.diagnostics.unresolvedDissonanceCount, 0);
     assert.equal(first.diagnostics.allVoiceSilenceGapCount, 0);
     assert.equal(first.diagnostics.candidatePoolOracle.schemaVersion, 5);
-    assert.equal(first.diagnostics.phase12Review.schemaVersion, 1);
+    assert.equal(first.diagnostics.phraseRepetitionReview.schemaVersion, 1);
   }
 }
 
@@ -258,9 +258,9 @@ export function collectPhase12RepetitionMetrics(seeds: readonly string[]): Phase
     });
 
     metrics.baselineTopEntryPatternFamilyCount +=
-      baseline.diagnostics.phase12Review.entryPatternFamilyConcentration.topFamilyCount;
+      baseline.diagnostics.phraseRepetitionReview.entryPatternFamilyConcentration.topFamilyCount;
     metrics.variantTopEntryPatternFamilyCount +=
-      variant.diagnostics.phase12Review.entryPatternFamilyConcentration.topFamilyCount;
+      variant.diagnostics.phraseRepetitionReview.entryPatternFamilyConcentration.topFamilyCount;
     metrics.baselineUnsupportedThinningRuns +=
       baseline.diagnostics.phase11Review.functionalThinning.unsupportedRunCount;
     metrics.variantUnsupportedThinningRuns += variant.diagnostics.phase11Review.functionalThinning.unsupportedRunCount;

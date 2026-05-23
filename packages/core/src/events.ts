@@ -466,7 +466,7 @@ export type StepwisePatternSummary = {
   sections: StepwisePatternSectionSummary[];
 };
 
-export type Phase11AdjacentVoiceIntervalSummary = {
+export type AdjacentVoiceIntervalSummary = {
   higherVoice: Voice;
   lowerVoice: Voice;
   checkpointCount: number;
@@ -475,7 +475,7 @@ export type Phase11AdjacentVoiceIntervalSummary = {
   overOctaveCount: number;
 };
 
-export type Phase11RegisterSpanSummary = {
+export type RegisterSpanSummary = {
   voice: Voice;
   noteCount: number;
   minPitch: number;
@@ -483,7 +483,7 @@ export type Phase11RegisterSpanSummary = {
   spanSemitones: number;
 };
 
-export type Phase11FunctionalThinningSummary = {
+export type FunctionalThinningSummary = {
   nonCadentialRunCount: number;
   oneVoiceRunCount: number;
   twoVoiceRunCount: number;
@@ -498,18 +498,18 @@ export type Phase11FunctionalThinningSummary = {
   maxDurationTicks: number;
 };
 
-export type Phase11StatePatternSummary = {
+export type StateGrammarPatternSummary = {
   pattern: FugueState[];
   count: number;
 };
 
-export type Phase11EntryPatternFamilySummary = {
+export type EntryPatternFamilySummary = {
   form: EntryForm;
   pattern: number[];
   count: number;
 };
 
-export type Phase12PhraseFunction =
+export type PhraseFunction =
   | "exposition"
   | "entry-preparation"
   | "episode-sequence"
@@ -517,40 +517,40 @@ export type Phase12PhraseFunction =
   | "stretto-compression"
   | "restatement";
 
-export type Phase12SubjectStemFamilySummary = {
+export type SubjectStemFamilySummary = {
   form: Extract<EntryForm, "subject" | "subject-fragment">;
   pattern: number[];
   count: number;
   share: number;
 };
 
-export type Phase12AnswerTransformSummary = {
+export type AnswerTransformSummary = {
   answerKind: AnswerKind | "none";
   pattern: number[];
   count: number;
   share: number;
 };
 
-export type Phase12FragmentDerivationSummary = {
+export type FragmentDerivationSummary = {
   transform: FragmentTransform | "none";
-  phraseFunction: Phase12PhraseFunction;
+  phraseFunction: PhraseFunction;
   count: number;
   share: number;
 };
 
-export type Phase12PhraseFunctionSummary = {
-  phraseFunction: Phase12PhraseFunction;
+export type PhraseFunctionSummary = {
+  phraseFunction: PhraseFunction;
   count: number;
   share: number;
 };
 
-export type Phase12SectionStatePatternSummary = {
+export type SectionStatePatternSummary = {
   pattern: FugueState[];
   count: number;
   share: number;
 };
 
-export type Phase11MetricalHarmonySummary = {
+export type MetricalHarmonyReviewSummary = {
   strongBeatCheckpointCount: number;
   strongBeatChordToneSupportCount: number;
   strongBeatChordToneMismatchCount: number;
@@ -564,22 +564,22 @@ export type Phase11MetricalHarmonySummary = {
   weakBeatUnresolvedNonChordToneCount: number;
 };
 
-export type Phase11ReviewSummary = {
+export type TexturePlanningReviewSummary = {
   schemaVersion: 1;
-  adjacentVoiceIntervals: Phase11AdjacentVoiceIntervalSummary[];
-  registerSpans: Phase11RegisterSpanSummary[];
-  functionalThinning: Phase11FunctionalThinningSummary;
+  adjacentVoiceIntervals: AdjacentVoiceIntervalSummary[];
+  registerSpans: RegisterSpanSummary[];
+  functionalThinning: FunctionalThinningSummary;
   stateGrammarRepetition: {
     patternLength: number;
     uniquePatternCount: number;
     mostRepeatedPatternCount: number;
-    topPatterns: Phase11StatePatternSummary[];
+    topPatterns: StateGrammarPatternSummary[];
   };
-  entryPatternFamilies: Phase11EntryPatternFamilySummary[];
-  metricalHarmony: Phase11MetricalHarmonySummary;
+  entryPatternFamilies: EntryPatternFamilySummary[];
+  metricalHarmony: MetricalHarmonyReviewSummary;
 };
 
-export type Phase12ReviewSummary = {
+export type PhraseRepetitionReviewSummary = {
   schemaVersion: 1;
   entryPatternFamilyConcentration: {
     entryCount: number;
@@ -587,19 +587,19 @@ export type Phase12ReviewSummary = {
     topFamilyCount: number;
     topFamilyShare: number;
   };
-  subjectStemFamilies: Phase12SubjectStemFamilySummary[];
-  answerTransformFamilies: Phase12AnswerTransformSummary[];
-  fragmentDerivations: Phase12FragmentDerivationSummary[];
-  phraseFunctions: Phase12PhraseFunctionSummary[];
+  subjectStemFamilies: SubjectStemFamilySummary[];
+  answerTransformFamilies: AnswerTransformSummary[];
+  fragmentDerivations: FragmentDerivationSummary[];
+  phraseFunctions: PhraseFunctionSummary[];
   sectionStatePatterns: {
     patternLength: number;
     uniquePatternCount: number;
     mostRepeatedPatternCount: number;
-    topPatterns: Phase12SectionStatePatternSummary[];
+    topPatterns: SectionStatePatternSummary[];
   };
 };
 
-export type Phase13QualityVectorAxis =
+export type QualityVectorAxis =
   | "exactSamePitchUnisonDuration"
   | "pitchClassUnisonDuration"
   | "longestExactSamePitchSpan"
@@ -609,9 +609,9 @@ export type Phase13QualityVectorAxis =
   | "entrySevereIntervalDuration"
   | "unresolvedEntrySevereIntervalDuration";
 
-export type Phase13QualityVectorStatus = "within-profile" | "review-required";
+export type QualityVectorStatus = "within-profile" | "review-required";
 
-export type Phase13QualityVectorGroupingKey = {
+export type QualityVectorGroupingKey = {
   styleProfile: StyleProfile | "mixed";
   sectionRole: FugueState | "mixed";
   voicePair?: string;
@@ -620,18 +620,18 @@ export type Phase13QualityVectorGroupingKey = {
   register?: "low" | "middle" | "high";
 };
 
-export type Phase13QualityVectorAxisSummary = {
-  axis: Phase13QualityVectorAxis;
+export type QualityVectorAxisSummary = {
+  axis: QualityVectorAxis;
   value: number;
   normalizedValue: number;
   expectedMax: number;
   weight: number;
-  status: Phase13QualityVectorStatus;
-  groupingKey: Phase13QualityVectorGroupingKey;
+  status: QualityVectorStatus;
+  groupingKey: QualityVectorGroupingKey;
   topContributors: string[];
 };
 
-export type Phase13VoicePairUnisonSummary = {
+export type VoicePairUnisonSummary = {
   leftVoice: Voice;
   rightVoice: Voice;
   activeDurationTicks: number;
@@ -644,7 +644,7 @@ export type Phase13VoicePairUnisonSummary = {
   styleProfile: StyleProfile | "mixed";
 };
 
-export type Phase13TVoicePairFunctionSummary = {
+export type VoicePairFunctionSummary = {
   leftVoice: Voice;
   rightVoice: Voice;
   subjectSupportLockstepTicks: number;
@@ -657,7 +657,7 @@ export type Phase13TVoicePairFunctionSummary = {
   functionalReinforcementTicks: number;
 };
 
-export type Phase13SopranoRepeatedNotePressureSummary = {
+export type SopranoRepeatedNotePressureSummary = {
   voice: Extract<Voice, "soprano">;
   runCount: number;
   highRegisterRunCount: number;
@@ -668,7 +668,7 @@ export type Phase13SopranoRepeatedNotePressureSummary = {
   register: "low" | "middle" | "high";
 };
 
-export type Phase13EntrySevereIntervalDurationSummary = {
+export type EntrySevereIntervalDurationSummary = {
   voice: Voice;
   form: EntryForm;
   state: FugueState;
@@ -679,7 +679,7 @@ export type Phase13EntrySevereIntervalDurationSummary = {
   representativeTick: number;
 };
 
-export type Phase13TEntrySonorityKind =
+export type EntrySonorityKind =
   | "open-consonance"
   | "pitch-class-unison-stack"
   | "adjacent-second-friction"
@@ -689,7 +689,7 @@ export type Phase13TEntrySonorityKind =
   | "prepared-suspension"
   | "unresolved-accented-clash";
 
-export type Phase13TEntrySonoritySummary = {
+export type EntrySonoritySummary = {
   voice: Voice;
   form: EntryForm;
   state: FugueState;
@@ -697,7 +697,7 @@ export type Phase13TEntrySonoritySummary = {
   representativeTick: number;
   beatStrength: "strong" | "weak";
   supportVoices: Voice[];
-  kinds: Phase13TEntrySonorityKind[];
+  kinds: EntrySonorityKind[];
   pitchClassUnisonStackCount: number;
   adjacentSecondFrictionCount: number;
   exposedSeventhCount: number;
@@ -708,7 +708,7 @@ export type Phase13TEntrySonoritySummary = {
   resolutionDeadlineTicks: number;
 };
 
-export type Phase13UEntryFormulaSummary = {
+export type EntryFormulaRecurrenceSummary = {
   formulaKey: string;
   recurrenceCount: number;
   representativeTick: number;
@@ -716,12 +716,12 @@ export type Phase13UEntryFormulaSummary = {
   state: FugueState;
   beatStrength: "strong" | "weak";
   supportVoices: Voice[];
-  kinds: Phase13TEntrySonorityKind[];
+  kinds: EntrySonorityKind[];
   resolutionDirection: "up" | "down" | "mixed" | "none";
   judgement: "reduced" | "review-required" | "functionally-justified";
 };
 
-export type Phase13TFragmentFunctionEvidence = {
+export type FragmentFunctionEvidenceSummary = {
   fragmentSectionCount: number;
   uniqueFunctionCount: number;
   topFunctionShare: number;
@@ -738,7 +738,7 @@ export type Phase13TFragmentFunctionEvidence = {
   }[];
 };
 
-export type Phase13TCounterSubjectWindowSummary = {
+export type CounterSubjectWindowSummary = {
   entryStartTick: number;
   entryVoice: Voice;
   counterSubjectVoice?: Voice;
@@ -749,7 +749,7 @@ export type Phase13TCounterSubjectWindowSummary = {
   preservationJudgement: "preserved" | "tradeoff" | "weak";
 };
 
-export type Phase13UVoicePairSpanClassification =
+export type VoicePairSpanClassification =
   | "mechanical-coupling"
   | "pitch-class-reinforcement"
   | "exact-collision"
@@ -758,18 +758,18 @@ export type Phase13UVoicePairSpanClassification =
   | "subject-support"
   | "color-doubling";
 
-export type Phase13UVoicePairSpanSummary = {
+export type VoicePairSpanSummary = {
   leftVoice: Voice;
   rightVoice: Voice;
   startTick: number;
   durationTicks: number;
   sectionRole: FugueState | "mixed";
-  classification: Phase13UVoicePairSpanClassification;
+  classification: VoicePairSpanClassification;
   symptom: string;
 };
 
-export type Phase13TMetricExplanationSummary = {
-  axis: Phase13QualityVectorAxis;
+export type MetricExplanationSummary = {
+  axis: QualityVectorAxis;
   representativeTick: number;
   sectionRole: FugueState | "mixed";
   voicePair?: string;
@@ -779,7 +779,7 @@ export type Phase13TMetricExplanationSummary = {
   adoptionMeaning: "musical-improvement" | "diagnostic-reclassification" | "review-required";
 };
 
-export type Phase13VReviewSummary = {
+export type ScoreBeautyEvidenceSummary = {
   schemaVersion: 1;
   lineAgency: {
     independentSpanCount: number;
@@ -806,8 +806,6 @@ export type Phase13VReviewSummary = {
     topFunctionShare: number;
   };
 };
-
-export type ScoreBeautyEvidenceSummary = Phase13VReviewSummary;
 
 export type EntryBoundaryContinuityWindow = {
   entryVoice: Voice;
@@ -869,14 +867,14 @@ export type BassAnswerTailTextureSummary = {
   windows: BassAnswerTailTextureWindow[];
 };
 
-export type Phase13LocalSentinelKind =
+export type LocalSentinelKind =
   | "long-exact-same-pitch-unison"
   | "long-pitch-class-unison"
   | "high-soprano-repeated-note-pressure"
   | "unresolved-entry-severe-interval";
 
-export type Phase13LocalSentinelSummary = {
-  kind: Phase13LocalSentinelKind;
+export type LocalSentinelSummary = {
+  kind: LocalSentinelKind;
   severity: "review-required";
   seed?: string;
   startTick: number;
@@ -885,30 +883,30 @@ export type Phase13LocalSentinelSummary = {
   voice?: Voice;
   sectionRole: FugueState | "mixed";
   symptom: string;
-  classification?: Phase13UVoicePairSpanClassification;
+  classification?: VoicePairSpanClassification;
 };
 
-export type Phase13QualityVector = {
+export type QualityVector = {
   schemaVersion: 4;
   modelVersion: 4;
-  axes: Phase13QualityVectorAxisSummary[];
-  voicePairUnisons: Phase13VoicePairUnisonSummary[];
-  voicePairFunctions: Phase13TVoicePairFunctionSummary[];
-  voicePairSpans: Phase13UVoicePairSpanSummary[];
-  sopranoRepeatedNotePressure: Phase13SopranoRepeatedNotePressureSummary;
-  entrySevereIntervals: Phase13EntrySevereIntervalDurationSummary[];
-  entrySonorities: Phase13TEntrySonoritySummary[];
-  entryFormulaRecurrences: Phase13UEntryFormulaSummary[];
-  fragmentFunctionEvidence: Phase13TFragmentFunctionEvidence;
-  counterSubjectWindows: Phase13TCounterSubjectWindowSummary[];
-  metricExplanations: Phase13TMetricExplanationSummary[];
+  axes: QualityVectorAxisSummary[];
+  voicePairUnisons: VoicePairUnisonSummary[];
+  voicePairFunctions: VoicePairFunctionSummary[];
+  voicePairSpans: VoicePairSpanSummary[];
+  sopranoRepeatedNotePressure: SopranoRepeatedNotePressureSummary;
+  entrySevereIntervals: EntrySevereIntervalDurationSummary[];
+  entrySonorities: EntrySonoritySummary[];
+  entryFormulaRecurrences: EntryFormulaRecurrenceSummary[];
+  fragmentFunctionEvidence: FragmentFunctionEvidenceSummary;
+  counterSubjectWindows: CounterSubjectWindowSummary[];
+  metricExplanations: MetricExplanationSummary[];
   scoreBeautyEvidence: ScoreBeautyEvidenceSummary;
-  phase13VReview: Phase13VReviewSummary;
-  localSentinels: Phase13LocalSentinelSummary[];
+  phase13VReview: ScoreBeautyEvidenceSummary;
+  localSentinels: LocalSentinelSummary[];
 };
 
-export type Phase13QSentinelCandidateLink = {
-  sentinelKind: Phase13LocalSentinelKind;
+export type SentinelCandidateLink = {
+  sentinelKind: LocalSentinelKind;
   sentinelStartTick: number;
   sentinelDurationTicks: number;
   sectionState: FugueState;
@@ -922,14 +920,12 @@ export type Phase13QSentinelCandidateLink = {
   resolutionDeadlineTicks?: number;
 };
 
-export type Phase13QReviewSummary = {
+export type LocalSentinelCandidateTraceSummary = {
   schemaVersion: 1;
-  sentinelCandidateLinks: Phase13QSentinelCandidateLink[];
+  sentinelCandidateLinks: SentinelCandidateLink[];
 };
 
-export type LocalSentinelCandidateTraceSummary = Phase13QReviewSummary;
-
-export type Phase13RReviewFindingCode =
+export type PhraseConvergenceReviewFindingCode =
   | "legacy-default-selection-model"
   | "mechanical-section-pattern-repetition"
   | "low-section-pattern-diversity"
@@ -937,8 +933,8 @@ export type Phase13RReviewFindingCode =
   | "subject-stem-family-concentration"
   | "subject-fragment-family-concentration";
 
-export type Phase13RReviewFinding = {
-  code: Phase13RReviewFindingCode;
+export type PhraseConvergenceReviewFinding = {
+  code: PhraseConvergenceReviewFindingCode;
   severity: "review-required";
   metric: string;
   actual: number | string;
@@ -946,7 +942,7 @@ export type Phase13RReviewFinding = {
   message: string;
 };
 
-export type Phase13RReviewSummary = {
+export type PhraseConvergenceReviewSummary = {
   schemaVersion: 1;
   selectionModel: SelectionModel;
   reviewRequired: boolean;
@@ -957,30 +953,28 @@ export type Phase13RReviewSummary = {
     topSubjectStemFamilyShare: number;
     topSubjectFragmentFamilyShare: number;
   };
-  findings: Phase13RReviewFinding[];
+  findings: PhraseConvergenceReviewFinding[];
 };
 
-export type PhraseConvergenceReviewSummary = Phase13RReviewSummary;
+export type PhraseDevelopmentJudgement = "new-material" | "function-bearing-recurrence" | "mechanical-reuse";
 
-export type Phase13ZPhraseDevelopmentJudgement = "new-material" | "function-bearing-recurrence" | "mechanical-reuse";
-
-export type Phase13ZPhraseDevelopmentWindow = {
+export type PhraseDevelopmentWindow = {
   startTick: number;
   state: FugueState;
   form: Extract<EntryForm, "subject" | "subject-fragment">;
   entryVoice: Voice;
   stemPattern: number[];
-  phraseFunction: Phase12PhraseFunction;
+  phraseFunction: PhraseFunction;
   cadenceKind: CadenceKind;
   localKey: KeySignature;
   recentStemReuseCount: number;
   changedEntryVoice: boolean;
   changedLocalKey: boolean;
   changedPhraseFunction: boolean;
-  judgement: Phase13ZPhraseDevelopmentJudgement;
+  judgement: PhraseDevelopmentJudgement;
 };
 
-export type Phase13ZReviewSummary = {
+export type PhraseDevelopmentReviewSummary = {
   schemaVersion: 1;
   reviewRequired: boolean;
   windowCount: number;
@@ -988,12 +982,10 @@ export type Phase13ZReviewSummary = {
   functionBearingWindowCount: number;
   topSubjectStemFamilyShare: number;
   topSubjectFragmentFamilyShare: number;
-  windows: Phase13ZPhraseDevelopmentWindow[];
+  windows: PhraseDevelopmentWindow[];
 };
 
-export type PhraseDevelopmentReviewSummary = Phase13ZReviewSummary;
-
-export type Phase14DissonanceTriageWindow = {
+export type DissonanceTriageWindow = {
   startTick: number;
   state: FugueState | "mixed";
   voices: Voice[];
@@ -1007,18 +999,16 @@ export type Phase14DissonanceTriageWindow = {
   response: "review-required";
 };
 
-export type Phase14DissonanceTriageSummary = {
+export type DissonanceTriageSummary = {
   schemaVersion: 1;
   weakPassingSemitoneClashTicks: number;
   passingNeighborOffbeatSemitoneClashTicks: number;
   entryAdjacentSecondFrictionCount: number;
   unresolvedAccentedEntryClashCount: number;
-  windows: Phase14DissonanceTriageWindow[];
+  windows: DissonanceTriageWindow[];
 };
 
-export type DissonanceTriageSummary = Phase14DissonanceTriageSummary;
-
-export type Phase14ScoreWindowAcceptanceKind =
+export type ScoreWindowAcceptanceKind =
   | "important-entry-continuity"
   | "dissonance-triage"
   | "active-voice-pair-span"
@@ -1026,14 +1016,14 @@ export type Phase14ScoreWindowAcceptanceKind =
   | "phrase-development"
   | "metric-explanation";
 
-export type Phase14ScoreWindowAcceptanceResponse =
+export type ScoreWindowAcceptanceResponse =
   | "accepted-context"
   | "review-required"
   | "generator-response-required"
   | "diagnostic-context";
 
-export type Phase14ScoreWindowAcceptanceWindow = {
-  kind: Phase14ScoreWindowAcceptanceKind;
+export type ScoreWindowAcceptanceWindow = {
+  kind: ScoreWindowAcceptanceKind;
   startTick: number;
   durationTicks?: number;
   state: FugueState | "mixed";
@@ -1043,10 +1033,10 @@ export type Phase14ScoreWindowAcceptanceWindow = {
   metric?: string;
   symptom: string;
   theoryBasis: "counterpoint" | "fugue-form" | "diagnostic-truthfulness";
-  response: Phase14ScoreWindowAcceptanceResponse;
+  response: ScoreWindowAcceptanceResponse;
 };
 
-export type Phase14ScoreWindowAcceptanceSummary = {
+export type ScoreWindowAcceptanceSummary = {
   schemaVersion: 1;
   importantEntryWindowCount: number;
   dissonanceWindowCount: number;
@@ -1058,12 +1048,57 @@ export type Phase14ScoreWindowAcceptanceSummary = {
   generatorResponseWindowCount: number;
   acceptedContextWindowCount: number;
   diagnosticContextWindowCount: number;
-  windows: Phase14ScoreWindowAcceptanceWindow[];
+  windows: ScoreWindowAcceptanceWindow[];
 };
 
-export type ScoreWindowAcceptanceSummary = Phase14ScoreWindowAcceptanceSummary;
-export type TexturePlanningReviewSummary = Phase11ReviewSummary;
-export type PhraseRepetitionReviewSummary = Phase12ReviewSummary;
+export type Phase11AdjacentVoiceIntervalSummary = AdjacentVoiceIntervalSummary;
+export type Phase11RegisterSpanSummary = RegisterSpanSummary;
+export type Phase11FunctionalThinningSummary = FunctionalThinningSummary;
+export type Phase11StatePatternSummary = StateGrammarPatternSummary;
+export type Phase11EntryPatternFamilySummary = EntryPatternFamilySummary;
+export type Phase11MetricalHarmonySummary = MetricalHarmonyReviewSummary;
+export type Phase11ReviewSummary = TexturePlanningReviewSummary;
+export type Phase12PhraseFunction = PhraseFunction;
+export type Phase12SubjectStemFamilySummary = SubjectStemFamilySummary;
+export type Phase12AnswerTransformSummary = AnswerTransformSummary;
+export type Phase12FragmentDerivationSummary = FragmentDerivationSummary;
+export type Phase12PhraseFunctionSummary = PhraseFunctionSummary;
+export type Phase12SectionStatePatternSummary = SectionStatePatternSummary;
+export type Phase12ReviewSummary = PhraseRepetitionReviewSummary;
+export type Phase13QualityVectorAxis = QualityVectorAxis;
+export type Phase13QualityVectorStatus = QualityVectorStatus;
+export type Phase13QualityVectorGroupingKey = QualityVectorGroupingKey;
+export type Phase13QualityVectorAxisSummary = QualityVectorAxisSummary;
+export type Phase13VoicePairUnisonSummary = VoicePairUnisonSummary;
+export type Phase13TVoicePairFunctionSummary = VoicePairFunctionSummary;
+export type Phase13SopranoRepeatedNotePressureSummary = SopranoRepeatedNotePressureSummary;
+export type Phase13EntrySevereIntervalDurationSummary = EntrySevereIntervalDurationSummary;
+export type Phase13TEntrySonorityKind = EntrySonorityKind;
+export type Phase13TEntrySonoritySummary = EntrySonoritySummary;
+export type Phase13UEntryFormulaSummary = EntryFormulaRecurrenceSummary;
+export type Phase13TFragmentFunctionEvidence = FragmentFunctionEvidenceSummary;
+export type Phase13TCounterSubjectWindowSummary = CounterSubjectWindowSummary;
+export type Phase13UVoicePairSpanClassification = VoicePairSpanClassification;
+export type Phase13UVoicePairSpanSummary = VoicePairSpanSummary;
+export type Phase13TMetricExplanationSummary = MetricExplanationSummary;
+export type Phase13VReviewSummary = ScoreBeautyEvidenceSummary;
+export type Phase13LocalSentinelKind = LocalSentinelKind;
+export type Phase13LocalSentinelSummary = LocalSentinelSummary;
+export type Phase13QualityVector = QualityVector;
+export type Phase13QSentinelCandidateLink = SentinelCandidateLink;
+export type Phase13QReviewSummary = LocalSentinelCandidateTraceSummary;
+export type Phase13RReviewFindingCode = PhraseConvergenceReviewFindingCode;
+export type Phase13RReviewFinding = PhraseConvergenceReviewFinding;
+export type Phase13RReviewSummary = PhraseConvergenceReviewSummary;
+export type Phase13ZPhraseDevelopmentJudgement = PhraseDevelopmentJudgement;
+export type Phase13ZPhraseDevelopmentWindow = PhraseDevelopmentWindow;
+export type Phase13ZReviewSummary = PhraseDevelopmentReviewSummary;
+export type Phase14DissonanceTriageWindow = DissonanceTriageWindow;
+export type Phase14DissonanceTriageSummary = DissonanceTriageSummary;
+export type Phase14ScoreWindowAcceptanceKind = ScoreWindowAcceptanceKind;
+export type Phase14ScoreWindowAcceptanceResponse = ScoreWindowAcceptanceResponse;
+export type Phase14ScoreWindowAcceptanceWindow = ScoreWindowAcceptanceWindow;
+export type Phase14ScoreWindowAcceptanceSummary = ScoreWindowAcceptanceSummary;
 
 export type GenerationDiagnostics = {
   generatorVersion: number;
@@ -1112,21 +1147,21 @@ export type GenerationDiagnostics = {
   stepwisePattern: StepwisePatternSummary;
   texturePlanningReview: TexturePlanningReviewSummary;
   phraseRepetitionReview: PhraseRepetitionReviewSummary;
-  phase11Review: Phase11ReviewSummary;
-  phase12Review: Phase12ReviewSummary;
+  phase11Review: TexturePlanningReviewSummary;
+  phase12Review: PhraseRepetitionReviewSummary;
   entryBoundaryContinuity: EntryBoundaryContinuitySummary;
   bassAnswerTailTexture: BassAnswerTailTextureSummary;
-  qualityVector: Phase13QualityVector;
+  qualityVector: QualityVector;
   localSentinelCandidateTrace: LocalSentinelCandidateTraceSummary;
   phraseConvergenceReview: PhraseConvergenceReviewSummary;
   phraseDevelopmentReview: PhraseDevelopmentReviewSummary;
   dissonanceTriage: DissonanceTriageSummary;
   scoreWindowAcceptance: ScoreWindowAcceptanceSummary;
-  phase13QReview: Phase13QReviewSummary;
-  phase13RReview: Phase13RReviewSummary;
-  phase13ZReview: Phase13ZReviewSummary;
-  phase14DissonanceTriage: Phase14DissonanceTriageSummary;
-  phase14ScoreWindowAcceptance: Phase14ScoreWindowAcceptanceSummary;
+  phase13QReview: LocalSentinelCandidateTraceSummary;
+  phase13RReview: PhraseConvergenceReviewSummary;
+  phase13ZReview: PhraseDevelopmentReviewSummary;
+  phase14DissonanceTriage: DissonanceTriageSummary;
+  phase14ScoreWindowAcceptance: ScoreWindowAcceptanceSummary;
   ornamentCandidateCount: number;
   ornamentDensity: number;
   ornamentPlacementReasons: OrnamentPlacementReasons;

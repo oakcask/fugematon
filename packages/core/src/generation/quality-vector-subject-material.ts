@@ -1,16 +1,16 @@
 import { TICKS_PER_QUARTER } from "../constants.js";
 import type {
+  CounterSubjectWindowSummary,
+  FragmentFunctionEvidenceSummary,
   HarmonicPlan,
   NoteEvent,
-  Phase13TCounterSubjectWindowSummary,
-  Phase13TFragmentFunctionEvidence,
   PlannedEntry,
 } from "../events.js";
 import { pitchClassDistance } from "./shared.js";
 
 export function summarizeFragmentFunctionEvidence(
   sectionPlans: readonly HarmonicPlan[],
-): Phase13TFragmentFunctionEvidence {
+): FragmentFunctionEvidenceSummary {
   const fragmentPlans = sectionPlans.filter((plan) => plan.state === "episode" && plan.fragmentTransform !== undefined);
   const counts = new Map<string, number>();
 
@@ -53,7 +53,7 @@ export function summarizeFragmentFunctionEvidence(
 function transformationClaimJudgement(
   transformationKindCount: number,
   share: number,
-): Phase13TFragmentFunctionEvidence["transformationClaims"][number]["judgement"] {
+): FragmentFunctionEvidenceSummary["transformationClaims"][number]["judgement"] {
   if (transformationKindCount >= 3) {
     return "developed";
   }
@@ -63,7 +63,7 @@ function transformationClaimJudgement(
 export function summarizeCounterSubjectWindows(
   notes: readonly NoteEvent[],
   subjectEntries: readonly PlannedEntry[],
-): Phase13TCounterSubjectWindowSummary[] {
+): CounterSubjectWindowSummary[] {
   return subjectEntries.map((entry) => {
     const windowEndTick = entry.startTick + TICKS_PER_QUARTER * 8;
     const counterSubjectNotes = notes
@@ -136,9 +136,7 @@ function fragmentTransformationKinds(functionKey: string): string[] {
   return [...kinds].sort();
 }
 
-function counterSubjectRetentionKind(
-  notes: readonly NoteEvent[],
-): Phase13TCounterSubjectWindowSummary["retentionKind"] {
+function counterSubjectRetentionKind(notes: readonly NoteEvent[]): CounterSubjectWindowSummary["retentionKind"] {
   const uniqueDurations = new Set(notes.slice(0, 8).map((note) => note.durationTicks));
   const contour = contourClass(notes);
   if (notes.length >= 6 && uniqueDurations.size >= 2 && contour.includes("u") && contour.includes("d")) {
@@ -151,9 +149,9 @@ function counterSubjectRetentionKind(
 }
 
 function counterSubjectPreservationJudgement(
-  retentionKind: Phase13TCounterSubjectWindowSummary["retentionKind"],
+  retentionKind: CounterSubjectWindowSummary["retentionKind"],
   supportCollisionCount: number,
-): Phase13TCounterSubjectWindowSummary["preservationJudgement"] {
+): CounterSubjectWindowSummary["preservationJudgement"] {
   if (retentionKind === "recognizable" && supportCollisionCount <= 4) {
     return "preserved";
   }
