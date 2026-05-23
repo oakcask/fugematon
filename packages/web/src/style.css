@@ -17,6 +17,17 @@ body {
   background:
     radial-gradient(circle at 20% 15%, rgba(179, 70, 41, 0.26), transparent 28rem),
     linear-gradient(135deg, #f5ead7 0%, #e4d1af 44%, #b9c0a1 100%);
+  background-position:
+    20% 15%,
+    0% 50%;
+  background-size:
+    120% 120%,
+    180% 180%;
+  transition: background-position 420ms ease;
+}
+
+body.is-playing {
+  animation: playback-background-flow 9s ease-in-out infinite alternate;
 }
 
 button,
@@ -221,6 +232,28 @@ h1 {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes playback-background-flow {
+  from {
+    background-position:
+      18% 12%,
+      0% 50%;
+  }
+  to {
+    background-position:
+      72% 34%,
+      100% 50%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.is-playing {
+    animation: none;
+    background-position:
+      58% 26%,
+      70% 50%;
   }
 }
 

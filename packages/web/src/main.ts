@@ -147,6 +147,7 @@ startButton.addEventListener("click", () => {
 stopButton.addEventListener("click", () => {
   player?.stop();
   cancelVisualizerLoop();
+  setPlaybackFeedback(false);
   drawPianoRoll(pianoRoll, state.model, 0);
   renderPlaybackPosition(0);
   transportStatus.textContent = "Playback stopped";
@@ -172,6 +173,7 @@ function regenerateScore(seed: string, urlUpdateMode: UrlUpdateMode = "push"): v
   seedInput.value = nextSeed;
   player?.stop();
   cancelVisualizerLoop();
+  setPlaybackFeedback(false);
   state = createState(nextSeed, performanceProfileSelect.value as PerformanceProfileId);
   render(state);
   drawPianoRoll(pianoRoll, state.model, 0);
@@ -254,8 +256,10 @@ async function startPlayback(): Promise<void> {
     player ??= new ScorePlayer();
     await player.play(state.model);
     transportStatus.textContent = "Playing score";
+    setPlaybackFeedback(true);
     startVisualizerLoop();
   } catch (error) {
+    setPlaybackFeedback(false);
     transportStatus.textContent = error instanceof Error ? error.message : "Playback failed";
   } finally {
     startButton.disabled = false;
@@ -276,6 +280,7 @@ function startVisualizerLoop(): void {
     }
 
     animationFrame = undefined;
+    setPlaybackFeedback(false);
     transportStatus.textContent = "Playback complete";
   };
 
@@ -287,6 +292,10 @@ function cancelVisualizerLoop(): void {
     window.cancelAnimationFrame(animationFrame);
     animationFrame = undefined;
   }
+}
+
+function setPlaybackFeedback(isPlaying: boolean): void {
+  document.body.classList.toggle("is-playing", isPlaying);
 }
 
 function requireElement<TElement extends Element>(element: TElement | null, name: string): TElement {
