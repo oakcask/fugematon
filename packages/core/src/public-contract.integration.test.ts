@@ -85,6 +85,18 @@ test("public diagnostics expose finite candidate score dimensions", () => {
 
   assert.ok(selectedEvaluation !== undefined);
   assertCandidateEvaluation(selectedEvaluation);
+  assert.equal(
+    selectedEvaluation.dimensions.texture.features.wideAdjacentVoiceSpacingCount,
+    selectedEvaluation.dimensions.texture.features.phase11AdjacentVoiceOverOctaveCount,
+  );
+  assert.equal(
+    selectedEvaluation.dimensions.texture.features.nonCadentialFunctionalThinningRunCount,
+    selectedEvaluation.dimensions.texture.features.phase11FunctionalThinningNonCadentialRunCount,
+  );
+  assert.equal(
+    selectedEvaluation.dimensions.form.features.stateGrammarMostRepeatedPatternCount,
+    selectedEvaluation.dimensions.form.features.phase11StateGrammarMostRepeatedPatternCount,
+  );
   assert.equal(output.diagnostics.rangeViolations, PHASE_5_DIAGNOSTICS_PROFILE.rangeViolations);
   assert.equal(output.diagnostics.voiceCrossings, PHASE_5_DIAGNOSTICS_PROFILE.voiceCrossings);
   assert.equal(output.diagnostics.subjectIdentityViolations, PHASE_5_DIAGNOSTICS_PROFILE.subjectIdentityViolations);

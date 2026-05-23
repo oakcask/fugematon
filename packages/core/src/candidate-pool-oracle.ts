@@ -127,38 +127,34 @@ const BLOCKER_SPECS: readonly BlockerSpec[] = [
   {
     blocker: "register-blending",
     referenceAxes: [
-      "phase11AdjacentVoiceOverOctaveCount",
-      "phase11AdjacentVoiceWideP75SemitoneExcess",
-      "phase11RegisterSpanSemitoneTotal",
+      "wideAdjacentVoiceSpacingCount",
+      "adjacentVoiceWideP75SemitoneExcess",
+      "registerSpanSemitoneTotal",
     ],
     selectedRisk: (evaluation) =>
-      candidateEvaluationFeature(evaluation, "texture", "phase11AdjacentVoiceOverOctaveCount") +
-      candidateEvaluationFeature(evaluation, "texture", "phase11AdjacentVoiceWideP75SemitoneExcess") +
-      candidateEvaluationFeature(evaluation, "texture", "phase11RegisterSpanSemitoneTotal") * 0.05,
+      candidateEvaluationFeature(evaluation, "texture", "wideAdjacentVoiceSpacingCount") +
+      candidateEvaluationFeature(evaluation, "texture", "adjacentVoiceWideP75SemitoneExcess") +
+      candidateEvaluationFeature(evaluation, "texture", "registerSpanSemitoneTotal") * 0.05,
   },
   {
     blocker: "functional-thinning",
     referenceAxes: [
-      "phase11FunctionalThinningNonCadentialRunCount",
-      "phase11FunctionalThinningOneVoiceRunCount",
-      "phase11FunctionalThinningMaxDurationQuarters",
+      "nonCadentialFunctionalThinningRunCount",
+      "oneVoiceFunctionalThinningRunCount",
+      "functionalThinningMaxDurationQuarters",
     ],
     selectedRisk: (evaluation) =>
-      candidateEvaluationFeature(evaluation, "texture", "phase11FunctionalThinningNonCadentialRunCount") * 2 +
-      candidateEvaluationFeature(evaluation, "texture", "phase11FunctionalThinningOneVoiceRunCount") +
-      candidateEvaluationFeature(evaluation, "texture", "phase11FunctionalThinningMaxDurationQuarters"),
+      candidateEvaluationFeature(evaluation, "texture", "nonCadentialFunctionalThinningRunCount") * 2 +
+      candidateEvaluationFeature(evaluation, "texture", "oneVoiceFunctionalThinningRunCount") +
+      candidateEvaluationFeature(evaluation, "texture", "functionalThinningMaxDurationQuarters"),
   },
   {
     blocker: "section-grammar-repetition",
-    referenceAxes: [
-      "formRepetitionWarnings",
-      "phase11StateGrammarMostRepeatedPatternCount",
-      "phase11TopEntryPatternFamilyCount",
-    ],
+    referenceAxes: ["formRepetitionWarnings", "stateGrammarMostRepeatedPatternCount", "topEntryPatternFamilyCount"],
     selectedRisk: (evaluation) =>
       candidateEvaluationFeature(evaluation, "form", "formRepetitionWarnings") +
-      Math.max(0, candidateEvaluationFeature(evaluation, "form", "phase11StateGrammarMostRepeatedPatternCount") - 1) +
-      Math.max(0, candidateEvaluationFeature(evaluation, "form", "phase11TopEntryPatternFamilyCount") - 1),
+      Math.max(0, candidateEvaluationFeature(evaluation, "form", "stateGrammarMostRepeatedPatternCount") - 1) +
+      Math.max(0, candidateEvaluationFeature(evaluation, "form", "topEntryPatternFamilyCount") - 1),
   },
 ] as const;
 
