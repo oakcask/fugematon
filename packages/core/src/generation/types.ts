@@ -99,11 +99,14 @@ export type TextureDiagnostics = {
   pitchContourMotion: PitchContourMotionSummary;
   lowerVoiceVocality: LowerVoiceVocalitySummary;
   stepwisePattern: StepwisePatternSummary;
+  texturePlanningReview: Phase11ReviewSummary;
+  phraseRepetitionReview: Phase12ReviewSummary;
   phase11Review: Phase11ReviewSummary;
   phase12Review: Phase12ReviewSummary;
   entryBoundaryContinuity: EntryBoundaryContinuitySummary;
   bassAnswerTailTexture: BassAnswerTailTextureSummary;
   qualityVector: Phase13QualityVector;
+  dissonanceTriage: Phase14DissonanceTriageSummary;
   phase14DissonanceTriage: Phase14DissonanceTriageSummary;
   ornamentCandidateCount: number;
   ornamentDensity: number;

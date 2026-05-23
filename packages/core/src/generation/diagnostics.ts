@@ -80,11 +80,14 @@ export function analyzeScore(
   pitchContourMotion: PitchContourMotionSummary;
   lowerVoiceVocality: LowerVoiceVocalitySummary;
   stepwisePattern: StepwisePatternSummary;
+  texturePlanningReview: Phase11ReviewSummary;
+  phraseRepetitionReview: Phase12ReviewSummary;
   phase11Review: Phase11ReviewSummary;
   phase12Review: Phase12ReviewSummary;
   entryBoundaryContinuity: EntryBoundaryContinuitySummary;
   bassAnswerTailTexture: BassAnswerTailTextureSummary;
   qualityVector: Phase13QualityVector;
+  dissonanceTriage: Phase14DissonanceTriageSummary;
   phase14DissonanceTriage: Phase14DissonanceTriageSummary;
   ornamentCandidateCount: number;
   ornamentDensity: number;
@@ -265,6 +268,9 @@ function analyzeTextureDiagnostics(
   const entrySupportInstabilityDetails = analyzeEntrySupportInstabilities(notes, subjectEntries);
   const entrySupportSevereIntervalDetails = analyzeEntrySupportSevereIntervals(notes, subjectEntries);
   const qualityVector = analyzePhase13QualityVector(notes, subjectEntries, sectionPlans);
+  const texturePlanningReview = analyzePhase11ReviewSummary(notes, subjectEntries, sectionPlans);
+  const phraseRepetitionReview = analyzePhase12ReviewSummary(subjectEntries, sectionPlans);
+  const dissonanceTriage = analyzePhase14DissonanceTriage(notes, sectionPlans, qualityVector.entrySonorities);
 
   return {
     counterSubjectIdentityRetention: counterSubjectIdentityRetention(counterSubjectNotes, sectionPlans),
@@ -299,12 +305,15 @@ function analyzeTextureDiagnostics(
     pitchContourMotion: analyzePitchContourMotion(notes),
     lowerVoiceVocality: analyzeLowerVoiceVocality(notes, sectionPlans),
     stepwisePattern: analyzeStepwisePattern(notes, sectionPlans),
-    phase11Review: analyzePhase11ReviewSummary(notes, subjectEntries, sectionPlans),
-    phase12Review: analyzePhase12ReviewSummary(subjectEntries, sectionPlans),
+    texturePlanningReview,
+    phraseRepetitionReview,
+    phase11Review: texturePlanningReview,
+    phase12Review: phraseRepetitionReview,
     entryBoundaryContinuity: analyzeEntryBoundaryContinuity(notes, subjectEntries),
     bassAnswerTailTexture: analyzeBassAnswerTailTexture(notes, subjectEntries),
     qualityVector,
-    phase14DissonanceTriage: analyzePhase14DissonanceTriage(notes, sectionPlans, qualityVector.entrySonorities),
+    dissonanceTriage,
+    phase14DissonanceTriage: dissonanceTriage,
     ornamentCandidateCount,
     ornamentDensity: roundRatio(ornamentCandidateCount / supportNoteCount),
     ornamentPlacementReasons: analyzeOrnamentPlacementReasons(notes, subjectEntries, sectionPlans),

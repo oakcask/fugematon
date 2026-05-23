@@ -215,23 +215,42 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
       shortStrongBeatEntryNoteCount: diagnostics.shortStrongBeatEntryNoteCount,
       entrySupportInstabilityCount: diagnostics.entrySupportInstabilityCount,
       allVoiceSilenceGapCount: diagnostics.allVoiceSilenceGapCount,
-      phase11AdjacentVoiceOverOctaveCount: diagnostics.phase11Review.adjacentVoiceIntervals.reduce(
+      wideAdjacentVoiceSpacingCount: diagnostics.texturePlanningReview.adjacentVoiceIntervals.reduce(
         (sum, interval) => sum + interval.overOctaveCount,
         0,
       ),
-      phase11AdjacentVoiceWideP75SemitoneExcess: diagnostics.phase11Review.adjacentVoiceIntervals.reduce(
+      adjacentVoiceWideP75SemitoneExcess: diagnostics.texturePlanningReview.adjacentVoiceIntervals.reduce(
         (sum, interval) => sum + Math.max(0, interval.seventyFifthPercentileSemitones - 12),
         0,
       ),
-      phase11RegisterSpanSemitoneTotal: diagnostics.phase11Review.registerSpans.reduce(
+      registerSpanSemitoneTotal: diagnostics.texturePlanningReview.registerSpans.reduce(
         (sum, span) => sum + span.spanSemitones,
         0,
       ),
-      phase11FunctionalThinningNonCadentialRunCount: diagnostics.phase11Review.functionalThinning.nonCadentialRunCount,
-      phase11FunctionalThinningOneVoiceRunCount: diagnostics.phase11Review.functionalThinning.oneVoiceRunCount,
-      phase11FunctionalThinningTwoVoiceRunCount: diagnostics.phase11Review.functionalThinning.twoVoiceRunCount,
+      nonCadentialFunctionalThinningRunCount:
+        diagnostics.texturePlanningReview.functionalThinning.nonCadentialRunCount,
+      oneVoiceFunctionalThinningRunCount: diagnostics.texturePlanningReview.functionalThinning.oneVoiceRunCount,
+      twoVoiceFunctionalThinningRunCount: diagnostics.texturePlanningReview.functionalThinning.twoVoiceRunCount,
+      functionalThinningMaxDurationQuarters:
+        diagnostics.texturePlanningReview.functionalThinning.maxDurationTicks / TICKS_PER_QUARTER,
+      phase11AdjacentVoiceOverOctaveCount: diagnostics.texturePlanningReview.adjacentVoiceIntervals.reduce(
+        (sum, interval) => sum + interval.overOctaveCount,
+        0,
+      ),
+      phase11AdjacentVoiceWideP75SemitoneExcess: diagnostics.texturePlanningReview.adjacentVoiceIntervals.reduce(
+        (sum, interval) => sum + Math.max(0, interval.seventyFifthPercentileSemitones - 12),
+        0,
+      ),
+      phase11RegisterSpanSemitoneTotal: diagnostics.texturePlanningReview.registerSpans.reduce(
+        (sum, span) => sum + span.spanSemitones,
+        0,
+      ),
+      phase11FunctionalThinningNonCadentialRunCount:
+        diagnostics.texturePlanningReview.functionalThinning.nonCadentialRunCount,
+      phase11FunctionalThinningOneVoiceRunCount: diagnostics.texturePlanningReview.functionalThinning.oneVoiceRunCount,
+      phase11FunctionalThinningTwoVoiceRunCount: diagnostics.texturePlanningReview.functionalThinning.twoVoiceRunCount,
       phase11FunctionalThinningMaxDurationQuarters:
-        diagnostics.phase11Review.functionalThinning.maxDurationTicks / TICKS_PER_QUARTER,
+        diagnostics.texturePlanningReview.functionalThinning.maxDurationTicks / TICKS_PER_QUARTER,
     },
   };
   const subjectClarity = {
@@ -336,10 +355,14 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
       formRepetitionWarnings: diagnostics.formRepetitionWarnings,
       episodeDirectionScore: diagnostics.episodeDirectionScore,
       strettoClarityScore: diagnostics.strettoClarityScore,
+      stateGrammarMostRepeatedPatternCount:
+        diagnostics.texturePlanningReview.stateGrammarRepetition.mostRepeatedPatternCount,
+      stateGrammarUniquePatternCount: diagnostics.texturePlanningReview.stateGrammarRepetition.uniquePatternCount,
+      topEntryPatternFamilyCount: diagnostics.texturePlanningReview.entryPatternFamilies[0]?.count ?? 0,
       phase11StateGrammarMostRepeatedPatternCount:
-        diagnostics.phase11Review.stateGrammarRepetition.mostRepeatedPatternCount,
-      phase11StateGrammarUniquePatternCount: diagnostics.phase11Review.stateGrammarRepetition.uniquePatternCount,
-      phase11TopEntryPatternFamilyCount: diagnostics.phase11Review.entryPatternFamilies[0]?.count ?? 0,
+        diagnostics.texturePlanningReview.stateGrammarRepetition.mostRepeatedPatternCount,
+      phase11StateGrammarUniquePatternCount: diagnostics.texturePlanningReview.stateGrammarRepetition.uniquePatternCount,
+      phase11TopEntryPatternFamilyCount: diagnostics.texturePlanningReview.entryPatternFamilies[0]?.count ?? 0,
       phase13VLongWindowReviewRequiredClaimCount:
         diagnostics.qualityVector.phase13VReview.longWindowDevelopment.reviewRequiredClaimCount,
       phase13VLongWindowTopFunctionShare:
