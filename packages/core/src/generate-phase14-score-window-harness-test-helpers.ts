@@ -23,11 +23,33 @@ export function assertPhase14ScoreWindowHarnessInputs(seeds: readonly string[]):
       phraseDevelopmentWindowCount: diagnostics.phase13ZReview.windowCount,
       metricExplanationCount: diagnostics.qualityVector.metricExplanations.length,
     };
+    const acceptance = diagnostics.phase14ScoreWindowAcceptance;
 
     assert.equal(
       diagnostics.phase13ZReview.windowCount,
       diagnostics.phase13ZReview.windows.length,
       `${seed} phrase-development window count should match exposed windows`,
+    );
+    assert.equal(acceptance.importantEntryWindowCount, scoreWindowInputs.importantEntryWindowCount);
+    assert.equal(acceptance.dissonanceWindowCount, scoreWindowInputs.dissonanceWindowCount);
+    assert.equal(acceptance.activeVoicePairSpanCount, scoreWindowInputs.activeVoicePairSpanCount);
+    assert.equal(acceptance.counterSubjectWindowCount, scoreWindowInputs.counterSubjectWindowCount);
+    assert.equal(acceptance.phraseDevelopmentWindowCount, scoreWindowInputs.phraseDevelopmentWindowCount);
+    assert.equal(acceptance.metricExplanationCount, scoreWindowInputs.metricExplanationCount);
+    assert.ok(
+      acceptance.windows.every(
+        (window) => window.startTick >= 0 && window.classification.length > 0 && window.symptom.length > 0,
+      ),
+      `${seed} acceptance windows should remain score-addressable`,
+    );
+    assert.ok(
+      acceptance.windows.every(
+        (window) =>
+          window.theoryBasis === "counterpoint" ||
+          window.theoryBasis === "fugue-form" ||
+          window.theoryBasis === "diagnostic-truthfulness",
+      ),
+      `${seed} acceptance windows should identify their theory basis`,
     );
     assert.ok(
       diagnostics.qualityVector.counterSubjectWindows.every(

@@ -10,6 +10,7 @@ import { chooseKeySignature, chooseTempo, chooseTimeSignature } from "./generati
 import { buildPhase13QReviewSummary } from "./generation/phase13q-review.js";
 import { buildPhase13RReviewSummary } from "./generation/phase13r-review.js";
 import { buildPhase13ZReviewSummary } from "./generation/phase13z-review.js";
+import { buildPhase14ScoreWindowAcceptanceSummary } from "./generation/phase14-score-window-acceptance.js";
 import { buildFugueScore } from "./generation/sections.js";
 import { buildSubject } from "./generation/subject.js";
 import { Xoshiro128StarStar } from "./prng.js";
@@ -32,6 +33,12 @@ export function generateScore(input: GenerationInput): GenerationOutput {
     score.subjectEntries,
     score.sectionPlans,
     diagnostics.phase12Review,
+  );
+  const phase14ScoreWindowAcceptance = buildPhase14ScoreWindowAcceptanceSummary(
+    diagnostics.entryBoundaryContinuity,
+    diagnostics.phase14DissonanceTriage,
+    diagnostics.qualityVector,
+    phase13ZReview,
   );
   const generatedUntilTick = Math.max(input.lengthTicks, score.endTick);
 
@@ -149,6 +156,7 @@ export function generateScore(input: GenerationInput): GenerationOutput {
       phase13RReview,
       phase13ZReview,
       phase14DissonanceTriage: diagnostics.phase14DissonanceTriage,
+      phase14ScoreWindowAcceptance,
       ornamentCandidateCount: diagnostics.ornamentCandidateCount,
       ornamentDensity: diagnostics.ornamentDensity,
       ornamentPlacementReasons: diagnostics.ornamentPlacementReasons,
