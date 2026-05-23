@@ -1007,6 +1007,49 @@ export type Phase14DissonanceTriageSummary = {
   windows: Phase14DissonanceTriageWindow[];
 };
 
+export type Phase14ScoreWindowAcceptanceKind =
+  | "important-entry-continuity"
+  | "dissonance-triage"
+  | "active-voice-pair-span"
+  | "counter-subject-survival"
+  | "phrase-development"
+  | "metric-explanation";
+
+export type Phase14ScoreWindowAcceptanceResponse =
+  | "accepted-context"
+  | "review-required"
+  | "generator-response-required"
+  | "diagnostic-context";
+
+export type Phase14ScoreWindowAcceptanceWindow = {
+  kind: Phase14ScoreWindowAcceptanceKind;
+  startTick: number;
+  durationTicks?: number;
+  state: FugueState | "mixed";
+  voices: Voice[];
+  roles: NoteRole[];
+  classification: string;
+  metric?: string;
+  symptom: string;
+  theoryBasis: "counterpoint" | "fugue-form" | "diagnostic-truthfulness";
+  response: Phase14ScoreWindowAcceptanceResponse;
+};
+
+export type Phase14ScoreWindowAcceptanceSummary = {
+  schemaVersion: 1;
+  importantEntryWindowCount: number;
+  dissonanceWindowCount: number;
+  activeVoicePairSpanCount: number;
+  counterSubjectWindowCount: number;
+  phraseDevelopmentWindowCount: number;
+  metricExplanationCount: number;
+  reviewRequiredWindowCount: number;
+  generatorResponseWindowCount: number;
+  acceptedContextWindowCount: number;
+  diagnosticContextWindowCount: number;
+  windows: Phase14ScoreWindowAcceptanceWindow[];
+};
+
 export type GenerationDiagnostics = {
   generatorVersion: number;
   selectionModel: SelectionModel;
@@ -1061,6 +1104,7 @@ export type GenerationDiagnostics = {
   phase13RReview: Phase13RReviewSummary;
   phase13ZReview: Phase13ZReviewSummary;
   phase14DissonanceTriage: Phase14DissonanceTriageSummary;
+  phase14ScoreWindowAcceptance: Phase14ScoreWindowAcceptanceSummary;
   ornamentCandidateCount: number;
   ornamentDensity: number;
   ornamentPlacementReasons: OrnamentPlacementReasons;

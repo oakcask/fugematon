@@ -71,6 +71,8 @@ Implementation note: `phase14DissonanceTriage` now records the focused seed set'
 
 Add review output that reports important entries, weak-passing and passing/neighbor semitone clashes, active voice-pair spans, counter-subject windows, phrase-development windows, and metric explanations before aggregate metrics. The harness should name seed, tick, voices, roles, intent, section state, theory basis, and proposed response.
 
+Implementation note: `phase14ScoreWindowAcceptance` now combines important-entry continuity, dissonance triage, active voice-pair spans, counter-subject survival, phrase-development, and metric-explanation windows into one review surface. See the [Phase 14 score-window acceptance implementation review](../reviews/phase-14-score-window-acceptance-implementation.md). This completes the diagnostics-harness part of 14A; generator-side responses remain in 14B/14C.
+
 ### 14B: Entry dissonance and continuity generation
 
 Tighten entry-continuity classification so one delayed or carried support line is not enough when the rest of the texture resets. Add generation candidates for carried support, suspensions, prepared resolutions, staggered continuation, contrary/oblique support, and weak dissonance that resolves by step. Candidate scoring should penalize repeated pitch-class stacks plus adjacent seconds when the score window cannot explain them as prepared, passing, neighboring, cadential, or stretto-functional.
