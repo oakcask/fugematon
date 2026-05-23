@@ -28,7 +28,7 @@ test("Phase 14 entry-reset review seeds avoid one-voice carry windows with outsi
     return {
       seed,
       oneVoiceCarryWithOutsideResetCount: oneVoiceCarryWindows.length,
-      generatorResponseWindowCount: diagnostics.phase14ScoreWindowAcceptance.generatorResponseWindowCount,
+      generatorResponseWindowCount: diagnostics.scoreWindowAcceptance.generatorResponseWindowCount,
     };
   });
 

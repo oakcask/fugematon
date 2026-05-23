@@ -7,7 +7,7 @@ const SUBJECT_FAMILY_SOURCE_SEEDS = ["bach-001", "fugue-smoke", "modal-cadence",
 
 test("phase-13R subject-family source diagnostics include seeds without per-score findings", () => {
   const output = generateScore({ seed: "bach-001", lengthTicks: PHASE_5_LENGTH_TICKS });
-  const phase13RFindings = output.diagnostics.phase13RReview.findings.map((finding) => finding.code);
+  const phase13RFindings = output.diagnostics.phraseConvergenceReview.findings.map((finding) => finding.code);
   const subjectFamilies = output.diagnostics.phraseRepetitionReview.subjectStemFamilies;
   const topSubject = subjectFamilies.find((family) => family.form === "subject");
 

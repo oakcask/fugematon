@@ -82,13 +82,10 @@ export function analyzeScore(
   stepwisePattern: StepwisePatternSummary;
   texturePlanningReview: TexturePlanningReviewSummary;
   phraseRepetitionReview: PhraseRepetitionReviewSummary;
-  phase11Review: TexturePlanningReviewSummary;
-  phase12Review: PhraseRepetitionReviewSummary;
   entryBoundaryContinuity: EntryBoundaryContinuitySummary;
   bassAnswerTailTexture: BassAnswerTailTextureSummary;
   qualityVector: QualityVector;
   dissonanceTriage: DissonanceTriageSummary;
-  phase14DissonanceTriage: DissonanceTriageSummary;
   ornamentCandidateCount: number;
   ornamentDensity: number;
   ornamentPlacementReasons: OrnamentPlacementReasons;
@@ -307,13 +304,10 @@ function analyzeTextureDiagnostics(
     stepwisePattern: analyzeStepwisePattern(notes, sectionPlans),
     texturePlanningReview,
     phraseRepetitionReview,
-    phase11Review: texturePlanningReview,
-    phase12Review: phraseRepetitionReview,
     entryBoundaryContinuity: analyzeEntryBoundaryContinuity(notes, subjectEntries),
     bassAnswerTailTexture: analyzeBassAnswerTailTexture(notes, subjectEntries),
     qualityVector,
     dissonanceTriage,
-    phase14DissonanceTriage: dissonanceTriage,
     ornamentCandidateCount,
     ornamentDensity: roundRatio(ornamentCandidateCount / supportNoteCount),
     ornamentPlacementReasons: analyzeOrnamentPlacementReasons(notes, subjectEntries, sectionPlans),

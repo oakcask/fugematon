@@ -10,23 +10,27 @@ test("phase-13R boundary seeds keep default planner convergence comparable in CI
     const legacy = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS, selectionModel: "baseline" });
     const current = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
 
-    assert.equal(legacy.diagnostics.phase13RReview.selectionModel, "baseline");
-    assert.equal(current.diagnostics.phase13RReview.selectionModel, "phase10-section-local-planner");
+    assert.equal(legacy.diagnostics.phraseConvergenceReview.selectionModel, "baseline");
+    assert.equal(current.diagnostics.phraseConvergenceReview.selectionModel, "phase10-section-local-planner");
     assert.ok(
-      legacy.diagnostics.phase13RReview.findings.some((finding) => finding.code === "legacy-default-selection-model"),
+      legacy.diagnostics.phraseConvergenceReview.findings.some(
+        (finding) => finding.code === "legacy-default-selection-model",
+      ),
     );
     assert.ok(
-      !current.diagnostics.phase13RReview.findings.some((finding) => finding.code === "legacy-default-selection-model"),
+      !current.diagnostics.phraseConvergenceReview.findings.some(
+        (finding) => finding.code === "legacy-default-selection-model",
+      ),
     );
     assert.ok(
-      current.diagnostics.phase13RReview.metrics.mostRepeatedFourSectionPatternCount <=
-        legacy.diagnostics.phase13RReview.metrics.mostRepeatedFourSectionPatternCount,
+      current.diagnostics.phraseConvergenceReview.metrics.mostRepeatedFourSectionPatternCount <=
+        legacy.diagnostics.phraseConvergenceReview.metrics.mostRepeatedFourSectionPatternCount,
     );
     assert.ok(
-      current.diagnostics.phase13RReview.metrics.uniqueFourSectionPatternCount >=
-        legacy.diagnostics.phase13RReview.metrics.uniqueFourSectionPatternCount,
+      current.diagnostics.phraseConvergenceReview.metrics.uniqueFourSectionPatternCount >=
+        legacy.diagnostics.phraseConvergenceReview.metrics.uniqueFourSectionPatternCount,
     );
-    assert.ok(current.diagnostics.phase13RReview.metrics.topSubjectStemFamilyShare > 0);
-    assert.ok(current.diagnostics.phase13RReview.metrics.topSubjectFragmentFamilyShare > 0);
+    assert.ok(current.diagnostics.phraseConvergenceReview.metrics.topSubjectStemFamilyShare > 0);
+    assert.ok(current.diagnostics.phraseConvergenceReview.metrics.topSubjectFragmentFamilyShare > 0);
   }
 });

@@ -151,11 +151,13 @@ export function collectPhase1112PlanningMetrics(seeds: readonly string[]): Phase
     metrics.baselineSectionGrammarRisk += baselineGrammar.selectedRiskTotal;
     metrics.variantSectionGrammarRisk += variantGrammar.selectedRiskTotal;
     metrics.baselineTopEntryPatternFamilyCount +=
-      baseline.diagnostics.phase11Review.entryPatternFamilies[0]?.count ?? 0;
-    metrics.variantTopEntryPatternFamilyCount += variant.diagnostics.phase11Review.entryPatternFamilies[0]?.count ?? 0;
+      baseline.diagnostics.texturePlanningReview.entryPatternFamilies[0]?.count ?? 0;
+    metrics.variantTopEntryPatternFamilyCount +=
+      variant.diagnostics.texturePlanningReview.entryPatternFamilies[0]?.count ?? 0;
     metrics.baselineUnsupportedThinningRuns +=
-      baseline.diagnostics.phase11Review.functionalThinning.unsupportedRunCount;
-    metrics.variantUnsupportedThinningRuns += variant.diagnostics.phase11Review.functionalThinning.unsupportedRunCount;
+      baseline.diagnostics.texturePlanningReview.functionalThinning.unsupportedRunCount;
+    metrics.variantUnsupportedThinningRuns +=
+      variant.diagnostics.texturePlanningReview.functionalThinning.unsupportedRunCount;
     metrics.baselineUnisonOverlapCount += baseline.diagnostics.unisonOverlapCount;
     metrics.variantUnisonOverlapCount += variant.diagnostics.unisonOverlapCount;
     metrics.baselineSharedRhythmOverlapCount += baseline.diagnostics.sharedRhythmOverlapCount;
@@ -165,9 +167,9 @@ export function collectPhase1112PlanningMetrics(seeds: readonly string[]): Phase
     metrics.baselineCounterSubjectIdentityRetention += baseline.diagnostics.counterSubjectIdentityRetention;
     metrics.variantCounterSubjectIdentityRetention += variant.diagnostics.counterSubjectIdentityRetention;
     metrics.baselineBassRootSupportCount +=
-      baseline.diagnostics.phase11Review.metricalHarmony.strongBeatBassRootSupportCount;
+      baseline.diagnostics.texturePlanningReview.metricalHarmony.strongBeatBassRootSupportCount;
     metrics.variantBassRootSupportCount +=
-      variant.diagnostics.phase11Review.metricalHarmony.strongBeatBassRootSupportCount;
+      variant.diagnostics.texturePlanningReview.metricalHarmony.strongBeatBassRootSupportCount;
   }
 
   return metrics;
@@ -262,8 +264,9 @@ export function collectPhase12RepetitionMetrics(seeds: readonly string[]): Phase
     metrics.variantTopEntryPatternFamilyCount +=
       variant.diagnostics.phraseRepetitionReview.entryPatternFamilyConcentration.topFamilyCount;
     metrics.baselineUnsupportedThinningRuns +=
-      baseline.diagnostics.phase11Review.functionalThinning.unsupportedRunCount;
-    metrics.variantUnsupportedThinningRuns += variant.diagnostics.phase11Review.functionalThinning.unsupportedRunCount;
+      baseline.diagnostics.texturePlanningReview.functionalThinning.unsupportedRunCount;
+    metrics.variantUnsupportedThinningRuns +=
+      variant.diagnostics.texturePlanningReview.functionalThinning.unsupportedRunCount;
   }
 
   return metrics;

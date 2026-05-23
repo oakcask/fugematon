@@ -901,7 +901,6 @@ export type QualityVector = {
   counterSubjectWindows: CounterSubjectWindowSummary[];
   metricExplanations: MetricExplanationSummary[];
   scoreBeautyEvidence: ScoreBeautyEvidenceSummary;
-  phase13VReview: ScoreBeautyEvidenceSummary;
   localSentinels: LocalSentinelSummary[];
 };
 
@@ -1051,55 +1050,6 @@ export type ScoreWindowAcceptanceSummary = {
   windows: ScoreWindowAcceptanceWindow[];
 };
 
-export type Phase11AdjacentVoiceIntervalSummary = AdjacentVoiceIntervalSummary;
-export type Phase11RegisterSpanSummary = RegisterSpanSummary;
-export type Phase11FunctionalThinningSummary = FunctionalThinningSummary;
-export type Phase11StatePatternSummary = StateGrammarPatternSummary;
-export type Phase11EntryPatternFamilySummary = EntryPatternFamilySummary;
-export type Phase11MetricalHarmonySummary = MetricalHarmonyReviewSummary;
-export type Phase11ReviewSummary = TexturePlanningReviewSummary;
-export type Phase12PhraseFunction = PhraseFunction;
-export type Phase12SubjectStemFamilySummary = SubjectStemFamilySummary;
-export type Phase12AnswerTransformSummary = AnswerTransformSummary;
-export type Phase12FragmentDerivationSummary = FragmentDerivationSummary;
-export type Phase12PhraseFunctionSummary = PhraseFunctionSummary;
-export type Phase12SectionStatePatternSummary = SectionStatePatternSummary;
-export type Phase12ReviewSummary = PhraseRepetitionReviewSummary;
-export type Phase13QualityVectorAxis = QualityVectorAxis;
-export type Phase13QualityVectorStatus = QualityVectorStatus;
-export type Phase13QualityVectorGroupingKey = QualityVectorGroupingKey;
-export type Phase13QualityVectorAxisSummary = QualityVectorAxisSummary;
-export type Phase13VoicePairUnisonSummary = VoicePairUnisonSummary;
-export type Phase13TVoicePairFunctionSummary = VoicePairFunctionSummary;
-export type Phase13SopranoRepeatedNotePressureSummary = SopranoRepeatedNotePressureSummary;
-export type Phase13EntrySevereIntervalDurationSummary = EntrySevereIntervalDurationSummary;
-export type Phase13TEntrySonorityKind = EntrySonorityKind;
-export type Phase13TEntrySonoritySummary = EntrySonoritySummary;
-export type Phase13UEntryFormulaSummary = EntryFormulaRecurrenceSummary;
-export type Phase13TFragmentFunctionEvidence = FragmentFunctionEvidenceSummary;
-export type Phase13TCounterSubjectWindowSummary = CounterSubjectWindowSummary;
-export type Phase13UVoicePairSpanClassification = VoicePairSpanClassification;
-export type Phase13UVoicePairSpanSummary = VoicePairSpanSummary;
-export type Phase13TMetricExplanationSummary = MetricExplanationSummary;
-export type Phase13VReviewSummary = ScoreBeautyEvidenceSummary;
-export type Phase13LocalSentinelKind = LocalSentinelKind;
-export type Phase13LocalSentinelSummary = LocalSentinelSummary;
-export type Phase13QualityVector = QualityVector;
-export type Phase13QSentinelCandidateLink = SentinelCandidateLink;
-export type Phase13QReviewSummary = LocalSentinelCandidateTraceSummary;
-export type Phase13RReviewFindingCode = PhraseConvergenceReviewFindingCode;
-export type Phase13RReviewFinding = PhraseConvergenceReviewFinding;
-export type Phase13RReviewSummary = PhraseConvergenceReviewSummary;
-export type Phase13ZPhraseDevelopmentJudgement = PhraseDevelopmentJudgement;
-export type Phase13ZPhraseDevelopmentWindow = PhraseDevelopmentWindow;
-export type Phase13ZReviewSummary = PhraseDevelopmentReviewSummary;
-export type Phase14DissonanceTriageWindow = DissonanceTriageWindow;
-export type Phase14DissonanceTriageSummary = DissonanceTriageSummary;
-export type Phase14ScoreWindowAcceptanceKind = ScoreWindowAcceptanceKind;
-export type Phase14ScoreWindowAcceptanceResponse = ScoreWindowAcceptanceResponse;
-export type Phase14ScoreWindowAcceptanceWindow = ScoreWindowAcceptanceWindow;
-export type Phase14ScoreWindowAcceptanceSummary = ScoreWindowAcceptanceSummary;
-
 export type GenerationDiagnostics = {
   generatorVersion: number;
   selectionModel: SelectionModel;
@@ -1147,8 +1097,6 @@ export type GenerationDiagnostics = {
   stepwisePattern: StepwisePatternSummary;
   texturePlanningReview: TexturePlanningReviewSummary;
   phraseRepetitionReview: PhraseRepetitionReviewSummary;
-  phase11Review: TexturePlanningReviewSummary;
-  phase12Review: PhraseRepetitionReviewSummary;
   entryBoundaryContinuity: EntryBoundaryContinuitySummary;
   bassAnswerTailTexture: BassAnswerTailTextureSummary;
   qualityVector: QualityVector;
@@ -1157,11 +1105,6 @@ export type GenerationDiagnostics = {
   phraseDevelopmentReview: PhraseDevelopmentReviewSummary;
   dissonanceTriage: DissonanceTriageSummary;
   scoreWindowAcceptance: ScoreWindowAcceptanceSummary;
-  phase13QReview: LocalSentinelCandidateTraceSummary;
-  phase13RReview: PhraseConvergenceReviewSummary;
-  phase13ZReview: PhraseDevelopmentReviewSummary;
-  phase14DissonanceTriage: DissonanceTriageSummary;
-  phase14ScoreWindowAcceptance: ScoreWindowAcceptanceSummary;
   ornamentCandidateCount: number;
   ornamentDensity: number;
   ornamentPlacementReasons: OrnamentPlacementReasons;

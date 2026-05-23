@@ -70,7 +70,7 @@ test("generateScore exposes phase-11 review summary signals", () => {
       lengthTicks: PHASE_5_LENGTH_TICKS,
       selectionModel: "phase10-section-local-planner",
     });
-    const summary = output.diagnostics.phase11Review;
+    const summary = output.diagnostics.texturePlanningReview;
 
     assert.equal(summary.schemaVersion, 1);
     assert.equal(summary.adjacentVoiceIntervals.length, 3);
