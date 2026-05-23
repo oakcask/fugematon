@@ -7,6 +7,7 @@
 * [quality-metrics.md](quality-metrics.md): 音楽品質指標、diagnostics、reference profile、quality vector、採否 policy、CI / review scope の入口。
 * [bibliography/README.md](bibliography/README.md): 文献、引用、source-family 根拠、claim map の管理手順。
 * [technical-plan.md](technical-plan.md): 技術計画の短い索引。詳細本文は [technical-plan-full.md](technical-plan-full.md)。
+* [error-message-guidelines.md](error-message-guidelines.md): CI failure、例外、警告、ログを自己対処しやすくするためのメッセージ設計。
 
 ## 読む判断
 
@@ -14,4 +15,5 @@
 * diagnostics、quality vector、reference profile、A/B adoption policy、seed/metric の CI 分類を確認する場合は quality-metrics を読む。
 * 文献根拠が実装方針、quality gate、Phase scope、review 採否、ライセンス判断に影響する場合は bibliography を読む。
 * コマンド、パッケージ境界、CI、diagnostics profile、データ形式を変える場合は technical-plan を読む。
+* CI failure、例外、警告、ログの文言を追加または変更する場合は [error-message-guidelines.md](error-message-guidelines.md) を読む。
 * 仕様の優先順位や外部要件を確認する場合だけ requirements を読む。
