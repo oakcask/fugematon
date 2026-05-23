@@ -29,6 +29,23 @@ Current な metric、gate、review surface は、導入された Phase ではな
 | `phase7Gate` | `contourMotionGate` | bass-upper / outer-voice contour motion gate。 |
 | `phase7BGate` | `reviewGatePolicy` | hard failure、review-required、warning、manual listening を分ける policy surface。 |
 
+## Candidate Evaluation Feature Keys
+
+Candidate evaluation feature keys follow the same rule: current keys name the musical risk, not the Phase that introduced the diagnostic. Historical feature keys may remain as compatibility aliases while public JSON consumers migrate.
+
+| Historical feature key | Current feature key | Meaning |
+| --- | --- | --- |
+| `phase11AdjacentVoiceOverOctaveCount` | `wideAdjacentVoiceSpacingCount` | Adjacent voice pairs whose spacing exceeds an octave. |
+| `phase11AdjacentVoiceWideP75SemitoneExcess` | `adjacentVoiceWideP75SemitoneExcess` | Excess in the 75th percentile adjacent-voice spacing over the octave reference. |
+| `phase11RegisterSpanSemitoneTotal` | `registerSpanSemitoneTotal` | Total register span pressure across voices. |
+| `phase11FunctionalThinningNonCadentialRunCount` | `nonCadentialFunctionalThinningRunCount` | Functional thinning runs not explained by cadence. |
+| `phase11FunctionalThinningOneVoiceRunCount` | `oneVoiceFunctionalThinningRunCount` | Functional thinning windows with one active voice. |
+| `phase11FunctionalThinningTwoVoiceRunCount` | `twoVoiceFunctionalThinningRunCount` | Functional thinning windows with two active voices. |
+| `phase11FunctionalThinningMaxDurationQuarters` | `functionalThinningMaxDurationQuarters` | Longest functional thinning duration in quarter notes. |
+| `phase11StateGrammarMostRepeatedPatternCount` | `stateGrammarMostRepeatedPatternCount` | Most repeated section-state pattern count. |
+| `phase11StateGrammarUniquePatternCount` | `stateGrammarUniquePatternCount` | Unique section-state pattern count. |
+| `phase11TopEntryPatternFamilyCount` | `topEntryPatternFamilyCount` | Largest entry-pattern family count. |
+
 ## Compatibility
 
 The next implementation slices should expose current names first and keep historical names as aliases until the relevant public contract has a documented schema transition. New code should read the current names. Compatibility aliases should not introduce separate computation paths.
