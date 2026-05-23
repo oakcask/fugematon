@@ -18,6 +18,10 @@ const PASSING_NEIGHBOR_OFFBEAT_INTENTS = new Set<MetricalHarmonyIntent>([
   "weak-neighbor-tone",
   "offbeat-motion",
 ]);
+type Phase14SemitoneClashClassification = Extract<
+  Phase14DissonanceTriageWindow["classification"],
+  "weak-passing-semitone-clash" | "passing-neighbor-offbeat-semitone-clash"
+>;
 
 export function analyzePhase14DissonanceTriage(
   notes: Parameters<typeof halfBeatVerticalities>[0],
@@ -59,34 +63,65 @@ function summarizeSemitoneClashWindows(
     const windows: Phase14DissonanceTriageWindow[] = [];
     const activeVoices = VOICE_ENTRY_ORDER.filter((voice) => active.has(voice));
     for (const [leftVoice, rightVoice] of phase14VoicePairs(activeVoices)) {
-      const left = active.get(leftVoice);
-      const right = active.get(rightVoice);
-      if (left === undefined || right === undefined || !isSemitoneClash(left, right)) {
-        continue;
+      const window = semitoneClashWindowAt(tick, state, active, leftVoice, rightVoice);
+      if (window !== undefined) {
+        windows.push(window);
       }
-      const intents = [left.metricalHarmonyIntent, right.metricalHarmonyIntent].filter(
-        (intent): intent is MetricalHarmonyIntent => intent !== undefined,
-      );
-      const classification = intents.includes("weak-passing-tone")
-        ? "weak-passing-semitone-clash"
-        : intents.some((intent) => PASSING_NEIGHBOR_OFFBEAT_INTENTS.has(intent))
-          ? "passing-neighbor-offbeat-semitone-clash"
-          : undefined;
-      if (classification === undefined) {
-        continue;
-      }
-      windows.push({
-        startTick: tick,
-        state,
-        voices: [leftVoice, rightVoice],
-        roles: [left.role, right.role].filter((role): role is NoteRole => role !== undefined),
-        metricalHarmonyIntents: intents,
-        classification,
-        response: "review-required",
-      });
     }
     return windows;
   });
+}
+
+function semitoneClashWindowAt(
+  tick: number,
+  state: Phase14DissonanceTriageWindow["state"],
+  active: ReadonlyMap<Phase14DissonanceTriageWindow["voices"][number], ActivePitch>,
+  leftVoice: Phase14DissonanceTriageWindow["voices"][number],
+  rightVoice: Phase14DissonanceTriageWindow["voices"][number],
+): Phase14DissonanceTriageWindow | undefined {
+  const left = active.get(leftVoice);
+  const right = active.get(rightVoice);
+  if (left === undefined || right === undefined || !isSemitoneClash(left, right)) {
+    return undefined;
+  }
+
+  const intents = activePitchIntents(left, right);
+  const classification = classifySemitoneClashIntents(intents);
+  if (classification === undefined) {
+    return undefined;
+  }
+
+  return {
+    startTick: tick,
+    state,
+    voices: [leftVoice, rightVoice],
+    roles: activePitchRoles(left, right),
+    metricalHarmonyIntents: intents,
+    classification,
+    response: "review-required",
+  };
+}
+
+function activePitchIntents(left: ActivePitch, right: ActivePitch): MetricalHarmonyIntent[] {
+  return [left.metricalHarmonyIntent, right.metricalHarmonyIntent].filter(
+    (intent): intent is MetricalHarmonyIntent => intent !== undefined,
+  );
+}
+
+function activePitchRoles(left: ActivePitch, right: ActivePitch): NoteRole[] {
+  return [left.role, right.role].filter((role): role is NoteRole => role !== undefined);
+}
+
+function classifySemitoneClashIntents(
+  intents: readonly MetricalHarmonyIntent[],
+): Phase14SemitoneClashClassification | undefined {
+  if (intents.includes("weak-passing-tone")) {
+    return "weak-passing-semitone-clash";
+  }
+  if (intents.some((intent) => PASSING_NEIGHBOR_OFFBEAT_INTENTS.has(intent))) {
+    return "passing-neighbor-offbeat-semitone-clash";
+  }
+  return undefined;
 }
 
 function summarizeEntrySonorityWindows(
