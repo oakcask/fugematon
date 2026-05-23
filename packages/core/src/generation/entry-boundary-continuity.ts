@@ -74,45 +74,15 @@ function summarizeEntryBoundaryContinuityWindow(
   const { entry } = context;
   const outsideVoices = VOICE_ENTRY_ORDER.filter((voice) => voice !== entry.voice);
   const reviewVoices = context.alreadyEnteredVoices.filter((voice) => voice !== entry.voice);
-  const outsideOnsetVoices = outsideVoices.filter((voice) =>
-    notes.some((note) => note.voice === voice && note.startTick === entry.startTick),
-  );
-  const outsideEndedAtEntryVoices = outsideVoices.filter((voice) =>
-    notes.some((note) => note.voice === voice && note.startTick + note.durationTicks === entry.startTick),
-  );
-  const carriedOutsideVoices = outsideVoices.filter((voice) =>
-    notes.some(
-      (note) =>
-        note.voice === voice &&
-        note.startTick < entry.startTick &&
-        entry.startTick < note.startTick + note.durationTicks,
-    ),
-  );
-  const suspendedOrResolvingOutsideVoices = carriedOutsideVoices.filter((voice) =>
-    notes.some(
-      (note) =>
-        note.voice === voice &&
-        note.startTick < entry.startTick &&
-        entry.startTick < note.startTick + note.durationTicks &&
-        note.startTick + note.durationTicks <= entry.startTick + TICKS_PER_QUARTER,
-    ),
-  );
-  const delayedOutsideVoices = outsideVoices.filter((voice) =>
-    notes.some(
-      (note) =>
-        note.voice === voice &&
-        entry.startTick < note.startTick &&
-        note.startTick <= entry.startTick + TICKS_PER_QUARTER / 2,
-    ),
-  );
-  const staggeredContinuationVoices = outsideVoices.filter((voice) =>
-    notes.some(
-      (note) =>
-        note.voice === voice &&
-        entry.startTick + TICKS_PER_QUARTER / 2 < note.startTick &&
-        note.startTick <= entry.startTick + TICKS_PER_QUARTER,
-    ),
-  );
+  const outsideVoiceEvidence = summarizeOutsideVoiceEvidence(notes, entry.startTick, outsideVoices);
+  const {
+    outsideOnsetVoices,
+    outsideEndedAtEntryVoices,
+    carriedOutsideVoices,
+    suspendedOrResolvingOutsideVoices,
+    delayedOutsideVoices,
+    staggeredContinuationVoices,
+  } = outsideVoiceEvidence;
   const preparedCollectiveArticulation =
     reviewVoices.length > 0 &&
     reviewVoices.every((voice) => outsideOnsetVoices.includes(voice)) &&
@@ -153,6 +123,68 @@ function summarizeEntryBoundaryContinuityWindow(
     preparedCollectiveArticulation,
     unsupportedEntryLocalThinning,
     classification,
+  };
+}
+
+type OutsideVoiceEvidence = {
+  outsideOnsetVoices: Voice[];
+  outsideEndedAtEntryVoices: Voice[];
+  carriedOutsideVoices: Voice[];
+  suspendedOrResolvingOutsideVoices: Voice[];
+  delayedOutsideVoices: Voice[];
+  staggeredContinuationVoices: Voice[];
+};
+
+function summarizeOutsideVoiceEvidence(
+  notes: readonly NoteEvent[],
+  entryStartTick: number,
+  outsideVoices: readonly Voice[],
+): OutsideVoiceEvidence {
+  const outsideOnsetVoices = outsideVoices.filter((voice) =>
+    notes.some((note) => note.voice === voice && note.startTick === entryStartTick),
+  );
+  const outsideEndedAtEntryVoices = outsideVoices.filter((voice) =>
+    notes.some((note) => note.voice === voice && note.startTick + note.durationTicks === entryStartTick),
+  );
+  const carriedOutsideVoices = outsideVoices.filter((voice) =>
+    notes.some(
+      (note) =>
+        note.voice === voice && note.startTick < entryStartTick && entryStartTick < note.startTick + note.durationTicks,
+    ),
+  );
+  const suspendedOrResolvingOutsideVoices = carriedOutsideVoices.filter((voice) =>
+    notes.some(
+      (note) =>
+        note.voice === voice &&
+        note.startTick < entryStartTick &&
+        entryStartTick < note.startTick + note.durationTicks &&
+        note.startTick + note.durationTicks <= entryStartTick + TICKS_PER_QUARTER,
+    ),
+  );
+  const delayedOutsideVoices = outsideVoices.filter((voice) =>
+    notes.some(
+      (note) =>
+        note.voice === voice &&
+        entryStartTick < note.startTick &&
+        note.startTick <= entryStartTick + TICKS_PER_QUARTER / 2,
+    ),
+  );
+  const staggeredContinuationVoices = outsideVoices.filter((voice) =>
+    notes.some(
+      (note) =>
+        note.voice === voice &&
+        entryStartTick + TICKS_PER_QUARTER / 2 < note.startTick &&
+        note.startTick <= entryStartTick + TICKS_PER_QUARTER,
+    ),
+  );
+
+  return {
+    outsideOnsetVoices,
+    outsideEndedAtEntryVoices,
+    carriedOutsideVoices,
+    suspendedOrResolvingOutsideVoices,
+    delayedOutsideVoices,
+    staggeredContinuationVoices,
   };
 }
 
