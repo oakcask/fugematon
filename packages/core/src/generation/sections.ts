@@ -69,7 +69,8 @@ export function buildFugueScore(
   rng: Xoshiro128StarStar,
   selectionModel: SelectionModel = "baseline",
 ): FugueScore {
-  const exposition = buildExposition(subject, keySignature);
+  const counterSubjectSupportRepair = lengthTicks >= TICKS_PER_QUARTER * 288;
+  const exposition = buildExposition(subject, keySignature, counterSubjectSupportRepair);
   const notes = [...exposition.notes];
   const subjectEntries = [...exposition.subjectEntries];
   const sectionPlans = [...exposition.sectionPlans];
@@ -126,6 +127,7 @@ export function buildFugueScore(
       sectionPlans,
       subjectEntries,
       phraseIntent,
+      counterSubjectSupportRepair,
     );
     if (selectionModel === "phase10-section-local-planner") {
       softenBassEntryBoundaryResets(selection.section.notes, selection.section.subjectEntries, notes);
@@ -571,7 +573,11 @@ export function chooseFragmentTransform(rng: Xoshiro128StarStar): FragmentTransf
   ]);
 }
 
-export function buildExposition(subject: readonly SubjectNote[], keySignature: KeySignature): Exposition {
+export function buildExposition(
+  subject: readonly SubjectNote[],
+  keySignature: KeySignature,
+  counterSubjectSupportRepair = false,
+): Exposition {
   const notes: Exposition["notes"] = [];
   const subjectEntries: Exposition["subjectEntries"] = [];
   const sectionPlans: HarmonicPlan[] = [
@@ -609,6 +615,7 @@ export function buildExposition(subject: readonly SubjectNote[], keySignature: K
       localKey: form === "answer" ? transposeKey(keySignature, 7) : keySignature,
       eligibleVoices: VOICE_ENTRY_ORDER.slice(0, entryIndex),
       harmonicPlan,
+      counterSubjectSupportRepair,
     });
   }
 
@@ -637,6 +644,7 @@ export function chooseContinuationSection(
   previousSectionPlans: readonly HarmonicPlan[] = [],
   previousSubjectEntries: readonly PlannedEntry[] = [],
   phraseIntent?: ContinuationPhraseSectionIntent,
+  counterSubjectSupportRepair = false,
 ): {
   section: Exposition;
   candidateCount: number;
@@ -652,6 +660,7 @@ export function chooseContinuationSection(
     rng,
     selectionModel,
     phraseIntent,
+    counterSubjectSupportRepair,
   );
   const evaluations = candidates.map((candidate) => evaluateCandidate(previousNotes, candidate));
   const selectionWindow = continuationCandidateSelectionWindow(state, selectionModel, candidates.length);
@@ -1168,6 +1177,7 @@ export function buildContinuationCandidates(
   rng: Xoshiro128StarStar,
   selectionModel: SelectionModel = "baseline",
   phraseIntent?: ContinuationPhraseSectionIntent,
+  counterSubjectSupportRepair = false,
 ): Exposition[] {
   const notes: Exposition["notes"] = [];
   const candidates: Exposition[] = [];
@@ -1197,28 +1207,40 @@ export function buildContinuationCandidates(
           fragmentTransform: chooseFragmentTransform(rng),
           cadenceKind: phraseIntent?.cadenceKind,
         };
-        candidates.push(buildContinuationSection(phraseSubject.slice(0, 4), input));
+        candidates.push(buildContinuationSection(phraseSubject.slice(0, 4), input, counterSubjectSupportRepair));
         if (includeSectionLocalPlannerCandidates) {
           sectionLocalPlannerCandidates.push(
-            buildContinuationSection(phraseSubject.slice(0, 4), {
-              ...input,
-              continuityVoiceCount: phraseContinuityVoiceCount(phraseIntent, 2),
-            }),
+            buildContinuationSection(
+              phraseSubject.slice(0, 4),
+              {
+                ...input,
+                continuityVoiceCount: phraseContinuityVoiceCount(phraseIntent, 2),
+              },
+              counterSubjectSupportRepair,
+            ),
           );
           voicePairSupportCandidates.push(
-            buildContinuationSection(phraseSubject.slice(0, 4), {
-              ...input,
-              continuityVoiceCount: phraseContinuityVoiceCount(phraseIntent, 2),
-              continuityVoiceOrder: voicePairSupportContinuityVoiceOrder(voice),
-              continuityLineKind: "oblique-support",
-            }),
+            buildContinuationSection(
+              phraseSubject.slice(0, 4),
+              {
+                ...input,
+                continuityVoiceCount: phraseContinuityVoiceCount(phraseIntent, 2),
+                continuityVoiceOrder: voicePairSupportContinuityVoiceOrder(voice),
+                continuityLineKind: "oblique-support",
+              },
+              counterSubjectSupportRepair,
+            ),
           );
           registerPlannerCandidates.push(
-            buildContinuationSection(phraseSubject.slice(0, 4), {
-              ...input,
-              continuityVoiceCount: phraseContinuityVoiceCount(phraseIntent, 2),
-              continuityVoiceOrder: registerBlendedContinuityVoiceOrder(voice),
-            }),
+            buildContinuationSection(
+              phraseSubject.slice(0, 4),
+              {
+                ...input,
+                continuityVoiceCount: phraseContinuityVoiceCount(phraseIntent, 2),
+                continuityVoiceOrder: registerBlendedContinuityVoiceOrder(voice),
+              },
+              counterSubjectSupportRepair,
+            ),
           );
         }
       }
@@ -1239,28 +1261,40 @@ export function buildContinuationCandidates(
           styleProfile: chooseStyleProfile(rng),
           cadenceKind: phraseIntent?.cadenceKind,
         };
-        candidates.push(buildContinuationSection(phraseSubject, input));
+        candidates.push(buildContinuationSection(phraseSubject, input, counterSubjectSupportRepair));
         if (includeSectionLocalPlannerCandidates) {
           sectionLocalPlannerCandidates.push(
-            buildContinuationSection(phraseSubject, {
-              ...input,
-              continuityVoiceCount: phraseContinuityVoiceCount(phraseIntent, 2),
-            }),
+            buildContinuationSection(
+              phraseSubject,
+              {
+                ...input,
+                continuityVoiceCount: phraseContinuityVoiceCount(phraseIntent, 2),
+              },
+              counterSubjectSupportRepair,
+            ),
           );
           voicePairSupportCandidates.push(
-            buildContinuationSection(phraseSubject, {
-              ...input,
-              continuityVoiceCount: phraseContinuityVoiceCount(phraseIntent, 2),
-              continuityVoiceOrder: voicePairSupportContinuityVoiceOrder(voice),
-              continuityLineKind: "oblique-support",
-            }),
+            buildContinuationSection(
+              phraseSubject,
+              {
+                ...input,
+                continuityVoiceCount: phraseContinuityVoiceCount(phraseIntent, 2),
+                continuityVoiceOrder: voicePairSupportContinuityVoiceOrder(voice),
+                continuityLineKind: "oblique-support",
+              },
+              counterSubjectSupportRepair,
+            ),
           );
           registerPlannerCandidates.push(
-            buildContinuationSection(phraseSubject, {
-              ...input,
-              continuityVoiceCount: phraseContinuityVoiceCount(phraseIntent, 2),
-              continuityVoiceOrder: registerBlendedContinuityVoiceOrder(voice),
-            }),
+            buildContinuationSection(
+              phraseSubject,
+              {
+                ...input,
+                continuityVoiceCount: phraseContinuityVoiceCount(phraseIntent, 2),
+                continuityVoiceOrder: registerBlendedContinuityVoiceOrder(voice),
+              },
+              counterSubjectSupportRepair,
+            ),
           );
         }
       }
@@ -1269,16 +1303,20 @@ export function buildContinuationCandidates(
     for (const firstVoice of rng.shuffle(VOICE_ENTRY_ORDER)) {
       for (const secondVoice of rng.shuffle(VOICE_ENTRY_ORDER.filter((voice) => voice !== firstVoice))) {
         candidates.push(
-          buildStrettoSection(phraseSubject.slice(0, 6), {
-            state,
-            firstVoice,
-            secondVoice,
-            startTick,
-            globalKey: keySignature,
-            sectionDurationTicks,
-            styleProfile: chooseStyleProfile(rng),
-            cadenceKind: phraseIntent?.cadenceKind,
-          }),
+          buildStrettoSection(
+            phraseSubject.slice(0, 6),
+            {
+              state,
+              firstVoice,
+              secondVoice,
+              startTick,
+              globalKey: keySignature,
+              sectionDurationTicks,
+              styleProfile: chooseStyleProfile(rng),
+              cadenceKind: phraseIntent?.cadenceKind,
+            },
+            counterSubjectSupportRepair,
+          ),
         );
       }
     }
@@ -1676,6 +1714,7 @@ export function buildContinuationSection(
     continuityLineKind?: ContinuityLineKind;
     cadenceKind?: CadenceKind;
   },
+  counterSubjectSupportRepair = false,
 ): Exposition {
   const notes: Exposition["notes"] = [];
   const subjectEntries: Exposition["subjectEntries"] = [];
@@ -1704,6 +1743,7 @@ export function buildContinuationSection(
     durationTicks: entry.supportDurationTicks,
     localKey: entry.localKey,
     harmonicPlan,
+    counterSubjectSupportRepair,
   });
   addContinuityCounterpoint(notes, {
     startTick: entry.startTick + entry.supportDurationTicks,
@@ -1737,6 +1777,7 @@ export function buildStrettoSection(
     styleProfile: StyleProfile;
     cadenceKind?: CadenceKind;
   },
+  counterSubjectSupportRepair = false,
 ): Exposition {
   const notes: Exposition["notes"] = [];
   const subjectEntries: Exposition["subjectEntries"] = [];
@@ -1781,6 +1822,7 @@ export function buildStrettoSection(
     durationTicks: subjectDuration(subject),
     localKey: entry.globalKey,
     harmonicPlan,
+    counterSubjectSupportRepair,
   });
   addContinuityCounterpoint(notes, {
     startTick: entry.startTick + subjectDuration(subject),
