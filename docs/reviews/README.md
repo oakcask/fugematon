@@ -36,6 +36,7 @@ seed や metric を追加、削除、昇格、降格するレビューでは、[
 * [Phase 14 dissonance triage implementation review](phase-14-dissonance-triage-implementation.md): Phase 14A0 の実装 evidence。focused seed set の weak-passing / passing-neighbor / offbeat semitone clash と entry adjacent-second / unresolved accented clash を score-window summary として記録する。
 * [Phase 14 score-window acceptance implementation review](phase-14-score-window-acceptance-implementation.md): Phase 14A の実装 evidence。important entry、dissonance、voice-pair、counter-subject、phrase-development、metric explanation を同じ review surface に束ねる。
 * [Phase 14 entry continuity generation review](phase-14-entry-continuity-generation.md): Phase 14B の最初の generator repair evidence。one-voice carry with outside reset を focused seed set で解消し、残る entry dissonance / line-agency / counter-subject / phrase-development work を分ける。
+* [Phase 14 entry dissonance generation review](phase-14-entry-dissonance-generation.md): Phase 14B の entry-local dissonance response evidence。support 側の step 解決を説明に含め、unresolved accented entry clash を未解決として過大分類しないようにする。
 * [Phase 13W completion review](phase-13w-completion-review.md): Phase 13W 完了 evidence。entry-boundary continuity diagnostic、delayed outside-voice support、22 seed score-window evidence、focused playback profile review を記録する。
 * [Phase 13W entry-boundary review](phase-13w-entry-boundary-review.md): Phase 13V 後に確認された bass entry 境界の外声 3 声同時再発音を、Phase 8 前 blocker として再編した根拠。
 * [Phase 13Y](../phases/phase-13y.md): 完了済み。entry-boundary continuity を bass-specific から entry-role / entry-order aware な診断へ広げた。

@@ -10,7 +10,7 @@ const PHASE_14_ENTRY_DISSONANCE_REVIEW_SEEDS = [
   "modal-cadence",
 ] as const;
 
-test("Phase 14 entry-dissonance review seeds expose unresolved accented entry clashes", () => {
+test("Phase 14 entry-dissonance review seeds keep unresolved accented entry clashes at the repaired ceiling", () => {
   const summaries = PHASE_14_ENTRY_DISSONANCE_REVIEW_SEEDS.map((seed) => {
     const diagnostics = generateScore({ seed, lengthTicks: TICKS_PER_QUARTER * 288 }).diagnostics;
     const entryAdjacentSecondFriction = diagnostics.qualityVector.entrySonorities.reduce(
@@ -36,12 +36,15 @@ test("Phase 14 entry-dissonance review seeds expose unresolved accented entry cl
   });
 
   assert.ok(
-    summaries.every(
-      (summary) =>
-        summary.entryAdjacentSecondFriction > 0 &&
-        summary.unresolvedAccentedEntryClashes > 0 &&
-        summary.unresolvedAccentedEntryWindowCount > 0,
-    ),
+    summaries.every((summary) => summary.entryAdjacentSecondFriction > 0),
+    JSON.stringify(summaries, null, 2),
+  );
+  assert.ok(
+    summaries.every((summary) => summary.unresolvedAccentedEntryClashes <= 3),
+    JSON.stringify(summaries, null, 2),
+  );
+  assert.ok(
+    summaries.reduce((sum, summary) => sum + summary.unresolvedAccentedEntryClashes, 0) <= 6,
     JSON.stringify(summaries, null, 2),
   );
   assert.ok(
