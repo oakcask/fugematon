@@ -10,6 +10,8 @@ Planning review: [Phase 14 score-led beauty review](../reviews/phase-14-score-le
 
 The latest 22 seed review bundle plus `random-listen-check` and `seed-0zereox-1v729ih` shows that current metrics still fail to express musical beauty. The reference aggregate can be green while every inspected seed still has review-required pitch-class unison and duration lockstep. The first bass answer no longer has the old all-voice reset, but all 24 inspected first-bass windows still count as `continuity-supported` while two outside voices end and re-articulate at the entry. Counter-subject material often does not survive as an independent musical idea, and phrase recurrence still reads as continuation more often than development.
 
+A focused post-Phase 13Z inspection also shows an uneven passing-tone semitone-clash tradeoff. Phase 13Z remains complete because it repaired long-run phrase convergence, but Phase 14 must now treat the new local dissonance distribution as the first score-window risk: `contrary-motion` gained a clear weak-passing semitone-clash increase, `tight-stretto` gained broader passing/neighbor clashes and unresolved accented entry clashes, while `circle-fifths`, `modal-cadence`, and `dense-modal` improved or moved mixed signals.
+
 Phase 13X, Phase 13X2, Phase 13Y, and Phase 13Z are still useful, but they are narrow repairs. Phase 14 treats the shared cause: the generator often chooses score windows that satisfy local constraints without creating living contrapuntal lines, durable counter-subject identity, or function-bearing development.
 
 Phase 14 is therefore the beauty trunk before Phase 8. It may change generator behavior, expected values, metric classifications, and guardrail margins when score-window review shows that the old values preserve less beautiful music.
@@ -17,7 +19,9 @@ Phase 14 is therefore the beauty trunk before Phase 8. It may change generator b
 ## Scope
 
 * Replace metric-first adoption with score-window musical acceptance for entry, line-agency, counter-subject, and phrase-development changes.
+* Add a post-Phase 13Z regression triage before any new generator repair. It must compare representative, rotation, modal, and adversarial seeds for passing-tone semitone clashes, entry adjacent-second friction, and unresolved accented clashes.
 * Rebuild important-entry support so enough outside material carries, suspends, resolves, or staggers through the entry to create audible continuity; one carried voice is not automatically sufficient when other voices reset together.
+* Rebuild passing/neighbor and offbeat support selection so weak dissonance is accepted only when it prepares, passes, neighbors, suspends, or resolves in the local voice-leading window.
 * Rebuild voice-pair and support-texture generation so independent rhythm, contour, register, contrary/oblique motion, and dissonance preparation are generated alternatives, not only diagnostics.
 * Make counter-subject survivability a generator objective across exposition, subject-return, episode, and stretto-like windows.
 * Link phrase recurrence to function-bearing development: contour change, inversion, sequence direction, cadence target, density arc, register transfer, voice assignment, and contrapuntal tension.
@@ -35,6 +39,7 @@ Phase 14 is therefore the beauty trunk before Phase 8. It may change generator b
 ## Completion Conditions
 
 * A focused seed set including representative, boundary, rotation, modal, adversarial, ad hoc listening, and user-reported seeds is reviewed from ScoreEvent windows before metrics are accepted.
+* The Phase 13Z tradeoff is classified by seed and section before broader Phase 14 changes are adopted. At minimum, `contrary-motion`, `tight-stretto`, `circle-fifths`, `modal-cadence`, and `dense-modal` are checked for weak-passing semitone clashes, broader passing/neighbor semitone clashes, entry adjacent-second friction, and unresolved accented entry clashes.
 * The 22 seed review bundle no longer has universal review-required pitch-class unison and duration lockstep without a score-window explanation and a musical response.
 * Important entry windows show audible continuity: carried, suspended, resolving, staggered, or prepared collective articulation is visible in the score, and the review distinguishes one-voice carry from real contrapuntal continuity.
 * Counter-subject windows are preserved or transformed recognizably; "tradeoff" is not the default outcome.
@@ -45,17 +50,21 @@ Phase 14 is therefore the beauty trunk before Phase 8. It may change generator b
 
 ## Workstreams
 
+### 14A0: Post-13Z dissonance triage
+
+Before changing generator weights again, record a small before/current review for Phase 13Z tradeoffs. Treat `contrary-motion` and `tight-stretto` as high-risk seeds, with `circle-fifths`, `modal-cadence`, and `dense-modal` as mixed/control seeds. The output should identify whether the response belongs in generator candidate construction, candidate scoring, diagnostics classification, or accepted tradeoff documentation.
+
 ### 14A: Score-window acceptance harness
 
-Add review output that reports important entries, active voice-pair spans, counter-subject windows, phrase-development windows, and metric explanations before aggregate metrics. The harness should name seed, tick, voices, roles, section state, theory basis, and proposed response.
+Add review output that reports important entries, weak-passing and passing/neighbor semitone clashes, active voice-pair spans, counter-subject windows, phrase-development windows, and metric explanations before aggregate metrics. The harness should name seed, tick, voices, roles, intent, section state, theory basis, and proposed response.
 
-### 14B: Entry and line-agency generation
+### 14B: Entry dissonance and continuity generation
 
-Tighten entry-continuity classification so one delayed or carried support line is not enough when the rest of the texture resets. Add generation candidates for carried support, suspensions, prepared resolutions, staggered continuation, contrary/oblique support, and independent rhythmic motion.
+Tighten entry-continuity classification so one delayed or carried support line is not enough when the rest of the texture resets. Add generation candidates for carried support, suspensions, prepared resolutions, staggered continuation, contrary/oblique support, and weak dissonance that resolves by step. Candidate scoring should penalize repeated pitch-class stacks plus adjacent seconds when the score window cannot explain them as prepared, passing, neighboring, cadential, or stretto-functional.
 
-### 14C: Counter-subject and phrase-development generation
+### 14C: Line-agency, counter-subject, and phrase-development generation
 
-Make counter-subject preservation and transformation selectable objectives. Rebuild phrase-development selection so recurrence must show changed role, register, cadence target, contour, density, or contrapuntal pressure, not only a changed state label.
+Add independent rhythmic and contour alternatives after the dissonance triage is stable. Make counter-subject preservation and transformation selectable objectives. Rebuild phrase-development selection so recurrence must show changed role, register, cadence target, contour, density, or contrapuntal pressure, not only a changed state label. Do not let phrase novelty rewards select windows that increase unprepared semitone friction.
 
 ### 14D: Metric truthfulness and scope cleanup
 
