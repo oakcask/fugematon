@@ -854,6 +854,7 @@ export type EntryBoundaryContinuitySummary = {
 export type BassAnswerTailTextureWindow = {
   seed?: string;
   firstBassAnswerStartTick: number;
+  firstBassAnswerTailStartTick: number;
   firstBassAnswerEndTick: number;
   windowEndTick: number;
   zeroOutsideVoiceTicks: number;
@@ -865,7 +866,7 @@ export type BassAnswerTailTextureWindow = {
 };
 
 export type BassAnswerTailTextureSummary = {
-  schemaVersion: 1;
+  schemaVersion: 2;
   reviewRequired: boolean;
   bassOnlyFreeCounterpointWindowCount: number;
   zeroOutsideVoiceWindowCount: number;

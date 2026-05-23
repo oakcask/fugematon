@@ -950,8 +950,13 @@ export function addBassAnswerTailTextureSupport(
   subjectEntries: readonly PlannedEntry[],
   sectionPlans: readonly HarmonicPlan[],
 ): void {
+  const firstBassAnswer = subjectEntries.find(
+    (entry) => entry.voice === "bass" && entry.state === "exposition" && entry.form === "answer",
+  );
   for (const run of findBassAnswerTailSupportRuns(notes, subjectEntries)) {
-    const plan = sectionPlanForTick(sectionPlans, run.startTick);
+    const plan =
+      sectionPlanForTick(sectionPlans, run.startTick) ??
+      firstBassAnswerInternalTailPlan(notes, sectionPlans, firstBassAnswer, run.startTick);
     const supportVoice = tailSupportVoice(notes, run);
     if (plan === undefined || supportVoice === undefined) {
       continue;
@@ -965,6 +970,7 @@ export function addBassAnswerTailTextureSupport(
       rootDegree: anchor === undefined ? 0 : rootDegreeForFunction(anchor.function),
       startTick: run.startTick,
       durationTicks: run.endTick - run.startTick,
+      maxNoteTicks: TICKS_PER_QUARTER * 3,
       strictSemitoneAvoidance: true,
     });
   }
@@ -974,6 +980,19 @@ export function addBassAnswerTailTextureSupport(
     Math.min(...sectionPlans.map((plan) => plan.startTick)),
     Math.max(...sectionPlans.map((plan) => plan.startTick + plan.durationTicks)),
   );
+}
+
+function firstBassAnswerInternalTailPlan(
+  notes: readonly NoteEvent[],
+  sectionPlans: readonly HarmonicPlan[],
+  firstBassAnswer: PlannedEntry | undefined,
+  tick: number,
+): HarmonicPlan | undefined {
+  if (firstBassAnswer === undefined || tick >= firstBassAnswerEnd(notes, firstBassAnswer)) {
+    return undefined;
+  }
+
+  return sectionPlans.find((plan) => plan.state === "exposition");
 }
 
 export function addPostEntryContinuationSupport(
@@ -1015,11 +1034,12 @@ function addFunctionalSupportLine(
     rootDegree: number;
     startTick: number;
     durationTicks: number;
+    maxNoteTicks?: number;
     strictSemitoneAvoidance?: boolean;
   },
 ): void {
   const lineDegrees = functionalSupportLineDegrees(input.voice, input.rootDegree);
-  const maxNoteTicks = TICKS_PER_QUARTER;
+  const maxNoteTicks = input.maxNoteTicks ?? TICKS_PER_QUARTER;
   let elapsedTicks = 0;
   let index = 0;
 
@@ -1109,14 +1129,15 @@ function findBassAnswerTailSupportRuns(
     return [];
   }
 
-  const startTick = firstBassAnswerEnd(notes, firstBassAnswer);
-  const endTick = startTick + TICKS_PER_QUARTER * 9;
+  const firstBassAnswerEndTick = firstBassAnswerEnd(notes, firstBassAnswer);
+  const startTick = firstBassAnswerTailStart(notes, firstBassAnswer);
+  const endTick = firstBassAnswerEndTick + TICKS_PER_QUARTER * 9;
   const runs: { startTick: number; endTick: number }[] = [];
   let currentRun: { startTick: number; endTick: number } | undefined;
 
   for (let tick = startTick; tick < endTick; tick += TICKS_PER_QUARTER / 2) {
     const segmentEndTick = Math.min(endTick, tick + TICKS_PER_QUARTER / 2);
-    if (isBassOnlyFreeCounterpointSegment(notes, tick, segmentEndTick)) {
+    if (isBassAnswerTailRepairSegment(notes, tick, segmentEndTick, firstBassAnswerEndTick)) {
       if (currentRun?.endTick === tick) {
         currentRun.endTick = segmentEndTick;
       } else {
@@ -1202,16 +1223,27 @@ function isThinPostEntrySupportSegment(
   return entryVoiceActive && outsideVoiceCount <= 1;
 }
 
-function isBassOnlyFreeCounterpointSegment(notes: readonly NoteEvent[], startTick: number, endTick: number): boolean {
+function isBassAnswerTailRepairSegment(
+  notes: readonly NoteEvent[],
+  startTick: number,
+  endTick: number,
+  firstBassAnswerEndTick: number,
+): boolean {
   const activeNotes = notes.filter(
     (note) => note.startTick < endTick && startTick < note.startTick + note.durationTicks,
   );
   const activeVoices = new Set(activeNotes.map((note) => note.voice));
-  return (
-    activeVoices.size === 1 &&
-    activeVoices.has("bass") &&
-    activeNotes.some((note) => note.voice === "bass" && note.role === "free-counterpoint")
-  );
+  const outsideVoices = [...activeVoices].filter((voice) => voice !== "bass");
+  const bassOnly = activeVoices.size === 1 && activeVoices.has("bass");
+  if (startTick < firstBassAnswerEndTick) {
+    return bassOnly && outsideVoices.length === 0;
+  }
+
+  return bassOnly && activeNotes.some((note) => note.voice === "bass" && note.role === "free-counterpoint");
+}
+
+function firstBassAnswerTailStart(notes: readonly NoteEvent[], firstBassAnswer: PlannedEntry): number {
+  return Math.min(firstBassAnswerEnd(notes, firstBassAnswer), firstBassAnswer.startTick + TICKS_PER_QUARTER * 4);
 }
 
 function firstBassAnswerEnd(notes: readonly NoteEvent[], firstBassAnswer: PlannedEntry): number {
@@ -1279,7 +1311,7 @@ function functionalSupportVoice(
 }
 
 function tailSupportVoice(notes: readonly NoteEvent[], run: { startTick: number; endTick: number }): Voice | undefined {
-  return (["soprano", "alto", "tenor"] as const).find(
+  return (["alto", "soprano", "tenor"] as const).find(
     (voice) => !hasOverlap(notes, voice, run.startTick, run.endTick - run.startTick),
   );
 }
