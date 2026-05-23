@@ -402,7 +402,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
           outsideReferenceCount: number;
           reviewStatus: string;
         };
-        phase59Gate: {
+        baselineBeautyGate: {
           passed: boolean;
           failures: unknown[];
           metrics: {
@@ -410,36 +410,31 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
             maxSelectedCandidateTextureCost: number;
           };
         };
-        baselineBeautyGate: unknown;
-        phase510Gate: {
+        voiceIndependenceGate: {
           passed: boolean;
           failures: unknown[];
         };
-        voiceIndependenceGate: unknown;
-        phase511Gate: {
+        rotationRobustnessGate: {
           passed: boolean;
           failures: unknown[];
           followUps: unknown[];
         };
-        rotationRobustnessGate: unknown;
-        phase6Gate: {
+        melodyTextureGate: {
           passed: boolean;
           failures: unknown[];
         };
-        melodyTextureGate: unknown;
-        phase7Gate: {
+        contourMotionGate: {
           passed: boolean;
           failures: unknown[];
         };
-        contourMotionGate: unknown;
-        phase7BGate: {
+        reviewGatePolicy: {
           policy: {
             schemaVersion: number;
-            phase: string;
+            name: string;
           };
           passed: boolean;
           hardConstraintPassed: boolean;
-          phase8Ready: boolean;
+          adoptionReady: boolean;
           findings: { policy: string; source: string }[];
           hardFailures: { policy: string; source: string }[];
           reviewSignals: { policy: string; source: string }[];
@@ -450,12 +445,11 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
             hardConstraintFailureCount: number;
             diagnosticsWarningCount: number;
           };
-          legacyPhase7Gate: {
+          contourMotionGate: {
             passed: boolean;
             failures: unknown[];
           };
         };
-        reviewGatePolicy: unknown;
       }[];
     };
     const listeningReview = JSON.parse(await readFile(join(directory, "listening-review.json"), "utf8")) as {
@@ -484,7 +478,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       comparisons: unknown[];
     };
 
-    assert.equal(summary.schemaVersion, 15);
+    assert.equal(summary.schemaVersion, 16);
     assert.equal(summary.lengthTicks, 9600);
     assert.equal(summary.selectionModel, "section-local-planner");
     assert.deepEqual(summary.performanceProfile, { id: "organ-default", version: 1 });
@@ -584,38 +578,38 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
       );
       assert.ok(entry.diagnosticsSummary.texture.rhythmicIndependenceScore >= 0);
       assert.ok(entry.diagnosticsSummary.texture.rhythmicIndependenceScore <= 1);
-      assert.deepEqual(entry.baselineBeautyGate, entry.phase59Gate);
-      assert.deepEqual(entry.voiceIndependenceGate, entry.phase510Gate);
-      assert.deepEqual(entry.rotationRobustnessGate, entry.phase511Gate);
-      assert.deepEqual(entry.melodyTextureGate, entry.phase6Gate);
-      assert.deepEqual(entry.contourMotionGate, entry.phase7Gate);
-      assert.deepEqual(entry.reviewGatePolicy, entry.phase7BGate);
-      assert.equal(typeof entry.phase59Gate.passed, "boolean");
-      assert.ok(Array.isArray(entry.phase59Gate.failures));
-      assert.ok(entry.phase59Gate.metrics.selectedCandidateEvaluationCount >= 0);
-      assert.ok(entry.phase59Gate.metrics.maxSelectedCandidateTextureCost >= 0);
-      assert.equal(typeof entry.phase511Gate.passed, "boolean");
-      assert.ok(Array.isArray(entry.phase511Gate.failures));
-      assert.ok(Array.isArray(entry.phase511Gate.followUps));
-      assert.equal(typeof entry.phase6Gate.passed, "boolean");
-      assert.ok(Array.isArray(entry.phase6Gate.failures));
-      assert.equal(typeof entry.phase7Gate.passed, "boolean");
-      assert.ok(Array.isArray(entry.phase7Gate.failures));
-      assert.equal(entry.phase7BGate.policy.schemaVersion, 1);
-      assert.equal(entry.phase7BGate.policy.phase, "phase-7B");
-      assert.equal(typeof entry.phase7BGate.passed, "boolean");
-      assert.equal(typeof entry.phase7BGate.hardConstraintPassed, "boolean");
-      assert.equal(typeof entry.phase7BGate.phase8Ready, "boolean");
-      assert.ok(Array.isArray(entry.phase7BGate.findings));
-      assert.ok(entry.phase7BGate.hardFailures.every((finding) => finding.policy === "hard-failure"));
-      assert.ok(entry.phase7BGate.reviewSignals.every((finding) => finding.policy === "review-required"));
-      assert.ok(entry.phase7BGate.warnings.every((finding) => finding.policy === "warning"));
-      assert.ok(entry.phase7BGate.manual.every((finding) => finding.policy === "manual"));
-      assert.ok(entry.phase7BGate.metrics.hardFailureCount >= 0);
-      assert.ok(entry.phase7BGate.metrics.hardConstraintFailureCount >= 0);
-      assert.ok(entry.phase7BGate.metrics.diagnosticsWarningCount >= 0);
-      assert.equal(entry.phase7BGate.legacyPhase7Gate.passed, entry.phase7Gate.passed);
-      assert.deepEqual(entry.phase7BGate.legacyPhase7Gate.failures, entry.phase7Gate.failures);
+      assert.equal(Object.hasOwn(entry, "phase59Gate"), false);
+      assert.equal(Object.hasOwn(entry, "phase510Gate"), false);
+      assert.equal(Object.hasOwn(entry, "phase511Gate"), false);
+      assert.equal(Object.hasOwn(entry, "phase6Gate"), false);
+      assert.equal(Object.hasOwn(entry, "phase7Gate"), false);
+      assert.equal(Object.hasOwn(entry, "phase7BGate"), false);
+      assert.equal(typeof entry.baselineBeautyGate.passed, "boolean");
+      assert.ok(Array.isArray(entry.baselineBeautyGate.failures));
+      assert.ok(entry.baselineBeautyGate.metrics.selectedCandidateEvaluationCount >= 0);
+      assert.ok(entry.baselineBeautyGate.metrics.maxSelectedCandidateTextureCost >= 0);
+      assert.equal(typeof entry.rotationRobustnessGate.passed, "boolean");
+      assert.ok(Array.isArray(entry.rotationRobustnessGate.failures));
+      assert.ok(Array.isArray(entry.rotationRobustnessGate.followUps));
+      assert.equal(typeof entry.melodyTextureGate.passed, "boolean");
+      assert.ok(Array.isArray(entry.melodyTextureGate.failures));
+      assert.equal(typeof entry.contourMotionGate.passed, "boolean");
+      assert.ok(Array.isArray(entry.contourMotionGate.failures));
+      assert.equal(entry.reviewGatePolicy.policy.schemaVersion, 2);
+      assert.equal(entry.reviewGatePolicy.policy.name, "review-gate-policy");
+      assert.equal(typeof entry.reviewGatePolicy.passed, "boolean");
+      assert.equal(typeof entry.reviewGatePolicy.hardConstraintPassed, "boolean");
+      assert.equal(typeof entry.reviewGatePolicy.adoptionReady, "boolean");
+      assert.ok(Array.isArray(entry.reviewGatePolicy.findings));
+      assert.ok(entry.reviewGatePolicy.hardFailures.every((finding) => finding.policy === "hard-failure"));
+      assert.ok(entry.reviewGatePolicy.reviewSignals.every((finding) => finding.policy === "review-required"));
+      assert.ok(entry.reviewGatePolicy.warnings.every((finding) => finding.policy === "warning"));
+      assert.ok(entry.reviewGatePolicy.manual.every((finding) => finding.policy === "manual"));
+      assert.ok(entry.reviewGatePolicy.metrics.hardFailureCount >= 0);
+      assert.ok(entry.reviewGatePolicy.metrics.hardConstraintFailureCount >= 0);
+      assert.ok(entry.reviewGatePolicy.metrics.diagnosticsWarningCount >= 0);
+      assert.equal(entry.reviewGatePolicy.contourMotionGate.passed, entry.contourMotionGate.passed);
+      assert.deepEqual(entry.reviewGatePolicy.contourMotionGate.failures, entry.contourMotionGate.failures);
       assert.ok(entry.diagnosticsSummary.texture.maxEntrySupportInstabilityPerEntry >= 0);
       assert.ok(entry.diagnosticsSummary.texture.maxConsecutiveEntrySupportInstabilities >= 0);
       assert.ok(entry.diagnosticsSummary.texture.unresolvedEntrySupportInstabilityCount >= 0);
@@ -887,14 +881,7 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
           referenceComparison: { reviewStatus: string; outsideReferenceCount: number };
           candidatePoolOracle: { schemaVersion: number; viableCandidateCount: number };
           reviewGatePolicy: {
-            phase8Ready: boolean;
-            hardFailureCount: number;
-            hardFailures: unknown[];
-            reviewSignalCount: number;
-            reviewSignals: unknown[];
-          };
-          phase7BGate: {
-            phase8Ready: boolean;
+            adoptionReady: boolean;
             hardFailureCount: number;
             hardFailures: unknown[];
             reviewSignalCount: number;
@@ -914,14 +901,7 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
           referenceComparison: { reviewStatus: string; outsideReferenceCount: number };
           candidatePoolOracle: { schemaVersion: number; viableCandidateCount: number };
           reviewGatePolicy: {
-            phase8Ready: boolean;
-            hardFailureCount: number;
-            hardFailures: unknown[];
-            reviewSignalCount: number;
-            reviewSignals: unknown[];
-          };
-          phase7BGate: {
-            phase8Ready: boolean;
+            adoptionReady: boolean;
             hardFailureCount: number;
             hardFailures: unknown[];
             reviewSignalCount: number;
@@ -938,12 +918,10 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
           candidatePoolViableCandidates: number;
           reviewPolicyHardFailures: number;
           reviewPolicyReviewSignals: number;
-          phase7BHardFailures: number;
-          phase7BReviewSignals: number;
           qualityVectorDistance: number;
           localSentinelCount: number;
           phraseConvergenceReviewFindings: number;
-          phase8ReadyChanged: boolean;
+          adoptionReadyChanged: boolean;
         };
         improvements: string[];
         regressions: string[];
@@ -1001,7 +979,7 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
     assert.equal(pairwisePreferences.manualListeningGap.unlistened, true);
     assert.match(pairwisePreferences.manualListeningGap.note, /no preference judgement/);
     assert.equal(pairwisePreferences.comparisons.length, comparison.seeds.length);
-    assert.equal(comparison.schemaVersion, 4);
+    assert.equal(comparison.schemaVersion, 5);
     assert.equal(comparison.lengthTicks, 960);
     assert.deepEqual(comparison.baseline, {
       label: "current",
@@ -1051,16 +1029,22 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
       assert.equal(entry.variant.candidatePoolOracle.schemaVersion, 5);
       assert.deepEqual(entry.baseline.candidatePoolOracle, entry.baseline.diagnosticsSummary.candidatePoolOracle);
       assert.deepEqual(entry.variant.candidatePoolOracle, entry.variant.diagnosticsSummary.candidatePoolOracle);
-      assert.equal(typeof entry.baseline.phase7BGate.phase8Ready, "boolean");
-      assert.equal(typeof entry.variant.phase7BGate.phase8Ready, "boolean");
-      assert.deepEqual(entry.baseline.reviewGatePolicy, entry.baseline.phase7BGate);
-      assert.deepEqual(entry.variant.reviewGatePolicy, entry.variant.phase7BGate);
-      assert.ok(entry.baseline.phase7BGate.hardFailureCount >= 0);
-      assert.ok(entry.variant.phase7BGate.hardFailureCount >= 0);
-      assert.ok(Array.isArray(entry.baseline.phase7BGate.hardFailures));
-      assert.ok(Array.isArray(entry.variant.phase7BGate.hardFailures));
-      assert.equal(entry.baseline.phase7BGate.reviewSignalCount, entry.baseline.phase7BGate.reviewSignals.length);
-      assert.equal(entry.variant.phase7BGate.reviewSignalCount, entry.variant.phase7BGate.reviewSignals.length);
+      assert.equal(Object.hasOwn(entry.baseline, "phase7BGate"), false);
+      assert.equal(Object.hasOwn(entry.variant, "phase7BGate"), false);
+      assert.equal(typeof entry.baseline.reviewGatePolicy.adoptionReady, "boolean");
+      assert.equal(typeof entry.variant.reviewGatePolicy.adoptionReady, "boolean");
+      assert.ok(entry.baseline.reviewGatePolicy.hardFailureCount >= 0);
+      assert.ok(entry.variant.reviewGatePolicy.hardFailureCount >= 0);
+      assert.ok(Array.isArray(entry.baseline.reviewGatePolicy.hardFailures));
+      assert.ok(Array.isArray(entry.variant.reviewGatePolicy.hardFailures));
+      assert.equal(
+        entry.baseline.reviewGatePolicy.reviewSignalCount,
+        entry.baseline.reviewGatePolicy.reviewSignals.length,
+      );
+      assert.equal(
+        entry.variant.reviewGatePolicy.reviewSignalCount,
+        entry.variant.reviewGatePolicy.reviewSignals.length,
+      );
       assert.ok(entry.baseline.qualityVector.axes.length > 0);
       assert.ok(entry.variant.qualityVector.axes.length > 0);
       assert.equal(
@@ -1082,19 +1066,9 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
         entry.deltas.reviewPolicyHardFailures,
         entry.variant.reviewGatePolicy.hardFailureCount - entry.baseline.reviewGatePolicy.hardFailureCount,
       );
-      assert.equal(entry.deltas.reviewPolicyHardFailures, entry.deltas.phase7BHardFailures);
-      assert.equal(
-        entry.deltas.phase7BHardFailures,
-        entry.variant.phase7BGate.hardFailureCount - entry.baseline.phase7BGate.hardFailureCount,
-      );
       assert.equal(
         entry.deltas.reviewPolicyReviewSignals,
         entry.variant.reviewGatePolicy.reviewSignalCount - entry.baseline.reviewGatePolicy.reviewSignalCount,
-      );
-      assert.equal(entry.deltas.reviewPolicyReviewSignals, entry.deltas.phase7BReviewSignals);
-      assert.equal(
-        entry.deltas.phase7BReviewSignals,
-        entry.variant.phase7BGate.reviewSignalCount - entry.baseline.phase7BGate.reviewSignalCount,
       );
       assert.equal(
         entry.deltas.localSentinelCount,
@@ -1113,8 +1087,8 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
       );
       assert.equal(typeof entry.deltas.qualityVectorDistance, "number");
       assert.equal(
-        entry.deltas.phase8ReadyChanged,
-        entry.variant.phase7BGate.phase8Ready !== entry.baseline.phase7BGate.phase8Ready,
+        entry.deltas.adoptionReadyChanged,
+        entry.variant.reviewGatePolicy.adoptionReady !== entry.baseline.reviewGatePolicy.adoptionReady,
       );
       assert.ok(Array.isArray(entry.improvements));
       assert.ok(Array.isArray(entry.regressions));

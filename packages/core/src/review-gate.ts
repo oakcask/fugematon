@@ -107,11 +107,12 @@ export type ReviewGatePolicyOptions = {
 
 export type ReviewGatePolicyResult = {
   policy: {
-    schemaVersion: 1;
-    phase: "phase-7B";
+    schemaVersion: 2;
+    name: "review-gate-policy";
   };
   passed: boolean;
   hardConstraintPassed: boolean;
+  adoptionReady: boolean;
   phase8Ready: boolean;
   findings: ClassifiedReviewGateFinding[];
   hardFailures: ClassifiedReviewGateFinding[];
@@ -123,6 +124,7 @@ export type ReviewGatePolicyResult = {
     hardConstraintFailureCount: number;
     diagnosticsWarningCount: number;
   };
+  contourMotionGate: ContourMotionGateResult;
   legacyPhase7Gate: ContourMotionGateResult;
 };
 
@@ -572,9 +574,9 @@ export function evaluateReviewGatePolicy(
   diagnostics: GenerationDiagnostics,
   options: ReviewGatePolicyOptions = {},
 ): ReviewGatePolicyResult {
-  const legacyPhase7Gate = evaluateContourMotionGate(seed, diagnostics);
+  const contourMotionGate = evaluateContourMotionGate(seed, diagnostics);
   const diagnosticHardFailures = classifyHardConstraintFailures(diagnostics);
-  const classifiedLegacyFindings = legacyPhase7Gate.failures.map(classifyLegacyGateFailure);
+  const classifiedLegacyFindings = contourMotionGate.failures.map(classifyLegacyGateFailure);
   const diagnosticsWarnings = classifyDiagnosticsWarnings(diagnostics);
   const manual = classifyManualListening(options.manualListeningCategory, options.manualListeningJudgement);
   const findings = [...diagnosticHardFailures, ...classifiedLegacyFindings, ...diagnosticsWarnings, ...manual];
@@ -582,28 +584,30 @@ export function evaluateReviewGatePolicy(
   const reviewSignals = findings.filter((finding) => finding.policy === "review-required");
   const warnings = findings.filter((finding) => finding.policy === "warning");
   const hardConstraintPassed = diagnosticHardFailures.length === 0;
-  const phase8Ready = hardFailures.length === 0;
+  const adoptionReady = hardFailures.length === 0;
 
   return {
     policy: {
-      schemaVersion: 1,
-      phase: "phase-7B",
+      schemaVersion: 2,
+      name: "review-gate-policy",
     },
-    passed: phase8Ready,
+    passed: adoptionReady,
     hardConstraintPassed,
-    phase8Ready,
+    adoptionReady,
+    phase8Ready: adoptionReady,
     findings,
     hardFailures,
     reviewSignals,
     warnings,
     manual,
     metrics: {
-      ...legacyPhase7Gate.metrics,
+      ...contourMotionGate.metrics,
       hardFailureCount: hardFailures.length,
       hardConstraintFailureCount: diagnosticHardFailures.length,
       diagnosticsWarningCount: diagnostics.warnings.length,
     },
-    legacyPhase7Gate,
+    contourMotionGate,
+    legacyPhase7Gate: contourMotionGate,
   };
 }
 
