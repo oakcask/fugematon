@@ -74,16 +74,7 @@ export function summarizeCounterSubjectWindows(
       )
       .sort(compareNotes);
     const supportCollisionCount = counterSubjectNotes.reduce(
-      (count, counterSubject) =>
-        count +
-        notes.filter(
-          (note) =>
-            note.role === "free-counterpoint" &&
-            note.voice !== counterSubject.voice &&
-            note.startTick < counterSubject.startTick + counterSubject.durationTicks &&
-            counterSubject.startTick < note.startTick + note.durationTicks &&
-            Math.abs(note.pitch - counterSubject.pitch) % 12 <= 2,
-        ).length,
+      (count, counterSubject) => count + counterSubjectSupportCollisionCount(notes, counterSubject),
       0,
     );
 
@@ -101,6 +92,29 @@ export function summarizeCounterSubjectWindows(
       ),
     };
   });
+}
+
+function counterSubjectSupportCollisionCount(notes: readonly NoteEvent[], counterSubject: NoteEvent): number {
+  return notes.filter((note) => isCounterSubjectSupportCollision(note, counterSubject)).length;
+}
+
+function isCounterSubjectSupportCollision(note: NoteEvent, counterSubject: NoteEvent): boolean {
+  return (
+    note.role === "free-counterpoint" &&
+    note.voice !== counterSubject.voice &&
+    notesOverlap(note, counterSubject) &&
+    isNearPitchClassCollision(note.pitch, counterSubject.pitch)
+  );
+}
+
+function notesOverlap(left: NoteEvent, right: NoteEvent): boolean {
+  return (
+    left.startTick < right.startTick + right.durationTicks && right.startTick < left.startTick + left.durationTicks
+  );
+}
+
+function isNearPitchClassCollision(leftPitch: number, rightPitch: number): boolean {
+  return Math.abs(leftPitch - rightPitch) % 12 <= 2;
 }
 
 function fragmentTransformationKinds(functionKey: string): string[] {
