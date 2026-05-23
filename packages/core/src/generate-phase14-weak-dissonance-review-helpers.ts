@@ -15,8 +15,10 @@ export const PHASE_14_WEAK_DISSONANCE_REVIEW_SEEDS = [
 export function assertPhase14WeakDissonanceReviewSeedsExposePressure(
   seeds: readonly string[],
   expectation: {
-    minWeakPassingSemitoneClashTicks: number;
-    minPassingNeighborOffbeatSemitoneClashTicks: number;
+    minWeakPassingSemitoneClashTicks?: number;
+    minPassingNeighborOffbeatSemitoneClashTicks?: number;
+    maxWeakPassingSemitoneClashTicks?: number;
+    maxPassingNeighborOffbeatSemitoneClashTicks?: number;
   },
 ): void {
   const summaries = seeds.map((seed) => {
@@ -62,14 +64,36 @@ export function assertPhase14WeakDissonanceReviewSeedsExposePressure(
     ),
     JSON.stringify(summaries, null, 2),
   );
-  assert.ok(
-    summaries.reduce((sum, summary) => sum + summary.weakPassingSemitoneClashTicks, 0) >=
-      expectation.minWeakPassingSemitoneClashTicks,
-    JSON.stringify(summaries, null, 2),
+  const weakPassingSemitoneClashTicks = summaries.reduce(
+    (sum, summary) => sum + summary.weakPassingSemitoneClashTicks,
+    0,
   );
-  assert.ok(
-    summaries.reduce((sum, summary) => sum + summary.passingNeighborOffbeatSemitoneClashTicks, 0) >=
-      expectation.minPassingNeighborOffbeatSemitoneClashTicks,
-    JSON.stringify(summaries, null, 2),
+  const passingNeighborOffbeatSemitoneClashTicks = summaries.reduce(
+    (sum, summary) => sum + summary.passingNeighborOffbeatSemitoneClashTicks,
+    0,
   );
+  if (expectation.minWeakPassingSemitoneClashTicks !== undefined) {
+    assert.ok(
+      weakPassingSemitoneClashTicks >= expectation.minWeakPassingSemitoneClashTicks,
+      JSON.stringify(summaries, null, 2),
+    );
+  }
+  if (expectation.minPassingNeighborOffbeatSemitoneClashTicks !== undefined) {
+    assert.ok(
+      passingNeighborOffbeatSemitoneClashTicks >= expectation.minPassingNeighborOffbeatSemitoneClashTicks,
+      JSON.stringify(summaries, null, 2),
+    );
+  }
+  if (expectation.maxWeakPassingSemitoneClashTicks !== undefined) {
+    assert.ok(
+      weakPassingSemitoneClashTicks <= expectation.maxWeakPassingSemitoneClashTicks,
+      JSON.stringify(summaries, null, 2),
+    );
+  }
+  if (expectation.maxPassingNeighborOffbeatSemitoneClashTicks !== undefined) {
+    assert.ok(
+      passingNeighborOffbeatSemitoneClashTicks <= expectation.maxPassingNeighborOffbeatSemitoneClashTicks,
+      JSON.stringify(summaries, null, 2),
+    );
+  }
 }
