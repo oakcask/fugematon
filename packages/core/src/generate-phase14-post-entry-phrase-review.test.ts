@@ -24,6 +24,26 @@ test("Phase 14 post-entry review seeds stay clear of long thin support windows a
   );
 });
 
+test("Phase 14 keeps outside support on the tight-stretto first bass answer tail", () => {
+  const output = scoreForSeed("tight-stretto");
+  const firstBassAnswer = output.diagnostics.subjectEntries.find(
+    (entry) => entry.voice === "bass" && entry.state === "exposition" && entry.form === "answer",
+  );
+  assert.ok(firstBassAnswer !== undefined);
+
+  const fifthBeatTick = firstBassAnswer.startTick + TICKS_PER_QUARTER * 4;
+  const activeNotes = output.events.filter(
+    (event): event is NoteEvent =>
+      event.kind === "note" && event.startTick <= fifthBeatTick && fifthBeatTick < event.startTick + event.durationTicks,
+  );
+  const activeOutsideVoices = new Set(
+    activeNotes.filter((note) => note.voice !== firstBassAnswer.voice).map((note) => note.voice),
+  );
+
+  assert.ok(activeOutsideVoices.size > 0);
+  assert.equal(output.diagnostics.bassAnswerTailTexture.reviewRequired, false);
+});
+
 test("Phase 14 free-counterpoint review seeds keep repeated surface phrase signatures below the repaired ceiling", () => {
   const signatureCounts = new Map<string, number>();
   const signatureSeeds = new Map<string, Set<string>>();

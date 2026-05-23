@@ -20,7 +20,7 @@ export function analyzeBassAnswerTailTexture(
   const windows = window === undefined ? [] : [window];
 
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     reviewRequired: windows.some((candidate) => candidate.classification === "review-required"),
     bassOnlyFreeCounterpointWindowCount: windows.filter((candidate) => candidate.bassOnlyFreeCounterpointTicks > 0)
       .length,
@@ -40,6 +40,7 @@ function summarizeBassAnswerTailTextureWindow(
   seed: string | undefined,
 ): BassAnswerTailTextureWindow {
   const firstBassAnswerEndTick = firstBassAnswerEnd(notes, firstBassAnswer);
+  const firstBassAnswerTailStartTick = firstBassAnswerTailStart(notes, firstBassAnswer);
   const windowEndTick = firstBassAnswerEndTick + TAIL_WINDOW_TICKS;
   let zeroOutsideVoiceTicks = 0;
   let bassOnlyFreeCounterpointTicks = 0;
@@ -47,7 +48,7 @@ function summarizeBassAnswerTailTextureWindow(
   let minOutsideVoiceCount = Number.POSITIVE_INFINITY;
   const activeOutsideVoices = new Set<Voice>();
 
-  for (let tick = firstBassAnswerEndTick; tick < windowEndTick; tick += TICKS_PER_QUARTER / 2) {
+  for (let tick = firstBassAnswerTailStartTick; tick < windowEndTick; tick += TICKS_PER_QUARTER / 2) {
     const segmentEndTick = Math.min(windowEndTick, tick + TICKS_PER_QUARTER / 2);
     const activeNotes = notes.filter(
       (note) => note.startTick < segmentEndTick && tick < note.startTick + note.durationTicks,
@@ -78,6 +79,7 @@ function summarizeBassAnswerTailTextureWindow(
   return {
     seed,
     firstBassAnswerStartTick: firstBassAnswer.startTick,
+    firstBassAnswerTailStartTick,
     firstBassAnswerEndTick,
     windowEndTick,
     zeroOutsideVoiceTicks,
@@ -88,6 +90,10 @@ function summarizeBassAnswerTailTextureWindow(
     classification:
       zeroOutsideVoiceTicks > 0 || bassOnlyFreeCounterpointTicks > 0 ? "review-required" : "supported-tail",
   };
+}
+
+function firstBassAnswerTailStart(notes: readonly NoteEvent[], firstBassAnswer: PlannedEntry): number {
+  return Math.min(firstBassAnswerEnd(notes, firstBassAnswer), firstBassAnswer.startTick + TICKS_PER_QUARTER * 4);
 }
 
 function firstBassAnswerEnd(notes: readonly NoteEvent[], firstBassAnswer: PlannedEntry): number {

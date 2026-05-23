@@ -20,6 +20,7 @@ export const PHASE_13X2_BASS_ANSWER_TAIL_REVIEW_BATCH_D = PHASE_13X2_BASS_ANSWER
 type BassAnswerTailWindow = {
   seed: string;
   firstBassAnswerStartTick: number;
+  firstBassAnswerTailStartTick: number;
   firstBassAnswerEndTick: number;
   windowEndTick: number;
   zeroOutsideVoiceTicks: number;
@@ -91,6 +92,7 @@ function summarizeBassAnswerTailWindow(
   firstBassAnswer: PlannedEntry,
 ): BassAnswerTailWindow {
   const firstBassAnswerEndTick = firstBassAnswerEnd(notes, firstBassAnswer);
+  const firstBassAnswerTailStartTick = firstBassAnswerTailStart(notes, firstBassAnswer);
   const windowEndTick = firstBassAnswerEndTick + TAIL_WINDOW_TICKS;
   let bassOnlyFreeCounterpointTicks = 0;
   let zeroOutsideVoiceTicks = 0;
@@ -98,7 +100,7 @@ function summarizeBassAnswerTailWindow(
   let minOutsideVoiceCount = Number.POSITIVE_INFINITY;
   const outsideVoices = new Set<Voice>();
 
-  for (let tick = firstBassAnswerEndTick; tick < windowEndTick; tick += TICKS_PER_QUARTER / 2) {
+  for (let tick = firstBassAnswerTailStartTick; tick < windowEndTick; tick += TICKS_PER_QUARTER / 2) {
     const segmentEndTick = Math.min(windowEndTick, tick + TICKS_PER_QUARTER / 2);
     const activeNotes = notes.filter(
       (note) => note.startTick < segmentEndTick && tick < note.startTick + note.durationTicks,
@@ -130,6 +132,7 @@ function summarizeBassAnswerTailWindow(
   return {
     seed,
     firstBassAnswerStartTick: firstBassAnswer.startTick,
+    firstBassAnswerTailStartTick,
     firstBassAnswerEndTick,
     windowEndTick,
     zeroOutsideVoiceTicks,
@@ -138,6 +141,10 @@ function summarizeBassAnswerTailWindow(
     minOutsideVoiceCount: Number.isFinite(minOutsideVoiceCount) ? minOutsideVoiceCount : 0,
     outsideVoices: [...outsideVoices],
   };
+}
+
+function firstBassAnswerTailStart(notes: readonly NoteEvent[], firstBassAnswer: PlannedEntry): number {
+  return Math.min(firstBassAnswerEnd(notes, firstBassAnswer), firstBassAnswer.startTick + TICKS_PER_QUARTER * 4);
 }
 
 function firstBassAnswerEnd(notes: readonly NoteEvent[], firstBassAnswer: PlannedEntry): number {

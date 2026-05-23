@@ -136,7 +136,7 @@ test("public diagnostics expose finite candidate score dimensions", () => {
       (window) => Number.isSafeInteger(window.entryOrderIndex) && Array.isArray(window.alreadyEnteredVoices),
     ),
   );
-  assert.equal(output.diagnostics.bassAnswerTailTexture.schemaVersion, 1);
+  assert.equal(output.diagnostics.bassAnswerTailTexture.schemaVersion, 2);
   assert.equal(typeof output.diagnostics.bassAnswerTailTexture.reviewRequired, "boolean");
   assert.equal(typeof output.diagnostics.bassAnswerTailTexture.bassOnlyFreeCounterpointWindowCount, "number");
   assert.ok(Array.isArray(output.diagnostics.bassAnswerTailTexture.windows));
