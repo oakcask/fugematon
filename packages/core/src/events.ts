@@ -953,6 +953,35 @@ export type Phase13RReviewSummary = {
   findings: Phase13RReviewFinding[];
 };
 
+export type Phase13ZPhraseDevelopmentJudgement = "new-material" | "function-bearing-recurrence" | "mechanical-reuse";
+
+export type Phase13ZPhraseDevelopmentWindow = {
+  startTick: number;
+  state: FugueState;
+  form: Extract<EntryForm, "subject" | "subject-fragment">;
+  entryVoice: Voice;
+  stemPattern: number[];
+  phraseFunction: Phase12PhraseFunction;
+  cadenceKind: CadenceKind;
+  localKey: KeySignature;
+  recentStemReuseCount: number;
+  changedEntryVoice: boolean;
+  changedLocalKey: boolean;
+  changedPhraseFunction: boolean;
+  judgement: Phase13ZPhraseDevelopmentJudgement;
+};
+
+export type Phase13ZReviewSummary = {
+  schemaVersion: 1;
+  reviewRequired: boolean;
+  windowCount: number;
+  mechanicalReuseWindowCount: number;
+  functionBearingWindowCount: number;
+  topSubjectStemFamilyShare: number;
+  topSubjectFragmentFamilyShare: number;
+  windows: Phase13ZPhraseDevelopmentWindow[];
+};
+
 export type GenerationDiagnostics = {
   generatorVersion: number;
   selectionModel: SelectionModel;
@@ -1005,6 +1034,7 @@ export type GenerationDiagnostics = {
   qualityVector: Phase13QualityVector;
   phase13QReview: Phase13QReviewSummary;
   phase13RReview: Phase13RReviewSummary;
+  phase13ZReview: Phase13ZReviewSummary;
   ornamentCandidateCount: number;
   ornamentDensity: number;
   ornamentPlacementReasons: OrnamentPlacementReasons;

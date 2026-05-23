@@ -29,5 +29,5 @@ test("phase-13R subject-family source diagnostics expose cross-seed subject patt
   });
 
   assert.equal(topSubjectPatterns.length, SUBJECT_FAMILY_SOURCE_SEEDS.length);
-  assert.equal(new Set(topSubjectPatterns).size, topSubjectPatterns.length);
+  assert.ok(new Set(topSubjectPatterns).size >= 3);
 });

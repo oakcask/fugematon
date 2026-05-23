@@ -12,10 +12,13 @@ const PHASE_13Z_FOCUSED_REVIEW_SEEDS = [
   "angular-answer",
 ] as const;
 
-test("Phase 13Z focused seeds preserve hard constraints and phase-7B readiness, group A", () => {
+test("Phase 13Z focused seeds preserve hard constraints and repair subject-stem concentration, group A", () => {
   for (const seed of PHASE_13Z_FOCUSED_REVIEW_SEEDS) {
     const output = generateScore({ seed, lengthTicks: PHASE_5_LENGTH_TICKS });
     const gate = evaluatePhase7BGatePolicy(seed, output.diagnostics);
+    const hasSubjectStemConcentration = output.diagnostics.phase13RReview.findings.some(
+      (finding) => finding.code === "subject-stem-family-concentration",
+    );
 
     assert.equal(output.diagnostics.rangeViolations, 0, `${seed} should keep range guardrail`);
     assert.equal(output.diagnostics.voiceCrossings, 0, `${seed} should keep voice-crossing guardrail`);
@@ -23,5 +26,6 @@ test("Phase 13Z focused seeds preserve hard constraints and phase-7B readiness, 
     assert.equal(output.diagnostics.answerPlanViolations, 0, `${seed} should keep answer-plan guardrail`);
     assert.equal(output.diagnostics.keyMetadataMismatches, 0, `${seed} should keep key metadata guardrail`);
     assert.equal(gate.phase8Ready, true, `${seed} should preserve Phase 7B readiness context`);
+    assert.equal(hasSubjectStemConcentration, false, `${seed} should avoid top subject-stem concentration`);
   }
 });

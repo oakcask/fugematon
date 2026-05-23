@@ -50,6 +50,7 @@
 | --- | --- | --- |
 | `phase12Review.subjectStemFamilies` | 1つの generated score 内で subject stem / subject-fragment family がどれだけ集中しているか。 | Per-score phrase convergence の signal。function-bearing return と mechanical reuse を分けて読む。 |
 | `phase13RReview` | default path、4-section pattern、entry-pattern family、subject stem、subject-fragment concentration の Phase 13R review summary。 | 1曲内の convergence と legacy default path の検出には使えるが、seed 横断の初期主題類似は bundle-level summary と合わせて読む。 |
+| `phase13ZReview` | continuation window ごとに subject stem、phrase function、entry voice、cadence、local key、recent reuse、`new-material` / `function-bearing-recurrence` / `mechanical-reuse` judgement を出す。 | Phase 13Z 以降の long-run phrase development signal。集計値だけで採否せず、譜面上で recurrence が役割を変えているかを読む。 |
 | `subjectFamilyDiversity` | Review bundle 全体で、initial subject degree/rhythm/contour/tail family が何種類に分散しているか。 | 複数 seed が同じ少数の主題形へ収束していないかを見る corpus-level review signal。A/B summary は unique family count、top-family share、fragment share の delta を出す。 |
 
 ## Review Summaries
@@ -63,3 +64,4 @@
 | `qualityVector` | Phase 13 以降の normalized review/adoption signal。詳細は [quality vector](quality-vector.md)。 |
 | `phase13QReview` | Phase 13 local sentinel を selected candidate explanation の section、entry、voice pair、resolution deadline へ戻す review-only bridge。 |
 | `phase13RReview` | Phase 13R の per-score convergence review signal。Seed 横断の主題語彙崩壊は bundle-level `subjectFamilyDiversity` と合わせて読む。 |
+| `phase13ZReview` | Phase 13Z の windowed phrase-development review signal。Remaining mechanical-reuse windows は Phase 14 の score-led beauty review に渡す。 |
