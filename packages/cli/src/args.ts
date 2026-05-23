@@ -1,4 +1,4 @@
-import type { SelectionModel } from "@fugematon/core";
+import { normalizeSelectionModel, type SelectionModel } from "@fugematon/core";
 import {
   DEFAULT_PERFORMANCE_PROFILE_ID,
   listPerformanceProfiles,
@@ -77,7 +77,7 @@ export function parseArgs(argv: readonly string[]): CliCommand {
         baselineLabel: options.get("baseline-label") ?? "baseline",
         variantLabel: options.get("variant-label") ?? "variant",
         baselineModel: parseSelectionModel(options.get("baseline-model") ?? "baseline", "baseline-model"),
-        variantModel: parseSelectionModel(options.get("variant-model") ?? "phase10-oracle-selection", "variant-model"),
+        variantModel: parseSelectionModel(options.get("variant-model") ?? "candidate-oracle-selection", "variant-model"),
         performanceProfileId: parsePerformanceProfileId(options.get("performance-profile")),
       };
     }
@@ -125,16 +125,22 @@ export function helpText(): string {
     "  fugematon diagnose --seed <seed> --ticks <lengthTicks>",
     "  fugematon midi --seed <seed> --ticks <lengthTicks> --out <file> [--performance-profile organ-default|strict-counterpoint]",
     "  fugematon review --out <directory> [--ticks <lengthTicks>] [--performance-profile organ-default|strict-counterpoint]",
-    "  fugematon review-ab --out <directory> [--ticks <lengthTicks>] [--baseline-label <label>] [--variant-label <label>] [--baseline-model baseline|phase10-oracle-selection|phase10-section-local-planner] [--variant-model baseline|phase10-oracle-selection|phase10-section-local-planner] [--performance-profile organ-default|strict-counterpoint]",
+    "  fugematon review-ab --out <directory> [--ticks <lengthTicks>] [--baseline-label <label>] [--variant-label <label>] [--baseline-model baseline|candidate-oracle-selection|section-local-planner] [--variant-model baseline|candidate-oracle-selection|section-local-planner] [--performance-profile organ-default|strict-counterpoint]",
   ].join("\n");
 }
 
 function parseSelectionModel(value: string, optionName: string): SelectionModel {
-  if (value === "baseline" || value === "phase10-oracle-selection" || value === "phase10-section-local-planner") {
-    return value;
+  if (
+    value === "baseline" ||
+    value === "candidate-oracle-selection" ||
+    value === "section-local-planner" ||
+    value === "phase10-oracle-selection" ||
+    value === "phase10-section-local-planner"
+  ) {
+    return normalizeSelectionModel(value);
   }
 
-  throw new Error(`--${optionName} must be baseline, phase10-oracle-selection, or phase10-section-local-planner`);
+  throw new Error(`--${optionName} must be baseline, candidate-oracle-selection, or section-local-planner`);
 }
 
 function parsePerformanceProfileId(value: string | undefined): PerformanceProfileId {

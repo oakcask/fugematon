@@ -46,6 +46,15 @@ Candidate evaluation feature keys follow the same rule: current keys name the mu
 | `phase11StateGrammarUniquePatternCount` | `stateGrammarUniquePatternCount` | Unique section-state pattern count. |
 | `phase11TopEntryPatternFamilyCount` | `topEntryPatternFamilyCount` | Largest entry-pattern family count. |
 
+## Selection Model Values
+
+Selection model values also use current names in CLI help, generated diagnostics, review bundles, and new tests. Legacy values remain accepted as input aliases during the compatibility window.
+
+| Historical value | Current value | Meaning |
+| --- | --- | --- |
+| `phase10-oracle-selection` | `candidate-oracle-selection` | Selection-model risk adjustment over the existing candidate pool. |
+| `phase10-section-local-planner` | `section-local-planner` | Adopted section-local planner with section grammar and phrase-family candidates. |
+
 ## Compatibility
 
 The next implementation slices should expose current names first and keep historical names as aliases until the relevant public contract has a documented schema transition. New code should read the current names. Compatibility aliases should not introduce separate computation paths.

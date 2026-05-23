@@ -19,12 +19,12 @@ test("generateScore applies history-aware section grammar planning to selected o
     const baseline = generateScore({
       seed,
       lengthTicks: PHASE_5_LENGTH_TICKS,
-      selectionModel: "phase10-oracle-selection",
+      selectionModel: "candidate-oracle-selection",
     });
     const variant = generateScore({
       seed,
       lengthTicks: PHASE_5_LENGTH_TICKS,
-      selectionModel: "phase10-section-local-planner",
+      selectionModel: "section-local-planner",
     });
     const baselineGate = evaluatePhase7BGatePolicy(seed, baseline.diagnostics);
     const variantGate = evaluatePhase7BGatePolicy(seed, variant.diagnostics);

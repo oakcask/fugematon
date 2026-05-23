@@ -7,7 +7,7 @@ test("generateScore keeps phase-13 local sentinels traceable to selected candida
   const output = generateScore({
     seed: "circle-fifths",
     lengthTicks: PHASE_5_LENGTH_TICKS,
-    selectionModel: "phase10-section-local-planner",
+    selectionModel: "section-local-planner",
   });
   const selectedSections = output.diagnostics.selectedCandidateEvaluations.flatMap(
     (evaluation) => evaluation.explanations.sections,

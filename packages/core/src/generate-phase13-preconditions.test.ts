@@ -12,7 +12,7 @@ test("generateScore exposes phase-13 quality vector diagnostics", () => {
   const output = generateScore({
     seed: "fugue-smoke",
     lengthTicks: PHASE_5_LENGTH_TICKS,
-    selectionModel: "phase10-section-local-planner",
+    selectionModel: "section-local-planner",
   });
   const qualityVector = output.diagnostics.qualityVector;
 

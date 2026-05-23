@@ -121,12 +121,12 @@ export function collectPhase1112PlanningMetrics(seeds: readonly string[]): Phase
     const baseline = generateScore({
       seed,
       lengthTicks: PHASE_5_LENGTH_TICKS,
-      selectionModel: "phase10-oracle-selection",
+      selectionModel: "candidate-oracle-selection",
     });
     const variant = generateScore({
       seed,
       lengthTicks: PHASE_5_LENGTH_TICKS,
-      selectionModel: "phase10-section-local-planner",
+      selectionModel: "section-local-planner",
     });
     const gate = evaluatePhase7BGatePolicy(seed, variant.diagnostics);
     const baselineStats = summarizeContinuationPatterns(baseline.diagnostics.stateTransitions);
@@ -180,12 +180,12 @@ export function assertPhase12FocusedRepetitionAdoption(seeds: readonly string[])
     const baseline = generateScore({
       seed,
       lengthTicks: PHASE_5_LENGTH_TICKS,
-      selectionModel: "phase10-oracle-selection",
+      selectionModel: "candidate-oracle-selection",
     });
     const variant = generateScore({
       seed,
       lengthTicks: PHASE_5_LENGTH_TICKS,
-      selectionModel: "phase10-section-local-planner",
+      selectionModel: "section-local-planner",
     });
     const gate = evaluatePhase7BGatePolicy(seed, variant.diagnostics);
 
@@ -212,12 +212,12 @@ export function assertPhase13ReviewPreconditions(seeds: readonly string[]): void
     const first = generateScore({
       seed,
       lengthTicks: PHASE_5_LENGTH_TICKS,
-      selectionModel: "phase10-section-local-planner",
+      selectionModel: "section-local-planner",
     });
     const repeated = generateScore({
       seed,
       lengthTicks: PHASE_5_LENGTH_TICKS,
-      selectionModel: "phase10-section-local-planner",
+      selectionModel: "section-local-planner",
     });
     const gate = evaluatePhase7BGatePolicy(seed, first.diagnostics);
 
@@ -251,12 +251,12 @@ export function collectPhase12RepetitionMetrics(seeds: readonly string[]): Phase
     const baseline = generateScore({
       seed,
       lengthTicks: PHASE_5_LENGTH_TICKS,
-      selectionModel: "phase10-oracle-selection",
+      selectionModel: "candidate-oracle-selection",
     });
     const variant = generateScore({
       seed,
       lengthTicks: PHASE_5_LENGTH_TICKS,
-      selectionModel: "phase10-section-local-planner",
+      selectionModel: "section-local-planner",
     });
 
     metrics.baselineTopEntryPatternFamilyCount +=

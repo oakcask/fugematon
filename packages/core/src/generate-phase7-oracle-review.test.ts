@@ -68,7 +68,7 @@ test("generateScore exposes phase-11 review summary signals", () => {
     const output = generateScore({
       seed,
       lengthTicks: PHASE_5_LENGTH_TICKS,
-      selectionModel: "phase10-section-local-planner",
+      selectionModel: "section-local-planner",
     });
     const summary = output.diagnostics.texturePlanningReview;
 

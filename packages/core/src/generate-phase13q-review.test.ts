@@ -7,7 +7,7 @@ test("generateScore links unresolved entry sentinels to selected entry context a
   const output = generateScore({
     seed: "modal-cadence",
     lengthTicks: PHASE_5_LENGTH_TICKS,
-    selectionModel: "phase10-section-local-planner",
+    selectionModel: "section-local-planner",
   });
   const unresolvedEntrySentinels = output.diagnostics.qualityVector.localSentinels.filter(
     (sentinel) => sentinel.kind === "unresolved-entry-severe-interval",
@@ -35,7 +35,7 @@ test("generateScore exposes phase-13Q quality-vector features in selected candid
   const output = generateScore({
     seed: "modal-cadence",
     lengthTicks: PHASE_5_LENGTH_TICKS,
-    selectionModel: "phase10-section-local-planner",
+    selectionModel: "section-local-planner",
   });
   const selected = output.diagnostics.selectedCandidateEvaluations.at(-1);
 

@@ -6,7 +6,7 @@ import {
 
 test("generateScore preserves phase-10 section-local planner compatibility across representative seeds", () => {
   assertPhase10CompletionCompatibility(
-    "phase10-section-local-planner",
+    "section-local-planner",
     PHASE10_COMPLETION_COMPATIBILITY_SEEDS.slice(0, 2),
   );
 });
