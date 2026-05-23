@@ -84,6 +84,8 @@ Phase 13X keeps the quality vector schema at version 4 and expands `entryBoundar
 
 Phase 13Y keeps the quality vector schema at version 4 and generalizes `entryBoundaryContinuity` to schema version 3. The review focus is entry voice, entry order, already-entered voices, prepared collective articulation, carried support, suspension/resolution, delayed support, staggered continuation, synchronized reset, and unsupported entry-local thinning.
 
+Phase 14 keeps the quality vector schema at version 4 and expands `entryBoundaryContinuity` to schema version 4. A first-bass or important-entry window with exactly one carried outside voice and two already-entered outside voices ending and re-articulating at the entry is classified separately as `one-voice-carry-with-outside-reset`. That evidence is review-required score-window acceptance evidence, not a hard CI blocker.
+
 ## Review Status
 
 `quality-review-required` は失敗ではありません。Phase 13 は review/adoption model の整備であり、selected output を直接変えません。Phase 13Q 以降の生成変更では、quality vector distance、local sentinel regression、reference profile、manual listening gap を合わせて A/B adoption を判断します。
