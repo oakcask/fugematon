@@ -1,5 +1,14 @@
 import { expect, test } from "@playwright/test";
 
+type AudioTestWindow = Window &
+  typeof globalThis & {
+    __audioTest: {
+      resolveResume: () => void;
+      startedOscillators: number;
+      stoppedOscillators: number;
+    };
+  };
+
 const VIEWPORTS = [
   { name: "desktop", size: { width: 1280, height: 900 } },
   { name: "mobile", size: { width: 390, height: 844 } },
@@ -83,4 +92,107 @@ test("syncs the seed with the URL query string", async ({ page }) => {
   await page.goBack();
   await expect(seedInput).toHaveValue("url-smoke");
   expect(new URL(page.url()).searchParams.get("seed")).toBe("url-smoke");
+});
+
+test("cancels pending playback before regenerating the score", async ({ page }) => {
+  await page.addInitScript(() => {
+    const testState = {
+      resumeResolvers: [] as Array<() => void>,
+      startedOscillators: 0,
+      stoppedOscillators: 0,
+      resolveResume(): void {
+        const resolvers = this.resumeResolvers.splice(0);
+        for (const resolve of resolvers) {
+          resolve();
+        }
+      },
+    };
+
+    class FakeAudioParam {
+      value = 0;
+
+      setValueAtTime(_value: number, _time: number): void {}
+
+      linearRampToValueAtTime(_value: number, _time: number): void {}
+    }
+
+    class FakeAudioNode {
+      connect<TNode>(node: TNode): TNode {
+        return node;
+      }
+
+      disconnect(): void {}
+    }
+
+    class FakeGainNode extends FakeAudioNode {
+      readonly gain = new FakeAudioParam();
+    }
+
+    class FakeStereoPannerNode extends FakeAudioNode {
+      readonly pan = new FakeAudioParam();
+    }
+
+    class FakeOscillatorNode extends FakeAudioNode {
+      readonly frequency = new FakeAudioParam();
+      type: OscillatorType = "sine";
+
+      start(_time?: number): void {
+        testState.startedOscillators += 1;
+      }
+
+      stop(_time?: number): void {
+        testState.stoppedOscillators += 1;
+      }
+
+      addEventListener(
+        _type: string,
+        _listener: EventListenerOrEventListenerObject,
+        _options?: AddEventListenerOptions,
+      ): void {}
+    }
+
+    class FakeAudioContext {
+      currentTime = 0;
+      readonly destination = new FakeAudioNode();
+
+      createGain(): GainNode {
+        return new FakeGainNode() as unknown as GainNode;
+      }
+
+      createOscillator(): OscillatorNode {
+        return new FakeOscillatorNode() as unknown as OscillatorNode;
+      }
+
+      createStereoPanner(): StereoPannerNode {
+        return new FakeStereoPannerNode() as unknown as StereoPannerNode;
+      }
+
+      resume(): Promise<void> {
+        return new Promise((resolve) => {
+          testState.resumeResolvers.push(resolve);
+        });
+      }
+    }
+
+    const target = window as AudioTestWindow;
+    target.__audioTest = testState;
+    target.AudioContext = FakeAudioContext as unknown as typeof AudioContext;
+  });
+
+  await page.goto("/");
+  await page.getByRole("button", { name: "Play score" }).click();
+  await expect(page.getByText("Starting playback")).toBeVisible();
+
+  const seedInput = page.getByLabel("Seed");
+  await seedInput.fill("mobile-regenerate");
+  await page.getByRole("button", { name: "Regenerate" }).click();
+  await expect(seedInput).toHaveValue("mobile-regenerate");
+  await expect(page.getByText("Ready to play")).toBeVisible();
+
+  await page.evaluate(() => (window as AudioTestWindow).__audioTest.resolveResume());
+  await page.waitForTimeout(50);
+
+  const scheduledNoteCount = await page.evaluate(() => (window as AudioTestWindow).__audioTest.startedOscillators);
+  expect(scheduledNoteCount).toBe(0);
+  await expect(page.getByText("Ready to play")).toBeVisible();
 });

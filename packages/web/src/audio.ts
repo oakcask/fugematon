@@ -9,6 +9,10 @@ export type ScheduledNote = {
   pan: number;
 };
 
+export type PlayOptions = {
+  signal?: AbortSignal;
+};
+
 const START_DELAY_SECONDS = 0.12;
 const MASTER_GAIN = 0.68;
 
@@ -43,16 +47,34 @@ export class ScorePlayer {
     this.master.connect(context.destination);
   }
 
-  async play(model: PlaybackModel): Promise<void> {
+  async play(model: PlaybackModel, options: PlayOptions = {}): Promise<boolean> {
+    if (options.signal?.aborted) {
+      return false;
+    }
+
     await this.context.resume();
+    if (options.signal?.aborted) {
+      return false;
+    }
+
     this.stop();
+    if (options.signal?.aborted) {
+      return false;
+    }
 
     const startAtSecond = this.context.currentTime + START_DELAY_SECONDS;
     this.startedAtSecond = startAtSecond;
     this.durationSecond = model.totalSeconds;
     for (const scheduled of createScheduledNotes(model, startAtSecond)) {
+      if (options.signal?.aborted) {
+        this.stop();
+        return false;
+      }
+
       this.scheduleOrganNote(scheduled);
     }
+
+    return true;
   }
 
   get playbackSecond(): number {
