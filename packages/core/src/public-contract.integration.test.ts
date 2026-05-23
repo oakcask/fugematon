@@ -2,10 +2,10 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import type { CandidateEvaluation, MetaEvent, NoteEvent, ScoreDimension } from "./index.js";
 import {
+  COUNTERPOINT_HARMONY_DIAGNOSTICS_PROFILE,
   DEFAULT_SELECTION_MODEL,
   GENERATOR_VERSION,
   generateScore,
-  PHASE_5_DIAGNOSTICS_PROFILE,
   REVIEW_LENGTH_TICKS,
   TICKS_PER_QUARTER,
   VOICES,
@@ -97,11 +97,17 @@ test("public diagnostics expose finite candidate score dimensions", () => {
     Object.hasOwn(selectedEvaluation.dimensions.form.features, "phase11StateGrammarMostRepeatedPatternCount"),
     false,
   );
-  assert.equal(output.diagnostics.rangeViolations, PHASE_5_DIAGNOSTICS_PROFILE.rangeViolations);
-  assert.equal(output.diagnostics.voiceCrossings, PHASE_5_DIAGNOSTICS_PROFILE.voiceCrossings);
-  assert.equal(output.diagnostics.subjectIdentityViolations, PHASE_5_DIAGNOSTICS_PROFILE.subjectIdentityViolations);
-  assert.equal(output.diagnostics.answerPlanViolations, PHASE_5_DIAGNOSTICS_PROFILE.answerPlanViolations);
-  assert.equal(output.diagnostics.keyMetadataMismatches, PHASE_5_DIAGNOSTICS_PROFILE.keyMetadataMismatches);
+  assert.equal(output.diagnostics.rangeViolations, COUNTERPOINT_HARMONY_DIAGNOSTICS_PROFILE.rangeViolations);
+  assert.equal(output.diagnostics.voiceCrossings, COUNTERPOINT_HARMONY_DIAGNOSTICS_PROFILE.voiceCrossings);
+  assert.equal(
+    output.diagnostics.subjectIdentityViolations,
+    COUNTERPOINT_HARMONY_DIAGNOSTICS_PROFILE.subjectIdentityViolations,
+  );
+  assert.equal(output.diagnostics.answerPlanViolations, COUNTERPOINT_HARMONY_DIAGNOSTICS_PROFILE.answerPlanViolations);
+  assert.equal(
+    output.diagnostics.keyMetadataMismatches,
+    COUNTERPOINT_HARMONY_DIAGNOSTICS_PROFILE.keyMetadataMismatches,
+  );
   assert.equal(output.diagnostics.stepwisePattern.degreePatternLength, 4);
   assert.ok(output.diagnostics.stepwisePattern.roles.length > 0);
   assert.ok(output.diagnostics.stepwisePattern.sections.length > 0);

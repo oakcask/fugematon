@@ -64,7 +64,7 @@ export function requireSelectedCandidateEvaluation(
   return selectedEvaluation;
 }
 
-export function assertPhase10CandidatePoolOracleShape(
+export function assertCandidatePoolOracleShape(
   oracle: ReturnType<typeof generateScore>["diagnostics"]["candidatePoolOracle"],
 ) {
   assert.equal(oracle.schemaVersion, 5);

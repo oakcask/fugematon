@@ -1325,7 +1325,7 @@ export function buildContinuationCandidates(
       ...buildSectionGrammarOracleCandidates(subject, keySignature, state, startTick, sectionDurationTicks),
     );
     phraseFamilyOracleCandidates.push(
-      ...buildPhase12PhraseFamilyOracleCandidates(subject, keySignature, state, startTick, sectionDurationTicks),
+      ...buildPhraseFamilyOracleCandidates(subject, keySignature, state, startTick, sectionDurationTicks),
     );
   }
 
@@ -1433,7 +1433,7 @@ function buildSectionGrammarOracleCandidates(
   return candidates;
 }
 
-function buildPhase12PhraseFamilyOracleCandidates(
+function buildPhraseFamilyOracleCandidates(
   subject: readonly SubjectNote[],
   keySignature: KeySignature,
   state: FugueState,

@@ -17,7 +17,7 @@ import type {
   VoicePairSpanSummary,
 } from "../events.js";
 
-const PHASE_14_ACCEPTANCE_WINDOW_LIMIT = 72;
+const SCORE_WINDOW_ACCEPTANCE_WINDOW_LIMIT = 72;
 const VOICE_NAMES = new Set<Voice>(["soprano", "alto", "tenor", "bass"]);
 
 export function buildScoreWindowAcceptanceSummary(
@@ -50,7 +50,7 @@ export function buildScoreWindowAcceptanceSummary(
     generatorResponseWindowCount: windows.filter((window) => window.response === "generator-response-required").length,
     acceptedContextWindowCount: windows.filter((window) => window.response === "accepted-context").length,
     diagnosticContextWindowCount: windows.filter((window) => window.response === "diagnostic-context").length,
-    windows: windows.slice(0, PHASE_14_ACCEPTANCE_WINDOW_LIMIT),
+    windows: windows.slice(0, SCORE_WINDOW_ACCEPTANCE_WINDOW_LIMIT),
   };
 }
 

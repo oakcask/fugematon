@@ -21,21 +21,21 @@ export const DEFAULT_GENERATION_PARAMETERS = {
 
 export const DEFAULT_SELECTION_MODEL = "section-local-planner" satisfies SelectionModel;
 
-export const PHASE_1_DIAGNOSTICS_PROFILE = {
+export const EXPOSITION_DIAGNOSTICS_PROFILE = {
   rangeViolations: 0,
   voiceCrossings: 0,
 } as const;
 
-export const PHASE_1_REPRESENTATIVE_SEEDS = [
+export const EXPOSITION_REPRESENTATIVE_SEEDS = [
   { seed: "bach-001", category: "fixed" },
   { seed: "fugue-smoke", category: "fixed" },
   { seed: "minor-entry", category: "boundary" },
   { seed: "wide-key", category: "boundary" },
 ] as const;
 
-export const PHASE_3_LENGTH_TICKS = TICKS_PER_QUARTER * 270;
+export const FUGUE_FORM_REVIEW_LENGTH_TICKS = TICKS_PER_QUARTER * 270;
 
-export const PHASE_3_DIAGNOSTICS_PROFILE = {
+export const FUGUE_FORM_DIAGNOSTICS_PROFILE = {
   rangeViolations: 0,
   voiceCrossings: 0,
   maxParallelPerfectsPerMinute: 12,
@@ -44,7 +44,7 @@ export const PHASE_3_DIAGNOSTICS_PROFILE = {
   maxGenerationMilliseconds: 1500,
 } as const;
 
-export const PHASE_3_REPRESENTATIVE_SEEDS = [
+export const FUGUE_FORM_REPRESENTATIVE_SEEDS = [
   { seed: "bach-001", category: "fixed" },
   { seed: "fugue-smoke", category: "fixed" },
   { seed: "minor-entry", category: "boundary" },
@@ -53,7 +53,7 @@ export const PHASE_3_REPRESENTATIVE_SEEDS = [
   { seed: "stretto-smoke", category: "fixed" },
 ] as const;
 
-export const PHASE_4_DIAGNOSTICS_PROFILE = {
+export const SUBJECT_ANSWER_PLAN_DIAGNOSTICS_PROFILE = {
   rangeViolations: 0,
   voiceCrossings: 0,
   subjectIdentityViolations: 0,
@@ -61,7 +61,7 @@ export const PHASE_4_DIAGNOSTICS_PROFILE = {
   keyMetadataMismatches: 0,
 } as const;
 
-export const PHASE_4_REPRESENTATIVE_SEEDS = PHASE_3_REPRESENTATIVE_SEEDS;
+export const SUBJECT_ANSWER_PLAN_REPRESENTATIVE_SEEDS = FUGUE_FORM_REPRESENTATIVE_SEEDS;
 
 export const REVIEW_LENGTH_TICKS = TICKS_PER_QUARTER * 270;
 
@@ -93,7 +93,7 @@ export const ROTATION_REVIEW_SEEDS = [
   { seed: "dense-modal", category: "adversarial" },
 ] as const;
 
-export const PHASE_5_DIAGNOSTICS_PROFILE = {
+export const COUNTERPOINT_HARMONY_DIAGNOSTICS_PROFILE = {
   rangeViolations: 0,
   voiceCrossings: 0,
   subjectIdentityViolations: 0,
@@ -119,7 +119,7 @@ export const PHASE_5_DIAGNOSTICS_PROFILE = {
   minStrettoClarityScore: 0.8,
 } as const;
 
-export const PHASE_5_6_DIAGNOSTICS_PROFILE = {
+export const BEAUTY_TEXTURE_DIAGNOSTICS_PROFILE = {
   minCounterSubjectIdentityRetention: 0.85,
   minCounterSubjectInvertibilityScore: 0.6,
   minFreeCounterpointContourScore: 0.5,
@@ -130,7 +130,7 @@ export const PHASE_5_6_DIAGNOSTICS_PROFILE = {
   minOrnamentDensity: 0.1,
 } as const;
 
-export const PHASE_5_7_DIAGNOSTICS_PROFILE = {
+export const MODAL_CONTEXT_DIAGNOSTICS_PROFILE = {
   minModalContextCount: 1,
   minModalCharacteristicToneHits: 1,
   minModalCadenceHits: 1,
