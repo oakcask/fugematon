@@ -6,12 +6,15 @@ Status: planned. Phase 8 is deferred until Phase 14 records score-window, diagno
 
 Planning reviews:
 
+* [Phase 14 post-entry texture and free-counterpoint phrase review](../reviews/phase-14-post-entry-texture-and-free-counterpoint-review.md): latest user-reported review of answer/stretto post-entry thinning and cross-seed free-counterpoint phrase convergence.
 * [Phase 14 beauty replan review](../reviews/phase-14-beauty-replan-2026-05.md): latest 22 seed + focused seed review and CI / review scope classification.
 * [Phase 14 score-led beauty review](../reviews/phase-14-score-led-beauty-review.md): initial score-led audit after Phase 13Z.
 
 ## Rationale
 
 The latest 22 seed review bundle plus `random-listen-check` and `seed-0zereox-1v729ih` shows that current metrics still fail to express musical beauty. The reference aggregate can be green while every inspected seed still has review-required pitch-class unison and duration lockstep. The refreshed bundle has 288 local sentinels, including 219 unresolved entry severe intervals and 69 long pitch-class unison spans, while all 22 bundle seeds remain Phase 7B ready. The first bass answer no longer has the old all-voice reset, but all 24 inspected first-bass windows still count as `continuity-supported` while two outside voices end and re-articulate at the entry. Counter-subject material often does not survive as an independent musical idea, and phrase recurrence still reads as continuation more often than development.
+
+A later user-reported review narrows two current blockers. The old literal bass-only first-answer collapse is still repaired, but answer and stretto-like entries are followed in 22 of 24 reviewed seeds by four to seven quarters where the entry line has at most one outside support voice. The same review confirms that free-counterpoint surface phrases reuse small six-eighth-note contour/duration signatures across 15-20 seeds. Phase 14C is therefore split so post-entry support continuity and free-counterpoint phrase vocabulary are repaired before broader line-agency, counter-subject, and phrase-development adoption evidence is trusted.
 
 A focused post-Phase 13Z inspection also shows an uneven passing-tone semitone-clash tradeoff. Phase 13Z remains complete because it repaired long-run phrase convergence, but Phase 14 must now treat the new local dissonance distribution as the first score-window risk: `contrary-motion` gained a clear weak-passing semitone-clash increase, `tight-stretto` gained broader passing/neighbor clashes and unresolved accented entry clashes, while `circle-fifths`, `modal-cadence`, and `dense-modal` improved or moved mixed signals.
 
@@ -32,10 +35,11 @@ The acceptance order is:
 * Replace metric-first adoption with score-window musical acceptance for entry, line-agency, counter-subject, and phrase-development changes.
 * Add a post-Phase 13Z regression triage before any new generator repair. It must compare representative, rotation, modal, and adversarial seeds for passing-tone semitone clashes, entry adjacent-second friction, and unresolved accented clashes.
 * Rebuild important-entry support so enough outside material carries, suspends, resolves, or staggers through the entry to create audible continuity; one carried voice is not automatically sufficient when other voices reset together.
+* Rebuild post-answer and post-stretto continuation support so the texture does not default to the entry line plus one support voice unless a cadence, pedal, exposed solo, or prepared two-part episode explains the thinning.
 * Rebuild passing/neighbor and offbeat support selection so weak dissonance is accepted only when it prepares, passes, neighbors, suspends, or resolves in the local voice-leading window.
 * Rebuild voice-pair and support-texture generation so independent rhythm, contour, register, contrary/oblique motion, and dissonance preparation are generated alternatives, not only diagnostics.
 * Make counter-subject survivability a generator objective across exposition, subject-return, episode, and stretto-like windows.
-* Link phrase recurrence to function-bearing development: contour change, inversion, sequence direction, cadence target, density arc, register transfer, voice assignment, and contrapuntal tension.
+* Link free-counterpoint and subject-material recurrence to function-bearing development: contour change, rhythm change, inversion, sequence direction, cadence target, density arc, register transfer, voice assignment, and contrapuntal tension.
 * Reclassify metrics that cannot explain representative score windows. Metrics that remain should point to seed, tick, voices, role, theory basis, and musical response.
 * Keep seed and metric scope classified under [CI and review scope](../reference/quality-metrics/ci-review-scope.md): uncertain beauty signals stay `review-required`, not PR CI blockers.
 * Use `organ-default` and `strict-counterpoint` focused listening notes as adoption evidence after score-window inspection.
@@ -53,8 +57,9 @@ The acceptance order is:
 * The Phase 13Z tradeoff is classified by seed and section before broader Phase 14 changes are adopted. At minimum, `contrary-motion`, `tight-stretto`, `circle-fifths`, `modal-cadence`, and `dense-modal` are checked for weak-passing semitone clashes, broader passing/neighbor semitone clashes, entry adjacent-second friction, and unresolved accented entry clashes.
 * The 22 seed review bundle no longer has universal review-required pitch-class unison and duration lockstep without a score-window explanation and a musical response.
 * Important entry windows show audible continuity: carried, suspended, resolving, staggered, or prepared collective articulation is visible in the score, and the review distinguishes one-voice carry from real contrapuntal continuity.
+* Answer and stretto-like post-entry windows no longer default to four-quarter-or-longer thin support with only one outside support voice unless the score-window function explains the thinning.
 * Counter-subject windows are preserved or transformed recognizably; "tradeoff" is not the default outcome.
-* Subject-return, episode, and stretto-like recurrence is accepted only when the repeated material changes musical function or developmental pressure.
+* Free-counterpoint and subject-material recurrence are accepted only when the repeated material changes musical function, surface rhythm/contour, or developmental pressure.
 * Reference aggregate and Phase 7B policy output are documented as safety/context signals, not as top-level beauty acceptance. Quality vector axes remain review inputs unless the score window confirms the musical symptom and response.
 * The review records CI / review scope for every seed or metric addition, removal, promotion, demotion, or archival decision.
 * Focused `organ-default` and `strict-counterpoint` listening notes include repaired entry windows, line-agency windows, counter-subject survival windows, and long-run phrase-development windows.
@@ -83,7 +88,19 @@ Implementation note: entry-local dissonance review now treats stepwise resolutio
 
 Implementation note: weak/offbeat free-counterpoint note creation now prefers a nearby chord-tone support pitch when a post-entry weak/offbeat support note would create an unexplained semitone clash. This reduces the focused seed set from 24,240 to 21,360 weak-passing semitone clash ticks and from 90,240 to 85,440 passing/neighbor/offbeat semitone clash ticks while keeping the unresolved accented entry-clash ceiling at 9. See the [Phase 14 weak-dissonance generation review](../reviews/phase-14-weak-dissonance-generation.md). Remaining weak/offbeat semitone windows and candidate scoring pressure stay open for later line-agency and counter-subject-aware work.
 
-### 14C: Line-agency, counter-subject, and phrase-development generation
+### 14C0: Post-entry support-continuity generation
+
+Generalize the first-bass-answer tail repair into post-answer and post-stretto continuation windows. Add review output that distinguishes literal one-voice texture, entry-line-plus-one-support texture, prepared two-part episode, cadential thinning, pedal, suspension, and exposed solo rhetoric. Generation should prefer at least two independent outside supports, staggered continuation, suspension/resolution, or delayed re-entry after important imitation unless the section function explains thinning.
+
+This now precedes broader line-agency work because the latest user-reported review found 22 of 24 seeds with four-to-seven-quarter thin-support windows after answer or stretto-like entries, even though the old bass-only first-answer collapse remains repaired.
+
+### 14C1: Free-counterpoint phrase-vocabulary generation
+
+Add a free-counterpoint phrase-signature review surface for short contour, rhythm, metrical-intent, voice, section-state, and cadence-function formulas. Rebuild free-counterpoint phrase construction so repeated six-eighth-note formulas are not the default across unrelated seeds; alternatives should vary rhythm, contour, local register, voice assignment, sequence direction, cadence approach, and relation to active subject or counter-subject material.
+
+This workstream must preserve the Phase 14B dissonance response: phrase vocabulary novelty may not select unprepared semitone friction or counter-subject collisions as a cheap source of variety.
+
+### 14C2: Line-agency, counter-subject, and phrase-development generation
 
 Add independent rhythmic and contour alternatives after the dissonance triage is stable. Make counter-subject preservation and transformation selectable objectives. Rebuild phrase-development selection so recurrence must show changed role, register, cadence target, contour, density, or contrapuntal pressure, not only a changed state label. Do not let phrase novelty rewards select windows that increase unprepared semitone friction. The generator should improve line agency before phrase-development rewards are trusted, because a novel phrase over block-like support is still weak fugue writing.
 
