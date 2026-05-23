@@ -31,6 +31,7 @@
 | `severeEntryIntervalCount` | entry 周辺の m2、M2、m7、M7 など聴感上目立つ interval。 | count だけでなく duration と解決文脈を見る。 |
 | `unresolvedSevereEntryIntervalCount` | severe interval が resolution deadline までに説明されない箇所。 | entry harmony の主要 review signal。Phase 13 以降は duration axis も見る。 |
 | `entryBoundaryContinuity` | subject / answer entry 境界で、外声が同時に再発音しているか、delayed / carried support があるかを読む summary。 | Phase 13X は初回 bass entry と post-exposition bass entry を分ける。Phase 13Y 以降は entry voice、entry order、already-entered voices で一般化し、Phase 14 以降は 1 声 carry + 2 外声 reset を score-window acceptance から分ける。playback smoothing ではなく score continuity で説明する。 |
+| `phase14DissonanceTriage` | Phase 13Z 後の weak-passing / passing-neighbor / offbeat semitone clash と entry adjacent-second / unresolved accented clash を score-window 単位で読む summary。 | Phase 14A0 の review-required evidence。Seed、section、voice、role、intent へ戻して読み、単独の CI blocker にはしない。 |
 
 ## Melody And Texture
 
@@ -65,3 +66,4 @@
 | `phase13QReview` | Phase 13 local sentinel を selected candidate explanation の section、entry、voice pair、resolution deadline へ戻す review-only bridge。 |
 | `phase13RReview` | Phase 13R の per-score convergence review signal。Seed 横断の主題語彙崩壊は bundle-level `subjectFamilyDiversity` と合わせて読む。 |
 | `phase13ZReview` | Phase 13Z の windowed phrase-development review signal。Remaining mechanical-reuse windows は Phase 14 の score-led beauty review に渡す。 |
+| `phase14DissonanceTriage` | Phase 14A0 の focused dissonance tradeoff summary。weak-passing semitone clash ticks、passing-neighbor/offbeat semitone clash ticks、entry adjacent-second friction count、unresolved accented entry clash count、代表 score-window を持つ。 |

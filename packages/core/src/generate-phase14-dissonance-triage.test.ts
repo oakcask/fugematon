@@ -25,6 +25,12 @@ test("Phase 14 dissonance triage seeds keep entry and weak-dissonance evidence o
 
     return {
       seed,
+      phase14WeakPassingSemitoneClashTicks: diagnostics.phase14DissonanceTriage.weakPassingSemitoneClashTicks,
+      phase14PassingNeighborOffbeatSemitoneClashTicks:
+        diagnostics.phase14DissonanceTriage.passingNeighborOffbeatSemitoneClashTicks,
+      phase14EntryAdjacentSecondFrictionCount: diagnostics.phase14DissonanceTriage.entryAdjacentSecondFrictionCount,
+      phase14UnresolvedAccentedEntryClashCount: diagnostics.phase14DissonanceTriage.unresolvedAccentedEntryClashCount,
+      phase14WindowCount: diagnostics.phase14DissonanceTriage.windows.length,
       entryAdjacentSecondFriction,
       unresolvedAccentedEntryClashes,
       weakBeatNonChordToneIntentCount: diagnostics.phase11Review.metricalHarmony.weakBeatNonChordToneIntentCount,
@@ -43,6 +49,19 @@ test("Phase 14 dissonance triage seeds keep entry and weak-dissonance evidence o
   );
   assert.ok(
     summaries.some((summary) => summary.weakBeatUnresolvedNonChordToneCount > 0),
+    JSON.stringify(summaries, null, 2),
+  );
+  assert.ok(
+    summaries.every(
+      (summary) =>
+        summary.phase14EntryAdjacentSecondFrictionCount === summary.entryAdjacentSecondFriction &&
+        summary.phase14UnresolvedAccentedEntryClashCount === summary.unresolvedAccentedEntryClashes &&
+        summary.phase14PassingNeighborOffbeatSemitoneClashTicks >= summary.phase14WeakPassingSemitoneClashTicks,
+    ),
+    JSON.stringify(summaries, null, 2),
+  );
+  assert.ok(
+    summaries.some((summary) => summary.phase14WindowCount > 0),
     JSON.stringify(summaries, null, 2),
   );
 });

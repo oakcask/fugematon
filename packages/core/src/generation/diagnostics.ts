@@ -17,6 +17,7 @@ import type {
   Phase12PhraseFunction,
   Phase12ReviewSummary,
   Phase13QualityVector,
+  Phase14DissonanceTriageSummary,
   PitchContourMotionSummary,
   PitchContourWindowSummary,
   PlannedEntry,
@@ -30,6 +31,7 @@ import { analyzeEntryBoundaryContinuity } from "./entry-boundary-continuity.js";
 import { chordTonePitchClasses, nearestHarmonicAnchor, rootDegreeForFunction } from "./harmony.js";
 import { analyzeHarmonicPlans } from "./harmony-diagnostics.js";
 import { isModalMode, tonicPitchClass } from "./key.js";
+import { analyzePhase14DissonanceTriage } from "./phase14-dissonance-triage.js";
 import { scaleDegreePitchClass } from "./pitch.js";
 import { analyzePhase13QualityVector } from "./quality-vector.js";
 import {
@@ -83,6 +85,7 @@ export function analyzeScore(
   entryBoundaryContinuity: EntryBoundaryContinuitySummary;
   bassAnswerTailTexture: BassAnswerTailTextureSummary;
   qualityVector: Phase13QualityVector;
+  phase14DissonanceTriage: Phase14DissonanceTriageSummary;
   ornamentCandidateCount: number;
   ornamentDensity: number;
   ornamentPlacementReasons: OrnamentPlacementReasons;
@@ -261,6 +264,7 @@ function analyzeTextureDiagnostics(
   const supportNoteCount = Math.max(1, supportNotes.length);
   const entrySupportInstabilityDetails = analyzeEntrySupportInstabilities(notes, subjectEntries);
   const entrySupportSevereIntervalDetails = analyzeEntrySupportSevereIntervals(notes, subjectEntries);
+  const qualityVector = analyzePhase13QualityVector(notes, subjectEntries, sectionPlans);
 
   return {
     counterSubjectIdentityRetention: counterSubjectIdentityRetention(counterSubjectNotes, sectionPlans),
@@ -299,7 +303,8 @@ function analyzeTextureDiagnostics(
     phase12Review: analyzePhase12ReviewSummary(subjectEntries, sectionPlans),
     entryBoundaryContinuity: analyzeEntryBoundaryContinuity(notes, subjectEntries),
     bassAnswerTailTexture: analyzeBassAnswerTailTexture(notes, subjectEntries),
-    qualityVector: analyzePhase13QualityVector(notes, subjectEntries, sectionPlans),
+    qualityVector,
+    phase14DissonanceTriage: analyzePhase14DissonanceTriage(notes, sectionPlans, qualityVector.entrySonorities),
     ornamentCandidateCount,
     ornamentDensity: roundRatio(ornamentCandidateCount / supportNoteCount),
     ornamentPlacementReasons: analyzeOrnamentPlacementReasons(notes, subjectEntries, sectionPlans),

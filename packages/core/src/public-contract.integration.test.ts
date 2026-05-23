@@ -132,6 +132,10 @@ test("public diagnostics expose finite candidate score dimensions", () => {
   assert.equal(typeof output.diagnostics.phase13ZReview.reviewRequired, "boolean");
   assert.equal(typeof output.diagnostics.phase13ZReview.mechanicalReuseWindowCount, "number");
   assert.ok(Array.isArray(output.diagnostics.phase13ZReview.windows));
+  assert.equal(output.diagnostics.phase14DissonanceTriage.schemaVersion, 1);
+  assert.equal(typeof output.diagnostics.phase14DissonanceTriage.weakPassingSemitoneClashTicks, "number");
+  assert.equal(typeof output.diagnostics.phase14DissonanceTriage.entryAdjacentSecondFrictionCount, "number");
+  assert.ok(Array.isArray(output.diagnostics.phase14DissonanceTriage.windows));
   assert.equal(output.diagnostics.lowerVoiceVocality.schemaVersion, 1);
   assert.ok(output.diagnostics.lowerVoiceVocality.score >= 0);
   assert.ok(output.diagnostics.lowerVoiceVocality.score <= 1);
