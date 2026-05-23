@@ -130,6 +130,7 @@ writeUrlSeed(state.seed, "replace");
 
 let player: ScorePlayer | undefined;
 let animationFrame: number | undefined;
+let playbackStartController: AbortController | undefined;
 
 seedForm.addEventListener("submit", (event) => {
   event.preventDefault();
@@ -145,8 +146,7 @@ startButton.addEventListener("click", () => {
 });
 
 stopButton.addEventListener("click", () => {
-  player?.stop();
-  cancelVisualizerLoop();
+  cancelPlayback();
   drawPianoRoll(pianoRoll, state.model, 0);
   renderPlaybackPosition(0);
   transportStatus.textContent = "Playback stopped";
@@ -170,8 +170,7 @@ function regenerateScore(seed: string, urlUpdateMode: UrlUpdateMode = "push"): v
   }
 
   seedInput.value = nextSeed;
-  player?.stop();
-  cancelVisualizerLoop();
+  cancelPlayback();
   state = createState(nextSeed, performanceProfileSelect.value as PerformanceProfileId);
   render(state);
   drawPianoRoll(pianoRoll, state.model, 0);
@@ -246,20 +245,42 @@ function renderPlaybackPosition(playbackSecond: number): void {
 }
 
 async function startPlayback(): Promise<void> {
+  const controller = new AbortController();
+  playbackStartController?.abort();
+  playbackStartController = controller;
   startButton.disabled = true;
   transportStatus.textContent = "Starting playback";
   renderPlaybackPosition(0);
 
   try {
     player ??= new ScorePlayer();
-    await player.play(state.model);
+    const started = await player.play(state.model, { signal: controller.signal });
+    if (!started || controller.signal.aborted) {
+      return;
+    }
+
     transportStatus.textContent = "Playing score";
     startVisualizerLoop();
   } catch (error) {
-    transportStatus.textContent = error instanceof Error ? error.message : "Playback failed";
+    if (!controller.signal.aborted) {
+      transportStatus.textContent = error instanceof Error ? error.message : "Playback failed";
+    }
   } finally {
-    startButton.disabled = false;
+    if (playbackStartController === controller) {
+      playbackStartController = undefined;
+    }
+    if (playbackStartController === undefined) {
+      startButton.disabled = false;
+    }
   }
+}
+
+function cancelPlayback(): void {
+  playbackStartController?.abort();
+  playbackStartController = undefined;
+  startButton.disabled = false;
+  player?.stop();
+  cancelVisualizerLoop();
 }
 
 function startVisualizerLoop(): void {
