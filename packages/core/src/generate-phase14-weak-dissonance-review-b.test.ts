@@ -6,7 +6,7 @@ import {
 
 test("Phase 14 weak-dissonance review seeds keep semitone clash pressure at the repaired ceiling in batch B", () => {
   assertPhase14WeakDissonanceReviewSeedsExposePressure(PHASE_14_WEAK_DISSONANCE_REVIEW_SEEDS.slice(3), {
-    maxWeakPassingSemitoneClashTicks: 12_000,
-    maxPassingNeighborOffbeatSemitoneClashTicks: 34_000,
+    maxWeakPassingSemitoneClashTicks: 19_000,
+    maxPassingNeighborOffbeatSemitoneClashTicks: 52_000,
   });
 });

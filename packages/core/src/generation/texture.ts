@@ -65,6 +65,8 @@ type TextureNotePattern = {
   harmonicPlan?: HarmonicPlan;
   metricalHarmonyIntent?: MetricalHarmonyIntent;
   counterSubjectSupportRepair?: boolean;
+  freeCounterpointPhraseVariation?: boolean;
+  strictSemitoneAvoidance?: boolean;
 };
 
 export function addCounterpointTexture(
@@ -137,6 +139,7 @@ function addEntryFreeCounterpoint(
       role: "free-counterpoint",
       harmonicPlan: entry.harmonicPlan,
       counterSubjectSupportRepair: entry.counterSubjectSupportRepair,
+      freeCounterpointPhraseVariation: entry.counterSubjectSupportRepair,
     });
   }
 }
@@ -325,6 +328,8 @@ export function addPatternCounterpoint(
     role: NoteEvent["role"];
     harmonicPlan?: HarmonicPlan;
     counterSubjectSupportRepair?: boolean;
+    freeCounterpointPhraseVariation?: boolean;
+    strictSemitoneAvoidance?: boolean;
   },
 ): void {
   let elapsedTicks = 0;
@@ -339,20 +344,48 @@ export function addPatternCounterpoint(
 
     const degree = pattern.degrees[index % pattern.degrees.length]!;
     if (pattern.role === "free-counterpoint" && durationTicks >= TICKS_PER_QUARTER) {
-      const firstDurationTicks = Math.floor(durationTicks / 2);
-      addTextureNote(notes, pattern, degree, startTick, firstDurationTicks);
-      addTextureNote(
-        notes,
-        pattern,
-        pattern.degrees[(index + 1) % pattern.degrees.length]!,
-        startTick + firstDurationTicks,
-        durationTicks - firstDurationTicks,
-      );
+      addFreeCounterpointPatternNote(notes, pattern, index, degree, startTick, durationTicks);
     } else {
       addTextureNote(notes, pattern, degree, startTick, durationTicks);
     }
     elapsedTicks += subjectNote.durationTicks;
   }
+}
+
+function addFreeCounterpointPatternNote(
+  notes: Exposition["notes"],
+  pattern: Parameters<typeof addPatternCounterpoint>[2],
+  index: number,
+  degree: number,
+  startTick: number,
+  durationTicks: number,
+): void {
+  const variant = freeCounterpointPhraseVariant(pattern, index);
+  if (variant === 1 || variant === 3) {
+    addTextureNote(notes, pattern, degree, startTick, durationTicks);
+    return;
+  }
+
+  const firstDurationTicks = Math.floor(durationTicks / 2);
+  addTextureNote(notes, pattern, degree, startTick, firstDurationTicks);
+  addTextureNote(
+    notes,
+    pattern,
+    pattern.degrees[(index + 1) % pattern.degrees.length]!,
+    startTick + firstDurationTicks,
+    durationTicks - firstDurationTicks,
+  );
+}
+
+function freeCounterpointPhraseVariant(pattern: Parameters<typeof addPatternCounterpoint>[2], index: number): number {
+  if (pattern.freeCounterpointPhraseVariation !== true) {
+    return 0;
+  }
+
+  const voiceOffset = VOICE_ENTRY_ORDER.indexOf(pattern.voice);
+  const stateOffset =
+    pattern.harmonicPlan?.state === "stretto-like" ? 3 : pattern.harmonicPlan?.state === "subject-return" ? 2 : 1;
+  return positiveModulo(Math.floor(pattern.startTick / TICKS_PER_QUARTER) + index + voiceOffset + stateOffset, 4);
 }
 
 export function addTextureNote(
@@ -403,8 +436,8 @@ function weakDissonanceSafePitch(
   if (
     pattern.role !== "free-counterpoint" ||
     pattern.harmonicPlan === undefined ||
-    startTick < pattern.harmonicPlan.startTick + TICKS_PER_QUARTER * 6 ||
-    startTick % (TICKS_PER_QUARTER * 2) === 0 ||
+    (pattern.strictSemitoneAvoidance !== true && startTick < pattern.harmonicPlan.startTick + TICKS_PER_QUARTER * 6) ||
+    (pattern.strictSemitoneAvoidance !== true && startTick % (TICKS_PER_QUARTER * 2) === 0) ||
     !createsSemitoneAtTick(notes, pattern.voice, startTick, pitch)
   ) {
     return pitch;
@@ -932,6 +965,37 @@ export function addBassAnswerTailTextureSupport(
       rootDegree: anchor === undefined ? 0 : rootDegreeForFunction(anchor.function),
       startTick: run.startTick,
       durationTicks: run.endTick - run.startTick,
+      strictSemitoneAvoidance: true,
+    });
+  }
+
+  repairTextureVoiceCrossings(
+    notes,
+    Math.min(...sectionPlans.map((plan) => plan.startTick)),
+    Math.max(...sectionPlans.map((plan) => plan.startTick + plan.durationTicks)),
+  );
+}
+
+export function addPostEntryContinuationSupport(
+  notes: Exposition["notes"],
+  subjectEntries: readonly PlannedEntry[],
+  sectionPlans: readonly HarmonicPlan[],
+): void {
+  for (const run of findPostEntryThinSupportRuns(notes, subjectEntries)) {
+    const plan = sectionPlanForTick(sectionPlans, run.startTick);
+    const supportVoice = postEntrySupportVoice(notes, run);
+    if (plan === undefined || supportVoice === undefined) {
+      continue;
+    }
+
+    const anchor = nearestHarmonicAnchor(run.startTick, [plan]);
+    addFunctionalSupportLine(notes, {
+      voice: supportVoice,
+      localKey: plan.targetKey,
+      harmonicPlan: plan,
+      rootDegree: anchor === undefined ? 0 : rootDegreeForFunction(anchor.function),
+      startTick: run.startTick,
+      durationTicks: run.endTick - run.startTick,
     });
   }
 
@@ -951,6 +1015,7 @@ function addFunctionalSupportLine(
     rootDegree: number;
     startTick: number;
     durationTicks: number;
+    strictSemitoneAvoidance?: boolean;
   },
 ): void {
   const lineDegrees = functionalSupportLineDegrees(input.voice, input.rootDegree);
@@ -971,6 +1036,7 @@ function addFunctionalSupportLine(
         harmonicPlan: input.harmonicPlan,
         metricalHarmonyIntent:
           input.voice === "bass" && degree === input.rootDegree ? "structural-root-support" : "structural-chord-tone",
+        strictSemitoneAvoidance: input.strictSemitoneAvoidance,
       },
       degree,
       input.startTick + elapsedTicks,
@@ -1071,6 +1137,71 @@ function findBassAnswerTailSupportRuns(
   return runs;
 }
 
+function findPostEntryThinSupportRuns(
+  notes: readonly NoteEvent[],
+  subjectEntries: readonly PlannedEntry[],
+): { startTick: number; endTick: number; entryVoice: Voice }[] {
+  const runs: { startTick: number; endTick: number; entryVoice: Voice }[] = [];
+
+  for (const entry of subjectEntries) {
+    if (entry.form !== "answer" && entry.state !== "stretto-like") {
+      continue;
+    }
+    runs.push(...postEntryThinSupportRunsForEntry(notes, entry));
+  }
+
+  return runs;
+}
+
+function postEntryThinSupportRunsForEntry(
+  notes: readonly NoteEvent[],
+  entry: PlannedEntry,
+): { startTick: number; endTick: number; entryVoice: Voice }[] {
+  const scanStartTick = entry.startTick + TICKS_PER_QUARTER * 2;
+  const scanEndTick = scanStartTick + TICKS_PER_QUARTER * 8;
+  const stepTicks = TICKS_PER_QUARTER / 2;
+  const runs: { startTick: number; endTick: number; entryVoice: Voice }[] = [];
+  let currentRun: { startTick: number; endTick: number; entryVoice: Voice } | undefined;
+
+  for (let tick = scanStartTick; tick < scanEndTick; tick += stepTicks) {
+    const segmentEndTick = Math.min(scanEndTick, tick + stepTicks);
+    if (isThinPostEntrySupportSegment(notes, entry.voice, tick, segmentEndTick)) {
+      if (currentRun?.endTick === tick) {
+        currentRun.endTick = segmentEndTick;
+      } else {
+        if (currentRun !== undefined) {
+          runs.push(currentRun);
+        }
+        currentRun = { startTick: tick, endTick: segmentEndTick, entryVoice: entry.voice };
+      }
+    } else if (currentRun !== undefined) {
+      runs.push(currentRun);
+      currentRun = undefined;
+    }
+  }
+  if (currentRun !== undefined) {
+    runs.push(currentRun);
+  }
+
+  return runs.filter((run) => run.endTick - run.startTick >= TICKS_PER_QUARTER * 4);
+}
+
+function isThinPostEntrySupportSegment(
+  notes: readonly NoteEvent[],
+  entryVoice: Voice,
+  startTick: number,
+  endTick: number,
+): boolean {
+  const activeNotes = notes.filter(
+    (note) => note.startTick < endTick && startTick < note.startTick + note.durationTicks,
+  );
+  const entryVoiceActive = activeNotes.some((note) => note.voice === entryVoice);
+  const outsideVoiceCount = new Set(activeNotes.filter((note) => note.voice !== entryVoice).map((note) => note.voice))
+    .size;
+
+  return entryVoiceActive && outsideVoiceCount <= 1;
+}
+
 function isBassOnlyFreeCounterpointSegment(notes: readonly NoteEvent[], startTick: number, endTick: number): boolean {
   const activeNotes = notes.filter(
     (note) => note.startTick < endTick && startTick < note.startTick + note.durationTicks,
@@ -1149,6 +1280,15 @@ function functionalSupportVoice(
 
 function tailSupportVoice(notes: readonly NoteEvent[], run: { startTick: number; endTick: number }): Voice | undefined {
   return (["soprano", "alto", "tenor"] as const).find(
+    (voice) => !hasOverlap(notes, voice, run.startTick, run.endTick - run.startTick),
+  );
+}
+
+function postEntrySupportVoice(
+  notes: readonly NoteEvent[],
+  run: { startTick: number; endTick: number; entryVoice: Voice },
+): Voice | undefined {
+  return VOICE_ENTRY_ORDER.filter((voice) => voice !== run.entryVoice).find(
     (voice) => !hasOverlap(notes, voice, run.startTick, run.endTick - run.startTick),
   );
 }

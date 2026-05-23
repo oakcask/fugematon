@@ -4,8 +4,8 @@
 
 ## Current Lane
 
-* [Phase 14](phase-14.md): 現在の実装対象。指標が譜面上の美しさを証明していない問題を、score-window musical acceptance と音楽美の acceptance ladder を先に置く beauty trunk として扱い、entry continuity、post-entry support thinning、free-counterpoint phrase vocabulary、line agency、counter-subject survivability、phrase development、metric truthfulness / CI scope cleanup を再編する。
-* [Phase 8](phase-8.md): Phase 14 後の operational lane。無限再生セッション、境界設計、内部状態 visualizer の MVP を扱う。
+* [Phase 8](phase-8.md): 現在の実装対象。Phase 14 の review-required tradeoff を見える状態に保ちながら、無限再生セッション、境界設計、内部状態 visualizer の MVP を扱う。
+* [Phase 14](phase-14.md): 完了済みの Phase 8 handoff baseline。指標が譜面上の美しさを証明していない問題を、score-window musical acceptance と音楽美の acceptance ladder を先に置く beauty trunk として扱い、entry continuity、post-entry support thinning、free-counterpoint phrase vocabulary、line agency、counter-subject survivability、phrase development、metric truthfulness / CI scope cleanup を再編した。
 * [Phase 9](phase-9.md): Phase 8 後の Worker 化、生成期限、fallback、長時間 visualizer stability。
 
 ## Quality Lane
@@ -41,7 +41,7 @@
 
 ## Review Links
 
-* 現在の実装対象を見る場合は [Phase 14](phase-14.md)、[../reviews/phase-14-post-entry-texture-and-free-counterpoint-review.md](../reviews/phase-14-post-entry-texture-and-free-counterpoint-review.md)、[../reviews/phase-14-beauty-replan-2026-05.md](../reviews/phase-14-beauty-replan-2026-05.md)、[../reviews/phase-14-score-led-beauty-review.md](../reviews/phase-14-score-led-beauty-review.md) を読む。
+* 現在の実装対象を見る場合は [Phase 8](phase-8.md) を読む。直前の Phase 14 handoff baseline は [Phase 14](phase-14.md)、[../reviews/phase-14-post-entry-phrase-generation.md](../reviews/phase-14-post-entry-phrase-generation.md)、[../reviews/phase-14-post-entry-texture-and-free-counterpoint-review.md](../reviews/phase-14-post-entry-texture-and-free-counterpoint-review.md)、[../reviews/phase-14-beauty-replan-2026-05.md](../reviews/phase-14-beauty-replan-2026-05.md)、[../reviews/phase-14-score-led-beauty-review.md](../reviews/phase-14-score-led-beauty-review.md) を読む。
 * Phase 13Z の完了 evidence は [Phase 13Z](phase-13z.md) と [../reviews/phase-13z-completion-review.md](../reviews/phase-13z-completion-review.md)、計画根拠は [../reviews/phase-13z-long-run-phrase-review.md](../reviews/phase-13z-long-run-phrase-review.md) を読む。
 * 直前の Phase 13Y 完了 evidence は [Phase 13Y](phase-13y.md) と [../reviews/phase-13y-completion-review.md](../reviews/phase-13y-completion-review.md)、計画根拠は [../reviews/phase-13y-entry-continuity-generalization.md](../reviews/phase-13y-entry-continuity-generalization.md) を読む。
 * Phase 10 の完了条件、採用条件、review evidence、残る listening gap を見る場合は [Phase 10](phase-10.md) を読む。

@@ -13,23 +13,18 @@ const PHASE_14_POST_ENTRY_PHRASE_REVIEW_SEEDS = [
 
 const scoreCache = new Map<string, GenerationOutput>();
 
-test("Phase 14 post-entry review seeds expose thin support pressure before repair", () => {
+test("Phase 14 post-entry review seeds stay clear of long thin support windows after repair", () => {
   const summaries = PHASE_14_POST_ENTRY_PHRASE_REVIEW_SEEDS.map((seed) => ({
     seed,
     windows: collectThinPostEntrySupportWindows(scoreForSeed(seed)),
   }));
-  const windowCount = summaries.reduce((sum, summary) => sum + summary.windows.length, 0);
-  const affectedSeedCount = summaries.filter((summary) => summary.windows.length > 0).length;
-  const longestWindowQuarters = Math.max(
-    ...summaries.flatMap((summary) => summary.windows.map((window) => window.maxThinSupportTicks / TICKS_PER_QUARTER)),
+  assert.ok(
+    summaries.every((summary) => summary.windows.length === 0),
+    JSON.stringify(summaries, null, 2),
   );
-
-  assert.ok(windowCount >= 8, JSON.stringify(summaries, null, 2));
-  assert.equal(affectedSeedCount, PHASE_14_POST_ENTRY_PHRASE_REVIEW_SEEDS.length, JSON.stringify(summaries, null, 2));
-  assert.ok(longestWindowQuarters >= 4, JSON.stringify(summaries, null, 2));
 });
 
-test("Phase 14 free-counterpoint review seeds expose repeated surface phrase signatures before repair", () => {
+test("Phase 14 free-counterpoint review seeds keep repeated surface phrase signatures below the repaired ceiling", () => {
   const signatureCounts = new Map<string, number>();
   const signatureSeeds = new Map<string, Set<string>>();
 
@@ -49,7 +44,7 @@ test("Phase 14 free-counterpoint review seeds expose repeated surface phrase sig
     .sort((left, right) => right.count - left.count);
 
   assert.ok(repeatedSignatures.length >= 5, JSON.stringify(repeatedSignatures.slice(0, 10), null, 2));
-  assert.ok(repeatedSignatures[0]?.count !== undefined && repeatedSignatures[0].count >= 70);
+  assert.ok(repeatedSignatures[0]?.count !== undefined && repeatedSignatures[0].count <= 55);
 });
 
 function scoreForSeed(seed: string): GenerationOutput {
