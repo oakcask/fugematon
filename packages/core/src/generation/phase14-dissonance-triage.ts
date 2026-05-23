@@ -6,8 +6,8 @@ import type {
   Phase13TEntrySonoritySummary,
   Phase14DissonanceTriageSummary,
   Phase14DissonanceTriageWindow,
-  Voice,
 } from "../events.js";
+import { phase14SectionStateAt, phase14VoicePairs } from "./phase14-score-window-shared.js";
 import { positiveModulo, VOICE_ENTRY_ORDER } from "./shared.js";
 import type { ActivePitch } from "./types.js";
 import { halfBeatVerticalities } from "./verticality.js";
@@ -55,10 +55,10 @@ function summarizeSemitoneClashWindows(
       return [];
     }
 
-    const state = sectionStateAt(tick, sectionPlans);
+    const state = phase14SectionStateAt(tick, sectionPlans);
     const windows: Phase14DissonanceTriageWindow[] = [];
     const activeVoices = VOICE_ENTRY_ORDER.filter((voice) => active.has(voice));
-    for (const [leftVoice, rightVoice] of voicePairs(activeVoices)) {
+    for (const [leftVoice, rightVoice] of phase14VoicePairs(activeVoices)) {
       const left = active.get(leftVoice);
       const right = active.get(rightVoice);
       if (left === undefined || right === undefined || !isSemitoneClash(left, right)) {
@@ -124,25 +124,4 @@ function summarizeEntrySonorityWindows(
 function isSemitoneClash(left: ActivePitch, right: ActivePitch): boolean {
   const interval = positiveModulo(left.pitch - right.pitch, 12);
   return interval === 1 || interval === 11;
-}
-
-function sectionStateAt(tick: number, sectionPlans: readonly HarmonicPlan[]): HarmonicPlan["state"] | "mixed" {
-  return (
-    sectionPlans.find((section) => section.startTick <= tick && tick < section.startTick + section.durationTicks)
-      ?.state ?? "mixed"
-  );
-}
-
-function voicePairs(voices: readonly Voice[]): [Voice, Voice][] {
-  const pairs: [Voice, Voice][] = [];
-  for (let leftIndex = 0; leftIndex < voices.length; leftIndex += 1) {
-    for (let rightIndex = leftIndex + 1; rightIndex < voices.length; rightIndex += 1) {
-      const left = voices[leftIndex];
-      const right = voices[rightIndex];
-      if (left !== undefined && right !== undefined) {
-        pairs.push([left, right]);
-      }
-    }
-  }
-  return pairs;
 }
