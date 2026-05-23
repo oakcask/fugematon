@@ -15,11 +15,11 @@ test("generateScore keeps phase-12 phrase family candidates traceable when selec
     const oracle = output.diagnostics.candidatePoolOracle;
 
     assert.equal(oracle.schemaVersion, 5);
-    assert.ok(oracle.phase12PhraseFamilyCandidateCount > 0);
-    assert.ok(oracle.candidateCount > oracle.phase12PhraseFamilyCandidateCount);
+    assert.ok(oracle.phraseFamilyCandidateCount > 0);
+    assert.ok(oracle.candidateCount > oracle.phraseFamilyCandidateCount);
 
     for (const blocker of oracle.blockerClassifications) {
-      assert.ok(blocker.representative.phase12PhraseFamilyCandidateCount > 0);
+      assert.ok(blocker.representative.phraseFamilyCandidateCount > 0);
       assert.ok(blocker.representative.selectedCandidateIndex < blocker.representative.candidateCount);
     }
   }

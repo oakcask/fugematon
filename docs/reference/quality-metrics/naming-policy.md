@@ -31,7 +31,7 @@ Current な metric、gate、review surface は、導入された Phase ではな
 
 ## Candidate Evaluation Feature Keys
 
-Candidate evaluation feature keys follow the same rule: current keys name the musical risk, not the Phase that introduced the diagnostic. Historical feature keys may remain as compatibility aliases while public JSON consumers migrate.
+Candidate evaluation feature keys follow the same rule: current keys name the musical risk, not the Phase that introduced the diagnostic. Historical feature keys are listed here as migration history; current generated candidate evaluations emit only the current keys.
 
 | Historical feature key | Current feature key | Meaning |
 | --- | --- | --- |
@@ -46,6 +46,12 @@ Candidate evaluation feature keys follow the same rule: current keys name the mu
 | `phase11StateGrammarUniquePatternCount` | `stateGrammarUniquePatternCount` | Unique section-state pattern count. |
 | `phase11TopEntryPatternFamilyCount` | `topEntryPatternFamilyCount` | Largest entry-pattern family count. |
 
+## Candidate Pool Oracle Keys
+
+| Historical field | Current field | Meaning |
+| --- | --- | --- |
+| `phase12PhraseFamilyCandidateCount` | `phraseFamilyCandidateCount` | Phrase-family candidate count in candidate-pool oracle section and summary evidence. |
+
 ## Selection Model Values
 
 Selection model values also use current names in CLI help, generated diagnostics, review bundles, and new tests. Legacy values remain accepted as input aliases during the compatibility window.
@@ -57,4 +63,4 @@ Selection model values also use current names in CLI help, generated diagnostics
 
 ## Compatibility
 
-The next implementation slices should expose current names first and keep historical names as aliases until the relevant public contract has a documented schema transition. New code should read the current names. Compatibility aliases should not introduce separate computation paths.
+Current code should read and emit the current names. Compatibility aliases should not introduce separate computation paths, and once a schema transition removes an alias, tests should assert that the historical key is absent from current output.

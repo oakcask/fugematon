@@ -43,16 +43,16 @@ const EVALUATION_WEIGHTS = {
     expositionEntryStagger: 10,
     bassUpperContraryMotion: 1,
     outerVoiceContraryMotion: 1,
-    phase13VLineAgency: 2,
-    phase13VEntryFormulaNovelty: 3,
-    phase13WEntryBoundaryReset: 0,
+    lineAgency: 2,
+    entryFormulaNovelty: 3,
+    entryBoundaryReset: 0,
   },
   subjectClarity: {
     subjectIdentityViolation: 10_000,
     answerPlanViolation: 1_000,
     counterSubjectIdentityRetention: 30,
     modalCounterSubjectIdentitySelection: 20,
-    phase13VCounterSubjectSurvivability: 0,
+    counterSubjectSurvivability: 0,
   },
   harmony: {
     entryInstability: 1,
@@ -76,7 +76,7 @@ const EVALUATION_WEIGHTS = {
     formRepetition: 50,
     episodeDirection: 10,
     strettoClarity: 10,
-    phase13VLongWindowDevelopment: 2,
+    longWindowDevelopment: 2,
   },
 } as const;
 
@@ -152,12 +152,12 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
     diagnostics.unisonOverlapCount * EVALUATION_WEIGHTS.texture.voiceIndependenceSelectionUnisonOverlap +
     diagnostics.sharedRhythmOverlapCount * EVALUATION_WEIGHTS.texture.voiceIndependenceSelectionSharedRhythmOverlap;
   const voicePairLockstepSelectionCost = scoreVoicePairLockstepRisk(riskContexts, diagnostics.modalContextCount);
-  const phase13VLineAgencyCost =
+  const lineAgencyCost =
     diagnostics.qualityVector.scoreBeautyEvidence.lineAgency.reinforcingSpanCount +
     diagnostics.qualityVector.scoreBeautyEvidence.lineAgency.reviewRequiredSpanCount * 2;
-  const phase13VEntryFormulaNoveltyCost =
+  const entryFormulaNoveltyCost =
     diagnostics.qualityVector.scoreBeautyEvidence.entryFormulaNovelty.reviewRequiredFormulaCount;
-  const phase13WEntryBoundaryResetCost = diagnostics.entryBoundaryContinuity.synchronizedResetCount;
+  const entryBoundaryResetCost = diagnostics.entryBoundaryContinuity.synchronizedResetCount;
   const texture = {
     cost:
       diagnostics.samePitchOverlapCount * EVALUATION_WEIGHTS.texture.samePitchOverlap +
@@ -172,9 +172,9 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
         EVALUATION_WEIGHTS.texture.fourBeatOuterVoiceSameDirection +
       diagnostics.sharedRhythmOverlapCount * EVALUATION_WEIGHTS.texture.sharedRhythmOverlap +
       diagnostics.allVoiceSilenceGapCount * EVALUATION_WEIGHTS.texture.allVoiceSilenceGap +
-      phase13VLineAgencyCost * EVALUATION_WEIGHTS.texture.phase13VLineAgency +
-      phase13VEntryFormulaNoveltyCost * EVALUATION_WEIGHTS.texture.phase13VEntryFormulaNovelty +
-      phase13WEntryBoundaryResetCost * EVALUATION_WEIGHTS.texture.phase13WEntryBoundaryReset,
+      lineAgencyCost * EVALUATION_WEIGHTS.texture.lineAgency +
+      entryFormulaNoveltyCost * EVALUATION_WEIGHTS.texture.entryFormulaNovelty +
+      entryBoundaryResetCost * EVALUATION_WEIGHTS.texture.entryBoundaryReset,
     reward:
       diagnostics.rhythmicIndependenceScore * EVALUATION_WEIGHTS.texture.rhythmicIndependence +
       diagnostics.supportTextureRepetitionScore * EVALUATION_WEIGHTS.texture.supportTextureRepetition +
@@ -209,9 +209,9 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
       selectedVoicePairLockstepSelectionCost: voicePairLockstepSelectionCost,
       qualityVectorPitchClassUnisonDuration: qualityVectorAxisValue(diagnostics, "pitchClassUnisonDuration"),
       qualityVectorDurationBasedLockstep: qualityVectorAxisValue(diagnostics, "durationBasedLockstep"),
-      phase13VLineAgencyCost,
-      phase13VEntryFormulaNoveltyCost,
-      phase13WEntryBoundaryResetCost,
+      lineAgencyCost,
+      entryFormulaNoveltyCost,
+      entryBoundaryResetCost,
       shortStrongBeatEntryNoteCount: diagnostics.shortStrongBeatEntryNoteCount,
       entrySupportInstabilityCount: diagnostics.entrySupportInstabilityCount,
       allVoiceSilenceGapCount: diagnostics.allVoiceSilenceGapCount,
@@ -232,24 +232,6 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
       twoVoiceFunctionalThinningRunCount: diagnostics.texturePlanningReview.functionalThinning.twoVoiceRunCount,
       functionalThinningMaxDurationQuarters:
         diagnostics.texturePlanningReview.functionalThinning.maxDurationTicks / TICKS_PER_QUARTER,
-      phase11AdjacentVoiceOverOctaveCount: diagnostics.texturePlanningReview.adjacentVoiceIntervals.reduce(
-        (sum, interval) => sum + interval.overOctaveCount,
-        0,
-      ),
-      phase11AdjacentVoiceWideP75SemitoneExcess: diagnostics.texturePlanningReview.adjacentVoiceIntervals.reduce(
-        (sum, interval) => sum + Math.max(0, interval.seventyFifthPercentileSemitones - 12),
-        0,
-      ),
-      phase11RegisterSpanSemitoneTotal: diagnostics.texturePlanningReview.registerSpans.reduce(
-        (sum, span) => sum + span.spanSemitones,
-        0,
-      ),
-      phase11FunctionalThinningNonCadentialRunCount:
-        diagnostics.texturePlanningReview.functionalThinning.nonCadentialRunCount,
-      phase11FunctionalThinningOneVoiceRunCount: diagnostics.texturePlanningReview.functionalThinning.oneVoiceRunCount,
-      phase11FunctionalThinningTwoVoiceRunCount: diagnostics.texturePlanningReview.functionalThinning.twoVoiceRunCount,
-      phase11FunctionalThinningMaxDurationQuarters:
-        diagnostics.texturePlanningReview.functionalThinning.maxDurationTicks / TICKS_PER_QUARTER,
     },
   };
   const subjectClarity = {
@@ -257,9 +239,9 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
       diagnostics.subjectIdentityViolations * EVALUATION_WEIGHTS.subjectClarity.subjectIdentityViolation +
       diagnostics.answerPlanViolations * EVALUATION_WEIGHTS.subjectClarity.answerPlanViolation +
       diagnostics.qualityVector.scoreBeautyEvidence.counterSubjectSurvivability.tradeoffWindowCount *
-        EVALUATION_WEIGHTS.subjectClarity.phase13VCounterSubjectSurvivability +
+        EVALUATION_WEIGHTS.subjectClarity.counterSubjectSurvivability +
       diagnostics.qualityVector.scoreBeautyEvidence.counterSubjectSurvivability.weakWindowCount *
-        EVALUATION_WEIGHTS.subjectClarity.phase13VCounterSubjectSurvivability *
+        EVALUATION_WEIGHTS.subjectClarity.counterSubjectSurvivability *
         2,
     reward:
       diagnostics.counterSubjectIdentityRetention * EVALUATION_WEIGHTS.subjectClarity.counterSubjectIdentityRetention +
@@ -275,9 +257,9 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
         diagnostics.counterSubjectIdentityRetention,
         diagnostics.modalContextCount,
       ),
-      phase13VCounterSubjectTradeoffWindowCount:
+      counterSubjectTradeoffWindowCount:
         diagnostics.qualityVector.scoreBeautyEvidence.counterSubjectSurvivability.tradeoffWindowCount,
-      phase13VCounterSubjectWeakWindowCount:
+      counterSubjectWeakWindowCount:
         diagnostics.qualityVector.scoreBeautyEvidence.counterSubjectSurvivability.weakWindowCount,
     },
   };
@@ -348,10 +330,10 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
     cost:
       diagnostics.formRepetitionWarnings * EVALUATION_WEIGHTS.form.formRepetition +
       diagnostics.qualityVector.scoreBeautyEvidence.longWindowDevelopment.reviewRequiredClaimCount *
-        EVALUATION_WEIGHTS.form.phase13VLongWindowDevelopment +
+        EVALUATION_WEIGHTS.form.longWindowDevelopment +
       Math.max(0, diagnostics.qualityVector.scoreBeautyEvidence.longWindowDevelopment.topFunctionShare - 0.34) *
         100 *
-        EVALUATION_WEIGHTS.form.phase13VLongWindowDevelopment,
+        EVALUATION_WEIGHTS.form.longWindowDevelopment,
     reward:
       diagnostics.episodeDirectionScore * EVALUATION_WEIGHTS.form.episodeDirection +
       diagnostics.strettoClarityScore * EVALUATION_WEIGHTS.form.strettoClarity,
@@ -363,14 +345,9 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
         diagnostics.texturePlanningReview.stateGrammarRepetition.mostRepeatedPatternCount,
       stateGrammarUniquePatternCount: diagnostics.texturePlanningReview.stateGrammarRepetition.uniquePatternCount,
       topEntryPatternFamilyCount: diagnostics.texturePlanningReview.entryPatternFamilies[0]?.count ?? 0,
-      phase11StateGrammarMostRepeatedPatternCount:
-        diagnostics.texturePlanningReview.stateGrammarRepetition.mostRepeatedPatternCount,
-      phase11StateGrammarUniquePatternCount:
-        diagnostics.texturePlanningReview.stateGrammarRepetition.uniquePatternCount,
-      phase11TopEntryPatternFamilyCount: diagnostics.texturePlanningReview.entryPatternFamilies[0]?.count ?? 0,
-      phase13VLongWindowReviewRequiredClaimCount:
+      longWindowReviewRequiredClaimCount:
         diagnostics.qualityVector.scoreBeautyEvidence.longWindowDevelopment.reviewRequiredClaimCount,
-      phase13VLongWindowTopFunctionShare:
+      longWindowTopFunctionShare:
         diagnostics.qualityVector.scoreBeautyEvidence.longWindowDevelopment.topFunctionShare,
     },
   };

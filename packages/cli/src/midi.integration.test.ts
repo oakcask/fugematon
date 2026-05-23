@@ -251,7 +251,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
             schemaVersion: number;
             sectionCount: number;
             candidateCount: number;
-            phase12PhraseFamilyCandidateCount: number;
+            phraseFamilyCandidateCount: number;
             viableCandidateCount: number;
             hardFailureRejectedCandidateCount: number;
             blockerClassifications: {
@@ -272,7 +272,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
               representative: {
                 state: string;
                 candidateCount: number;
-                phase12PhraseFamilyCandidateCount: number;
+                phraseFamilyCandidateCount: number;
                 viableCandidateCount: number;
                 selectedRisk: number;
                 bestViableRisk: number;
@@ -659,7 +659,7 @@ test("review command writes diagnostics and MIDI files for phase-5 seeds", async
         entry.diagnosticsSummary.candidatePoolOracle.candidateCount >=
           entry.diagnosticsSummary.candidatePoolOracle.sectionCount,
       );
-      assert.ok(entry.diagnosticsSummary.candidatePoolOracle.phase12PhraseFamilyCandidateCount >= 0);
+      assert.ok(entry.diagnosticsSummary.candidatePoolOracle.phraseFamilyCandidateCount >= 0);
       assert.ok(entry.diagnosticsSummary.candidatePoolOracle.viableCandidateCount >= 0);
       assert.ok(entry.diagnosticsSummary.candidatePoolOracle.hardFailureRejectedCandidateCount >= 0);
       assert.ok(entry.diagnosticsSummary.candidatePoolOracle.blockerClassifications.length >= 0);

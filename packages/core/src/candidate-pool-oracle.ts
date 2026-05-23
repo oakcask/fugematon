@@ -26,7 +26,7 @@ type CandidatePoolOracleSection = {
   startTick: number;
   durationTicks: number;
   candidateCount: number;
-  phase12PhraseFamilyCandidateCount: number;
+  phraseFamilyCandidateCount: number;
   selectedCandidateIndex: number;
   viableCandidateCount: number;
   hardFailureRejectedCandidateCount: number;
@@ -161,7 +161,7 @@ export function classifyCandidatePoolOracleSection(input: {
   evaluations: readonly CandidateEvaluation[];
   selectedCandidateIndex: number;
   candidateDiversityDescriptors?: readonly CandidateDiversityDescriptor[];
-  phase12PhraseFamilyCandidateCount?: number;
+  phraseFamilyCandidateCount?: number;
   stateHistory?: readonly FugueState[];
   referenceProfile?: ReferenceDiagnosticsProfile;
 }): CandidatePoolOracleSection {
@@ -182,7 +182,7 @@ export function classifyCandidatePoolOracleSection(input: {
     startTick: input.startTick,
     durationTicks: input.durationTicks,
     candidateCount: input.evaluations.length,
-    phase12PhraseFamilyCandidateCount: input.phase12PhraseFamilyCandidateCount ?? 0,
+    phraseFamilyCandidateCount: input.phraseFamilyCandidateCount ?? 0,
     selectedCandidateIndex: input.selectedCandidateIndex,
     viableCandidateCount: viable.filter(Boolean).length,
     hardFailureRejectedCandidateCount,
@@ -194,7 +194,7 @@ export function classifyCandidatePoolOracleSection(input: {
     blockers: BLOCKER_SPECS.flatMap((spec) => {
       const selectedRisk = roundOracleRisk(
         spec.selectedRisk(selected, context) +
-          phase11SectionGrammarHistoryRisk(spec.blocker, context.stateHistory, candidateSectionState(selected)),
+          sectionGrammarHistoryRisk(spec.blocker, context.stateHistory, candidateSectionState(selected)),
       );
       if (selectedRisk <= 0) {
         return [];
@@ -205,7 +205,7 @@ export function classifyCandidatePoolOracleSection(input: {
           viable[index]
             ? roundOracleRisk(
                 spec.selectedRisk(evaluation, context) +
-                  phase11SectionGrammarHistoryRisk(
+                  sectionGrammarHistoryRisk(
                     spec.blocker,
                     context.stateHistory,
                     candidateSectionState(evaluation),
@@ -290,8 +290,8 @@ export function summarizeCandidatePoolOracleSections(
     schemaVersion: 5,
     sectionCount: sections.length,
     candidateCount: sections.reduce((sum, section) => sum + section.candidateCount, 0),
-    phase12PhraseFamilyCandidateCount: sections.reduce(
-      (sum, section) => sum + section.phase12PhraseFamilyCandidateCount,
+    phraseFamilyCandidateCount: sections.reduce(
+      (sum, section) => sum + section.phraseFamilyCandidateCount,
       0,
     ),
     viableCandidateCount: sections.reduce((sum, section) => sum + section.viableCandidateCount, 0),
@@ -446,7 +446,7 @@ function chooseRepresentative(
     startTick: best.section.startTick,
     durationTicks: best.section.durationTicks,
     candidateCount: best.section.candidateCount,
-    phase12PhraseFamilyCandidateCount: best.section.phase12PhraseFamilyCandidateCount,
+    phraseFamilyCandidateCount: best.section.phraseFamilyCandidateCount,
     selectedCandidateIndex: best.section.selectedCandidateIndex,
     viableCandidateCount: best.section.viableCandidateCount,
     hardFailureRejectedCandidateCount: best.section.hardFailureRejectedCandidateCount,
@@ -457,7 +457,7 @@ function chooseRepresentative(
   };
 }
 
-function phase11SectionGrammarHistoryRisk(
+function sectionGrammarHistoryRisk(
   blocker: CandidatePoolOracleBlocker,
   stateHistory: readonly FugueState[],
   candidateState: FugueState | undefined,

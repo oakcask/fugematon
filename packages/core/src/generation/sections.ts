@@ -742,7 +742,7 @@ export function chooseContinuationSection(
       evaluations,
       selectedCandidateIndex: bestIndex,
       candidateDiversityDescriptors: candidates.map(describeCandidateDiversity),
-      phase12PhraseFamilyCandidateCount:
+      phraseFamilyCandidateCount:
         selectionModel === "section-local-planner"
           ? candidates.length - selectionWindow.phraseFamilyCandidateStart
           : 0,
@@ -890,9 +890,9 @@ function continuationCandidateSelectionWindow(
 
   return {
     baselineCandidateCount: baselineContinuationCandidateCount(state),
-    selectableCandidateCount: phase10SelectableContinuationCandidateCount(state),
-    sectionGrammarCandidateStart: phase10SectionGrammarCandidateStartIndex(state),
-    phraseFamilyCandidateStart: phase12PhraseFamilyCandidateStartIndex(state),
+    selectableCandidateCount: selectableContinuationCandidateCount(state),
+    sectionGrammarCandidateStart: sectionGrammarCandidateStartIndex(state),
+    phraseFamilyCandidateStart: phraseFamilyCandidateStartIndex(state),
   };
 }
 
@@ -950,7 +950,7 @@ function baselineContinuationCandidateCount(state: FugueState): number {
   return VOICE_ENTRY_ORDER.length * (VOICE_ENTRY_ORDER.length - 1);
 }
 
-function phase10SelectableContinuationCandidateCount(state: FugueState): number {
+function selectableContinuationCandidateCount(state: FugueState): number {
   if (state === "stretto-like") {
     return baselineContinuationCandidateCount(state);
   }
@@ -958,7 +958,7 @@ function phase10SelectableContinuationCandidateCount(state: FugueState): number 
   return baselineContinuationCandidateCount(state) * 3;
 }
 
-function phase10SectionGrammarCandidateStartIndex(state: FugueState): number {
+function sectionGrammarCandidateStartIndex(state: FugueState): number {
   if (state === "stretto-like") {
     return baselineContinuationCandidateCount(state);
   }
@@ -966,8 +966,8 @@ function phase10SectionGrammarCandidateStartIndex(state: FugueState): number {
   return baselineContinuationCandidateCount(state) * 4;
 }
 
-function phase12PhraseFamilyCandidateStartIndex(state: FugueState): number {
-  return phase10SectionGrammarCandidateStartIndex(state) + 4;
+function phraseFamilyCandidateStartIndex(state: FugueState): number {
+  return sectionGrammarCandidateStartIndex(state) + 4;
 }
 
 function selectionScore(evaluation: CandidateEvaluation, selectionModel: SelectionModel): number {
@@ -977,12 +977,12 @@ function selectionScore(evaluation: CandidateEvaluation, selectionModel: Selecti
 
   return (
     evaluation.totalCost +
-    phase10OracleSelectionRiskAdjustment(evaluation) +
+    candidateOracleSelectionRiskAdjustment(evaluation) +
     sectionLocalPlannerSelectionRiskAdjustment(evaluation, selectionModel)
   );
 }
 
-function phase10OracleSelectionRiskAdjustment(evaluation: CandidateEvaluation): number {
+function candidateOracleSelectionRiskAdjustment(evaluation: CandidateEvaluation): number {
   if (evaluation.hardFailures.length > 0) {
     return 0;
   }

@@ -70,7 +70,7 @@ export function assertPhase10CandidatePoolOracleShape(
   assert.equal(oracle.schemaVersion, 5);
   assert.ok(oracle.sectionCount > 0);
   assert.ok(oracle.candidateCount >= oracle.sectionCount);
-  assert.ok(oracle.phase12PhraseFamilyCandidateCount >= 0);
+  assert.ok(oracle.phraseFamilyCandidateCount >= 0);
   assert.ok(oracle.viableCandidateCount >= 0);
   assert.ok(oracle.hardFailureRejectedCandidateCount >= 0);
   assert.ok(oracle.blockerClassifications.length > 0);
