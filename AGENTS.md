@@ -7,7 +7,8 @@
 - Treat gitignored files the same way: do not quote, copy, summarize, or expose their contents unless explicitly requested and sanitized.
 - Avoid absolute local paths, usernames, hostnames, machine names, local repository locations, private tokens, email addresses, and other personally identifying details.
 - Use generic placeholders or relative paths when such information is necessary for explanation.
-- When running git subcommands that may open an editor, set `GIT_EDITOR=/bin/true` unless interactive editor behavior is explicitly requested.
+- Set `GIT_EDITOR=/bin/true` only for git command forms that may open an editor, unless interactive editor behavior is explicitly requested.
+- Examples that may need it: `git commit` without `-m` or `-F`, `git commit --amend` without `--no-edit`, `-m`, or `-F`, `git rebase -i`, `git rebase --continue`, `git merge` or `git merge --continue` when a merge commit message may be edited, `git revert` without `--no-edit`, and `git tag -a` or `git tag -s` without `-m` or `-F`.
 - Keep `AGENTS.md` as a short entry point. Move task-specific procedures, commands, checklists, and troubleshooting into skills, leaving only always-on rules or skill links here.
 
 ## Project Context
