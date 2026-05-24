@@ -6,6 +6,7 @@ import type {
   EntryBoundaryContinuityWindow,
   HarmonicContinuitySummary,
   HarmonicContinuityWindow,
+  HarmonicSonorityWindow,
   MetricExplanationSummary,
   PhraseDevelopmentJudgement,
   PhraseDevelopmentReviewSummary,
@@ -35,6 +36,7 @@ export function buildScoreWindowAcceptanceSummary(
   const windows = [
     ...importantEntryWindows.map(scoreWindowFromEntryContinuity),
     ...harmonicContinuity.windows.map(scoreWindowFromHarmonicContinuity),
+    ...qualityVector.harmonicSonorities.windows.map(scoreWindowFromHarmonicSonority),
     ...dissonanceTriage.windows.map(scoreWindowFromDissonance),
     ...qualityVector.voicePairSpans.map(scoreWindowFromVoicePairSpan),
     ...qualityVector.counterSubjectWindows.map(scoreWindowFromCounterSubject),
@@ -46,6 +48,7 @@ export function buildScoreWindowAcceptanceSummary(
     schemaVersion: 1,
     importantEntryWindowCount: importantEntryWindows.length,
     harmonicContinuityWindowCount: harmonicContinuity.windows.length,
+    harmonicSonorityWindowCount: qualityVector.harmonicSonorities.windows.length,
     dissonanceWindowCount: dissonanceTriage.windows.length,
     activeVoicePairSpanCount: qualityVector.voicePairSpans.length,
     counterSubjectWindowCount: qualityVector.counterSubjectWindows.length,
@@ -90,6 +93,21 @@ function scoreWindowFromHarmonicContinuity(window: HarmonicContinuityWindow): Sc
       window.classification === "audible-progression"
         ? "short pivot episode has enough bass-root and chord-tone support to carry the planned progression"
         : "short pivot episode does not yet make the planned harmonic path audible",
+    theoryBasis: "harmony",
+    response: window.response,
+  };
+}
+
+function scoreWindowFromHarmonicSonority(window: HarmonicSonorityWindow): ScoreWindowAcceptanceWindow {
+  return {
+    kind: "harmonic-sonority",
+    startTick: window.startTick,
+    durationTicks: window.durationTicks,
+    state: window.state,
+    voices: window.voices,
+    roles: window.roles,
+    classification: window.classification,
+    symptom: window.symptom,
     theoryBasis: "harmony",
     response: window.response,
   };

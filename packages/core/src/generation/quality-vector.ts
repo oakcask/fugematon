@@ -1,4 +1,5 @@
 import type { HarmonicPlan, NoteEvent, PlannedEntry, QualityVector } from "../events.js";
+import { analyzeHarmonicSonorities } from "./harmonic-sonority-review.js";
 import {
   summarizeEntryFormulaRecurrences,
   summarizeEntrySevereIntervalDurations,
@@ -35,6 +36,7 @@ export function analyzeQualityVector(
   const entryFormulaRecurrences = summarizeEntryFormulaRecurrences(entrySonorities);
   const fragmentFunctionEvidence = summarizeFragmentFunctionEvidence(sectionPlans);
   const counterSubjectWindows = summarizeCounterSubjectWindows(notes, subjectEntries);
+  const harmonicSonorities = analyzeHarmonicSonorities(notes, sectionPlans);
   const localSentinels = summarizeLocalSentinels(
     voicePairUnisons,
     voicePairSpans,
@@ -50,8 +52,8 @@ export function analyzeQualityVector(
   });
 
   return {
-    schemaVersion: 4,
-    modelVersion: 4,
+    schemaVersion: 5,
+    modelVersion: 5,
     axes: summarizeAxes(voicePairUnisons, sopranoRepeatedNotePressure, entrySevereIntervals),
     voicePairUnisons,
     voicePairFunctions,
@@ -62,6 +64,7 @@ export function analyzeQualityVector(
     entryFormulaRecurrences,
     fragmentFunctionEvidence,
     counterSubjectWindows,
+    harmonicSonorities,
     metricExplanations: summarizeMetricExplanations(
       voicePairUnisons,
       voicePairFunctions,

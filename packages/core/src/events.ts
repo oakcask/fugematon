@@ -820,6 +820,43 @@ export type CounterSubjectWindowSummary = {
   preservationJudgement: "preserved" | "tradeoff" | "weak";
 };
 
+export type HarmonicSonorityClassification =
+  | "thin-unrooted-support"
+  | "pitch-class-doubling-only"
+  | "non-chord-structural-support";
+
+export type HarmonicSonorityWindow = {
+  startTick: number;
+  durationTicks: number;
+  state: FugueState | "mixed";
+  localKey: KeySignature;
+  harmonicFunction: HarmonicFunction;
+  voices: Voice[];
+  roles: NoteRole[];
+  pitchClasses: number[];
+  chordTonePitchClasses: number[];
+  nonChordPitchClasses: number[];
+  rootPresent: boolean;
+  completeTriad: boolean;
+  activeVoiceCount: number;
+  structuralIntentMismatchCount: number;
+  pitchClassUnisonStackCount: number;
+  classification: HarmonicSonorityClassification;
+  symptom: string;
+  response: "review-required" | "generator-response-required";
+};
+
+export type HarmonicSonorityReviewSummary = {
+  schemaVersion: 1;
+  focusedWindowCount: number;
+  reviewRequiredWindowCount: number;
+  generatorResponseWindowCount: number;
+  thinUnrootedWindowCount: number;
+  pitchClassDoublingWindowCount: number;
+  nonChordStructuralWindowCount: number;
+  windows: HarmonicSonorityWindow[];
+};
+
 export type VoicePairSpanClassification =
   | "mechanical-coupling"
   | "pitch-class-reinforcement"
@@ -969,8 +1006,8 @@ export type LocalSentinelSummary = {
 };
 
 export type QualityVector = {
-  schemaVersion: 4;
-  modelVersion: 4;
+  schemaVersion: 5;
+  modelVersion: 5;
   axes: QualityVectorAxisSummary[];
   voicePairUnisons: VoicePairUnisonSummary[];
   voicePairFunctions: VoicePairFunctionSummary[];
@@ -981,6 +1018,7 @@ export type QualityVector = {
   entryFormulaRecurrences: EntryFormulaRecurrenceSummary[];
   fragmentFunctionEvidence: FragmentFunctionEvidenceSummary;
   counterSubjectWindows: CounterSubjectWindowSummary[];
+  harmonicSonorities: HarmonicSonorityReviewSummary;
   metricExplanations: MetricExplanationSummary[];
   scoreBeautyEvidence: ScoreBeautyEvidenceSummary;
   localSentinels: LocalSentinelSummary[];
@@ -1119,6 +1157,7 @@ export type HarmonicContinuitySummary = {
 export type ScoreWindowAcceptanceKind =
   | "important-entry-continuity"
   | "harmonic-continuity"
+  | "harmonic-sonority"
   | "dissonance-triage"
   | "active-voice-pair-span"
   | "counter-subject-survival"
@@ -1149,6 +1188,7 @@ export type ScoreWindowAcceptanceSummary = {
   schemaVersion: 1;
   importantEntryWindowCount: number;
   harmonicContinuityWindowCount: number;
+  harmonicSonorityWindowCount: number;
   dissonanceWindowCount: number;
   activeVoicePairSpanCount: number;
   counterSubjectWindowCount: number;

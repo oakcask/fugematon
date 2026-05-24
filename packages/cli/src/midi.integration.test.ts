@@ -380,6 +380,11 @@ test("review command writes diagnostics and MIDI files for review seeds", async 
               transformationClaims: { functionKey: string; judgement: string }[];
             };
             counterSubjectWindows: { entryStartTick: number; retentionKind: string }[];
+            harmonicSonorities: {
+              schemaVersion: number;
+              focusedWindowCount: number;
+              windows: { startTick: number; classification: string; response: string }[];
+            };
             metricExplanations: { axis: string; symptom: string; classification: string }[];
             scoreBeautyEvidence: {
               schemaVersion: number;
@@ -511,7 +516,7 @@ test("review command writes diagnostics and MIDI files for review seeds", async 
       ),
     );
     assert.equal(summary.qualityProfileComparison.schemaVersion, 1);
-    assert.equal(summary.qualityProfileComparison.modelVersion, 4);
+    assert.equal(summary.qualityProfileComparison.modelVersion, 5);
     assert.equal(summary.qualityProfileComparison.seedCount, summary.seeds.length);
     assert.ok(summary.qualityProfileComparison.axes.length >= 8);
     assert.ok(summary.qualityProfileComparison.localSentinelCount >= 0);
@@ -707,8 +712,8 @@ test("review command writes diagnostics and MIDI files for review seeds", async 
           (finding) => finding.code === "legacy-default-selection-model",
         ),
       );
-      assert.equal(entry.diagnosticsSummary.qualityVector.schemaVersion, 4);
-      assert.equal(entry.diagnosticsSummary.qualityVector.modelVersion, 4);
+      assert.equal(entry.diagnosticsSummary.qualityVector.schemaVersion, 5);
+      assert.equal(entry.diagnosticsSummary.qualityVector.modelVersion, 5);
       assert.ok(entry.diagnosticsSummary.qualityVector.axes.length >= 8);
       assert.equal(entry.diagnosticsSummary.qualityVector.voicePairUnisons.length, 6);
       assert.equal(entry.diagnosticsSummary.qualityVector.voicePairFunctions.length, 6);
@@ -719,6 +724,8 @@ test("review command writes diagnostics and MIDI files for review seeds", async 
       assert.ok(entry.diagnosticsSummary.qualityVector.entrySonorities.length > 0);
       assert.ok(entry.diagnosticsSummary.qualityVector.entryFormulaRecurrences.length >= 0);
       assert.ok(entry.diagnosticsSummary.qualityVector.counterSubjectWindows.length > 0);
+      assert.equal(entry.diagnosticsSummary.qualityVector.harmonicSonorities.schemaVersion, 1);
+      assert.ok(entry.diagnosticsSummary.qualityVector.harmonicSonorities.focusedWindowCount >= 0);
       assert.ok(entry.diagnosticsSummary.qualityVector.metricExplanations.length >= 3);
       assert.deepEqual(
         entry.diagnosticsSummary.qualityVector.scoreBeautyEvidence,
