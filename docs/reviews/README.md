@@ -4,6 +4,7 @@
 
 ## Read First
 
+* [Historical reference observation](historical-reference-observation.md): 探索的 Bach WTC diagnostics と現行生成 bundle の比較。persistent voice-pair coupling、pitch-class reinforcement、entry severe-interval pressure を、Infinite playback MVP 前の Historical reference calibration へ再編する根拠。
 * [Texture continuity repair completion review](texture-continuity-repair-completion.md): Texture continuity repair の完了 evidence。focused seed set の bass-answer tail、exposed free-counterpoint solo、tradeoff signal、CI / review scope、Phase 8 handoff。
 * [Texture continuity replan](texture-continuity-replan.md): `seed-0i335vx-1n54a1x` の5小節目、9小節目、28小節目で確認した bass-answer tail one-outside support、exposed free-counterpoint solo、退屈な solo formula を、Infinite playback MVP 前の Texture continuity repair へ再編する根拠。
 * [Metrical generation repair completion review](metrical-generation-repair-completion.md): Metrical generation repair の完了 evidence。3/4 focused seeds、6/8 compound-meter seeds、4/4 controls の score-window / diagnostics review と Phase 8 handoff。

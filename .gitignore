@@ -4,8 +4,7 @@ dist/
 app-dist/
 packages/web/public/og-image.png
 *.tsbuildinfo
-samples/**/*.mid
-samples/**/*.json
+samples/
 playwright-report/
 test-results/
 .cache/

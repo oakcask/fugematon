@@ -10,7 +10,8 @@
 
 ## Read First
 
-* [Infinite playback MVP](phase-8.md): 現在の operational target。旧 Phase 8。Score-led beauty harmonic-continuity follow-up、Metrical generation repair、Texture continuity repair 後に、`continuous fugue`、`endless program`、`regenerative cycle` の 3 再生モード semantics と segment snapshot contract を扱う。
+* [Historical reference calibration](historical-reference-calibration.md): 現在の品質 blocker。探索的な Bach WTC diagnostics と現行生成 bundle の比較から、persistent voice-pair coupling、long pitch-class reinforcement、entry severe-interval pressure を Infinite playback MVP の前に扱う。
+* [Infinite playback MVP](phase-8.md): 次の operational target。旧 Phase 8。Score-led beauty harmonic-continuity follow-up、Metrical generation repair、Texture continuity repair、Historical reference calibration 後に、`continuous fugue`、`endless program`、`regenerative cycle` の 3 再生モード semantics と segment snapshot contract を扱う。
 * [WebAudio synth interpretation follow-up](webaudio-synth-interpretation.md): Infinite playback MVP 後の rendering follow-up。`PerformanceProfile` の WebAudio envelope / velocity 解釈を調整し、生成譜面の欠陥を隠さず長時間再生の聴き取りやすさを改善する。
 * [Texture continuity repair](texture-continuity-repair.md): 完了済み品質 blocker。`seed-0i335vx-1n54a1x` の5小節目、9小節目、28小節目で確認した bass-answer tail thinning、exposed free-counterpoint solo、退屈な solo formula を Infinite playback MVP の前に扱った。
 * [Score-led beauty handoff](phase-14.md): 完了済み品質 follow-up。旧 Phase 14。`seed-1dxb2n8-1miapx7` の6-7小節で確認した harmonic-continuity blocker を、Infinite playback MVP の前に score-window review と generator/scoring response で修正した。
@@ -22,7 +23,7 @@
 * 実装対象の計画が分かっている場合は、その計画だけ読む。
 * 計画 scope や実装順序を変える場合は、該当計画と [../reference/technical-plan.md](../reference/technical-plan.md) を合わせて読む。
 * 指標の意味や採否 policy を確認する場合は、計画文書ではなく [../reference/quality-metrics.md](../reference/quality-metrics.md) を読む。
-* Score-led beauty handoff のレビュー根拠が必要な場合は [../reviews/README.md](../reviews/README.md) から最新レビューを選ぶ。
+* Historical reference calibration や Score-led beauty handoff のレビュー根拠が必要な場合は [../reviews/README.md](../reviews/README.md) から最新レビューを選ぶ。
 
 ## Catalog
 
