@@ -31,7 +31,7 @@ test("generateScore links unresolved entry sentinels to selected entry context a
   );
 });
 
-test("generateScore exposes phase-13Q quality-vector features in selected candidate evaluations", () => {
+test("generateScore exposes candidate-diversity quality-vector features in selected candidate evaluations", () => {
   const output = generateScore({
     seed: "modal-cadence",
     lengthTicks: REVIEW_LENGTH_TICKS,

@@ -116,6 +116,19 @@ Candidate evaluation feature keys follow the same rule: current keys name the mu
 | --- | --- | --- |
 | `phase12PhraseFamilyCandidateCount` | `phraseFamilyCandidateCount` | Phrase-family candidate count in candidate-pool oracle section and summary evidence. |
 
+## Current Test Helper Migration Map
+
+Current behavior tests and shared test helpers use the same musical-surface naming rule as runtime metrics. Historical Phase names remain only in compatibility assertions and phase/review history docs.
+
+| Historical name | Current name | Meaning |
+| --- | --- | --- |
+| `PHASE_13Q_FOCUSED_SEEDS` | `CANDIDATE_DIVERSITY_ADOPTION_SEEDS` | Focused seed set for candidate-diversity adoption readiness. |
+| `assertPhase13QAdoptionSeedsReady` | `assertCandidateDiversityAdoptionSeedsReady` | Adoption readiness helper for candidate-diversity generator work. |
+| `assertPhase13QCandidateDiversitySeedsReady` | `assertCandidateDiversityReviewSeedsReady` | Review helper for candidate-diversity oracle summaries. |
+| `generate-phase13q-review-*.test.ts` | `generate-candidate-diversity-adoption-*.test.ts` | Candidate-diversity adoption regression batches. |
+| `generate-phase13q-candidate-diversity*.test.ts` | `generate-candidate-diversity-review*.test.ts` | Candidate-diversity oracle review batches. |
+| `generate-phase13q-review.test.ts` | `generate-local-sentinel-candidate-trace.test.ts` | Local-sentinel to selected-candidate trace contract. |
+
 ## Selection Model Values
 
 Selection model values use current names in CLI help, generated diagnostics, review bundles, and new tests. Historical input aliases are outside the compatibility window and should be rejected by current code.
