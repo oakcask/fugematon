@@ -13,8 +13,11 @@ import type {
   Voice,
 } from "../events.js";
 import { isModalMode } from "./key.js";
+import { beatStrengthAtTick } from "./meter.js";
 import { scaleDegreePitchClass } from "./pitch.js";
 import { positiveModulo } from "./shared.js";
+
+export { beatStrengthAtTick } from "./meter.js";
 
 export function buildHarmonicPlan(plan: {
   state: FugueState;
@@ -82,16 +85,6 @@ export function cadenceKindForSection(state: FugueState, targetKey: KeySignature
     return "modal";
   }
   return state === "episode" ? "modulatory" : "authentic";
-}
-
-export function beatStrengthAtTick(tick: number): "strong" | "weak" | "offbeat" {
-  if (tick % (TICKS_PER_QUARTER * 2) === 0) {
-    return "strong";
-  }
-  if (tick % TICKS_PER_QUARTER === 0) {
-    return "weak";
-  }
-  return "offbeat";
 }
 
 export function nearestHarmonicAnchor(tick: number, sectionPlans: readonly HarmonicPlan[]): HarmonicAnchor | undefined {
