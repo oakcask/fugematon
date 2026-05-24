@@ -123,9 +123,9 @@ pnpm build
 * `packages/midi`: standard MIDI export from score events and performance profiles.
 * `packages/cli`: command-line wrapper around the core generator.
 * `packages/web`: Vite app for browser playback and visualization.
-* `docs`: design notes, technical plan, and phase implementation notes.
+* `docs`: design notes, technical plan, and implementation history.
 * `samples`: generated sample artifacts for manual listening checks.
 
-## Phase Notes
+## Implementation Notes
 
 Read `docs/README.md` for implementation context.
