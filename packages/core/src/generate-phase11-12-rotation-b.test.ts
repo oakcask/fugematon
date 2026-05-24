@@ -1,9 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { collectPhase1112PlanningMetrics, PHASE_11_12_ROTATION_SEEDS } from "./generate-phase-review-test-helpers.js";
+import {
+  collectTexturePhrasePlanningMetrics,
+  TEXTURE_PHRASE_PLANNING_ROTATION_SEEDS,
+} from "./generate-quality-review-test-helpers.js";
 
-test("generateScore applies phase-11 and phase-12 phrase-unit planning across rotation seed batch B", () => {
-  const metrics = collectPhase1112PlanningMetrics(PHASE_11_12_ROTATION_SEEDS.slice(5));
+test("generateScore applies texture and phrase-unit planning across rotation seed batch B", () => {
+  const metrics = collectTexturePhrasePlanningMetrics(TEXTURE_PHRASE_PLANNING_ROTATION_SEEDS.slice(5));
 
   assert.equal(metrics.changedStateSequenceCount, metrics.seedCount);
   assert.ok(metrics.variantUniqueContinuationPatternCount >= metrics.baselineUniqueContinuationPatternCount * 2.5);

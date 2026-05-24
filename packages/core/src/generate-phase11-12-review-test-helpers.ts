@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
-import { collectPhase1112PlanningMetrics } from "./generate-phase-review-test-helpers.js";
+import { collectTexturePhrasePlanningMetrics } from "./generate-quality-review-test-helpers.js";
 
-export function assertPhase1112ReviewBatch(
+export function assertTexturePhrasePlanningReviewBatch(
   seeds: readonly string[],
   expectation: {
     uniqueContinuationPatternRatio: number;
@@ -13,7 +13,7 @@ export function assertPhase1112ReviewBatch(
     bassRootSupportDelta?: number;
   },
 ): void {
-  const metrics = collectPhase1112PlanningMetrics(seeds);
+  const metrics = collectTexturePhrasePlanningMetrics(seeds);
   assert.equal(metrics.changedStateSequenceCount, metrics.seedCount);
   assert.ok(
     metrics.variantUniqueContinuationPatternCount >=

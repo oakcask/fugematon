@@ -4,8 +4,8 @@ import type { CandidatePoolOracleBlocker } from "./events.js";
 import { generateScore } from "./generate.js";
 import { evaluateReviewGatePolicy } from "./review-gate.js";
 
-export const PHASE_11_12_REVIEW_SEEDS = REPRESENTATIVE_REVIEW_SEEDS.map(({ seed }) => seed);
-export const PHASE_11_12_REVIEW_BATCH_A = [
+export const TEXTURE_PHRASE_PLANNING_REVIEW_SEEDS = REPRESENTATIVE_REVIEW_SEEDS.map(({ seed }) => seed);
+export const TEXTURE_PHRASE_PLANNING_REVIEW_BATCH_A = [
   "bach-001",
   "fugue-smoke",
   "wide-key",
@@ -14,7 +14,7 @@ export const PHASE_11_12_REVIEW_BATCH_A = [
   "dark-episode",
   "ornament-test",
 ] as const;
-export const PHASE_11_12_REVIEW_BATCH_B = [
+export const TEXTURE_PHRASE_PLANNING_REVIEW_BATCH_B = [
   "minor-entry",
   "lyrical-line",
   "close-imitation",
@@ -23,15 +23,15 @@ export const PHASE_11_12_REVIEW_BATCH_B = [
   "long-arc",
   "contrary-motion",
 ] as const;
-export const PHASE_11_12_ROTATION_SEEDS = ROTATION_REVIEW_SEEDS.map(({ seed }) => seed);
-export const PHASE_12_REPETITION_FOCUSED_SEEDS = [
+export const TEXTURE_PHRASE_PLANNING_ROTATION_SEEDS = ROTATION_REVIEW_SEEDS.map(({ seed }) => seed);
+export const PHRASE_REPETITION_FOCUSED_SEEDS = [
   "angular-answer",
   "modal-dorian",
   "modal-answer",
   "modal-cadence",
   "dense-modal",
 ] as const;
-export const PHASE_13_FOCUSED_SEEDS = [
+export const QUALITY_VECTOR_REVIEW_SEEDS = [
   "bach-001",
   "fugue-smoke",
   "dense-modal",
@@ -55,14 +55,14 @@ export const CANDIDATE_DIVERSITY_ADOPTION_SEEDS = [
   "contrary-motion",
 ] as const;
 
-const PHASE_12_REPETITION_REVIEW_SEEDS = [...REPRESENTATIVE_REVIEW_SEEDS, ...ROTATION_REVIEW_SEEDS].map(
+const PHRASE_REPETITION_REVIEW_SEEDS = [...REPRESENTATIVE_REVIEW_SEEDS, ...ROTATION_REVIEW_SEEDS].map(
   ({ seed }) => seed,
 );
 
-export const PHASE_12_REPETITION_REVIEW_BATCH_A = PHASE_12_REPETITION_REVIEW_SEEDS.slice(0, 11);
-export const PHASE_12_REPETITION_REVIEW_BATCH_B = PHASE_12_REPETITION_REVIEW_SEEDS.slice(11);
+export const PHRASE_REPETITION_REVIEW_BATCH_A = PHRASE_REPETITION_REVIEW_SEEDS.slice(0, 11);
+export const PHRASE_REPETITION_REVIEW_BATCH_B = PHRASE_REPETITION_REVIEW_SEEDS.slice(11);
 
-export type Phase1112PlanningMetrics = {
+export type TexturePhrasePlanningMetrics = {
   seedCount: number;
   changedStateSequenceCount: number;
   baselineUniqueContinuationPatternCount: number;
@@ -85,7 +85,7 @@ export type Phase1112PlanningMetrics = {
   variantBassRootSupportCount: number;
 };
 
-export type Phase12RepetitionMetrics = {
+export type PhraseRepetitionMetrics = {
   seedCount: number;
   baselineTopEntryPatternFamilyCount: number;
   variantTopEntryPatternFamilyCount: number;
@@ -93,8 +93,8 @@ export type Phase12RepetitionMetrics = {
   variantUnsupportedThinningRuns: number;
 };
 
-export function collectPhase1112PlanningMetrics(seeds: readonly string[]): Phase1112PlanningMetrics {
-  const metrics: Phase1112PlanningMetrics = {
+export function collectTexturePhrasePlanningMetrics(seeds: readonly string[]): TexturePhrasePlanningMetrics {
+  const metrics: TexturePhrasePlanningMetrics = {
     seedCount: seeds.length,
     changedStateSequenceCount: 0,
     baselineUniqueContinuationPatternCount: 0,
@@ -175,7 +175,7 @@ export function collectPhase1112PlanningMetrics(seeds: readonly string[]): Phase
   return metrics;
 }
 
-export function assertPhase12FocusedRepetitionAdoption(seeds: readonly string[]): void {
+export function assertFocusedPhraseRepetitionAdoption(seeds: readonly string[]): void {
   for (const seed of seeds) {
     const baseline = generateScore({
       seed,
@@ -203,8 +203,8 @@ export function assertPhase12FocusedRepetitionAdoption(seeds: readonly string[])
   }
 }
 
-export function assertPhase13ReviewPreconditions(seeds: readonly string[]): void {
-  const reviewSeedSet = new Set<string>(PHASE_12_REPETITION_REVIEW_SEEDS);
+export function assertQualityVectorReviewPreconditions(seeds: readonly string[]): void {
+  const reviewSeedSet = new Set<string>(PHRASE_REPETITION_REVIEW_SEEDS);
 
   for (const seed of seeds) {
     assert.equal(reviewSeedSet.has(seed), true);
@@ -238,8 +238,8 @@ export function assertPhase13ReviewPreconditions(seeds: readonly string[]): void
   }
 }
 
-export function collectPhase12RepetitionMetrics(seeds: readonly string[]): Phase12RepetitionMetrics {
-  const metrics: Phase12RepetitionMetrics = {
+export function collectPhraseRepetitionMetrics(seeds: readonly string[]): PhraseRepetitionMetrics {
+  const metrics: PhraseRepetitionMetrics = {
     seedCount: seeds.length,
     baselineTopEntryPatternFamilyCount: 0,
     variantTopEntryPatternFamilyCount: 0,

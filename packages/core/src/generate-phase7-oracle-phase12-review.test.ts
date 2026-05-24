@@ -3,7 +3,7 @@ import test from "node:test";
 import { REVIEW_LENGTH_TICKS } from "./constants.js";
 import { generateScore } from "./generate.js";
 
-test("generateScore exposes phase-12 repetition family diagnostics", () => {
+test("generateScore exposes phrase-repetition family diagnostics", () => {
   const reviewSeeds = ["angular-answer", "modal-dorian", "modal-answer", "modal-cadence", "dense-modal"] as const;
 
   for (const seed of reviewSeeds) {

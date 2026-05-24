@@ -1,20 +1,20 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
-  collectPhase12RepetitionMetrics,
-  PHASE_12_REPETITION_REVIEW_BATCH_B,
-} from "./generate-phase-review-test-helpers.js";
+  collectPhraseRepetitionMetrics,
+  PHRASE_REPETITION_REVIEW_BATCH_B,
+} from "./generate-quality-review-test-helpers.js";
 
-test("generateScore completes phase-12 repetition adoption across review seeds batch B1a", () => {
-  assertPhase12RepetitionReviewBatch(PHASE_12_REPETITION_REVIEW_BATCH_B.slice(0, 3), 3, -7);
+test("generateScore completes phrase-repetition adoption across review seeds batch B1a", () => {
+  assertPhraseRepetitionReviewBatch(PHRASE_REPETITION_REVIEW_BATCH_B.slice(0, 3), 3, -7);
 });
 
-function assertPhase12RepetitionReviewBatch(
+function assertPhraseRepetitionReviewBatch(
   seeds: readonly string[],
   expectedSeedCount: number,
   maximumTopEntryPatternFamilyDelta: number,
 ): void {
-  const metrics = collectPhase12RepetitionMetrics(seeds);
+  const metrics = collectPhraseRepetitionMetrics(seeds);
 
   assert.equal(metrics.seedCount, expectedSeedCount);
   assert.ok(
