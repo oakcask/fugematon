@@ -1,5 +1,6 @@
 import type { NoteRole, Voice } from "@fugematon/core";
 import type { PlaybackEntry, PlaybackModel } from "./score.js";
+import { secondsToTicks, ticksPerBar, ticksPerBeat, ticksToSeconds } from "./score.js";
 
 export type PianoRollNoteLayout = {
   voice: Voice;
@@ -32,6 +33,21 @@ export type RoundedRectLayout = {
 export type PianoRollViewport = {
   startSecond: number;
   endSecond: number;
+};
+
+export type PianoRollGridLineLayout = {
+  x: number;
+  tick: number;
+  isBarLine: boolean;
+  beatIndex: number;
+};
+
+export type PianoRollBarBandLayout = {
+  x: number;
+  width: number;
+  startTick: number;
+  endTick: number;
+  barIndex: number;
 };
 
 const VOICE_COLORS: Record<Voice, string> = {
@@ -173,6 +189,75 @@ export function computeActivePitches(model: PlaybackModel, playbackSecond: numbe
   }
 
   return [...activePitches].sort((left, right) => left - right);
+}
+
+export function computePianoRollGridLineLayout(
+  model: PlaybackModel,
+  width: number,
+  viewport: PianoRollViewport,
+): PianoRollGridLineLayout[] {
+  const usableWidth = Math.max(1, width - LEFT_GUTTER - RIGHT_GUTTER);
+  const viewportDuration = Math.max(1, viewport.endSecond - viewport.startSecond);
+  const beatTicks = ticksPerBeat(model.timeSignature, model.ticksPerQuarter);
+  const barTicks = ticksPerBar(model.timeSignature, model.ticksPerQuarter);
+  const startTick = secondsToTicks(viewport.startSecond, model.bpm, model.ticksPerQuarter);
+  const endTick = secondsToTicks(viewport.endSecond, model.bpm, model.ticksPerQuarter);
+  const firstBeatTick = Math.ceil(startTick / beatTicks) * beatTicks;
+  const gridLines: PianoRollGridLineLayout[] = [];
+
+  for (let tick = firstBeatTick; tick <= endTick; tick += beatTicks) {
+    const second = ticksToSeconds(tick, model.bpm, model.ticksPerQuarter);
+    const tickWithinBar = positiveModulo(tick, barTicks);
+    gridLines.push({
+      x: LEFT_GUTTER + ((second - viewport.startSecond) / viewportDuration) * usableWidth,
+      tick,
+      isBarLine: isGridMultiple(tick, barTicks),
+      beatIndex: Math.floor(tickWithinBar / beatTicks),
+    });
+  }
+
+  return gridLines;
+}
+
+export function computePianoRollBarBandLayout(
+  model: PlaybackModel,
+  width: number,
+  viewport: PianoRollViewport,
+): PianoRollBarBandLayout[] {
+  const barTicks = ticksPerBar(model.timeSignature, model.ticksPerQuarter);
+  const startTick = secondsToTicks(viewport.startSecond, model.bpm, model.ticksPerQuarter);
+  const endTick = secondsToTicks(viewport.endSecond, model.bpm, model.ticksPerQuarter);
+  const firstBarIndex = Math.floor(startTick / barTicks);
+  const viewportDuration = Math.max(1, viewport.endSecond - viewport.startSecond);
+  const usableWidth = Math.max(1, width - LEFT_GUTTER - RIGHT_GUTTER);
+  const bands: PianoRollBarBandLayout[] = [];
+
+  for (let barIndex = firstBarIndex; barIndex * barTicks < endTick; barIndex += 1) {
+    if (barIndex % 2 !== 0) {
+      continue;
+    }
+
+    const barStartTick = barIndex * barTicks;
+    const barEndTick = barStartTick + barTicks;
+    const bandStartSecond = Math.max(
+      viewport.startSecond,
+      ticksToSeconds(barStartTick, model.bpm, model.ticksPerQuarter),
+    );
+    const bandEndSecond = Math.min(viewport.endSecond, ticksToSeconds(barEndTick, model.bpm, model.ticksPerQuarter));
+    if (bandEndSecond <= bandStartSecond) {
+      continue;
+    }
+
+    bands.push({
+      x: LEFT_GUTTER + ((bandStartSecond - viewport.startSecond) / viewportDuration) * usableWidth,
+      width: ((bandEndSecond - bandStartSecond) / viewportDuration) * usableWidth,
+      startTick: Math.max(startTick, barStartTick),
+      endTick: Math.min(endTick, barEndTick),
+      barIndex,
+    });
+  }
+
+  return bands;
 }
 
 export function shouldDrawNoteRoleStroke(role: NoteRole | undefined): role is NoteRole {
@@ -389,21 +474,31 @@ function drawBackground(
   context.fillStyle = gradient;
   context.fillRect(0, 0, width, height);
 
-  context.strokeStyle = "rgba(60, 43, 30, 0.12)";
-  context.lineWidth = 1;
+  drawBarBands(context, width, height, model, viewport);
 
-  const beatSeconds = 60 / model.bpm;
-  const firstBeatSecond = Math.ceil(viewport.startSecond / beatSeconds) * beatSeconds;
-  const viewportDuration = Math.max(1, viewport.endSecond - viewport.startSecond);
-  for (let second = firstBeatSecond; second <= viewport.endSecond; second += beatSeconds) {
-    const x = LEFT_GUTTER + ((second - viewport.startSecond) / viewportDuration) * (width - LEFT_GUTTER - RIGHT_GUTTER);
+  for (const line of computePianoRollGridLineLayout(model, width, viewport)) {
+    context.strokeStyle = line.isBarLine ? "rgba(45, 29, 18, 0.34)" : "rgba(60, 43, 30, 0.11)";
+    context.lineWidth = line.isBarLine ? 2 : 1;
     context.beginPath();
-    context.moveTo(x, TOP_GUTTER);
-    context.lineTo(x, height - BOTTOM_GUTTER);
+    context.moveTo(line.x + 0.5, TOP_GUTTER);
+    context.lineTo(line.x + 0.5, height - BOTTOM_GUTTER);
     context.stroke();
   }
 
   drawActivePitchMarkers(context, width, height, model, activePitches);
+}
+
+function drawBarBands(
+  context: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  model: PlaybackModel,
+  viewport: PianoRollViewport,
+): void {
+  for (const band of computePianoRollBarBandLayout(model, width, viewport)) {
+    context.fillStyle = "rgba(255, 252, 241, 0.16)";
+    context.fillRect(band.x, TOP_GUTTER, band.width, height - TOP_GUTTER - BOTTOM_GUTTER);
+  }
 }
 
 function drawPlayhead(
@@ -551,6 +646,14 @@ function formatPitchName(pitch: number): string {
   const pitchClass = ((pitch % 12) + 12) % 12;
   const octave = Math.floor(pitch / 12) - 1;
   return `${NOTE_NAMES[pitchClass]}${octave}`;
+}
+
+function positiveModulo(value: number, divisor: number): number {
+  return ((value % divisor) + divisor) % divisor;
+}
+
+function isGridMultiple(value: number, interval: number): boolean {
+  return Math.abs(value - Math.round(value / interval) * interval) < 0.001;
 }
 
 function roundRect(

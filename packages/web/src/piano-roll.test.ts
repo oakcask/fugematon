@@ -4,6 +4,8 @@ import { FUGUE_FORM_REVIEW_LENGTH_TICKS, generateScore } from "@fugematon/core";
 import {
   computeActivePitches,
   computeActivePitchMarkerLayout,
+  computePianoRollBarBandLayout,
+  computePianoRollGridLineLayout,
   computePianoRollLayout,
   computePianoRollViewport,
   computeRoleBackplateLayout,
@@ -47,6 +49,55 @@ test("computePianoRollViewport starts at the opening and follows playback", () =
   assert.ok(following.startSecond > opening.startSecond);
   assert.ok(following.startSecond < DEFAULT_VIEWPORT_SECONDS * 2);
   assert.equal(following.endSecond - following.startSecond, DEFAULT_VIEWPORT_SECONDS);
+});
+
+test("computePianoRollGridLineLayout marks time-signature bar boundaries", () => {
+  const model = {
+    bpm: 60,
+    ticksPerQuarter: 480,
+    timeSignature: { numerator: 3, denominator: 4 },
+  } as PlaybackModel;
+  const lines = computePianoRollGridLineLayout(model, 562, { startSecond: 0, endSecond: 12 });
+  const barLines = lines.filter((line) => line.isBarLine);
+
+  assert.deepEqual(
+    lines.slice(0, 4).map((line) => ({ tick: line.tick, isBarLine: line.isBarLine, beatIndex: line.beatIndex })),
+    [
+      { tick: 0, isBarLine: true, beatIndex: 0 },
+      { tick: 480, isBarLine: false, beatIndex: 1 },
+      { tick: 960, isBarLine: false, beatIndex: 2 },
+      { tick: 1440, isBarLine: true, beatIndex: 0 },
+    ],
+  );
+  assert.deepEqual(
+    barLines.map((line) => line.tick),
+    [0, 1440, 2880, 4320, 5760],
+  );
+  assert.equal(barLines[0]!.x, 62);
+  assert.equal(barLines[1]!.x, 182);
+});
+
+test("computePianoRollBarBandLayout anchors alternating backgrounds to score bars", () => {
+  const model = {
+    bpm: 60,
+    ticksPerQuarter: 480,
+    timeSignature: { numerator: 4, denominator: 4 },
+  } as PlaybackModel;
+  const bands = computePianoRollBarBandLayout(model, 562, { startSecond: 5, endSecond: 17 });
+
+  assert.deepEqual(
+    bands.map((band) => ({
+      startTick: band.startTick,
+      endTick: band.endTick,
+      barIndex: band.barIndex,
+      x: band.x,
+      width: band.width,
+    })),
+    [
+      { startTick: 3840, endTick: 5760, barIndex: 2, x: 182, width: 160 },
+      { startTick: 7680, endTick: 8160, barIndex: 4, x: 502, width: 40 },
+    ],
+  );
 });
 
 test("computeRoleBackplateLayout covers nearby role note sequences", () => {
