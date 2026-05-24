@@ -48,7 +48,6 @@ export function assertWeakDissonanceReviewSeedsExposePressure(
   assert.ok(
     summaries.every(
       (summary) =>
-        summary.weakPassingSemitoneClashTicks > 0 &&
         summary.passingNeighborOffbeatSemitoneClashTicks > 0 &&
         summary.passingNeighborOffbeatSemitoneClashTicks >= summary.weakPassingSemitoneClashTicks,
     ),

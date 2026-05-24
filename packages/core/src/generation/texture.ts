@@ -74,6 +74,7 @@ type TextureNotePattern = {
   counterSubjectSupportRepair?: boolean;
   freeCounterpointPhraseVariation?: boolean;
   strictSemitoneAvoidance?: boolean;
+  preserveDurations?: boolean;
 };
 
 const LONG_REST_PHRASE_CLOSURE_TICKS = TICKS_PER_QUARTER * 2;
@@ -340,6 +341,7 @@ export function addPatternCounterpoint(
     counterSubjectSupportRepair?: boolean;
     freeCounterpointPhraseVariation?: boolean;
     strictSemitoneAvoidance?: boolean;
+    preserveDurations?: boolean;
   },
 ): void {
   let elapsedTicks = 0;
@@ -353,7 +355,11 @@ export function addPatternCounterpoint(
     }
 
     const degree = pattern.degrees[index % pattern.degrees.length]!;
-    if (pattern.role === "free-counterpoint" && durationTicks >= TICKS_PER_QUARTER) {
+    if (
+      pattern.role === "free-counterpoint" &&
+      pattern.preserveDurations !== true &&
+      durationTicks >= TICKS_PER_QUARTER
+    ) {
       addFreeCounterpointPatternNote(notes, pattern, index, degree, startTick, durationTicks);
     } else {
       addTextureNote(notes, pattern, degree, startTick, durationTicks);
@@ -749,15 +755,7 @@ function addContinuityLine(
   if (maxDurationTicks <= 0) {
     return;
   }
-  const fillerSubject = degrees.map((scaleDegree, index) => ({
-    offsetTick: index * (TICKS_PER_QUARTER / 2),
-    durationTicks: TICKS_PER_QUARTER / 2,
-    scaleDegree,
-    accidental: 0,
-    importantTone: false,
-    melodicRole: melodicRoleForScaleDegree(scaleDegree),
-    metricalHarmonyIntent: "weak-passing-tone" as const,
-  }));
+  const fillerSubject = continuityFillerSubject(degrees, plan);
   addPatternCounterpoint(notes, fillerSubject, {
     voice,
     startTick,
@@ -767,6 +765,42 @@ function addContinuityLine(
     velocity: lineIndex === 0 ? 58 : 52,
     role: "free-counterpoint",
     harmonicPlan: plan.harmonicPlan,
+    preserveDurations: plan.harmonicPlan?.meterContext.timeSignature.numerator === 3,
+  });
+}
+
+function continuityFillerSubject(
+  degrees: readonly number[],
+  plan: ContinuityCounterpointInput,
+): readonly SubjectNote[] {
+  const durations =
+    plan.harmonicPlan?.meterContext.timeSignature.numerator === 3
+      ? [
+          TICKS_PER_QUARTER,
+          TICKS_PER_QUARTER / 2,
+          TICKS_PER_QUARTER / 2,
+          TICKS_PER_QUARTER,
+          TICKS_PER_QUARTER,
+          TICKS_PER_QUARTER / 2,
+          TICKS_PER_QUARTER / 2,
+          TICKS_PER_QUARTER,
+        ]
+      : degrees.map(() => TICKS_PER_QUARTER / 2);
+  let offsetTick = 0;
+
+  return degrees.map((scaleDegree, index) => {
+    const durationTicks = durations[index % durations.length]!;
+    const subjectNote = {
+      offsetTick,
+      durationTicks,
+      scaleDegree,
+      accidental: 0,
+      importantTone: false,
+      melodicRole: melodicRoleForScaleDegree(scaleDegree),
+      metricalHarmonyIntent: "weak-passing-tone" as const,
+    };
+    offsetTick += durationTicks;
+    return subjectNote;
   });
 }
 
