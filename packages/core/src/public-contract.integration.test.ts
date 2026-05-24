@@ -131,10 +131,19 @@ test("public diagnostics expose finite candidate score dimensions", () => {
       (window) => Number.isSafeInteger(window.entryOrderIndex) && Array.isArray(window.alreadyEnteredVoices),
     ),
   );
-  assert.equal(output.diagnostics.bassAnswerTailTexture.schemaVersion, 2);
+  assert.equal(output.diagnostics.bassAnswerTailTexture.schemaVersion, 3);
   assert.equal(typeof output.diagnostics.bassAnswerTailTexture.reviewRequired, "boolean");
   assert.equal(typeof output.diagnostics.bassAnswerTailTexture.bassOnlyFreeCounterpointWindowCount, "number");
+  assert.equal(typeof output.diagnostics.bassAnswerTailTexture.supportRhythmReviewRequiredWindowCount, "number");
   assert.ok(Array.isArray(output.diagnostics.bassAnswerTailTexture.windows));
+  assert.ok(
+    output.diagnostics.bassAnswerTailTexture.windows.every(
+      (window) =>
+        typeof window.supportRhythmClassification === "string" &&
+        typeof window.supportRhythmReviewRequired === "boolean" &&
+        typeof window.dottedSupportTicks === "number",
+    ),
+  );
   assert.equal(output.diagnostics.exposedFreeCounterpointSolo.schemaVersion, 1);
   assert.equal(typeof output.diagnostics.exposedFreeCounterpointSolo.reviewRequired, "boolean");
   assert.equal(typeof output.diagnostics.exposedFreeCounterpointSolo.reviewRequiredWindowCount, "number");

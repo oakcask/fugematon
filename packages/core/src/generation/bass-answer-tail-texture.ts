@@ -8,6 +8,8 @@ import type {
 } from "../events.js";
 
 const TAIL_WINDOW_TICKS = TICKS_PER_QUARTER * 9;
+const HALF_BEAT_TICKS = TICKS_PER_QUARTER / 2;
+const DOTTED_EIGHTH_TICKS = (TICKS_PER_QUARTER * 3) / 4;
 
 export function analyzeBassAnswerTailTexture(
   notes: readonly NoteEvent[],
@@ -20,12 +22,13 @@ export function analyzeBassAnswerTailTexture(
   const windows = window === undefined ? [] : [window];
 
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     reviewRequired: windows.some((candidate) => candidate.classification === "review-required"),
     bassOnlyFreeCounterpointWindowCount: windows.filter((candidate) => candidate.bassOnlyFreeCounterpointTicks > 0)
       .length,
     zeroOutsideVoiceWindowCount: windows.filter((candidate) => candidate.zeroOutsideVoiceTicks > 0).length,
     oneOutsideVoiceWindowCount: windows.filter((candidate) => candidate.oneOutsideVoiceTicks > 0).length,
+    supportRhythmReviewRequiredWindowCount: windows.filter((candidate) => candidate.supportRhythmReviewRequired).length,
     windows,
   };
 }
@@ -47,6 +50,7 @@ function summarizeBassAnswerTailTextureWindow(
   let oneOutsideVoiceTicks = 0;
   let minOutsideVoiceCount = Number.POSITIVE_INFINITY;
   const activeOutsideVoices = new Set<Voice>();
+  const supportRhythm = classifyTailSupportRhythm(notes, firstBassAnswerTailStartTick, firstBassAnswerEndTick);
 
   for (let tick = firstBassAnswerTailStartTick; tick < windowEndTick; tick += TICKS_PER_QUARTER / 2) {
     const segmentEndTick = Math.min(windowEndTick, tick + TICKS_PER_QUARTER / 2);
@@ -85,13 +89,89 @@ function summarizeBassAnswerTailTextureWindow(
     zeroOutsideVoiceTicks,
     bassOnlyFreeCounterpointTicks,
     oneOutsideVoiceTicks,
+    ...supportRhythm,
     minOutsideVoiceCount: Number.isFinite(minOutsideVoiceCount) ? minOutsideVoiceCount : 0,
     activeOutsideVoices: [...activeOutsideVoices],
     classification:
-      zeroOutsideVoiceTicks > 0 || bassOnlyFreeCounterpointTicks > 0 || oneOutsideVoiceTicks > TICKS_PER_QUARTER * 2
+      zeroOutsideVoiceTicks > 0 ||
+      bassOnlyFreeCounterpointTicks > 0 ||
+      oneOutsideVoiceTicks > TICKS_PER_QUARTER * 2 ||
+      supportRhythm.supportRhythmReviewRequired
         ? "review-required"
         : "supported-tail",
   };
+}
+
+function classifyTailSupportRhythm(
+  notes: readonly NoteEvent[],
+  tailStartTick: number,
+  firstBassAnswerEndTick: number,
+): Pick<
+  BassAnswerTailTextureWindow,
+  | "supportRhythmClassification"
+  | "supportRhythmReviewRequired"
+  | "supportRhythmOnsetCount"
+  | "dottedSupportTicks"
+  | "offGridSupportTicks"
+> {
+  const supportNotes = notes.filter(
+    (note) =>
+      note.voice !== "bass" &&
+      note.role === "free-counterpoint" &&
+      note.startTick < firstBassAnswerEndTick &&
+      tailStartTick < note.startTick + note.durationTicks,
+  );
+
+  if (supportNotes.length === 0) {
+    return {
+      supportRhythmClassification: "no-upper-support",
+      supportRhythmReviewRequired: false,
+      supportRhythmOnsetCount: 0,
+      dottedSupportTicks: 0,
+      offGridSupportTicks: 0,
+    };
+  }
+
+  const clippedDurations = supportNotes.map((note) => {
+    const clippedStartTick = Math.max(tailStartTick, note.startTick);
+    const clippedEndTick = Math.min(firstBassAnswerEndTick, note.startTick + note.durationTicks);
+    return Math.max(0, clippedEndTick - clippedStartTick);
+  });
+  const dottedSupportTicks = supportNotes.reduce(
+    (sum, note, index) => sum + (isDottedSupportNote(note) ? clippedDurations[index]! : 0),
+    0,
+  );
+  const offGridSupportTicks = supportNotes.reduce(
+    (sum, note, index) => sum + (isHalfBeatAnchored(note) ? 0 : clippedDurations[index]!),
+    0,
+  );
+  const hasMotivicDottedRhythm = notes.some(
+    (note) =>
+      note.voice !== "bass" &&
+      (note.role === "subject" || note.role === "answer" || note.role === "counter-subject") &&
+      isDottedSupportNote(note),
+  );
+  const supportRhythmReviewRequired = dottedSupportTicks > 0 && offGridSupportTicks > 0 && !hasMotivicDottedRhythm;
+
+  return {
+    supportRhythmClassification: supportRhythmReviewRequired
+      ? "unmotivated-tail-fragmentation"
+      : dottedSupportTicks > 0
+        ? "motivic-dotted-rhythm"
+        : "held-or-meter-anchored-support",
+    supportRhythmReviewRequired,
+    supportRhythmOnsetCount: new Set(supportNotes.map((note) => note.startTick)).size,
+    dottedSupportTicks,
+    offGridSupportTicks,
+  };
+}
+
+function isHalfBeatAnchored(note: Pick<NoteEvent, "startTick" | "durationTicks">): boolean {
+  return note.startTick % HALF_BEAT_TICKS === 0 && note.durationTicks % HALF_BEAT_TICKS === 0;
+}
+
+function isDottedSupportNote(note: Pick<NoteEvent, "durationTicks">): boolean {
+  return note.durationTicks > 0 && note.durationTicks % DOTTED_EIGHTH_TICKS === 0;
 }
 
 function firstBassAnswerTailStart(notes: readonly NoteEvent[], firstBassAnswer: PlannedEntry): number {
