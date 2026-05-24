@@ -5,6 +5,7 @@
 ## Read First
 
 * [Metrical generation repair completion review](metrical-generation-repair-completion.md): Metrical generation repair の完了 evidence。3/4 focused seeds、6/8 compound-meter seeds、4/4 controls の score-window / diagnostics review と Phase 8 handoff。
+* [Phase 14 harmonic continuity replan](phase-14-harmonic-continuity-replan.md): `seed-1dxb2n8-1miapx7` の6-7小節で聞こえる不自然な和音進行を、short modulatory / pivot-harmony episode の audible harmonic-continuity blocker として Phase 14 follow-up へ戻す根拠。
 * [Metrical generation review](metrical-generation-review.md): `seed-0kowcm6-0am7x3f` の 3/4 metadata と聴感上の拍節感の不一致を調査し、Phase 8 前の Metrical generation repair へ再編する根拠。
 * [Phase 14 post-entry and free-counterpoint generation review](phase-14-post-entry-phrase-generation.md): Phase 14C0 / 14C1 の実装 evidence。answer / stretto-like 後の long thin support window を focused seed で解消し、free-counterpoint phrase signature の repaired ceiling と dissonance tradeoff を記録する。
 * [Phase 14 soprano register contour review](phase-14-soprano-register-contour-review.md): `seed-1yc5rlr-184cz7l` の soprano 第3-4小節で露出する大跳躍を、register placement と melodic continuity の衝突として Phase 14 follow-up へ入れる根拠。

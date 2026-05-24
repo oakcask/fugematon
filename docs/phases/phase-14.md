@@ -2,10 +2,11 @@
 
 Phase 14 is inserted after Phase 13Z and before Phase 8. Its purpose is to make musical beauty the primary acceptance criterion for the generator. Existing metrics, compatibility fields, and guardrail margins are secondary when they contradict the score.
 
-Status: complete for the score-led beauty handoff, but superseded as the immediate Phase 8 prerequisite by [Metrical generation repair](metrical-generation-repair.md). Phase 14 records score-window, diagnostics, focused profile notes, and review-required tradeoffs showing that the generator is no longer being accepted by metrics alone. Phase 8 may proceed only after these review signals and the later meter-context repair remain visible.
+Status: reopened for a focused harmonic-continuity follow-up before Infinite playback MVP proceeds. The earlier score-led beauty handoff and [Metrical generation repair](metrical-generation-repair.md) remain accepted baselines, but `seed-1dxb2n8-1miapx7` shows a user-reported short-episode harmonic-continuity blocker that must be handled as score-window evidence, not hidden by Phase 8 playback or UI work.
 
 Planning reviews:
 
+* [Phase 14 harmonic continuity replan](../reviews/phase-14-harmonic-continuity-replan.md): user-reported `seed-1dxb2n8-1miapx7` evidence showing measures 6-7 fail to make a planned D minor to E minor modulatory episode audible before the A minor stretto-like handoff.
 * [Phase 14 post-entry and free-counterpoint generation review](../reviews/phase-14-post-entry-phrase-generation.md): completion evidence for the Phase 14C0 / 14C1 generator response and the remaining review-required dissonance tradeoff.
 * [Phase 14 soprano register contour review](../reviews/phase-14-soprano-register-contour-review.md): user-reported `seed-1yc5rlr-184cz7l` evidence showing exposed soprano leaps caused by register placement overpowering melodic continuity.
 * [Phase 14 post-entry texture and free-counterpoint phrase review](../reviews/phase-14-post-entry-texture-and-free-counterpoint-review.md): latest user-reported review of answer/stretto post-entry thinning and cross-seed free-counterpoint phrase convergence.
@@ -19,6 +20,8 @@ The latest 22 seed review bundle plus `random-listen-check` and `seed-0zereox-1v
 A later user-reported review narrows two current blockers. The old literal bass-only first-answer collapse is still repaired, but answer and stretto-like entries are followed in 22 of 24 reviewed seeds by four to seven quarters where the entry line has at most one outside support voice. The same review confirms that free-counterpoint surface phrases reuse small six-eighth-note contour/duration signatures across 15-20 seeds. Phase 14C is therefore split so post-entry support continuity and free-counterpoint phrase vocabulary are repaired before broader line-agency, counter-subject, and phrase-development adoption evidence is trusted.
 
 A focused post-Phase 13Z inspection also shows an uneven passing-tone semitone-clash tradeoff. Phase 13Z remains complete because it repaired long-run phrase convergence, but Phase 14 must now treat the new local dissonance distribution as the first score-window risk: `contrary-motion` gained a clear weak-passing semitone-clash increase, `tight-stretto` gained broader passing/neighbor clashes and unresolved accented entry clashes, while `circle-fifths`, `modal-cadence`, and `dense-modal` improved or moved mixed signals.
+
+A later user-reported harmonic-continuity review adds another Phase 8 blocker. In `seed-1dxb2n8-1miapx7`, measures 6-7 sit inside a short D minor to E minor `circle-fifths` / `inversion` / `pivot-harmony` episode, but the audible surface stacks F on a structural beat, thins before the E minor arrival, and returns to A minor before the modulatory plan is perceptually clear. This is not a hard-constraint failure; it is a score-window failure where controlled ambiguity and phrase transformation are accepted without enough root support, chord-tone realization, or prepared dissonance to make the planned progression convincing.
 
 Phase 13X, Phase 13X2, Phase 13Y, and Phase 13Z are still useful, but they are narrow repairs. Phase 14 treats the shared cause: the generator often chooses score windows that satisfy local constraints without creating living contrapuntal lines, durable counter-subject identity, or function-bearing development.
 
@@ -61,6 +64,7 @@ The acceptance order is:
 * Important entry windows show audible continuity: carried, suspended, resolving, staggered, or prepared collective articulation is visible in the score, and the review distinguishes one-voice carry from real contrapuntal continuity.
 * Answer and stretto-like post-entry windows no longer default to four-quarter-or-longer thin support with only one outside support voice unless the score-window function explains the thinning.
 * User-reported soprano register-contour failures, starting with `seed-1yc5rlr-184cz7l` measures 3-4, are repaired by contour-aware entry and support pitch placement rather than by widening `leapRecoveryMisses` thresholds.
+* User-reported harmonic-continuity failures, starting with `seed-1dxb2n8-1miapx7` measures 6-7, are repaired by short-episode harmonic-continuity generation and scoring rather than by accepting controlled ambiguity when the local score window does not make the progression audible.
 * Counter-subject windows are preserved or transformed recognizably; "tradeoff" is not the default outcome.
 * Free-counterpoint and subject-material recurrence are accepted only when the repeated material changes musical function, surface rhythm/contour, or developmental pressure.
 * Reference aggregate and Phase 7B policy output are documented as safety/context signals, not as top-level beauty acceptance. Quality vector axes remain review inputs unless the score window confirms the musical symptom and response.
@@ -119,6 +123,12 @@ Repair user-reported exposed soprano leaps where register placement overrules me
 
 The first focused seed is `seed-1yc5rlr-184cz7l`, where measures 3-4 expose `B4 -> A5 -> D5` and `C5 -> A5 -> D5`. See the [Phase 14 soprano register contour review](../reviews/phase-14-soprano-register-contour-review.md). Keep this repair score-window based: do not widen aggregate `leapRecoveryMisses` thresholds to make the symptom pass.
 
+### 14C4: Short-episode harmonic-continuity generation
+
+Repair user-reported short modulatory or pivot-harmony episodes whose planned harmonic path is not audible in the score window. Episode and stretto-adjacent candidates should demonstrate bass-root support, chord-tone support, prepared dissonance, or a clear rhetorical reason for thinning before receiving credit for `pivot-harmony`, `circle-fifths`, controlled ambiguity, or evaded cadence.
+
+The first focused seed is `seed-1dxb2n8-1miapx7`, where measures 6-7 plan a D minor to E minor modulatory episode but sound like exposed F doubling, thin F#/G and A/E sonorities, and an underprepared A minor handoff. See the [Phase 14 harmonic continuity replan](../reviews/phase-14-harmonic-continuity-replan.md). Keep this repair score-window based: aggregate `strongBeatDissonanceCount`, `harmonicFunctionMismatches`, and bass-root support counts should guide inspection, but they must not replace local listening judgement.
+
 ### 14D: Metric truthfulness and scope cleanup
 
 Reclassify or remove metrics that cannot explain the accepted score windows. Keep reference aggregate and Phase 7B readiness as `ci-observed` or safety/context evidence, not beauty acceptance. Keep pitch-class unison, lockstep, entry severe interval, line agency, counter-subject survivability, entry formula novelty, and subject-stem concentration as `review-required` until score-window evidence, fix target, and runtime justify CI promotion.
@@ -133,4 +143,4 @@ Implementation note: focused profile notes for `organ-default` and `strict-count
 
 ## Phase 8 Handoff
 
-Phase 8 may resume only after Phase 14 and the later Metrical generation repair are both complete for handoff. Infinite playback must not use segment boundaries, visual smoothing, playback profiles, or UI controls to make weak counterpoint, repeated formulae, entry resets, same-family fatigue, unresolved semitone-friction tradeoffs, or meter mismatch less audible.
+Phase 8 may resume only after the Phase 14 harmonic-continuity follow-up and the later Metrical generation repair are both complete for handoff. Infinite playback must not use segment boundaries, visual smoothing, playback profiles, or UI controls to make weak counterpoint, repeated formulae, entry resets, same-family fatigue, unresolved semitone-friction tradeoffs, unclear harmonic progressions, or meter mismatch less audible.
