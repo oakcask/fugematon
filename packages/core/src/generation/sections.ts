@@ -10,6 +10,7 @@ import type {
   FugueState,
   HarmonicPlan,
   KeySignature,
+  MeterContext,
   NoteEvent,
   PlannedEntry,
   SelectionModel,
@@ -22,6 +23,7 @@ import { addSubjectEntry, chooseAnswerKind } from "./entries.js";
 import { evaluateCandidate } from "./evaluation.js";
 import { buildHarmonicPlan, cadenceKindForSection } from "./harmony.js";
 import { isModalMode, tonicPitchClass, transposeKey } from "./key.js";
+import { createLegacyMeterContext } from "./meter.js";
 import { melodicRoleForScaleDegree } from "./pitch.js";
 import {
   compareNoteEvents,
@@ -70,9 +72,10 @@ export function buildFugueScore(
   lengthTicks: number,
   rng: Xoshiro128StarStar,
   selectionModel: SelectionModel = "baseline",
+  meterContext: MeterContext = createLegacyMeterContext(),
 ): FugueScore {
   const counterSubjectSupportRepair = lengthTicks >= TICKS_PER_QUARTER * 288;
-  const exposition = buildExposition(subject, keySignature, counterSubjectSupportRepair);
+  const exposition = buildExposition(subject, keySignature, counterSubjectSupportRepair, meterContext);
   const notes = [...exposition.notes];
   const subjectEntries = [...exposition.subjectEntries];
   const sectionPlans = [...exposition.sectionPlans];
@@ -115,7 +118,7 @@ export function buildFugueScore(
 
     const phraseIntent = phraseUnit?.sections[phraseSectionIndex];
     const state = phraseIntent?.state ?? statePattern[stateIndex]!;
-    const sectionDurationTicks = chooseContinuationSectionTicks(state, rng);
+    const sectionDurationTicks = chooseContinuationSectionTicks(state, rng, meterContext);
     const selection = chooseContinuationSection(
       subject,
       keySignature,
@@ -130,6 +133,7 @@ export function buildFugueScore(
       subjectEntries,
       phraseIntent,
       counterSubjectSupportRepair,
+      meterContext,
     );
     if (selectionModel === "section-local-planner") {
       softenBassEntryBoundaryResets(selection.section.notes, selection.section.subjectEntries, notes);
@@ -522,7 +526,20 @@ function continuationStateTieBreak(state: FugueState): number {
   return 0.2;
 }
 
-export function chooseContinuationSectionTicks(state: FugueState, rng: Xoshiro128StarStar): number {
+export function chooseContinuationSectionTicks(
+  state: FugueState,
+  rng: Xoshiro128StarStar,
+  meterContext: MeterContext = createLegacyMeterContext(),
+): number {
+  if (meterContext.timeSignature.numerator !== 4) {
+    const measureCount = rng.chooseWeighted([
+      { value: state === "episode" ? 2 : 3, weight: 2 },
+      { value: 3, weight: 3 },
+      { value: 4, weight: 2 },
+    ]);
+    return meterContext.measureTicks * measureCount;
+  }
+
   if (state === "episode") {
     return (
       TICKS_PER_QUARTER *
@@ -581,26 +598,29 @@ export function buildExposition(
   subject: readonly SubjectNote[],
   keySignature: KeySignature,
   counterSubjectSupportRepair = false,
+  meterContext: MeterContext = createLegacyMeterContext(),
 ): Exposition {
   const notes: Exposition["notes"] = [];
   const subjectEntries: Exposition["subjectEntries"] = [];
+  const entrySpacingTicks = expositionEntrySpacingTicks(meterContext);
   const sectionPlans: HarmonicPlan[] = [
     buildHarmonicPlan({
       state: "exposition",
       startTick: 0,
-      durationTicks: ENTRY_SPACING_TICKS * VOICE_ENTRY_ORDER.length,
+      durationTicks: entrySpacingTicks * VOICE_ENTRY_ORDER.length,
       globalKey: keySignature,
       localKey: keySignature,
       targetKey: transposeKey(keySignature, 7),
       styleProfile: "strict-classical",
       cadenceKind: "half",
       ambiguityIntent: "none",
+      meterContext,
     }),
   ];
 
   for (const [entryIndex, voice] of VOICE_ENTRY_ORDER.entries()) {
     const form = entryIndex % 2 === 0 ? "subject" : "answer";
-    const startTick = entryIndex * ENTRY_SPACING_TICKS;
+    const startTick = entryIndex * entrySpacingTicks;
     const harmonicPlan = sectionPlans[0]!;
     addSubjectEntry(notes, subjectEntries, subject, {
       state: "exposition",
@@ -615,7 +635,7 @@ export function buildExposition(
     addCounterpointTexture(notes, subject, {
       enteringVoice: voice,
       startTick,
-      durationTicks: ENTRY_SPACING_TICKS,
+      durationTicks: entrySpacingTicks,
       localKey: form === "answer" ? transposeKey(keySignature, 7) : keySignature,
       eligibleVoices: VOICE_ENTRY_ORDER.slice(0, entryIndex),
       harmonicPlan,
@@ -631,8 +651,15 @@ export function buildExposition(
     subjectEntries,
     sectionPlans,
     endTick: Math.max(...notes.map((note) => note.startTick + note.durationTicks)),
-    durationTicks: ENTRY_SPACING_TICKS * VOICE_ENTRY_ORDER.length,
+    durationTicks: entrySpacingTicks * VOICE_ENTRY_ORDER.length,
   };
+}
+
+function expositionEntrySpacingTicks(meterContext: MeterContext): number {
+  if (meterContext.timeSignature.numerator === 4) {
+    return ENTRY_SPACING_TICKS;
+  }
+  return meterContext.measureTicks;
 }
 
 export function chooseContinuationSection(
@@ -649,6 +676,7 @@ export function chooseContinuationSection(
   previousSubjectEntries: readonly PlannedEntry[] = [],
   phraseIntent?: ContinuationPhraseSectionIntent,
   counterSubjectSupportRepair = false,
+  meterContext: MeterContext = createLegacyMeterContext(),
 ): {
   section: Exposition;
   candidateCount: number;
@@ -665,6 +693,7 @@ export function chooseContinuationSection(
     selectionModel,
     phraseIntent,
     counterSubjectSupportRepair,
+    meterContext,
   );
   const evaluations = candidates.map((candidate) => evaluateCandidate(previousNotes, candidate));
   const selectionWindow = continuationCandidateSelectionWindow(state, selectionModel, candidates.length);
@@ -1180,6 +1209,7 @@ export function buildContinuationCandidates(
   selectionModel: SelectionModel = "baseline",
   phraseIntent?: ContinuationPhraseSectionIntent,
   counterSubjectSupportRepair = false,
+  meterContext: MeterContext = createLegacyMeterContext(),
 ): Exposition[] {
   const notes: Exposition["notes"] = [];
   const candidates: Exposition[] = [];
@@ -1209,7 +1239,9 @@ export function buildContinuationCandidates(
           fragmentTransform: chooseFragmentTransform(rng),
           cadenceKind: phraseIntent?.cadenceKind,
         };
-        candidates.push(buildContinuationSection(phraseSubject.slice(0, 4), input, counterSubjectSupportRepair));
+        candidates.push(
+          buildContinuationSection(phraseSubject.slice(0, 4), input, counterSubjectSupportRepair, meterContext),
+        );
         if (includeSectionLocalPlannerCandidates) {
           sectionLocalPlannerCandidates.push(
             buildContinuationSection(
@@ -1219,6 +1251,7 @@ export function buildContinuationCandidates(
                 continuityVoiceCount: phraseContinuityVoiceCount(phraseIntent, 2),
               },
               counterSubjectSupportRepair,
+              meterContext,
             ),
           );
           voicePairSupportCandidates.push(
@@ -1231,6 +1264,7 @@ export function buildContinuationCandidates(
                 continuityLineKind: "oblique-support",
               },
               counterSubjectSupportRepair,
+              meterContext,
             ),
           );
           registerPlannerCandidates.push(
@@ -1242,6 +1276,7 @@ export function buildContinuationCandidates(
                 continuityVoiceOrder: registerBlendedContinuityVoiceOrder(voice),
               },
               counterSubjectSupportRepair,
+              meterContext,
             ),
           );
         }
@@ -1263,7 +1298,7 @@ export function buildContinuationCandidates(
           styleProfile: chooseStyleProfile(rng),
           cadenceKind: phraseIntent?.cadenceKind,
         };
-        candidates.push(buildContinuationSection(phraseSubject, input, counterSubjectSupportRepair));
+        candidates.push(buildContinuationSection(phraseSubject, input, counterSubjectSupportRepair, meterContext));
         if (includeSectionLocalPlannerCandidates) {
           sectionLocalPlannerCandidates.push(
             buildContinuationSection(
@@ -1273,6 +1308,7 @@ export function buildContinuationCandidates(
                 continuityVoiceCount: phraseContinuityVoiceCount(phraseIntent, 2),
               },
               counterSubjectSupportRepair,
+              meterContext,
             ),
           );
           voicePairSupportCandidates.push(
@@ -1285,6 +1321,7 @@ export function buildContinuationCandidates(
                 continuityLineKind: "oblique-support",
               },
               counterSubjectSupportRepair,
+              meterContext,
             ),
           );
           registerPlannerCandidates.push(
@@ -1296,6 +1333,7 @@ export function buildContinuationCandidates(
                 continuityVoiceOrder: registerBlendedContinuityVoiceOrder(voice),
               },
               counterSubjectSupportRepair,
+              meterContext,
             ),
           );
         }
@@ -1318,6 +1356,7 @@ export function buildContinuationCandidates(
               cadenceKind: phraseIntent?.cadenceKind,
             },
             counterSubjectSupportRepair,
+            meterContext,
           ),
         );
       }
@@ -1326,10 +1365,17 @@ export function buildContinuationCandidates(
 
   if (includeSectionLocalPlannerCandidates) {
     sectionGrammarCandidates.push(
-      ...buildSectionGrammarOracleCandidates(subject, keySignature, state, startTick, sectionDurationTicks),
+      ...buildSectionGrammarOracleCandidates(
+        subject,
+        keySignature,
+        state,
+        startTick,
+        sectionDurationTicks,
+        meterContext,
+      ),
     );
     phraseFamilyOracleCandidates.push(
-      ...buildPhraseFamilyOracleCandidates(subject, keySignature, state, startTick, sectionDurationTicks),
+      ...buildPhraseFamilyOracleCandidates(subject, keySignature, state, startTick, sectionDurationTicks, meterContext),
     );
   }
 
@@ -1416,6 +1462,7 @@ function buildSectionGrammarOracleCandidates(
   selectedState: FugueState,
   startTick: number,
   sectionDurationTicks: number,
+  meterContext: MeterContext,
 ): Exposition[] {
   const candidates: Exposition[] = [];
   const candidateStates = (["episode", "subject-return", "stretto-like"] as const).filter(
@@ -1424,13 +1471,23 @@ function buildSectionGrammarOracleCandidates(
 
   for (const state of candidateStates) {
     if (state === "episode") {
-      candidates.push(...buildEpisodeGrammarOracleCandidates(subject, keySignature, startTick, sectionDurationTicks));
+      candidates.push(
+        ...buildEpisodeGrammarOracleCandidates(subject, keySignature, startTick, sectionDurationTicks, meterContext),
+      );
     } else if (state === "subject-return") {
       candidates.push(
-        ...buildSubjectReturnGrammarOracleCandidates(subject, keySignature, startTick, sectionDurationTicks),
+        ...buildSubjectReturnGrammarOracleCandidates(
+          subject,
+          keySignature,
+          startTick,
+          sectionDurationTicks,
+          meterContext,
+        ),
       );
     } else {
-      candidates.push(...buildStrettoGrammarOracleCandidates(subject, keySignature, startTick, sectionDurationTicks));
+      candidates.push(
+        ...buildStrettoGrammarOracleCandidates(subject, keySignature, startTick, sectionDurationTicks, meterContext),
+      );
     }
   }
 
@@ -1443,6 +1500,7 @@ function buildPhraseFamilyOracleCandidates(
   state: FugueState,
   startTick: number,
   sectionDurationTicks: number,
+  meterContext: MeterContext,
 ): Exposition[] {
   const subjectVariation = deriveSubjectStem(subject, [0, 2, 1, 3, 4, 2, 3, 1]);
   const modalVariation = deriveSubjectStem(subject, [0, 2, 3, 1, 4, 3, 1, 0]);
@@ -1450,94 +1508,124 @@ function buildPhraseFamilyOracleCandidates(
 
   if (state === "episode") {
     return [
-      buildContinuationSection(fragmentVariation, {
-        state,
-        voice: "alto",
-        form: "subject-fragment",
-        startTick,
-        globalKey: keySignature,
-        localKey: transposeKey(keySignature, 5),
-        targetKey: transposeKey(keySignature, 7),
-        supportDurationTicks: Math.min(sectionDurationTicks, subjectDuration(fragmentVariation)),
-        sectionDurationTicks,
-        styleProfile: "hybrid",
-        sequencePattern: "circle-fifths",
-        fragmentTransform: "inversion",
-        continuityVoiceCount: 2,
-        continuityVoiceOrder: registerBlendedContinuityVoiceOrder("alto"),
-      }),
-      buildContinuationSection(deriveSubjectStem(subject.slice(0, 4), [0, 3, 1, 2]), {
-        state,
-        voice: "tenor",
-        form: "subject-fragment",
-        startTick,
-        globalKey: keySignature,
-        localKey: transposeKey(keySignature, 7),
-        targetKey: transposeKey(keySignature, 5),
-        supportDurationTicks: Math.min(sectionDurationTicks, subjectDuration(fragmentVariation)),
-        sectionDurationTicks,
-        styleProfile: "strict-classical",
-        sequencePattern: "descending-step",
-        fragmentTransform: "contrary-motion",
-        continuityVoiceCount: 2,
-        continuityVoiceOrder: registerBlendedContinuityVoiceOrder("tenor"),
-      }),
+      buildContinuationSection(
+        fragmentVariation,
+        {
+          state,
+          voice: "alto",
+          form: "subject-fragment",
+          startTick,
+          globalKey: keySignature,
+          localKey: transposeKey(keySignature, 5),
+          targetKey: transposeKey(keySignature, 7),
+          supportDurationTicks: Math.min(sectionDurationTicks, subjectDuration(fragmentVariation)),
+          sectionDurationTicks,
+          styleProfile: "hybrid",
+          sequencePattern: "circle-fifths",
+          fragmentTransform: "inversion",
+          continuityVoiceCount: 2,
+          continuityVoiceOrder: registerBlendedContinuityVoiceOrder("alto"),
+        },
+        false,
+        meterContext,
+      ),
+      buildContinuationSection(
+        deriveSubjectStem(subject.slice(0, 4), [0, 3, 1, 2]),
+        {
+          state,
+          voice: "tenor",
+          form: "subject-fragment",
+          startTick,
+          globalKey: keySignature,
+          localKey: transposeKey(keySignature, 7),
+          targetKey: transposeKey(keySignature, 5),
+          supportDurationTicks: Math.min(sectionDurationTicks, subjectDuration(fragmentVariation)),
+          sectionDurationTicks,
+          styleProfile: "strict-classical",
+          sequencePattern: "descending-step",
+          fragmentTransform: "contrary-motion",
+          continuityVoiceCount: 2,
+          continuityVoiceOrder: registerBlendedContinuityVoiceOrder("tenor"),
+        },
+        false,
+        meterContext,
+      ),
     ];
   }
 
   if (state === "subject-return") {
     const returnSubject = isModalMode(keySignature.mode) ? modalVariation : subjectVariation;
     return [
-      buildContinuationSection(returnSubject, {
-        state,
-        voice: "alto",
-        form: "subject",
-        startTick,
-        globalKey: keySignature,
-        localKey: keySignature,
-        targetKey: keySignature,
-        supportDurationTicks: subjectDuration(returnSubject),
-        sectionDurationTicks,
-        styleProfile: isModalMode(keySignature.mode) ? "hybrid" : "strict-classical",
-        continuityVoiceCount: 2,
-        continuityVoiceOrder: registerBlendedContinuityVoiceOrder("alto"),
-      }),
-      buildContinuationSection(subjectVariation, {
-        state,
-        voice: "tenor",
-        form: "subject",
-        startTick,
-        globalKey: keySignature,
-        localKey: transposeKey(keySignature, 7),
-        targetKey: transposeKey(keySignature, 7),
-        supportDurationTicks: subjectDuration(subjectVariation),
-        sectionDurationTicks,
-        styleProfile: "hybrid",
-        continuityVoiceCount: 2,
-        continuityVoiceOrder: registerBlendedContinuityVoiceOrder("tenor"),
-      }),
+      buildContinuationSection(
+        returnSubject,
+        {
+          state,
+          voice: "alto",
+          form: "subject",
+          startTick,
+          globalKey: keySignature,
+          localKey: keySignature,
+          targetKey: keySignature,
+          supportDurationTicks: subjectDuration(returnSubject),
+          sectionDurationTicks,
+          styleProfile: isModalMode(keySignature.mode) ? "hybrid" : "strict-classical",
+          continuityVoiceCount: 2,
+          continuityVoiceOrder: registerBlendedContinuityVoiceOrder("alto"),
+        },
+        false,
+        meterContext,
+      ),
+      buildContinuationSection(
+        subjectVariation,
+        {
+          state,
+          voice: "tenor",
+          form: "subject",
+          startTick,
+          globalKey: keySignature,
+          localKey: transposeKey(keySignature, 7),
+          targetKey: transposeKey(keySignature, 7),
+          supportDurationTicks: subjectDuration(subjectVariation),
+          sectionDurationTicks,
+          styleProfile: "hybrid",
+          continuityVoiceCount: 2,
+          continuityVoiceOrder: registerBlendedContinuityVoiceOrder("tenor"),
+        },
+        false,
+        meterContext,
+      ),
     ];
   }
 
   return [
-    buildStrettoSection(subjectVariation.slice(0, 6), {
-      state: "stretto-like",
-      firstVoice: "soprano",
-      secondVoice: "tenor",
-      startTick,
-      globalKey: keySignature,
-      sectionDurationTicks,
-      styleProfile: "hybrid",
-    }),
-    buildStrettoSection(modalVariation.slice(0, 6), {
-      state: "stretto-like",
-      firstVoice: "bass",
-      secondVoice: "alto",
-      startTick,
-      globalKey: keySignature,
-      sectionDurationTicks,
-      styleProfile: isModalMode(keySignature.mode) ? "hybrid" : "strict-classical",
-    }),
+    buildStrettoSection(
+      subjectVariation.slice(0, 6),
+      {
+        state: "stretto-like",
+        firstVoice: "soprano",
+        secondVoice: "tenor",
+        startTick,
+        globalKey: keySignature,
+        sectionDurationTicks,
+        styleProfile: "hybrid",
+      },
+      false,
+      meterContext,
+    ),
+    buildStrettoSection(
+      modalVariation.slice(0, 6),
+      {
+        state: "stretto-like",
+        firstVoice: "bass",
+        secondVoice: "alto",
+        startTick,
+        globalKey: keySignature,
+        sectionDurationTicks,
+        styleProfile: isModalMode(keySignature.mode) ? "hybrid" : "strict-classical",
+      },
+      false,
+      meterContext,
+    ),
   ];
 }
 
@@ -1566,40 +1654,51 @@ function buildEpisodeGrammarOracleCandidates(
   keySignature: KeySignature,
   startTick: number,
   sectionDurationTicks: number,
+  meterContext: MeterContext,
 ): Exposition[] {
   return [
-    buildContinuationSection(subject.slice(0, 4), {
-      state: "episode",
-      voice: "alto",
-      form: "subject-fragment",
-      startTick,
-      globalKey: keySignature,
-      localKey: transposeKey(keySignature, 5),
-      targetKey: transposeKey(keySignature, 5),
-      supportDurationTicks: Math.min(sectionDurationTicks, subjectDuration(subject.slice(0, 4))),
-      sectionDurationTicks,
-      styleProfile: "hybrid",
-      sequencePattern: "circle-fifths",
-      fragmentTransform: "contrary-motion",
-      continuityVoiceCount: 2,
-      continuityVoiceOrder: registerBlendedContinuityVoiceOrder("alto"),
-    }),
-    buildContinuationSection(subject.slice(0, 4), {
-      state: "episode",
-      voice: "tenor",
-      form: "subject-fragment",
-      startTick,
-      globalKey: keySignature,
-      localKey: transposeKey(keySignature, 7),
-      targetKey: transposeKey(keySignature, 7),
-      supportDurationTicks: Math.min(sectionDurationTicks, subjectDuration(subject.slice(0, 4))),
-      sectionDurationTicks,
-      styleProfile: "strict-classical",
-      sequencePattern: "descending-step",
-      fragmentTransform: "sequence",
-      continuityVoiceCount: 2,
-      continuityVoiceOrder: registerBlendedContinuityVoiceOrder("tenor"),
-    }),
+    buildContinuationSection(
+      subject.slice(0, 4),
+      {
+        state: "episode",
+        voice: "alto",
+        form: "subject-fragment",
+        startTick,
+        globalKey: keySignature,
+        localKey: transposeKey(keySignature, 5),
+        targetKey: transposeKey(keySignature, 5),
+        supportDurationTicks: Math.min(sectionDurationTicks, subjectDuration(subject.slice(0, 4))),
+        sectionDurationTicks,
+        styleProfile: "hybrid",
+        sequencePattern: "circle-fifths",
+        fragmentTransform: "contrary-motion",
+        continuityVoiceCount: 2,
+        continuityVoiceOrder: registerBlendedContinuityVoiceOrder("alto"),
+      },
+      false,
+      meterContext,
+    ),
+    buildContinuationSection(
+      subject.slice(0, 4),
+      {
+        state: "episode",
+        voice: "tenor",
+        form: "subject-fragment",
+        startTick,
+        globalKey: keySignature,
+        localKey: transposeKey(keySignature, 7),
+        targetKey: transposeKey(keySignature, 7),
+        supportDurationTicks: Math.min(sectionDurationTicks, subjectDuration(subject.slice(0, 4))),
+        sectionDurationTicks,
+        styleProfile: "strict-classical",
+        sequencePattern: "descending-step",
+        fragmentTransform: "sequence",
+        continuityVoiceCount: 2,
+        continuityVoiceOrder: registerBlendedContinuityVoiceOrder("tenor"),
+      },
+      false,
+      meterContext,
+    ),
   ];
 }
 
@@ -1608,36 +1707,47 @@ function buildSubjectReturnGrammarOracleCandidates(
   keySignature: KeySignature,
   startTick: number,
   sectionDurationTicks: number,
+  meterContext: MeterContext,
 ): Exposition[] {
   return [
-    buildContinuationSection(subject, {
-      state: "subject-return",
-      voice: "alto",
-      form: "subject",
-      startTick,
-      globalKey: keySignature,
-      localKey: keySignature,
-      targetKey: keySignature,
-      supportDurationTicks: subjectDuration(subject),
-      sectionDurationTicks,
-      styleProfile: "strict-classical",
-      continuityVoiceCount: 2,
-      continuityVoiceOrder: registerBlendedContinuityVoiceOrder("alto"),
-    }),
-    buildContinuationSection(subject, {
-      state: "subject-return",
-      voice: "tenor",
-      form: "subject",
-      startTick,
-      globalKey: keySignature,
-      localKey: transposeKey(keySignature, 7),
-      targetKey: transposeKey(keySignature, 7),
-      supportDurationTicks: subjectDuration(subject),
-      sectionDurationTicks,
-      styleProfile: "hybrid",
-      continuityVoiceCount: 2,
-      continuityVoiceOrder: registerBlendedContinuityVoiceOrder("tenor"),
-    }),
+    buildContinuationSection(
+      subject,
+      {
+        state: "subject-return",
+        voice: "alto",
+        form: "subject",
+        startTick,
+        globalKey: keySignature,
+        localKey: keySignature,
+        targetKey: keySignature,
+        supportDurationTicks: subjectDuration(subject),
+        sectionDurationTicks,
+        styleProfile: "strict-classical",
+        continuityVoiceCount: 2,
+        continuityVoiceOrder: registerBlendedContinuityVoiceOrder("alto"),
+      },
+      false,
+      meterContext,
+    ),
+    buildContinuationSection(
+      subject,
+      {
+        state: "subject-return",
+        voice: "tenor",
+        form: "subject",
+        startTick,
+        globalKey: keySignature,
+        localKey: transposeKey(keySignature, 7),
+        targetKey: transposeKey(keySignature, 7),
+        supportDurationTicks: subjectDuration(subject),
+        sectionDurationTicks,
+        styleProfile: "hybrid",
+        continuityVoiceCount: 2,
+        continuityVoiceOrder: registerBlendedContinuityVoiceOrder("tenor"),
+      },
+      false,
+      meterContext,
+    ),
   ];
 }
 
@@ -1646,26 +1756,37 @@ function buildStrettoGrammarOracleCandidates(
   keySignature: KeySignature,
   startTick: number,
   sectionDurationTicks: number,
+  meterContext: MeterContext,
 ): Exposition[] {
   return [
-    buildStrettoSection(subject.slice(0, 6), {
-      state: "stretto-like",
-      firstVoice: "alto",
-      secondVoice: "soprano",
-      startTick,
-      globalKey: keySignature,
-      sectionDurationTicks,
-      styleProfile: "hybrid",
-    }),
-    buildStrettoSection(subject.slice(0, 6), {
-      state: "stretto-like",
-      firstVoice: "tenor",
-      secondVoice: "alto",
-      startTick,
-      globalKey: keySignature,
-      sectionDurationTicks,
-      styleProfile: "strict-classical",
-    }),
+    buildStrettoSection(
+      subject.slice(0, 6),
+      {
+        state: "stretto-like",
+        firstVoice: "alto",
+        secondVoice: "soprano",
+        startTick,
+        globalKey: keySignature,
+        sectionDurationTicks,
+        styleProfile: "hybrid",
+      },
+      false,
+      meterContext,
+    ),
+    buildStrettoSection(
+      subject.slice(0, 6),
+      {
+        state: "stretto-like",
+        firstVoice: "tenor",
+        secondVoice: "alto",
+        startTick,
+        globalKey: keySignature,
+        sectionDurationTicks,
+        styleProfile: "strict-classical",
+      },
+      false,
+      meterContext,
+    ),
   ];
 }
 
@@ -1717,6 +1838,7 @@ export function buildContinuationSection(
     cadenceKind?: CadenceKind;
   },
   counterSubjectSupportRepair = false,
+  meterContext: MeterContext = createLegacyMeterContext(),
 ): Exposition {
   const notes: Exposition["notes"] = [];
   const subjectEntries: Exposition["subjectEntries"] = [];
@@ -1731,6 +1853,7 @@ export function buildContinuationSection(
       styleProfile: entry.styleProfile,
       cadenceKind: entry.cadenceKind ?? cadenceKindForSection(entry.state, entry.targetKey),
       ambiguityIntent: entry.state === "episode" ? "pivot-harmony" : "none",
+      meterContext,
       sequencePattern: entry.sequencePattern,
       fragmentTransform: entry.fragmentTransform,
     }),
@@ -1780,6 +1903,7 @@ export function buildStrettoSection(
     cadenceKind?: CadenceKind;
   },
   counterSubjectSupportRepair = false,
+  meterContext: MeterContext = createLegacyMeterContext(),
 ): Exposition {
   const notes: Exposition["notes"] = [];
   const subjectEntries: Exposition["subjectEntries"] = [];
@@ -1794,6 +1918,7 @@ export function buildStrettoSection(
       styleProfile: entry.styleProfile,
       cadenceKind: entry.cadenceKind ?? "evaded",
       ambiguityIntent: "evaded-cadence",
+      meterContext,
     }),
   ];
 

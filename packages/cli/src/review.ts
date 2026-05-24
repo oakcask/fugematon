@@ -352,6 +352,7 @@ type ReviewDiagnosticsSummary = {
   };
   candidatePoolOracle: CandidatePoolOracleSummary;
   texturePlanningReview: GenerationDiagnostics["texturePlanningReview"];
+  meterConsistencyReview: GenerationDiagnostics["meterConsistencyReview"];
   phraseRepetitionReview: GenerationDiagnostics["phraseRepetitionReview"];
   phraseConvergenceReview: GenerationDiagnostics["phraseConvergenceReview"];
   qualityVector: GenerationDiagnostics["qualityVector"];
@@ -759,6 +760,7 @@ function summarizeDiagnostics(diagnostics: GenerationDiagnostics): ReviewDiagnos
     candidateEvaluation: summarizeCandidateEvaluation(diagnostics),
     candidatePoolOracle: diagnostics.candidatePoolOracle,
     texturePlanningReview: diagnostics.texturePlanningReview,
+    meterConsistencyReview: diagnostics.meterConsistencyReview,
     phraseRepetitionReview: diagnostics.phraseRepetitionReview,
     phraseConvergenceReview: diagnostics.phraseConvergenceReview,
     qualityVector: diagnostics.qualityVector,

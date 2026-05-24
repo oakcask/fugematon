@@ -11,6 +11,7 @@ export function assertTexturePhrasePlanningReviewBatch(
     sharedRhythmOverlapDelta: number;
     leapRecoveryMissDelta: number;
     bassRootSupportDelta?: number;
+    counterSubjectIdentityRetentionDelta?: number;
   },
 ): void {
   const metrics = collectTexturePhrasePlanningMetrics(seeds);
@@ -39,5 +40,8 @@ export function assertTexturePhrasePlanningReviewBatch(
   assert.ok(
     metrics.variantLeapRecoveryMisses <= metrics.baselineLeapRecoveryMisses + expectation.leapRecoveryMissDelta,
   );
-  assert.ok(metrics.variantCounterSubjectIdentityRetention >= metrics.baselineCounterSubjectIdentityRetention - 0.08);
+  assert.ok(
+    metrics.variantCounterSubjectIdentityRetention >=
+      metrics.baselineCounterSubjectIdentityRetention - (expectation.counterSubjectIdentityRetentionDelta ?? 0.08),
+  );
 }

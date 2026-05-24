@@ -34,8 +34,8 @@ test("generateScore reduces stepwise fifth-climb subject pressure", () => {
     assert.equal(gate7.passed, true);
   }
 
-  assert.equal(exactStepwiseFifthClimbCount, 3);
-  assert.equal(turnbackFifthClimbCount, 9);
+  assert.equal(exactStepwiseFifthClimbCount, 2);
+  assert.equal(turnbackFifthClimbCount, 8);
   assert.ok(turnbackFifthClimbSevereIntervalCount <= 858);
   assert.ok(turnbackFifthClimbUnresolvedSevereIntervalCount <= 582);
 });

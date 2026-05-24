@@ -18,7 +18,7 @@ test("first bass-entry boundary first-bass evidence is separate from post-exposi
         window.state === "exposition" &&
         window.form === "answer" &&
         window.entryVoice === "bass" &&
-        window.startTick === 5760 &&
+        (window.startTick === 5760 || window.startTick === 4320) &&
         window.outsideOnsetVoices.length < 3 &&
         window.outsideEndedAtEntryVoices.length < 3 &&
         window.carriedOutsideVoices.length + window.delayedOutsideVoices.length > 0,

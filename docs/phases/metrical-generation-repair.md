@@ -1,10 +1,11 @@
 # Metrical Generation Repair
 
-Status: current implementation target before `Infinite playback MVP`.
+Status: complete. `Infinite playback MVP` may resume with meter consistency evidence preserved.
 
 This plan responds to the user-reported `seed-0kowcm6-0am7x3f` symptom: the exported score is 3/4, but the music does not sound like triple meter. The cause is structural, not playback-only. `generateScore` chooses a time signature and emits it as metadata, while subject generation, exposition spacing, continuation planning, harmonic anchors, metrical intent, scoring, and diagnostics still use quarter- and two-quarter constants that mostly behave like 4/4.
 
 Review basis: [Metrical generation review](../reviews/metrical-generation-review.md).
+Completion review: [Metrical generation repair completion review](../reviews/metrical-generation-repair-completion.md).
 
 ## Scope
 
@@ -53,3 +54,16 @@ Extend beat-strength grouping for 6/8 before the repair is considered complete. 
 ### M5: Review Bundle And Handoff
 
 Regenerate focused review evidence, record listening gaps or accepted tradeoffs, and update `Infinite playback MVP` handoff text. Only then resume operational work.
+
+## Completion Record
+
+Metrical generation repair is complete for generator-side Phase 8 handoff.
+
+* `TimeSignature` now creates a shared meter context used by subject rhythm, exposition spacing, harmonic anchors, metrical intent, strong-beat diagnostics, and `meterConsistencyReview`.
+* The focused 3/4 seeds `seed-0kowcm6-0am7x3f`, `seed-0zereox-1v729ih`, and `tight-stretto` now place exposition entries at quarter positions `0, 3, 6, 9` with subject strong offsets at `0` and `3`; `offMeasureEntryCount`, `strongIntentOnNonDownbeatCount`, and `cadenceTargetOffDownbeatCount` are `0` in the focused check.
+* The focused 6/8 seeds `meter-6-8-122`, `meter-6-8-150`, and `meter-6-8-169` record compound midpoint evidence at `1.5` and `4.5` quarter offsets; `cadenceTargetOffDownbeatCount` and `phraseBoundaryOffDownbeatCount` are `0`.
+* 4/4 controls `fugue-smoke`, `bach-001`, and `contrary-motion` keep exposition entries at `0, 4, 8, 12`. Existing score-window review signals remain visible rather than being hidden by the metrical repair.
+* `meterConsistencyReview` stays `review-required`; it is diagnostic evidence for review bundles and Phase 8 segment-boundary comparison, not a CI-blocking beauty gate.
+* Focused `organ-default` and `strict-counterpoint` listening notes are recorded in the completion review. Human playback remains future manual-listening evidence, but the generator-side repair no longer depends on playback-only accent simulation.
+
+`Infinite playback MVP` may resume only if segment design preserves `meterConsistencyReview`, exposes 3/4 / 6/8 windows across generated boundaries, and does not use playback or visualization smoothing to hide meter-context failures.

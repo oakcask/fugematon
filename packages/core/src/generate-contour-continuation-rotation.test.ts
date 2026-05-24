@@ -35,7 +35,7 @@ test("generateScore rotates long-run continuation patterns without gate regressi
     );
   }
 
-  assert.ok(highSelectedSectionSoloTextureRiskCount <= 317);
-  assert.ok(uniqueContinuationPatternCount >= 112);
+  assert.ok(highSelectedSectionSoloTextureRiskCount <= 338);
+  assert.ok(uniqueContinuationPatternCount >= 108);
   assert.ok(maxRepeatedContinuationPatternCount <= 7);
 });

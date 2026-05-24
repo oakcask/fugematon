@@ -9,6 +9,7 @@ import { normalizeSelectionModel } from "./events.js";
 import { analyzeScore } from "./generation/diagnostics.js";
 import { chooseKeySignature, chooseTempo, chooseTimeSignature } from "./generation/key.js";
 import { buildLocalSentinelCandidateTraceSummary } from "./generation/local-sentinel-candidate-trace.js";
+import { createMeterContext } from "./generation/meter.js";
 import { buildPhraseConvergenceReviewSummary } from "./generation/phrase-convergence-review.js";
 import { buildPhraseDevelopmentReviewSummary } from "./generation/phrase-development-review.js";
 import { buildScoreWindowAcceptanceSummary } from "./generation/score-window-acceptance.js";
@@ -23,10 +24,11 @@ export function generateScore(input: GenerationInput): GenerationOutput {
   const parameters = normalizeParameters(input.parameters);
   const keySignature = chooseKeySignature(rng, input.seed);
   const timeSignature = chooseTimeSignature(rng);
+  const meterContext = createMeterContext(timeSignature);
   const bpm = chooseTempo(rng);
   const selectionModel = normalizeSelectionModel(input.selectionModel ?? DEFAULT_SELECTION_MODEL);
-  const subject = buildSubject(rng, keySignature, selectionModel);
-  const score = buildFugueScore(subject, keySignature, input.lengthTicks, rng, selectionModel);
+  const subject = buildSubject(rng, keySignature, selectionModel, meterContext);
+  const score = buildFugueScore(subject, keySignature, input.lengthTicks, rng, selectionModel, meterContext);
   const diagnostics = analyzeScore(score.notes, score.subjectEntries, score.sectionPlans);
   const localSentinelCandidateTrace = buildLocalSentinelCandidateTraceSummary(
     score.selectedCandidateEvaluations,
@@ -155,6 +157,7 @@ export function generateScore(input: GenerationInput): GenerationOutput {
       lowerVoiceVocality: diagnostics.lowerVoiceVocality,
       stepwisePattern: diagnostics.stepwisePattern,
       texturePlanningReview: diagnostics.texturePlanningReview,
+      meterConsistencyReview: diagnostics.meterConsistencyReview,
       phraseRepetitionReview: diagnostics.phraseRepetitionReview,
       entryBoundaryContinuity: diagnostics.entryBoundaryContinuity,
       bassAnswerTailTexture: diagnostics.bassAnswerTailTexture,

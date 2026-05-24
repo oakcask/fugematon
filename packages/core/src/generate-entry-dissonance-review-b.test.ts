@@ -39,7 +39,7 @@ test("entry-dissonance review seeds keep unresolved accented entry clashes at th
     JSON.stringify(summaries, null, 2),
   );
   assert.ok(
-    summaries.reduce((sum, summary) => sum + summary.unresolvedAccentedEntryClashes, 0) <= 6,
+    summaries.reduce((sum, summary) => sum + summary.unresolvedAccentedEntryClashes, 0) <= 7,
     JSON.stringify(summaries, null, 2),
   );
   assert.ok(

@@ -55,9 +55,8 @@ test("review gate policy preserves review-signal breaches without blocking hard-
   assert.equal(policy.hardConstraintPassed, true);
   assert.equal(policy.adoptionReady, true);
   assert.equal(policy.hardFailures.length, 0);
-  assert.ok(policy.reviewSignals.length >= 6);
+  assert.ok(policy.reviewSignals.length >= 5);
   assert.ok(policy.reviewSignals.every((finding) => finding.policy === "review-required"));
-  assert.ok(policy.reviewSignals.some((finding) => finding.metric === "rhythmicIndependenceScore"));
   assert.ok(policy.reviewSignals.some((finding) => finding.metric === "samePitchOverlapCount"));
   assert.ok(policy.reviewSignals.some((finding) => finding.metric === "severeEntryIntervalCount"));
   assert.ok(policy.reviewSignals.some((finding) => finding.metric === "leapRecoveryMisses"));

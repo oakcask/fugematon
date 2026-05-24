@@ -31,6 +31,15 @@ export type TimeSignature = {
   denominator: 4 | 8;
 };
 
+export type MeterContext = {
+  timeSignature: TimeSignature;
+  measureTicks: number;
+  beatTicks: number;
+  strongBeatIntervalTicks: number;
+  weakBeatIntervalTicks: number;
+  compound: boolean;
+};
+
 export type KeyMode = "major" | "minor" | "dorian" | "mixolydian" | "aeolian";
 
 export type KeySignature = {
@@ -67,6 +76,7 @@ export type HarmonicPlan = {
   state: FugueState;
   startTick: number;
   durationTicks: number;
+  meterContext: MeterContext;
   localKey: KeySignature;
   departureKey: KeySignature;
   targetKey: KeySignature;
@@ -568,6 +578,34 @@ export type MetricalHarmonyReviewSummary = {
   weakBeatNonChordToneIntentCount: number;
   weakBeatResolvedNonChordToneCount: number;
   weakBeatUnresolvedNonChordToneCount: number;
+};
+
+export type MeterConsistencyWindow = {
+  kind: "entry-start" | "subject-accent" | "harmonic-anchor" | "cadence-target" | "phrase-boundary";
+  tick: number;
+  measureOffsetTicks: number;
+  beatStrength: BeatStrength;
+  classification: "meter-confirming" | "compound-midpoint" | "pickup-or-cross-metric" | "review-required";
+  voice?: Voice;
+  state?: FugueState;
+  form?: EntryForm;
+};
+
+export type MeterConsistencyReviewSummary = {
+  schemaVersion: 1;
+  status: "review-required";
+  timeSignature: TimeSignature;
+  measureTicks: number;
+  beatTicks: number;
+  compound: boolean;
+  focusedWindowCount: number;
+  downbeatEntryCount: number;
+  offMeasureEntryCount: number;
+  compoundMidpointCount: number;
+  strongIntentOnNonDownbeatCount: number;
+  cadenceTargetOffDownbeatCount: number;
+  phraseBoundaryOffDownbeatCount: number;
+  windows: MeterConsistencyWindow[];
 };
 
 export type TexturePlanningReviewSummary = {
@@ -1103,6 +1141,7 @@ export type GenerationDiagnostics = {
   lowerVoiceVocality: LowerVoiceVocalitySummary;
   stepwisePattern: StepwisePatternSummary;
   texturePlanningReview: TexturePlanningReviewSummary;
+  meterConsistencyReview: MeterConsistencyReviewSummary;
   phraseRepetitionReview: PhraseRepetitionReviewSummary;
   entryBoundaryContinuity: EntryBoundaryContinuitySummary;
   bassAnswerTailTexture: BassAnswerTailTextureSummary;
