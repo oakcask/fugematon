@@ -69,7 +69,7 @@ Metric explanations must be checked against score-window musical judgement. A re
 
 Schema 3 keeps generated score output stable and records rejected generator repair evidence. A local entry-support pitch repair was not adopted because it worsened older musical guardrails. Reviewers should treat schema 3 as a truthfulness layer, not as a claim that every remaining review signal has been fixed.
 
-`qualityVector.schemaVersion` 4 / `modelVersion` 4 adds `scoreBeautyEvidence`, formerly `phase13VReview`:
+`qualityVector.schemaVersion` 4 / `modelVersion` 4 adds `scoreBeautyEvidence`:
 
 * `scoreBeautyEvidence.lineAgency`: independent, reinforcing, review-required, and ratio summaries for localized voice-pair spans.
 * `scoreBeautyEvidence.entryFormulaNovelty`: total, review-required, justified, and ratio summaries for repeated entry formulas.

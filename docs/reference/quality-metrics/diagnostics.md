@@ -31,8 +31,8 @@
 | `severeEntryIntervalCount` | entry 周辺の m2、M2、m7、M7 など聴感上目立つ interval。 | count だけでなく duration と解決文脈を見る。 |
 | `unresolvedSevereEntryIntervalCount` | severe interval が resolution deadline までに説明されない箇所。 | entry harmony の主要 review signal。Phase 13 以降は duration axis も見る。 |
 | `entryBoundaryContinuity` | subject / answer entry 境界で、外声が同時に再発音しているか、delayed / carried support があるかを読む summary。 | Phase 13X は初回 bass entry と post-exposition bass entry を分ける。Phase 13Y 以降は entry voice、entry order、already-entered voices で一般化し、Phase 14 以降は 1 声 carry + 2 外声 reset を score-window acceptance から分ける。playback smoothing ではなく score continuity で説明する。 |
-| `dissonanceTriage` | weak-passing / passing-neighbor / offbeat semitone clash と entry adjacent-second / unresolved accented clash を score-window 単位で読む summary。 | `phase14DissonanceTriage` の current 名。review-required evidence として seed、section、voice、role、intent へ戻して読み、単独の CI blocker にはしない。 |
-| `scoreWindowAcceptance` | important entry、dissonance triage、active voice-pair span、counter-subject survival、phrase development、metric explanation を同じ window list へ束ねる score-window acceptance surface。 | `phase14ScoreWindowAcceptance` の current 名。Aggregate metrics より先に読む review surface。各 window の tick、state、voices、roles、classification、theory basis、response から、accepted context / review-required / generator response / diagnostic context を分ける。 |
+| `dissonanceTriage` | weak-passing / passing-neighbor / offbeat semitone clash と entry adjacent-second / unresolved accented clash を score-window 単位で読む summary。 | review-required evidence として seed、section、voice、role、intent へ戻して読み、単独の CI blocker にはしない。 |
+| `scoreWindowAcceptance` | important entry、dissonance triage、active voice-pair span、counter-subject survival、phrase development、metric explanation を同じ window list へ束ねる score-window acceptance surface。 | Aggregate metrics より先に読む review surface。各 window の tick、state、voices、roles、classification、theory basis、response から、accepted context / review-required / generator response / diagnostic context を分ける。 |
 
 ## Melody And Texture
 
@@ -50,9 +50,9 @@
 
 | Metric | Meaning | Read as |
 | --- | --- | --- |
-| `phraseRepetitionReview.subjectStemFamilies` | 1つの generated score 内で subject stem / subject-fragment family がどれだけ集中しているか。 | `phase12Review.subjectStemFamilies` の current 名。Per-score phrase convergence の signal。function-bearing return と mechanical reuse を分けて読む。 |
-| `phraseConvergenceReview` | default path、4-section pattern、entry-pattern family、subject stem、subject-fragment concentration の review summary。 | `phase13RReview` の current 名。1曲内の convergence と legacy default path の検出には使えるが、seed 横断の初期主題類似は bundle-level summary と合わせて読む。 |
-| `phraseDevelopmentReview` | continuation window ごとに subject stem、phrase function、entry voice、cadence、local key、recent reuse、`new-material` / `function-bearing-recurrence` / `mechanical-reuse` judgement を出す。 | `phase13ZReview` の current 名。Long-run phrase development signal として、集計値だけで採否せず、譜面上で recurrence が役割を変えているかを読む。 |
+| `phraseRepetitionReview.subjectStemFamilies` | 1つの generated score 内で subject stem / subject-fragment family がどれだけ集中しているか。 | Per-score phrase convergence の signal。function-bearing return と mechanical reuse を分けて読む。 |
+| `phraseConvergenceReview` | default path、4-section pattern、entry-pattern family、subject stem、subject-fragment concentration の review summary。 | 1曲内の convergence と legacy default path の検出には使えるが、seed 横断の初期主題類似は bundle-level summary と合わせて読む。 |
+| `phraseDevelopmentReview` | continuation window ごとに subject stem、phrase function、entry voice、cadence、local key、recent reuse、`new-material` / `function-bearing-recurrence` / `mechanical-reuse` judgement を出す。 | Long-run phrase development signal として、集計値だけで採否せず、譜面上で recurrence が役割を変えているかを読む。 |
 | `subjectFamilyDiversity` | Review bundle 全体で、initial subject degree/rhythm/contour/tail family が何種類に分散しているか。 | 複数 seed が同じ少数の主題形へ収束していないかを見る corpus-level review signal。A/B summary は unique family count、top-family share、fragment share の delta を出す。 |
 
 ## Review Summaries
@@ -60,12 +60,12 @@
 | Field | Meaning |
 | --- | --- |
 | `candidatePoolOracle` | selected candidate と alternatives を比べ、selection model で直せる問題か、generator / section planner が足りない問題かを切り分ける。Phase 13Q 以降は viable candidate diversity も出す。 |
-| `texturePlanningReview` | register、functional thinning、state grammar、metrical harmony の summary。Formerly `phase11Review`。 |
-| `phraseRepetitionReview` | subject stem、answer transform、fragment derivation、phrase function、section-state pattern の反復 summary。Formerly `phase12Review`。 |
+| `texturePlanningReview` | register、functional thinning、state grammar、metrical harmony の summary。 |
+| `phraseRepetitionReview` | subject stem、answer transform、fragment derivation、phrase function、section-state pattern の反復 summary。 |
 | `entryBoundaryContinuity` | Phase 13W/13X の bass-entry boundary summary から、Phase 13Y で generalized entry-continuity summary へ広げた。first bass entry window、post-exposition bass compatibility count、generalized important-entry windows、entry voice、entry order、already-entered voices、outside onset、entry で切れた外声、carried support、suspension/resolution、delayed support、staggered continuation、prepared collective articulation、unsupported entry-local thinning、synchronized reset classification、one-voice carry with outside reset classification を持つ。 |
 | `qualityVector` | normalized review/adoption signal。詳細は [quality vector](quality-vector.md)。 |
-| `localSentinelCandidateTrace` | local sentinel を selected candidate explanation の section、entry、voice pair、resolution deadline へ戻す review-only bridge。Formerly `phase13QReview`。 |
-| `phraseConvergenceReview` | per-score convergence review signal。Seed 横断の主題語彙崩壊は bundle-level `subjectFamilyDiversity` と合わせて読む。Formerly `phase13RReview`。 |
-| `phraseDevelopmentReview` | windowed phrase-development review signal。Remaining mechanical-reuse windows は score-led beauty review に渡す。Formerly `phase13ZReview`。 |
-| `dissonanceTriage` | focused dissonance tradeoff summary。weak-passing semitone clash ticks、passing-neighbor/offbeat semitone clash ticks、entry adjacent-second friction count、unresolved accented entry clash count、代表 score-window を持つ。Formerly `phase14DissonanceTriage`。 |
-| `scoreWindowAcceptance` | score-window acceptance summary。important entry、dissonance、voice-pair、counter-subject、phrase-development、metric-explanation の window count と response count を持ち、代表 window には theory basis と project response を含める。Formerly `phase14ScoreWindowAcceptance`。 |
+| `localSentinelCandidateTrace` | local sentinel を selected candidate explanation の section、entry、voice pair、resolution deadline へ戻す review-only bridge。 |
+| `phraseConvergenceReview` | per-score convergence review signal。Seed 横断の主題語彙崩壊は bundle-level `subjectFamilyDiversity` と合わせて読む。 |
+| `phraseDevelopmentReview` | windowed phrase-development review signal。Remaining mechanical-reuse windows は score-led beauty review に渡す。 |
+| `dissonanceTriage` | focused dissonance tradeoff summary。weak-passing semitone clash ticks、passing-neighbor/offbeat semitone clash ticks、entry adjacent-second friction count、unresolved accented entry clash count、代表 score-window を持つ。 |
+| `scoreWindowAcceptance` | score-window acceptance summary。important entry、dissonance、voice-pair、counter-subject、phrase-development、metric-explanation の window count と response count を持ち、代表 window には theory basis と project response を含める。 |

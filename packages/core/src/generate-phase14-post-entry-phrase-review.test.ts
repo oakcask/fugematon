@@ -34,7 +34,9 @@ test("Phase 14 keeps outside support on the tight-stretto first bass answer tail
   const fifthBeatTick = firstBassAnswer.startTick + TICKS_PER_QUARTER * 4;
   const activeNotes = output.events.filter(
     (event): event is NoteEvent =>
-      event.kind === "note" && event.startTick <= fifthBeatTick && fifthBeatTick < event.startTick + event.durationTicks,
+      event.kind === "note" &&
+      event.startTick <= fifthBeatTick &&
+      fifthBeatTick < event.startTick + event.durationTicks,
   );
   const activeOutsideVoices = new Set(
     activeNotes.filter((note) => note.voice !== firstBassAnswer.voice).map((note) => note.voice),
