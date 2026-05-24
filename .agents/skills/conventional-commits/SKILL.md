@@ -21,7 +21,10 @@ Use this format:
 [optional footer(s)]
 ```
 
-- Use common types such as `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `chore`, or `revert`.
+- Use common types such as `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `chore`, or `revert`.
+- Do not use the `build` type. Use `chore` for build-system, dependency,
+  packaging, tooling, and configuration-only changes that do not fit a more
+  specific allowed type.
 - Use `chore(ci)` for CI-related changes, including workflow, pipeline, report parsing,
   test sharding, budget checks, and automation updates. Do not use `feat` or
   `fix` with CI-related scopes such as `ci`, `workflow`, `workflows`, or `actions`
