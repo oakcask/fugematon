@@ -4,6 +4,7 @@
 
 ## Read First
 
+* [Metrical generation review](metrical-generation-review.md): `seed-0kowcm6-0am7x3f` の 3/4 metadata と聴感上の拍節感の不一致を調査し、Phase 8 前の Metrical generation repair へ再編する根拠。
 * [Phase 14 post-entry and free-counterpoint generation review](phase-14-post-entry-phrase-generation.md): Phase 14C0 / 14C1 の実装 evidence。answer / stretto-like 後の long thin support window を focused seed で解消し、free-counterpoint phrase signature の repaired ceiling と dissonance tradeoff を記録する。
 * [Phase 14 post-entry texture and free-counterpoint phrase review](phase-14-post-entry-texture-and-free-counterpoint-review.md): ユーザー報告後の ScoreEvent review。answer / stretto-like 後の thin support と、free-counterpoint phrase signature の seed 横断収束を Phase 14C0 / 14C1 へ再編する根拠。
 * [Phase 14 beauty replan review](phase-14-beauty-replan-2026-05.md): Phase 14 の再レビュー。score-window evidence、entry-continuity classifier、line agency、counter-subject survivability、phrase-development hierarchy、CI / review scope を再分類した最新根拠。

@@ -2,7 +2,7 @@
 
 Phase 14 is inserted after Phase 13Z and before Phase 8. Its purpose is to make musical beauty the primary acceptance criterion for the generator. Existing metrics, compatibility fields, and guardrail margins are secondary when they contradict the score.
 
-Status: complete for the Phase 8 handoff. Phase 14 records score-window, diagnostics, focused profile notes, and review-required tradeoffs showing that the generator is no longer being accepted by metrics alone. Phase 8 may proceed only with these review signals visible.
+Status: complete for the score-led beauty handoff, but superseded as the immediate Phase 8 prerequisite by [Metrical generation repair](metrical-generation-repair.md). Phase 14 records score-window, diagnostics, focused profile notes, and review-required tradeoffs showing that the generator is no longer being accepted by metrics alone. Phase 8 may proceed only after these review signals and the later meter-context repair remain visible.
 
 Planning reviews:
 
@@ -125,4 +125,4 @@ Implementation note: focused profile notes for `organ-default` and `strict-count
 
 ## Phase 8 Handoff
 
-Phase 8 may resume with Phase 14 complete for handoff. Infinite playback must not use segment boundaries, visual smoothing, playback profiles, or UI controls to make weak counterpoint, repeated formulae, entry resets, same-family fatigue, or unresolved semitone-friction tradeoffs less audible.
+Phase 8 may resume only after Phase 14 and the later Metrical generation repair are both complete for handoff. Infinite playback must not use segment boundaries, visual smoothing, playback profiles, or UI controls to make weak counterpoint, repeated formulae, entry resets, same-family fatigue, unresolved semitone-friction tradeoffs, or meter mismatch less audible.
