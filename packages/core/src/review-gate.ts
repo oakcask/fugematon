@@ -82,7 +82,11 @@ export type ManualListeningJudgement = "pass" | "needs-work" | "fail" | "not-rev
 
 export type ReviewGatePolicyClassification = "hard-failure" | "review-required" | "warning" | "manual";
 
-export type ReviewGateFindingSource = "diagnostics" | "legacy-phase-gate" | "diagnostics-warning" | "manual-listening";
+export type ReviewGateFindingSource =
+  | "diagnostics"
+  | "retired-review-gate"
+  | "diagnostics-warning"
+  | "manual-listening";
 
 export type ClassifiedReviewGateFinding = ReviewGateFailure & {
   policy: ReviewGatePolicyClassification;
@@ -896,13 +900,13 @@ function hardConstraintFailure(metric: string, actual: number): ClassifiedReview
 function classifyLegacyGateFailure(failure: ReviewGateFailure): ClassifiedReviewGateFinding {
   const metric = metricName(failure.metric);
   if (REVIEW_POLICY_REVIEW_SIGNAL_METRICS.has(metric)) {
-    return { ...failure, policy: "review-required", source: "legacy-phase-gate" };
+    return { ...failure, policy: "review-required", source: "retired-review-gate" };
   }
   if (REVIEW_POLICY_SCHEMA_SHAPE_METRICS.has(metric)) {
-    return { ...failure, policy: "hard-failure", source: "legacy-phase-gate" };
+    return { ...failure, policy: "hard-failure", source: "retired-review-gate" };
   }
 
-  return { ...failure, policy: "warning", source: "legacy-phase-gate" };
+  return { ...failure, policy: "warning", source: "retired-review-gate" };
 }
 
 function classifyDiagnosticsWarnings(diagnostics: GenerationDiagnostics): ClassifiedReviewGateFinding[] {

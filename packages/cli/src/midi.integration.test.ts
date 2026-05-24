@@ -578,12 +578,6 @@ test("review command writes diagnostics and MIDI files for review seeds", async 
       );
       assert.ok(entry.diagnosticsSummary.texture.rhythmicIndependenceScore >= 0);
       assert.ok(entry.diagnosticsSummary.texture.rhythmicIndependenceScore <= 1);
-      assert.equal(Object.hasOwn(entry, "phase59Gate"), false);
-      assert.equal(Object.hasOwn(entry, "phase510Gate"), false);
-      assert.equal(Object.hasOwn(entry, "phase511Gate"), false);
-      assert.equal(Object.hasOwn(entry, "phase6Gate"), false);
-      assert.equal(Object.hasOwn(entry, "phase7Gate"), false);
-      assert.equal(Object.hasOwn(entry, "phase7BGate"), false);
       assert.equal(typeof entry.baselineBeautyGate.passed, "boolean");
       assert.ok(Array.isArray(entry.baselineBeautyGate.failures));
       assert.ok(entry.baselineBeautyGate.metrics.selectedCandidateEvaluationCount >= 0);
@@ -1029,8 +1023,6 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
       assert.equal(entry.variant.candidatePoolOracle.schemaVersion, 5);
       assert.deepEqual(entry.baseline.candidatePoolOracle, entry.baseline.diagnosticsSummary.candidatePoolOracle);
       assert.deepEqual(entry.variant.candidatePoolOracle, entry.variant.diagnosticsSummary.candidatePoolOracle);
-      assert.equal(Object.hasOwn(entry.baseline, "phase7BGate"), false);
-      assert.equal(Object.hasOwn(entry.variant, "phase7BGate"), false);
       assert.equal(typeof entry.baseline.reviewGatePolicy.adoptionReady, "boolean");
       assert.equal(typeof entry.variant.reviewGatePolicy.adoptionReady, "boolean");
       assert.ok(entry.baseline.reviewGatePolicy.hardFailureCount >= 0);

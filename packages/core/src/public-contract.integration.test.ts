@@ -85,18 +85,9 @@ test("public diagnostics expose finite candidate score dimensions", () => {
 
   assert.ok(selectedEvaluation !== undefined);
   assertCandidateEvaluation(selectedEvaluation);
-  assert.equal(
-    Object.hasOwn(selectedEvaluation.dimensions.texture.features, "phase11AdjacentVoiceOverOctaveCount"),
-    false,
-  );
-  assert.equal(
-    Object.hasOwn(selectedEvaluation.dimensions.texture.features, "phase11FunctionalThinningNonCadentialRunCount"),
-    false,
-  );
-  assert.equal(
-    Object.hasOwn(selectedEvaluation.dimensions.form.features, "phase11StateGrammarMostRepeatedPatternCount"),
-    false,
-  );
+  assert.equal(typeof selectedEvaluation.dimensions.texture.features.wideAdjacentVoiceSpacingCount, "number");
+  assert.equal(typeof selectedEvaluation.dimensions.texture.features.nonCadentialFunctionalThinningRunCount, "number");
+  assert.equal(typeof selectedEvaluation.dimensions.form.features.stateGrammarMostRepeatedPatternCount, "number");
   assert.equal(output.diagnostics.rangeViolations, COUNTERPOINT_HARMONY_DIAGNOSTICS_PROFILE.rangeViolations);
   assert.equal(output.diagnostics.voiceCrossings, COUNTERPOINT_HARMONY_DIAGNOSTICS_PROFILE.voiceCrossings);
   assert.equal(
@@ -159,14 +150,6 @@ test("public diagnostics expose finite candidate score dimensions", () => {
   assert.equal(typeof output.diagnostics.scoreWindowAcceptance.counterSubjectWindowCount, "number");
   assert.equal(typeof output.diagnostics.scoreWindowAcceptance.generatorResponseWindowCount, "number");
   assert.ok(Array.isArray(output.diagnostics.scoreWindowAcceptance.windows));
-  assert.equal(Object.hasOwn(output.diagnostics, "phase11Review"), false);
-  assert.equal(Object.hasOwn(output.diagnostics, "phase12Review"), false);
-  assert.equal(Object.hasOwn(output.diagnostics, "phase13QReview"), false);
-  assert.equal(Object.hasOwn(output.diagnostics, "phase13RReview"), false);
-  assert.equal(Object.hasOwn(output.diagnostics, "phase13ZReview"), false);
-  assert.equal(Object.hasOwn(output.diagnostics, "phase14DissonanceTriage"), false);
-  assert.equal(Object.hasOwn(output.diagnostics, "phase14ScoreWindowAcceptance"), false);
-  assert.equal(Object.hasOwn(output.diagnostics.qualityVector, "phase13VReview"), false);
   assert.equal(output.diagnostics.lowerVoiceVocality.schemaVersion, 1);
   assert.ok(output.diagnostics.lowerVoiceVocality.score >= 0);
   assert.ok(output.diagnostics.lowerVoiceVocality.score <= 1);
