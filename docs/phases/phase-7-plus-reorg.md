@@ -316,6 +316,8 @@ Phase 8 の主目的は、パラメータスライダを増やすことではな
 
 ユーザー向け操作は再生モード、seed、performance profile、再生成またはスキップなどの高水準 command に絞る。strictness、density、subjectPresence のような細かな値は、初期は内部状態として保持し、visualizer が見せる対象にする。状態変更が必要な場合は、次の状態遷移または segment 境界から有効にし、履歴に meta event として残す。
 
+WebAudio synth / envelope / velocity-to-gain の再設計は Phase 8 MVP の主対象にしない。Phase 8 後の [WebAudio synth interpretation follow-up](webaudio-synth-interpretation.md) で、`PerformanceProfile` の WebAudio 解釈として扱い、生成譜面、diagnostics、quality vector の修正とは分ける。
+
 完了条件:
 
 * ring buffer replay、rewind、state-change / boundary / mode-change meta event が deterministic に動く。
@@ -324,6 +326,12 @@ Phase 8 の主目的は、パラメータスライダを増やすことではな
 * segment 前後の generated score も reference diagnostics、review signal、quality vector comparison、performance profile metadata を出せる。
 * UI または CLI review bundle で、segment 前後の diagnostics と manual listening note を比較できる。
 * visualizer が主題 family、調性領域、density arc、cadence preparation、novelty budget などの内部状態を鑑賞対象として見せられる。
+
+### WebAudio synth interpretation follow-up
+
+WebAudio synth interpretation follow-up は Phase 8 後の rendering lane とする。Phase 12P の `PerformanceProfile` 境界を使い、WebAudio の envelope、velocity-to-attack emphasis、velocity-to-sustain gain、bass balance を調整する。これは作曲モデルの変更ではなく、`ScoreEvent.velocity` を長音の sustain gain に直結しすぎる現行 WebAudio 解釈を修正するための後続計画である。詳細は [WebAudio synth interpretation follow-up](webaudio-synth-interpretation.md) に置く。
+
+この follow-up は score-level blocker を隠すために使わない。entry-boundary reset、tail thinning、voice lockstep、unison、weak counter-subject identity は、引き続き score-window review と generator / scoring / diagnostics の問題として扱う。
 
 ### Phase 9: Worker 化と安定化
 

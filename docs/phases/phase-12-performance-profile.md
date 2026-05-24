@@ -53,6 +53,8 @@ Phase 13 は Phase 12 baseline の musical defects を `qualityVector` と local
 
 Phase 12P is complete. The next implementation phase is [Phase 13](phase-13.md).
 
+Later WebAudio synth and envelope interpretation work is tracked as [WebAudio synth interpretation follow-up](webaudio-synth-interpretation.md). That follow-up should use the `PerformanceProfile` boundary introduced here and should remain a rendering change unless it uncovers a score-level blocker that belongs in generator, scoring, or diagnostics work.
+
 ## Implementation Notes
 
 * `packages/performance` defines `PerformanceProfile`, `PerformanceEvent`, `organ-default`, `strict-counterpoint`, and deterministic `ScoreEvent` to `PerformanceEvent` conversion without depending on DOM, WebAudio, Node.js runtime APIs, or the MIDI encoder.
