@@ -4,6 +4,7 @@
 
 ## Phase 14
 
+* [Metrical generation review](metrical-generation-review.md): `seed-0kowcm6-0am7x3f` の 3/4 metadata と聴感上の拍節感の不一致を調査し、Metrical generation repair を Phase 8 前に差し込む根拠。
 * [Phase 14 post-entry and free-counterpoint generation review](phase-14-post-entry-phrase-generation.md): Phase 14C0 / 14C1 の実装 evidence。answer / stretto-like 後の long thin support window を focused seed で解消し、free-counterpoint phrase signature の repaired ceiling と dissonance tradeoff を記録する。
 * [Phase 14 beauty replan review](phase-14-beauty-replan-2026-05.md): Phase 14 の再レビュー。22 seed bundle と focused seed で、Phase 7B/reference aggregate の false acceptance、entry-continuity classifier の甘さ、line agency、counter-subject survivability、phrase-development hierarchy、CI / review scope を再分類した最新根拠。
 * [Phase 14 score-led beauty review](phase-14-score-led-beauty-review.md): Phase 13Z 後に、指標ではなく譜面を読み、reference aggregate の false acceptance、entry continuity、line agency、counter-subject survivability、phrase development、CI / review scope を Phase 8 前の score-led beauty trunk として再編する根拠。
@@ -60,7 +61,8 @@
 * [Phase 7+ 再編計画](../phases/phase-7-plus-reorg.md): Phase 7 blocker 後の gate 緩和、review signal 化、Phase 10 先行と Phase 8/9 defer の進め方。
 * [Phase 11](../phases/phase-11.md): Phase 10 譜面レビュー後に、Phase 8/9 の前へ追加した品質モデル再設計計画。
 * [Phase 10](../phases/phase-10.md): 操作機能より先に進める reference corpus、oracle-driven model update、section-local planner、pairwise preference の品質基盤計画。
-* [Phase 8](../phases/phase-8.md): 現在の operational lane。Phase 13X、Phase 13Y、Phase 13Z、Phase 14 の evidence baseline を前提に無限再生 operational lane を再開する。
+* [Metrical generation repair](../phases/metrical-generation-repair.md): 現在の実装対象。time-signature metadata を generator、scoring、diagnostics へ接続する。
+* [Phase 8](../phases/phase-8.md): Metrical generation repair 後の operational lane。Phase 13X、Phase 13Y、Phase 13Z、Phase 14、Metrical generation repair の evidence baseline を前提に無限再生 operational lane を再開する。
 
 ## Earlier Reviews
 
@@ -80,7 +82,7 @@
 
 ## Read When
 
-* 最新の品質方針を見る場合は Phase 14 reviews と Phase 14 を先に読む。必要な場合だけ Phase 13Z、Phase 13Y、Phase 13X2、Phase 13X、Phase 13W、Phase 13V、Phase 13U、Phase 13T、Phase 13S、Phase 13R、Phase 13Q へ戻る。
+* 最新の品質方針を見る場合は Metrical generation review と Metrical generation repair を先に読む。必要な場合だけ Phase 14、Phase 13Z、Phase 13Y、Phase 13X2、Phase 13X、Phase 13W、Phase 13V、Phase 13U、Phase 13T、Phase 13S、Phase 13R、Phase 13Q へ戻る。
 * Phase 11 の実装済み観察軸を見る場合は [Phase 11 review summary diagnostics](phase-11-review-summary.md) を読む。
 * Phase 7 以降の gate 再構成を見る場合は [Phase 7 参照作品 diagnostics 計画](phase-7-reference-diagnostics-plan.md) を読む。
 * Phase 12 挿入前の blocker evidence を見る場合は [Phase 11 post-completion score review](phase-11-post-review.md) を読む。

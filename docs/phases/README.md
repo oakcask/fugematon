@@ -10,7 +10,8 @@
 
 ## Read First
 
-* [Infinite playback MVP](phase-8.md): 現在の実装対象。旧 Phase 8。Score-led beauty handoff 後の operational lane。無限再生セッション、境界設計、内部状態 visualizer の MVP。
+* [Metrical generation repair](metrical-generation-repair.md): 現在の実装対象。3/4 や 6/8 の time-signature metadata を generator、scoring、diagnostics へ接続し、譜面の拍子と聴感上の拍節感を揃える品質 lane。
+* [Infinite playback MVP](phase-8.md): Metrical generation repair 後の operational lane。旧 Phase 8。Score-led beauty handoff 後の無限再生セッション、境界設計、内部状態 visualizer の MVP。
 * [Score-led beauty handoff](phase-14.md): 完了済み handoff baseline。旧 Phase 14。score-window musical acceptance と音楽美の acceptance ladder を先に置く beauty trunk。
 * [Quality-first reorg](phase-7-plus-reorg.md): Phase 12 以降の品質優先再編と Phase 8/9 defer の理由。
 
