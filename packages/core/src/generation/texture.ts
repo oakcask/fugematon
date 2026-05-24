@@ -69,6 +69,9 @@ type TextureNotePattern = {
   strictSemitoneAvoidance?: boolean;
 };
 
+const LONG_REST_PHRASE_CLOSURE_TICKS = TICKS_PER_QUARTER * 2;
+const PHRASE_CLOSURE_CADENCE_PROXIMITY_TICKS = TICKS_PER_QUARTER;
+
 export function addCounterpointTexture(
   notes: Exposition["notes"],
   subject: readonly SubjectNote[],
@@ -1023,6 +1026,107 @@ export function addPostEntryContinuationSupport(
     Math.min(...sectionPlans.map((plan) => plan.startTick)),
     Math.max(...sectionPlans.map((plan) => plan.startTick + plan.durationTicks)),
   );
+}
+
+export function shapeLongRestPhraseClosures(notes: Exposition["notes"], sectionPlans: readonly HarmonicPlan[]): void {
+  const scoreEndTick = Math.max(...notes.map((note) => note.startTick + note.durationTicks));
+
+  for (const voice of VOICE_ENTRY_ORDER) {
+    const voiceNotes = notes
+      .filter((note) => note.voice === voice)
+      .sort((left, right) => left.startTick - right.startTick || left.durationTicks - right.durationTicks);
+
+    for (const [index, note] of voiceNotes.entries()) {
+      if (note.role !== "free-counterpoint") {
+        continue;
+      }
+
+      const restStartTick = note.startTick + note.durationTicks;
+      const nextStartTick = voiceNotes[index + 1]?.startTick ?? scoreEndTick;
+      const restTicks = nextStartTick - restStartTick;
+      if (restTicks < LONG_REST_PHRASE_CLOSURE_TICKS) {
+        continue;
+      }
+
+      const plan = sectionPlanForTick(sectionPlans, Math.max(0, restStartTick - 1));
+      const anchor = phraseClosureAnchor(plan, restStartTick);
+      if (anchor === undefined) {
+        continue;
+      }
+
+      const closingPitch = nearestRestClosingPitch(notes, note, anchor);
+      if (closingPitch === undefined) {
+        continue;
+      }
+
+      note.pitch = closingPitch;
+      note.metricalHarmonyIntent =
+        note.voice === "bass" &&
+        positiveModulo(closingPitch, 12) === chordTonePitchClasses(anchor.localKey, anchor.function)[0]
+          ? "structural-root-support"
+          : "structural-chord-tone";
+    }
+  }
+
+  const startTick = Math.min(...sectionPlans.map((plan) => plan.startTick));
+  const endTick = Math.max(...sectionPlans.map((plan) => plan.startTick + plan.durationTicks));
+  repairTextureVoiceCrossings(notes, startTick, endTick - startTick);
+}
+
+function phraseClosureAnchor(
+  plan: HarmonicPlan | undefined,
+  restStartTick: number,
+): ReturnType<typeof nearestHarmonicAnchor> {
+  if (plan === undefined) {
+    return undefined;
+  }
+
+  const cadenceAnchor = plan.anchors
+    .filter((anchor) => anchor.cadenceTarget)
+    .map((anchor) => ({ anchor, distance: Math.abs(anchor.tick - restStartTick) }))
+    .filter((candidate) => candidate.distance <= PHRASE_CLOSURE_CADENCE_PROXIMITY_TICKS)
+    .sort((left, right) => left.distance - right.distance)[0]?.anchor;
+  if (cadenceAnchor !== undefined) {
+    return cadenceAnchor;
+  }
+
+  const distanceFromSectionEnd = plan.startTick + plan.durationTicks - restStartTick;
+  if (0 <= distanceFromSectionEnd && distanceFromSectionEnd <= PHRASE_CLOSURE_CADENCE_PROXIMITY_TICKS) {
+    return nearestHarmonicAnchor(Math.max(plan.startTick, restStartTick - 1), [plan]);
+  }
+
+  return undefined;
+}
+
+function nearestRestClosingPitch(
+  notes: readonly NoteEvent[],
+  note: NoteEvent,
+  anchor: NonNullable<ReturnType<typeof nearestHarmonicAnchor>>,
+): number | undefined {
+  const pitchClasses = chordTonePitchClasses(anchor.localKey, anchor.function);
+  const range = VOICE_RANGES[note.voice];
+  const candidates = Array.from({ length: range.max - range.min + 1 }, (_, index) => range.min + index)
+    .filter((pitch) => pitchClasses.includes(positiveModulo(pitch, 12)))
+    .filter((pitch) => keepsAdjacentVoiceOrder(notes, note, pitch));
+
+  const noSemitoneCandidates = candidates.filter(
+    (pitch) => !createsSemitoneAtTick(notes, note.voice, note.startTick, pitch),
+  );
+  const noUnisonCandidates = noSemitoneCandidates.filter(
+    (pitch) => !createsPitchClassUnisonAtTick(notes, note.voice, note.startTick, pitch),
+  );
+
+  const nearestNonSemitonePitch = nearestPitch(noSemitoneCandidates, note.pitch);
+  const nearestNonUnisonPitch = nearestPitch(noUnisonCandidates, note.pitch);
+  if (
+    nearestNonSemitonePitch !== undefined &&
+    nearestNonUnisonPitch !== undefined &&
+    Math.abs(nearestNonUnisonPitch - note.pitch) <= Math.abs(nearestNonSemitonePitch - note.pitch)
+  ) {
+    return nearestNonUnisonPitch;
+  }
+
+  return nearestNonSemitonePitch;
 }
 
 function addFunctionalSupportLine(
