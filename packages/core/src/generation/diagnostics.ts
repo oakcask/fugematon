@@ -45,6 +45,7 @@ import {
   positiveModulo,
   VOICE_ENTRY_ORDER,
 } from "./shared.js";
+import { analyzeSoloTexture } from "./solo-texture.js";
 import type { ActivePitch, ActiveVerticality, TextureDiagnostics } from "./types.js";
 import { type HalfBeatVerticality, halfBeatVerticalities } from "./verticality.js";
 
@@ -1367,68 +1368,6 @@ function isSevereEntryInterval(intervalClass: number): boolean {
   return intervalClass === 1 || intervalClass === 2 || intervalClass === 10 || intervalClass === 11;
 }
 
-function analyzeSoloTexture(notes: readonly NoteEvent[], sectionPlans: readonly HarmonicPlan[]): SoloTextureSummary {
-  const checkpoints = [...new Set(notes.flatMap((note) => [note.startTick, note.startTick + note.durationTicks]))].sort(
-    (left, right) => left - right,
-  );
-  const runs: {
-    voice: Voice;
-    startTick: number;
-    endTick: number;
-    previousActiveVoiceCount: number;
-  }[] = [];
-  let currentRun:
-    | {
-        voice: Voice;
-        startTick: number;
-        endTick: number;
-        previousActiveVoiceCount: number;
-      }
-    | undefined;
-  let previousActiveVoiceCount = 0;
-
-  for (let index = 0; index < checkpoints.length - 1; index += 1) {
-    const startTick = checkpoints[index]!;
-    const endTick = checkpoints[index + 1]!;
-    const activeVoices = activeVoicesDuring(notes, startTick, endTick);
-    if (activeVoices.length === 1) {
-      const voice = activeVoices[0]!;
-      if (currentRun?.voice === voice && currentRun.endTick === startTick) {
-        currentRun.endTick = endTick;
-      } else {
-        if (currentRun !== undefined) {
-          runs.push(currentRun);
-        }
-        currentRun = { voice, startTick, endTick, previousActiveVoiceCount };
-      }
-    } else if (currentRun !== undefined) {
-      runs.push(currentRun);
-      currentRun = undefined;
-    }
-    previousActiveVoiceCount = activeVoices.length;
-  }
-  if (currentRun !== undefined) {
-    runs.push(currentRun);
-  }
-
-  const longRuns = runs.filter((run) => run.endTick - run.startTick >= TICKS_PER_QUARTER);
-  const unsupportedRuns = longRuns.filter(
-    (run) =>
-      run.previousActiveVoiceCount >= 2 &&
-      !hasNearbyPhraseSupport(run.startTick, sectionPlans) &&
-      !hasGradualThinningBefore(notes, run.voice, run.startTick),
-  );
-  const abruptRuns = unsupportedRuns.filter((run) => run.previousActiveVoiceCount >= 3);
-  const runsByVoice = VOICE_ENTRY_ORDER.map((voice) => longRuns.filter((run) => run.voice === voice).length);
-
-  return {
-    soloRunCount: longRuns.length,
-    unsupportedSoloRunCount: unsupportedRuns.length,
-    abruptTextureDropCount: abruptRuns.length,
-    soloVoiceImbalance: Math.max(...runsByVoice) - Math.min(...runsByVoice),
-  };
-}
-
 function analyzePitchContourMotion(notes: readonly NoteEvent[]): PitchContourMotionSummary {
   return {
     fourBeat: analyzePitchContourWindow(notes, TICKS_PER_QUARTER * 4),
@@ -1849,14 +1788,6 @@ function normalizedPatternEntropy(patternCounts: readonly number[]): number {
   return entropy / Math.log2(patternCounts.length);
 }
 
-function activeVoicesDuring(notes: readonly NoteEvent[], startTick: number, endTick: number): Voice[] {
-  return VOICE_ENTRY_ORDER.filter((voice) =>
-    notes.some(
-      (note) => note.voice === voice && note.startTick < endTick && startTick < note.startTick + note.durationTicks,
-    ),
-  );
-}
-
 function hasNearbyPhraseSupport(tick: number, sectionPlans: readonly HarmonicPlan[]): boolean {
   return sectionPlans.some((plan) => {
     const sectionEndTick = plan.startTick + plan.durationTicks;
@@ -1867,16 +1798,6 @@ function hasNearbyPhraseSupport(tick: number, sectionPlans: readonly HarmonicPla
     );
     return nearSectionBoundary || nearCadence;
   });
-}
-
-function hasGradualThinningBefore(notes: readonly NoteEvent[], voice: Voice, tick: number): boolean {
-  const previousTick = tick - TICKS_PER_QUARTER / 2;
-  if (previousTick < 0) {
-    return false;
-  }
-
-  const previousActiveVoices = activeVoicesDuring(notes, previousTick, tick);
-  return previousActiveVoices.length === 2 && previousActiveVoices.includes(voice);
 }
 
 function analyzeOrnamentPlacementReasons(
