@@ -7,6 +7,7 @@ Status: complete for the score-led beauty handoff, but superseded as the immedia
 Planning reviews:
 
 * [Phase 14 post-entry and free-counterpoint generation review](../reviews/phase-14-post-entry-phrase-generation.md): completion evidence for the Phase 14C0 / 14C1 generator response and the remaining review-required dissonance tradeoff.
+* [Phase 14 soprano register contour review](../reviews/phase-14-soprano-register-contour-review.md): user-reported `seed-1yc5rlr-184cz7l` evidence showing exposed soprano leaps caused by register placement overpowering melodic continuity.
 * [Phase 14 post-entry texture and free-counterpoint phrase review](../reviews/phase-14-post-entry-texture-and-free-counterpoint-review.md): latest user-reported review of answer/stretto post-entry thinning and cross-seed free-counterpoint phrase convergence.
 * [Phase 14 beauty replan review](../reviews/phase-14-beauty-replan-2026-05.md): latest 22 seed + focused seed review and CI / review scope classification.
 * [Phase 14 score-led beauty review](../reviews/phase-14-score-led-beauty-review.md): initial score-led audit after Phase 13Z.
@@ -59,6 +60,7 @@ The acceptance order is:
 * The 22 seed review bundle no longer has universal review-required pitch-class unison and duration lockstep without a score-window explanation and a musical response.
 * Important entry windows show audible continuity: carried, suspended, resolving, staggered, or prepared collective articulation is visible in the score, and the review distinguishes one-voice carry from real contrapuntal continuity.
 * Answer and stretto-like post-entry windows no longer default to four-quarter-or-longer thin support with only one outside support voice unless the score-window function explains the thinning.
+* User-reported soprano register-contour failures, starting with `seed-1yc5rlr-184cz7l` measures 3-4, are repaired by contour-aware entry and support pitch placement rather than by widening `leapRecoveryMisses` thresholds.
 * Counter-subject windows are preserved or transformed recognizably; "tradeoff" is not the default outcome.
 * Free-counterpoint and subject-material recurrence are accepted only when the repeated material changes musical function, surface rhythm/contour, or developmental pressure.
 * Reference aggregate and Phase 7B policy output are documented as safety/context signals, not as top-level beauty acceptance. Quality vector axes remain review inputs unless the score window confirms the musical symptom and response.
@@ -110,6 +112,12 @@ Implementation note: long-form review generation now varies free-counterpoint su
 Add independent rhythmic and contour alternatives after the dissonance triage is stable. Make counter-subject preservation and transformation selectable objectives. Rebuild phrase-development selection so recurrence must show changed role, register, cadence target, contour, density, or contrapuntal pressure, not only a changed state label. Do not let phrase novelty rewards select windows that increase unprepared semitone friction. The generator should improve line agency before phrase-development rewards are trusted, because a novel phrase over block-like support is still weak fugue writing.
 
 Implementation note: free-counterpoint support now avoids near pitch-class collisions with active counter-subject notes, preferring nearby chord tones when a harmonic anchor is available. With the corrected cyclic pitch-class-distance diagnostic, this reduces focused counter-subject support collisions from 2,045 to 857 in the high-collision seed group and from 453 to 217 in the modal/control group, while keeping the remaining survivability and phrase-development evidence review-required. The accepted tradeoff is that unresolved accented entry clashes rise to 16 across the focused entry-dissonance seeds, with `tight-stretto` at 9; this stays review-required rather than CI-blocking. See the [Phase 14 counter-subject support generation review](../reviews/phase-14-counter-subject-support-generation.md). Line-agency rhythm/contour independence and function-bearing phrase development remain open.
+
+### 14C3: Soprano register-contour generation
+
+Repair user-reported exposed soprano leaps where register placement overrules melodic continuity. Subject and answer entry pitch placement should consider neighboring entry tones when choosing octaves, while preserving subject identity, answer plan, range, and voice order. Free-counterpoint support should likewise choose the nearer octave when that avoids an unrecovered soprano leap and does not create semitone, pitch-class-unison, counter-subject collision, weak-dissonance, or crossing regressions.
+
+The first focused seed is `seed-1yc5rlr-184cz7l`, where measures 3-4 expose `B4 -> A5 -> D5` and `C5 -> A5 -> D5`. See the [Phase 14 soprano register contour review](../reviews/phase-14-soprano-register-contour-review.md). Keep this repair score-window based: do not widen aggregate `leapRecoveryMisses` thresholds to make the symptom pass.
 
 ### 14D: Metric truthfulness and scope cleanup
 

@@ -6,6 +6,7 @@
 
 * [Metrical generation review](metrical-generation-review.md): `seed-0kowcm6-0am7x3f` の 3/4 metadata と聴感上の拍節感の不一致を調査し、Metrical generation repair を Phase 8 前に差し込む根拠。
 * [Phase 14 post-entry and free-counterpoint generation review](phase-14-post-entry-phrase-generation.md): Phase 14C0 / 14C1 の実装 evidence。answer / stretto-like 後の long thin support window を focused seed で解消し、free-counterpoint phrase signature の repaired ceiling と dissonance tradeoff を記録する。
+* [Phase 14 soprano register contour review](phase-14-soprano-register-contour-review.md): `seed-1yc5rlr-184cz7l` の soprano 第3-4小節で露出する大跳躍を、register placement と melodic continuity の衝突として Phase 14 follow-up へ入れる根拠。
 * [Phase 14 beauty replan review](phase-14-beauty-replan-2026-05.md): Phase 14 の再レビュー。22 seed bundle と focused seed で、Phase 7B/reference aggregate の false acceptance、entry-continuity classifier の甘さ、line agency、counter-subject survivability、phrase-development hierarchy、CI / review scope を再分類した最新根拠。
 * [Phase 14 score-led beauty review](phase-14-score-led-beauty-review.md): Phase 13Z 後に、指標ではなく譜面を読み、reference aggregate の false acceptance、entry continuity、line agency、counter-subject survivability、phrase development、CI / review scope を Phase 8 前の score-led beauty trunk として再編する根拠。
 * [Phase 14 dissonance triage implementation review](phase-14-dissonance-triage-implementation.md): Phase 14A0 の実装 evidence。focused seed set の weak-passing / passing-neighbor / offbeat semitone clash と entry adjacent-second / unresolved accented clash を score-window summary として記録する。
