@@ -7,7 +7,7 @@ import {
 import type { NoteEvent, PlannedEntry, Voice } from "./events.js";
 import { generateScore } from "./generate.js";
 
-export const PHASE_13W_FOCUSED_ENTRY_BOUNDARY_SEEDS = [
+export const POST_EXPOSITION_ENTRY_BOUNDARY_FOCUSED_SEEDS = [
   "bach-001",
   "fugue-smoke",
   "bright-answer",
@@ -15,15 +15,16 @@ export const PHASE_13W_FOCUSED_ENTRY_BOUNDARY_SEEDS = [
   "dense-modal",
 ] as const;
 
-export const PHASE_13W_REVIEW_SEEDS = [...REPRESENTATIVE_REVIEW_SEEDS, ...ROTATION_REVIEW_SEEDS].map(
-  ({ seed }) => seed,
-);
-export const PHASE_13W_REVIEW_BATCH_A = PHASE_13W_REVIEW_SEEDS.slice(0, 6);
-export const PHASE_13W_REVIEW_BATCH_B = PHASE_13W_REVIEW_SEEDS.slice(6, 12);
-export const PHASE_13W_REVIEW_BATCH_C = PHASE_13W_REVIEW_SEEDS.slice(12, 17);
-export const PHASE_13W_REVIEW_BATCH_D = PHASE_13W_REVIEW_SEEDS.slice(17);
+export const POST_EXPOSITION_ENTRY_BOUNDARY_REVIEW_SEEDS = [
+  ...REPRESENTATIVE_REVIEW_SEEDS,
+  ...ROTATION_REVIEW_SEEDS,
+].map(({ seed }) => seed);
+export const POST_EXPOSITION_ENTRY_BOUNDARY_REVIEW_BATCH_A = POST_EXPOSITION_ENTRY_BOUNDARY_REVIEW_SEEDS.slice(0, 6);
+export const POST_EXPOSITION_ENTRY_BOUNDARY_REVIEW_BATCH_B = POST_EXPOSITION_ENTRY_BOUNDARY_REVIEW_SEEDS.slice(6, 12);
+export const POST_EXPOSITION_ENTRY_BOUNDARY_REVIEW_BATCH_C = POST_EXPOSITION_ENTRY_BOUNDARY_REVIEW_SEEDS.slice(12, 17);
+export const POST_EXPOSITION_ENTRY_BOUNDARY_REVIEW_BATCH_D = POST_EXPOSITION_ENTRY_BOUNDARY_REVIEW_SEEDS.slice(17);
 
-export type Phase13WEntryBoundaryWindow = {
+export type PostExpositionEntryBoundaryWindow = {
   seed: string;
   state: PlannedEntry["state"];
   form: PlannedEntry["form"];
@@ -34,14 +35,16 @@ export type Phase13WEntryBoundaryWindow = {
   delayedOutsideVoices: Voice[];
 };
 
-export type Phase13WEntryBoundaryMetrics = {
+export type PostExpositionEntryBoundaryMetrics = {
   seedCount: number;
   unpreparedSynchronizedResetSeedCount: number;
   continuitySupportedSeedCount: number;
-  windows: Phase13WEntryBoundaryWindow[];
+  windows: PostExpositionEntryBoundaryWindow[];
 };
 
-export function collectPhase13WEntryBoundaryMetrics(seeds: readonly string[]): Phase13WEntryBoundaryMetrics {
+export function collectPostExpositionEntryBoundaryMetrics(
+  seeds: readonly string[],
+): PostExpositionEntryBoundaryMetrics {
   const windows = seeds.map((seed) => {
     const output = generateScore({ seed, lengthTicks: REVIEW_LENGTH_TICKS });
     const notes = output.events.filter((event): event is NoteEvent => event.kind === "note");
@@ -83,7 +86,7 @@ function summarizeEntryBoundaryWindow(
   seed: string,
   notes: readonly NoteEvent[],
   entry: PlannedEntry,
-): Phase13WEntryBoundaryWindow {
+): PostExpositionEntryBoundaryWindow {
   const outsideVoices = notes
     .filter((note) => note.voice !== entry.voice && note.startTick === entry.startTick)
     .map((note) => note.voice);

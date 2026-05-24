@@ -3,16 +3,16 @@ import { REPRESENTATIVE_REVIEW_SEEDS, REVIEW_LENGTH_TICKS, ROTATION_REVIEW_SEEDS
 import type { PlannedEntry, Voice } from "./events.js";
 import { generateScore } from "./generate.js";
 
-export const PHASE_13X_FIRST_BASS_ENTRY_REVIEW_SEEDS = [...REPRESENTATIVE_REVIEW_SEEDS, ...ROTATION_REVIEW_SEEDS].map(
+export const FIRST_BASS_ENTRY_BOUNDARY_REVIEW_SEEDS = [...REPRESENTATIVE_REVIEW_SEEDS, ...ROTATION_REVIEW_SEEDS].map(
   ({ seed }) => seed,
 );
 
-export const PHASE_13X_FIRST_BASS_ENTRY_REVIEW_BATCH_A = PHASE_13X_FIRST_BASS_ENTRY_REVIEW_SEEDS.slice(0, 6);
-export const PHASE_13X_FIRST_BASS_ENTRY_REVIEW_BATCH_B = PHASE_13X_FIRST_BASS_ENTRY_REVIEW_SEEDS.slice(6, 12);
-export const PHASE_13X_FIRST_BASS_ENTRY_REVIEW_BATCH_C = PHASE_13X_FIRST_BASS_ENTRY_REVIEW_SEEDS.slice(12, 17);
-export const PHASE_13X_FIRST_BASS_ENTRY_REVIEW_BATCH_D = PHASE_13X_FIRST_BASS_ENTRY_REVIEW_SEEDS.slice(17);
+export const FIRST_BASS_ENTRY_BOUNDARY_REVIEW_BATCH_A = FIRST_BASS_ENTRY_BOUNDARY_REVIEW_SEEDS.slice(0, 6);
+export const FIRST_BASS_ENTRY_BOUNDARY_REVIEW_BATCH_B = FIRST_BASS_ENTRY_BOUNDARY_REVIEW_SEEDS.slice(6, 12);
+export const FIRST_BASS_ENTRY_BOUNDARY_REVIEW_BATCH_C = FIRST_BASS_ENTRY_BOUNDARY_REVIEW_SEEDS.slice(12, 17);
+export const FIRST_BASS_ENTRY_BOUNDARY_REVIEW_BATCH_D = FIRST_BASS_ENTRY_BOUNDARY_REVIEW_SEEDS.slice(17);
 
-type Phase13XFirstBassEntryWindow = {
+type FirstBassEntryBoundaryWindow = {
   seed: string;
   state: PlannedEntry["state"];
   form: PlannedEntry["form"];
@@ -24,15 +24,15 @@ type Phase13XFirstBassEntryWindow = {
   delayedOutsideVoices: readonly Voice[];
 };
 
-export type Phase13XFirstBassEntryMetrics = {
+export type FirstBassEntryBoundaryMetrics = {
   seedCount: number;
   firstBassEntryResetSeedCount: number;
   postExpositionWindowCount: number;
   postExpositionSynchronizedResetCount: number;
-  windows: Phase13XFirstBassEntryWindow[];
+  windows: FirstBassEntryBoundaryWindow[];
 };
 
-export function collectPhase13XFirstBassEntryMetrics(seeds: readonly string[]): Phase13XFirstBassEntryMetrics {
+export function collectFirstBassEntryBoundaryMetrics(seeds: readonly string[]): FirstBassEntryBoundaryMetrics {
   const outputs = seeds.map((seed) => ({ seed, output: generateScore({ seed, lengthTicks: REVIEW_LENGTH_TICKS }) }));
   const windows = outputs.map(({ seed, output }) => {
     const firstBassEntryWindow = output.diagnostics.entryBoundaryContinuity.firstBassEntryWindow;
@@ -65,8 +65,8 @@ export function collectPhase13XFirstBassEntryMetrics(seeds: readonly string[]): 
   };
 }
 
-export function assertPhase13XFirstBassEntryContinuityEvidence(seeds: readonly string[]): void {
-  const metrics = collectPhase13XFirstBassEntryMetrics(seeds);
+export function assertFirstBassEntryBoundaryContinuityEvidence(seeds: readonly string[]): void {
+  const metrics = collectFirstBassEntryBoundaryMetrics(seeds);
   const continuitySeeds = metrics.windows
     .filter((firstBassEntryWindow) => {
       assert.equal(

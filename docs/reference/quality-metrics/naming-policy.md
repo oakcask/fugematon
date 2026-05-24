@@ -142,6 +142,15 @@ Current behavior tests and shared test helpers use the same musical-surface nami
 | `assertPhase12FocusedRepetitionAdoption` | `assertFocusedPhraseRepetitionAdoption` | Adoption helper for focused phrase-repetition seeds. |
 | `assertPhase12RepetitionReviewBatch` | `assertPhraseRepetitionReviewBatch` | Review helper for phrase-repetition seed batches. |
 | `assertPhase13ReviewPreconditions` | `assertQualityVectorReviewPreconditions` | Preconditions helper for quality-vector review seeds. |
+| `generate-phase13w-entry-boundary*` | `generate-post-exposition-entry-boundary*` | Post-exposition entry-boundary continuity review helpers and batches. |
+| `PHASE_13W_*` | `POST_EXPOSITION_ENTRY_BOUNDARY_*` | Post-exposition entry-boundary focused and review seed batches. |
+| `Phase13WEntryBoundary*` | `PostExpositionEntryBoundary*` | Post-exposition entry-boundary review metrics and windows. |
+| `generate-phase13x-first-bass-entry*` | `generate-first-bass-entry-boundary*` | First bass-entry boundary continuity review helpers and batches. |
+| `PHASE_13X_FIRST_BASS_ENTRY_*` | `FIRST_BASS_ENTRY_BOUNDARY_*` | First bass-entry boundary review seed batches. |
+| `Phase13XFirstBassEntry*` | `FirstBassEntryBoundary*` | First bass-entry boundary review metrics and windows. |
+| `generate-phase13x2-bass-answer-tail*` | `generate-bass-answer-tail-texture*` | Bass-answer tail texture review helpers and batches. |
+| `PHASE_13X2_BASS_ANSWER_TAIL_*` | `BASS_ANSWER_TAIL_TEXTURE_*` | Bass-answer tail texture review seed batches. |
+| `Phase13X2BassAnswerTailMetrics` | `BassAnswerTailTextureMetrics` | Bass-answer tail texture review metrics. |
 
 ## Selection Model Values
 
