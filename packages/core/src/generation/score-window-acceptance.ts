@@ -4,6 +4,8 @@ import type {
   DissonanceTriageWindow,
   EntryBoundaryContinuitySummary,
   EntryBoundaryContinuityWindow,
+  HarmonicContinuitySummary,
+  HarmonicContinuityWindow,
   MetricExplanationSummary,
   PhraseDevelopmentJudgement,
   PhraseDevelopmentReviewSummary,
@@ -22,6 +24,7 @@ const VOICE_NAMES = new Set<Voice>(["soprano", "alto", "tenor", "bass"]);
 
 export function buildScoreWindowAcceptanceSummary(
   entryBoundaryContinuity: EntryBoundaryContinuitySummary,
+  harmonicContinuity: HarmonicContinuitySummary,
   dissonanceTriage: DissonanceTriageSummary,
   qualityVector: QualityVector,
   phraseDevelopmentReview: PhraseDevelopmentReviewSummary,
@@ -31,6 +34,7 @@ export function buildScoreWindowAcceptanceSummary(
   );
   const windows = [
     ...importantEntryWindows.map(scoreWindowFromEntryContinuity),
+    ...harmonicContinuity.windows.map(scoreWindowFromHarmonicContinuity),
     ...dissonanceTriage.windows.map(scoreWindowFromDissonance),
     ...qualityVector.voicePairSpans.map(scoreWindowFromVoicePairSpan),
     ...qualityVector.counterSubjectWindows.map(scoreWindowFromCounterSubject),
@@ -41,6 +45,7 @@ export function buildScoreWindowAcceptanceSummary(
   return {
     schemaVersion: 1,
     importantEntryWindowCount: importantEntryWindows.length,
+    harmonicContinuityWindowCount: harmonicContinuity.windows.length,
     dissonanceWindowCount: dissonanceTriage.windows.length,
     activeVoicePairSpanCount: qualityVector.voicePairSpans.length,
     counterSubjectWindowCount: qualityVector.counterSubjectWindows.length,
@@ -69,6 +74,24 @@ function scoreWindowFromEntryContinuity(window: EntryBoundaryContinuityWindow): 
       : "entry support does not yet prove collective contrapuntal continuity",
     theoryBasis: "counterpoint",
     response: accepted ? "accepted-context" : "generator-response-required",
+  };
+}
+
+function scoreWindowFromHarmonicContinuity(window: HarmonicContinuityWindow): ScoreWindowAcceptanceWindow {
+  return {
+    kind: "harmonic-continuity",
+    startTick: window.startTick,
+    durationTicks: window.durationTicks,
+    state: window.state,
+    voices: ["bass"],
+    roles: ["free-counterpoint"],
+    classification: window.classification,
+    symptom:
+      window.classification === "audible-progression"
+        ? "short pivot episode has enough bass-root and chord-tone support to carry the planned progression"
+        : "short pivot episode does not yet make the planned harmonic path audible",
+    theoryBasis: "harmony",
+    response: window.response,
   };
 }
 

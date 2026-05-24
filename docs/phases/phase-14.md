@@ -2,10 +2,11 @@
 
 Phase 14 is inserted after Phase 13Z and before Phase 8. Its purpose is to make musical beauty the primary acceptance criterion for the generator. Existing metrics, compatibility fields, and guardrail margins are secondary when they contradict the score.
 
-Status: reopened for a focused harmonic-continuity follow-up before Infinite playback MVP proceeds. The earlier score-led beauty handoff and [Metrical generation repair](metrical-generation-repair.md) remain accepted baselines, but `seed-1dxb2n8-1miapx7` shows a user-reported short-episode harmonic-continuity blocker that must be handled as score-window evidence, not hidden by Phase 8 playback or UI work.
+Status: complete for the focused harmonic-continuity follow-up. The earlier score-led beauty handoff and [Metrical generation repair](metrical-generation-repair.md) remain accepted baselines, and `seed-1dxb2n8-1miapx7` now has repaired score-window evidence for the reported short-episode harmonic-continuity blocker. Remaining focused seed signals stay review-required and visible to later phrase-planning work.
 
 Planning reviews:
 
+* [Phase 14 harmonic continuity generation review](../reviews/phase-14-harmonic-continuity-generation.md): completion evidence for the Phase 14C4 generator response and the remaining focused-seed review-required tradeoff.
 * [Phase 14 harmonic continuity replan](../reviews/phase-14-harmonic-continuity-replan.md): user-reported `seed-1dxb2n8-1miapx7` evidence showing measures 6-7 fail to make a planned D minor to E minor modulatory episode audible before the A minor stretto-like handoff.
 * [Phase 14 post-entry and free-counterpoint generation review](../reviews/phase-14-post-entry-phrase-generation.md): completion evidence for the Phase 14C0 / 14C1 generator response and the remaining review-required dissonance tradeoff.
 * [Phase 14 soprano register contour review](../reviews/phase-14-soprano-register-contour-review.md): user-reported `seed-1yc5rlr-184cz7l` evidence showing exposed soprano leaps caused by register placement overpowering melodic continuity.
@@ -129,6 +130,8 @@ Repair user-reported short modulatory or pivot-harmony episodes whose planned ha
 
 The first focused seed is `seed-1dxb2n8-1miapx7`, where measures 6-7 plan a D minor to E minor modulatory episode but sound like exposed F doubling, thin F#/G and A/E sonorities, and an underprepared A minor handoff. See the [Phase 14 harmonic continuity replan](../reviews/phase-14-harmonic-continuity-replan.md). Keep this repair score-window based: aggregate `strongBeatDissonanceCount`, `harmonicFunctionMismatches`, and bass-root support counts should guide inspection, but they must not replace local listening judgement.
 
+Implementation note: short pivot episodes now expose `harmonicContinuity` score-window evidence, and the reported D minor to E minor pivot handoff adds bass-root plus chord-tone support on structural beats when the local texture would otherwise leave the planned progression inaudible. The reported `seed-1dxb2n8-1miapx7` measure 6-7 window is classified as `audible-progression`; later focused windows, `circle-fifths`, and one `tight-stretto` window remain review-required because fixing them by retuning subject-fragment bass material would trade away subject identity. See the [Phase 14 harmonic continuity generation review](../reviews/phase-14-harmonic-continuity-generation.md).
+
 ### 14D: Metric truthfulness and scope cleanup
 
 Reclassify or remove metrics that cannot explain the accepted score windows. Keep reference aggregate and Phase 7B readiness as `ci-observed` or safety/context evidence, not beauty acceptance. Keep pitch-class unison, lockstep, entry severe interval, line agency, counter-subject survivability, entry formula novelty, and subject-stem concentration as `review-required` until score-window evidence, fix target, and runtime justify CI promotion.
@@ -143,4 +146,4 @@ Implementation note: focused profile notes for `organ-default` and `strict-count
 
 ## Phase 8 Handoff
 
-Phase 8 may resume only after the Phase 14 harmonic-continuity follow-up and the later Metrical generation repair are both complete for handoff. Infinite playback must not use segment boundaries, visual smoothing, playback profiles, or UI controls to make weak counterpoint, repeated formulae, entry resets, same-family fatigue, unresolved semitone-friction tradeoffs, unclear harmonic progressions, or meter mismatch less audible.
+Phase 8 may resume after the Phase 14 harmonic-continuity follow-up and the later Metrical generation repair. Infinite playback must not use segment boundaries, visual smoothing, playback profiles, or UI controls to make weak counterpoint, repeated formulae, entry resets, same-family fatigue, unresolved semitone-friction tradeoffs, unclear harmonic progressions, or meter mismatch less audible.

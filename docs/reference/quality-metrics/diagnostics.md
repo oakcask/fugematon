@@ -32,6 +32,7 @@
 | `unresolvedSevereEntryIntervalCount` | severe interval が resolution deadline までに説明されない箇所。 | entry harmony の主要 review signal。Phase 13 以降は duration axis も見る。 |
 | `entryBoundaryContinuity` | subject / answer entry 境界で、外声が同時に再発音しているか、delayed / carried support があるかを読む summary。 | Phase 13X は初回 bass entry と post-exposition bass entry を分ける。Phase 13Y 以降は entry voice、entry order、already-entered voices で一般化し、Phase 14 以降は 1 声 carry + 2 外声 reset を score-window acceptance から分ける。playback smoothing ではなく score continuity で説明する。 |
 | `dissonanceTriage` | weak-passing / passing-neighbor / offbeat semitone clash と entry adjacent-second / unresolved accented clash を score-window 単位で読む summary。 | review-required evidence として seed、section、voice、role、intent へ戻して読み、単独の CI blocker にはしない。 |
+| `harmonicContinuity` | short modulatory / pivot-harmony episode の structural beat が bass-root support、chord-tone support、thin texture、next handoff を譜面上で示すかを見る summary。 | Phase 14C4 以降の review-required score-window evidence。`audible-progression` は局所 window の受容であり、aggregate harmonic metrics の代替ではない。 |
 | `scoreWindowAcceptance` | important entry、dissonance triage、active voice-pair span、counter-subject survival、phrase development、metric explanation を同じ window list へ束ねる score-window acceptance surface。 | Aggregate metrics より先に読む review surface。各 window の tick、state、voices、roles、classification、theory basis、response から、accepted context / review-required / generator response / diagnostic context を分ける。 |
 
 ## Melody And Texture

@@ -38,6 +38,7 @@ import {
   addCounterpointTexture,
   addFunctionalThinningSupport,
   addPostEntryContinuationSupport,
+  addShortEpisodeHarmonicContinuitySupport,
   type ContinuityLineKind,
   fillAllVoiceSilenceGaps,
   shapeLongRestPhraseClosures,
@@ -163,6 +164,7 @@ export function buildFugueScore(
     addFunctionalThinningSupport(notes, sectionPlans);
     addBassAnswerTailTextureSupport(notes, subjectEntries, sectionPlans);
     addPostEntryContinuationSupport(notes, subjectEntries, sectionPlans);
+    addShortEpisodeHarmonicContinuitySupport(notes, sectionPlans);
     shapeLongRestPhraseClosures(notes, sectionPlans);
   }
   notes.sort(compareNoteEvents);

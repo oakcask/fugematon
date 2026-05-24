@@ -1052,8 +1052,36 @@ export type DissonanceTriageSummary = {
   windows: DissonanceTriageWindow[];
 };
 
+export type HarmonicContinuityWindow = {
+  startTick: number;
+  durationTicks: number;
+  state: Extract<FugueState, "episode">;
+  localKey: KeySignature;
+  targetKey: KeySignature;
+  ambiguityIntent: AmbiguityIntent;
+  sequencePattern?: SequencePattern;
+  fragmentTransform?: FragmentTransform;
+  nextState?: FugueState;
+  structuralBeatCount: number;
+  bassRootSupportCount: number;
+  chordToneSupportCount: number;
+  structuralBeatMismatchCount: number;
+  thinStructuralBeatCount: number;
+  classification: "audible-progression" | "review-required";
+  response: "accepted-context" | "generator-response-required";
+};
+
+export type HarmonicContinuitySummary = {
+  schemaVersion: 1;
+  focusedWindowCount: number;
+  reviewRequiredWindowCount: number;
+  audibleProgressionWindowCount: number;
+  windows: HarmonicContinuityWindow[];
+};
+
 export type ScoreWindowAcceptanceKind =
   | "important-entry-continuity"
+  | "harmonic-continuity"
   | "dissonance-triage"
   | "active-voice-pair-span"
   | "counter-subject-survival"
@@ -1076,13 +1104,14 @@ export type ScoreWindowAcceptanceWindow = {
   classification: string;
   metric?: string;
   symptom: string;
-  theoryBasis: "counterpoint" | "fugue-form" | "diagnostic-truthfulness";
+  theoryBasis: "counterpoint" | "harmony" | "fugue-form" | "diagnostic-truthfulness";
   response: ScoreWindowAcceptanceResponse;
 };
 
 export type ScoreWindowAcceptanceSummary = {
   schemaVersion: 1;
   importantEntryWindowCount: number;
+  harmonicContinuityWindowCount: number;
   dissonanceWindowCount: number;
   activeVoicePairSpanCount: number;
   counterSubjectWindowCount: number;
@@ -1150,6 +1179,7 @@ export type GenerationDiagnostics = {
   phraseConvergenceReview: PhraseConvergenceReviewSummary;
   phraseDevelopmentReview: PhraseDevelopmentReviewSummary;
   dissonanceTriage: DissonanceTriageSummary;
+  harmonicContinuity: HarmonicContinuitySummary;
   scoreWindowAcceptance: ScoreWindowAcceptanceSummary;
   ornamentCandidateCount: number;
   ornamentDensity: number;

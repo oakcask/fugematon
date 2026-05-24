@@ -7,6 +7,7 @@ import type {
   EntryBoundaryContinuitySummary,
   EntrySupportInstabilitySummary,
   EntrySupportSevereIntervalSummary,
+  HarmonicContinuitySummary,
   HarmonicPlan,
   KeySignature,
   LowerVoiceVocalitySummary,
@@ -30,6 +31,7 @@ import type {
 import { analyzeBassAnswerTailTexture } from "./bass-answer-tail-texture.js";
 import { analyzeDissonanceTriage } from "./dissonance-triage.js";
 import { analyzeEntryBoundaryContinuity } from "./entry-boundary-continuity.js";
+import { analyzeHarmonicContinuity } from "./harmonic-continuity-review.js";
 import { chordTonePitchClasses, nearestHarmonicAnchor, rootDegreeForFunction } from "./harmony.js";
 import { analyzeHarmonicPlans } from "./harmony-diagnostics.js";
 import { isModalMode, tonicPitchClass } from "./key.js";
@@ -89,6 +91,7 @@ export function analyzeScore(
   bassAnswerTailTexture: BassAnswerTailTextureSummary;
   qualityVector: QualityVector;
   dissonanceTriage: DissonanceTriageSummary;
+  harmonicContinuity: HarmonicContinuitySummary;
   ornamentCandidateCount: number;
   ornamentDensity: number;
   ornamentPlacementReasons: OrnamentPlacementReasons;
@@ -166,6 +169,7 @@ export function analyzeScore(
   const melodicStagnationWarnings = countIssues(issues, "melodic-stagnation");
   const leapRecoveryMisses = countIssues(issues, "leap-recovery-miss");
   const harmonicDiagnostics = analyzeHarmonicPlans(notes, sectionPlans, subjectEntries);
+  const harmonicContinuity = analyzeHarmonicContinuity(notes, sectionPlans);
   const warnings: string[] = [];
   if (rangeViolations > 0) {
     warnings.push("range violations detected");
@@ -225,6 +229,7 @@ export function analyzeScore(
     melodicStagnationWarnings,
     leapRecoveryMisses,
     ...harmonicDiagnostics,
+    harmonicContinuity,
     issues,
     warnings,
   };
