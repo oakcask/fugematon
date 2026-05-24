@@ -3,7 +3,7 @@ import test from "node:test";
 import { REVIEW_LENGTH_TICKS } from "./constants.js";
 import { generateScore } from "./generate.js";
 
-const PHASE_13R_FOLLOWUP_CONVERGENCE_SEEDS_B = [
+const PHRASE_CONVERGENCE_FOLLOWUP_SEEDS_B = [
   "modal-answer",
   "minor-entry",
   "sparse-cadence",
@@ -11,7 +11,7 @@ const PHASE_13R_FOLLOWUP_CONVERGENCE_SEEDS_B = [
 ] as const;
 
 test("phase-13R follow-up boundary seeds repair mechanical subject-fragment convergence", () => {
-  const seedsWithFragmentFindings = PHASE_13R_FOLLOWUP_CONVERGENCE_SEEDS_B.filter((seed) =>
+  const seedsWithFragmentFindings = PHRASE_CONVERGENCE_FOLLOWUP_SEEDS_B.filter((seed) =>
     generateScore({ seed, lengthTicks: REVIEW_LENGTH_TICKS }).diagnostics.phraseConvergenceReview.findings.some(
       (finding) => finding.code === "subject-fragment-family-concentration",
     ),

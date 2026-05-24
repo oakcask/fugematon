@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { REVIEW_LENGTH_TICKS } from "./constants.js";
 import { generateScore } from "./generate.js";
-import { assertPhase10CompletionCompatibility } from "./generate-phase10-compatibility-test-helpers.js";
+import { assertPlannerCompletionCompatibility } from "./generate-phase10-compatibility-test-helpers.js";
 import { evaluateMelodyTextureGate } from "./review-gate.js";
 
 test("generateScore can compare the phase-10 oracle selection model against baseline", () => {
@@ -28,5 +28,5 @@ test("generateScore can compare the phase-10 oracle selection model against base
 });
 
 test("generateScore preserves phase-10 completion compatibility across the readiness subset", () => {
-  assertPhase10CompletionCompatibility("baseline");
+  assertPlannerCompletionCompatibility("baseline");
 });

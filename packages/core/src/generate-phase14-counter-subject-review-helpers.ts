@@ -2,21 +2,21 @@ import assert from "node:assert/strict";
 import { TICKS_PER_QUARTER } from "./constants.js";
 import { generateScore } from "./generate.js";
 
-export const PHASE_14_COUNTER_SUBJECT_HIGH_COLLISION_REVIEW_SEEDS = [
+export const COUNTER_SUBJECT_HIGH_COLLISION_REVIEW_SEEDS = [
   "bach-001",
   "tight-stretto",
   "contrary-motion",
   "seed-0zereox-1v729ih",
 ] as const;
 
-export const PHASE_14_COUNTER_SUBJECT_MODAL_REVIEW_SEEDS = [
+export const COUNTER_SUBJECT_MODAL_REVIEW_SEEDS = [
   "dense-modal",
   "modal-answer",
   "angular-answer",
   "random-listen-check",
 ] as const;
 
-export function assertPhase14CounterSubjectReviewSeedsExposePressure(
+export function assertCounterSubjectReviewSeedsExposePressure(
   seeds: readonly string[],
   expectation: {
     minWindowCount: number;

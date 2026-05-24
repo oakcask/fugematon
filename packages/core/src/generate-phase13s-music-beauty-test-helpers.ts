@@ -8,18 +8,18 @@ import {
 import type { GenerationOutput, NoteEvent, Voice } from "./events.js";
 import { generateScore } from "./generate.js";
 
-const PHASE_13S_REVIEW_SEEDS = [...REPRESENTATIVE_REVIEW_SEEDS, ...ROTATION_REVIEW_SEEDS].map(({ seed }) => seed);
+const SCORE_BEAUTY_REVIEW_SEEDS = [...REPRESENTATIVE_REVIEW_SEEDS, ...ROTATION_REVIEW_SEEDS].map(({ seed }) => seed);
 
-export const PHASE_13S_MUSIC_BEAUTY_BATCHES = {
-  first: PHASE_13S_REVIEW_SEEDS.slice(0, 4),
-  second: PHASE_13S_REVIEW_SEEDS.slice(4, 8),
-  third: PHASE_13S_REVIEW_SEEDS.slice(8, 12),
-  fourth: PHASE_13S_REVIEW_SEEDS.slice(12, 16),
-  fifth: PHASE_13S_REVIEW_SEEDS.slice(16, 19),
-  sixth: PHASE_13S_REVIEW_SEEDS.slice(19),
+export const SCORE_BEAUTY_REVIEW_BATCHES = {
+  first: SCORE_BEAUTY_REVIEW_SEEDS.slice(0, 4),
+  second: SCORE_BEAUTY_REVIEW_SEEDS.slice(4, 8),
+  third: SCORE_BEAUTY_REVIEW_SEEDS.slice(8, 12),
+  fourth: SCORE_BEAUTY_REVIEW_SEEDS.slice(12, 16),
+  fifth: SCORE_BEAUTY_REVIEW_SEEDS.slice(16, 19),
+  sixth: SCORE_BEAUTY_REVIEW_SEEDS.slice(19),
 } as const;
 
-export type Phase13SMusicBeautyMetrics = {
+export type ScoreBeautyReviewMetrics = {
   seedCount: number;
   uniqueInitialSubjectRhythmPatternCount: number;
   uniqueInitialSubjectClimaxIndexCount: number;
@@ -28,7 +28,7 @@ export type Phase13SMusicBeautyMetrics = {
   counterSubjectIdentityRetentionTotal: number;
 };
 
-export type Phase13TCurrentBlockerMetrics = {
+export type CurrentBeautyBlockerMetrics = {
   seedCount: number;
   durationBasedLockstepReviewSeedCount: number;
   pitchClassUnisonReviewSeedCount: number;
@@ -41,7 +41,7 @@ export type Phase13TCurrentBlockerMetrics = {
   lowModalCounterSubjectIdentitySeedCount: number;
 };
 
-export function collectPhase13SMusicBeautyMetrics(seeds: readonly string[]): Phase13SMusicBeautyMetrics {
+export function collectScoreBeautyReviewMetrics(seeds: readonly string[]): ScoreBeautyReviewMetrics {
   const rhythmPatterns = new Set<string>();
   const climaxIndexes = new Set<number>();
   const topSubjectFragments = new Map<string, number>();
@@ -79,7 +79,7 @@ export function collectPhase13SMusicBeautyMetrics(seeds: readonly string[]): Pha
   };
 }
 
-export function collectPhase13TCurrentBlockerMetrics(seeds: readonly string[]): Phase13TCurrentBlockerMetrics {
+export function collectCurrentBeautyBlockerMetrics(seeds: readonly string[]): CurrentBeautyBlockerMetrics {
   const topSubjectFragments = new Map<string, number>();
   let durationBasedLockstepReviewSeedCount = 0;
   let pitchClassUnisonReviewSeedCount = 0;

@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
-import { collectPhase13TCurrentBlockerMetrics } from "./generate-phase13s-music-beauty-test-helpers.js";
+import { collectCurrentBeautyBlockerMetrics } from "./generate-phase13s-music-beauty-test-helpers.js";
 
-export function assertPhase13TCompletionEvidenceBatch(seeds: readonly string[]): void {
-  const metrics = collectPhase13TCurrentBlockerMetrics(seeds);
+export function assertCurrentBeautyCompletionEvidenceBatch(seeds: readonly string[]): void {
+  const metrics = collectCurrentBeautyBlockerMetrics(seeds);
 
   assert.equal(metrics.seedCount, seeds.length);
   assert.equal(metrics.durationBasedLockstepReviewSeedCount, metrics.seedCount);

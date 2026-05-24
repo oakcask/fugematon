@@ -5,7 +5,7 @@ import { generateScore } from "./generate.js";
 import { stepwisePatternRole } from "./generate-test-helpers.js";
 import { evaluateContourMotionGate, evaluateMelodyTextureGate } from "./review-gate.js";
 
-export function assertPhase7StepwisePatternEvidenceBatch(seeds: readonly string[]): void {
+export function assertStepwisePatternEvidenceBatch(seeds: readonly string[]): void {
   for (const seed of seeds) {
     const output = generateScore({ seed, lengthTicks: REVIEW_LENGTH_TICKS, selectionModel: "baseline" });
     const gate6 = evaluateMelodyTextureGate(seed, output.diagnostics);

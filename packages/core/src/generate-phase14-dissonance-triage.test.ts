@@ -3,7 +3,7 @@ import test from "node:test";
 import { TICKS_PER_QUARTER } from "./constants.js";
 import { generateScore } from "./generate.js";
 
-const PHASE_14_DISSONANCE_TRIAGE_SEEDS = [
+const DISSONANCE_TRIAGE_REVIEW_SEEDS = [
   "contrary-motion",
   "tight-stretto",
   "circle-fifths",
@@ -12,7 +12,7 @@ const PHASE_14_DISSONANCE_TRIAGE_SEEDS = [
 ] as const;
 
 test("Phase 14 dissonance triage seeds keep entry and weak-dissonance evidence observable", () => {
-  const summaries = PHASE_14_DISSONANCE_TRIAGE_SEEDS.map((seed) => {
+  const summaries = DISSONANCE_TRIAGE_REVIEW_SEEDS.map((seed) => {
     const diagnostics = generateScore({ seed, lengthTicks: TICKS_PER_QUARTER * 288 }).diagnostics;
     const entryAdjacentSecondFriction = diagnostics.qualityVector.entrySonorities.reduce(
       (sum, sonority) => sum + sonority.adjacentSecondFrictionCount,
@@ -25,12 +25,11 @@ test("Phase 14 dissonance triage seeds keep entry and weak-dissonance evidence o
 
     return {
       seed,
-      phase14WeakPassingSemitoneClashTicks: diagnostics.dissonanceTriage.weakPassingSemitoneClashTicks,
-      phase14PassingNeighborOffbeatSemitoneClashTicks:
-        diagnostics.dissonanceTriage.passingNeighborOffbeatSemitoneClashTicks,
-      phase14EntryAdjacentSecondFrictionCount: diagnostics.dissonanceTriage.entryAdjacentSecondFrictionCount,
-      phase14UnresolvedAccentedEntryClashCount: diagnostics.dissonanceTriage.unresolvedAccentedEntryClashCount,
-      phase14WindowCount: diagnostics.dissonanceTriage.windows.length,
+      weakPassingSemitoneClashTicks: diagnostics.dissonanceTriage.weakPassingSemitoneClashTicks,
+      passingNeighborOffbeatSemitoneClashTicks: diagnostics.dissonanceTriage.passingNeighborOffbeatSemitoneClashTicks,
+      entryAdjacentSecondFrictionCount: diagnostics.dissonanceTriage.entryAdjacentSecondFrictionCount,
+      unresolvedAccentedEntryClashCount: diagnostics.dissonanceTriage.unresolvedAccentedEntryClashCount,
+      windowCount: diagnostics.dissonanceTriage.windows.length,
       entryAdjacentSecondFriction,
       unresolvedAccentedEntryClashes,
       weakBeatNonChordToneIntentCount:
@@ -55,14 +54,14 @@ test("Phase 14 dissonance triage seeds keep entry and weak-dissonance evidence o
   assert.ok(
     summaries.every(
       (summary) =>
-        summary.phase14EntryAdjacentSecondFrictionCount === summary.entryAdjacentSecondFriction &&
-        summary.phase14UnresolvedAccentedEntryClashCount === summary.unresolvedAccentedEntryClashes &&
-        summary.phase14PassingNeighborOffbeatSemitoneClashTicks >= summary.phase14WeakPassingSemitoneClashTicks,
+        summary.entryAdjacentSecondFrictionCount === summary.entryAdjacentSecondFriction &&
+        summary.unresolvedAccentedEntryClashCount === summary.unresolvedAccentedEntryClashes &&
+        summary.passingNeighborOffbeatSemitoneClashTicks >= summary.weakPassingSemitoneClashTicks,
     ),
     JSON.stringify(summaries, null, 2),
   );
   assert.ok(
-    summaries.some((summary) => summary.phase14WindowCount > 0),
+    summaries.some((summary) => summary.windowCount > 0),
     JSON.stringify(summaries, null, 2),
   );
 });

@@ -3,7 +3,7 @@ import test from "node:test";
 import { REVIEW_LENGTH_TICKS } from "./constants.js";
 import { generateScore } from "./generate.js";
 
-const PHASE_13R_FOLLOWUP_TEXTURE_SEEDS_B = [
+const TEXTURE_SUPPORT_FOLLOWUP_SEEDS_B = [
   "modal-answer",
   "minor-entry",
   "sparse-cadence",
@@ -11,7 +11,7 @@ const PHASE_13R_FOLLOWUP_TEXTURE_SEEDS_B = [
 ] as const;
 
 test("phase-13R follow-up boundary seeds repair abrupt three-part silence as unsupported solo texture", () => {
-  const seedsWithAbruptDrops = PHASE_13R_FOLLOWUP_TEXTURE_SEEDS_B.filter(
+  const seedsWithAbruptDrops = TEXTURE_SUPPORT_FOLLOWUP_SEEDS_B.filter(
     (seed) =>
       generateScore({ seed, lengthTicks: REVIEW_LENGTH_TICKS }).diagnostics.soloTexture.abruptTextureDropCount > 0,
   );

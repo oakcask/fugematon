@@ -10,18 +10,18 @@ import {
 } from "./reference-diagnostics.js";
 import { evaluateReviewGatePolicy } from "./review-gate.js";
 
-export const PHASE10_COMPLETION_COMPATIBILITY_SEEDS = [
+export const PLANNER_COMPLETION_COMPATIBILITY_SEEDS = [
   { seed: "bach-001", category: "representative" },
   { seed: "minor-entry", category: "boundary" },
   { seed: "modal-cadence", category: "rotation" },
   { seed: "dense-modal", category: "adversarial" },
 ] as const;
 
-type Phase10CompletionCompatibilitySeed = (typeof PHASE10_COMPLETION_COMPATIBILITY_SEEDS)[number];
+type PlannerCompletionCompatibilitySeed = (typeof PLANNER_COMPLETION_COMPATIBILITY_SEEDS)[number];
 
-export function assertPhase10CompletionCompatibility(
+export function assertPlannerCompletionCompatibility(
   selectionModel: SelectionModel,
-  compatibilitySeeds: readonly Phase10CompletionCompatibilitySeed[] = PHASE10_COMPLETION_COMPATIBILITY_SEEDS,
+  compatibilitySeeds: readonly PlannerCompletionCompatibilitySeed[] = PLANNER_COMPLETION_COMPATIBILITY_SEEDS,
 ): void {
   const referenceComparisons = [];
 

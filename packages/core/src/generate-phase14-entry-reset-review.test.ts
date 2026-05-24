@@ -3,15 +3,10 @@ import test from "node:test";
 import { TICKS_PER_QUARTER } from "./constants.js";
 import { generateScore } from "./generate.js";
 
-const PHASE_14_ENTRY_RESET_REVIEW_SEEDS = [
-  "contrary-motion",
-  "tight-stretto",
-  "modal-cadence",
-  "seed-0zereox-1v729ih",
-] as const;
+const ENTRY_RESET_REVIEW_SEEDS = ["contrary-motion", "tight-stretto", "modal-cadence", "seed-0zereox-1v729ih"] as const;
 
 test("Phase 14 entry-reset review seeds avoid one-voice carry windows with outside resets", () => {
-  const summaries = PHASE_14_ENTRY_RESET_REVIEW_SEEDS.map((seed) => {
+  const summaries = ENTRY_RESET_REVIEW_SEEDS.map((seed) => {
     const diagnostics = generateScore({ seed, lengthTicks: TICKS_PER_QUARTER * 288 }).diagnostics;
     const oneVoiceCarryWindows = diagnostics.entryBoundaryContinuity.windows.filter(
       (window) => window.classification === "one-voice-carry-with-outside-reset",

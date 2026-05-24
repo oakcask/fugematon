@@ -3,15 +3,15 @@ import { REPRESENTATIVE_REVIEW_SEEDS, ROTATION_REVIEW_SEEDS, TICKS_PER_QUARTER }
 import { generateScore } from "./generate.js";
 import { evaluateReviewGatePolicy } from "./review-gate.js";
 
-export const PHASE_13V_REVIEW_SEEDS = [...REPRESENTATIVE_REVIEW_SEEDS, ...ROTATION_REVIEW_SEEDS].map(
+export const LINE_AGENCY_REVIEW_SEEDS = [...REPRESENTATIVE_REVIEW_SEEDS, ...ROTATION_REVIEW_SEEDS].map(
   ({ seed }) => seed,
 );
 
-export const PHASE_13V_FOCUSED_REVIEW_SEEDS = ["bach-001", "modal-cadence"] as const;
+export const FOCUSED_LINE_AGENCY_REVIEW_SEEDS = ["bach-001", "modal-cadence"] as const;
 
-const PHASE_13V_SMOKE_LENGTH_TICKS = TICKS_PER_QUARTER * 96;
+const LINE_AGENCY_SMOKE_LENGTH_TICKS = TICKS_PER_QUARTER * 96;
 
-export type Phase13VBeautyReviewMetrics = {
+export type LineAgencyBeautyReviewMetrics = {
   seedCount: number;
   entryFormulaSummaryCount: number;
   reviewRequiredEntryFormulaCount: number;
@@ -26,8 +26,8 @@ export type Phase13VBeautyReviewMetrics = {
   topFragmentFunctionShareTotal: number;
 };
 
-export function collectPhase13VBeautyReviewMetrics(seeds: readonly string[]): Phase13VBeautyReviewMetrics {
-  const metrics: Phase13VBeautyReviewMetrics = {
+export function collectLineAgencyBeautyReviewMetrics(seeds: readonly string[]): LineAgencyBeautyReviewMetrics {
+  const metrics: LineAgencyBeautyReviewMetrics = {
     seedCount: seeds.length,
     entryFormulaSummaryCount: 0,
     reviewRequiredEntryFormulaCount: 0,
@@ -43,7 +43,7 @@ export function collectPhase13VBeautyReviewMetrics(seeds: readonly string[]): Ph
   };
 
   for (const seed of seeds) {
-    const output = generateScore({ seed, lengthTicks: PHASE_13V_SMOKE_LENGTH_TICKS });
+    const output = generateScore({ seed, lengthTicks: LINE_AGENCY_SMOKE_LENGTH_TICKS });
     const gate = evaluateReviewGatePolicy(seed, output.diagnostics);
     const vector = output.diagnostics.qualityVector;
     const axes = new Map(vector.axes.map((axis) => [axis.axis, axis]));

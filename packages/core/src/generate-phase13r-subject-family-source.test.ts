@@ -7,12 +7,12 @@ const SUBJECT_FAMILY_SOURCE_SEEDS = ["bach-001", "fugue-smoke", "modal-cadence",
 
 test("phase-13R subject-family source diagnostics include seeds without per-score findings", () => {
   const output = generateScore({ seed: "bach-001", lengthTicks: REVIEW_LENGTH_TICKS });
-  const phase13RFindings = output.diagnostics.phraseConvergenceReview.findings.map((finding) => finding.code);
+  const phraseConvergenceFindings = output.diagnostics.phraseConvergenceReview.findings.map((finding) => finding.code);
   const subjectFamilies = output.diagnostics.phraseRepetitionReview.subjectStemFamilies;
   const topSubject = subjectFamilies.find((family) => family.form === "subject");
 
-  assert.ok(!phase13RFindings.includes("subject-stem-family-concentration"));
-  assert.ok(!phase13RFindings.includes("subject-fragment-family-concentration"));
+  assert.ok(!phraseConvergenceFindings.includes("subject-stem-family-concentration"));
+  assert.ok(!phraseConvergenceFindings.includes("subject-fragment-family-concentration"));
   assert.ok(topSubject !== undefined);
   assert.ok(topSubject.count > 0);
   assert.ok(topSubject.share > 0);
