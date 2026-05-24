@@ -84,7 +84,7 @@ test("midi command writes a valid standard MIDI file", async () => {
   }
 });
 
-test("review command writes diagnostics and MIDI files for phase-5 seeds", async () => {
+test("review command writes diagnostics and MIDI files for review seeds", async () => {
   const directory = await mkdtemp(join(tmpdir(), "fugematon-review-"));
   try {
     await main(["review", "--ticks", "9600", "--out", directory]);
