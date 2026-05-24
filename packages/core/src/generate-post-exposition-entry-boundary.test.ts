@@ -1,14 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
-  collectPhase13WEntryBoundaryMetrics,
-  PHASE_13W_FOCUSED_ENTRY_BOUNDARY_SEEDS,
-} from "./generate-phase13w-entry-boundary-test-helpers.js";
+  collectPostExpositionEntryBoundaryMetrics,
+  POST_EXPOSITION_ENTRY_BOUNDARY_FOCUSED_SEEDS,
+} from "./generate-post-exposition-entry-boundary-test-helpers.js";
 
-test("Phase 13W focused review seeds avoid synchronized outside-voice bass-entry resets", () => {
-  const metrics = collectPhase13WEntryBoundaryMetrics(PHASE_13W_FOCUSED_ENTRY_BOUNDARY_SEEDS);
+test("post-exposition entry-boundary focused review seeds avoid synchronized outside-voice bass-entry resets", () => {
+  const metrics = collectPostExpositionEntryBoundaryMetrics(POST_EXPOSITION_ENTRY_BOUNDARY_FOCUSED_SEEDS);
 
-  assert.equal(metrics.seedCount, PHASE_13W_FOCUSED_ENTRY_BOUNDARY_SEEDS.length);
+  assert.equal(metrics.seedCount, POST_EXPOSITION_ENTRY_BOUNDARY_FOCUSED_SEEDS.length);
   assert.equal(metrics.unpreparedSynchronizedResetSeedCount, 0);
   assert.equal(metrics.continuitySupportedSeedCount, metrics.seedCount);
   assert.ok(

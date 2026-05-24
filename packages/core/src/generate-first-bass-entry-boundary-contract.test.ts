@@ -1,14 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
-  collectPhase13XFirstBassEntryMetrics,
-  PHASE_13X_FIRST_BASS_ENTRY_REVIEW_BATCH_A,
-} from "./generate-phase13x-first-bass-entry-review-test-helpers.js";
+  collectFirstBassEntryBoundaryMetrics,
+  FIRST_BASS_ENTRY_BOUNDARY_REVIEW_BATCH_A,
+} from "./generate-first-bass-entry-boundary-test-helpers.js";
 
-test("Phase 13X first-bass evidence is separate from post-exposition bass-entry evidence", () => {
-  const metrics = collectPhase13XFirstBassEntryMetrics(PHASE_13X_FIRST_BASS_ENTRY_REVIEW_BATCH_A);
+test("first bass-entry boundary first-bass evidence is separate from post-exposition bass-entry evidence", () => {
+  const metrics = collectFirstBassEntryBoundaryMetrics(FIRST_BASS_ENTRY_BOUNDARY_REVIEW_BATCH_A);
 
-  assert.equal(metrics.seedCount, PHASE_13X_FIRST_BASS_ENTRY_REVIEW_BATCH_A.length);
+  assert.equal(metrics.seedCount, FIRST_BASS_ENTRY_BOUNDARY_REVIEW_BATCH_A.length);
   assert.equal(metrics.firstBassEntryResetSeedCount, 0);
   assert.equal(metrics.postExpositionSynchronizedResetCount, 0);
   assert.ok(metrics.postExpositionWindowCount >= metrics.seedCount);

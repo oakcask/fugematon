@@ -8,14 +8,14 @@ import {
 import type { NoteEvent, PlannedEntry, Voice } from "./events.js";
 import { generateScore } from "./generate.js";
 
-export const PHASE_13X2_BASS_ANSWER_TAIL_REVIEW_SEEDS = [...REPRESENTATIVE_REVIEW_SEEDS, ...ROTATION_REVIEW_SEEDS].map(
+export const BASS_ANSWER_TAIL_TEXTURE_REVIEW_SEEDS = [...REPRESENTATIVE_REVIEW_SEEDS, ...ROTATION_REVIEW_SEEDS].map(
   ({ seed }) => seed,
 );
 
-export const PHASE_13X2_BASS_ANSWER_TAIL_REVIEW_BATCH_A = PHASE_13X2_BASS_ANSWER_TAIL_REVIEW_SEEDS.slice(0, 6);
-export const PHASE_13X2_BASS_ANSWER_TAIL_REVIEW_BATCH_B = PHASE_13X2_BASS_ANSWER_TAIL_REVIEW_SEEDS.slice(6, 12);
-export const PHASE_13X2_BASS_ANSWER_TAIL_REVIEW_BATCH_C = PHASE_13X2_BASS_ANSWER_TAIL_REVIEW_SEEDS.slice(12, 17);
-export const PHASE_13X2_BASS_ANSWER_TAIL_REVIEW_BATCH_D = PHASE_13X2_BASS_ANSWER_TAIL_REVIEW_SEEDS.slice(17);
+export const BASS_ANSWER_TAIL_TEXTURE_REVIEW_BATCH_A = BASS_ANSWER_TAIL_TEXTURE_REVIEW_SEEDS.slice(0, 6);
+export const BASS_ANSWER_TAIL_TEXTURE_REVIEW_BATCH_B = BASS_ANSWER_TAIL_TEXTURE_REVIEW_SEEDS.slice(6, 12);
+export const BASS_ANSWER_TAIL_TEXTURE_REVIEW_BATCH_C = BASS_ANSWER_TAIL_TEXTURE_REVIEW_SEEDS.slice(12, 17);
+export const BASS_ANSWER_TAIL_TEXTURE_REVIEW_BATCH_D = BASS_ANSWER_TAIL_TEXTURE_REVIEW_SEEDS.slice(17);
 
 type BassAnswerTailWindow = {
   seed: string;
@@ -32,7 +32,7 @@ type BassAnswerTailWindow = {
   diagnosticBassOnlyFreeCounterpointWindowCount?: number;
 };
 
-export type Phase13X2BassAnswerTailMetrics = {
+export type BassAnswerTailTextureMetrics = {
   seedCount: number;
   bassOnlyFreeCounterpointSeedCount: number;
   oneOrZeroOutsideVoiceSeedCount: number;
@@ -41,7 +41,7 @@ export type Phase13X2BassAnswerTailMetrics = {
 
 const TAIL_WINDOW_TICKS = TICKS_PER_QUARTER * 9;
 
-export function collectPhase13X2BassAnswerTailMetrics(seeds: readonly string[]): Phase13X2BassAnswerTailMetrics {
+export function collectBassAnswerTailTextureMetrics(seeds: readonly string[]): BassAnswerTailTextureMetrics {
   const windows = seeds.map((seed) => {
     const output = generateScore({ seed, lengthTicks: REVIEW_LENGTH_TICKS });
     const notes = output.events.filter((event): event is NoteEvent => event.kind === "note");
@@ -64,8 +64,8 @@ export function collectPhase13X2BassAnswerTailMetrics(seeds: readonly string[]):
   };
 }
 
-export function assertPhase13X2BassAnswerTailRepair(seeds: readonly string[]): void {
-  const metrics = collectPhase13X2BassAnswerTailMetrics(seeds);
+export function assertBassAnswerTailTextureRepair(seeds: readonly string[]): void {
+  const metrics = collectBassAnswerTailTextureMetrics(seeds);
   const bassOnlySeeds = metrics.windows
     .filter((window) => window.bassOnlyFreeCounterpointTicks > 0)
     .map((window) => window.seed);
