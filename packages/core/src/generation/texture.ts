@@ -47,6 +47,11 @@ export type ContinuityTexturePlan = ContinuityCounterpointInput & {
 
 export type ContinuityLineKind = "linear" | "oblique-support";
 
+type FunctionalSupportRun = {
+  startTick: number;
+  endTick: number;
+};
+
 type EntryCounterpointTextureInput = {
   enteringVoice: Voice;
   startTick: number;
@@ -929,23 +934,10 @@ export function addFunctionalThinningSupport(notes: Exposition["notes"], section
       continue;
     }
 
-    const anchor = nearestHarmonicAnchor(run.startTick, [plan]);
-    const degree = anchor === undefined ? 0 : rootDegreeForFunction(anchor.function);
-    addFunctionalSupportLine(notes, {
-      voice: supportVoice,
-      localKey: plan.targetKey,
-      harmonicPlan: plan,
-      rootDegree: degree,
-      startTick: run.startTick,
-      durationTicks: run.endTick - run.startTick,
-    });
+    addFunctionalSupportForRun(notes, { run, plan, supportVoice });
   }
 
-  repairTextureVoiceCrossings(
-    notes,
-    Math.min(...sectionPlans.map((plan) => plan.startTick)),
-    Math.max(...sectionPlans.map((plan) => plan.startTick + plan.durationTicks)),
-  );
+  repairTextureVoiceCrossingsForPlans(notes, sectionPlans);
 }
 
 export function addBassAnswerTailTextureSupport(
@@ -965,24 +957,16 @@ export function addBassAnswerTailTextureSupport(
       continue;
     }
 
-    const anchor = nearestHarmonicAnchor(run.startTick, [plan]);
-    addFunctionalSupportLine(notes, {
-      voice: supportVoice,
-      localKey: plan.targetKey,
-      harmonicPlan: plan,
-      rootDegree: anchor === undefined ? 0 : rootDegreeForFunction(anchor.function),
-      startTick: run.startTick,
-      durationTicks: run.endTick - run.startTick,
+    addFunctionalSupportForRun(notes, {
+      run,
+      plan,
+      supportVoice,
       maxNoteTicks: TICKS_PER_QUARTER * 3,
       strictSemitoneAvoidance: true,
     });
   }
 
-  repairTextureVoiceCrossings(
-    notes,
-    Math.min(...sectionPlans.map((plan) => plan.startTick)),
-    Math.max(...sectionPlans.map((plan) => plan.startTick + plan.durationTicks)),
-  );
+  repairTextureVoiceCrossingsForPlans(notes, sectionPlans);
 }
 
 function firstBassAnswerInternalTailPlan(
@@ -1010,22 +994,10 @@ export function addPostEntryContinuationSupport(
       continue;
     }
 
-    const anchor = nearestHarmonicAnchor(run.startTick, [plan]);
-    addFunctionalSupportLine(notes, {
-      voice: supportVoice,
-      localKey: plan.targetKey,
-      harmonicPlan: plan,
-      rootDegree: anchor === undefined ? 0 : rootDegreeForFunction(anchor.function),
-      startTick: run.startTick,
-      durationTicks: run.endTick - run.startTick,
-    });
+    addFunctionalSupportForRun(notes, { run, plan, supportVoice });
   }
 
-  repairTextureVoiceCrossings(
-    notes,
-    Math.min(...sectionPlans.map((plan) => plan.startTick)),
-    Math.max(...sectionPlans.map((plan) => plan.startTick + plan.durationTicks)),
-  );
+  repairTextureVoiceCrossingsForPlans(notes, sectionPlans);
 }
 
 export function shapeLongRestPhraseClosures(notes: Exposition["notes"], sectionPlans: readonly HarmonicPlan[]): void {
@@ -1169,6 +1141,37 @@ function addFunctionalSupportLine(
     elapsedTicks += durationTicks;
     index += 1;
   }
+}
+
+function addFunctionalSupportForRun(
+  notes: Exposition["notes"],
+  input: {
+    run: FunctionalSupportRun;
+    plan: HarmonicPlan;
+    supportVoice: Voice;
+    maxNoteTicks?: number;
+    strictSemitoneAvoidance?: boolean;
+  },
+): void {
+  const anchor = nearestHarmonicAnchor(input.run.startTick, [input.plan]);
+  addFunctionalSupportLine(notes, {
+    voice: input.supportVoice,
+    localKey: input.plan.targetKey,
+    harmonicPlan: input.plan,
+    rootDegree: anchor === undefined ? 0 : rootDegreeForFunction(anchor.function),
+    startTick: input.run.startTick,
+    durationTicks: input.run.endTick - input.run.startTick,
+    maxNoteTicks: input.maxNoteTicks,
+    strictSemitoneAvoidance: input.strictSemitoneAvoidance,
+  });
+}
+
+function repairTextureVoiceCrossingsForPlans(notes: Exposition["notes"], sectionPlans: readonly HarmonicPlan[]): void {
+  repairTextureVoiceCrossings(
+    notes,
+    Math.min(...sectionPlans.map((plan) => plan.startTick)),
+    Math.max(...sectionPlans.map((plan) => plan.startTick + plan.durationTicks)),
+  );
 }
 
 function functionalSupportLineDegrees(voice: Voice, rootDegree: number): readonly number[] {
