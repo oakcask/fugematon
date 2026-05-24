@@ -24,7 +24,7 @@ test("createPlaybackModel extracts timing metadata and notes", () => {
   assert.equal(model.notes.length, output.diagnostics.noteCount);
   assert.deepEqual(model.stateTransitions, output.diagnostics.stateTransitions);
   assert.equal(model.subjectEntries.length, output.diagnostics.subjectEntries.length);
-  assert.deepEqual(model.performanceProfile, { id: "organ-default", version: 1 });
+  assert.deepEqual(model.performanceProfile, { id: "strict-counterpoint", version: 1 });
   assert.ok(model.notes.some((note) => note.entry?.state === "exposition"));
   assert.ok(model.notes.some((note) => note.entry?.answerKind === "tonal"));
   assert.ok(model.notes.some((note) => note.role === "counter-subject"));
@@ -42,13 +42,13 @@ test("createPlaybackModel extracts timing metadata and notes", () => {
   assert.ok(model.pitchRange.min <= model.pitchRange.max);
 });
 
-test("createPlaybackModel can select the strict counterpoint performance profile", () => {
+test("createPlaybackModel can select the organ default performance profile", () => {
   const output = generateScore({ seed: "fugue-smoke", lengthTicks: 7680 });
-  const model = createPlaybackModel(output, "strict-counterpoint");
+  const model = createPlaybackModel(output, "organ-default");
 
-  assert.deepEqual(model.performanceProfile, { id: "strict-counterpoint", version: 1 });
-  assert.ok(model.notes.every((note) => note.oscillatorType === "sine"));
-  assert.equal(model.notes.find((note) => note.voice === "soprano")?.gain, 0.2);
+  assert.deepEqual(model.performanceProfile, { id: "organ-default", version: 1 });
+  assert.ok(model.notes.some((note) => note.oscillatorType === "triangle"));
+  assert.equal(model.notes.find((note) => note.voice === "soprano")?.gain, 0.18);
 });
 
 test("ticksToSeconds maps score ticks to playback seconds", () => {

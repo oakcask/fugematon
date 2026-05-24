@@ -1,14 +1,11 @@
 import { DEFAULT_SELECTION_MODEL, FUGUE_FORM_REVIEW_LENGTH_TICKS, generateScore } from "@fugematon/core";
-import {
-  DEFAULT_PERFORMANCE_PROFILE_ID,
-  listPerformanceProfiles,
-  type PerformanceProfileId,
-} from "@fugematon/performance";
+import { listPerformanceProfiles, type PerformanceProfileId } from "@fugematon/performance";
 import "./style.css";
 import { ScorePlayer } from "./audio.js";
 import { drawPianoRoll } from "./piano-roll.js";
 import {
   createPlaybackModel,
+  DEFAULT_WEB_PERFORMANCE_PROFILE_ID,
   formatBarBeatDuration,
   formatPlaybackPosition,
   formatTimeSignature,
@@ -187,7 +184,7 @@ function createRandomSeed(): string {
 
 function createState(
   seed: string,
-  performanceProfileId: PerformanceProfileId = DEFAULT_PERFORMANCE_PROFILE_ID,
+  performanceProfileId: PerformanceProfileId = DEFAULT_WEB_PERFORMANCE_PROFILE_ID,
 ): AppState {
   return {
     seed,
