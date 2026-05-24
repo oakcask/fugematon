@@ -27,6 +27,8 @@ Theory basis: Fux-like contrapuntal texture and fugue-form pacing both allow cad
 
 Current diagnostics partially miss the symptom. `bassAnswerTailTexture` confirms the old bass-only first-answer collapse is repaired, but it is first-bass specific. `entryBoundaryContinuity` checks the entry boundary, not the post-entry continuation. `soloTexture` is too broad to distinguish acceptable cadential thinning from answer/stretto tail thinning.
 
+Follow-up from `seed-1yc5rlr-184cz7l`: measure five shows a partial repair, because the bass answer is no longer left alone and alto provides support. The remaining weakness is phrase grammar: upper voices can enter a long rest after free-counterpoint notes that do not behave like a cadence or arrival. The generator response should shape only long-rest entrances near cadence or section boundaries toward local cadence chord tones, while leaving short expressive rests and dotted-rhythm gaps untouched.
+
 ### Free-counterpoint phrase convergence is confirmed
 
 Free-counterpoint six-note contour and duration signatures repeat across many seeds. The strongest repeated signatures all use six eighth-like durations and near-identical weak/offbeat/strong support roles:
@@ -71,6 +73,7 @@ Action:
 
 * Add review diagnostics for post-entry continuation windows after answer and stretto-like entries.
 * Keep the existing first-bass-answer tail repair as accepted context, but generalize the tail check beyond first bass.
+* Shape long-rest entrances near cadence or section boundaries as phrase closures, not as generic rest filling.
 * Add a free-counterpoint phrase-signature review surface before any CI promotion.
 * Do not make these PR CI blockers until the generator response, false-positive exceptions, and runtime are stable.
 

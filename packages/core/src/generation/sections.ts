@@ -38,6 +38,7 @@ import {
   addPostEntryContinuationSupport,
   type ContinuityLineKind,
   fillAllVoiceSilenceGaps,
+  shapeLongRestPhraseClosures,
   softenBassEntryBoundaryResets,
   softenFirstBassEntryBoundaryReset,
 } from "./texture.js";
@@ -158,6 +159,7 @@ export function buildFugueScore(
     addFunctionalThinningSupport(notes, sectionPlans);
     addBassAnswerTailTextureSupport(notes, subjectEntries, sectionPlans);
     addPostEntryContinuationSupport(notes, subjectEntries, sectionPlans);
+    shapeLongRestPhraseClosures(notes, sectionPlans);
   }
   notes.sort(compareNoteEvents);
 
