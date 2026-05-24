@@ -7,6 +7,7 @@ import type {
   EntryBoundaryContinuitySummary,
   EntrySupportInstabilitySummary,
   EntrySupportSevereIntervalSummary,
+  ExposedFreeCounterpointSoloSummary,
   FugueState,
   GenerationOutput,
   HarmonicPlan,
@@ -96,6 +97,7 @@ export type TextureDiagnostics = {
   repeatedPitchRunCount: number;
   allVoiceSilenceGapCount: number;
   soloTexture: SoloTextureSummary;
+  exposedFreeCounterpointSolo: ExposedFreeCounterpointSoloSummary;
   pitchContourMotion: PitchContourMotionSummary;
   lowerVoiceVocality: LowerVoiceVocalitySummary;
   stepwisePattern: StepwisePatternSummary;

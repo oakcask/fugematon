@@ -4,6 +4,7 @@
 
 ## Read First
 
+* [Texture continuity repair completion review](texture-continuity-repair-completion.md): Texture continuity repair の完了 evidence。focused seed set の bass-answer tail、exposed free-counterpoint solo、tradeoff signal、CI / review scope、Phase 8 handoff。
 * [Texture continuity replan](texture-continuity-replan.md): `seed-0i335vx-1n54a1x` の5小節目、9小節目、28小節目で確認した bass-answer tail one-outside support、exposed free-counterpoint solo、退屈な solo formula を、Infinite playback MVP 前の Texture continuity repair へ再編する根拠。
 * [Metrical generation repair completion review](metrical-generation-repair-completion.md): Metrical generation repair の完了 evidence。3/4 focused seeds、6/8 compound-meter seeds、4/4 controls の score-window / diagnostics review と Phase 8 handoff。
 * [Phase 14 harmonic continuity generation review](phase-14-harmonic-continuity-generation.md): Phase 14C4 の実装 evidence。`seed-1dxb2n8-1miapx7` の short pivot episode を bass-root / chord-tone support で repaired score-window として記録し、残る focused seed の review-required signal を分類する。

@@ -31,6 +31,7 @@ import {
   VOICE_ENTRY_ORDER,
   VOICE_REGISTER_TARGETS,
 } from "./shared.js";
+import { collectUnsupportedExposedFreeCounterpointSoloRuns } from "./solo-texture.js";
 import type { Exposition, SubjectNote } from "./types.js";
 
 export type ContinuityCounterpointInput = {
@@ -1036,6 +1037,28 @@ export function addPostEntryContinuationSupport(
   repairTextureVoiceCrossingsForPlans(notes, sectionPlans);
 }
 
+export function addExposedFreeCounterpointSoloSupport(
+  notes: Exposition["notes"],
+  sectionPlans: readonly HarmonicPlan[],
+): void {
+  for (const run of collectUnsupportedExposedFreeCounterpointSoloRuns(notes, sectionPlans)) {
+    const plan = sectionPlanForTick(sectionPlans, run.startTick);
+    const supportVoice = exposedSoloSupportVoice(notes, run);
+    if (plan === undefined || supportVoice === undefined) {
+      continue;
+    }
+
+    addFunctionalSupportForRun(notes, {
+      run,
+      plan,
+      supportVoice,
+      strictSemitoneAvoidance: true,
+    });
+  }
+
+  repairTextureVoiceCrossingsForPlans(notes, sectionPlans);
+}
+
 export function addShortEpisodeHarmonicContinuitySupport(
   notes: Exposition["notes"],
   sectionPlans: readonly HarmonicPlan[],
@@ -1447,26 +1470,12 @@ function findBassAnswerTailSupportRuns(
   const startTick = firstBassAnswerTailStart(notes, firstBassAnswer);
   const endTick = firstBassAnswerEndTick + TICKS_PER_QUARTER * 9;
   const runs: { startTick: number; endTick: number }[] = [];
-  let currentRun: { startTick: number; endTick: number } | undefined;
 
   for (let tick = startTick; tick < endTick; tick += TICKS_PER_QUARTER / 2) {
     const segmentEndTick = Math.min(endTick, tick + TICKS_PER_QUARTER / 2);
     if (isBassAnswerTailRepairSegment(notes, tick, segmentEndTick, firstBassAnswerEndTick)) {
-      if (currentRun?.endTick === tick) {
-        currentRun.endTick = segmentEndTick;
-      } else {
-        if (currentRun !== undefined) {
-          runs.push(currentRun);
-        }
-        currentRun = { startTick: tick, endTick: segmentEndTick };
-      }
-    } else if (currentRun !== undefined) {
-      runs.push(currentRun);
-      currentRun = undefined;
+      runs.push({ startTick: tick, endTick: segmentEndTick });
     }
-  }
-  if (currentRun !== undefined) {
-    runs.push(currentRun);
   }
 
   return runs;
@@ -1549,11 +1558,14 @@ function isBassAnswerTailRepairSegment(
   const activeVoices = new Set(activeNotes.map((note) => note.voice));
   const outsideVoices = [...activeVoices].filter((voice) => voice !== "bass");
   const bassOnly = activeVoices.size === 1 && activeVoices.has("bass");
+  const oneOutside = outsideVoices.length <= 1;
   if (startTick < firstBassAnswerEndTick) {
-    return bassOnly && outsideVoices.length === 0;
+    return oneOutside;
   }
 
-  return bassOnly && activeNotes.some((note) => note.voice === "bass" && note.role === "free-counterpoint");
+  return (
+    oneOutside || (bassOnly && activeNotes.some((note) => note.voice === "bass" && note.role === "free-counterpoint"))
+  );
 }
 
 function firstBassAnswerTailStart(notes: readonly NoteEvent[], firstBassAnswer: PlannedEntry): number {
@@ -1635,6 +1647,15 @@ function postEntrySupportVoice(
   run: { startTick: number; endTick: number; entryVoice: Voice },
 ): Voice | undefined {
   return VOICE_ENTRY_ORDER.filter((voice) => voice !== run.entryVoice).find(
+    (voice) => !hasOverlap(notes, voice, run.startTick, run.endTick - run.startTick),
+  );
+}
+
+function exposedSoloSupportVoice(
+  notes: readonly NoteEvent[],
+  run: { startTick: number; endTick: number; activeVoice: Voice },
+): Voice | undefined {
+  return VOICE_ENTRY_ORDER.filter((voice) => voice !== run.activeVoice).find(
     (voice) => !hasOverlap(notes, voice, run.startTick, run.endTick - run.startTick),
   );
 }

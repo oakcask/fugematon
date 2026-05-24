@@ -2,11 +2,12 @@
 
 Texture continuity repair is inserted after Score-led beauty handoff and Metrical generation repair, before Infinite playback MVP. Its purpose is to stop exposed free-counterpoint from becoming a default solo filler when subject or answer material is not active.
 
-Status: current quality blocker for Infinite playback MVP. The first reported seed is `seed-0i335vx-1n54a1x`, where measure 5 thins to bass answer plus one outside free-counterpoint support, measure 9 exposes a short alto-only free-counterpoint span, and measure 28 exposes a two-quarter tenor free-counterpoint solo. The repair must be structural, not seed-specific.
+Status: complete. The reported `seed-0i335vx-1n54a1x` first bass-answer tail and later exposed free-counterpoint solo symptoms have score-window repair evidence, and Infinite playback MVP may resume while keeping the remaining texture review signals visible.
 
 Planning review:
 
 * [Texture continuity replan](../reviews/texture-continuity-replan.md): user-reported score-window evidence, structural hypothesis, CI / review scope, and implementation order.
+* [Texture continuity repair completion review](../reviews/texture-continuity-repair-completion.md): focused seed evidence, tradeoff signals, CI / review scope, and Infinite playback MVP handoff.
 
 ## Rationale
 
@@ -80,6 +81,12 @@ Run a focused score-window review on `seed-0i335vx-1n54a1x`, `bach-001`, `fugue-
 * `soloTexture`, `bassAnswerTailTexture`, and the new exposed-solo review surface remain visible to Infinite playback MVP; operational UI must not hide these signals.
 * Focused `organ-default` and `strict-counterpoint` listening notes are recorded or explicitly left as a listening gap before handoff.
 
+## Completion Record
+
+Texture continuity repair adds `exposedFreeCounterpointSolo` review evidence, raises sustained one-outside first bass-answer tail thinning into the repair target, and inserts support for unsupported exposed free-counterpoint solo windows. The focused repair set has no `bassAnswerTailTexture` review-required first-tail windows and no `exposedFreeCounterpointSolo` review-required windows. Remaining unison, shared rhythm, dissonance, leap recovery, and counter-subject signals stay review-required rather than CI-blocking.
+
+Focused `organ-default` and `strict-counterpoint` listening notes were not completed; this is an explicit manual-listening gap, not a blocker for resuming Infinite playback MVP.
+
 ## Phase 8 Handoff
 
-Infinite playback MVP may resume only after Texture continuity repair has score-window evidence for the reported seed and a focused seed set. Segment boundaries, visualizer treatment, performance profiles, or playback smoothing must not be used to mask exposed free-counterpoint filler, bass-answer tail thinning, or unsupported solo texture.
+Infinite playback MVP may resume. Segment boundaries, visualizer treatment, performance profiles, or playback smoothing must not be used to mask exposed free-counterpoint filler, bass-answer tail thinning, or unsupported solo texture.

@@ -395,6 +395,33 @@ export type SoloTextureSummary = {
   soloVoiceImbalance: number;
 };
 
+export type ExposedFreeCounterpointSoloFunction =
+  | "cadential-preparation"
+  | "entry-preparation"
+  | "pedal"
+  | "solo-rhetoric"
+  | "unsupported";
+
+export type ExposedFreeCounterpointSoloWindow = {
+  voice: Voice;
+  startTick: number;
+  endTick: number;
+  durationTicks: number;
+  state: FugueState | "unplanned";
+  previousActiveVoiceCount: number;
+  function: ExposedFreeCounterpointSoloFunction;
+  classification: "function-explained" | "review-required";
+};
+
+export type ExposedFreeCounterpointSoloSummary = {
+  schemaVersion: 1;
+  reviewRequired: boolean;
+  windowCount: number;
+  reviewRequiredWindowCount: number;
+  functionExplainedWindowCount: number;
+  windows: ExposedFreeCounterpointSoloWindow[];
+};
+
 export type OrnamentPlacementReasons = {
   entryEnding: number;
   cadenceApproach: number;
@@ -1166,6 +1193,7 @@ export type GenerationDiagnostics = {
   repeatedPitchRunCount: number;
   allVoiceSilenceGapCount: number;
   soloTexture: SoloTextureSummary;
+  exposedFreeCounterpointSolo: ExposedFreeCounterpointSoloSummary;
   pitchContourMotion: PitchContourMotionSummary;
   lowerVoiceVocality: LowerVoiceVocalitySummary;
   stepwisePattern: StepwisePatternSummary;

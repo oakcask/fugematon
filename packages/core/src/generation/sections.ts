@@ -36,6 +36,7 @@ import {
   addBassAnswerTailTextureSupport,
   addContinuityCounterpoint,
   addCounterpointTexture,
+  addExposedFreeCounterpointSoloSupport,
   addFunctionalThinningSupport,
   addPostEntryContinuationSupport,
   addShortEpisodeHarmonicContinuitySupport,
@@ -164,6 +165,7 @@ export function buildFugueScore(
     addFunctionalThinningSupport(notes, sectionPlans);
     addBassAnswerTailTextureSupport(notes, subjectEntries, sectionPlans);
     addPostEntryContinuationSupport(notes, subjectEntries, sectionPlans);
+    addExposedFreeCounterpointSoloSupport(notes, sectionPlans);
     addShortEpisodeHarmonicContinuitySupport(notes, sectionPlans);
     shapeLongRestPhraseClosures(notes, sectionPlans);
   }
@@ -646,6 +648,7 @@ export function buildExposition(
   }
 
   softenFirstBassEntryBoundaryReset(notes, subjectEntries);
+  addBassAnswerTailTextureSupport(notes, subjectEntries, sectionPlans);
   notes.sort(compareNoteEvents);
 
   return {
