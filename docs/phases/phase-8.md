@@ -1,8 +1,8 @@
 # Phase 8: 無限再生セッション MVP
 
-Phase 8 は、Phase 13X2 の bass-answer-tail texture repair、Phase 13Y の generalized entry-continuity repair、Phase 13Z の long-run phrase-development repair、Phase 14 の score-led musical beauty rebuild、そして [Metrical generation repair](metrical-generation-repair.md) 後に戻る operational lane である。目的は細かな生成パラメータ UI を増やすことではなく、長時間聴ける無限再生セッションを成立させ、内部状態を鑑賞用 visualizer として見せることである。
+Phase 8 は、Phase 13X2 の bass-answer-tail texture repair、Phase 13Y の generalized entry-continuity repair、Phase 13Z の long-run phrase-development repair、Phase 14 の score-led musical beauty rebuild、そして [Metrical generation repair](metrical-generation-repair.md) 後に戻る operational lane である。ただし、`seed-1dxb2n8-1miapx7` の6-7小節で確認した harmonic-continuity blocker により、Phase 8 は [Phase 14 harmonic-continuity follow-up](phase-14.md#14c4-short-episode-harmonic-continuity-generation) の後へ戻す。目的は細かな生成パラメータ UI を増やすことではなく、長時間聴ける無限再生セッションを成立させ、内部状態を鑑賞用 visualizer として見せることである。
 
-Phase 13W は post-exposition bass entry の同時再発音を修正したが、exposition の初回 bass answer は review scope から外れていた。Phase 13X はこの初回 bass entry blocker を扱う。Phase 13Y は、その修理を bass 固有の規則に閉じず、entry voice、entry order、already-entered voices に基づく一般的な entry-boundary continuity model へ広げる。Phase 13Z は、初期主題の多様性改善後も残る long-run phrase convergence を subject-return、episode、stretto-like の発展不足として扱う。Phase 14 は、指標が譜面上の美しさを証明していない問題を score-window musical acceptance として扱う。Metrical generation repair は、拍子 metadata が generator に渡らず 3/4 の譜面が三拍子として聞こえない問題を扱う。Phase 8 は Phase 13Y、Phase 13Z、Phase 14、Metrical generation repair の review signal を segment 境界設計で隠さず、修正 evidence 後に無限再生 operational lane を再開する。
+Phase 13W は post-exposition bass entry の同時再発音を修正したが、exposition の初回 bass answer は review scope から外れていた。Phase 13X はこの初回 bass entry blocker を扱う。Phase 13Y は、その修理を bass 固有の規則に閉じず、entry voice、entry order、already-entered voices に基づく一般的な entry-boundary continuity model へ広げる。Phase 13Z は、初期主題の多様性改善後も残る long-run phrase convergence を subject-return、episode、stretto-like の発展不足として扱う。Phase 14 は、指標が譜面上の美しさを証明していない問題を score-window musical acceptance として扱い、ユーザー報告の short modulatory / pivot-harmony episode における harmonic-continuity failure も Phase 8 前に戻す。Metrical generation repair は、拍子 metadata が generator に渡らず 3/4 の譜面が三拍子として聞こえない問題を扱う。Phase 8 は Phase 13Y、Phase 13Z、Phase 14、Metrical generation repair の review signal を segment 境界設計で隠さず、修正 evidence 後に無限再生 operational lane を再開する。
 
 詳細な route は [Phase 7+ 再編計画](phase-7-plus-reorg.md) を読む。品質指標の意味は [quality metrics reference](../reference/quality-metrics.md) を読む。
 
@@ -35,5 +35,5 @@ Phase 13W は post-exposition bass entry の同時再発音を修正したが、
 * Phase 13X2 の bass-answer-tail texture evidence、role-visible review output、focused listening、検出された post-answer thinning 問題の修正と再レビューが完了している。
 * Phase 13Y の generalized entry-continuity evidence、non-bass entry-window review、alternate entry-order stress review、focused listening が完了している。
 * Phase 13Z の long-run phrase-development evidence、subject-return / episode / stretto-like recurrence review、focused listening が完了している。
-* Phase 14 の score-led beauty evidence、entry continuity、line agency、counter-subject survivability、phrase development、metric truthfulness review、focused listening が完了している。
+* Phase 14 の score-led beauty evidence、entry continuity、line agency、counter-subject survivability、phrase development、metric truthfulness review、harmonic-continuity follow-up、focused listening が完了している。
 * Metrical generation repair の 3/4 / 6/8 meter-context evidence、`meterConsistencyReview`、focused listening が完了し、time-signature metadata と生成構造の不一致を operational UI で隠していない。
