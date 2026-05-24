@@ -9,7 +9,6 @@ import type {
   Voice,
 } from "@fugematon/core";
 import {
-  DEFAULT_PERFORMANCE_PROFILE_ID,
   getPerformanceProfile,
   type PerformanceProfileId,
   type PerformanceProfileMetadata,
@@ -56,10 +55,11 @@ export type PlaybackModel = {
 const DEFAULT_BPM = 84;
 const DEFAULT_TICKS_PER_QUARTER = 480;
 const DEFAULT_TIME_SIGNATURE: TimeSignature = { numerator: 4, denominator: 4 };
+export const DEFAULT_WEB_PERFORMANCE_PROFILE_ID: PerformanceProfileId = "strict-counterpoint";
 
 export function createPlaybackModel(
   output: GenerationOutput,
-  performanceProfileId: PerformanceProfileId = DEFAULT_PERFORMANCE_PROFILE_ID,
+  performanceProfileId: PerformanceProfileId = DEFAULT_WEB_PERFORMANCE_PROFILE_ID,
 ): PlaybackModel {
   const bpm = readBpm(output.events) ?? DEFAULT_BPM;
   const ticksPerQuarter = readTicksPerQuarter(output.events) ?? DEFAULT_TICKS_PER_QUARTER;

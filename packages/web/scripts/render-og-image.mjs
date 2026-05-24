@@ -93,16 +93,15 @@ const markup = `<!doctype html>
     </div>
     <script type="module">
       import { DEFAULT_SELECTION_MODEL, FUGUE_FORM_REVIEW_LENGTH_TICKS, generateScore } from "@fugematon/core";
-      import { DEFAULT_PERFORMANCE_PROFILE_ID } from "@fugematon/performance";
       import { drawPianoRoll } from "/src/piano-roll.ts";
-      import { createPlaybackModel } from "/src/score.ts";
+      import { createPlaybackModel, DEFAULT_WEB_PERFORMANCE_PROFILE_ID } from "/src/score.ts";
 
       const output = generateScore({
         seed: "fugue-smoke",
         lengthTicks: FUGUE_FORM_REVIEW_LENGTH_TICKS,
         selectionModel: DEFAULT_SELECTION_MODEL,
       });
-      const model = createPlaybackModel(output, DEFAULT_PERFORMANCE_PROFILE_ID);
+      const model = createPlaybackModel(output, DEFAULT_WEB_PERFORMANCE_PROFILE_ID);
       const canvas = document.querySelector("#piano-roll");
       drawPianoRoll(canvas, model, choosePlaybackSecond(model));
       window.__ogReady = true;
