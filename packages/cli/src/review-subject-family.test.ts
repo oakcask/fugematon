@@ -27,7 +27,7 @@ test("subject family diversity treats rhythm and climax as initial subject rheto
   );
 });
 
-test("subject family diversity flags Phase 13S rhythm and climax collapse", () => {
+test("subject family diversity flags score-beauty rhythm and climax collapse", () => {
   const summary = summarizeSubjectFamilyDiversity([
     subjectSeed("one", [0, 1, 2, 3, 4, 3, 2, 1], [1, 1, 1, 1, 1, 1, 1, 1], 4),
     subjectSeed("two", [0, 2, 1, 3, 4, 3, 2, 1], [1, 1, 1, 1, 1, 1, 1, 1], 4),

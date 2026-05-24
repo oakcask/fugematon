@@ -210,7 +210,7 @@ test("candidate pool oracle scores section grammar history by candidate state", 
   assert.equal(sectionGrammar?.generatorNeededRate, 0);
 });
 
-test("candidate pool oracle keeps phase-12 phrase family evidence traceable per representative", () => {
+test("candidate pool oracle keeps phrase family evidence traceable per representative", () => {
   const selected = candidateEvaluation({
     entryRisk: 6,
     leapRecoveryMisses: 2,

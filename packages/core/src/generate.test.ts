@@ -28,7 +28,7 @@ test("generateScore changes seed-derived metadata for different seeds", () => {
   assert.notDeepEqual(first.events, second.events);
 });
 
-test("generateScore emits a tick-based phase-1 exposition", () => {
+test("generateScore emits a tick-based exposition", () => {
   const output = generateScore({ seed: "phase-zero", lengthTicks: 960 });
   const first = asMetaEvent(output.events[0]);
   const last = asMetaEvent(output.events.at(-1));
@@ -119,7 +119,7 @@ test("generateScore exposes ordered subject and answer entries", () => {
   assert.ok(output.diagnostics.generatedUntilTick >= 7680);
 });
 
-test("generateScore extends long scores with phase-3 fugue states", () => {
+test("generateScore extends long scores with fugue-form states", () => {
   const output = generateScore({ seed: "fugue-smoke", lengthTicks: FUGUE_FORM_REVIEW_LENGTH_TICKS });
   const stateChanges = output.events.filter(
     (event): event is Extract<MetaEvent, { type: "state-change" }> =>
@@ -175,7 +175,7 @@ test("generateScore emits section plans with bounded harmonic anchors", () => {
   }
 });
 
-test("generateScore validates representative phase-1 seeds", () => {
+test("generateScore validates representative exposition seeds", () => {
   for (const { seed, category } of EXPOSITION_REPRESENTATIVE_SEEDS) {
     const output = generateScore({ seed, lengthTicks: 7680 });
     const notes = output.events.filter((event): event is NoteEvent => event.kind === "note");
