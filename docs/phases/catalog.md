@@ -1,12 +1,14 @@
-# Phase Catalog
+# Plan Catalog
 
-フェーズ一覧と履歴調査用の入口です。現在の作業対象を探すだけなら [README.md](README.md) に戻ってください。
+計画一覧と履歴調査用の入口です。現在の作業対象を探すだけなら [README.md](README.md) に戻ってください。
+
+Current な表示名は目的名を primary label にし、`Phase N` は旧ラベルまたは履歴ラベルとして残します。並び替えや挿入が起きても、計画の identity は目的名で追跡してください。
 
 ## Current Lane
 
-* [Phase 8](phase-8.md): 現在の実装対象。Phase 14 の review-required tradeoff を見える状態に保ちながら、無限再生セッション、境界設計、内部状態 visualizer の MVP を扱う。
-* [Phase 14](phase-14.md): 完了済みの Phase 8 handoff baseline。指標が譜面上の美しさを証明していない問題を、score-window musical acceptance と音楽美の acceptance ladder を先に置く beauty trunk として扱い、entry continuity、post-entry support thinning、free-counterpoint phrase vocabulary、line agency、counter-subject survivability、phrase development、metric truthfulness / CI scope cleanup を再編した。
-* [Phase 9](phase-9.md): Phase 8 後の Worker 化、生成期限、fallback、長時間 visualizer stability。
+* [Infinite playback MVP](phase-8.md): 現在の実装対象。旧 Phase 8。Score-led beauty handoff の review-required tradeoff を見える状態に保ちながら、無限再生セッション、境界設計、内部状態 visualizer の MVP を扱う。
+* [Score-led beauty handoff](phase-14.md): 完了済みの Infinite playback MVP handoff baseline。旧 Phase 14。指標が譜面上の美しさを証明していない問題を、score-window musical acceptance と音楽美の acceptance ladder を先に置く beauty trunk として扱い、entry continuity、post-entry support thinning、free-counterpoint phrase vocabulary、line agency、counter-subject survivability、phrase development、metric truthfulness / CI scope cleanup を再編した。
+* [Playback worker stability](phase-9.md): 旧 Phase 9。Infinite playback MVP 後の Worker 化、生成期限、fallback、長時間 visualizer stability。
 
 ## Quality Lane
 

@@ -16,12 +16,12 @@
 * 調性的処理、主題 entry、教会旋法。
 * 生成エンジン API、CLI、パッケージ構成、依存ルール、performance profile、CI。
 * CI failure、例外、警告、ログのメッセージ設計は [error-message-guidelines.md](error-message-guidelines.md) に置く。
-* 代表 seed、MIDI export、再現データ形式、フェーズ別実装順序。
-* 生成期限、フォールバック、フェーズ別検証観点。
+* 代表 seed、MIDI export、再現データ形式、計画別実装順序。
+* 生成期限、フォールバック、計画別検証観点。
 
 ## 読む判断
 
-* 実装順序や Phase scope を変える場合は、詳細本文の「フェーズ別実装順序案」と該当 Phase メモを読む。
+* 実装順序や計画 scope を変える場合は、詳細本文の「フェーズ別実装順序案」と該当計画メモを読む。新しい current plan 名は順序番号ではなく目的名を primary label にする。
 * diagnostics、seed、CI gate を変える場合は、詳細本文の diagnostics と CI 周辺、および [quality-metrics.md](quality-metrics.md) を読む。CI に入れるか review-only にするかの分類は quality metrics の CI / review scope を優先する。
 * CI failure、例外、警告、ログの文言を変える場合は [error-message-guidelines.md](error-message-guidelines.md) を読む。
 * API、CLI、パッケージ境界を変える場合は、詳細本文の該当 section だけ読む。
