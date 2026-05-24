@@ -20,6 +20,7 @@ import {
   evaluateRotationRobustnessGate,
   evaluateVoiceIndependenceGate,
   generateScore,
+  type HistoricalReferenceCalibrationSummary,
   type MelodyTextureGateResult,
   manualListeningBlockers,
   REPRESENTATIVE_REVIEW_SEEDS,
@@ -28,6 +29,7 @@ import {
   type ReviewGatePolicyResult,
   ROTATION_REVIEW_SEEDS,
   type RotationRobustnessGateResult,
+  summarizeHistoricalReferenceCalibration,
   summarizeReferenceDiagnosticsComparisons,
   TICKS_PER_QUARTER,
   type VoiceIndependenceGateResult,
@@ -90,11 +92,12 @@ export async function writeReviewBundle(
   }
 
   const summary: ReviewSummary = {
-    schemaVersion: 18,
+    schemaVersion: 19,
     lengthTicks,
     selectionModel,
     performanceProfile,
     referenceDiagnostics: summarizeReferenceDiagnosticsComparisons(referenceComparisons),
+    historicalReferenceCalibration: summarizeHistoricalReferenceCalibration(),
     qualityProfileComparison: summarizeQualityProfileComparison(summarySeeds),
     subjectFamilyDiversity: summarizeSubjectFamilyDiversity(summarySeeds),
     seeds: summarySeeds,
@@ -150,11 +153,12 @@ export async function writeAbReviewBundle(
 }
 
 type ReviewSummary = {
-  schemaVersion: 18;
+  schemaVersion: 19;
   lengthTicks: number;
   selectionModel: SelectionModel;
   performanceProfile: PerformanceProfileMetadata;
   referenceDiagnostics: ReferenceDiagnosticsAggregate;
+  historicalReferenceCalibration: HistoricalReferenceCalibrationSummary;
   qualityProfileComparison: QualityProfileComparison;
   subjectFamilyDiversity: SubjectFamilyDiversitySummary;
   seeds: ReviewSummarySeed[];

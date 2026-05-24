@@ -4,6 +4,8 @@ import {
   createNormalizedReferenceDiagnostics,
   generateScore,
   parseReferenceCorpusManifest,
+  summarizeHistoricalReferenceCalibration,
+  summarizeHistoricalReferenceReview,
   validateReferenceManifestRecord,
 } from "./index.js";
 
@@ -173,4 +175,127 @@ test("parses structured manifests and emits normalized diagnostics axes", () => 
   );
   assert.ok(normalized.normalizers.scoreQuarterNotes > 0);
   assert.ok(normalized.axes.every((axis) => Number.isFinite(axis.value)));
+});
+
+test("classifies historical reference calibration as review evidence until entries are annotated", () => {
+  const manifest = parseReferenceCorpusManifest({
+    schemaVersion: 1,
+    records: [
+      {
+        sourceId: "local-humdrum-fugue",
+        composer: "Reference Composer",
+        title: "Local Humdrum fugue",
+        edition: "local study edition",
+        license: "local import only",
+        importedAt: "2026-05-25",
+        format: "humdrum",
+        redistributionPolicy: "local-import-only",
+        profileFamily: "fugue-reference",
+        normalizerAxes: [
+          {
+            axis: "sharedRhythmOverlapPerVoicePairQuarter",
+            normalizer: "estimated-active-voice-pair-quarter-notes",
+          },
+          {
+            axis: "severeEntryIntervalPerEntry",
+            normalizer: "subject-entry-count",
+          },
+        ],
+      },
+    ],
+  });
+
+  const calibration = summarizeHistoricalReferenceCalibration(manifest);
+
+  assert.equal(calibration.status, "review-required");
+  assert.equal(calibration.referenceProfileAggregate.role, "context-only");
+  assert.equal(calibration.referenceProfileAggregate.beautyHandoffAccepted, false);
+  assert.equal(calibration.sources[0]?.entryMetricThresholds, "excluded-until-annotated");
+  assert.equal(
+    calibration.metricRoles.find((role) => role.axis === "severeEntryIntervalPerEntry")?.role,
+    "threshold-excluded",
+  );
+});
+
+test("promotes local historical sources to observed readiness only with matched or annotated entries", () => {
+  const manifest = parseReferenceCorpusManifest({
+    schemaVersion: 1,
+    records: [
+      {
+        sourceId: "matched-humdrum-fugue",
+        composer: "Reference Composer",
+        title: "Matched Humdrum fugue",
+        edition: "local study edition",
+        license: "local import only",
+        importedAt: "2026-05-25",
+        format: "humdrum",
+        redistributionPolicy: "local-import-only",
+        profileFamily: "fugue-reference",
+        normalizerAxes: [
+          {
+            axis: "sharedRhythmOverlapPerVoicePairQuarter",
+            normalizer: "estimated-active-voice-pair-quarter-notes",
+          },
+          {
+            axis: "severeEntryIntervalPerEntry",
+            normalizer: "subject-entry-count",
+          },
+        ],
+      },
+    ],
+  });
+
+  const calibration = summarizeHistoricalReferenceCalibration(manifest, [
+    {
+      sourceId: "matched-humdrum-fugue",
+      method: "pattern-matched",
+      entryCount: 7,
+      confidence: "medium",
+    },
+  ]);
+
+  assert.equal(calibration.status, "ci-observed-ready");
+  assert.equal(calibration.annotatedSourceCount, 1);
+  assert.equal(calibration.sources[0]?.entryMetricThresholds, "eligible-for-calibration");
+});
+
+test("summarizes normalized historical reference review metrics with calibration roles", () => {
+  const manifest = parseReferenceCorpusManifest({
+    schemaVersion: 1,
+    records: [
+      {
+        sourceId: "fixture-fugue",
+        composer: "Reference Composer",
+        title: "Fixture fugue",
+        edition: "metadata-only fixture",
+        license: "license verification pending",
+        importedAt: "2026-05-25",
+        format: "metadata-only",
+        redistributionPolicy: "metadata-only",
+        profileFamily: "fugue-reference",
+        normalizerAxes: [
+          {
+            axis: "sharedRhythmOverlapPerVoicePairQuarter",
+            normalizer: "estimated-active-voice-pair-quarter-notes",
+          },
+          {
+            axis: "leapRecoveryMissesPerQuarter",
+            normalizer: "score-quarter-notes",
+          },
+        ],
+      },
+    ],
+  });
+  const output = generateScore({ seed: "historical-review-summary", lengthTicks: 9600 });
+  const normalized = createNormalizedReferenceDiagnostics(manifest.records[0], output.diagnostics);
+
+  const review = summarizeHistoricalReferenceReview([normalized]);
+
+  assert.equal(review.status, "review-required");
+  assert.equal(review.sourceCount, 1);
+  assert.ok(review.axes.some((axis) => axis.axis === "sharedRhythmOverlapPerVoicePairQuarter"));
+  assert.equal(
+    review.axes.find((axis) => axis.axis === "leapRecoveryMissesPerQuarter")?.calibrationRole,
+    "context-only",
+  );
 });

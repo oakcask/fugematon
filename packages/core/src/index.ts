@@ -130,9 +130,16 @@ export { normalizeSelectionModel } from "./events.js";
 export { generateScore, normalizeParameters } from "./generate.js";
 export { seedToUint32State, Xoshiro128StarStar } from "./prng.js";
 export type {
+  HistoricalReferenceCalibrationMetricRole,
+  HistoricalReferenceCalibrationSource,
+  HistoricalReferenceCalibrationStatus,
+  HistoricalReferenceCalibrationSummary,
+  HistoricalReferenceMetricAggregate,
+  HistoricalReferenceReviewSummary,
   NormalizedReferenceDiagnosticAxis,
   NormalizedReferenceDiagnostics,
   NormalizedReferenceMetrics,
+  ReferenceCalibrationMetricRole,
   ReferenceCorpusManifest,
   ReferenceDiagnosticsAggregate,
   ReferenceDiagnosticsComparison,
@@ -150,6 +157,8 @@ export type {
   ReferenceRedistributionPolicy,
   ReferenceSourceFormat,
   ReferenceSourceMetadata,
+  ReferenceSubjectEntryAnnotation,
+  ReferenceSubjectEntryAnnotationMethod,
 } from "./reference-diagnostics.js";
 export {
   compareDiagnosticsToReferenceProfile,
@@ -159,6 +168,8 @@ export {
   parseReferenceCorpusManifest,
   REFERENCE_CORPUS_MANIFEST,
   REFERENCE_DIAGNOSTICS_PROFILE,
+  summarizeHistoricalReferenceCalibration,
+  summarizeHistoricalReferenceReview,
   summarizeReferenceDiagnosticsComparisons,
   summarizeReferenceProfile,
   validateReferenceManifestRecord,

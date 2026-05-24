@@ -165,6 +165,78 @@ export type ReferenceDiagnosticsAggregate = {
   maxDistance: number;
 };
 
+export type ReferenceSubjectEntryAnnotationMethod =
+  | "missing"
+  | "approximated-first-active-voice"
+  | "pattern-matched"
+  | "manual-annotated";
+
+export type ReferenceSubjectEntryAnnotation = {
+  sourceId: string;
+  method: ReferenceSubjectEntryAnnotationMethod;
+  entryCount: number;
+  confidence: "none" | "low" | "medium" | "high";
+  notes?: string;
+};
+
+export type ReferenceCalibrationMetricRole = "context-only" | "threshold-excluded" | "calibration-candidate";
+
+export type HistoricalReferenceCalibrationStatus = "review-required" | "ci-observed-ready";
+
+export type HistoricalReferenceCalibrationSource = {
+  sourceId: string;
+  format: ReferenceManifestFormat;
+  redistributionPolicy: ReferenceRedistributionPolicy;
+  scoreFileRedistributed: boolean;
+  annotationMethod: ReferenceSubjectEntryAnnotationMethod;
+  annotatedEntryCount: number;
+  entryMetricThresholds: "excluded-until-annotated" | "eligible-for-calibration";
+  readiness: HistoricalReferenceCalibrationStatus;
+  notes: string;
+};
+
+export type HistoricalReferenceCalibrationMetricRole = {
+  axis: ReferenceMetricAxis | "referenceDiagnostics.outsideReferenceSeedCount";
+  role: ReferenceCalibrationMetricRole;
+  reason: string;
+  action: string;
+};
+
+export type HistoricalReferenceCalibrationSummary = {
+  schemaVersion: 1;
+  status: HistoricalReferenceCalibrationStatus;
+  sourceCount: number;
+  annotatedSourceCount: number;
+  metricRoles: HistoricalReferenceCalibrationMetricRole[];
+  sources: HistoricalReferenceCalibrationSource[];
+  referenceProfileAggregate: {
+    field: "referenceDiagnostics.outsideReferenceSeedCount";
+    role: "context-only";
+    beautyHandoffAccepted: false;
+    reason: string;
+    action: string;
+  };
+};
+
+export type HistoricalReferenceMetricAggregate = {
+  axis: ReferenceMetricAxis;
+  normalizer: ReferenceMetricNormalizer;
+  sourceCount: number;
+  averageValue: number;
+  minValue: number;
+  maxValue: number;
+  calibrationRole: ReferenceCalibrationMetricRole;
+};
+
+export type HistoricalReferenceReviewSummary = {
+  schemaVersion: 1;
+  status: HistoricalReferenceCalibrationStatus;
+  sourceCount: number;
+  sources: HistoricalReferenceCalibrationSource[];
+  axes: HistoricalReferenceMetricAggregate[];
+  calibration: HistoricalReferenceCalibrationSummary;
+};
+
 const VOICE_PAIR_COUNT = (VOICES.length * (VOICES.length - 1)) / 2;
 
 const REFERENCE_METRIC_NORMALIZERS = {
@@ -490,6 +562,72 @@ export function createNormalizedReferenceDiagnostics(
   };
 }
 
+export function summarizeHistoricalReferenceCalibration(
+  manifest: ReferenceCorpusManifest = REFERENCE_CORPUS_MANIFEST,
+  annotations: readonly ReferenceSubjectEntryAnnotation[] = [],
+): HistoricalReferenceCalibrationSummary {
+  const sources = manifest.records.map((record) => summarizeHistoricalReferenceSource(record, annotations));
+  const annotatedSourceCount = sources.filter(
+    (source) => source.entryMetricThresholds === "eligible-for-calibration",
+  ).length;
+  const status =
+    sources.length > 0 && sources.every((source) => source.readiness === "ci-observed-ready")
+      ? "ci-observed-ready"
+      : "review-required";
+
+  return {
+    schemaVersion: 1,
+    status,
+    sourceCount: sources.length,
+    annotatedSourceCount,
+    metricRoles: REFERENCE_METRIC_AXES.map((axis) => referenceCalibrationMetricRole(axis)),
+    sources,
+    referenceProfileAggregate: {
+      field: "referenceDiagnostics.outsideReferenceSeedCount",
+      role: "context-only",
+      beautyHandoffAccepted: false,
+      reason:
+        "The current reference profile is useful for coarse drift context, but a zero outside-reference count does not prove score-window beauty.",
+      action:
+        "Use quality-vector local sentinels, score-window review, and manual-listening evidence for beauty handoff decisions.",
+    },
+  };
+}
+
+export function summarizeHistoricalReferenceReview(
+  diagnostics: readonly NormalizedReferenceDiagnostics[],
+  annotations: readonly ReferenceSubjectEntryAnnotation[] = [],
+): HistoricalReferenceReviewSummary {
+  const manifest: ReferenceCorpusManifest = {
+    schemaVersion: 1,
+    records: diagnostics.map((source) =>
+      validateReferenceManifestRecord({
+        sourceId: source.sourceId,
+        composer: "Historical reference source",
+        title: source.sourceId,
+        edition: "normalized diagnostics import",
+        license: "metadata supplied by normalized diagnostics import",
+        importedAt: "2026-05-25",
+        format: source.format,
+        redistributionPolicy: source.redistributionPolicy,
+        profileFamily: source.profileFamily,
+        scoreFileRedistributed: false,
+        normalizerAxes: source.axes.map(({ axis, normalizer }) => ({ axis, normalizer })),
+      }),
+    ),
+  };
+  const calibration = summarizeHistoricalReferenceCalibration(manifest, annotations);
+
+  return {
+    schemaVersion: 1,
+    status: calibration.status,
+    sourceCount: diagnostics.length,
+    sources: calibration.sources,
+    axes: REFERENCE_METRIC_AXES.flatMap((axis) => summarizeHistoricalReferenceAxis(axis, diagnostics, calibration)),
+    calibration,
+  };
+}
+
 export function compareDiagnosticsToReferenceProfile(
   diagnostics: GenerationDiagnostics,
   profile: ReferenceDiagnosticsProfile = REFERENCE_DIAGNOSTICS_PROFILE,
@@ -561,6 +699,94 @@ export function summarizeReferenceDiagnosticsComparisons(
     outsideReferenceSeedCount: comparisons.filter((comparison) => comparison.outsideReferenceCount > 0).length,
     maxDistance: roundMetric(maximum(comparisons.map((comparison) => comparison.maxDistance))),
   };
+}
+
+function summarizeHistoricalReferenceSource(
+  record: ReferenceManifestRecord,
+  annotations: readonly ReferenceSubjectEntryAnnotation[],
+): HistoricalReferenceCalibrationSource {
+  const annotation = annotations.find((candidate) => candidate.sourceId === record.sourceId);
+  const method = annotation?.method ?? "missing";
+  const entryMetricThresholds =
+    method === "pattern-matched" || method === "manual-annotated"
+      ? "eligible-for-calibration"
+      : "excluded-until-annotated";
+  const sourceReady =
+    record.format !== "metadata-only" &&
+    record.scoreFileRedistributed === false &&
+    entryMetricThresholds === "eligible-for-calibration";
+
+  return {
+    sourceId: record.sourceId,
+    format: record.format,
+    redistributionPolicy: record.redistributionPolicy,
+    scoreFileRedistributed: record.scoreFileRedistributed,
+    annotationMethod: method,
+    annotatedEntryCount: annotation?.entryCount ?? 0,
+    entryMetricThresholds,
+    readiness: sourceReady ? "ci-observed-ready" : "review-required",
+    notes:
+      annotation?.notes ??
+      (entryMetricThresholds === "eligible-for-calibration"
+        ? "Subject-entry evidence is available for review calibration."
+        : "Entry-local historical metrics stay excluded from thresholds until subject entries are matched or annotated."),
+  };
+}
+
+function referenceCalibrationMetricRole(axis: ReferenceMetricAxis): HistoricalReferenceCalibrationMetricRole {
+  if (axis === "severeEntryIntervalPerEntry" || axis === "unresolvedSevereEntryIntervalPerEntry") {
+    return {
+      axis,
+      role: "threshold-excluded",
+      reason:
+        "Historical entry-local intervals need subject-entry annotation or matching before they can define reference bands.",
+      action:
+        "Keep generated entry-friction repair driven by score-window diagnostics until annotated reference entries land.",
+    };
+  }
+  if (axis === "leapRecoveryMissesPerQuarter") {
+    return {
+      axis,
+      role: "context-only",
+      reason:
+        "Keyboard fugue figuration can explain leaps that a vocal-style recovery heuristic would flag too aggressively.",
+      action:
+        "Add style-aware sequence, arpeggiation, and subject-function explanation before tuning toward this axis.",
+    };
+  }
+  return {
+    axis,
+    role: "calibration-candidate",
+    reason:
+      "This axis can compare generated texture or line-agency pressure against historical normalized diagnostics.",
+    action: "Use as review evidence first, then promote only after import determinism and source metadata are stable.",
+  };
+}
+
+function summarizeHistoricalReferenceAxis(
+  axis: ReferenceMetricAxis,
+  diagnostics: readonly NormalizedReferenceDiagnostics[],
+  calibration: HistoricalReferenceCalibrationSummary,
+): HistoricalReferenceMetricAggregate[] {
+  const values = diagnostics.flatMap((source) =>
+    source.axes.filter((candidate) => candidate.axis === axis).map((candidate) => candidate.value),
+  );
+  if (values.length === 0) {
+    return [];
+  }
+  const role = calibration.metricRoles.find((candidate) => candidate.axis === axis)?.role ?? "context-only";
+
+  return [
+    {
+      axis,
+      normalizer: REFERENCE_METRIC_NORMALIZERS[axis],
+      sourceCount: values.length,
+      averageValue: roundMetric(average(values)),
+      minValue: roundMetric(minimum(values)),
+      maxValue: roundMetric(maximum(values)),
+      calibrationRole: role,
+    },
+  ];
 }
 
 function referenceNormalizers(diagnostics: GenerationDiagnostics): ReferenceDiagnosticsComparison["normalizers"] {
