@@ -1,6 +1,6 @@
 # Fugematon
 
-Fugematon is a deterministic fugue generator. The core package generates a tick-based four-voice score from a seed, the CLI exports JSON diagnostics or MIDI files, and the web app plays the generated Phase 4 score with WebAudio while showing a Canvas piano roll.
+Fugematon is a deterministic fugue generator. The core package generates a tick-based four-voice score from a seed, the CLI exports JSON diagnostics or MIDI files, and the web app plays the generated fugue-form score with WebAudio while showing a Canvas piano roll.
 
 ## Requirements
 
@@ -62,7 +62,7 @@ pnpm fugematon diagnose --seed fugue-smoke --ticks 7680
 Export MIDI:
 
 ```sh
-pnpm fugematon midi --seed fugue-smoke --ticks 7680 --out samples/fugue-smoke-phase1.mid
+pnpm fugematon midi --seed fugue-smoke --ticks 7680 --out samples/fugue-smoke-exposition.mid
 ```
 
 The sample MIDI command is also available as:
@@ -81,8 +81,8 @@ pnpm web:dev
 
 Open the local URL printed by Vite. The app lets you:
 
-* Enter a seed and regenerate the deterministic Phase 4 score.
-* Play a Phase 4 score with exposition, episode, subject return, and stretto-like states.
+* Enter a seed and regenerate the deterministic fugue-form score.
+* Play a score with exposition, episode, subject return, and stretto-like states.
 * Press Start to begin WebAudio playback after the required browser user gesture.
 * Press Stop to stop scheduled playback.
 * Watch a fixed-window Canvas piano roll follow playback while entry-plan subject highlights stay readable.

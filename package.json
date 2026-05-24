@@ -18,7 +18,7 @@
     "web:og-image": "pnpm --filter @fugematon/web og:image",
     "web:og-image:app-dist": "pnpm --filter @fugematon/web og:image:app-dist",
     "fugematon": "node packages/cli/dist/index.js",
-    "samples:generate": "pnpm build && node packages/cli/dist/index.js midi --seed fugue-smoke --ticks 7680 --out samples/fugue-smoke-phase1.mid"
+    "samples:generate": "pnpm build && node packages/cli/dist/index.js midi --seed fugue-smoke --ticks 7680 --out samples/fugue-smoke-exposition.mid"
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.15",
