@@ -128,6 +128,20 @@ Current behavior tests and shared test helpers use the same musical-surface nami
 | `generate-phase13q-review-*.test.ts` | `generate-candidate-diversity-adoption-*.test.ts` | Candidate-diversity adoption regression batches. |
 | `generate-phase13q-candidate-diversity*.test.ts` | `generate-candidate-diversity-review*.test.ts` | Candidate-diversity oracle review batches. |
 | `generate-phase13q-review.test.ts` | `generate-local-sentinel-candidate-trace.test.ts` | Local-sentinel to selected-candidate trace contract. |
+| `generate-phase-review-test-helpers.ts` | `generate-quality-review-test-helpers.ts` | Shared helper module for current quality-review test surfaces. |
+| `PHASE_11_12_REVIEW_*` | `TEXTURE_PHRASE_PLANNING_REVIEW_*` | Texture and phrase-planning review seed batches. |
+| `PHASE_11_12_ROTATION_SEEDS` | `TEXTURE_PHRASE_PLANNING_ROTATION_SEEDS` | Rotation seed set for texture and phrase-planning review. |
+| `PHASE_12_REPETITION_*` | `PHRASE_REPETITION_*` | Phrase-repetition focused and review seed batches. |
+| `PHASE_13_FOCUSED_SEEDS` | `QUALITY_VECTOR_REVIEW_SEEDS` | Focused seed set for quality-vector review preconditions. |
+| `Phase1112PlanningMetrics` | `TexturePhrasePlanningMetrics` | Aggregate metrics for texture and phrase-planning review. |
+| `Phase12RepetitionMetrics` | `PhraseRepetitionMetrics` | Aggregate metrics for phrase-repetition review. |
+| `collectPhase1112PlanningMetrics` | `collectTexturePhrasePlanningMetrics` | Collector for texture and phrase-planning review metrics. |
+| `collectPhase12RepetitionMetrics` | `collectPhraseRepetitionMetrics` | Collector for phrase-repetition review metrics. |
+| `assertPhase1112ReviewBatch` | `assertTexturePhrasePlanningReviewBatch` | Review helper for texture and phrase-planning seed batches. |
+| `assertPhase1112RotationBatch` | `assertTexturePhrasePlanningRotationBatch` | Review helper for texture and phrase-planning rotation batches. |
+| `assertPhase12FocusedRepetitionAdoption` | `assertFocusedPhraseRepetitionAdoption` | Adoption helper for focused phrase-repetition seeds. |
+| `assertPhase12RepetitionReviewBatch` | `assertPhraseRepetitionReviewBatch` | Review helper for phrase-repetition seed batches. |
+| `assertPhase13ReviewPreconditions` | `assertQualityVectorReviewPreconditions` | Preconditions helper for quality-vector review seeds. |
 
 ## Selection Model Values
 

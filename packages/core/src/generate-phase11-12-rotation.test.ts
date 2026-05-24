@@ -1,9 +1,9 @@
 import test from "node:test";
-import { PHASE_11_12_ROTATION_SEEDS } from "./generate-phase-review-test-helpers.js";
-import { assertPhase1112RotationBatch } from "./generate-phase11-12-rotation-test-helpers.js";
+import { assertTexturePhrasePlanningRotationBatch } from "./generate-phase11-12-rotation-test-helpers.js";
+import { TEXTURE_PHRASE_PLANNING_ROTATION_SEEDS } from "./generate-quality-review-test-helpers.js";
 
-test("generateScore applies phase-11 and phase-12 phrase-unit planning across rotation seed batch A", () => {
-  assertPhase1112RotationBatch(PHASE_11_12_ROTATION_SEEDS.slice(0, 2), {
+test("generateScore applies texture and phrase-unit planning across rotation seed batch A", () => {
+  assertTexturePhrasePlanningRotationBatch(TEXTURE_PHRASE_PLANNING_ROTATION_SEEDS.slice(0, 2), {
     topEntryPatternFamilyDelta: 4,
     leapRecoveryMissDelta: 21,
     unisonOverlapDelta: 205,

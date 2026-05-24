@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
-import { collectPhase1112PlanningMetrics } from "./generate-phase-review-test-helpers.js";
+import { collectTexturePhrasePlanningMetrics } from "./generate-quality-review-test-helpers.js";
 
-type Phase1112RotationExpectation = {
+type TexturePhrasePlanningRotationExpectation = {
   topEntryPatternFamilyDelta: number;
   leapRecoveryMissDelta: number;
   unisonOverlapDelta?: number;
@@ -10,11 +10,11 @@ type Phase1112RotationExpectation = {
   sectionGrammarRiskMultiplier?: number;
 };
 
-export function assertPhase1112RotationBatch(
+export function assertTexturePhrasePlanningRotationBatch(
   seeds: readonly string[],
-  expectation: Phase1112RotationExpectation,
+  expectation: TexturePhrasePlanningRotationExpectation,
 ): void {
-  const metrics = collectPhase1112PlanningMetrics(seeds);
+  const metrics = collectTexturePhrasePlanningMetrics(seeds);
   assert.equal(metrics.changedStateSequenceCount, metrics.seedCount);
   assert.ok(
     metrics.variantUniqueContinuationPatternCount >=
