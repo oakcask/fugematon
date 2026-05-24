@@ -27,19 +27,23 @@ test("default profile keeps current voice mapping metadata", () => {
   const profile = getPerformanceProfile(DEFAULT_PERFORMANCE_PROFILE_ID);
   const metadata = performanceProfileMetadata(profile);
 
-  assert.deepEqual(metadata, { id: "organ-default", version: 1 });
+  assert.deepEqual(metadata, { id: "organ-default", version: 2 });
   assert.equal(profile.voices.soprano.channel, 0);
   assert.equal(profile.voices.alto.channel, 1);
   assert.equal(profile.voices.tenor.channel, 2);
   assert.equal(profile.voices.bass.channel, 3);
   assert.equal(profile.voices.soprano.program, 19);
   assert.equal(profile.voices.bass.program, 32);
+  assert.equal(profile.voices.bass.pan, 64);
+  assert.ok(profile.voices.tenor.pan >= 56 && profile.voices.tenor.pan <= 72);
+  assert.ok(profile.voices.alto.pan < profile.voices.bass.pan);
+  assert.ok(profile.voices.soprano.pan > profile.voices.bass.pan);
   assert.equal(profile.voices.bass.oscillatorType, "sawtooth");
 });
 
 test("profile registry exposes reviewable profile ids", () => {
   assert.deepEqual(listPerformanceProfiles(), [
-    { id: "organ-default", version: 1 },
+    { id: "organ-default", version: 2 },
     { id: "strict-counterpoint", version: 1 },
   ]);
 });

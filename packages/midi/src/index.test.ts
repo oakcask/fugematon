@@ -46,19 +46,19 @@ test("exportMidi preserves the default voice track layout", () => {
     [
       [
         { channel: 0, controller: 7, value: 127 },
-        { channel: 0, controller: 10, value: 32 },
+        { channel: 0, controller: 10, value: 84 },
       ],
       [
         { channel: 1, controller: 7, value: 127 },
-        { channel: 1, controller: 10, value: 48 },
+        { channel: 1, controller: 10, value: 44 },
       ],
       [
         { channel: 2, controller: 7, value: 127 },
-        { channel: 2, controller: 10, value: 80 },
+        { channel: 2, controller: 10, value: 58 },
       ],
       [
         { channel: 3, controller: 7, value: 127 },
-        { channel: 3, controller: 10, value: 96 },
+        { channel: 3, controller: 10, value: 64 },
       ],
     ],
   );

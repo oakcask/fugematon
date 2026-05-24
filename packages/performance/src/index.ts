@@ -68,12 +68,12 @@ export const DEFAULT_PERFORMANCE_PROFILE_ID: PerformanceProfileId = "organ-defau
 
 const ORGAN_DEFAULT: PerformanceProfile = {
   id: "organ-default",
-  version: 1,
+  version: 2,
   voices: {
-    soprano: voiceSettings("soprano", 0, 19, 32, 127, 0.18, "triangle"),
-    alto: voiceSettings("alto", 1, 19, 48, 127, 0.16, "triangle"),
-    tenor: voiceSettings("tenor", 2, 19, 80, 127, 0.15, "triangle"),
-    bass: voiceSettings("bass", 3, 32, 96, 127, 0.2, "sawtooth"),
+    soprano: voiceSettings("soprano", 0, 19, 84, 127, 0.18, "triangle"),
+    alto: voiceSettings("alto", 1, 19, 44, 127, 0.16, "triangle"),
+    tenor: voiceSettings("tenor", 2, 19, 58, 127, 0.15, "triangle"),
+    bass: voiceSettings("bass", 3, 32, 64, 127, 0.2, "sawtooth"),
   },
 };
 

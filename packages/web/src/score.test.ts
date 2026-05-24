@@ -46,7 +46,7 @@ test("createPlaybackModel can select the organ default performance profile", () 
   const output = generateScore({ seed: "fugue-smoke", lengthTicks: 7680 });
   const model = createPlaybackModel(output, "organ-default");
 
-  assert.deepEqual(model.performanceProfile, { id: "organ-default", version: 1 });
+  assert.deepEqual(model.performanceProfile, { id: "organ-default", version: 2 });
   assert.ok(model.notes.some((note) => note.oscillatorType === "triangle"));
   assert.equal(model.notes.find((note) => note.voice === "soprano")?.gain, 0.18);
 });

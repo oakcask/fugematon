@@ -481,7 +481,7 @@ test("review command writes diagnostics and MIDI files for review seeds", async 
     assert.equal(summary.schemaVersion, 18);
     assert.equal(summary.lengthTicks, 9600);
     assert.equal(summary.selectionModel, "section-local-planner");
-    assert.deepEqual(summary.performanceProfile, { id: "organ-default", version: 1 });
+    assert.deepEqual(summary.performanceProfile, { id: "organ-default", version: 2 });
     assert.ok(summary.seeds.length > 1);
     assert.equal(summary.referenceDiagnostics.profile.profileId, "fugue-reference-profile");
     assert.equal(summary.referenceDiagnostics.profile.sources[0]?.sourceFormat, "profile-fixture");
@@ -527,7 +527,7 @@ test("review command writes diagnostics and MIDI files for review seeds", async 
     assert.deepEqual(pairwisePreferences, {
       schemaVersion: 2,
       lengthTicks: 9600,
-      performanceProfile: { id: "organ-default", version: 1 },
+      performanceProfile: { id: "organ-default", version: 2 },
       instructions:
         "Fill preferredSide only after manual pairwise listening. These records are candidates for future aesthetic scoring weights and do not override hard constraints.",
       manualListeningStatus: "not-reviewed",
