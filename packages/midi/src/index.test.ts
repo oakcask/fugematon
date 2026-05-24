@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { generateScore, type NoteEvent } from "@fugematon/core";
+import { generateScore } from "@fugematon/core";
+import { scoreToPerformanceEvents } from "@fugematon/performance";
 import { exportMidi } from "./index.js";
 
 test("exportMidi creates a deterministic standard MIDI file", () => {
@@ -23,7 +24,9 @@ test("exportMidi preserves the default voice track layout", () => {
   const notesByVoice = new Map(
     ["soprano", "alto", "tenor", "bass"].map((voice) => [
       voice,
-      score.events.filter((event): event is NoteEvent => event.kind === "note" && event.voice === voice),
+      scoreToPerformanceEvents({ events: score.events, seed: score.diagnostics.seed }).filter(
+        (event) => event.voice === voice,
+      ),
     ]),
   );
 
@@ -74,7 +77,7 @@ test("exportMidi writes performance profile metadata", () => {
   const score = generateScore({ seed: "fugue-smoke", lengthTicks: 7680 });
   const tracks = parseMidiTracks(exportMidi(score.events, { performanceProfileId: "strict-counterpoint" }));
 
-  assert.ok(tracks[0]!.textEvents.includes("PerformanceProfile strict-counterpoint@1"));
+  assert.ok(tracks[0]!.textEvents.includes("PerformanceProfile strict-counterpoint@2"));
   assert.deepEqual(
     tracks.slice(1).map((track) => track.programChange),
     [

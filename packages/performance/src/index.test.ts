@@ -39,11 +39,22 @@ test("default profile keeps current voice mapping metadata", () => {
   assert.ok(profile.voices.alto.pan < profile.voices.bass.pan);
   assert.ok(profile.voices.soprano.pan > profile.voices.bass.pan);
   assert.equal(profile.voices.bass.oscillatorType, "sawtooth");
+  assert.deepEqual(profile.voices.alto.velocityCurve, { kind: "linear", scale: 1, minimum: 64, maximum: 112 });
 });
 
 test("profile registry exposes reviewable profile ids", () => {
   assert.deepEqual(listPerformanceProfiles(), [
     { id: "organ-default", version: 2 },
-    { id: "strict-counterpoint", version: 1 },
+    { id: "strict-counterpoint", version: 2 },
   ]);
+});
+
+test("default profile keeps quiet support notes audible", () => {
+  const score = generateScore({ seed: "fugue-smoke", lengthTicks: 7680 });
+  const performanceEvents = scoreToPerformanceEvents({ events: score.events, seed: score.diagnostics.seed });
+  const quietSupport = performanceEvents.find(
+    (event) => event.voice === "alto" && event.startTick === 7680 && event.role === "free-counterpoint",
+  );
+
+  assert.equal(quietSupport?.velocity, 64);
 });

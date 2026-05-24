@@ -24,7 +24,7 @@ test("createPlaybackModel extracts timing metadata and notes", () => {
   assert.equal(model.notes.length, output.diagnostics.noteCount);
   assert.deepEqual(model.stateTransitions, output.diagnostics.stateTransitions);
   assert.equal(model.subjectEntries.length, output.diagnostics.subjectEntries.length);
-  assert.deepEqual(model.performanceProfile, { id: "strict-counterpoint", version: 1 });
+  assert.deepEqual(model.performanceProfile, { id: "strict-counterpoint", version: 2 });
   assert.ok(model.notes.some((note) => note.entry?.state === "exposition"));
   assert.ok(model.notes.some((note) => note.entry?.answerKind === "tonal"));
   assert.ok(model.notes.some((note) => note.role === "counter-subject"));

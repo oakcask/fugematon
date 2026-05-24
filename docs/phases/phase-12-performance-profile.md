@@ -58,7 +58,7 @@ Later WebAudio synth and envelope interpretation work is tracked as [WebAudio sy
 ## Implementation Notes
 
 * `packages/performance` defines `PerformanceProfile`, `PerformanceEvent`, `organ-default`, `strict-counterpoint`, and deterministic `ScoreEvent` to `PerformanceEvent` conversion without depending on DOM, WebAudio, Node.js runtime APIs, or the MIDI encoder.
-* MIDI export moved to `packages/midi` and consumes the shared performance conversion. The default `organ-default` profile preserves the existing voice track names, channels, organ programs, and score-derived velocity while adding profile metadata, pan, and volume as rendering data.
+* MIDI export moved to `packages/midi` and consumes the shared performance conversion. The default `organ-default` profile preserves the existing voice track names, channels, and organ programs while applying the profile velocity curve, metadata, pan, and volume as rendering data.
 * WebAudio playback uses the same performance conversion for gain, oscillator type, release, and selected profile metadata instead of keeping a separate preview profile.
 * CLI `midi`, `review`, and `review-ab` accept `--performance-profile`; review summaries, A/B summaries, pairwise preference templates, and MIDI metadata record profile id and version.
 * `packages/core` no longer exports the MIDI encoder and remains independent of DOM, WebAudio, Node.js runtime APIs, MIDI encoding, and renderer profile settings.
@@ -66,5 +66,5 @@ Later WebAudio synth and envelope interpretation work is tracked as [WebAudio sy
 ## Completion Review
 
 * Existing generation tests keep selected `ScoreEvent` output, hard constraints, Phase 7B readiness, schema-compatible diagnostics, reference diagnostics, and candidate-pool oracle shape stable.
-* Default rendering stays close to the Phase 12 listening baseline: WebAudio still derives gain from score velocity and the organ profile, while MIDI keeps the same voice channels and programs.
+* Default rendering stays close to the Phase 12 listening baseline: WebAudio still derives gain from performance velocity and the organ profile, while MIDI keeps the same voice channels and programs.
 * Rendering changes are documented as performance-profile changes, not generation changes. The default MIDI now carries profile metadata plus pan and volume controller events so Phase 13 can reproduce listening conditions.
