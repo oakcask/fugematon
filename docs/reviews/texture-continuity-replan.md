@@ -28,7 +28,7 @@ Project response: change first bass-answer tail planning and diagnostics so one 
 
 Affected seed: `seed-0i335vx-1n54a1x`.
 
-The same score has many solo runs. Diagnostics report `soloRunCount` 39, `unsupportedSoloRunCount` 1, and `abruptTextureDropCount` 1. Measure 9 includes a one-beat bass-only free-counterpoint segment. Measure 28 exposes tenor free-counterpoint for two quarters while the other voices rest.
+The same score has many solo runs. Current section-local-planner diagnostics report `soloRunCount` 34, `unsupportedSoloRunCount` 0, and `abruptTextureDropCount` 0, so the existing aggregate texture counters no longer classify the reported windows as unsupported or abrupt. Measure 9 still exposes a short alto-only free-counterpoint span, and measure 28 exposes tenor free-counterpoint for two quarters while the other voices rest.
 
 This is not the same failure as the old all-voice silence or bass-only first-answer collapse. The generator has learned to avoid the most severe texture holes, but it still permits exposed free-counterpoint filler in non-cadential continuation windows.
 

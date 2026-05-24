@@ -2,7 +2,7 @@
 
 Texture continuity repair is inserted after Score-led beauty handoff and Metrical generation repair, before Infinite playback MVP. Its purpose is to stop exposed free-counterpoint from becoming a default solo filler when subject or answer material is not active.
 
-Status: current quality blocker for Infinite playback MVP. The first reported seed is `seed-0i335vx-1n54a1x`, where measure 5 thins to bass answer plus one outside free-counterpoint support, measure 9 exposes a bass-only free-counterpoint beat, and measure 28 exposes a two-quarter tenor free-counterpoint solo. The repair must be structural, not seed-specific.
+Status: current quality blocker for Infinite playback MVP. The first reported seed is `seed-0i335vx-1n54a1x`, where measure 5 thins to bass answer plus one outside free-counterpoint support, measure 9 exposes a short alto-only free-counterpoint span, and measure 28 exposes a two-quarter tenor free-counterpoint solo. The repair must be structural, not seed-specific.
 
 Planning review:
 
@@ -12,7 +12,7 @@ Planning review:
 
 Earlier work repaired all-voice silence, bass-only first-answer collapse, long post-answer thin-support windows, and repeated free-counterpoint phrase signatures in focused sets. The new report shows a remaining gap: one outside support voice can still be accepted as enough at the first bass-answer tail, and later continuation can expose a single free-counterpoint line whose short stock phrase is not strong enough to carry the texture alone.
 
-This is a score-window failure rather than only a metric failure. `soloTexture` sees the reported seed as having solo runs, including one unsupported abrupt run, and `bassAnswerTailTexture` records one-outside tail ticks while still classifying the tail as supported. The generator therefore needs a stronger texture-floor model and the diagnostics need to distinguish acceptable cadential or rhetorical thinning from exposed filler.
+This is a score-window failure rather than only a metric failure. `soloTexture` sees the reported seed as having many solo runs while current unsupported and abrupt solo counters stay at zero, and `bassAnswerTailTexture` records one-outside tail ticks while still classifying the tail as supported. The generator therefore needs a stronger texture-floor model and the diagnostics need to distinguish acceptable cadential or rhetorical thinning from exposed filler.
 
 Theory basis: fugue texture may reduce to two voices, pedal support, cadence preparation, echo, or deliberate solo rhetoric. The reported windows are different: the non-entry voices withdraw without a clear cadence or prepared solo function, and the exposed free-counterpoint line uses a short formula rather than a function-bearing continuation.
 
