@@ -4,6 +4,7 @@
 
 ## Read First
 
+* [Historical reference calibration completion review](historical-reference-calibration-completion.md): Historical reference calibration の完了 evidence。focused seed と 22 seed の voice-pair coupling / entry severe-interval 改善、reference-readiness scope、manual-listening gap、Phase 8 handoff。
 * [Historical reference observation](historical-reference-observation.md): 探索的 Bach WTC diagnostics と現行生成 bundle の比較。persistent voice-pair coupling、pitch-class reinforcement、entry severe-interval pressure を、Infinite playback MVP 前の Historical reference calibration へ再編する根拠。
 * [Texture continuity repair completion review](texture-continuity-repair-completion.md): Texture continuity repair の完了 evidence。focused seed set の bass-answer tail、exposed free-counterpoint solo、tradeoff signal、CI / review scope、Phase 8 handoff。
 * [Texture continuity replan](texture-continuity-replan.md): `seed-0i335vx-1n54a1x` の5小節目、9小節目、28小節目で確認した bass-answer tail one-outside support、exposed free-counterpoint solo、退屈な solo formula を、Infinite playback MVP 前の Texture continuity repair へ再編する根拠。

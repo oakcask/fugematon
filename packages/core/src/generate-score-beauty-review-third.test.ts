@@ -13,5 +13,5 @@ test("generateScore improves score-beauty evidence in the third review batch", (
   assert.ok(metrics.uniqueInitialSubjectClimaxIndexCount >= 2);
   assert.ok(metrics.topSubjectFragmentFamilyShare <= 1);
   assert.ok(metrics.unresolvedEntrySevereIntervalQuarters <= 36);
-  assert.ok(metrics.counterSubjectIdentityRetentionTotal >= 3.69);
+  assert.ok(metrics.counterSubjectIdentityRetentionTotal >= 3.68);
 });

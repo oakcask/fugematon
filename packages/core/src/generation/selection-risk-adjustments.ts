@@ -57,10 +57,10 @@ function voicePairLockstepSelectionRiskAdjustment(evaluation: CandidateEvaluatio
   } = evaluation.dimensions.texture.features;
 
   return (
-    selectedVoicePairLockstepSelectionCost * 1.5 +
-    samePitchOverlapCount * 2 +
-    qualityVectorPitchClassUnisonDuration * 0.2 +
-    qualityVectorDurationBasedLockstep * 0.2
+    selectedVoicePairLockstepSelectionCost * 2.2 +
+    samePitchOverlapCount * 3 +
+    qualityVectorPitchClassUnisonDuration * 0.65 +
+    qualityVectorDurationBasedLockstep * 0.85
   );
 }
 
