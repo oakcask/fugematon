@@ -34,6 +34,7 @@ export function addSubjectEntry(
   },
 ): void {
   const plannedSubject = applyEntryPlanToSubject(subject, entry.form, entry.answerKind);
+  const meterContext = entry.harmonicPlan?.meterContext;
   const plannedEntry: PlannedEntry = {
     voice: entry.voice,
     form: entry.form,
@@ -52,7 +53,7 @@ export function addSubjectEntry(
       const pitchClass = pitchClassForSubjectNote(note, entry.localKey);
       return {
         offsetTick: note.offsetTick,
-        beatStrength: beatStrengthAtTick(tick),
+        beatStrength: beatStrengthAtTick(tick, meterContext),
         scaleDegree: note.scaleDegree,
         harmonicFunction: anchor?.function ?? "tonic",
         intent: metricalHarmonyIntentForDegree({

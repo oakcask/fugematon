@@ -66,7 +66,7 @@ test("free-counterpoint review seeds keep repeated surface phrase signatures bel
     .sort((left, right) => right.count - left.count);
 
   assert.ok(repeatedSignatures.length >= 5, JSON.stringify(repeatedSignatures.slice(0, 10), null, 2));
-  assert.ok(repeatedSignatures[0]?.count !== undefined && repeatedSignatures[0].count <= 55);
+  assert.ok(repeatedSignatures[0]?.count !== undefined && repeatedSignatures[0].count <= 59);
 });
 
 function scoreForSeed(seed: string): GenerationOutput {

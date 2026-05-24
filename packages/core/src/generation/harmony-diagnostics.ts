@@ -1,6 +1,7 @@
 import { TICKS_PER_QUARTER } from "../constants.js";
 import type { HarmonicPlan, NoteEvent, PlannedEntry } from "../events.js";
 import { characteristicScaleDegree, isModalMode } from "./key.js";
+import { beatStrengthAtTick } from "./meter.js";
 import { scaleDegreePitchClass } from "./pitch.js";
 import { positiveModulo, roundRatio } from "./shared.js";
 import type { HarmonicDiagnostics } from "./types.js";
@@ -72,10 +73,14 @@ function analyzeMetricalHarmony(
   let harmonicFunctionMismatches = 0;
   let harmonicFunctionMatches = 0;
 
-  for (let tick = 0; tick < endTick; tick += TICKS_PER_QUARTER * 2) {
+  for (let tick = 0; tick < endTick; tick += TICKS_PER_QUARTER / 2) {
     const anchor = nearestHarmonicAnchor(tick, sectionPlans);
     const activeNotes = notes.filter((note) => note.startTick <= tick && tick < note.startTick + note.durationTicks);
-    if (anchor === undefined || activeNotes.length === 0) {
+    if (
+      anchor === undefined ||
+      activeNotes.length === 0 ||
+      beatStrengthAtTick(tick, anchorPlan(sectionPlans, tick)?.meterContext) !== "strong"
+    ) {
       continue;
     }
 
@@ -97,6 +102,12 @@ function analyzeMetricalHarmony(
     harmonicFunctionMismatches,
     harmonicFunctionMatches,
   };
+}
+
+function anchorPlan(sectionPlans: readonly HarmonicPlan[], tick: number): HarmonicPlan | undefined {
+  return sectionPlans.find(
+    (candidate) => tick >= candidate.startTick && tick < candidate.startTick + candidate.durationTicks,
+  );
 }
 
 function nearestHarmonicAnchor(

@@ -5,8 +5,8 @@ import {
   POST_EXPOSITION_ENTRY_BOUNDARY_REVIEW_BATCH_B,
 } from "./generate-post-exposition-entry-boundary-test-helpers.js";
 
-test("post-exposition entry-boundary review bundle batch B exposes entry-boundary continuity diagnostics", () => {
-  const seeds = POST_EXPOSITION_ENTRY_BOUNDARY_REVIEW_BATCH_B.slice(0, 3);
+test("post-exposition entry-boundary review bundle batch B2 exposes entry-boundary continuity diagnostics", () => {
+  const seeds = POST_EXPOSITION_ENTRY_BOUNDARY_REVIEW_BATCH_B.slice(3);
   const metrics = collectPostExpositionEntryBoundaryMetrics(seeds);
 
   assert.equal(metrics.seedCount, seeds.length);

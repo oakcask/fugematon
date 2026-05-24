@@ -108,6 +108,10 @@ test("public diagnostics expose finite candidate score dimensions", () => {
   assert.ok(output.diagnostics.texturePlanningReview.entryPatternFamilies.length > 0);
   assert.ok(output.diagnostics.texturePlanningReview.functionalThinning.unsupportedRunCount >= 0);
   assert.ok(output.diagnostics.texturePlanningReview.metricalHarmony.strongBeatCheckpointCount > 0);
+  assert.equal(output.diagnostics.meterConsistencyReview.schemaVersion, 1);
+  assert.equal(output.diagnostics.meterConsistencyReview.status, "review-required");
+  assert.ok(output.diagnostics.meterConsistencyReview.focusedWindowCount > 0);
+  assert.ok(Array.isArray(output.diagnostics.meterConsistencyReview.windows));
   assert.equal(output.diagnostics.phraseRepetitionReview.schemaVersion, 1);
   assert.ok(output.diagnostics.phraseRepetitionReview.subjectStemFamilies.length > 0);
   assert.ok(output.diagnostics.phraseRepetitionReview.answerTransformFamilies.length > 0);

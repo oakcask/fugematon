@@ -9,7 +9,7 @@ test("generateScore balances entry harmony scoring with preservation guardrails"
   const blockerSeeds = [
     ["fugue-smoke", 140, 98, 72, 4, 3, 3],
     ["modal-cadence", 149, 101, 70, 4, 3, 3],
-    ["lyrical-line", 136, 98, 72, 4, 3, 3],
+    ["lyrical-line", 136, 98, 72, 3, 3, 3],
     ["tight-stretto", 144, 96, 72, 4, 3, 3],
     ["wide-key", 130, 96, 72, 3, 3, 3],
     ["contrary-answer", 137, 96, 72, 4, 3, 3],

@@ -11,6 +11,7 @@ import type {
   KeySignature,
   LowerVoiceVocalitySummary,
   LowerVoiceVocalityVoiceSummary,
+  MeterConsistencyReviewSummary,
   NoteEvent,
   NoteRole,
   OrnamentPlacementReasons,
@@ -32,6 +33,7 @@ import { analyzeEntryBoundaryContinuity } from "./entry-boundary-continuity.js";
 import { chordTonePitchClasses, nearestHarmonicAnchor, rootDegreeForFunction } from "./harmony.js";
 import { analyzeHarmonicPlans } from "./harmony-diagnostics.js";
 import { isModalMode, tonicPitchClass } from "./key.js";
+import { beatStrengthAtTick, isCompoundMidpoint, isMeasureDownbeat, measureOffsetTicks } from "./meter.js";
 import { scaleDegreePitchClass } from "./pitch.js";
 import { analyzeQualityVector } from "./quality-vector.js";
 import {
@@ -81,6 +83,7 @@ export function analyzeScore(
   lowerVoiceVocality: LowerVoiceVocalitySummary;
   stepwisePattern: StepwisePatternSummary;
   texturePlanningReview: TexturePlanningReviewSummary;
+  meterConsistencyReview: MeterConsistencyReviewSummary;
   phraseRepetitionReview: PhraseRepetitionReviewSummary;
   entryBoundaryContinuity: EntryBoundaryContinuitySummary;
   bassAnswerTailTexture: BassAnswerTailTextureSummary;
@@ -158,6 +161,7 @@ export function analyzeScore(
   const counterSubjectCoverage = textureCoverage(notes, "counter-subject");
   const freeCounterpointCoverage = textureCoverage(notes, "free-counterpoint");
   const textureDiagnostics = analyzeTextureDiagnostics(notes, subjectEntries, sectionPlans);
+  const meterConsistencyReview = analyzeMeterConsistency(subjectEntries, sectionPlans);
   const fallbackPassageCount = notes.filter((note) => note.role === "fallback").length;
   const melodicStagnationWarnings = countIssues(issues, "melodic-stagnation");
   const leapRecoveryMisses = countIssues(issues, "leap-recovery-miss");
@@ -216,6 +220,7 @@ export function analyzeScore(
     counterSubjectCoverage,
     freeCounterpointCoverage,
     ...textureDiagnostics,
+    meterConsistencyReview,
     fallbackPassageCount,
     melodicStagnationWarnings,
     leapRecoveryMisses,
@@ -248,6 +253,114 @@ function textureCoverage(notes: readonly NoteEvent[], role: "counter-subject" | 
     0,
   );
   return roundRatio(coveredDuration / entryDuration);
+}
+
+function analyzeMeterConsistency(
+  subjectEntries: readonly PlannedEntry[],
+  sectionPlans: readonly HarmonicPlan[],
+): MeterConsistencyReviewSummary {
+  const meterContext = sectionPlans[0]?.meterContext ?? {
+    timeSignature: { numerator: 4, denominator: 4 } as const,
+    measureTicks: TICKS_PER_QUARTER * 4,
+    beatTicks: TICKS_PER_QUARTER,
+    strongBeatIntervalTicks: TICKS_PER_QUARTER * 2,
+    weakBeatIntervalTicks: TICKS_PER_QUARTER,
+    compound: false,
+  };
+  const windows: MeterConsistencyReviewSummary["windows"] = [];
+
+  for (const entry of subjectEntries.slice(0, 16)) {
+    const entryWindow = meterWindow("entry-start", entry.startTick, meterContext, {
+      voice: entry.voice,
+      state: entry.state,
+      form: entry.form,
+    });
+    windows.push(entryWindow);
+
+    const reviewedAccents = entry.metricalIntentPattern.filter(
+      (candidate) =>
+        candidate.beatStrength === "strong" || (meterContext.compound && candidate.beatStrength === "weak"),
+    );
+    for (const intent of reviewedAccents) {
+      windows.push(
+        meterWindow("subject-accent", entry.startTick + intent.offsetTick, meterContext, {
+          voice: entry.voice,
+          state: entry.state,
+          form: entry.form,
+        }),
+      );
+    }
+  }
+
+  for (const plan of sectionPlans.slice(0, 16)) {
+    windows.push(meterWindow("phrase-boundary", plan.startTick, meterContext, { state: plan.state }));
+    for (const anchor of plan.anchors) {
+      windows.push(
+        meterWindow(anchor.cadenceTarget ? "cadence-target" : "harmonic-anchor", anchor.tick, meterContext, {
+          state: plan.state,
+        }),
+      );
+    }
+  }
+
+  const downbeatEntryCount = windows.filter(
+    (window) => window.kind === "entry-start" && window.classification === "meter-confirming",
+  ).length;
+  const offMeasureEntryCount = windows.filter(
+    (window) => window.kind === "entry-start" && window.classification === "review-required",
+  ).length;
+  const compoundMidpointCount = windows.filter((window) => window.classification === "compound-midpoint").length;
+  const strongIntentOnNonDownbeatCount = windows.filter(
+    (window) => window.kind === "subject-accent" && window.classification === "review-required",
+  ).length;
+  const cadenceTargetOffDownbeatCount = windows.filter(
+    (window) => window.kind === "cadence-target" && window.classification === "review-required",
+  ).length;
+  const phraseBoundaryOffDownbeatCount = windows.filter(
+    (window) => window.kind === "phrase-boundary" && window.classification === "review-required",
+  ).length;
+
+  return {
+    schemaVersion: 1,
+    status: "review-required",
+    timeSignature: meterContext.timeSignature,
+    measureTicks: meterContext.measureTicks,
+    beatTicks: meterContext.beatTicks,
+    compound: meterContext.compound,
+    focusedWindowCount: windows.length,
+    downbeatEntryCount,
+    offMeasureEntryCount,
+    compoundMidpointCount,
+    strongIntentOnNonDownbeatCount,
+    cadenceTargetOffDownbeatCount,
+    phraseBoundaryOffDownbeatCount,
+    windows: windows.slice(0, 64),
+  };
+}
+
+function meterWindow(
+  kind: MeterConsistencyReviewSummary["windows"][number]["kind"],
+  tick: number,
+  meterContext: HarmonicPlan["meterContext"],
+  details: Pick<MeterConsistencyReviewSummary["windows"][number], "voice" | "state" | "form">,
+): MeterConsistencyReviewSummary["windows"][number] {
+  const offsetTicks = measureOffsetTicks(tick, meterContext);
+  const classification = isMeasureDownbeat(tick, meterContext)
+    ? "meter-confirming"
+    : isCompoundMidpoint(tick, meterContext)
+      ? "compound-midpoint"
+      : kind === "entry-start" && beatStrengthAtTick(tick, meterContext) !== "offbeat"
+        ? "pickup-or-cross-metric"
+        : "review-required";
+
+  return {
+    kind,
+    tick,
+    measureOffsetTicks: offsetTicks,
+    beatStrength: beatStrengthAtTick(tick, meterContext),
+    classification,
+    ...details,
+  };
 }
 
 function analyzeTextureDiagnostics(
@@ -719,8 +832,9 @@ function summarizeMetricalHarmony(
     if (tick % TICKS_PER_QUARTER !== 0) {
       continue;
     }
+    const plan = sectionPlanForTick(sectionPlans, tick);
     const anchor = nearestHarmonicAnchor(tick, sectionPlans);
-    if (anchor === undefined || active.size === 0) {
+    if (anchor === undefined || active.size === 0 || plan === undefined) {
       continue;
     }
 
@@ -728,7 +842,8 @@ function summarizeMetricalHarmony(
     const activePitchClasses = [...active.values()].map((note) => positiveModulo(note.pitch, 12));
     const hasChordTone = activePitchClasses.some((pitchClass) => chordTones.includes(pitchClass));
     const hasMismatch = activePitchClasses.some((pitchClass) => !chordTones.includes(pitchClass));
-    const isStrongBeat = tick % (TICKS_PER_QUARTER * 2) === 0;
+    const beatStrength = beatStrengthAtTick(tick, plan.meterContext);
+    const isStrongBeat = beatStrength === "strong";
 
     if (isStrongBeat) {
       strongBeatCheckpointCount += 1;
@@ -747,7 +862,7 @@ function summarizeMetricalHarmony(
         strongBeatStructuralIntentCount += 1;
         strongBeatStructuralIntentMismatchCount += Number(!chordTones.includes(positiveModulo(activeNote.pitch, 12)));
       }
-    } else {
+    } else if (beatStrength === "weak") {
       weakBeatCheckpointCount += 1;
       weakBeatChordToneMismatchCount += Number(hasMismatch);
       for (const [voice, activeNote] of active.entries()) {

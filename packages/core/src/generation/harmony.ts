@@ -7,13 +7,14 @@ import type {
   HarmonicAnchor,
   HarmonicPlan,
   KeySignature,
+  MeterContext,
   MetricalHarmonyIntent,
   SequencePattern,
   StyleProfile,
   Voice,
 } from "../events.js";
 import { isModalMode } from "./key.js";
-import { beatStrengthAtTick } from "./meter.js";
+import { beatStrengthAtTick, createLegacyMeterContext, previousMeasureDownbeat } from "./meter.js";
 import { scaleDegreePitchClass } from "./pitch.js";
 import { positiveModulo } from "./shared.js";
 
@@ -29,12 +30,14 @@ export function buildHarmonicPlan(plan: {
   styleProfile: StyleProfile;
   cadenceKind: CadenceKind;
   ambiguityIntent: AmbiguityIntent;
+  meterContext?: MeterContext;
   sequencePattern?: SequencePattern;
   fragmentTransform?: FragmentTransform;
 }): HarmonicPlan {
-  const cadenceTick = plan.startTick + Math.max(TICKS_PER_QUARTER, plan.durationTicks - TICKS_PER_QUARTER);
-  const predominantTick = plan.startTick + Math.max(TICKS_PER_QUARTER, Math.floor(plan.durationTicks / 3));
-  const dominantTick = plan.startTick + Math.max(TICKS_PER_QUARTER * 2, Math.floor((plan.durationTicks * 2) / 3));
+  const meterContext = plan.meterContext ?? createLegacyMeterContext();
+  const cadenceTick = cadenceAnchorTick(plan.startTick, plan.durationTicks, meterContext);
+  const predominantTick = sectionalAnchorTick(plan.startTick, plan.durationTicks, meterContext, 1 / 3);
+  const dominantTick = sectionalAnchorTick(plan.startTick, plan.durationTicks, meterContext, 2 / 3);
   const anchors: HarmonicAnchor[] = [
     {
       tick: plan.startTick,
@@ -66,6 +69,7 @@ export function buildHarmonicPlan(plan: {
     state: plan.state,
     startTick: plan.startTick,
     durationTicks: plan.durationTicks,
+    meterContext,
     localKey: plan.localKey,
     departureKey: plan.globalKey,
     targetKey: plan.targetKey,
@@ -78,6 +82,26 @@ export function buildHarmonicPlan(plan: {
     fragmentTransform: plan.fragmentTransform,
     anchors,
   };
+}
+
+function sectionalAnchorTick(
+  startTick: number,
+  durationTicks: number,
+  meterContext: MeterContext,
+  fraction: number,
+): number {
+  const rawTick = startTick + Math.max(meterContext.beatTicks, Math.floor(durationTicks * fraction));
+  if (meterContext.timeSignature.numerator === 4) {
+    return rawTick;
+  }
+  return previousMeasureDownbeat(rawTick + meterContext.measureTicks / 2, meterContext);
+}
+
+function cadenceAnchorTick(startTick: number, durationTicks: number, meterContext: MeterContext): number {
+  if (meterContext.timeSignature.numerator === 4) {
+    return startTick + Math.max(TICKS_PER_QUARTER, durationTicks - TICKS_PER_QUARTER);
+  }
+  return previousMeasureDownbeat(startTick + durationTicks - meterContext.beatTicks, meterContext);
 }
 
 export function cadenceKindForSection(state: FugueState, targetKey: KeySignature): CadenceKind {
@@ -128,7 +152,7 @@ export function metricalHarmonyIntentForDegree(input: {
   harmonicPlan?: HarmonicPlan;
   fallbackIntent?: MetricalHarmonyIntent;
 }): MetricalHarmonyIntent {
-  const beatStrength = beatStrengthAtTick(input.tick);
+  const beatStrength = beatStrengthAtTick(input.tick, input.harmonicPlan?.meterContext);
   if (input.harmonicPlan === undefined) {
     return input.fallbackIntent ?? (beatStrength === "offbeat" ? "offbeat-motion" : "weak-passing-tone");
   }
