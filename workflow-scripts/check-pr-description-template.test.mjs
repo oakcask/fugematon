@@ -39,7 +39,7 @@ test("accepts a breaking PR title when the description explains the breaking cha
       "",
       "Consumers must read the semantic diagnostic fields.",
       "",
-      "BREAKING CHANGE: Generated diagnostics no longer emit the old phase-numbered aliases.",
+      "BREAKING CHANGE: Generated diagnostics no longer emit the old numbered aliases.",
       "",
       "## Risks",
       "",
@@ -49,7 +49,7 @@ test("accepts a breaking PR title when the description explains the breaking cha
       "",
       "- pnpm test",
     ].join("\n"),
-    { title: "refactor(core)!: remove phase diagnostic aliases" },
+    { title: "refactor(core)!: remove legacy diagnostic aliases" },
   );
 
   assert.equal(result.valid, true);
@@ -74,7 +74,7 @@ test("rejects a breaking PR title without a BREAKING CHANGE line", () => {
       "",
       "- pnpm test",
     ].join("\n"),
-    { title: "refactor(core)!: remove phase diagnostic aliases" },
+    { title: "refactor(core)!: remove legacy diagnostic aliases" },
   );
 
   assert.equal(result.valid, false);
@@ -102,7 +102,7 @@ test("rejects an empty BREAKING CHANGE line for a breaking PR title", () => {
       "",
       "- pnpm test",
     ].join("\n"),
-    { title: "refactor(core)!: remove phase diagnostic aliases" },
+    { title: "refactor(core)!: remove legacy diagnostic aliases" },
   );
 
   assert.equal(result.valid, false);
