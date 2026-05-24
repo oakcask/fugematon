@@ -29,7 +29,7 @@ test("generateScore changes seed-derived metadata for different seeds", () => {
 });
 
 test("generateScore emits a tick-based exposition", () => {
-  const output = generateScore({ seed: "phase-zero", lengthTicks: 960 });
+  const output = generateScore({ seed: "exposition-contract", lengthTicks: 960 });
   const first = asMetaEvent(output.events[0]);
   const last = asMetaEvent(output.events.at(-1));
   const notes = output.events.filter((event): event is NoteEvent => event.kind === "note");

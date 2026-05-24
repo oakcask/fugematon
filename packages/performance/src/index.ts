@@ -171,7 +171,7 @@ function voiceSettings(
     },
     humanize: {
       maxOffsetTicks: 0,
-      seedSalt: "phase12p-default",
+      seedSalt: "performance-profile-default",
     },
   };
 }
