@@ -13,12 +13,14 @@ Phase 13W は post-exposition bass entry の同時再発音を修正したが、
 * state-change、boundary、mode-change、必要な parameter-change meta event。
 * 再生モード、seed、performance profile、再生成またはスキップなどの高水準 command。
 * 主題 family、answer transform、fragment derivation、調性領域、cadence preparation、density arc、novelty budget の visualizer 表現。
+* WebAudio synth / envelope の細部は [WebAudio synth interpretation follow-up](webaudio-synth-interpretation.md) に残し、Phase 8 では既存 profile を選ぶ高水準 command に留める。
 
 ## Out Of Scope
 
 * strictness、density、subjectPresence などの細かな生成値を、MVP で直接スライダ化すること。
 * 巻き戻し地点から別分岐して生成する branch mode。
 * Worker fallback、deadline tuning、AudioWorklet。
+* ADSR、velocity-to-gain、oscillator balance などの WebAudio synth 再設計。これは Infinite playback MVP 後の [WebAudio synth interpretation follow-up](webaudio-synth-interpretation.md) で扱う。
 * 無限再生の聴感問題、特に subject sameness、long-run phrase convergence、entry friction、voice lockstep、weak fugal development を UI 操作で隠して採用すること。
 * Phase 13V の対象である line agency、entry formula recurrence、counter-subject survivability、fragment sameness、long-run development、metric false acceptance、長時間聴取疲労、Phase 13W / Phase 13X / Phase 13Y の対象である entry 境界の外声同時再発音、Phase 13X2 の対象である bass-answer-tail thinning、Phase 13Z の対象である same-family phrase fatigue を、境界設計や visualizer で見えにくくすること。
 
