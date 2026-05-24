@@ -45,6 +45,7 @@ export function generateScore(input: GenerationInput): GenerationOutput {
   );
   const scoreWindowAcceptance = buildScoreWindowAcceptanceSummary(
     diagnostics.entryBoundaryContinuity,
+    diagnostics.harmonicContinuity,
     diagnostics.dissonanceTriage,
     diagnostics.qualityVector,
     phraseDevelopmentReview,
@@ -166,6 +167,7 @@ export function generateScore(input: GenerationInput): GenerationOutput {
       phraseConvergenceReview,
       phraseDevelopmentReview,
       dissonanceTriage: diagnostics.dissonanceTriage,
+      harmonicContinuity: diagnostics.harmonicContinuity,
       scoreWindowAcceptance,
       ornamentCandidateCount: diagnostics.ornamentCandidateCount,
       ornamentDensity: diagnostics.ornamentDensity,

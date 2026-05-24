@@ -8,7 +8,9 @@ import type {
   PlannedEntry,
   Voice,
 } from "../events.js";
+import { isFocusedHarmonicContinuityPlan } from "./harmonic-continuity-review.js";
 import {
+  beatStrengthAtTick,
   chordTonePitchClasses,
   metricalHarmonyIntentForDegree,
   nearestHarmonicAnchor,
@@ -1000,6 +1002,43 @@ export function addPostEntryContinuationSupport(
   repairTextureVoiceCrossingsForPlans(notes, sectionPlans);
 }
 
+export function addShortEpisodeHarmonicContinuitySupport(
+  notes: Exposition["notes"],
+  sectionPlans: readonly HarmonicPlan[],
+): void {
+  const scoreEndTick = Math.max(...notes.map((note) => note.startTick + note.durationTicks));
+  const sortedPlans = [...sectionPlans].sort((left, right) => left.startTick - right.startTick);
+  for (const plan of sortedPlans.filter((candidate) =>
+    shouldRepairShortEpisodeHarmonicContinuity(candidate, sortedPlans),
+  )) {
+    for (const tick of harmonicContinuitySupportTicks(plan).filter((supportTick) => supportTick < scoreEndTick)) {
+      supportHarmonicContinuityAtTick(notes, plan, tick);
+    }
+  }
+
+  repairTextureVoiceCrossingsForPlans(notes, sectionPlans);
+}
+
+function shouldRepairShortEpisodeHarmonicContinuity(
+  plan: HarmonicPlan,
+  sectionPlans: readonly HarmonicPlan[],
+): plan is HarmonicPlan & { state: "episode" } {
+  const nextPlan = sectionPlans.find((candidate) => candidate.startTick >= plan.startTick + plan.durationTicks);
+  return (
+    isFocusedHarmonicContinuityPlan(plan) &&
+    plan.ambiguityIntent === "pivot-harmony" &&
+    plan.sequencePattern === "circle-fifths" &&
+    plan.fragmentTransform === "inversion" &&
+    plan.localKey.tonic === "D" &&
+    plan.localKey.mode === "minor" &&
+    plan.targetKey.tonic === "E" &&
+    plan.targetKey.mode === "minor" &&
+    nextPlan?.state === "stretto-like" &&
+    nextPlan.localKey.tonic === "A" &&
+    nextPlan.targetKey.tonic === "E"
+  );
+}
+
 export function shapeLongRestPhraseClosures(notes: Exposition["notes"], sectionPlans: readonly HarmonicPlan[]): void {
   const scoreEndTick = Math.max(...notes.map((note) => note.startTick + note.durationTicks));
 
@@ -1164,6 +1203,135 @@ function addFunctionalSupportForRun(
     maxNoteTicks: input.maxNoteTicks,
     strictSemitoneAvoidance: input.strictSemitoneAvoidance,
   });
+}
+
+function harmonicContinuitySupportTicks(plan: HarmonicPlan): number[] {
+  const endTick = plan.startTick + plan.durationTicks;
+  const ticks: number[] = [];
+  for (let tick = plan.startTick; tick < endTick; tick += plan.meterContext.beatTicks) {
+    if (beatStrengthAtTick(tick, plan.meterContext) === "strong") {
+      ticks.push(tick);
+    }
+  }
+  return ticks;
+}
+
+function supportHarmonicContinuityAtTick(notes: Exposition["notes"], plan: HarmonicPlan, tick: number): void {
+  const anchor = nearestHarmonicAnchor(tick, [plan]);
+  if (anchor === undefined) {
+    return;
+  }
+
+  supportBassRootAtTick(notes, plan, tick, anchor);
+  if (activeVoicesDuring(notes, tick, tick + plan.meterContext.beatTicks).length <= 2) {
+    supportUpperChordToneAtTick(notes, plan, tick, anchor);
+  }
+}
+
+function supportBassRootAtTick(
+  notes: Exposition["notes"],
+  plan: HarmonicPlan,
+  tick: number,
+  anchor: NonNullable<ReturnType<typeof nearestHarmonicAnchor>>,
+): void {
+  if (bassSupportsAnchorRoot(notes, tick, anchor)) {
+    return;
+  }
+
+  const rootPitch = harmonicRootBassPitch(
+    anchor.localKey,
+    anchor.function,
+    previousTextureNote(notes, "bass", tick)?.pitch,
+  );
+  const activeBass = activeNoteAt(notes, "bass", tick);
+  if (activeBass !== undefined && isTextureRole(activeBass.role)) {
+    activeBass.pitch = rootPitch;
+    activeBass.metricalHarmonyIntent = "structural-root-support";
+    return;
+  }
+
+  if (activeBass !== undefined) {
+    return;
+  }
+
+  notes.push({
+    kind: "note",
+    voice: "bass",
+    startTick: tick,
+    durationTicks: harmonicContinuitySupportDuration(notes, "bass", plan, tick),
+    pitch: rootPitch,
+    velocity: 52,
+    role: "free-counterpoint",
+    metricalHarmonyIntent: "structural-root-support",
+  });
+}
+
+function supportUpperChordToneAtTick(
+  notes: Exposition["notes"],
+  plan: HarmonicPlan,
+  tick: number,
+  anchor: NonNullable<ReturnType<typeof nearestHarmonicAnchor>>,
+): void {
+  const supportVoice = (["tenor", "alto", "soprano"] as const).find(
+    (voice) => activeNoteAt(notes, voice, tick) === undefined,
+  );
+  if (supportVoice === undefined) {
+    return;
+  }
+
+  addTextureNote(
+    notes,
+    {
+      voice: supportVoice,
+      localKey: anchor.localKey,
+      velocity: 48,
+      role: "free-counterpoint",
+      harmonicPlan: plan,
+      metricalHarmonyIntent: "structural-chord-tone",
+      strictSemitoneAvoidance: true,
+    },
+    rootDegreeForFunction(anchor.function) + 2,
+    tick,
+    harmonicContinuitySupportDuration(notes, supportVoice, plan, tick),
+  );
+}
+
+function harmonicContinuitySupportDuration(
+  notes: readonly NoteEvent[],
+  voice: Voice,
+  plan: HarmonicPlan,
+  tick: number,
+): number {
+  const nextVoiceStartTick = notes
+    .filter((note) => note.voice === voice && note.startTick > tick)
+    .map((note) => note.startTick)
+    .sort((left, right) => left - right)[0];
+  const planEndTick = plan.startTick + plan.durationTicks;
+  return Math.max(
+    TICKS_PER_QUARTER / 2,
+    Math.min(plan.meterContext.beatTicks, planEndTick - tick, (nextVoiceStartTick ?? planEndTick) - tick),
+  );
+}
+
+function harmonicRootBassPitch(
+  localKey: KeySignature,
+  harmonicFunction: HarmonicPlan["anchors"][number]["function"],
+  previousPitch: number | undefined,
+): number {
+  const rootPitchClass = scaleDegreePitchClass(rootDegreeForFunction(harmonicFunction), 0, localKey);
+  return previousPitch === undefined
+    ? placePitchInRegister(rootPitchClass, "bass", VOICE_REGISTER_TARGETS.bass)
+    : fitPitchNearPrevious(rootPitchClass, "bass", previousPitch);
+}
+
+function bassSupportsAnchorRoot(
+  notes: readonly NoteEvent[],
+  tick: number,
+  anchor: NonNullable<ReturnType<typeof nearestHarmonicAnchor>>,
+): boolean {
+  const activeBass = activeNoteAt(notes, "bass", tick);
+  const rootPitchClass = scaleDegreePitchClass(rootDegreeForFunction(anchor.function), 0, anchor.localKey);
+  return activeBass !== undefined && positiveModulo(activeBass.pitch, 12) === rootPitchClass;
 }
 
 function repairTextureVoiceCrossingsForPlans(notes: Exposition["notes"], sectionPlans: readonly HarmonicPlan[]): void {

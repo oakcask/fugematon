@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { TICKS_PER_QUARTER } from "./constants.js";
-import type { CandidateEvaluation, HarmonicPlan } from "./events.js";
+import type { HarmonicPlan } from "./events.js";
 import { generateScore } from "./generate.js";
 
 const HARMONIC_CONTINUITY_REVIEW_SEEDS = [
@@ -24,8 +24,12 @@ test("reported harmonic-continuity seed keeps the short pivot episode review-add
   const followingStretto = diagnostics.sectionPlans.find(
     (plan) => plan.state === "stretto-like" && plan.startTick === TICKS_PER_QUARTER * 27,
   );
-  const selectedEpisode = selectedSectionAt(diagnostics.selectedCandidateEvaluations, TICKS_PER_QUARTER * 19);
-  const selectedStretto = selectedSectionAt(diagnostics.selectedCandidateEvaluations, TICKS_PER_QUARTER * 27);
+  const harmonicWindow = diagnostics.harmonicContinuity.windows.find(
+    (window) => window.startTick === TICKS_PER_QUARTER * 19,
+  );
+  const acceptanceWindow = diagnostics.scoreWindowAcceptance.windows.find(
+    (window) => window.kind === "harmonic-continuity" && window.startTick === TICKS_PER_QUARTER * 19,
+  );
 
   assert.ok(reportedEpisode !== undefined, "reported seed should expose the episode starting at measure 5 beat 4");
   assert.deepEqual(pivotPlanSignature(reportedEpisode), {
@@ -42,72 +46,50 @@ test("reported harmonic-continuity seed keeps the short pivot episode review-add
   assert.equal(followingStretto?.localKey.tonic, "A");
   assert.equal(followingStretto?.targetKey.tonic, "E");
 
-  assert.equal(selectedEpisode?.dimensions.harmony.features.strongBeatBassRootSupportCount, 0);
-  assert.equal(selectedEpisode?.dimensions.harmony.features.strongBeatBassRootUnsupportedCount, 4);
-  assert.equal(selectedEpisode?.dimensions.harmony.features.harmonicFunctionMismatches, 11);
-  assert.equal(selectedStretto?.dimensions.harmony.features.strongBeatBassRootSupportCount, 0);
-  assert.equal(selectedStretto?.dimensions.harmony.features.strongBeatBassRootUnsupportedCount, 5);
-  assert.equal(selectedStretto?.dimensions.harmony.features.unresolvedSevereEntryIntervalCount, 3);
+  assert.equal(harmonicWindow?.classification, "audible-progression");
+  assert.equal(harmonicWindow?.bassRootSupportCount, harmonicWindow?.structuralBeatCount);
+  assert.equal(harmonicWindow?.chordToneSupportCount, harmonicWindow?.structuralBeatCount);
+  assert.equal(harmonicWindow?.structuralBeatMismatchCount, 0);
+  assert.equal(harmonicWindow?.thinStructuralBeatCount, 0);
+  assert.equal(acceptanceWindow?.response, "accepted-context");
+  assert.ok(diagnostics.texturePlanningReview.metricalHarmony.strongBeatBassRootSupportCount >= 12);
+  assert.ok(diagnostics.harmonicFunctionMatches > 0);
 });
 
-test("focused harmonic-continuity review seeds expose short-pivot bass-root pressure", () => {
+test("focused harmonic-continuity review seeds expose repaired and remaining short-pivot evidence", () => {
   const summaries = HARMONIC_CONTINUITY_REVIEW_SEEDS.map((seed) => {
     const diagnostics = generateScore({ seed, lengthTicks: TICKS_PER_QUARTER * 80 }).diagnostics;
-    const selectedEpisodeOrStretto = diagnostics.selectedCandidateEvaluations.filter((evaluation) =>
-      sectionStateIsEpisodeOrStretto(evaluation),
-    );
 
     return {
       seed,
-      shortPivotEpisodeCount: diagnostics.sectionPlans.filter(
-        (plan) =>
-          plan.state === "episode" &&
-          plan.ambiguityIntent === "pivot-harmony" &&
-          plan.durationTicks <= TICKS_PER_QUARTER * 10,
-      ).length,
-      zeroBassRootSectionCount: selectedEpisodeOrStretto.filter(
-        (evaluation) => evaluation.dimensions.harmony.features.strongBeatBassRootSupportCount === 0,
-      ).length,
-      bassRootUnsupportedTotal: selectedEpisodeOrStretto.reduce(
-        (sum, evaluation) => sum + evaluation.dimensions.harmony.features.strongBeatBassRootUnsupportedCount,
+      focusedWindowCount: diagnostics.harmonicContinuity.focusedWindowCount,
+      reviewRequiredWindowCount: diagnostics.harmonicContinuity.reviewRequiredWindowCount,
+      audibleProgressionWindowCount: diagnostics.harmonicContinuity.audibleProgressionWindowCount,
+      structuralBeatMismatchCount: diagnostics.harmonicContinuity.windows.reduce(
+        (sum, window) => sum + window.structuralBeatMismatchCount,
         0,
       ),
-      harmonicFunctionMismatchTotal: selectedEpisodeOrStretto.reduce(
-        (sum, evaluation) => sum + evaluation.dimensions.harmony.features.harmonicFunctionMismatches,
-        0,
-      ),
+      subjectIdentityViolations: diagnostics.subjectIdentityViolations,
     };
   });
 
   assert.ok(
-    summaries.every((summary) => summary.shortPivotEpisodeCount > 0),
+    summaries.every((summary) => summary.focusedWindowCount > 0),
     JSON.stringify(summaries, null, 2),
   );
   assert.ok(
-    summaries.every((summary) => summary.zeroBassRootSectionCount > 0),
+    summaries.some((summary) => summary.audibleProgressionWindowCount > 0),
     JSON.stringify(summaries, null, 2),
   );
+  assert.equal(summaries.find((summary) => summary.seed === "seed-1dxb2n8-1miapx7")?.audibleProgressionWindowCount, 1);
+  assert.equal(summaries.find((summary) => summary.seed === "seed-1dxb2n8-1miapx7")?.reviewRequiredWindowCount, 2);
+  assert.equal(summaries.find((summary) => summary.seed === "circle-fifths")?.reviewRequiredWindowCount, 3);
+  assert.equal(summaries.find((summary) => summary.seed === "circle-fifths")?.structuralBeatMismatchCount, 8);
   assert.ok(
-    summaries.every((summary) => summary.bassRootUnsupportedTotal >= 9),
-    JSON.stringify(summaries, null, 2),
-  );
-  assert.ok(
-    summaries.every((summary) => summary.harmonicFunctionMismatchTotal >= 24),
+    summaries.every((summary) => summary.subjectIdentityViolations === 0),
     JSON.stringify(summaries, null, 2),
   );
 });
-
-function selectedSectionAt(
-  evaluations: readonly CandidateEvaluation[],
-  startTick: number,
-): CandidateEvaluation | undefined {
-  return evaluations.find((evaluation) => evaluation.explanations.sections[0]?.startTick === startTick);
-}
-
-function sectionStateIsEpisodeOrStretto(evaluation: CandidateEvaluation): boolean {
-  const state = evaluation.explanations.sections[0]?.state;
-  return state === "episode" || state === "stretto-like";
-}
 
 function pivotPlanSignature(plan: HarmonicPlan): Record<string, string | undefined> {
   return {

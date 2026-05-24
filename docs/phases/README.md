@@ -10,8 +10,8 @@
 
 ## Read First
 
-* [Score-led beauty handoff](phase-14.md): 現在の品質 follow-up。旧 Phase 14。`seed-1dxb2n8-1miapx7` の6-7小節で確認した harmonic-continuity blocker を、Infinite playback MVP の前に score-window review と generator/scoring response へ戻す。
-* [Infinite playback MVP](phase-8.md): 次の operational target。旧 Phase 8。Score-led beauty harmonic-continuity follow-up と Metrical generation repair 後の無限再生セッション、境界設計、内部状態 visualizer の MVP。
+* [Infinite playback MVP](phase-8.md): 現在の operational target。旧 Phase 8。Score-led beauty harmonic-continuity follow-up と Metrical generation repair 後の無限再生セッション、境界設計、内部状態 visualizer の MVP。
+* [Score-led beauty handoff](phase-14.md): 完了済み品質 follow-up。旧 Phase 14。`seed-1dxb2n8-1miapx7` の6-7小節で確認した harmonic-continuity blocker を、Infinite playback MVP の前に score-window review と generator/scoring response で修正した。
 * [Metrical generation repair](metrical-generation-repair.md): 完了済み handoff baseline。3/4 や 6/8 の time-signature metadata を generator、scoring、diagnostics へ接続し、譜面の拍子と聴感上の拍節感を揃えた品質 lane。
 * [Quality-first reorg](phase-7-plus-reorg.md): Phase 12 以降の品質優先再編と Phase 8/9 defer の理由。
 

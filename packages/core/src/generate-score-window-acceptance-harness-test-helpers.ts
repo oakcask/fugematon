@@ -17,6 +17,7 @@ export function assertScoreWindowAcceptanceHarnessInputs(seeds: readonly string[
     const diagnostics = generateScore({ seed, lengthTicks: TICKS_PER_QUARTER * 288 }).diagnostics;
     const scoreWindowInputs = {
       importantEntryWindowCount: diagnostics.entryBoundaryContinuity.importantEntryWindowCount,
+      harmonicContinuityWindowCount: diagnostics.harmonicContinuity.windows.length,
       dissonanceWindowCount: diagnostics.dissonanceTriage.windows.length,
       activeVoicePairSpanCount: diagnostics.qualityVector.voicePairSpans.length,
       counterSubjectWindowCount: diagnostics.qualityVector.counterSubjectWindows.length,
@@ -31,6 +32,7 @@ export function assertScoreWindowAcceptanceHarnessInputs(seeds: readonly string[
       `${seed} phrase-development window count should match exposed windows`,
     );
     assert.equal(acceptance.importantEntryWindowCount, scoreWindowInputs.importantEntryWindowCount);
+    assert.equal(acceptance.harmonicContinuityWindowCount, scoreWindowInputs.harmonicContinuityWindowCount);
     assert.equal(acceptance.dissonanceWindowCount, scoreWindowInputs.dissonanceWindowCount);
     assert.equal(acceptance.activeVoicePairSpanCount, scoreWindowInputs.activeVoicePairSpanCount);
     assert.equal(acceptance.counterSubjectWindowCount, scoreWindowInputs.counterSubjectWindowCount);
@@ -46,6 +48,7 @@ export function assertScoreWindowAcceptanceHarnessInputs(seeds: readonly string[
       acceptance.windows.every(
         (window) =>
           window.theoryBasis === "counterpoint" ||
+          window.theoryBasis === "harmony" ||
           window.theoryBasis === "fugue-form" ||
           window.theoryBasis === "diagnostic-truthfulness",
       ),
