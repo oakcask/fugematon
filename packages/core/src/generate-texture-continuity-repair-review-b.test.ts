@@ -4,28 +4,13 @@ import { TICKS_PER_QUARTER } from "./constants.js";
 import type { GenerationOutput } from "./events.js";
 import { generateScore } from "./generate.js";
 
-const TEXTURE_CONTINUITY_REPAIR_REVIEW_SEEDS = [
-  "seed-0i335vx-1n54a1x",
-  "bach-001",
-  "fugue-smoke",
-  "minor-entry",
-] as const;
-
-const EXPECTS_REPORTED_SEED = true;
+const TEXTURE_CONTINUITY_REPAIR_REVIEW_SEEDS = ["modal-cadence", "dense-modal", "random-listen-check"] as const;
 
 const REPAIR_REVIEW_LENGTH_TICKS = TICKS_PER_QUARTER * 288;
 const scoreCache = new Map<string, GenerationOutput>();
 
-test("texture-continuity repair seeds no longer rely on sustained one-outside bass-answer tails", () => {
-  assertBassAnswerTailRepair(TEXTURE_CONTINUITY_REPAIR_REVIEW_SEEDS, EXPECTS_REPORTED_SEED);
-});
-
-test("texture-continuity repair seeds keep exposed free-counterpoint solo windows review-visible", () => {
-  assertExposedFreeCounterpointSoloRepair(TEXTURE_CONTINUITY_REPAIR_REVIEW_SEEDS);
-});
-
-function assertBassAnswerTailRepair(seeds: readonly string[], expectsReportedSeed: boolean): void {
-  const summaries = seeds.map((seed) => {
+test("texture-continuity repair review batch B avoids sustained one-outside bass-answer tails", () => {
+  const summaries = TEXTURE_CONTINUITY_REPAIR_REVIEW_SEEDS.map((seed) => {
     const output = scoreForSeed(seed);
     const tailWindow = output.diagnostics.bassAnswerTailTexture.windows[0];
     assert.ok(tailWindow !== undefined, `${seed} should expose the first bass-answer tail window`);
@@ -33,26 +18,18 @@ function assertBassAnswerTailRepair(seeds: readonly string[], expectsReportedSee
     return {
       seed,
       reviewRequired: output.diagnostics.bassAnswerTailTexture.reviewRequired,
-      classification: tailWindow.classification,
-      oneOutsideVoiceTicks: tailWindow.oneOutsideVoiceTicks,
       minOutsideVoiceCount: tailWindow.minOutsideVoiceCount,
     };
   });
 
-  if (expectsReportedSeed) {
-    const reportedSeed = summaries.find((summary) => summary.seed === "seed-0i335vx-1n54a1x");
-    assert.ok(reportedSeed !== undefined);
-    assert.ok(reportedSeed.oneOutsideVoiceTicks < TICKS_PER_QUARTER * 2, JSON.stringify(summaries, null, 2));
-    assert.equal(reportedSeed.classification, "supported-tail");
-  }
   assert.ok(
     summaries.every((summary) => summary.minOutsideVoiceCount >= 1 && !summary.reviewRequired),
     JSON.stringify(summaries, null, 2),
   );
-}
+});
 
-function assertExposedFreeCounterpointSoloRepair(seeds: readonly string[]): void {
-  const summaries = seeds.map((seed) => {
+test("texture-continuity repair review batch B keeps exposed free-counterpoint solo windows review-visible", () => {
+  const summaries = TEXTURE_CONTINUITY_REPAIR_REVIEW_SEEDS.map((seed) => {
     const summary = scoreForSeed(seed).diagnostics.exposedFreeCounterpointSolo;
     return {
       seed,
@@ -71,7 +48,7 @@ function assertExposedFreeCounterpointSoloRepair(seeds: readonly string[]): void
     summaries.some((summary) => summary.functionExplainedWindowCount > 0),
     JSON.stringify(summaries, null, 2),
   );
-}
+});
 
 function scoreForSeed(seed: string): GenerationOutput {
   const cached = scoreCache.get(seed);

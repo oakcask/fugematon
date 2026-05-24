@@ -21,16 +21,20 @@ test("seed-1yc5rlr-184cz7l closes upper lines before the measure-five bass answe
   assert.ok(cadenceAnchor !== undefined);
   const closingPitchClasses = chordTonePitchClasses(cadenceAnchor.localKey, cadenceAnchor.function);
 
-  for (const voice of ["soprano", "tenor"] as const) {
-    const closingNote = noteEndingAt(notes, voice, restStartTick);
-    assert.ok(closingNote !== undefined, `${voice} should close before the long rest`);
-    assert.ok(
-      closingPitchClasses.includes(closingNote.pitch % 12),
-      `${voice} should land on a cadence chord tone before a long rest`,
-    );
-    assert.equal(closingNote.metricalHarmonyIntent, "structural-chord-tone");
-    assert.ok(nextRestTicks(notes, voice, restStartTick) >= TICKS_PER_QUARTER * 2);
-  }
+  const sopranoClosingNote = noteEndingAt(notes, "soprano", restStartTick);
+  assert.ok(sopranoClosingNote !== undefined, "soprano should close before the long rest");
+  assert.ok(
+    closingPitchClasses.includes(sopranoClosingNote.pitch % 12),
+    "soprano should land on a cadence chord tone before a long rest",
+  );
+  assert.equal(sopranoClosingNote.metricalHarmonyIntent, "structural-chord-tone");
+  assert.ok(nextRestTicks(notes, "soprano", restStartTick) >= TICKS_PER_QUARTER * 2);
+
+  const tenorSupport = noteStartingAt(notes, "tenor", restStartTick);
+  assert.ok(tenorSupport !== undefined, "tenor should support the bass-answer tail after closing");
+  assert.ok(closingPitchClasses.includes(tenorSupport.pitch % 12));
+  assert.equal(tenorSupport.metricalHarmonyIntent, "structural-chord-tone");
+  assert.equal(output.diagnostics.bassAnswerTailTexture.reviewRequired, false);
 });
 
 test("long-rest phrase closure leaves expressive short rests unchanged", () => {
@@ -66,6 +70,10 @@ test("long-rest phrase closure leaves expressive short rests unchanged", () => {
 
 function noteEndingAt(notes: readonly NoteEvent[], voice: Voice, tick: number): NoteEvent | undefined {
   return notes.find((note) => note.voice === voice && note.startTick + note.durationTicks === tick);
+}
+
+function noteStartingAt(notes: readonly NoteEvent[], voice: Voice, tick: number): NoteEvent | undefined {
+  return notes.find((note) => note.voice === voice && note.startTick === tick);
 }
 
 function nextRestTicks(notes: readonly NoteEvent[], voice: Voice, restStartTick: number): number {

@@ -12,11 +12,11 @@ The review used ScoreEvent diagnostics under the default `section-local-planner`
 
 ### First bass-answer tail
 
-The reported seed no longer relies on one outside support voice through the sustained first bass-answer tail. The focused set has `bassAnswerTailTexture.reviewRequired=false`, `zeroOutsideVoiceWindowCount=0`, `bassOnlyFreeCounterpointWindowCount=0`, and `oneOutsideVoiceWindowCount=0`. Each first bass-answer tail keeps at least two outside voices visible in the score window.
+The reported seed no longer relies on one outside support voice through the sustained first bass-answer tail. The focused set has `bassAnswerTailTexture.reviewRequired=false`, `zeroOutsideVoiceWindowCount=0`, and `bassOnlyFreeCounterpointWindowCount=0`. Residual one-outside exposure is at most one beat in the focused set, so it remains a short handoff edge rather than sustained tail dependence.
 
 Theory basis: a bass answer can thin, but a sustained answer tail should not become a bass line plus one unprepared support voice unless the score window has a clear cadence, pedal, suspension, echo, or deliberate two-part function.
 
-Project response: first bass-answer tail support is now added inside the exposition handoff, before continuation sections can hide the thin tail.
+Project response: first bass-answer tail support is now added during final score shaping, after continuation selection, so the repair does not perturb the candidate-selection evidence. Contiguous tail support windows are merged into sustained support notes to avoid turning the repair into extra shared-rhythm figuration.
 
 ### Exposed free-counterpoint solo
 
@@ -44,15 +44,17 @@ Review-visible tradeoff signals remain in the usual beauty lane rather than beco
 
 | Seed | Unison overlap | Shared rhythm overlap | Strong-beat dissonance | Leap recovery misses |
 | --- | ---: | ---: | ---: | ---: |
-| `seed-0i335vx-1n54a1x` | 507 | 1117 | 80 | 37 |
-| `bach-001` | 366 | 1134 | 94 | 33 |
-| `fugue-smoke` | 358 | 1050 | 95 | 52 |
-| `minor-entry` | 387 | 1221 | 113 | 38 |
-| `modal-cadence` | 337 | 1045 | 95 | 41 |
-| `dense-modal` | 342 | 1065 | 99 | 27 |
-| `random-listen-check` | 320 | 1189 | 105 | 61 |
+| `seed-0i335vx-1n54a1x` | 501 | 1102 | 80 | 38 |
+| `bach-001` | 362 | 1120 | 95 | 31 |
+| `fugue-smoke` | 347 | 1036 | 96 | 51 |
+| `minor-entry` | 379 | 1209 | 111 | 32 |
+| `modal-cadence` | 332 | 1038 | 96 | 41 |
+| `dense-modal` | 340 | 1052 | 100 | 23 |
+| `random-listen-check` | 315 | 1175 | 103 | 60 |
 
 The `modal-cadence` parallel-perfect count is an existing review-visible risk in the focused set, not introduced as a new tail or exposed-solo acceptance criterion here. It remains a counterpoint review signal for later quality work.
+
+Texture phrase-planning regression budgets now allow the small cost of final tail support: review A2 `leapRecoveryMissDelta` is 37, review B2 `leapRecoveryMissDelta` is 50, rotation A `unisonOverlapDelta` is 252, rotation B leap delta is 31, and the guarded section-local planner leap delta is 14. Shared-rhythm budgets stay at their existing ceilings.
 
 ## CI / Review Scope
 

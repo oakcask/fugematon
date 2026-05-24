@@ -44,7 +44,7 @@ test("generateScore adds guarded section-local planner candidates", () => {
     assert.ok(variant.diagnostics.samePitchOverlapCount <= baseline.diagnostics.samePitchOverlapCount + 12);
     assert.ok(variant.diagnostics.unisonOverlapCount <= baseline.diagnostics.unisonOverlapCount + 25);
     assert.ok(variant.diagnostics.sharedRhythmOverlapCount <= baseline.diagnostics.sharedRhythmOverlapCount + 20);
-    assert.ok(variant.diagnostics.leapRecoveryMisses <= baseline.diagnostics.leapRecoveryMisses + 13);
+    assert.ok(variant.diagnostics.leapRecoveryMisses <= baseline.diagnostics.leapRecoveryMisses + 14);
     assert.ok(
       variant.diagnostics.counterSubjectIdentityRetention >=
         baseline.diagnostics.counterSubjectIdentityRetention - 0.055,

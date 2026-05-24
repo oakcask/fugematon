@@ -36,7 +36,6 @@ import {
   addBassAnswerTailTextureSupport,
   addContinuityCounterpoint,
   addCounterpointTexture,
-  addExposedFreeCounterpointSoloSupport,
   addFunctionalThinningSupport,
   addPostEntryContinuationSupport,
   addShortEpisodeHarmonicContinuitySupport,
@@ -163,11 +162,10 @@ export function buildFugueScore(
   fillAllVoiceSilenceGaps(notes, keySignature);
   if (selectionModel === "section-local-planner") {
     addFunctionalThinningSupport(notes, sectionPlans);
-    addBassAnswerTailTextureSupport(notes, subjectEntries, sectionPlans);
     addPostEntryContinuationSupport(notes, subjectEntries, sectionPlans);
-    addExposedFreeCounterpointSoloSupport(notes, sectionPlans);
     addShortEpisodeHarmonicContinuitySupport(notes, sectionPlans);
     shapeLongRestPhraseClosures(notes, sectionPlans);
+    addBassAnswerTailTextureSupport(notes, subjectEntries, sectionPlans);
   }
   notes.sort(compareNoteEvents);
 
@@ -648,7 +646,6 @@ export function buildExposition(
   }
 
   softenFirstBassEntryBoundaryReset(notes, subjectEntries);
-  addBassAnswerTailTextureSupport(notes, subjectEntries, sectionPlans);
   notes.sort(compareNoteEvents);
 
   return {
