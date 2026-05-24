@@ -25,6 +25,7 @@ import { buildHarmonicPlan, cadenceKindForSection } from "./harmony.js";
 import { isModalMode, tonicPitchClass, transposeKey } from "./key.js";
 import { createLegacyMeterContext } from "./meter.js";
 import { melodicRoleForScaleDegree } from "./pitch.js";
+import { candidateSelectionScore } from "./selection-risk-adjustments.js";
 import {
   compareNoteEvents,
   ENTRY_SPACING_TICKS,
@@ -728,7 +729,7 @@ export function chooseContinuationSection(
     }
 
     const candidateScore =
-      selectionScore(evaluation, selectionModel) +
+      candidateSelectionScore(evaluation, selectionModel) +
       (selectionModel === "section-local-planner"
         ? sectionGrammarPlannerSelectionRiskAdjustment(
             evaluation,
@@ -738,10 +739,10 @@ export function chooseContinuationSection(
         : 0);
     const bestScore =
       selectionModel === "section-local-planner" && bestIndex < selectionWindow.baselineCandidateCount
-        ? selectionScore(evaluations[bestIndex]!, "candidate-oracle-selection") +
+        ? candidateSelectionScore(evaluations[bestIndex]!, "candidate-oracle-selection") +
           sectionGrammarPlannerSelectionRiskAdjustment(evaluations[bestIndex]!, historyContext, false) +
           phraseDevelopmentSelectionRiskAdjustment(candidates[bestIndex]!, previousSubjectEntries, historyContext)
-        : selectionScore(evaluations[bestIndex]!, selectionModel) +
+        : candidateSelectionScore(evaluations[bestIndex]!, selectionModel) +
           (selectionModel === "section-local-planner"
             ? sectionGrammarPlannerSelectionRiskAdjustment(
                 evaluations[bestIndex]!,
@@ -896,8 +897,8 @@ function avoidShortAlternatingPhraseSelection(input: {
 
     const candidateScore =
       candidateBand !== "baseline"
-        ? selectionScore(evaluation, input.selectionModel)
-        : selectionScore(evaluation, "candidate-oracle-selection");
+        ? candidateSelectionScore(evaluation, input.selectionModel)
+        : candidateSelectionScore(evaluation, "candidate-oracle-selection");
     if (candidateScore < fallbackScore) {
       fallbackIndex = index;
       fallbackScore = candidateScore;
@@ -1003,88 +1004,6 @@ function phraseFamilyCandidateStartIndex(state: FugueState): number {
   return sectionGrammarCandidateStartIndex(state) + 4;
 }
 
-function selectionScore(evaluation: CandidateEvaluation, selectionModel: SelectionModel): number {
-  if (selectionModel === "baseline") {
-    return evaluation.totalCost;
-  }
-
-  return (
-    evaluation.totalCost +
-    candidateOracleSelectionRiskAdjustment(evaluation) +
-    sectionLocalPlannerSelectionRiskAdjustment(evaluation, selectionModel)
-  );
-}
-
-function candidateOracleSelectionRiskAdjustment(evaluation: CandidateEvaluation): number {
-  if (evaluation.hardFailures.length > 0) {
-    return 0;
-  }
-  if (evaluation.dimensions.harmony.features.modalContextCount > 0) {
-    return entryHarmonySelectionRiskAdjustment(evaluation);
-  }
-
-  return (
-    entryHarmonySelectionRiskAdjustment(evaluation) +
-    stepwiseFixationSelectionRiskAdjustment(evaluation) +
-    voicePairLockstepSelectionRiskAdjustment(evaluation) +
-    melodyPreservationRiskAdjustment(evaluation)
-  );
-}
-
-function entryHarmonySelectionRiskAdjustment(evaluation: CandidateEvaluation): number {
-  const { entrySupportInstabilityCount, severeEntryIntervalCount, unresolvedSevereEntryIntervalCount } =
-    evaluation.dimensions.harmony.features;
-  const unresolvedDuration = evaluation.dimensions.harmony.features.qualityVectorUnresolvedEntrySevereIntervalDuration;
-
-  return (
-    entrySupportInstabilityCount * 1.5 +
-    severeEntryIntervalCount * 3 +
-    unresolvedSevereEntryIntervalCount * 5 +
-    unresolvedDuration * 0.6
-  );
-}
-
-function stepwiseFixationSelectionRiskAdjustment(evaluation: CandidateEvaluation): number {
-  const { selectedFreeCounterpointStepwiseFixationCost, freeCounterpointRepeatedDegreePatternCount } =
-    evaluation.dimensions.melody.features;
-
-  return selectedFreeCounterpointStepwiseFixationCost * 1.5 + freeCounterpointRepeatedDegreePatternCount * 0.01;
-}
-
-function voicePairLockstepSelectionRiskAdjustment(evaluation: CandidateEvaluation): number {
-  const {
-    selectedVoicePairLockstepSelectionCost,
-    samePitchOverlapCount,
-    qualityVectorPitchClassUnisonDuration,
-    qualityVectorDurationBasedLockstep,
-  } = evaluation.dimensions.texture.features;
-
-  return (
-    selectedVoicePairLockstepSelectionCost * 1.5 +
-    samePitchOverlapCount * 2 +
-    qualityVectorPitchClassUnisonDuration * 0.2 +
-    qualityVectorDurationBasedLockstep * 0.2
-  );
-}
-
-function melodyPreservationRiskAdjustment(evaluation: CandidateEvaluation): number {
-  return evaluation.dimensions.melody.features.leapRecoveryMisses * 20;
-}
-
-function sectionLocalPlannerSelectionRiskAdjustment(
-  evaluation: CandidateEvaluation,
-  selectionModel: SelectionModel,
-): number {
-  if (selectionModel !== "section-local-planner" || evaluation.hardFailures.length > 0) {
-    return 0;
-  }
-
-  const highSoloTextureSections = evaluation.explanations.sections.filter((section) => section.soloTextureRisk >= 6);
-  const soloTextureRisk = highSoloTextureSections.reduce((sum, section) => sum + section.soloTextureRisk, 0);
-
-  return soloTextureRisk * 12;
-}
-
 function sectionGrammarPlannerSelectionRiskAdjustment(
   evaluation: CandidateEvaluation,
   context: HistoryAwareSelectionContext,
@@ -1154,7 +1073,10 @@ function bestContinuationCandidateIndex(
 ): number {
   let bestIndex = 0;
   for (const [index, evaluation] of evaluations.entries()) {
-    if (selectionScore(evaluation, selectionModel) < selectionScore(evaluations[bestIndex]!, selectionModel)) {
+    if (
+      candidateSelectionScore(evaluation, selectionModel) <
+      candidateSelectionScore(evaluations[bestIndex]!, selectionModel)
+    ) {
       bestIndex = index;
     }
   }
