@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { REVIEW_LENGTH_TICKS } from "./constants.js";
 import { generateScore } from "./generate.js";
 
-export function assertPhase13QCandidateDiversitySeedsReady(seeds: readonly string[]): void {
+export function assertCandidateDiversityReviewSeedsReady(seeds: readonly string[]): void {
   for (const seed of seeds) {
     const output = generateScore({
       seed,

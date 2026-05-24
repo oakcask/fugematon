@@ -40,7 +40,7 @@ export const PHASE_13_FOCUSED_SEEDS = [
   "sparse-cadence",
   "long-arc",
 ] as const;
-export const PHASE_13Q_FOCUSED_SEEDS = [
+export const CANDIDATE_DIVERSITY_ADOPTION_SEEDS = [
   "bach-001",
   "fugue-smoke",
   "sparse-cadence",

@@ -4,7 +4,7 @@ import type { CandidatePoolOracleBlocker } from "./events.js";
 import { generateScore } from "./generate.js";
 import { evaluateReviewGatePolicy } from "./review-gate.js";
 
-export function assertPhase13QAdoptionSeedsReady(seeds: readonly string[]): void {
+export function assertCandidateDiversityAdoptionSeedsReady(seeds: readonly string[]): void {
   const expectedBlockers: readonly CandidatePoolOracleBlocker[] = [
     "entry-harmony",
     "voice-pair-lockstep",
@@ -30,7 +30,7 @@ export function assertPhase13QAdoptionSeedsReady(seeds: readonly string[]): void
     const gate = evaluateReviewGatePolicy(seed, variant.diagnostics);
     const oracle = variant.diagnostics.candidatePoolOracle;
     const blockerNames = new Set(oracle.blockerClassifications.map((blocker) => blocker.blocker));
-    const phase13QBlockers = oracle.blockerClassifications.filter((blocker) =>
+    const candidateDiversityBlockers = oracle.blockerClassifications.filter((blocker) =>
       expectedBlockers.includes(blocker.blocker),
     );
 
@@ -42,7 +42,7 @@ export function assertPhase13QAdoptionSeedsReady(seeds: readonly string[]): void
     assert.equal(oracle.schemaVersion, 5);
     assert.ok(
       oracle.candidateDiversity.some((facet) => facet.selectionHasViableAlternative) ||
-        phase13QBlockers.some((blocker) => blocker.generatorNeededRate > 0),
+        candidateDiversityBlockers.some((blocker) => blocker.generatorNeededRate > 0),
     );
     assert.ok(expectedBlockers.some((blocker) => blockerNames.has(blocker)));
     assert.ok(
