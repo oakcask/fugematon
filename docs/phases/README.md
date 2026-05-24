@@ -1,21 +1,27 @@
-# Phase Docs
+# Plan Docs
 
-実装フェーズの計画、完了条件、実装記録です。現在の予定や open work を探す agent は、この索引から該当 Phase だけ読んでください。
+実装計画、完了条件、実装記録です。現在の予定や open work を探す agent は、この索引から目的名で該当計画を選び、必要な文書だけ読んでください。
+
+## Naming
+
+* Current な計画名は、並び順や番号ではなく目的で付ける。例: `Infinite playback MVP`、`Score-led beauty handoff`。
+* `Phase N` は履歴ラベル、既存ファイル名、完了記録の互換名として扱う。新しい計画や current index の primary label には使わない。
+* 計画順を変える場合は、目的名を固定し、必要なら括弧で旧 Phase ラベルを残す。
 
 ## Read First
 
-* [Phase 8](phase-8.md): 現在の実装対象。Phase 14 後の operational lane。無限再生セッション、境界設計、内部状態 visualizer の MVP。
-* [Phase 14](phase-14.md): 完了済み handoff baseline。score-window musical acceptance と音楽美の acceptance ladder を先に置く beauty trunk。
-* [Phase 7+ 再編計画](phase-7-plus-reorg.md): Phase 12 以降の品質優先再編と Phase 8/9 defer の理由。
+* [Infinite playback MVP](phase-8.md): 現在の実装対象。旧 Phase 8。Score-led beauty handoff 後の operational lane。無限再生セッション、境界設計、内部状態 visualizer の MVP。
+* [Score-led beauty handoff](phase-14.md): 完了済み handoff baseline。旧 Phase 14。score-window musical acceptance と音楽美の acceptance ladder を先に置く beauty trunk。
+* [Quality-first reorg](phase-7-plus-reorg.md): Phase 12 以降の品質優先再編と Phase 8/9 defer の理由。
 
 ## Read When
 
-* 実装対象の Phase が分かっている場合は、その Phase だけ読む。
-* Phase scope や実装順序を変える場合は、該当 Phase と [../reference/technical-plan.md](../reference/technical-plan.md) を合わせて読む。
-* 指標の意味や採否 policy を確認する場合は、Phase 文書ではなく [../reference/quality-metrics.md](../reference/quality-metrics.md) を読む。
-* Phase 14 のレビュー根拠が必要な場合は [../reviews/README.md](../reviews/README.md) から最新レビューを選ぶ。
+* 実装対象の計画が分かっている場合は、その計画だけ読む。
+* 計画 scope や実装順序を変える場合は、該当計画と [../reference/technical-plan.md](../reference/technical-plan.md) を合わせて読む。
+* 指標の意味や採否 policy を確認する場合は、計画文書ではなく [../reference/quality-metrics.md](../reference/quality-metrics.md) を読む。
+* Score-led beauty handoff のレビュー根拠が必要な場合は [../reviews/README.md](../reviews/README.md) から最新レビューを選ぶ。
 
 ## Catalog
 
-* フェーズ一覧、完了済み Phase、supersede 関係、古い Phase への入口は [catalog.md](catalog.md) に置く。
-* 履歴調査以外では、古い Phase を順番に全部読まない。
+* 計画一覧、完了済み履歴、supersede 関係、古い Phase ラベルへの入口は [catalog.md](catalog.md) に置く。
+* 履歴調査以外では、古い計画を順番に全部読まない。
