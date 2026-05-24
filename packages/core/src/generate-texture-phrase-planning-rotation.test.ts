@@ -6,7 +6,7 @@ test("generateScore applies texture and phrase-unit planning across rotation see
   assertTexturePhrasePlanningRotationBatch(TEXTURE_PHRASE_PLANNING_ROTATION_SEEDS.slice(0, 2), {
     topEntryPatternFamilyDelta: 4,
     leapRecoveryMissDelta: 28,
-    unisonOverlapDelta: 242,
-    sharedRhythmOverlapDelta: 228,
+    unisonOverlapDelta: 248,
+    sharedRhythmOverlapDelta: 255,
   });
 });

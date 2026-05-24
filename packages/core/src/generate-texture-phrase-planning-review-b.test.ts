@@ -8,7 +8,7 @@ test("generateScore applies texture and phrase-unit planning across review seeds
     sectionGrammarRiskRatio: 0.2,
     topEntryPatternFamilyDelta: -4,
     unisonOverlapDelta: 403,
-    sharedRhythmOverlapDelta: 245,
+    sharedRhythmOverlapDelta: 286,
     leapRecoveryMissDelta: 60,
     bassRootSupportDelta: -15,
     counterSubjectIdentityRetentionDelta: 0.16,

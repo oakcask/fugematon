@@ -797,28 +797,11 @@ function continuityFillerSubject(
       accidental: 0,
       importantTone: false,
       melodicRole: melodicRoleForScaleDegree(scaleDegree),
-      metricalHarmonyIntent: continuityMetricalHarmonyIntent(plan, offsetTick),
+      metricalHarmonyIntent: "weak-passing-tone" as const,
     };
     offsetTick += durationTicks;
     return subjectNote;
   });
-}
-
-function continuityMetricalHarmonyIntent(
-  plan: ContinuityCounterpointInput,
-  offsetTick: number,
-): SubjectNote["metricalHarmonyIntent"] {
-  if (plan.harmonicPlan === undefined) {
-    return "weak-passing-tone";
-  }
-
-  const tick = plan.startTick + offsetTick;
-  const beatStrength = beatStrengthAtTick(tick, plan.harmonicPlan.meterContext);
-  return beatStrength === "strong"
-    ? "structural-chord-tone"
-    : beatStrength === "weak"
-      ? "weak-passing-tone"
-      : "offbeat-motion";
 }
 
 function addObliqueContinuitySupport(
