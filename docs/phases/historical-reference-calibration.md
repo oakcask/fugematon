@@ -2,11 +2,12 @@
 
 Historical reference calibration is inserted after Texture continuity repair and before Infinite playback MVP. Its purpose is to use historical score evidence to tune the generator away from persistent voice-pair coupling and unresolved entry friction, without treating a placeholder reference profile as musical acceptance.
 
-Status: in progress. The review bundle now exposes a Historical reference calibration summary that keeps placeholder reference-profile success as context only, excludes entry-local historical thresholds until subject entries are matched or annotated, and classifies historical normalized metrics as review evidence. Infinite playback MVP should still wait until this lane either repairs the score-window blockers or records a scoped deferral that keeps them visible in operational playback.
+Status: complete. The review bundle exposes a Historical reference calibration summary that keeps placeholder reference-profile success as context only, excludes entry-local historical thresholds until subject entries are matched or annotated, and classifies historical normalized metrics as review evidence. The generator response reduces aggregate voice-pair coupling and entry severe-interval pressure while keeping remaining score-window blockers visible for Infinite playback MVP.
 
 Planning review:
 
 * [Historical reference observation](../reviews/historical-reference-observation.md): exploratory Bach WTC diagnostics, generated bundle comparison, structural hypothesis, and CI / review scope.
+* [Historical reference calibration completion review](../reviews/historical-reference-calibration-completion.md): generator/scoring response evidence, focused and full seed comparison, CI / review scope, and listening gap classification.
 
 ## Rationale
 
@@ -59,15 +60,21 @@ Adjust generation and candidate scoring so long duration lockstep and pitch-clas
 
 The repair should preserve texture continuity and avoid reverting to exposed free-counterpoint solo.
 
+Completed response: candidate selection weighs voice-pair coupling risk more strongly. The 22 seed aggregate lowered `pitchClassUnisonDuration` and `durationBasedLockstep` without new hard failures or subject/answer identity regressions; remaining mechanical-coupling and exposed-solo review signals stay visible in the completion review.
+
 ### HRC-E: Entry support repair
 
 Improve support around subject and answer entries. Prefer prepared or carried contrapuntal support over same-tick resets and unexplained seconds or sevenths.
 
 Focused seeds include `circle-fifths`, `contrary-motion`, `modal-cadence`, and `tight-stretto`, plus representative and rotation controls.
 
+Completed response: the full 22 seed bundle lowered unresolved entry severe-interval duration and unresolved-entry local sentinel count. Focused high-risk seeds remain classified as score-window review targets rather than being accepted through the reference-profile aggregate.
+
 ### HRC-F: Review and handoff
 
 Generate an A/B review bundle after HRC-D and HRC-E. Record improvements, regressions, concrete score-window symptoms, and whether each tradeoff belongs in generation, scoring, diagnostics, docs, or manual listening.
+
+Completed response: generated `organ-default` and `strict-counterpoint` review bundles are recorded in the completion review. Human listening remains an explicit manual-listening gap for Infinite playback MVP follow-up.
 
 ## Completion Conditions
 
@@ -81,4 +88,4 @@ Generate an A/B review bundle after HRC-D and HRC-E. Record improvements, regres
 
 ## Phase 8 Handoff
 
-Infinite playback MVP may resume only after Historical reference calibration records completion or a scoped deferral. Segment boundaries, regeneration modes, performance profiles, and playback UI must not hide persistent lockstep, long pitch-class reinforcement, or unresolved entry friction.
+Infinite playback MVP may resume. Segment boundaries, regeneration modes, performance profiles, and playback UI must not hide remaining persistent lockstep, long pitch-class reinforcement, or unresolved entry friction; these remain review-required score-window signals rather than reference-profile acceptance criteria.

@@ -14,6 +14,8 @@ const HISTORICAL_CALIBRATION_FOCUSED_SEEDS = [
 test("historical calibration focused seeds keep score-window repair evidence observable", () => {
   let unresolvedEntrySevereIntervalQuarters = 0;
   let unresolvedEntrySentinelCount = 0;
+  let pitchClassUnisonDuration = 0;
+  let durationBasedLockstep = 0;
   let mechanicalCouplingQuarters = 0;
   let pitchClassColorDoublingQuarters = 0;
   let functionalLockstepSeedCount = 0;
@@ -23,6 +25,7 @@ test("historical calibration focused seeds keep score-window repair evidence obs
   for (const seed of HISTORICAL_CALIBRATION_FOCUSED_SEEDS) {
     const output = generateScore({ seed, lengthTicks: REVIEW_LENGTH_TICKS });
     const gate = evaluateReviewGatePolicy(seed, output.diagnostics);
+    const axes = new Map(output.diagnostics.qualityVector.axes.map((axis) => [axis.axis, axis]));
 
     assert.equal(gate.adoptionReady, true);
     assert.equal(gate.hardConstraintPassed, true);
@@ -38,6 +41,8 @@ test("historical calibration focused seeds keep score-window repair evidence obs
     unresolvedEntrySentinelCount += output.diagnostics.qualityVector.localSentinels.filter(
       (sentinel) => sentinel.kind === "unresolved-entry-severe-interval",
     ).length;
+    pitchClassUnisonDuration += axes.get("pitchClassUnisonDuration")?.value ?? 0;
+    durationBasedLockstep += axes.get("durationBasedLockstep")?.value ?? 0;
     classifiedEntrySonorityCount += output.diagnostics.qualityVector.entrySonorities.filter(
       (sonority) => !sonority.kinds.includes("open-consonance"),
     ).length;
@@ -66,10 +71,12 @@ test("historical calibration focused seeds keep score-window repair evidence obs
     functionalLockstepSeedCount += Number(functionTotals.functionalLockstepTicks > 0);
   }
 
-  assert.ok(unresolvedEntrySevereIntervalQuarters > 0);
-  assert.ok(unresolvedEntrySentinelCount > 0);
+  assert.ok(unresolvedEntrySevereIntervalQuarters <= 79);
+  assert.ok(unresolvedEntrySentinelCount <= 132);
+  assert.ok(pitchClassUnisonDuration <= 687);
+  assert.ok(durationBasedLockstep <= 918);
   assert.ok(classifiedEntrySonorityCount >= HISTORICAL_CALIBRATION_FOCUSED_SEEDS.length * 20);
-  assert.ok(mechanicalCouplingQuarters > 0);
+  assert.ok(mechanicalCouplingQuarters <= 779);
   assert.ok(pitchClassColorDoublingQuarters > 0);
   assert.ok(functionalLockstepSeedCount >= HISTORICAL_CALIBRATION_FOCUSED_SEEDS.length);
   assert.ok(exposedSoloRunCount <= HISTORICAL_CALIBRATION_FOCUSED_SEEDS.length * 2);
