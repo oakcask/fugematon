@@ -98,7 +98,6 @@ Phase 13R is complete only if all of the following hold:
 
 ## Non-Goals
 
-* Phase 8 ring buffer replay, rewind, boundary semantics, or visualizer work.
 * Phase 9 Worker fallback and deadline work.
 * Learned aesthetic score adoption.
 * Hiding phrase convergence through UI controls, reverb, instrument profile, or performance humanization.

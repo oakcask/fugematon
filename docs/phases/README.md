@@ -10,7 +10,7 @@
 
 ## Read First
 
-* [Infinite playback MVP](phase-8.md): 現在の operational target。旧 Phase 8。Score-led beauty harmonic-continuity follow-up、Metrical generation repair、Texture continuity repair 後の無限再生セッション、境界設計、内部状態 visualizer の MVP。
+* [Infinite playback MVP](phase-8.md): 現在の operational target。旧 Phase 8。Score-led beauty harmonic-continuity follow-up、Metrical generation repair、Texture continuity repair 後に、`continuous fugue`、`endless program`、`regenerative cycle` の 3 再生モード semantics と segment snapshot contract を扱う。
 * [WebAudio synth interpretation follow-up](webaudio-synth-interpretation.md): Infinite playback MVP 後の rendering follow-up。`PerformanceProfile` の WebAudio envelope / velocity 解釈を調整し、生成譜面の欠陥を隠さず長時間再生の聴き取りやすさを改善する。
 * [Texture continuity repair](texture-continuity-repair.md): 完了済み品質 blocker。`seed-0i335vx-1n54a1x` の5小節目、9小節目、28小節目で確認した bass-answer tail thinning、exposed free-counterpoint solo、退屈な solo formula を Infinite playback MVP の前に扱った。
 * [Score-led beauty handoff](phase-14.md): 完了済み品質 follow-up。旧 Phase 14。`seed-1dxb2n8-1miapx7` の6-7小節で確認した harmonic-continuity blocker を、Infinite playback MVP の前に score-window review と generator/scoring response で修正した。

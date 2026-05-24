@@ -133,7 +133,7 @@ Phase 10 は以下の evidence により完了扱いにする。
 Phase 8/9 は削除しない。ただし Phase 10 後の譜面レビューで、音域分離、進行反復、終止感のない thinning、強拍/弱拍を意識しない和声設計が blocker と確認された。このため当時の実装対象は Phase 8 ではなく Phase 11 に移した。
 
 * Phase 11: harmonic rhythm、subject family、section grammar、register planning、functional texture thinning を、破壊的変更も含めて再設計する。
-* Phase 8: ring buffer replay、rewind、MVP sliders、parameter-change meta event。
+* Phase 8: current scope was later narrowed to the 3 playback-mode semantics and segment snapshot contract.
 * Phase 9: Dedicated Web Worker、deadline、best-so-far fallback。
 
 Phase 8/9 へ戻る条件は後続 Phase で更新され、Phase 13S の music-beauty-first rewrite と Phase 13T の entry-sonority evidence は完了した。現在は Phase 13U で、現行 default の repeated entry formula、voice coupling、fragment transformation、modal counter-subject weakness、metric truthfulness を Phase 8 前に扱う。
