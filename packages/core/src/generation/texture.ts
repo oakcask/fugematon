@@ -1022,7 +1022,7 @@ function bassAnswerTailSupportRunForVoice(
   }
 
   return {
-    startTick: run.startTick,
+    startTick: Math.min(run.endTick, run.startTick + TICKS_PER_QUARTER / 2),
     endTick: Math.max(run.startTick, run.endTick - TICKS_PER_QUARTER / 2),
   };
 }
@@ -1237,7 +1237,7 @@ function addFunctionalSupportLine(
   },
 ): void {
   const lineDegrees = functionalSupportLineDegrees(input.voice, input.rootDegree);
-  const maxNoteTicks = input.maxNoteTicks ?? TICKS_PER_QUARTER;
+  const maxNoteTicks = functionalSupportMaxNoteTicks(input.voice, input.maxNoteTicks);
   let elapsedTicks = 0;
   let index = 0;
 
@@ -1263,6 +1263,11 @@ function addFunctionalSupportLine(
     elapsedTicks += durationTicks;
     index += 1;
   }
+}
+
+function functionalSupportMaxNoteTicks(voice: Voice, requestedMaxNoteTicks: number | undefined): number {
+  const maxNoteTicks = requestedMaxNoteTicks ?? TICKS_PER_QUARTER;
+  return voice === "bass" ? maxNoteTicks : Math.min(maxNoteTicks, (TICKS_PER_QUARTER * 3) / 4);
 }
 
 function addFunctionalSupportForRun(

@@ -46,6 +46,32 @@ test("score generation keeps outside support on the tight-stretto first bass ans
   assert.equal(output.diagnostics.bassAnswerTailTexture.reviewRequired, false);
 });
 
+test("fugue-smoke keeps upper bass-answer tail support singable", () => {
+  const output = scoreForSeed("fugue-smoke");
+  const notes = output.events.filter((event): event is NoteEvent => event.kind === "note");
+  const firstBassAnswer = output.diagnostics.subjectEntries.find(
+    (entry) => entry.voice === "bass" && entry.state === "exposition" && entry.form === "answer",
+  );
+  assert.ok(firstBassAnswer !== undefined);
+
+  const tailStartTick = firstBassAnswer.startTick + TICKS_PER_QUARTER * 4;
+  const tailEndTick = firstBassAnswer.startTick + TICKS_PER_QUARTER * 7;
+  const upperSupportNotes = notes.filter(
+    (note) =>
+      note.voice !== "bass" &&
+      note.role === "free-counterpoint" &&
+      note.metricalHarmonyIntent === "structural-chord-tone" &&
+      note.startTick < tailEndTick &&
+      tailStartTick < note.startTick + note.durationTicks,
+  );
+
+  assert.ok(upperSupportNotes.length > 0);
+  assert.ok(
+    upperSupportNotes.every((note) => note.durationTicks <= TICKS_PER_QUARTER),
+    JSON.stringify(upperSupportNotes, null, 2),
+  );
+});
+
 test("free-counterpoint review seeds keep repeated surface phrase signatures below the repaired ceiling", () => {
   const signatureCounts = new Map<string, number>();
   const signatureSeeds = new Map<string, Set<string>>();

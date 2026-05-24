@@ -79,7 +79,7 @@ const ORGAN_DEFAULT: PerformanceProfile = {
 
 const STRICT_COUNTERPOINT: PerformanceProfile = {
   id: "strict-counterpoint",
-  version: 1,
+  version: 2,
   voices: {
     soprano: voiceSettings("soprano", 0, 73, 24, 127, 0.2, "sine"),
     alto: voiceSettings("alto", 1, 73, 52, 127, 0.18, "sine"),
@@ -162,8 +162,8 @@ function voiceSettings(
     velocityCurve: {
       kind: "linear",
       scale: 1,
-      minimum: 1,
-      maximum: 127,
+      minimum: 64,
+      maximum: 112,
     },
     articulation: {
       noteLengthRatio: 1,

@@ -968,7 +968,7 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
     assert.ok(variantFiles.includes("summary.json"));
     assert.equal(pairwisePreferences.schemaVersion, 2);
     assert.equal(pairwisePreferences.lengthTicks, 960);
-    assert.deepEqual(pairwisePreferences.performanceProfile, { id: "strict-counterpoint", version: 1 });
+    assert.deepEqual(pairwisePreferences.performanceProfile, { id: "strict-counterpoint", version: 2 });
     assert.equal(pairwisePreferences.manualListeningStatus, "not-reviewed");
     assert.equal(pairwisePreferences.manualListeningGap.unlistened, true);
     assert.match(pairwisePreferences.manualListeningGap.note, /no preference judgement/);
@@ -980,14 +980,14 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
       directory: "baseline",
       summaryFile: "baseline/summary.json",
       selectionModel: "baseline",
-      performanceProfile: { id: "strict-counterpoint", version: 1 },
+      performanceProfile: { id: "strict-counterpoint", version: 2 },
     });
     assert.deepEqual(comparison.variant, {
       label: "candidate",
       directory: "variant",
       summaryFile: "variant/summary.json",
       selectionModel: "candidate-oracle-selection",
-      performanceProfile: { id: "strict-counterpoint", version: 1 },
+      performanceProfile: { id: "strict-counterpoint", version: 2 },
     });
     assert.equal(comparison.subjectFamilyDiversity.baseline.seedCount, comparison.seeds.length);
     assert.equal(comparison.subjectFamilyDiversity.variant.seedCount, comparison.seeds.length);
