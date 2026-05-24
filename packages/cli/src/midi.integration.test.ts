@@ -120,6 +120,15 @@ test("review command writes diagnostics and MIDI files for review seeds", async 
         outsideReferenceSeedCount: number;
         maxDistance: number;
       };
+      historicalReferenceCalibration: {
+        schemaVersion: number;
+        status: string;
+        metricRoles: { axis: string; role: string }[];
+        referenceProfileAggregate: {
+          role: string;
+          beautyHandoffAccepted: boolean;
+        };
+      };
       qualityProfileComparison: {
         schemaVersion: number;
         modelVersion: number;
@@ -478,7 +487,7 @@ test("review command writes diagnostics and MIDI files for review seeds", async 
       comparisons: unknown[];
     };
 
-    assert.equal(summary.schemaVersion, 18);
+    assert.equal(summary.schemaVersion, 19);
     assert.equal(summary.lengthTicks, 9600);
     assert.equal(summary.selectionModel, "section-local-planner");
     assert.deepEqual(summary.performanceProfile, { id: "organ-default", version: 2 });
@@ -492,6 +501,15 @@ test("review command writes diagnostics and MIDI files for review seeds", async 
     assert.equal(summary.referenceDiagnostics.seedCount, summary.seeds.length);
     assert.ok(summary.referenceDiagnostics.axes.length > 1);
     assert.ok(summary.referenceDiagnostics.maxDistance >= 0);
+    assert.equal(summary.historicalReferenceCalibration.schemaVersion, 1);
+    assert.equal(summary.historicalReferenceCalibration.status, "review-required");
+    assert.equal(summary.historicalReferenceCalibration.referenceProfileAggregate.role, "context-only");
+    assert.equal(summary.historicalReferenceCalibration.referenceProfileAggregate.beautyHandoffAccepted, false);
+    assert.ok(
+      summary.historicalReferenceCalibration.metricRoles.some(
+        (role) => role.axis === "severeEntryIntervalPerEntry" && role.role === "threshold-excluded",
+      ),
+    );
     assert.equal(summary.qualityProfileComparison.schemaVersion, 1);
     assert.equal(summary.qualityProfileComparison.modelVersion, 4);
     assert.equal(summary.qualityProfileComparison.seedCount, summary.seeds.length);

@@ -2,7 +2,7 @@
 
 Historical reference calibration is inserted after Texture continuity repair and before Infinite playback MVP. Its purpose is to use historical score evidence to tune the generator away from persistent voice-pair coupling and unresolved entry friction, without treating a placeholder reference profile as musical acceptance.
 
-Status: planned. Infinite playback MVP should wait until this lane either repairs the score-window blockers or records a scoped deferral that keeps them visible in operational playback.
+Status: in progress. The review bundle now exposes a Historical reference calibration summary that keeps placeholder reference-profile success as context only, excludes entry-local historical thresholds until subject entries are matched or annotated, and classifies historical normalized metrics as review evidence. Infinite playback MVP should still wait until this lane either repairs the score-window blockers or records a scoped deferral that keeps them visible in operational playback.
 
 Planning review:
 
@@ -39,15 +39,19 @@ Theory basis: species counterpoint and Bach/fugue practice both require independ
 
 Create a repeatable review path for historical Humdrum/MusicXML scores that preserves voice identity, timing, source metadata, and redistribution policy. Keep raw score redistribution out of committed docs unless licensing is verified.
 
-The first output remains `review-required`. It may become `ci-observed` after import determinism, source metadata, and runtime are stable.
+Implemented baseline: `reference-diagnostics` now exposes `summarizeHistoricalReferenceReview` for normalized historical diagnostic records and `summarizeHistoricalReferenceCalibration` for source readiness, metric roles, and handoff classification. The first output remains `review-required`. It may become `ci-observed` after import determinism, source metadata, and runtime are stable.
 
 ### HRC-B: Subject-entry annotation
 
 Add an annotation or matching layer for historical subject entries before deriving entry-local severe-interval bands. Until then, historical entry metrics remain incomplete evidence and cannot set thresholds.
 
+Implemented baseline: calibration source records carry subject-entry annotation method and entry count. `severeEntryIntervalPerEntry` and `unresolvedSevereEntryIntervalPerEntry` stay `threshold-excluded` unless the source has `pattern-matched` or `manual-annotated` entries.
+
 ### HRC-C: Reference readiness reclassification
 
 Update adoption language and review summaries so reference-profile aggregate pass is not treated as beauty acceptance. It can remain context for compatibility and coarse profile drift.
+
+Implemented baseline: review summaries include `historicalReferenceCalibration.referenceProfileAggregate`, which marks `referenceDiagnostics.outsideReferenceSeedCount` as `context-only` with `beautyHandoffAccepted: false`.
 
 ### HRC-D: Voice-pair independence repair
 
