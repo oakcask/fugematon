@@ -14,6 +14,11 @@ Theory basis: common-practice phrase rhythm and fugue source family. A default 3
 
 Project response: generator and diagnostics change accepted. `TimeSignature` now creates a meter context used by subject rhythm, exposition spacing, harmonic anchors, metrical intent, strong-beat diagnostics, and meter review evidence.
 
+Follow-up: user feedback after the repair noted that a soloized part can still fill an entire 3/4 bar with uninterrupted eighth notes, weakening the triple-meter phrase feel even when entries and cadences are measure-aligned.
+The project response is a scoped generator change for 3/4 continuity free-counterpoint: solo-prone continuation lines now use a quarter/eighth/eighth/quarter profile and preserve those durations, rather than splitting every quarter into two eighths.
+Focused 3/4 seeds now assert that full-measure solo runs of six consecutive eighth notes do not become the default continuation texture.
+This remains a `review-required` texture/rhythm concern, not a new CI-blocking meter failure.
+
 ### 2. 6/8 has compound-meter evidence, not only downbeat alignment
 
 Affected seeds: `meter-6-8-122`, `meter-6-8-150`, `meter-6-8-169`.
