@@ -3,10 +3,10 @@ import test from "node:test";
 import { REVIEW_LENGTH_TICKS } from "./constants.js";
 import { generateScore } from "./generate.js";
 
-const PHASE_13R_FOCUSED_SEEDS = ["minor-entry", "sparse-cadence", "random-listen-check"] as const;
+const PHRASE_CONVERGENCE_FOCUSED_SEEDS = ["minor-entry", "sparse-cadence", "random-listen-check"] as const;
 
 test("phase-13R boundary seeds keep default planner convergence comparable in CI", () => {
-  for (const seed of PHASE_13R_FOCUSED_SEEDS) {
+  for (const seed of PHRASE_CONVERGENCE_FOCUSED_SEEDS) {
     const legacy = generateScore({ seed, lengthTicks: REVIEW_LENGTH_TICKS, selectionModel: "baseline" });
     const current = generateScore({ seed, lengthTicks: REVIEW_LENGTH_TICKS });
 

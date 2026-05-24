@@ -4,7 +4,7 @@ import { TICKS_PER_QUARTER } from "./constants.js";
 import type { GenerationOutput, NoteEvent, PlannedEntry } from "./events.js";
 import { generateScore } from "./generate.js";
 
-const PHASE_14_POST_ENTRY_PHRASE_REVIEW_SEEDS = [
+const POST_ENTRY_PHRASE_REVIEW_SEEDS = [
   "angular-answer",
   "modal-dorian",
   "random-listen-check",
@@ -14,7 +14,7 @@ const PHASE_14_POST_ENTRY_PHRASE_REVIEW_SEEDS = [
 const scoreCache = new Map<string, GenerationOutput>();
 
 test("Phase 14 post-entry review seeds stay clear of long thin support windows after repair", () => {
-  const summaries = PHASE_14_POST_ENTRY_PHRASE_REVIEW_SEEDS.map((seed) => ({
+  const summaries = POST_ENTRY_PHRASE_REVIEW_SEEDS.map((seed) => ({
     seed,
     windows: collectThinPostEntrySupportWindows(scoreForSeed(seed)),
   }));
@@ -50,7 +50,7 @@ test("Phase 14 free-counterpoint review seeds keep repeated surface phrase signa
   const signatureCounts = new Map<string, number>();
   const signatureSeeds = new Map<string, Set<string>>();
 
-  for (const seed of PHASE_14_POST_ENTRY_PHRASE_REVIEW_SEEDS) {
+  for (const seed of POST_ENTRY_PHRASE_REVIEW_SEEDS) {
     const seedSignatures = freeCounterpointPhraseSignatures(scoreForSeed(seed));
     for (const signature of seedSignatures) {
       signatureCounts.set(signature, (signatureCounts.get(signature) ?? 0) + 1);
@@ -62,7 +62,7 @@ test("Phase 14 free-counterpoint review seeds keep repeated surface phrase signa
 
   const repeatedSignatures = [...signatureSeeds.entries()]
     .map(([signature, seeds]) => ({ signature, seedCount: seeds.size, count: signatureCounts.get(signature) ?? 0 }))
-    .filter((summary) => summary.seedCount === PHASE_14_POST_ENTRY_PHRASE_REVIEW_SEEDS.length)
+    .filter((summary) => summary.seedCount === POST_ENTRY_PHRASE_REVIEW_SEEDS.length)
     .sort((left, right) => right.count - left.count);
 
   assert.ok(repeatedSignatures.length >= 5, JSON.stringify(repeatedSignatures.slice(0, 10), null, 2));

@@ -102,12 +102,12 @@ test("candidate pool oracle never treats hard failures as viable improvements", 
   assert.equal(entryHarmony?.viableImprovementCount, 0);
 });
 
-test("candidate pool oracle reports phase-11 blocker families and upper-bound evidence", () => {
+test("candidate pool oracle reports texture-planning blocker families and upper-bound evidence", () => {
   const selected = candidateEvaluation({
     entryRisk: 2,
     leapRecoveryMisses: 1,
     counterSubjectIdentityRetention: 0.8,
-    phase11: {
+    texturePlanning: {
       metricalHarmonyRisk: 12,
       bassRootUnsupportedCount: 5,
       registerBlendingRisk: 18,
@@ -119,7 +119,7 @@ test("candidate pool oracle reports phase-11 blocker families and upper-bound ev
     entryRisk: 2,
     leapRecoveryMisses: 1,
     counterSubjectIdentityRetention: 0.8,
-    phase11: {
+    texturePlanning: {
       metricalHarmonyRisk: 8,
       bassRootUnsupportedCount: 2,
       registerBlendingRisk: 10,
@@ -137,7 +137,7 @@ test("candidate pool oracle reports phase-11 blocker families and upper-bound ev
       selectedCandidateIndex: 0,
     }),
   ]);
-  const phase11Blockers = summary.blockerClassifications.filter((blocker) =>
+  const texturePlanningBlockers = summary.blockerClassifications.filter((blocker) =>
     [
       "metrical-harmony",
       "bass-root-support",
@@ -150,10 +150,10 @@ test("candidate pool oracle reports phase-11 blocker families and upper-bound ev
 
   assert.equal(summary.schemaVersion, 5);
   assert.equal(summary.phraseFamilyCandidateCount, 0);
-  assert.equal(phase11Blockers.length, 5);
-  assert.ok(phase11Blockers.every((blocker) => blocker.classification === "selection-model"));
-  assert.ok(phase11Blockers.every((blocker) => blocker.selectionOnlyUpperBoundRiskReduction > 0));
-  assert.ok(phase11Blockers.every((blocker) => blocker.generatorNeededRate === 0));
+  assert.equal(texturePlanningBlockers.length, 5);
+  assert.ok(texturePlanningBlockers.every((blocker) => blocker.classification === "selection-model"));
+  assert.ok(texturePlanningBlockers.every((blocker) => blocker.selectionOnlyUpperBoundRiskReduction > 0));
+  assert.ok(texturePlanningBlockers.every((blocker) => blocker.generatorNeededRate === 0));
   assert.equal(bassRootSupport?.selectedRiskTotal, 5);
   assert.equal(bassRootSupport?.bestViableRiskTotal, 2);
   assert.equal(bassRootSupport?.selectionOnlyUpperBoundRiskReduction, 3);
@@ -165,7 +165,7 @@ test("candidate pool oracle scores section grammar history by candidate state", 
     leapRecoveryMisses: 0,
     counterSubjectIdentityRetention: 0.8,
     sectionState: "stretto-like",
-    phase11: {
+    texturePlanning: {
       sectionGrammarRisk: 2,
     },
   });
@@ -174,7 +174,7 @@ test("candidate pool oracle scores section grammar history by candidate state", 
     leapRecoveryMisses: 0,
     counterSubjectIdentityRetention: 0.8,
     sectionState: "subject-return",
-    phase11: {
+    texturePlanning: {
       sectionGrammarRisk: 2,
     },
   });
@@ -263,7 +263,7 @@ function candidateEvaluation(input: {
   sectionState?: CandidateEvaluation["explanations"]["sections"][number]["state"];
   hardFailures?: CandidateEvaluation["hardFailures"];
   totalCost?: number;
-  phase11?: {
+  texturePlanning?: {
     metricalHarmonyRisk?: number;
     bassRootUnsupportedCount?: number;
     registerBlendingRisk?: number;
@@ -273,7 +273,7 @@ function candidateEvaluation(input: {
 }): CandidateEvaluation {
   const severeIntervalCount = Math.floor(input.entryRisk / 2);
   const unresolvedSevereIntervalCount = input.entryRisk - severeIntervalCount;
-  const phase11 = input.phase11 ?? {};
+  const texturePlanning = input.texturePlanning ?? {};
 
   return {
     featureVersion: 3,
@@ -327,10 +327,10 @@ function candidateEvaluation(input: {
         fourBeatBassUpperSameDirectionRatio: 0.4,
         eightBeatBassUpperSameDirectionRatio: 0.4,
         fourBeatOuterVoiceSameDirectionRatio: 0.4,
-        wideAdjacentVoiceSpacingCount: phase11.registerBlendingRisk ?? 0,
+        wideAdjacentVoiceSpacingCount: texturePlanning.registerBlendingRisk ?? 0,
         adjacentVoiceWideP75SemitoneExcess: 0,
         registerSpanSemitoneTotal: 0,
-        nonCadentialFunctionalThinningRunCount: phase11.functionalThinningRisk ?? 0,
+        nonCadentialFunctionalThinningRunCount: texturePlanning.functionalThinningRisk ?? 0,
         oneVoiceFunctionalThinningRunCount: 0,
         functionalThinningMaxDurationQuarters: 0,
       }),
@@ -340,14 +340,14 @@ function candidateEvaluation(input: {
         counterSubjectIdentityRetention: input.counterSubjectIdentityRetention,
       }),
       harmony: dimension({
-        strongBeatDissonanceCount: phase11.metricalHarmonyRisk ?? 0,
+        strongBeatDissonanceCount: texturePlanning.metricalHarmonyRisk ?? 0,
         harmonicFunctionMismatches: 0,
         strongBeatChordToneMismatchCount: 0,
         weakBeatChordToneMismatchCount: 0,
-        strongBeatBassRootUnsupportedCount: phase11.bassRootUnsupportedCount ?? 0,
+        strongBeatBassRootUnsupportedCount: texturePlanning.bassRootUnsupportedCount ?? 0,
       }),
       form: dimension({
-        formRepetitionWarnings: phase11.sectionGrammarRisk ?? 0,
+        formRepetitionWarnings: texturePlanning.sectionGrammarRisk ?? 0,
         stateGrammarMostRepeatedPatternCount: 1,
         topEntryPatternFamilyCount: 1,
       }),

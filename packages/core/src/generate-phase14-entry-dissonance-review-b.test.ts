@@ -3,10 +3,10 @@ import test from "node:test";
 import { TICKS_PER_QUARTER } from "./constants.js";
 import { generateScore } from "./generate.js";
 
-const PHASE_14_ENTRY_DISSONANCE_REVIEW_SEEDS = ["dense-modal", "random-listen-check", "seed-0zereox-1v729ih"] as const;
+const ENTRY_DISSONANCE_REVIEW_SEEDS = ["dense-modal", "random-listen-check", "seed-0zereox-1v729ih"] as const;
 
 test("Phase 14 entry-dissonance review seeds keep unresolved accented entry clashes at the repaired ceiling", () => {
-  const summaries = PHASE_14_ENTRY_DISSONANCE_REVIEW_SEEDS.map((seed) => {
+  const summaries = ENTRY_DISSONANCE_REVIEW_SEEDS.map((seed) => {
     const diagnostics = generateScore({ seed, lengthTicks: TICKS_PER_QUARTER * 288 }).diagnostics;
     const entryAdjacentSecondFriction = diagnostics.qualityVector.entrySonorities.reduce(
       (sum, sonority) => sum + sonority.adjacentSecondFrictionCount,
@@ -24,8 +24,8 @@ test("Phase 14 entry-dissonance review seeds keep unresolved accented entry clas
       seed,
       entryAdjacentSecondFriction,
       unresolvedAccentedEntryClashes,
-      phase14EntryAdjacentSecondFrictionCount: diagnostics.dissonanceTriage.entryAdjacentSecondFrictionCount,
-      phase14UnresolvedAccentedEntryClashCount: diagnostics.dissonanceTriage.unresolvedAccentedEntryClashCount,
+      entryAdjacentSecondFrictionCount: diagnostics.dissonanceTriage.entryAdjacentSecondFrictionCount,
+      unresolvedAccentedEntryClashCount: diagnostics.dissonanceTriage.unresolvedAccentedEntryClashCount,
       unresolvedAccentedEntryWindowCount: unresolvedAccentedEntryWindows.length,
     };
   });
@@ -45,8 +45,8 @@ test("Phase 14 entry-dissonance review seeds keep unresolved accented entry clas
   assert.ok(
     summaries.every(
       (summary) =>
-        summary.phase14EntryAdjacentSecondFrictionCount === summary.entryAdjacentSecondFriction &&
-        summary.phase14UnresolvedAccentedEntryClashCount === summary.unresolvedAccentedEntryClashes,
+        summary.entryAdjacentSecondFrictionCount === summary.entryAdjacentSecondFriction &&
+        summary.unresolvedAccentedEntryClashCount === summary.unresolvedAccentedEntryClashes,
     ),
     JSON.stringify(summaries, null, 2),
   );

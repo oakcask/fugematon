@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { TICKS_PER_QUARTER } from "./constants.js";
 import { generateScore } from "./generate.js";
 
-export const PHASE_14_WEAK_DISSONANCE_REVIEW_SEEDS = [
+export const WEAK_DISSONANCE_REVIEW_SEEDS = [
   "contrary-motion",
   "tight-stretto",
   "circle-fifths",
@@ -12,7 +12,7 @@ export const PHASE_14_WEAK_DISSONANCE_REVIEW_SEEDS = [
   "seed-0zereox-1v729ih",
 ] as const;
 
-export function assertPhase14WeakDissonanceReviewSeedsExposePressure(
+export function assertWeakDissonanceReviewSeedsExposePressure(
   seeds: readonly string[],
   expectation: {
     minWeakPassingSemitoneClashTicks?: number;

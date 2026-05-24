@@ -3,12 +3,12 @@ import test from "node:test";
 import { REPRESENTATIVE_REVIEW_SEEDS, REVIEW_LENGTH_TICKS } from "./constants.js";
 import { generateScore } from "./generate.js";
 
-const PHASE_13R_REVIEW_SUBJECT_DIVERSITY_SEEDS = REPRESENTATIVE_REVIEW_SEEDS.slice(0, 4).map(({ seed }) => seed);
+const SUBJECT_FAMILY_DIVERSITY_REVIEW_SEEDS = REPRESENTATIVE_REVIEW_SEEDS.slice(0, 4).map(({ seed }) => seed);
 
 test("phase-13R default review subjects keep first-a family concentration below the repair ceiling", () => {
   const familyCounts = new Map<string, number>();
 
-  for (const seed of PHASE_13R_REVIEW_SUBJECT_DIVERSITY_SEEDS) {
+  for (const seed of SUBJECT_FAMILY_DIVERSITY_REVIEW_SEEDS) {
     const output = generateScore({ seed, lengthTicks: REVIEW_LENGTH_TICKS });
     const topSubject = output.diagnostics.phraseRepetitionReview.subjectStemFamilies.find(
       (family) => family.form === "subject",
@@ -19,7 +19,7 @@ test("phase-13R default review subjects keep first-a family concentration below 
     familyCounts.set(family, (familyCounts.get(family) ?? 0) + 1);
   }
 
-  const topFamilyShare = Math.max(...familyCounts.values()) / PHASE_13R_REVIEW_SUBJECT_DIVERSITY_SEEDS.length;
+  const topFamilyShare = Math.max(...familyCounts.values()) / SUBJECT_FAMILY_DIVERSITY_REVIEW_SEEDS.length;
 
   assert.ok(familyCounts.size >= 4);
   assert.ok(topFamilyShare <= 0.25);

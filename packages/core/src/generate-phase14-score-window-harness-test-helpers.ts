@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { TICKS_PER_QUARTER } from "./constants.js";
 import { generateScore } from "./generate.js";
 
-export const PHASE_14_SCORE_WINDOW_HARNESS_SEEDS = [
+export const SCORE_WINDOW_ACCEPTANCE_HARNESS_SEEDS = [
   "bach-001",
   "tight-stretto",
   "circle-fifths",
@@ -12,7 +12,7 @@ export const PHASE_14_SCORE_WINDOW_HARNESS_SEEDS = [
   "seed-0zereox-1v729ih",
 ] as const;
 
-export function assertPhase14ScoreWindowHarnessInputs(seeds: readonly string[]): void {
+export function assertScoreWindowAcceptanceHarnessInputs(seeds: readonly string[]): void {
   const summaries = seeds.map((seed) => {
     const diagnostics = generateScore({ seed, lengthTicks: TICKS_PER_QUARTER * 288 }).diagnostics;
     const scoreWindowInputs = {

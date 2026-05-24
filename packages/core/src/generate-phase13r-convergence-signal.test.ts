@@ -3,7 +3,7 @@ import test from "node:test";
 import { REVIEW_LENGTH_TICKS } from "./constants.js";
 import { generateScore } from "./generate.js";
 
-const PHASE_13R_FOCUSED_SEEDS = ["bach-001", "fugue-smoke", "modal-cadence"] as const;
+const PHRASE_CONVERGENCE_FOCUSED_SEEDS = ["bach-001", "fugue-smoke", "modal-cadence"] as const;
 
 test("generateScore exposes phase-13R review signals for the explicit legacy baseline path", () => {
   const output = generateScore({ seed: "fugue-smoke", lengthTicks: REVIEW_LENGTH_TICKS, selectionModel: "baseline" });
@@ -41,7 +41,7 @@ test("generateScore uses the adopted planner as the normal phase-13R default pat
 });
 
 test("phase-13R focused seeds keep default planner convergence comparable in CI", () => {
-  for (const seed of PHASE_13R_FOCUSED_SEEDS) {
+  for (const seed of PHRASE_CONVERGENCE_FOCUSED_SEEDS) {
     const legacy = generateScore({ seed, lengthTicks: REVIEW_LENGTH_TICKS, selectionModel: "baseline" });
     const current = generateScore({ seed, lengthTicks: REVIEW_LENGTH_TICKS });
 

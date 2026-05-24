@@ -4,7 +4,7 @@ import { REVIEW_LENGTH_TICKS } from "./constants.js";
 import { generateScore } from "./generate.js";
 import { evaluateReviewGatePolicy } from "./review-gate.js";
 
-const PHASE_13Z_FOCUSED_REVIEW_SEEDS = [
+const PHRASE_DEVELOPMENT_FOCUSED_REVIEW_SEEDS = [
   "modal-answer",
   "minor-entry",
   "sparse-cadence",
@@ -13,7 +13,7 @@ const PHASE_13Z_FOCUSED_REVIEW_SEEDS = [
 ] as const;
 
 test("Phase 13Z focused seeds preserve hard constraints and repair subject-stem concentration, group B", () => {
-  for (const seed of PHASE_13Z_FOCUSED_REVIEW_SEEDS) {
+  for (const seed of PHRASE_DEVELOPMENT_FOCUSED_REVIEW_SEEDS) {
     const output = generateScore({ seed, lengthTicks: REVIEW_LENGTH_TICKS });
     const gate = evaluateReviewGatePolicy(seed, output.diagnostics);
     const hasSubjectStemConcentration = output.diagnostics.phraseConvergenceReview.findings.some(
