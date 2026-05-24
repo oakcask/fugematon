@@ -40,7 +40,7 @@
 - Use `git-editor-guardrail` when running git commands that may open an editor or when choosing the noninteractive form of commit, amend, rebase, merge, revert, or tag operations.
 - Use `conventional-commits` when authoring commit messages or PR titles.
 - Use `change-rationale-writing` when drafting commit bodies, PR descriptions, changelog entries, release notes, or decision records.
-- Use `github-pr-operations` when creating, editing, or managing pull requests with GitHub CLI.
+- Use `github-pr-operations` when creating, editing, merging, or managing pull requests with GitHub CLI.
 - Use `github-actions-inspection` when inspecting GitHub Actions workflow runs, jobs, logs, artifacts, or check failures with GitHub CLI.
 - Use `ui-inspection` when browser-level Web UI validation is needed.
 - Use `dependency-review` before adding, choosing, upgrading, or approving third-party dependencies.
