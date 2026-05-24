@@ -33,6 +33,16 @@ For each ambiguous phrase, record the possible interpretations and test at least
 
 Do not let a diagnostic helper or existing phase scope silently choose one interpretation. If the review intentionally narrows the meaning, state the excluded cases in the review and add a focused check for the excluded high-risk case when it could match the user's symptom.
 
+## Anti-Overfitting Rules
+
+When user feedback leads to a generator, scoring, diagnostic, or planner change, use the reported seed or measure as evidence, not as the model boundary.
+
+Do not encode a repair in terms of a single seed, exact measure, time signature, key signature, pitch name, chord name, voice name, or current ordering artifact unless the feature is explicitly scoped to that literal case. Prefer structural predicates such as entry role and order, section state, harmonic function, relative key motion, cadence function, phrase role, texture density, voice-leading relation, or support-line function.
+
+Before reporting the change complete, add or update at least one check that would fail if the repair only matched the reported literal details. Good checks include a transposed or mode-adjacent synthetic case, a related generated seed, a control seed that should stay review-required, or a review note explaining why broader verification could not be run.
+
+If a literal special case is unavoidable, document why the model cannot yet express the general structure, keep the exception local, and add a follow-up to generalize it before using the repair as Phase handoff evidence.
+
 ## Literature Rules
 
 Use [references/literature-map.md](references/literature-map.md) to choose source families. Do not treat it as exhaustive.

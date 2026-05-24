@@ -14,6 +14,8 @@ Theory basis: common-practice harmonic continuity and contrapuntal texture. A sh
 
 Project response: generator repair plus review surface. The reported D minor to E minor pivot handoff now adds bass-root support and, when the texture would be too thin, an upper chord-tone support line at structural beats. The repair does not widen aggregate thresholds and does not treat controlled ambiguity as sufficient by itself.
 
+Follow-up generalization: the generator predicate is no longer tied to the reported pitch names. It repairs short modulatory `circle-fifths` / `inversion` pivot episodes when the following stretto-like handoff shares the target key. The reported seed remains regression evidence, and a transposed synthetic pivot episode verifies that the repair is structural rather than literal-key matching. Other sequence/fragment pairs remain review-required until they have their own score-window evidence, because broadening this repair across all episode transformations regresses older texture and phrase guardrails.
+
 ### 2. Focused seed review shows improvement without hiding remaining review-required material
 
 Reviewed seeds: `seed-1dxb2n8-1miapx7`, `circle-fifths`, `tight-stretto`, `modal-cadence`, `bach-001`, and `contrary-motion`.
