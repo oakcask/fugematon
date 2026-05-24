@@ -162,10 +162,10 @@ export function buildFugueScore(
   fillAllVoiceSilenceGaps(notes, keySignature);
   if (selectionModel === "section-local-planner") {
     addFunctionalThinningSupport(notes, sectionPlans);
-    addBassAnswerTailTextureSupport(notes, subjectEntries, sectionPlans);
     addPostEntryContinuationSupport(notes, subjectEntries, sectionPlans);
     addShortEpisodeHarmonicContinuitySupport(notes, sectionPlans);
     shapeLongRestPhraseClosures(notes, sectionPlans);
+    addBassAnswerTailTextureSupport(notes, subjectEntries, sectionPlans);
   }
   notes.sort(compareNoteEvents);
 

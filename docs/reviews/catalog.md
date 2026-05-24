@@ -4,8 +4,9 @@
 
 ## Current Quality Lane
 
+* [Texture continuity repair completion review](texture-continuity-repair-completion.md): Texture continuity repair の完了 evidence。focused seed set の bass-answer tail、exposed free-counterpoint solo、tradeoff signal、CI / review scope、Phase 8 handoff。
 * [Texture continuity replan](texture-continuity-replan.md): `seed-0i335vx-1n54a1x` の5小節目、9小節目、28小節目で確認した one-outside bass-answer tail、exposed free-counterpoint solo、退屈な exposed formula を Texture continuity repair として Infinite playback MVP 前へ戻す根拠。
-* [Texture continuity repair](../phases/texture-continuity-repair.md): 現在の品質 blocker。exposed-solo review surface、first-bass-answer tail texture floor、support generation、continuation texture-floor planning、exposed phrase grammar を扱う。
+* [Texture continuity repair](../phases/texture-continuity-repair.md): 完了済み品質 blocker。exposed-solo review surface、first-bass-answer tail texture floor、support generation、continuation texture-floor planning、exposed phrase grammar を扱った。
 
 ## Phase 14
 

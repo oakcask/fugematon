@@ -154,6 +154,7 @@ export function generateScore(input: GenerationInput): GenerationOutput {
       repeatedPitchRunCount: diagnostics.repeatedPitchRunCount,
       allVoiceSilenceGapCount: diagnostics.allVoiceSilenceGapCount,
       soloTexture: diagnostics.soloTexture,
+      exposedFreeCounterpointSolo: diagnostics.exposedFreeCounterpointSolo,
       pitchContourMotion: diagnostics.pitchContourMotion,
       lowerVoiceVocality: diagnostics.lowerVoiceVocality,
       stepwisePattern: diagnostics.stepwisePattern,

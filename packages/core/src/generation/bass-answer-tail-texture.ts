@@ -88,7 +88,9 @@ function summarizeBassAnswerTailTextureWindow(
     minOutsideVoiceCount: Number.isFinite(minOutsideVoiceCount) ? minOutsideVoiceCount : 0,
     activeOutsideVoices: [...activeOutsideVoices],
     classification:
-      zeroOutsideVoiceTicks > 0 || bassOnlyFreeCounterpointTicks > 0 ? "review-required" : "supported-tail",
+      zeroOutsideVoiceTicks > 0 || bassOnlyFreeCounterpointTicks > 0 || oneOutsideVoiceTicks >= TICKS_PER_QUARTER * 2
+        ? "review-required"
+        : "supported-tail",
   };
 }
 

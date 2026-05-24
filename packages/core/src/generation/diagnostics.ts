@@ -7,6 +7,7 @@ import type {
   EntryBoundaryContinuitySummary,
   EntrySupportInstabilitySummary,
   EntrySupportSevereIntervalSummary,
+  ExposedFreeCounterpointSoloSummary,
   HarmonicContinuitySummary,
   HarmonicPlan,
   KeySignature,
@@ -45,7 +46,7 @@ import {
   positiveModulo,
   VOICE_ENTRY_ORDER,
 } from "./shared.js";
-import { analyzeSoloTexture } from "./solo-texture.js";
+import { analyzeExposedFreeCounterpointSolo, analyzeSoloTexture } from "./solo-texture.js";
 import type { ActivePitch, ActiveVerticality, TextureDiagnostics } from "./types.js";
 import { type HalfBeatVerticality, halfBeatVerticalities } from "./verticality.js";
 
@@ -82,6 +83,7 @@ export function analyzeScore(
   repeatedPitchRunCount: number;
   allVoiceSilenceGapCount: number;
   soloTexture: SoloTextureSummary;
+  exposedFreeCounterpointSolo: ExposedFreeCounterpointSoloSummary;
   pitchContourMotion: PitchContourMotionSummary;
   lowerVoiceVocality: LowerVoiceVocalitySummary;
   stepwisePattern: StepwisePatternSummary;
@@ -418,6 +420,7 @@ function analyzeTextureDiagnostics(
     repeatedPitchRunCount,
     allVoiceSilenceGapCount: countAllVoiceSilenceGaps(notes),
     soloTexture: analyzeSoloTexture(notes, sectionPlans),
+    exposedFreeCounterpointSolo: analyzeExposedFreeCounterpointSolo(notes, sectionPlans),
     pitchContourMotion: analyzePitchContourMotion(notes),
     lowerVoiceVocality: analyzeLowerVoiceVocality(notes, sectionPlans),
     stepwisePattern: analyzeStepwisePattern(notes, sectionPlans),

@@ -31,6 +31,7 @@ import {
   VOICE_ENTRY_ORDER,
   VOICE_REGISTER_TARGETS,
 } from "./shared.js";
+import { collectUnsupportedExposedFreeCounterpointSoloRuns } from "./solo-texture.js";
 import type { Exposition, SubjectNote } from "./types.js";
 
 export type ContinuityCounterpointInput = {
@@ -988,21 +989,42 @@ export function addBassAnswerTailTextureSupport(
     const plan =
       sectionPlanForTick(sectionPlans, run.startTick) ??
       firstBassAnswerInternalTailPlan(notes, sectionPlans, firstBassAnswer, run.startTick);
-    const supportVoice = tailSupportVoice(notes, run);
-    if (plan === undefined || supportVoice === undefined) {
+    const supportVoices = tailSupportVoices(notes, run);
+    if (plan === undefined || supportVoices.length === 0) {
       continue;
     }
 
-    addFunctionalSupportForRun(notes, {
-      run,
-      plan,
-      supportVoice,
-      maxNoteTicks: TICKS_PER_QUARTER * 3,
-      strictSemitoneAvoidance: true,
-    });
+    for (const [index, supportVoice] of supportVoices.entries()) {
+      const supportRun = bassAnswerTailSupportRunForVoice(run, index, supportVoices.length);
+      if (supportRun.endTick <= supportRun.startTick) {
+        continue;
+      }
+      addFunctionalSupportForRun(notes, {
+        run: supportRun,
+        plan,
+        supportVoice,
+        maxNoteTicks: TICKS_PER_QUARTER * 3,
+        strictSemitoneAvoidance: true,
+      });
+    }
   }
 
   repairTextureVoiceCrossingsForPlans(notes, sectionPlans);
+}
+
+function bassAnswerTailSupportRunForVoice(
+  run: { startTick: number; endTick: number },
+  supportVoiceIndex: number,
+  supportVoiceCount: number,
+): { startTick: number; endTick: number } {
+  if (supportVoiceIndex === 0 || supportVoiceCount === 1) {
+    return run;
+  }
+
+  return {
+    startTick: run.startTick,
+    endTick: Math.max(run.startTick, run.endTick - TICKS_PER_QUARTER / 2),
+  };
 }
 
 function firstBassAnswerInternalTailPlan(
@@ -1031,6 +1053,28 @@ export function addPostEntryContinuationSupport(
     }
 
     addFunctionalSupportForRun(notes, { run, plan, supportVoice });
+  }
+
+  repairTextureVoiceCrossingsForPlans(notes, sectionPlans);
+}
+
+export function addExposedFreeCounterpointSoloSupport(
+  notes: Exposition["notes"],
+  sectionPlans: readonly HarmonicPlan[],
+): void {
+  for (const run of collectUnsupportedExposedFreeCounterpointSoloRuns(notes, sectionPlans)) {
+    const plan = sectionPlanForTick(sectionPlans, run.startTick);
+    const supportVoice = exposedSoloSupportVoice(notes, run);
+    if (plan === undefined || supportVoice === undefined) {
+      continue;
+    }
+
+    addFunctionalSupportForRun(notes, {
+      run,
+      plan,
+      supportVoice,
+      strictSemitoneAvoidance: true,
+    });
   }
 
   repairTextureVoiceCrossingsForPlans(notes, sectionPlans);
@@ -1446,30 +1490,25 @@ function findBassAnswerTailSupportRuns(
   const firstBassAnswerEndTick = firstBassAnswerEnd(notes, firstBassAnswer);
   const startTick = firstBassAnswerTailStart(notes, firstBassAnswer);
   const endTick = firstBassAnswerEndTick + TICKS_PER_QUARTER * 9;
-  const runs: { startTick: number; endTick: number }[] = [];
-  let currentRun: { startTick: number; endTick: number } | undefined;
+  const runs: { startTick: number; endTick: number; outsideVoiceSignature: string }[] = [];
 
   for (let tick = startTick; tick < endTick; tick += TICKS_PER_QUARTER / 2) {
     const segmentEndTick = Math.min(endTick, tick + TICKS_PER_QUARTER / 2);
     if (isBassAnswerTailRepairSegment(notes, tick, segmentEndTick, firstBassAnswerEndTick)) {
-      if (currentRun?.endTick === tick) {
+      const outsideVoiceSignature = activeOutsideVoiceSignature(notes, "bass", tick, segmentEndTick);
+      const currentRun = runs.at(-1);
+      if (currentRun?.endTick === tick && currentRun.outsideVoiceSignature === outsideVoiceSignature) {
         currentRun.endTick = segmentEndTick;
       } else {
-        if (currentRun !== undefined) {
-          runs.push(currentRun);
-        }
-        currentRun = { startTick: tick, endTick: segmentEndTick };
+        runs.push({ startTick: tick, endTick: segmentEndTick, outsideVoiceSignature });
       }
-    } else if (currentRun !== undefined) {
-      runs.push(currentRun);
-      currentRun = undefined;
     }
   }
-  if (currentRun !== undefined) {
-    runs.push(currentRun);
-  }
 
-  return runs;
+  return runs.map(({ startTick: runStartTick, endTick: runEndTick }) => ({
+    startTick: runStartTick,
+    endTick: runEndTick,
+  }));
 }
 
 function findPostEntryThinSupportRuns(
@@ -1549,11 +1588,14 @@ function isBassAnswerTailRepairSegment(
   const activeVoices = new Set(activeNotes.map((note) => note.voice));
   const outsideVoices = [...activeVoices].filter((voice) => voice !== "bass");
   const bassOnly = activeVoices.size === 1 && activeVoices.has("bass");
+  const oneOutside = outsideVoices.length <= 1;
   if (startTick < firstBassAnswerEndTick) {
-    return bassOnly && outsideVoices.length === 0;
+    return oneOutside;
   }
 
-  return bassOnly && activeNotes.some((note) => note.voice === "bass" && note.role === "free-counterpoint");
+  return (
+    oneOutside || (bassOnly && activeNotes.some((note) => note.voice === "bass" && note.role === "free-counterpoint"))
+  );
 }
 
 function firstBassAnswerTailStart(notes: readonly NoteEvent[], firstBassAnswer: PlannedEntry): number {
@@ -1624,10 +1666,48 @@ function functionalSupportVoice(
   );
 }
 
-function tailSupportVoice(notes: readonly NoteEvent[], run: { startTick: number; endTick: number }): Voice | undefined {
-  return (["alto", "soprano", "tenor"] as const).find(
-    (voice) => !hasOverlap(notes, voice, run.startTick, run.endTick - run.startTick),
-  );
+function tailSupportVoices(notes: readonly NoteEvent[], run: { startTick: number; endTick: number }): Voice[] {
+  const outsideVoiceCount = activeOutsideVoiceCount(notes, "bass", run.startTick, run.endTick);
+  const requiredSupportCount = Math.max(0, 2 - outsideVoiceCount);
+  return (["alto", "tenor", "soprano"] as const)
+    .filter((voice) => !hasOverlap(notes, voice, run.startTick, run.endTick - run.startTick))
+    .slice(0, requiredSupportCount);
+}
+
+function activeOutsideVoiceCount(
+  notes: readonly NoteEvent[],
+  primaryVoice: Voice,
+  startTick: number,
+  endTick: number,
+): number {
+  return new Set(
+    notes
+      .filter(
+        (note) =>
+          note.voice !== primaryVoice && note.startTick < endTick && startTick < note.startTick + note.durationTicks,
+      )
+      .map((note) => note.voice),
+  ).size;
+}
+
+function activeOutsideVoiceSignature(
+  notes: readonly NoteEvent[],
+  primaryVoice: Voice,
+  startTick: number,
+  endTick: number,
+): string {
+  return [
+    ...new Set(
+      notes
+        .filter(
+          (note) =>
+            note.voice !== primaryVoice && note.startTick < endTick && startTick < note.startTick + note.durationTicks,
+        )
+        .map((note) => note.voice),
+    ),
+  ]
+    .sort()
+    .join(">");
 }
 
 function postEntrySupportVoice(
@@ -1635,6 +1715,15 @@ function postEntrySupportVoice(
   run: { startTick: number; endTick: number; entryVoice: Voice },
 ): Voice | undefined {
   return VOICE_ENTRY_ORDER.filter((voice) => voice !== run.entryVoice).find(
+    (voice) => !hasOverlap(notes, voice, run.startTick, run.endTick - run.startTick),
+  );
+}
+
+function exposedSoloSupportVoice(
+  notes: readonly NoteEvent[],
+  run: { startTick: number; endTick: number; activeVoice: Voice },
+): Voice | undefined {
+  return VOICE_ENTRY_ORDER.filter((voice) => voice !== run.activeVoice).find(
     (voice) => !hasOverlap(notes, voice, run.startTick, run.endTick - run.startTick),
   );
 }
