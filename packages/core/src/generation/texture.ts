@@ -1027,15 +1027,12 @@ function shouldRepairShortEpisodeHarmonicContinuity(
   return (
     isFocusedHarmonicContinuityPlan(plan) &&
     plan.ambiguityIntent === "pivot-harmony" &&
+    plan.cadenceKind === "modulatory" &&
     plan.sequencePattern === "circle-fifths" &&
     plan.fragmentTransform === "inversion" &&
-    plan.localKey.tonic === "D" &&
-    plan.localKey.mode === "minor" &&
-    plan.targetKey.tonic === "E" &&
-    plan.targetKey.mode === "minor" &&
+    isModulatoryKeyMotion(plan) &&
     nextPlan?.state === "stretto-like" &&
-    nextPlan.localKey.tonic === "A" &&
-    nextPlan.targetKey.tonic === "E"
+    sameKeySignature(plan.targetKey, nextPlan.targetKey)
   );
 }
 
@@ -1082,6 +1079,14 @@ export function shapeLongRestPhraseClosures(notes: Exposition["notes"], sectionP
   const startTick = Math.min(...sectionPlans.map((plan) => plan.startTick));
   const endTick = Math.max(...sectionPlans.map((plan) => plan.startTick + plan.durationTicks));
   repairTextureVoiceCrossings(notes, startTick, endTick - startTick);
+}
+
+function isModulatoryKeyMotion(plan: HarmonicPlan): boolean {
+  return !sameKeySignature(plan.localKey, plan.targetKey) || !sameKeySignature(plan.departureKey, plan.targetKey);
+}
+
+function sameKeySignature(left: KeySignature, right: KeySignature): boolean {
+  return left.tonic === right.tonic && left.mode === right.mode;
 }
 
 function phraseClosureAnchor(
