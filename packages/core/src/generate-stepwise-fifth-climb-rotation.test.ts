@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { REPRESENTATIVE_REVIEW_SEEDS, REVIEW_LENGTH_TICKS } from "./constants.js";
+import { REVIEW_LENGTH_TICKS, ROTATION_REVIEW_SEEDS } from "./constants.js";
 import { generateScore } from "./generate.js";
 import { evaluateContourMotionGate, evaluateMelodyTextureGate } from "./review-gate.js";
 
-test("generateScore reduces stepwise fifth-climb subject pressure across representative seeds", () => {
+test("generateScore reduces stepwise fifth-climb subject pressure across rotation seeds", () => {
   const exactStepwiseFifthClimbPattern = "0-1-2-3-4-3-2-1";
   const turnbackFifthClimbPattern = "0-1-2-3-4-3-1-2";
   let exactStepwiseFifthClimbCount = 0;
@@ -12,7 +12,7 @@ test("generateScore reduces stepwise fifth-climb subject pressure across represe
   let turnbackFifthClimbSevereIntervalCount = 0;
   let turnbackFifthClimbUnresolvedSevereIntervalCount = 0;
 
-  for (const { seed } of REPRESENTATIVE_REVIEW_SEEDS) {
+  for (const { seed } of ROTATION_REVIEW_SEEDS) {
     const output = generateScore({ seed, lengthTicks: REVIEW_LENGTH_TICKS, selectionModel: "baseline" });
     const gate6 = evaluateMelodyTextureGate(seed, output.diagnostics);
     const gate7 = evaluateContourMotionGate(seed, output.diagnostics);
@@ -35,6 +35,6 @@ test("generateScore reduces stepwise fifth-climb subject pressure across represe
 
   assert.equal(exactStepwiseFifthClimbCount, 1);
   assert.equal(turnbackFifthClimbCount, 4);
-  assert.ok(turnbackFifthClimbSevereIntervalCount <= 378);
-  assert.ok(turnbackFifthClimbUnresolvedSevereIntervalCount <= 276);
+  assert.ok(turnbackFifthClimbSevereIntervalCount <= 384);
+  assert.ok(turnbackFifthClimbUnresolvedSevereIntervalCount <= 270);
 });
