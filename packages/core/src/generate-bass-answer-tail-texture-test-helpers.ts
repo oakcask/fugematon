@@ -30,6 +30,7 @@ type BassAnswerTailWindow = {
   outsideVoices: readonly Voice[];
   diagnosticReviewRequired?: boolean;
   diagnosticBassOnlyFreeCounterpointWindowCount?: number;
+  diagnosticSupportRhythmReviewRequiredWindowCount?: number;
 };
 
 export type BassAnswerTailTextureMetrics = {
@@ -53,6 +54,8 @@ export function collectBassAnswerTailTextureMetrics(seeds: readonly string[]): B
       diagnosticReviewRequired: output.diagnostics.bassAnswerTailTexture.reviewRequired,
       diagnosticBassOnlyFreeCounterpointWindowCount:
         output.diagnostics.bassAnswerTailTexture.bassOnlyFreeCounterpointWindowCount,
+      diagnosticSupportRhythmReviewRequiredWindowCount:
+        output.diagnostics.bassAnswerTailTexture.supportRhythmReviewRequiredWindowCount,
     };
   });
 
@@ -80,6 +83,7 @@ export function assertBassAnswerTailTextureRepair(seeds: readonly string[]): voi
   assert.ok(metrics.windows.every((window) => window.minOutsideVoiceCount >= 1));
   assert.ok(metrics.windows.every((window) => window.diagnosticReviewRequired === false));
   assert.ok(metrics.windows.every((window) => window.diagnosticBassOnlyFreeCounterpointWindowCount === 0));
+  assert.ok(metrics.windows.every((window) => window.diagnosticSupportRhythmReviewRequiredWindowCount === 0));
 }
 
 function isFirstBassAnswerEntry(entry: PlannedEntry): boolean {

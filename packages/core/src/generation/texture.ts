@@ -1004,12 +1004,13 @@ export function addBassAnswerTailTextureSupport(
         plan,
         supportVoice,
         maxNoteTicks: TICKS_PER_QUARTER * 3,
+        meterAnchored: true,
         strictSemitoneAvoidance: true,
       });
     }
   }
 
-  repairTextureVoiceCrossingsForPlans(notes, sectionPlans);
+  repairTextureVoiceCrossingsForNotes(notes, sectionPlans);
 }
 
 function bassAnswerTailSupportRunForVoice(
@@ -1233,16 +1234,26 @@ function addFunctionalSupportLine(
     startTick: number;
     durationTicks: number;
     maxNoteTicks?: number;
+    meterAnchored?: boolean;
     strictSemitoneAvoidance?: boolean;
   },
 ): void {
   const lineDegrees = functionalSupportLineDegrees(input.voice, input.rootDegree);
-  const maxNoteTicks = functionalSupportMaxNoteTicks(input.voice, input.maxNoteTicks);
+  const maxNoteTicks = functionalSupportMaxNoteTicks(input.voice, input.maxNoteTicks, input.meterAnchored);
   let elapsedTicks = 0;
   let index = 0;
 
   while (elapsedTicks < input.durationTicks) {
-    const durationTicks = Math.min(maxNoteTicks, input.durationTicks - elapsedTicks);
+    const durationTicks = Math.min(
+      functionalSupportNoteDurationTicks({
+        notes,
+        voice: input.voice,
+        startTick: input.startTick + elapsedTicks,
+        maxNoteTicks,
+        meterAnchored: input.meterAnchored,
+      }),
+      input.durationTicks - elapsedTicks,
+    );
     const degree = lineDegrees[index % lineDegrees.length]!;
     addTextureNote(
       notes,
@@ -1265,8 +1276,50 @@ function addFunctionalSupportLine(
   }
 }
 
-function functionalSupportMaxNoteTicks(voice: Voice, requestedMaxNoteTicks: number | undefined): number {
+function functionalSupportNoteDurationTicks(input: {
+  notes: readonly NoteEvent[];
+  voice: Voice;
+  startTick: number;
+  maxNoteTicks: number;
+  meterAnchored: boolean | undefined;
+}): number {
+  if (input.meterAnchored === true && input.voice !== "bass") {
+    const candidates = [TICKS_PER_QUARTER, TICKS_PER_QUARTER / 2].filter(
+      (durationTicks) => durationTicks <= input.maxNoteTicks,
+    );
+    return (
+      candidates.find(
+        (durationTicks) => !hasExactRhythmAtStart(input.notes, input.voice, input.startTick, durationTicks),
+      ) ?? TICKS_PER_QUARTER / 2
+    );
+  }
+  return input.maxNoteTicks;
+}
+
+function hasExactRhythmAtStart(
+  notes: readonly NoteEvent[],
+  voice: Voice,
+  startTick: number,
+  durationTicks: number,
+): boolean {
+  return notes.some(
+    (note) =>
+      note.voice !== voice &&
+      note.startTick === startTick &&
+      note.durationTicks === durationTicks &&
+      startTick < note.startTick + note.durationTicks,
+  );
+}
+
+function functionalSupportMaxNoteTicks(
+  voice: Voice,
+  requestedMaxNoteTicks: number | undefined,
+  meterAnchored: boolean | undefined,
+): number {
   const maxNoteTicks = requestedMaxNoteTicks ?? TICKS_PER_QUARTER;
+  if (meterAnchored === true && voice !== "bass") {
+    return Math.min(maxNoteTicks, TICKS_PER_QUARTER);
+  }
   return voice === "bass" ? maxNoteTicks : Math.min(maxNoteTicks, (TICKS_PER_QUARTER * 3) / 4);
 }
 
@@ -1277,6 +1330,7 @@ function addFunctionalSupportForRun(
     plan: HarmonicPlan;
     supportVoice: Voice;
     maxNoteTicks?: number;
+    meterAnchored?: boolean;
     strictSemitoneAvoidance?: boolean;
   },
 ): void {
@@ -1289,6 +1343,7 @@ function addFunctionalSupportForRun(
     startTick: input.run.startTick,
     durationTicks: input.run.endTick - input.run.startTick,
     maxNoteTicks: input.maxNoteTicks,
+    meterAnchored: input.meterAnchored,
     strictSemitoneAvoidance: input.strictSemitoneAvoidance,
   });
 }
@@ -1428,6 +1483,15 @@ function repairTextureVoiceCrossingsForPlans(notes: Exposition["notes"], section
     Math.min(...sectionPlans.map((plan) => plan.startTick)),
     Math.max(...sectionPlans.map((plan) => plan.startTick + plan.durationTicks)),
   );
+}
+
+function repairTextureVoiceCrossingsForNotes(notes: Exposition["notes"], sectionPlans: readonly HarmonicPlan[]): void {
+  const startTick = Math.min(...sectionPlans.map((plan) => plan.startTick), ...notes.map((note) => note.startTick));
+  const endTick = Math.max(
+    ...sectionPlans.map((plan) => plan.startTick + plan.durationTicks),
+    ...notes.map((note) => note.startTick + note.durationTicks),
+  );
+  repairTextureVoiceCrossings(notes, startTick, endTick - startTick);
 }
 
 function functionalSupportLineDegrees(voice: Voice, rootDegree: number): readonly number[] {

@@ -925,17 +925,27 @@ export type BassAnswerTailTextureWindow = {
   zeroOutsideVoiceTicks: number;
   bassOnlyFreeCounterpointTicks: number;
   oneOutsideVoiceTicks: number;
+  supportRhythmClassification:
+    | "no-upper-support"
+    | "held-or-meter-anchored-support"
+    | "motivic-dotted-rhythm"
+    | "unmotivated-tail-fragmentation";
+  supportRhythmReviewRequired: boolean;
+  supportRhythmOnsetCount: number;
+  dottedSupportTicks: number;
+  offGridSupportTicks: number;
   minOutsideVoiceCount: number;
   activeOutsideVoices: Voice[];
   classification: "supported-tail" | "review-required";
 };
 
 export type BassAnswerTailTextureSummary = {
-  schemaVersion: 2;
+  schemaVersion: 3;
   reviewRequired: boolean;
   bassOnlyFreeCounterpointWindowCount: number;
   zeroOutsideVoiceWindowCount: number;
   oneOutsideVoiceWindowCount: number;
+  supportRhythmReviewRequiredWindowCount: number;
   windows: BassAnswerTailTextureWindow[];
 };
 
