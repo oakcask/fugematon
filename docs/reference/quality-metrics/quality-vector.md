@@ -78,6 +78,15 @@ Schema 3 keeps generated score output stable and records rejected generator repa
 
 These fields are generator-side adoption evidence, not only explanation. The completion baseline improves entry formula novelty, line agency, counter-subject preservation, and fragment-function concentration while keeping remaining review signals visible for later entry-continuity, phrase-development, and operational work.
 
+`qualityVector.schemaVersion` 5 / `modelVersion` 5 adds `harmonicSonorities`:
+
+* `harmonicSonorities`: non-entry support-texture windows where the active sonority does not make the planned harmony audible. It checks actual pitch classes against the current harmonic anchor instead of trusting `metricalHarmonyIntent`.
+* `non-chord-structural-support`: support notes labelled as structural chord/root support even though their actual pitch classes are outside the anchor chord. This is a generator-response signal because the score metadata is musically misleading.
+* `pitch-class-doubling-only`: two or more support voices collapse to one pitch class, producing texture but not a functional sonority.
+* `thin-unrooted-support`: a two-voice support window lacks root support and is too thin to establish the planned harmony.
+
+`harmonicSonorities` is score-window evidence, not a standalone adoption score. Treat it as `review-required` unless the window is a structural metadata mismatch, which should route to generator response before any CI blocker is considered.
+
 `entryBoundaryContinuity` sits beside `qualityVector` in `GenerationDiagnostics`. Entry-boundary continuity evidence identifies synchronized outside-voice onsets at entry ticks and distinguishes delayed or carried support from mechanical section resets.
 
 `entryBoundaryContinuity` separates first-bass-entry evidence from post-exposition bass-entry evidence. This prevents post-exposition aggregate readiness from hiding the exposition bass-answer reset.

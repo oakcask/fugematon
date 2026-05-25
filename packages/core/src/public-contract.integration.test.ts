@@ -166,9 +166,16 @@ test("public diagnostics expose finite candidate score dimensions", () => {
   assert.equal(typeof output.diagnostics.harmonicContinuity.focusedWindowCount, "number");
   assert.equal(typeof output.diagnostics.harmonicContinuity.reviewRequiredWindowCount, "number");
   assert.ok(Array.isArray(output.diagnostics.harmonicContinuity.windows));
+  assert.equal(output.diagnostics.qualityVector.schemaVersion, 5);
+  assert.equal(output.diagnostics.qualityVector.modelVersion, 5);
+  assert.equal(output.diagnostics.qualityVector.harmonicSonorities.schemaVersion, 1);
+  assert.equal(typeof output.diagnostics.qualityVector.harmonicSonorities.focusedWindowCount, "number");
+  assert.equal(typeof output.diagnostics.qualityVector.harmonicSonorities.generatorResponseWindowCount, "number");
+  assert.ok(Array.isArray(output.diagnostics.qualityVector.harmonicSonorities.windows));
   assert.equal(output.diagnostics.scoreWindowAcceptance.schemaVersion, 1);
   assert.equal(typeof output.diagnostics.scoreWindowAcceptance.importantEntryWindowCount, "number");
   assert.equal(typeof output.diagnostics.scoreWindowAcceptance.harmonicContinuityWindowCount, "number");
+  assert.equal(typeof output.diagnostics.scoreWindowAcceptance.harmonicSonorityWindowCount, "number");
   assert.equal(typeof output.diagnostics.scoreWindowAcceptance.counterSubjectWindowCount, "number");
   assert.equal(typeof output.diagnostics.scoreWindowAcceptance.generatorResponseWindowCount, "number");
   assert.ok(Array.isArray(output.diagnostics.scoreWindowAcceptance.windows));

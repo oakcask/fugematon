@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { REVIEW_LENGTH_TICKS } from "./constants.js";
+import { REVIEW_LENGTH_TICKS, TICKS_PER_QUARTER } from "./constants.js";
 import { generateScore } from "./generate.js";
 import {
   assertQualityVectorReviewPreconditions,
@@ -19,8 +19,8 @@ test("generateScore exposes quality vector diagnostics", () => {
   });
   const qualityVector = output.diagnostics.qualityVector;
 
-  assert.equal(qualityVector.schemaVersion, 4);
-  assert.equal(qualityVector.modelVersion, 4);
+  assert.equal(qualityVector.schemaVersion, 5);
+  assert.equal(qualityVector.modelVersion, 5);
   assert.equal(qualityVector.voicePairUnisons.length, 6);
   assert.equal(qualityVector.voicePairFunctions.length, 6);
   assert.ok(qualityVector.voicePairSpans.length > 0);
@@ -31,6 +31,9 @@ test("generateScore exposes quality vector diagnostics", () => {
   assert.ok(qualityVector.fragmentFunctionEvidence.uniqueFunctionCount >= 0);
   assert.ok(qualityVector.fragmentFunctionEvidence.transformationClaims.length >= 0);
   assert.ok(qualityVector.counterSubjectWindows.length > 0);
+  assert.equal(qualityVector.harmonicSonorities.schemaVersion, 1);
+  assert.ok(qualityVector.harmonicSonorities.focusedWindowCount > 0);
+  assert.ok(Array.isArray(qualityVector.harmonicSonorities.windows));
   assert.ok(qualityVector.metricExplanations.length >= 3);
   assert.equal(qualityVector.scoreBeautyEvidence.schemaVersion, 1);
   assert.ok(qualityVector.scoreBeautyEvidence.entryFormulaNovelty.totalFormulaCount >= 0);
@@ -41,6 +44,40 @@ test("generateScore exposes quality vector diagnostics", () => {
   assert.ok(
     qualityVector.localSentinels.every(
       (sentinel) => sentinel.severity === "review-required" && sentinel.symptom.length > 0,
+    ),
+  );
+});
+
+test("generateScore exposes harmonic sonority review windows for thin bass-answer tail support", () => {
+  const output = generateScore({
+    seed: "fugue-smoke",
+    lengthTicks: 7680,
+    selectionModel: "section-local-planner",
+  });
+  const barSevenStartTick = TICKS_PER_QUARTER * 24;
+  const barSevenEndTick = TICKS_PER_QUARTER * 28;
+  const sonority = output.diagnostics.qualityVector.harmonicSonorities;
+  const barSevenWindows = sonority.windows.filter(
+    (window) => barSevenStartTick <= window.startTick && window.startTick < barSevenEndTick,
+  );
+
+  assert.ok(sonority.generatorResponseWindowCount > 0);
+  assert.ok(
+    barSevenWindows.some(
+      (window) =>
+        window.classification === "non-chord-structural-support" &&
+        window.response === "generator-response-required" &&
+        window.structuralIntentMismatchCount > 0,
+    ),
+  );
+  assert.ok(
+    barSevenWindows.some(
+      (window) => window.classification === "pitch-class-doubling-only" && window.pitchClassUnisonStackCount > 0,
+    ),
+  );
+  assert.ok(
+    output.diagnostics.scoreWindowAcceptance.windows.some(
+      (window) => window.kind === "harmonic-sonority" && barSevenStartTick <= window.startTick,
     ),
   );
 });

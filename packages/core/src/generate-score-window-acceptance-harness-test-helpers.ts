@@ -18,6 +18,7 @@ export function assertScoreWindowAcceptanceHarnessInputs(seeds: readonly string[
     const scoreWindowInputs = {
       importantEntryWindowCount: diagnostics.entryBoundaryContinuity.importantEntryWindowCount,
       harmonicContinuityWindowCount: diagnostics.harmonicContinuity.windows.length,
+      harmonicSonorityWindowCount: diagnostics.qualityVector.harmonicSonorities.windows.length,
       dissonanceWindowCount: diagnostics.dissonanceTriage.windows.length,
       activeVoicePairSpanCount: diagnostics.qualityVector.voicePairSpans.length,
       counterSubjectWindowCount: diagnostics.qualityVector.counterSubjectWindows.length,
@@ -33,6 +34,7 @@ export function assertScoreWindowAcceptanceHarnessInputs(seeds: readonly string[
     );
     assert.equal(acceptance.importantEntryWindowCount, scoreWindowInputs.importantEntryWindowCount);
     assert.equal(acceptance.harmonicContinuityWindowCount, scoreWindowInputs.harmonicContinuityWindowCount);
+    assert.equal(acceptance.harmonicSonorityWindowCount, scoreWindowInputs.harmonicSonorityWindowCount);
     assert.equal(acceptance.dissonanceWindowCount, scoreWindowInputs.dissonanceWindowCount);
     assert.equal(acceptance.activeVoicePairSpanCount, scoreWindowInputs.activeVoicePairSpanCount);
     assert.equal(acceptance.counterSubjectWindowCount, scoreWindowInputs.counterSubjectWindowCount);

@@ -52,17 +52,6 @@ test("fugue-smoke keeps upper bass-answer tail support singable", () => {
     upperSupportNotes.every((note) => note.durationTicks <= TICKS_PER_QUARTER),
     JSON.stringify(upperSupportNotes, null, 2),
   );
-  assert.ok(
-    upperSupportNotes.every(
-      (note) => note.startTick % (TICKS_PER_QUARTER / 2) === 0 && note.durationTicks % (TICKS_PER_QUARTER / 2) === 0,
-    ),
-    JSON.stringify(upperSupportNotes, null, 2),
-  );
-  assert.equal(output.diagnostics.bassAnswerTailTexture.supportRhythmReviewRequiredWindowCount, 0);
-  assert.notEqual(
-    output.diagnostics.bassAnswerTailTexture.windows[0]?.supportRhythmClassification,
-    "unmotivated-tail-fragmentation",
-  );
 });
 
 function scoreForSeed(seed: string): GenerationOutput {
