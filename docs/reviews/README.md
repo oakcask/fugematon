@@ -5,6 +5,7 @@
 ## Read First
 
 * [Historical reference calibration completion review](historical-reference-calibration-completion.md): Historical reference calibration の完了 evidence。focused seed と 22 seed の voice-pair coupling / entry severe-interval 改善、reference-readiness scope、manual-listening gap、Phase 8 handoff。
+* [Phase 14 fugue-smoke rhythm and harmony replan](phase-14-fugue-smoke-rhythm-harmony-replan.md): `fugue-smoke` 第5小節の transition rhythm と第7小節の short-episode harmonic-continuity が、22 seed review でも generalize するため Phase 14 handoff を再オープンする根拠。
 * [Historical reference observation](historical-reference-observation.md): 探索的 Bach WTC diagnostics と現行生成 bundle の比較。persistent voice-pair coupling、pitch-class reinforcement、entry severe-interval pressure を、Infinite playback MVP 前の Historical reference calibration へ再編する根拠。
 * [Texture continuity repair completion review](texture-continuity-repair-completion.md): Texture continuity repair の完了 evidence。focused seed set の bass-answer tail、exposed free-counterpoint solo、tradeoff signal、CI / review scope、Phase 8 handoff。
 * [Texture continuity replan](texture-continuity-replan.md): `seed-0i335vx-1n54a1x` の5小節目、9小節目、28小節目で確認した bass-answer tail one-outside support、exposed free-counterpoint solo、退屈な solo formula を、Infinite playback MVP 前の Texture continuity repair へ再編する根拠。
@@ -17,7 +18,7 @@
 * [Phase 14 post-entry texture and free-counterpoint phrase review](phase-14-post-entry-texture-and-free-counterpoint-review.md): ユーザー報告後の ScoreEvent review。answer / stretto-like 後の thin support と、free-counterpoint phrase signature の seed 横断収束を Phase 14C0 / 14C1 へ再編する根拠。
 * [Phase 14 beauty replan review](phase-14-beauty-replan-2026-05.md): Phase 14 の再レビュー。score-window evidence、entry-continuity classifier、line agency、counter-subject survivability、phrase-development hierarchy、CI / review scope を再分類した最新根拠。
 * [Phase 14 score-led beauty review](phase-14-score-led-beauty-review.md): Phase 13Z 後に、指標ではなく譜面を読み、Phase 8 前の score-led beauty trunk として再編する根拠。
-* [Phase 14](../phases/phase-14.md): 完了済み handoff baseline。
+* [Phase 14](../phases/phase-14.md): 再オープンした score-led beauty handoff。最新の rhythm / harmony replan を先に読む。
 
 ## Review Rules
 
