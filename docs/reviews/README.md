@@ -5,6 +5,7 @@
 ## Read First
 
 * [Historical reference calibration completion review](historical-reference-calibration-completion.md): Historical reference calibration の完了 evidence。focused seed と 22 seed の voice-pair coupling / entry severe-interval 改善、reference-readiness scope、manual-listening gap、Phase 8 handoff。
+* [Phase 14 rhythm and harmony handoff completion review](phase-14-rhythm-harmony-handoff-completion.md): reopened Phase 14 の完了 evidence。`fugue-smoke` transition rhythm、short-episode harmonic-continuity generalization、focused seed set、CI / review scope、Phase 8 handoff。
 * [Phase 14 fugue-smoke rhythm and harmony replan](phase-14-fugue-smoke-rhythm-harmony-replan.md): `fugue-smoke` 第5小節の transition rhythm と第7小節の short-episode harmonic-continuity が、22 seed review でも generalize するため Phase 14 handoff を再オープンする根拠。
 * [Historical reference observation](historical-reference-observation.md): 探索的 Bach WTC diagnostics と現行生成 bundle の比較。persistent voice-pair coupling、pitch-class reinforcement、entry severe-interval pressure を、Infinite playback MVP 前の Historical reference calibration へ再編する根拠。
 * [Texture continuity repair completion review](texture-continuity-repair-completion.md): Texture continuity repair の完了 evidence。focused seed set の bass-answer tail、exposed free-counterpoint solo、tradeoff signal、CI / review scope、Phase 8 handoff。

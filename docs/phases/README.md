@@ -10,8 +10,8 @@
 
 ## Read First
 
-* [Score-led beauty handoff](phase-14.md): 現在の品質 blocker。旧 Phase 14。`fugue-smoke` 第5小節の transition rhythm と第7小節の short-episode harmonic-continuity を、Infinite playback MVP の前に generalized score-window repair として扱う。
-* [Infinite playback MVP](phase-8.md): 次の operational target。旧 Phase 8。Score-led beauty rhythm / harmonic-continuity follow-up、Metrical generation repair、Texture continuity repair、Historical reference calibration 後に、`continuous fugue`、`endless program`、`regenerative cycle` の 3 再生モード semantics と segment snapshot contract を扱う。
+* [Infinite playback MVP](phase-8.md): 現在の operational target。旧 Phase 8。Score-led beauty handoff、Metrical generation repair、Texture continuity repair、Historical reference calibration 後に、`continuous fugue`、`endless program`、`regenerative cycle` の 3 再生モード semantics と segment snapshot contract を扱う。
+* [Score-led beauty handoff](phase-14.md): 完了済み品質 blocker。旧 Phase 14。`fugue-smoke` 第5小節の transition rhythm と第7小節の short-episode harmonic-continuity を、Infinite playback MVP の前に generalized score-window repair として扱った。
 * [Historical reference calibration](historical-reference-calibration.md): 品質 blocker。探索的な Bach WTC diagnostics と現行生成 bundle の比較から、persistent voice-pair coupling、long pitch-class reinforcement、entry severe-interval pressure を Infinite playback MVP の前に扱った。
 * [WebAudio synth interpretation follow-up](webaudio-synth-interpretation.md): Infinite playback MVP 後の rendering follow-up。`PerformanceProfile` の WebAudio envelope / velocity 解釈を調整し、生成譜面の欠陥を隠さず長時間再生の聴き取りやすさを改善する。
 * [Texture continuity repair](texture-continuity-repair.md): 完了済み品質 blocker。`seed-0i335vx-1n54a1x` の5小節目、9小節目、28小節目で確認した bass-answer tail thinning、exposed free-counterpoint solo、退屈な solo formula を Infinite playback MVP の前に扱った。

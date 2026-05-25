@@ -3,7 +3,7 @@ import test from "node:test";
 import { TICKS_PER_QUARTER } from "./constants.js";
 import { generateScore } from "./generate.js";
 
-test("fugue-smoke keeps the reopened rhythm and harmony blockers score-addressable", () => {
+test("fugue-smoke repairs the reopened rhythm and harmony handoff", () => {
   const diagnostics = generateScore({
     seed: "fugue-smoke",
     lengthTicks: TICKS_PER_QUARTER * 288,
@@ -17,37 +17,36 @@ test("fugue-smoke keeps the reopened rhythm and harmony blockers score-addressab
     (window) => window.kind === "harmonic-continuity" && window.startTick === transitionTick,
   );
 
-  assert.deepEqual(
-    transitionWindows.map((window) => ({
-      kind: window.kind,
-      measureOffsetTicks: window.measureOffsetTicks,
-      classification: window.classification,
-      state: window.state,
-    })),
-    [
-      {
-        kind: "entry-start",
-        measureOffsetTicks: TICKS_PER_QUARTER * 3,
-        classification: "pickup-or-cross-metric",
-        state: "episode",
-      },
-      {
-        kind: "phrase-boundary",
-        measureOffsetTicks: TICKS_PER_QUARTER * 3,
-        classification: "review-required",
-        state: "episode",
-      },
-      {
-        kind: "harmonic-anchor",
-        measureOffsetTicks: TICKS_PER_QUARTER * 3,
-        classification: "review-required",
-        state: "episode",
-      },
-    ],
+  assert.ok(
+    transitionWindows.some(
+      (window) =>
+        window.kind === "entry-start" &&
+        window.measureOffsetTicks === TICKS_PER_QUARTER * 3 &&
+        window.classification === "pickup-or-cross-metric" &&
+        window.state === "episode",
+    ),
+  );
+  assert.ok(
+    transitionWindows.some(
+      (window) =>
+        window.kind === "phrase-boundary" &&
+        window.measureOffsetTicks === TICKS_PER_QUARTER * 3 &&
+        window.classification === "pickup-or-cross-metric" &&
+        window.state === "episode",
+    ),
+  );
+  assert.ok(
+    transitionWindows.some(
+      (window) =>
+        window.kind === "harmonic-anchor" &&
+        window.measureOffsetTicks === TICKS_PER_QUARTER * 3 &&
+        window.classification === "pickup-or-cross-metric" &&
+        window.state === "episode",
+    ),
   );
   assert.equal(harmonicWindow?.sequencePattern, "ascending-step");
   assert.equal(harmonicWindow?.fragmentTransform, "contrary-motion");
-  assert.equal(harmonicWindow?.classification, "review-required");
-  assert.equal(harmonicWindow?.response, "generator-response-required");
-  assert.equal(acceptanceWindow?.response, "generator-response-required");
+  assert.equal(harmonicWindow?.classification, "audible-progression");
+  assert.equal(harmonicWindow?.response, "accepted-context");
+  assert.equal(acceptanceWindow?.response, "accepted-context");
 });

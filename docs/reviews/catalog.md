@@ -13,6 +13,7 @@
 
 ## Phase 14
 
+* [Phase 14 rhythm and harmony handoff completion review](phase-14-rhythm-harmony-handoff-completion.md): reopened Phase 14 の完了 evidence。`fugue-smoke` transition rhythm、short-episode harmonic-continuity generalization、focused seed set、CI / review scope、Phase 8 handoff。
 * [Metrical generation review](metrical-generation-review.md): `seed-0kowcm6-0am7x3f` の 3/4 metadata と聴感上の拍節感の不一致を調査し、Metrical generation repair を Phase 8 前に差し込む根拠。
 * [Phase 14 harmonic continuity generation review](phase-14-harmonic-continuity-generation.md): Phase 14C4 の実装 evidence。`seed-1dxb2n8-1miapx7` の short pivot episode を repaired score-window として記録し、focused seed set の残る review-required signal を分類する。
 * [Phase 14 harmonic continuity replan](phase-14-harmonic-continuity-replan.md): `seed-1dxb2n8-1miapx7` の6-7小節で聞こえる不自然な和音進行を、short modulatory / pivot-harmony episode の audible harmonic-continuity blocker として Phase 14 follow-up へ戻す根拠。
