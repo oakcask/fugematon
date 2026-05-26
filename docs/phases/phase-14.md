@@ -2,7 +2,7 @@
 
 Phase 14 is inserted after Phase 13Z and before Phase 8. Its purpose is to make musical beauty the primary acceptance criterion for the generator. Existing metrics, compatibility fields, and guardrail margins are secondary when they contradict the score.
 
-Status: reopened for Phase 8 handoff. The earlier score-led beauty, metrical repair, texture-continuity, and `seed-1dxb2n8-1miapx7` harmonic-continuity repairs remain accepted evidence. The latest `fugue-smoke` repair closes the focused sonority-level failure, and the follow-up support-placement fix removes the new shared-rhythm regression from the texture/phrase planning A2 and B2 controls. Phase 8 remains blocked until the focused handoff evidence is refreshed and the remaining transition-rhythm work is reviewed.
+Status: reopened for Phase 8 handoff. The earlier score-led beauty, metrical repair, texture-continuity, and `seed-1dxb2n8-1miapx7` harmonic-continuity repairs remain accepted evidence. The latest `fugue-smoke` repair closes the focused sonority-level failure, and the follow-up support-placement fix keeps the texture/phrase planning B2 shared-rhythm tradeoff bounded while preserving counter-subject identity. Phase 8 remains blocked until the focused handoff evidence is refreshed and the remaining transition-rhythm work is reviewed.
 
 Planning reviews:
 
@@ -141,7 +141,9 @@ Implementation note: short pivot episodes expose `harmonicContinuity` score-wind
 
 Reopened implementation note: the handoff test must now require both top-level harmonic-continuity acceptance and absence of sonority-level `generator-response-required` windows inside the reported short episode. A short pivot episode may be accepted only when its structural beats and local support texture agree: enough root/chord-tone evidence must be audible, and structural-support labels must not sit on non-chord tones.
 
-Follow-up ordering: the harmonic-support regression is repaired by limiting the generator response to early modulatory stretto handoffs in the short-episode transformation families that need audible support. The focused repair may use texture change-points as evidence, but it must not add or retag bass support at every local boundary when that creates shared-rhythm overlap. Texture/phrase planning B2 keeps a slightly wider leap-recovery allowance because the remaining two-count excess is the older phrase-planning tradeoff in `long-arc` and `contrary-motion`, not the short-episode support regression.
+Follow-up ordering: the harmonic-support regression is repaired by limiting the generator response to the first post-exposition short-episode-to-stretto handoff rather than to a literal meter or seed. This keeps `tight-stretto` in scope even though it is a 3/4 rotation seed. The repair may use free-counterpoint texture change-points as evidence, but bass-root support is added only at structural support ticks and counter-subject notes are not retagged or repitched as harmonic support. Texture/phrase planning B2 keeps a bounded shared-rhythm allowance for the remaining `long-arc` / `contrary-motion` texture tradeoff, while leap recovery and counter-subject identity remain within the focused control.
+
+Motivic support update: early short pivot episodes now shape added upper support from recent subject / answer / counter-subject / free-counterpoint contour, then constrain that derived contour to the active chord path. Bass support remains root-led, so the progression stays audible while the added free-counterpoint support reads as a transformed earlier idea instead of an unrelated filler line. This is a structural rule for first post-exposition pivot handoffs, not a literal `fugue-smoke`, meter, voice, or pitch exception.
 
 ### 14C5: Section-transition rhythm generation
 
@@ -163,7 +165,7 @@ Regenerate the 22 seed bundle and the focused seed set, then record focused `org
 
 Implementation note: focused profile notes for `organ-default` and `strict-counterpoint` are recorded in the Phase 14 post-entry and free-counterpoint generation review. No broad human listening pass was completed for that PR.
 
-Reopened note: 14E must be refreshed again after the stricter rhythm and harmony handoff repair. The shared-rhythm overlap regression is resolved in the A2 and B2 controls, but the focused review set still needs `fugue-smoke`, representative controls, rotation/ad hoc seeds, modal seeds, and the user-reported harmonic-continuity seed. Human listening remains incomplete, so remaining beauty signals stay review-required rather than CI-blocking.
+Reopened note: 14E must be refreshed again after the stricter rhythm and harmony handoff repair. The shared-rhythm overlap tradeoff is bounded in the B2 control and the focused handoff tests now require absence of sonority-level generator-response windows inside accepted first post-exposition short-episode-to-stretto spans. The focused review set still needs `fugue-smoke`, representative controls, rotation/ad hoc seeds, modal seeds, and the user-reported harmonic-continuity seed. Human listening remains incomplete, so remaining beauty signals stay review-required rather than CI-blocking.
 
 ## Phase 8 Handoff
 

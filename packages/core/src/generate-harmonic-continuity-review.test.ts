@@ -160,6 +160,90 @@ test("short pivot harmonic-continuity repair generalizes across keys", () => {
   );
 });
 
+test("short pivot support decorates earlier motivic contour against the local chord path", () => {
+  const meterContext = createMeterContext({ numerator: 4, denominator: 4 });
+  const localKey: KeySignature = { tonic: "C", mode: "major" };
+  const targetKey: KeySignature = { tonic: "G", mode: "major" };
+  const notes: NoteEvent[] = [
+    {
+      kind: "note",
+      voice: "alto",
+      startTick: 0,
+      durationTicks: TICKS_PER_QUARTER,
+      pitch: 60,
+      velocity: 64,
+      role: "subject",
+    },
+    {
+      kind: "note",
+      voice: "alto",
+      startTick: TICKS_PER_QUARTER,
+      durationTicks: TICKS_PER_QUARTER,
+      pitch: 64,
+      velocity: 64,
+      role: "subject",
+    },
+    {
+      kind: "note",
+      voice: "alto",
+      startTick: TICKS_PER_QUARTER * 2,
+      durationTicks: TICKS_PER_QUARTER,
+      pitch: 67,
+      velocity: 64,
+      role: "subject",
+    },
+    {
+      kind: "note",
+      voice: "soprano",
+      startTick: TICKS_PER_QUARTER * 4,
+      durationTicks: TICKS_PER_QUARTER * 8,
+      pitch: 72,
+      velocity: 64,
+      role: "subject-fragment",
+    },
+  ];
+  const pivotEpisode: HarmonicPlan = {
+    state: "episode",
+    startTick: TICKS_PER_QUARTER * 4,
+    durationTicks: TICKS_PER_QUARTER * 8,
+    meterContext,
+    localKey,
+    departureKey: localKey,
+    targetKey,
+    styleProfile: "hybrid",
+    cadenceKind: "modulatory",
+    ambiguityIntent: "pivot-harmony",
+    ambiguityRecoveryTick: TICKS_PER_QUARTER * 12,
+    parallelKeyShift: false,
+    sequencePattern: "ascending-step",
+    fragmentTransform: "contrary-motion",
+    anchors: [
+      { tick: TICKS_PER_QUARTER * 4, localKey, function: "tonic", cadenceTarget: false },
+      { tick: TICKS_PER_QUARTER * 6, localKey: targetKey, function: "predominant", cadenceTarget: false },
+      { tick: TICKS_PER_QUARTER * 8, localKey: targetKey, function: "dominant", cadenceTarget: false },
+    ],
+  };
+  const followingStretto: HarmonicPlan = {
+    ...pivotEpisode,
+    state: "stretto-like",
+    startTick: TICKS_PER_QUARTER * 12,
+    anchors: [{ tick: TICKS_PER_QUARTER * 12, localKey: targetKey, function: "tonic", cadenceTarget: false }],
+  };
+
+  addShortEpisodeHarmonicContinuitySupport(notes, [pivotEpisode, followingStretto]);
+
+  const tenorSupport = notes
+    .filter((note) => note.voice === "tenor" && note.role === "free-counterpoint")
+    .sort((left, right) => left.startTick - right.startTick);
+
+  assert.deepEqual(
+    tenorSupport.map((note) => note.startTick),
+    [4, 6, 8, 10].map((quarter) => TICKS_PER_QUARTER * quarter),
+  );
+  assert.ok(new Set(tenorSupport.map((note) => note.pitch)).size >= 3);
+  assert.ok(tenorSupport.every((note) => note.metricalHarmonyIntent === "structural-chord-tone"));
+});
+
 function isModulatoryPivotEpisode(plan: HarmonicPlan): boolean {
   return (
     plan.state === "episode" &&
