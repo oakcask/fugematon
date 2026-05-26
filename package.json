@@ -11,6 +11,7 @@
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
     "format:check": "biome format .",
+    "code-metrics": "node workflow-scripts/check-code-metrics.mjs",
     "test": "pnpm build && node --test packages/*/dist/**/*.test.js workflow-scripts/*.test.mjs scripts/*.test.mjs",
     "ui:inspect": "playwright test --project=chromium",
     "ui:inspect:prod": "playwright test --config playwright.prod.config.ts --project=chromium",
