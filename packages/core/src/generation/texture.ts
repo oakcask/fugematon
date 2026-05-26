@@ -1122,10 +1122,17 @@ function shouldRepairShortEpisodeHarmonicContinuity(
     plan.meterContext.timeSignature.denominator === 4 &&
     plan.startTick <= TICKS_PER_QUARTER * 24 &&
     nextPlan !== undefined &&
-    (isModulatoryKeyMotion(plan) ||
-      plan.sequencePattern !== undefined ||
-      plan.fragmentTransform !== undefined ||
-      nextPlan.state === "stretto-like")
+    nextPlan.state === "stretto-like" &&
+    isModulatoryKeyMotion(plan) &&
+    isShortEpisodeHarmonicContinuityRepairFamily(plan)
+  );
+}
+
+function isShortEpisodeHarmonicContinuityRepairFamily(plan: HarmonicPlan): boolean {
+  return (
+    (plan.sequencePattern === "circle-fifths" && plan.fragmentTransform === "inversion") ||
+    (plan.sequencePattern === "ascending-step" && plan.fragmentTransform === "contrary-motion") ||
+    (plan.sequencePattern === "descending-step" && plan.fragmentTransform === "contrary-motion")
   );
 }
 
