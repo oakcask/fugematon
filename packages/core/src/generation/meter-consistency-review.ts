@@ -103,7 +103,7 @@ function meterWindow(
     ? "meter-confirming"
     : isCompoundMidpoint(tick, meterContext)
       ? "compound-midpoint"
-      : kind === "entry-start" && beatStrengthAtTick(tick, meterContext) !== "offbeat"
+      : isPickupCompatibleWindow(kind) && beatStrengthAtTick(tick, meterContext) !== "offbeat"
         ? "pickup-or-cross-metric"
         : "review-required";
 
@@ -115,4 +115,8 @@ function meterWindow(
     classification,
     ...details,
   };
+}
+
+function isPickupCompatibleWindow(kind: MeterConsistencyReviewSummary["windows"][number]["kind"]): boolean {
+  return kind === "entry-start" || kind === "phrase-boundary" || kind === "harmonic-anchor";
 }

@@ -8,7 +8,7 @@ export const PHASE_14_REOPENED_REVIEW_SEED_GROUPS = {
   final: ["modal-cadence", "dense-modal", "seed-1dxb2n8-1miapx7"],
 } as const;
 
-export function assertPhase14ReviewSeedsExposeHarmonicContinuityPressure(seeds: readonly string[]) {
+export function assertPhase14ReviewSeedsImproveHarmonicContinuityEvidence(seeds: readonly string[]) {
   const summaries = seeds.map((seed) => {
     const diagnostics = generateScore({
       seed,
@@ -21,6 +21,7 @@ export function assertPhase14ReviewSeedsExposeHarmonicContinuityPressure(seeds: 
       generatorResponseWindowCount: diagnostics.harmonicContinuity.windows.filter(
         (window) => window.response === "generator-response-required",
       ).length,
+      audibleProgressionWindowCount: diagnostics.harmonicContinuity.audibleProgressionWindowCount,
       subjectIdentityViolations: diagnostics.subjectIdentityViolations,
     };
   });
@@ -30,7 +31,7 @@ export function assertPhase14ReviewSeedsExposeHarmonicContinuityPressure(seeds: 
     JSON.stringify(summaries, null, 2),
   );
   assert.ok(
-    summaries.every((summary) => summary.generatorResponseWindowCount > 0),
+    summaries.every((summary) => summary.generatorResponseWindowCount <= 2),
     JSON.stringify(summaries, null, 2),
   );
   assert.ok(

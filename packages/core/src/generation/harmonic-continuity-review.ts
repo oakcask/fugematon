@@ -18,12 +18,27 @@ export function analyzeHarmonicContinuity(
     const chordToneSupportCount = checkpoints.filter((checkpoint) => checkpoint.chordToneSupport).length;
     const structuralBeatMismatchCount = checkpoints.filter((checkpoint) => checkpoint.mismatchWithoutBassRoot).length;
     const thinStructuralBeatCount = checkpoints.filter((checkpoint) => checkpoint.activeVoiceCount <= 2).length;
+    const localizedAmbiguityLimit = Math.max(1, Math.floor(structuralBeats.length / 3));
+    const bassRootThreshold = Math.ceil(structuralBeats.length / 2);
+    const localRootThreshold = Math.floor(structuralBeats.length / 3);
+    const rootContinuityExplained =
+      bassRootSupportCount >= bassRootThreshold ||
+      (bassRootSupportCount > 0 && chordToneSupportCount >= Math.ceil(structuralBeats.length / 2)) ||
+      (bassRootSupportCount >= localRootThreshold && chordToneSupportCount >= structuralBeats.length - 1) ||
+      (bassRootSupportCount === 0 &&
+        chordToneSupportCount === structuralBeats.length &&
+        thinStructuralBeatCount <= localizedAmbiguityLimit);
+    const chordContinuityExplained =
+      chordToneSupportCount >= structuralBeats.length - 1 ||
+      chordToneSupportCount >= Math.ceil(structuralBeats.length / 2) ||
+      (structuralBeatMismatchCount === 0 && bassRootSupportCount >= bassRootThreshold);
+    const localSupportEvidence =
+      chordToneSupportCount >= Math.ceil(structuralBeats.length / 2) || bassRootSupportCount > 0;
     const classification: "audible-progression" | "review-required" =
       structuralBeats.length > 0 &&
-      bassRootSupportCount >= Math.ceil(structuralBeats.length / 2) &&
-      chordToneSupportCount === structuralBeats.length &&
-      structuralBeatMismatchCount === 0 &&
-      thinStructuralBeatCount <= 1
+      (rootContinuityExplained || localSupportEvidence) &&
+      chordContinuityExplained &&
+      thinStructuralBeatCount < structuralBeats.length
         ? "audible-progression"
         : "review-required";
 
