@@ -56,6 +56,11 @@ type FunctionalSupportRun = {
   endTick: number;
 };
 
+type FunctionalSupportProfile = {
+  degrees: readonly number[];
+  durationTicks: readonly number[];
+};
+
 type EntryCounterpointTextureInput = {
   enteringVoice: Voice;
   startTick: number;
@@ -1251,12 +1256,16 @@ function addFunctionalSupportLine(
     strictSemitoneAvoidance?: boolean;
   },
 ): void {
-  const lineDegrees = functionalSupportLineDegrees(input.voice, input.rootDegree);
+  const profile = functionalSupportProfile(notes, input);
+  if (profile === undefined) {
+    return;
+  }
   const maxNoteTicks = functionalSupportMaxNoteTicks(input.voice, input.maxNoteTicks, input.meterAnchored);
   let elapsedTicks = 0;
   let index = 0;
 
   while (elapsedTicks < input.durationTicks) {
+    const preferredDurationTicks = profile.durationTicks[index % profile.durationTicks.length]!;
     const durationTicks = Math.min(
       functionalSupportNoteDurationTicks({
         notes,
@@ -1264,10 +1273,11 @@ function addFunctionalSupportLine(
         startTick: input.startTick + elapsedTicks,
         maxNoteTicks,
         meterAnchored: input.meterAnchored,
+        preferredDurationTicks,
       }),
       input.durationTicks - elapsedTicks,
     );
-    const degree = lineDegrees[index % lineDegrees.length]!;
+    const degree = profile.degrees[index % profile.degrees.length]!;
     addTextureNote(
       notes,
       {
@@ -1295,18 +1305,30 @@ function functionalSupportNoteDurationTicks(input: {
   startTick: number;
   maxNoteTicks: number;
   meterAnchored: boolean | undefined;
+  preferredDurationTicks: number;
 }): number {
-  if (input.meterAnchored === true && input.voice !== "bass") {
-    const candidates = [TICKS_PER_QUARTER, TICKS_PER_QUARTER / 2].filter(
-      (durationTicks) => durationTicks <= input.maxNoteTicks,
-    );
+  if (input.voice !== "bass") {
+    const fallbackDurations =
+      input.meterAnchored === true
+        ? [TICKS_PER_QUARTER, TICKS_PER_QUARTER / 2]
+        : [input.maxNoteTicks, TICKS_PER_QUARTER / 2];
+    const candidates = uniqueDurations([
+      Math.min(input.preferredDurationTicks, input.maxNoteTicks),
+      ...fallbackDurations,
+    ])
+      .filter((durationTicks) => durationTicks <= input.maxNoteTicks)
+      .filter((durationTicks) => durationTicks >= TICKS_PER_QUARTER / 2);
     return (
       candidates.find(
         (durationTicks) => !hasExactRhythmAtStart(input.notes, input.voice, input.startTick, durationTicks),
-      ) ?? TICKS_PER_QUARTER / 2
+      ) ?? Math.min(input.maxNoteTicks, TICKS_PER_QUARTER / 2)
     );
   }
-  return input.maxNoteTicks;
+  return Math.max(TICKS_PER_QUARTER / 2, Math.min(input.preferredDurationTicks, input.maxNoteTicks));
+}
+
+function uniqueDurations(durationTicks: readonly number[]): number[] {
+  return [...new Set(durationTicks.map((duration) => Math.max(1, Math.floor(duration))))];
 }
 
 function hasExactRhythmAtStart(
@@ -1550,6 +1572,11 @@ function supportUpperChordToneAtTick(
   if (supportVoice === undefined) {
     return;
   }
+  const supportDegree = motivicChordSupportDegree(notes, plan, tick, supportVoice, anchor);
+  const supportDuration = motivicChordSupportDuration(notes, tick, supportVoice, plan);
+  if (supportDegree === undefined || supportDuration === undefined) {
+    return;
+  }
 
   addTextureNote(
     notes,
@@ -1562,10 +1589,9 @@ function supportUpperChordToneAtTick(
       metricalHarmonyIntent: "structural-chord-tone",
       strictSemitoneAvoidance: true,
     },
-    motivicChordSupportDegree(notes, plan, tick, supportVoice, anchor) ?? rootDegreeForFunction(anchor.function) + 2,
+    supportDegree,
     tick,
-    motivicChordSupportDuration(notes, tick, supportVoice, plan) ??
-      harmonicContinuitySupportDuration(notes, supportVoice, plan, tick),
+    supportDuration,
   );
 }
 
@@ -1605,7 +1631,18 @@ function motivicChordSupportDuration(
     return undefined;
   }
 
-  const supportDuration = harmonicContinuitySupportDuration(notes, voice, plan, tick);
+  const nextVoiceStartTick = notes
+    .filter((note) => note.voice === voice && note.startTick > tick)
+    .map((note) => note.startTick)
+    .sort((left, right) => left - right)[0];
+  const supportDuration = Math.max(
+    harmonicContinuitySupportDuration(notes, voice, plan, tick),
+    Math.min(
+      plan.meterContext.beatTicks,
+      plan.startTick + plan.durationTicks - tick,
+      (nextVoiceStartTick ?? Number.POSITIVE_INFINITY) - tick,
+    ),
+  );
   return recentMotivicNotes(notes, tick)
     .map((note) => note.durationTicks)
     .map((durationTicks) => Math.min(supportDuration, Math.max(TICKS_PER_QUARTER / 2, durationTicks)))
@@ -1668,14 +1705,34 @@ function repairTextureVoiceCrossingsForNotes(notes: Exposition["notes"], section
   repairTextureVoiceCrossings(notes, startTick, endTick - startTick);
 }
 
-function functionalSupportLineDegrees(voice: Voice, rootDegree: number): readonly number[] {
-  if (voice === "bass") {
-    return [rootDegree, rootDegree + 2, rootDegree + 4, rootDegree + 2];
+function functionalSupportProfile(
+  notes: readonly NoteEvent[],
+  input: {
+    voice: Voice;
+    localKey: KeySignature;
+    harmonicPlan: HarmonicPlan;
+    rootDegree: number;
+    startTick: number;
+    durationTicks: number;
+    maxNoteTicks?: number;
+    meterAnchored?: boolean;
+  },
+): FunctionalSupportProfile | undefined {
+  const motif = recentMotivicNotes(notes, input.startTick);
+  const degrees = derivedMotivicSupportDegrees(motif, {
+    voice: input.voice,
+    localKey: input.localKey,
+    harmonicPlan: input.harmonicPlan,
+    rootDegree: input.rootDegree,
+  });
+  if (degrees === undefined) {
+    return undefined;
   }
-  if (voice === "tenor") {
-    return [rootDegree + 2, rootDegree + 4, rootDegree + 3, rootDegree + 2];
-  }
-  return [rootDegree + 4, rootDegree + 2, rootDegree + 5, rootDegree + 3];
+
+  return {
+    degrees,
+    durationTicks: motifDurationPattern(motif, input),
+  };
 }
 
 function shouldUseDerivedMotivicSupport(harmonicPlan: HarmonicPlan): boolean {
@@ -1733,6 +1790,24 @@ function derivedMotivicSupportDegrees(
         )
       : degree,
   );
+}
+
+function motifDurationPattern(
+  motif: readonly NoteEvent[],
+  input: {
+    voice: Voice;
+    harmonicPlan: HarmonicPlan;
+    startTick: number;
+    maxNoteTicks?: number;
+    meterAnchored?: boolean;
+  },
+): readonly number[] {
+  const maxNoteTicks = functionalSupportMaxNoteTicks(input.voice, input.maxNoteTicks, input.meterAnchored);
+  const fallbackTicks = harmonicContinuitySupportDuration([], input.voice, input.harmonicPlan, input.startTick);
+  const durations = motif
+    .map((note) => Math.min(note.durationTicks, maxNoteTicks))
+    .filter((durationTicks) => durationTicks >= TICKS_PER_QUARTER / 2);
+  return durations.length === 0 ? [Math.min(maxNoteTicks, fallbackTicks)] : durations;
 }
 
 function pitchScaleDegree(pitch: number, key: KeySignature): number | undefined {

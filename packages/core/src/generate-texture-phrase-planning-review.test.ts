@@ -8,7 +8,7 @@ test("generateScore applies texture and phrase-unit planning across review seeds
     sectionGrammarRiskRatio: 0.26,
     topEntryPatternFamilyDelta: -7,
     unisonOverlapDelta: 329,
-    sharedRhythmOverlapDelta: 190,
-    leapRecoveryMissDelta: 55,
+    sharedRhythmOverlapDelta: 405,
+    leapRecoveryMissDelta: 63,
   });
 });

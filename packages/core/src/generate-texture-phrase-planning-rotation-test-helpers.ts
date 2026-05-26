@@ -8,6 +8,7 @@ type TexturePhrasePlanningRotationExpectation = {
   sharedRhythmOverlapDelta?: number;
   uniqueContinuationPatternMultiplier?: number;
   sectionGrammarRiskMultiplier?: number;
+  bassRootSupportDelta?: number;
 };
 
 export function assertTexturePhrasePlanningRotationBatch(
@@ -29,7 +30,10 @@ export function assertTexturePhrasePlanningRotationBatch(
       metrics.baselineTopEntryPatternFamilyCount + expectation.topEntryPatternFamilyDelta,
   );
   assert.ok(metrics.variantUnsupportedThinningRuns <= metrics.baselineUnsupportedThinningRuns / 2);
-  assert.ok(metrics.variantBassRootSupportCount > metrics.baselineBassRootSupportCount);
+  assert.ok(
+    metrics.variantBassRootSupportCount >=
+      metrics.baselineBassRootSupportCount + (expectation.bassRootSupportDelta ?? 1),
+  );
   assert.ok(
     metrics.variantUnisonOverlapCount <= metrics.baselineUnisonOverlapCount + (expectation.unisonOverlapDelta ?? 100),
   );

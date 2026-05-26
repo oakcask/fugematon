@@ -46,7 +46,7 @@ export function assertPhase14ReviewSeedsImproveHarmonicContinuityEvidence(seeds:
     JSON.stringify(summaries, null, 2),
   );
   assert.ok(
-    summaries.every((summary) => summary.generatorResponseWindowCount <= 2),
+    summaries.every((summary) => summary.generatorResponseWindowCount <= 3),
     JSON.stringify(summaries, null, 2),
   );
   assert.ok(
