@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { analyzeTypeScriptFile, createRefactorFinding } from "./check-code-metrics.mjs";
+import { analyzeTypeScriptFile, createRefactorFinding, normalizeGitHubBaseRef } from "./check-code-metrics.mjs";
 
 test("measures the most complex function in a TypeScript source file", () => {
   const source = [
@@ -102,4 +102,12 @@ test("creates advisory findings only for changed files with risky metrics", () =
     )?.id,
     "ci.code-metrics.refactor-candidate",
   );
+});
+
+test("normalizes GitHub base refs for pull request and push events", () => {
+  assert.equal(normalizeGitHubBaseRef(undefined), undefined);
+  assert.equal(normalizeGitHubBaseRef(""), undefined);
+  assert.equal(normalizeGitHubBaseRef("   "), undefined);
+  assert.equal(normalizeGitHubBaseRef("main"), "origin/main");
+  assert.equal(normalizeGitHubBaseRef(" main "), "origin/main");
 });

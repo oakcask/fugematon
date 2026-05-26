@@ -10,7 +10,7 @@ const cwd = process.cwd();
 const isGitHubActions = process.env.GITHUB_ACTIONS === "true";
 
 const defaultOptions = {
-  baseRef: process.env.GITHUB_BASE_REF === undefined ? undefined : `origin/${process.env.GITHUB_BASE_REF}`,
+  baseRef: normalizeGitHubBaseRef(process.env.GITHUB_BASE_REF),
   complexityThreshold: 12,
   functionLineThreshold: 120,
   changedLineThreshold: 10,
@@ -109,6 +109,14 @@ export function createRefactorFinding(fileMetrics, options = defaultOptions) {
     id: "ci.code-metrics.refactor-candidate",
     score: fileMetrics.maxComplexity * 3 + Math.floor(fileMetrics.maxFunctionLines / 20) + changedLines * 2,
   };
+}
+
+export function normalizeGitHubBaseRef(baseRef) {
+  const normalizedBaseRef = baseRef?.trim();
+  if (normalizedBaseRef === undefined || normalizedBaseRef.length === 0) {
+    return undefined;
+  }
+  return `origin/${normalizedBaseRef}`;
 }
 
 function analyzeFunctionNode(sourceFile, node) {
