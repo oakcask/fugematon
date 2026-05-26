@@ -164,9 +164,9 @@ export function buildFugueScore(
   if (selectionModel === "section-local-planner") {
     addFunctionalThinningSupport(notes, sectionPlans);
     addPostEntryContinuationSupport(notes, subjectEntries, sectionPlans);
-    addShortEpisodeHarmonicContinuitySupport(notes, sectionPlans);
     shapeLongRestPhraseClosures(notes, sectionPlans);
     addBassAnswerTailTextureSupport(notes, subjectEntries, sectionPlans);
+    addShortEpisodeHarmonicContinuitySupport(notes, sectionPlans);
   }
   notes.sort(compareNoteEvents);
 
