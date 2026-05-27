@@ -4,6 +4,7 @@
 
 ## Current Quality Lane
 
+* [Modern surface brilliance review](modern-surface-brilliance-review.md): `surfaceBrilliance` review-only diagnostic の根拠。現代的なきらめきを、短音価密度、support motion、modal color、stretto compression と fugue-identity tradeoff に分けて読む。
 * [Candidate evaluation model refactor review](candidate-evaluation-model-refactor.md): 次実装前の評価モデル整理 evidence。literal fifth-climb 補正を構造的 contour cost へ置き換え、placeholder weight を削除し、22 seed before/after bundle で譜面出力が変わらないことを確認した。
 * [Historical reference calibration completion review](historical-reference-calibration-completion.md): 完了 evidence。focused seed と 22 seed の voice-pair coupling / entry severe-interval 改善、reference-readiness scope、manual-listening gap、Phase 8 handoff。
 * [Historical reference observation](historical-reference-observation.md): 探索的 Bach WTC diagnostics と現行生成 bundle の比較。persistent voice-pair coupling、long pitch-class reinforcement、entry severe-interval pressure を Historical reference calibration として Infinite playback MVP 前へ戻す根拠。

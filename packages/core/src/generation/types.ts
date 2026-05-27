@@ -20,6 +20,7 @@ import type {
   QualityVector,
   SoloTextureSummary,
   StepwisePatternSummary,
+  SurfaceBrillianceSummary,
   TexturePlanningReviewSummary,
 } from "../events.js";
 
@@ -101,6 +102,7 @@ export type TextureDiagnostics = {
   pitchContourMotion: PitchContourMotionSummary;
   lowerVoiceVocality: LowerVoiceVocalitySummary;
   stepwisePattern: StepwisePatternSummary;
+  surfaceBrilliance: SurfaceBrillianceSummary;
   texturePlanningReview: TexturePlanningReviewSummary;
   phraseRepetitionReview: PhraseRepetitionReviewSummary;
   entryBoundaryContinuity: EntryBoundaryContinuitySummary;
