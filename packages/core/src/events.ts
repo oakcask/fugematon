@@ -356,6 +356,36 @@ export type DurationDistribution = {
   other: number;
 };
 
+export type SurfaceBrillianceSignal =
+  | "short-note-motion"
+  | "support-motion-density"
+  | "upper-register-activity"
+  | "four-voice-density"
+  | "modal-color"
+  | "pivot-ambiguity"
+  | "stretto-compression";
+
+export type SurfaceBrillianceTradeoff =
+  | "counter-subject-identity-tradeoff"
+  | "entry-friction-tradeoff"
+  | "lockstep-texture-tradeoff"
+  | "low-ornament-support";
+
+export type SurfaceBrillianceSummary = {
+  schemaVersion: 1;
+  score: number;
+  shortNoteShare: number;
+  attackDensityPerQuarter: number;
+  supportMotionDensityPerQuarter: number;
+  upperRegisterAttackShare: number;
+  fourVoiceShare: number;
+  modalColorShare: number;
+  pivotAmbiguityShare: number;
+  strettoShare: number;
+  signals: SurfaceBrillianceSignal[];
+  tradeoffs: SurfaceBrillianceTradeoff[];
+};
+
 export type EntrySupportInstabilitySummary = {
   voice: Voice;
   form: EntryForm;
@@ -1270,6 +1300,7 @@ export type GenerationDiagnostics = {
   pitchContourMotion: PitchContourMotionSummary;
   lowerVoiceVocality: LowerVoiceVocalitySummary;
   stepwisePattern: StepwisePatternSummary;
+  surfaceBrilliance: SurfaceBrillianceSummary;
   texturePlanningReview: TexturePlanningReviewSummary;
   meterConsistencyReview: MeterConsistencyReviewSummary;
   phraseRepetitionReview: PhraseRepetitionReviewSummary;

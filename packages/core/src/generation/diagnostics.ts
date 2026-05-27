@@ -25,6 +25,9 @@ import type {
   SoloTextureSummary,
   StepwisePatternRoleSummary,
   StepwisePatternSummary,
+  SurfaceBrillianceSignal,
+  SurfaceBrillianceSummary,
+  SurfaceBrillianceTradeoff,
   TexturePlanningReviewSummary,
   TransitionRhythmReviewSummary,
   Voice,
@@ -89,6 +92,7 @@ export function analyzeScore(
   pitchContourMotion: PitchContourMotionSummary;
   lowerVoiceVocality: LowerVoiceVocalitySummary;
   stepwisePattern: StepwisePatternSummary;
+  surfaceBrilliance: SurfaceBrillianceSummary;
   texturePlanningReview: TexturePlanningReviewSummary;
   meterConsistencyReview: ReturnType<typeof analyzeMeterConsistency>;
   phraseRepetitionReview: PhraseRepetitionReviewSummary;
@@ -286,9 +290,30 @@ function analyzeTextureDiagnostics(
   const texturePlanningReview = analyzeTexturePlanningReviewSummary(notes, subjectEntries, sectionPlans);
   const phraseRepetitionReview = analyzePhraseRepetitionReviewSummary(subjectEntries, sectionPlans);
   const dissonanceTriage = analyzeDissonanceTriage(notes, sectionPlans, qualityVector.entrySonorities);
+  const counterSubjectIdentityRetentionValue = counterSubjectIdentityRetention(counterSubjectNotes, sectionPlans);
+  const durationDistributionSummary = durationDistribution(notes);
+  const severeEntryIntervalCount = entrySupportSevereIntervalDetails.reduce(
+    (sum, detail) => sum + detail.severeIntervalCount,
+    0,
+  );
+  const unresolvedSevereEntryIntervalCount = entrySupportSevereIntervalDetails.reduce(
+    (sum, detail) => sum + detail.unresolvedSevereIntervalCount,
+    0,
+  );
+  const ornamentDensity = roundRatio(ornamentCandidateCount / supportNoteCount);
+  const surfaceBrilliance = analyzeSurfaceBrilliance({
+    notes,
+    sectionPlans,
+    durationDistribution: durationDistributionSummary,
+    counterSubjectIdentityRetention: counterSubjectIdentityRetentionValue,
+    severeEntryIntervalCount,
+    unresolvedSevereEntryIntervalCount,
+    sharedRhythmOverlapCount: verticalStats.sharedRhythmOverlapCount,
+    ornamentDensity,
+  });
 
   return {
-    counterSubjectIdentityRetention: counterSubjectIdentityRetention(counterSubjectNotes, sectionPlans),
+    counterSubjectIdentityRetention: counterSubjectIdentityRetentionValue,
     counterSubjectInvertibilityScore: invertibilityNearEntries(notes, subjectEntries),
     freeCounterpointContourScore: contourVariety(freeCounterpointNotes),
     rhythmicIndependenceScore: roundRatio(Math.max(0, 1 - verticalStats.sharedRhythmOverlapCount / supportNoteCount)),
@@ -304,16 +329,10 @@ function analyzeTextureDiagnostics(
       0,
     ),
     entrySupportInstabilityDetails,
-    severeEntryIntervalCount: entrySupportSevereIntervalDetails.reduce(
-      (sum, detail) => sum + detail.severeIntervalCount,
-      0,
-    ),
-    unresolvedSevereEntryIntervalCount: entrySupportSevereIntervalDetails.reduce(
-      (sum, detail) => sum + detail.unresolvedSevereIntervalCount,
-      0,
-    ),
+    severeEntryIntervalCount,
+    unresolvedSevereEntryIntervalCount,
     entrySupportSevereIntervalDetails,
-    durationDistribution: durationDistribution(notes),
+    durationDistribution: durationDistributionSummary,
     repeatedPitchRunCount,
     allVoiceSilenceGapCount: countAllVoiceSilenceGaps(notes),
     soloTexture: analyzeSoloTexture(notes, sectionPlans),
@@ -321,6 +340,7 @@ function analyzeTextureDiagnostics(
     pitchContourMotion: analyzePitchContourMotion(notes),
     lowerVoiceVocality: analyzeLowerVoiceVocality(notes, sectionPlans),
     stepwisePattern: analyzeStepwisePattern(notes, sectionPlans),
+    surfaceBrilliance,
     texturePlanningReview,
     phraseRepetitionReview,
     entryBoundaryContinuity: analyzeEntryBoundaryContinuity(notes, subjectEntries),
@@ -328,7 +348,7 @@ function analyzeTextureDiagnostics(
     qualityVector,
     dissonanceTriage,
     ornamentCandidateCount,
-    ornamentDensity: roundRatio(ornamentCandidateCount / supportNoteCount),
+    ornamentDensity,
     ornamentPlacementReasons: analyzeOrnamentPlacementReasons(notes, subjectEntries, sectionPlans),
   };
 }
@@ -378,6 +398,117 @@ function analyzePhraseRepetitionReviewSummary(
     phraseFunctions: summarizePhraseFunctions(sectionPlans),
     sectionStatePatterns: summarizeSectionStatePatterns(sectionPlans),
   };
+}
+
+function analyzeSurfaceBrilliance({
+  notes,
+  sectionPlans,
+  durationDistribution,
+  counterSubjectIdentityRetention,
+  severeEntryIntervalCount,
+  unresolvedSevereEntryIntervalCount,
+  sharedRhythmOverlapCount,
+  ornamentDensity,
+}: {
+  notes: readonly NoteEvent[];
+  sectionPlans: readonly HarmonicPlan[];
+  durationDistribution: DurationDistribution;
+  counterSubjectIdentityRetention: number;
+  severeEntryIntervalCount: number;
+  unresolvedSevereEntryIntervalCount: number;
+  sharedRhythmOverlapCount: number;
+  ornamentDensity: number;
+}): SurfaceBrillianceSummary {
+  const noteCount = Math.max(1, notes.length);
+  const endTick = Math.max(1, ...notes.map((note) => note.startTick + note.durationTicks));
+  const totalQuarters = Math.max(1, endTick / TICKS_PER_QUARTER);
+  const shortNoteCount =
+    durationDistribution.eighth +
+    durationDistribution.sixteenth +
+    durationDistribution.dotted +
+    durationDistribution.triplet;
+  const supportMotionCount = notes.filter(
+    (note) =>
+      (note.role === "free-counterpoint" || note.role === "counter-subject") && note.durationTicks <= TICKS_PER_QUARTER,
+  ).length;
+  const verticalities = halfBeatVerticalities(notes);
+  const planCount = Math.max(1, sectionPlans.length);
+  const modalPlanCount = sectionPlans.filter((plan) => isModalMode(plan.localKey.mode)).length;
+  const pivotPlanCount = sectionPlans.filter((plan) => plan.ambiguityIntent === "pivot-harmony").length;
+  const strettoPlanCount = sectionPlans.filter((plan) => plan.state === "stretto-like").length;
+  const shortNoteShare = roundRatio(shortNoteCount / noteCount);
+  const attackDensityPerQuarter = roundRatio(notes.length / totalQuarters);
+  const supportMotionDensityPerQuarter = roundRatio(supportMotionCount / totalQuarters);
+  const upperRegisterAttackShare = roundRatio(notes.filter((note) => note.pitch >= 72).length / noteCount);
+  const fourVoiceShare = roundRatio(
+    verticalities.filter((verticality) => verticality.active.size >= 4).length / Math.max(1, verticalities.length),
+  );
+  const modalColorShare = roundRatio(modalPlanCount / planCount);
+  const pivotAmbiguityShare = roundRatio(pivotPlanCount / planCount);
+  const strettoShare = roundRatio(strettoPlanCount / planCount);
+  const score = roundRatio(
+    normalizeReviewSignal(shortNoteShare, 0.7) * 0.3 +
+      normalizeReviewSignal(supportMotionDensityPerQuarter, 4) * 0.25 +
+      normalizeReviewSignal(modalColorShare, 0.75) * 0.2 +
+      normalizeReviewSignal(upperRegisterAttackShare, 0.22) * 0.1 +
+      normalizeReviewSignal(fourVoiceShare, 0.6) * 0.1 +
+      normalizeReviewSignal(strettoShare, 0.3) * 0.05,
+  );
+  const signals: SurfaceBrillianceSignal[] = [];
+  if (shortNoteShare >= 0.65) {
+    signals.push("short-note-motion");
+  }
+  if (supportMotionDensityPerQuarter >= 3.5) {
+    signals.push("support-motion-density");
+  }
+  if (upperRegisterAttackShare >= 0.16) {
+    signals.push("upper-register-activity");
+  }
+  if (fourVoiceShare >= 0.55) {
+    signals.push("four-voice-density");
+  }
+  if (modalColorShare >= 0.25) {
+    signals.push("modal-color");
+  }
+  if (pivotAmbiguityShare >= 0.25) {
+    signals.push("pivot-ambiguity");
+  }
+  if (strettoShare >= 0.25) {
+    signals.push("stretto-compression");
+  }
+
+  const tradeoffs: SurfaceBrillianceTradeoff[] = [];
+  if (counterSubjectIdentityRetention < 0.65) {
+    tradeoffs.push("counter-subject-identity-tradeoff");
+  }
+  if (severeEntryIntervalCount >= 80 || unresolvedSevereEntryIntervalCount >= 50) {
+    tradeoffs.push("entry-friction-tradeoff");
+  }
+  if (sharedRhythmOverlapCount >= 940) {
+    tradeoffs.push("lockstep-texture-tradeoff");
+  }
+  if (ornamentDensity < 0.15) {
+    tradeoffs.push("low-ornament-support");
+  }
+
+  return {
+    schemaVersion: 1,
+    score,
+    shortNoteShare,
+    attackDensityPerQuarter,
+    supportMotionDensityPerQuarter,
+    upperRegisterAttackShare,
+    fourVoiceShare,
+    modalColorShare,
+    pivotAmbiguityShare,
+    strettoShare,
+    signals,
+    tradeoffs,
+  };
+}
+
+function normalizeReviewSignal(value: number, target: number): number {
+  return Math.max(0, Math.min(1, value / target));
 }
 
 function summarizeSubjectStemFamilies(

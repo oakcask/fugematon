@@ -147,6 +147,7 @@ export function generateScore(input: GenerationInput): GenerationOutput {
       pitchContourMotion: diagnostics.pitchContourMotion,
       lowerVoiceVocality: diagnostics.lowerVoiceVocality,
       stepwisePattern: diagnostics.stepwisePattern,
+      surfaceBrilliance: diagnostics.surfaceBrilliance,
       texturePlanningReview: diagnostics.texturePlanningReview,
       meterConsistencyReview: diagnostics.meterConsistencyReview,
       phraseRepetitionReview: diagnostics.phraseRepetitionReview,

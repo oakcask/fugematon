@@ -48,6 +48,7 @@
 | `stepwisePattern` | 長い順次進行や同じ degree pattern の横断反復。 | 自然な旋律運動と mechanical filler を区別する。 |
 | `pitchContourMotion` | bass-upper / outer-voice の同方向、反行、概形 motion。 | Phase 7B 以降は hard failure ではなく review signal。 |
 | `lowerVoiceVocality` | bass/tenor の support line が歌える線としてつながっているか。 | 長い support note が前後の小さな melodic connection、cadence、phrase boundary で説明できるかと、短い support 同士が同音保持や大きい跳躍に偏らないかを読む。 |
+| `surfaceBrilliance` | 短い音価の運動、support motion density、上声域の活動、4声密度、modal color、pivot ambiguity、stretto compression をまとめた review-only summary。 | Jazz / pops 的な現代的きらめきや色彩感を拾う positive signal。単独の pass/fail にはせず、`tradeoffs` の counter-subject identity、entry friction、lockstep、ornament support と合わせて読む。 |
 
 ## Subject And Phrase Diversity
 

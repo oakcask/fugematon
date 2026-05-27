@@ -314,6 +314,7 @@ type ReviewDiagnosticsSummary = {
     pitchContourMotion: GenerationDiagnostics["pitchContourMotion"];
     lowerVoiceVocality: GenerationDiagnostics["lowerVoiceVocality"];
     stepwisePattern: GenerationDiagnostics["stepwisePattern"];
+    surfaceBrilliance: GenerationDiagnostics["surfaceBrilliance"];
   };
   melody: {
     leapRecoveryMisses: number;
@@ -745,6 +746,7 @@ function summarizeDiagnostics(diagnostics: GenerationDiagnostics): ReviewDiagnos
       pitchContourMotion: diagnostics.pitchContourMotion,
       lowerVoiceVocality: diagnostics.lowerVoiceVocality,
       stepwisePattern: diagnostics.stepwisePattern,
+      surfaceBrilliance: diagnostics.surfaceBrilliance,
     },
     melody: {
       leapRecoveryMisses: diagnostics.leapRecoveryMisses,
