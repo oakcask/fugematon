@@ -15,6 +15,8 @@ import type {
   ScoreWindowAcceptanceResponse,
   ScoreWindowAcceptanceSummary,
   ScoreWindowAcceptanceWindow,
+  TransitionRhythmReviewSummary,
+  TransitionRhythmWindow,
   Voice,
   VoicePairSpanClassification,
   VoicePairSpanSummary,
@@ -26,6 +28,7 @@ const VOICE_NAMES = new Set<Voice>(["soprano", "alto", "tenor", "bass"]);
 export function buildScoreWindowAcceptanceSummary(
   entryBoundaryContinuity: EntryBoundaryContinuitySummary,
   harmonicContinuity: HarmonicContinuitySummary,
+  transitionRhythmReview: TransitionRhythmReviewSummary,
   dissonanceTriage: DissonanceTriageSummary,
   qualityVector: QualityVector,
   phraseDevelopmentReview: PhraseDevelopmentReviewSummary,
@@ -36,6 +39,7 @@ export function buildScoreWindowAcceptanceSummary(
   const windows = collectScoreWindowAcceptanceWindows(
     importantEntryWindows,
     harmonicContinuity,
+    transitionRhythmReview,
     dissonanceTriage,
     qualityVector,
     phraseDevelopmentReview,
@@ -47,6 +51,7 @@ export function buildScoreWindowAcceptanceSummary(
     importantEntryWindowCount: importantEntryWindows.length,
     harmonicContinuityWindowCount: harmonicContinuity.windows.length,
     harmonicSonorityWindowCount: qualityVector.harmonicSonorities.windows.length,
+    transitionRhythmWindowCount: transitionRhythmReview.windows.length,
     dissonanceWindowCount: dissonanceTriage.windows.length,
     activeVoicePairSpanCount: qualityVector.voicePairSpans.length,
     counterSubjectWindowCount: qualityVector.counterSubjectWindows.length,
@@ -63,6 +68,7 @@ export function buildScoreWindowAcceptanceSummary(
 function collectScoreWindowAcceptanceWindows(
   importantEntryWindows: readonly EntryBoundaryContinuityWindow[],
   harmonicContinuity: HarmonicContinuitySummary,
+  transitionRhythmReview: TransitionRhythmReviewSummary,
   dissonanceTriage: DissonanceTriageSummary,
   qualityVector: QualityVector,
   phraseDevelopmentReview: PhraseDevelopmentReviewSummary,
@@ -70,6 +76,7 @@ function collectScoreWindowAcceptanceWindows(
   return [
     ...importantEntryWindows.map(scoreWindowFromEntryContinuity),
     ...harmonicContinuity.windows.map(scoreWindowFromHarmonicContinuity),
+    ...transitionRhythmReview.windows.map(scoreWindowFromTransitionRhythm),
     ...qualityVector.harmonicSonorities.windows.map(scoreWindowFromHarmonicSonority),
     ...dissonanceTriage.windows.map(scoreWindowFromDissonance),
     ...qualityVector.voicePairSpans.map(scoreWindowFromVoicePairSpan),
@@ -135,6 +142,26 @@ function scoreWindowFromHarmonicSonority(window: HarmonicSonorityWindow): ScoreW
     classification: window.classification,
     symptom: window.symptom,
     theoryBasis: "harmony",
+    response: window.response,
+  };
+}
+
+function scoreWindowFromTransitionRhythm(window: TransitionRhythmWindow): ScoreWindowAcceptanceWindow {
+  return {
+    kind: "transition-rhythm",
+    startTick: window.startTick,
+    durationTicks: window.durationTicks,
+    state: window.state,
+    voices: window.activeVoices,
+    roles: window.roleMix,
+    classification: window.classification,
+    symptom:
+      window.classification === "prepared-pickup"
+        ? "off-downbeat section boundary has sustained pickup or prepared support rhetoric"
+        : window.classification === "meter-confirming"
+          ? "section boundary lands on a meter-confirming location"
+          : "off-downbeat section boundary needs pickup, cadence, held support, or directed-contour evidence",
+    theoryBasis: "fugue-form",
     response: window.response,
   };
 }

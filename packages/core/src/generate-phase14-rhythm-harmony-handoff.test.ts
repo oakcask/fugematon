@@ -59,7 +59,7 @@ test("fugue-smoke repairs the reopened rhythm and harmony handoff", () => {
   assert.deepEqual(harmonicSonorityFailures, []);
 });
 
-test("fugue-smoke handoff diagnostics still expose the transition-rhythm coverage gap", () => {
+test("fugue-smoke handoff diagnostics expose local transition-rhythm evidence", () => {
   const diagnostics = generateScore({
     seed: "fugue-smoke",
     lengthTicks: TICKS_PER_QUARTER * 288,
@@ -68,17 +68,29 @@ test("fugue-smoke handoff diagnostics still expose the transition-rhythm coverag
   const transitionWindows = diagnostics.meterConsistencyReview.windows.filter(
     (window) => window.tick === transitionTick,
   );
-  const transitionRhythmWindows = diagnostics.scoreWindowAcceptance.windows.filter(
-    (window) => (window.kind as string) === "transition-rhythm" && window.startTick === transitionTick,
+  const transitionRhythmWindow = diagnostics.transitionRhythmReview.windows.find(
+    (window) => window.startTick === transitionTick,
+  );
+  const acceptanceWindow = diagnostics.scoreWindowAcceptance.windows.find(
+    (window) => window.kind === "transition-rhythm" && window.startTick === transitionTick,
   );
 
   assert.equal(transitionWindows.length, 3);
   assert.ok(
     transitionWindows.every(
       (window) =>
-        window.measureOffsetTicks === TICKS_PER_QUARTER * 3 &&
-        window.classification === "pickup-or-cross-metric",
+        window.measureOffsetTicks === TICKS_PER_QUARTER * 3 && window.classification === "pickup-or-cross-metric",
     ),
   );
-  assert.equal(transitionRhythmWindows.length, 0);
+  assert.deepEqual(transitionRhythmWindow?.boundaryKinds.sort(), ["entry-start", "harmonic-anchor", "phrase-boundary"]);
+  assert.equal(transitionRhythmWindow?.classification, "prepared-pickup");
+  assert.equal(transitionRhythmWindow?.response, "accepted-context");
+  assert.equal(transitionRhythmWindow?.activeVoiceCount, 4);
+  assert.ok((transitionRhythmWindow?.attackCount ?? 0) >= 12);
+  assert.ok((transitionRhythmWindow?.shortAttackCount ?? 0) >= 6);
+  assert.ok(transitionRhythmWindow?.roleMix.includes("subject-fragment"));
+  assert.ok(transitionRhythmWindow?.roleMix.includes("counter-subject"));
+  assert.ok(transitionRhythmWindow?.supportKinds.includes("sustained-pickup"));
+  assert.equal(acceptanceWindow?.classification, "prepared-pickup");
+  assert.equal(acceptanceWindow?.response, "accepted-context");
 });
