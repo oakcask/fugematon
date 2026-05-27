@@ -33,16 +33,14 @@ export function buildScoreWindowAcceptanceSummary(
   const importantEntryWindows = entryBoundaryContinuity.windows.filter(
     (window) => window.entryOrderIndex === 0 || window.alreadyEnteredVoices.length > 0,
   );
-  const windows = [
-    ...importantEntryWindows.map(scoreWindowFromEntryContinuity),
-    ...harmonicContinuity.windows.map(scoreWindowFromHarmonicContinuity),
-    ...qualityVector.harmonicSonorities.windows.map(scoreWindowFromHarmonicSonority),
-    ...dissonanceTriage.windows.map(scoreWindowFromDissonance),
-    ...qualityVector.voicePairSpans.map(scoreWindowFromVoicePairSpan),
-    ...qualityVector.counterSubjectWindows.map(scoreWindowFromCounterSubject),
-    ...phraseDevelopmentReview.windows.map(scoreWindowFromPhraseDevelopment),
-    ...qualityVector.metricExplanations.map(scoreWindowFromMetricExplanation),
-  ];
+  const windows = collectScoreWindowAcceptanceWindows(
+    importantEntryWindows,
+    harmonicContinuity,
+    dissonanceTriage,
+    qualityVector,
+    phraseDevelopmentReview,
+  );
+  const responseCounts = countScoreWindowResponses(windows);
 
   return {
     schemaVersion: 1,
@@ -54,11 +52,39 @@ export function buildScoreWindowAcceptanceSummary(
     counterSubjectWindowCount: qualityVector.counterSubjectWindows.length,
     phraseDevelopmentWindowCount: phraseDevelopmentReview.windowCount,
     metricExplanationCount: qualityVector.metricExplanations.length,
-    reviewRequiredWindowCount: windows.filter((window) => window.response === "review-required").length,
-    generatorResponseWindowCount: windows.filter((window) => window.response === "generator-response-required").length,
-    acceptedContextWindowCount: windows.filter((window) => window.response === "accepted-context").length,
-    diagnosticContextWindowCount: windows.filter((window) => window.response === "diagnostic-context").length,
+    reviewRequiredWindowCount: responseCounts.reviewRequired,
+    generatorResponseWindowCount: responseCounts.generatorResponse,
+    acceptedContextWindowCount: responseCounts.acceptedContext,
+    diagnosticContextWindowCount: responseCounts.diagnosticContext,
     windows: windows.slice(0, SCORE_WINDOW_ACCEPTANCE_WINDOW_LIMIT),
+  };
+}
+
+function collectScoreWindowAcceptanceWindows(
+  importantEntryWindows: readonly EntryBoundaryContinuityWindow[],
+  harmonicContinuity: HarmonicContinuitySummary,
+  dissonanceTriage: DissonanceTriageSummary,
+  qualityVector: QualityVector,
+  phraseDevelopmentReview: PhraseDevelopmentReviewSummary,
+): ScoreWindowAcceptanceWindow[] {
+  return [
+    ...importantEntryWindows.map(scoreWindowFromEntryContinuity),
+    ...harmonicContinuity.windows.map(scoreWindowFromHarmonicContinuity),
+    ...qualityVector.harmonicSonorities.windows.map(scoreWindowFromHarmonicSonority),
+    ...dissonanceTriage.windows.map(scoreWindowFromDissonance),
+    ...qualityVector.voicePairSpans.map(scoreWindowFromVoicePairSpan),
+    ...qualityVector.counterSubjectWindows.map(scoreWindowFromCounterSubject),
+    ...phraseDevelopmentReview.windows.map(scoreWindowFromPhraseDevelopment),
+    ...qualityVector.metricExplanations.map(scoreWindowFromMetricExplanation),
+  ];
+}
+
+function countScoreWindowResponses(windows: readonly ScoreWindowAcceptanceWindow[]) {
+  return {
+    reviewRequired: windows.filter((window) => window.response === "review-required").length,
+    generatorResponse: windows.filter((window) => window.response === "generator-response-required").length,
+    acceptedContext: windows.filter((window) => window.response === "accepted-context").length,
+    diagnosticContext: windows.filter((window) => window.response === "diagnostic-context").length,
   };
 }
 
