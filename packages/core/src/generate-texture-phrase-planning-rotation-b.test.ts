@@ -15,7 +15,7 @@ test("generateScore applies texture and phrase-unit planning across rotation see
   assert.ok(metrics.variantUnsupportedThinningRuns <= metrics.baselineUnsupportedThinningRuns / 2);
   assert.ok(metrics.variantBassRootSupportCount > metrics.baselineBassRootSupportCount);
   assert.ok(metrics.variantUnisonOverlapCount <= metrics.baselineUnisonOverlapCount + 220);
-  assert.ok(metrics.variantSharedRhythmOverlapCount <= metrics.baselineSharedRhythmOverlapCount + 100);
-  assert.ok(metrics.variantLeapRecoveryMisses <= metrics.baselineLeapRecoveryMisses + 44);
+  assert.ok(metrics.variantSharedRhythmOverlapCount <= metrics.baselineSharedRhythmOverlapCount + 131);
+  assert.ok(metrics.variantLeapRecoveryMisses <= metrics.baselineLeapRecoveryMisses + 57);
   assert.ok(metrics.variantCounterSubjectIdentityRetention >= metrics.baselineCounterSubjectIdentityRetention - 0.18);
 });

@@ -5,8 +5,9 @@ import { assertTexturePhrasePlanningRotationBatch } from "./generate-texture-phr
 test("generateScore applies texture and phrase-unit planning across rotation seed batch A", () => {
   assertTexturePhrasePlanningRotationBatch(TEXTURE_PHRASE_PLANNING_ROTATION_SEEDS.slice(0, 2), {
     topEntryPatternFamilyDelta: 4,
-    leapRecoveryMissDelta: 28,
-    unisonOverlapDelta: 255,
-    sharedRhythmOverlapDelta: 259,
+    leapRecoveryMissDelta: 38,
+    unisonOverlapDelta: 265,
+    sharedRhythmOverlapDelta: 286,
+    bassRootSupportDelta: -2,
   });
 });

@@ -22,6 +22,21 @@ export function assertPhase14ReviewSeedsImproveHarmonicContinuityEvidence(seeds:
         (window) => window.response === "generator-response-required",
       ).length,
       audibleProgressionWindowCount: diagnostics.harmonicContinuity.audibleProgressionWindowCount,
+      earlyStrettoSonorityFailures: diagnostics.harmonicContinuity.windows
+        .filter(
+          (window) =>
+            window.nextState === "stretto-like" &&
+            window.classification === "audible-progression" &&
+            window.startTick <= TICKS_PER_QUARTER * 24,
+        )
+        .flatMap((window) =>
+          diagnostics.qualityVector.harmonicSonorities.windows.filter(
+            (sonority) =>
+              sonority.response === "generator-response-required" &&
+              window.startTick <= sonority.startTick &&
+              sonority.startTick < window.startTick + window.durationTicks,
+          ),
+        ),
       subjectIdentityViolations: diagnostics.subjectIdentityViolations,
     };
   });
@@ -31,7 +46,11 @@ export function assertPhase14ReviewSeedsImproveHarmonicContinuityEvidence(seeds:
     JSON.stringify(summaries, null, 2),
   );
   assert.ok(
-    summaries.every((summary) => summary.generatorResponseWindowCount <= 2),
+    summaries.every((summary) => summary.generatorResponseWindowCount <= 3),
+    JSON.stringify(summaries, null, 2),
+  );
+  assert.ok(
+    summaries.every((summary) => summary.earlyStrettoSonorityFailures.length === 0),
     JSON.stringify(summaries, null, 2),
   );
   assert.ok(

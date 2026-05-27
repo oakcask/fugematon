@@ -1,6 +1,8 @@
 # Phase 14 Rhythm And Harmony Handoff Completion Review
 
-This review records the reopened Phase 14C4 / 14C5 / 14E completion evidence before Infinite playback MVP resumes.
+Status: superseded. A later focused `fugue-smoke` score review found that the handoff acceptance was too weak: top-level `harmonicContinuity` could classify the first short episode as accepted while sonority-level windows in measure 7 still reported structural support on non-chord tones. Keep this file as historical evidence for the first repair attempt; current planning is in [Phase 14](../phases/phase-14.md) and [Phase 14 fugue-smoke rhythm and harmony replan](phase-14-fugue-smoke-rhythm-harmony-replan.md).
+
+This review records the earlier reopened Phase 14C4 / 14C5 / 14E completion evidence before the handoff was superseded.
 
 ## Findings
 

@@ -9,6 +9,10 @@ Reported symptoms:
 
 Evidence source: a fresh review bundle generated under `samples/fugue-smoke-rhythm-harmony-review`, plus direct ScoreEvent inspection for `fugue-smoke`. No broad human listening pass was completed.
 
+Current diagnostics refresh: a later focused check of current generated diagnostics confirms that the metric coverage is uneven. `fugue-smoke` measure 7 is still score-window visible as `harmonic-sonority` / `thin-unrooted-support` at quarter offsets `27` and `27.5`, so the local sonority surface detects the unnatural harmony even when top-level `harmonicContinuity` reads as accepted context. `fugue-smoke` measure 5 is weaker diagnostically: `meterConsistencyReview` reports the off-downbeat entry, phrase boundary, and harmonic anchor as pickup-compatible, but no local rhythm window explains whether the free-counterpoint short-note pattern itself is musically prepared.
+
+Across the 22 representative and rotation review seeds, measure 5 has meter-review evidence in 18 seeds and every seed has at least as many measure-5 short attacks as `fugue-smoke`. Measure 7 has harmony or dissonance review windows in 15 seeds. The free-counterpoint aggregate metrics also show pressure, but they are score-wide signals rather than measure-local explanations. This refresh keeps the issue in Phase 14 as a diagnostics-truthfulness problem as well as a generator-quality problem.
+
 ## Findings
 
 ### 1. Measure 5 rhythm is improved but still review-required
@@ -29,20 +33,24 @@ Project response: reopen Phase 14 with a focused transition-rhythm workstream. D
 
 Affected seed: `fugue-smoke`.
 
-The current measure 7 window lies inside the first pivot episode at tick `9120-13920`. `harmonicContinuity` reports this window as `review-required` with `response: generator-response-required`. The window has 5 structural beats, 2 bass-root supports, 4 chord-tone supports, 3 structural-beat mismatches, and 1 thin structural beat.
+The reported measure 7 window lies inside the first pivot episode at tick `9120-13920`. A later implementation attempt made top-level `harmonicContinuity` report this window as `audible-progression`, but the score-window surface still reported sonority-level failures inside the same measure. This means top-level harmonic-continuity acceptance is necessary context, not sufficient handoff evidence.
 
 The score-window acceptance surface also flags the same local passage:
 
-* `harmonic-continuity` at tick `9120`: short pivot episode does not yet make the planned harmonic path audible.
-* `harmonic-sonority` at ticks `11760`, `12000`, `12240`, `12480`, and `12960`: support texture labels non-chord tones as structural chord support.
+* `harmonic-continuity` at tick `9120`: the short pivot episode must make the planned harmonic path audible at structural beats.
+* `harmonic-sonority` at ticks inside measure 7: support texture must not label non-chord tones as structural chord or root support.
 
-This means the earlier Phase 14C4 repair fixed the reported `seed-1dxb2n8-1miapx7` D minor to E minor pivot handoff, but it did not generalize enough to `fugue-smoke` and related short episode patterns.
+This means the earlier Phase 14C4 repair fixed the reported `seed-1dxb2n8-1miapx7` D minor to E minor pivot handoff, but it did not generalize enough to `fugue-smoke` and related short episode patterns. The next implementation must connect `harmonicContinuity` and `harmonic-sonority` evidence rather than letting one accepted window hide local sonority review windows in the same span.
 
-Cross-seed evidence: measure 7 or overlapping early-episode harmonic-continuity windows remain `generator-response-required` in many review seeds, including `bach-001`, `wide-key`, `modal-dorian`, `circle-fifths`, `dark-episode`, `ornament-test`, `long-arc`, `contrary-motion`, `quiet-cadence`, `modal-cadence`, and `dense-modal`. This is a broad short-episode harmonic-continuity pattern, not a single reported window.
+Cross-seed evidence: measure 7 or overlapping early-episode harmonic-continuity windows remain review-visible in many review seeds, including `bach-001`, `wide-key`, `modal-dorian`, `circle-fifths`, `dark-episode`, `ornament-test`, `long-arc`, `contrary-motion`, `quiet-cadence`, `modal-cadence`, and `dense-modal`. This is a broad short-episode harmonic-continuity pattern, not a single reported window.
 
 Theory basis: common-practice harmonic continuity and contrapuntal texture. Controlled ambiguity, pivot harmony, sequence, or thinning may be acceptable, but the audible vertical surface must show enough bass-root support, chord-tone support, prepared dissonance, suspension / resolution, or rhetorical thinning to make the planned progression perceptible.
 
-Project response: reopen Phase 14C4 as a general short-episode harmonic-continuity repair. The next repair must cover ascending-step, descending-step, circle-fifths, parallel-shift, sequence, contrary-motion, and inversion windows by structural evidence, not literal pitch names or the earlier reported seed.
+Project response: reopen Phase 14C4 as a general short-episode harmonic-continuity repair. The next repair must cover ascending-step, descending-step, circle-fifths, parallel-shift, sequence, contrary-motion, and inversion windows by structural evidence, not literal pitch names or the earlier reported seed. A focused acceptance check must fail when a reported short episode contains any unexplained sonority-level review window.
+
+Implementation update: the stricter focused repair now requires the `fugue-smoke` first short episode to have accepted top-level harmonic-continuity evidence and no unexplained sonority-level review windows inside the same span. The first implementation closed that focused failure but repaired too many texture change-points with bass-root support. The follow-up generator predicate now limits the repair to first post-exposition short-episode-to-stretto handoffs that need audible support, without hard-coding 4/4. The support edit repairs free-counterpoint structural labels at texture change-points, adds bass-root support only at structural support ticks, and preserves counter-subject notes as motivic material rather than retagging them as harmonic support. A full focused seed refresh is still needed before Phase 8 handoff is complete again.
+
+Motivic-support update: the focused repair now derives added upper support in early short pivot episodes from recent motivic contour and constrains it to the local chord path. This keeps the bass root-led for harmonic clarity while making the free-counterpoint support a decorated transformation of earlier material. The same rule removes the old fixed root-degree support formulas for generated functional support lines: when no usable prior subject / answer / counter-subject / free-counterpoint material exists, the generator leaves the window visible for review instead of adding unrelated filler. The synthetic regressions now check both sides of that policy: no motif-free upper filler is created, and an available ascending motivic outline can still produce transformed upper support across tonic, predominant, and dominant anchors without hard-coding the reported seed, voice, meter, or pitch names.
 
 ## Structural Hypothesis
 
@@ -54,10 +62,12 @@ Evidence strength: confirmed for `fugue-smoke` and supported across the standard
 
 Project response: reorganize Phase 14 before Phase 8 resumes:
 
-1. Add a transition-rhythm review surface for section-boundary windows where entry start, phrase boundary, harmonic anchor, and cadence preparation conflict.
-2. Generalize short-episode harmonic-continuity generation beyond the earlier `seed-1dxb2n8-1miapx7` pivot pattern.
-3. Review the focused seed set before accepting the handoff: `fugue-smoke`, `bach-001`, `bright-answer`, `dark-episode`, `ornament-test`, `long-arc`, `circle-fifths`, `tight-stretto`, `modal-cadence`, `dense-modal`, and `seed-1dxb2n8-1miapx7`.
-4. Keep Phase 8 blocked until the repaired bundle shows score-window evidence, not only better aggregate counts.
+1. Keep 14C4 focused on structural handoff evidence. The `fugue-smoke` sonority repair and the `seed-1dxb2n8-1miapx7` harmonic-continuity repair remain covered, while blanket bass support at every texture change-point stays rejected because it weakens voice independence.
+2. Add a transition-rhythm review surface for section-boundary windows where entry start, phrase boundary, harmonic anchor, local attack density, short-note concentration, free-counterpoint role, and cadence preparation conflict.
+3. Generalize short-episode harmonic-continuity generation beyond the earlier `seed-1dxb2n8-1miapx7` pivot pattern without weakening voice independence. Added support should be decorated transformations of recent motivic contour, not unrelated filler patterns; unsupported windows should remain review-required when the local chord path cannot absorb prior material.
+4. Review the focused seed set before accepting the handoff: `fugue-smoke`, `bach-001`, `bright-answer`, `dark-episode`, `ornament-test`, `long-arc`, `circle-fifths`, `tight-stretto`, `modal-cadence`, `dense-modal`, and `seed-1dxb2n8-1miapx7`.
+5. Keep the texture/phrase planning review and rotation batches as regression controls. Removing fixed filler formulas widens the shared-rhythm and leap-recovery review-signal budgets because some formerly hidden support windows now remain exposed or derive from recent material. Treat the remaining excess as a bounded review-required texture tradeoff, not as evidence that blanket bass support is acceptable.
+6. Keep Phase 8 blocked until the repaired bundle shows score-window evidence, not only better aggregate counts or top-level harmonic-continuity acceptance.
 
 ## CI / Review Scope
 
@@ -65,8 +75,11 @@ Project response: reorganize Phase 14 before Phase 8 resumes:
 | --- | --- | --- | --- |
 | `fugue-smoke` measure 5 transition rhythm | `review-required` | The symptom depends on phrase-rhythm judgement and section-boundary context. | Add focused review coverage; do not make it a hard PR CI blocker yet. |
 | Section-boundary transition-rhythm review surface | `review-required` | The classifier must distinguish expressive pickup from accidental off-downbeat handoff. | Add diagnostics and score-window acceptance evidence before generator adoption. |
-| `fugue-smoke` measure 7 harmonic-continuity window | `review-required` | It is deterministic and generator-response-required, but acceptance remains score-window based. | Add to Phase 14C4 focused regression coverage. |
+| Local free-counterpoint rhythm-window evidence | `review-required` | Existing free-counterpoint repetition and rhythmic-independence metrics are aggregate pressure signals and do not explain the reported measure-local rhythm pattern. | Add a windowed diagnostic that reports attack density, short-note concentration, role mix, boundary function, and pickup/cadence support together. |
+| `fugue-smoke` measure 7 harmonic-continuity window | `review-required` | It is deterministic and locally review-visible, but acceptance remains score-window based. | Add to Phase 14C4 focused regression coverage. |
+| `harmonicContinuity` versus `harmonic-sonority` disagreement | `review-required` | Top-level acceptance can hide local sonority review windows when only the broad metric is read. | Require Phase 14C4 handoff evidence to inspect child sonority windows inside accepted short episodes. |
 | Broad short-episode harmonic-continuity windows | `review-required` | The issue recurs across seed families and sequence patterns. | Generalize generation/scoring before Phase 8. |
+| Texture/phrase shared-rhythm and leap-recovery overlap after filler removal | `ci-observed` | They are deterministic regression controls and represent weaker contrapuntal independence or line recovery when they rise, but fixed filler support is no longer accepted as the repair. | Keep review and rotation batches as regression controls with updated bounded budgets; prefer future generator improvements over restoring motif-free support formulas. |
 | Aggregate attack counts, strong-beat dissonance, and harmonic-function mismatch counts | `ci-observed` / `review-required` | They locate pressure but cannot by themselves distinguish expressive pickup, prepared dissonance, or convincing progression. | Use as context only; local score-window acceptance remains primary. |
 
 ## Plan Impact
@@ -75,4 +88,4 @@ Phase 14 is no longer complete for Phase 8 handoff. The earlier repairs remain a
 
 * `14C4`: generalized short-episode harmonic-continuity generation.
 * `14C5`: section-transition rhythm generation and scoring.
-* `14E`: regenerated bundle evidence and focused listening notes after both repairs.
+* `14E`: regenerated bundle evidence and focused listening notes after both repairs and the shared-rhythm regression control pass.

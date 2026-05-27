@@ -16,6 +16,13 @@ test("fugue-smoke repairs the reopened rhythm and harmony handoff", () => {
   const acceptanceWindow = diagnostics.scoreWindowAcceptance.windows.find(
     (window) => window.kind === "harmonic-continuity" && window.startTick === transitionTick,
   );
+  const harmonicSonorityFailures = diagnostics.scoreWindowAcceptance.windows.filter(
+    (window) =>
+      window.kind === "harmonic-sonority" &&
+      transitionTick <= window.startTick &&
+      window.startTick < transitionTick + TICKS_PER_QUARTER * 10 &&
+      window.response === "generator-response-required",
+  );
 
   assert.ok(
     transitionWindows.some(
@@ -49,4 +56,5 @@ test("fugue-smoke repairs the reopened rhythm and harmony handoff", () => {
   assert.equal(harmonicWindow?.classification, "audible-progression");
   assert.equal(harmonicWindow?.response, "accepted-context");
   assert.equal(acceptanceWindow?.response, "accepted-context");
+  assert.deepEqual(harmonicSonorityFailures, []);
 });
