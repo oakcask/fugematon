@@ -220,8 +220,8 @@ test("public subject entry diagnostics correspond to emitted entry notes", () =>
 });
 
 function assertCandidateEvaluation(evaluation: CandidateEvaluation): void {
-  assert.equal(evaluation.featureVersion, 6);
-  assert.equal(evaluation.evaluationModelVersion, 12);
+  assert.equal(evaluation.featureVersion, 7);
+  assert.equal(evaluation.evaluationModelVersion, 13);
   assert.ok(Number.isFinite(evaluation.totalCost));
   assert.ok(evaluation.explanations.entries.length > 0);
   assert.ok(evaluation.explanations.voicePairs.length > 0);
@@ -239,6 +239,9 @@ function assertCandidateEvaluation(evaluation: CandidateEvaluation): void {
   for (const dimension of Object.values(evaluation.dimensions)) {
     assertScoreDimension(dimension);
   }
+
+  assert.ok("ascendingFifthTurnbackContourCost" in evaluation.dimensions.texture.features);
+  assert.equal("selectedUpperNeighborFifthClimbContourCost" in evaluation.dimensions.texture.features, false);
 }
 
 function assertScoreDimension(dimension: ScoreDimension): void {

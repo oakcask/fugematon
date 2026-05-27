@@ -5,6 +5,7 @@
 ## Read First
 
 * [Historical reference calibration completion review](historical-reference-calibration-completion.md): Historical reference calibration の完了 evidence。focused seed と 22 seed の voice-pair coupling / entry severe-interval 改善、reference-readiness scope、manual-listening gap、Phase 8 handoff。
+* [Candidate evaluation model refactor review](candidate-evaluation-model-refactor.md): 次実装前の評価モデル整理 evidence。literal fifth-climb 補正を構造的 contour cost へ置き換え、placeholder weight を削除し、22 seed before/after bundle で譜面出力が変わらないことを確認した。
 * [Phase 14 transition-rhythm truthfulness completion review](phase-14-transition-rhythm-truthfulness-completion.md): reopened Phase 14 handoff の最新完了 evidence。`fugue-smoke` measure 5 の local transition-rhythm window、measure 7 / focused seed の sonority-truthfulness、CI / review scope、listening gap を記録する。
 * [Phase 14 fugue-smoke rhythm and harmony replan](phase-14-fugue-smoke-rhythm-harmony-replan.md): `fugue-smoke` 第5小節の transition rhythm と第7小節の short-episode harmonic-continuity が、22 seed review でも generalize するため Phase 14 handoff を再オープンする根拠。Current diagnostics refresh は、measure 7 の harmony は local sonority window で検出できるが、measure 5 の free-counterpoint rhythm は windowed diagnostic が不足していることを記録する。
 * [Phase 14 rhythm and harmony handoff completion review](phase-14-rhythm-harmony-handoff-completion.md): superseded completion evidence。`fugue-smoke` transition rhythm、short-episode harmonic-continuity generalization、focused seed set、CI / review scope、Phase 8 handoff の historical acceptance としてだけ読む。

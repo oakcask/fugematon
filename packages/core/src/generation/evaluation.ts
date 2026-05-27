@@ -6,79 +6,14 @@ import {
   explainCandidateRiskContexts,
 } from "./candidate-risk-contexts.js";
 import { analyzeScore } from "./diagnostics.js";
+import {
+  CANDIDATE_EVALUATION_FEATURE_VERSION,
+  CANDIDATE_EVALUATION_MODEL_VERSION,
+  CANDIDATE_EVALUATION_WEIGHTS,
+} from "./evaluation-model.js";
 import type { Exposition } from "./types.js";
 
-const EVALUATION_WEIGHTS = {
-  hardFailure: 10_000,
-  counterpoint: {
-    parallelPerfect: 10,
-    counterSubjectCoverage: 20,
-    freeCounterpointCoverage: 10,
-    counterSubjectInvertibility: 8,
-  },
-  melody: {
-    leapRecoveryMiss: 35,
-    melodicStagnation: 25,
-    lowerVoiceUnvocalLongSupportQuarter: 18,
-    freeCounterpointStepwiseRunRatio: 8,
-    freeCounterpointMonotoneStepRun: 2,
-    freeCounterpointContour: 12,
-    ornamentDensity: 6,
-  },
-  texture: {
-    samePitchOverlap: 4,
-    unisonOverlap: 8,
-    sameDirectionMotion: 3,
-    fourBeatBassUpperSameDirection: 2,
-    eightBeatBassUpperSameDirection: 1,
-    upperNeighborFifthClimbEightBeatBassUpperSameDirection: 50,
-    fourBeatOuterVoiceSameDirection: 1,
-    sharedRhythmOverlap: 2,
-    voiceIndependenceSelectionUnisonOverlap: 8,
-    voiceIndependenceSelectionSharedRhythmOverlap: 4,
-    voicePairLockstepSelectionSamePitchOverlap: 4,
-    allVoiceSilenceGap: 25,
-    rhythmicIndependence: 12,
-    supportTextureRepetition: 8,
-    expositionEntryStagger: 10,
-    bassUpperContraryMotion: 1,
-    outerVoiceContraryMotion: 1,
-    lineAgency: 2,
-    entryFormulaNovelty: 3,
-    entryBoundaryReset: 0,
-  },
-  subjectClarity: {
-    subjectIdentityViolation: 10_000,
-    answerPlanViolation: 1_000,
-    counterSubjectIdentityRetention: 30,
-    modalCounterSubjectIdentitySelection: 20,
-    counterSubjectSurvivability: 0,
-  },
-  harmony: {
-    entryInstability: 1,
-    severeEntryInterval: 1,
-    unresolvedSevereEntryInterval: 2,
-    modalCadenceEntryInstability: 1,
-    modalCadenceSevereEntryInterval: 2,
-    modalCadenceUnresolvedSevereEntryInterval: 3,
-    unresolvedDissonance: 100,
-    strongBeatDissonance: 0,
-    harmonicFunctionMismatch: 0.000001,
-    strongBeatStructuralIntentMismatch: 0.000001,
-    weakBeatUnresolvedNonChordTone: 0.000001,
-    predominantDirectionMiss: 30,
-    unresolvedAmbiguity: 30,
-    controlledAmbiguity: 10,
-    styleModulationFit: 8,
-    harmonicFunctionMatch: 0,
-  },
-  form: {
-    formRepetition: 50,
-    episodeDirection: 10,
-    strettoClarity: 10,
-    longWindowDevelopment: 2,
-  },
-} as const;
+const EVALUATION_WEIGHTS = CANDIDATE_EVALUATION_WEIGHTS;
 
 export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate: Exposition): CandidateEvaluation {
   const recentNotes = previousNotes.slice(-64);
@@ -86,10 +21,10 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
   const diagnostics = analyzeScore(candidateNotes, candidate.subjectEntries, candidate.sectionPlans);
   const riskContexts = buildCandidateRiskContexts(candidateNotes, candidate, diagnostics);
   const explanations = explainCandidateRiskContexts(riskContexts);
-  const upperNeighborFifthClimbContourSelectionCost =
-    upperNeighborFifthClimbPatternIsPresent(candidate) *
+  const ascendingFifthTurnbackContourCost =
+    hasAscendingFifthTurnbackSubjectContour(candidate) *
     diagnostics.pitchContourMotion.eightBeat.bassUpperSameDirectionRatio *
-    EVALUATION_WEIGHTS.texture.upperNeighborFifthClimbEightBeatBassUpperSameDirection;
+    EVALUATION_WEIGHTS.texture.ascendingFifthTurnbackBassUpperSameDirection;
 
   const hardFailures = diagnostics.issues
     .filter(
@@ -157,7 +92,6 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
     diagnostics.qualityVector.scoreBeautyEvidence.lineAgency.reviewRequiredSpanCount * 2;
   const entryFormulaNoveltyCost =
     diagnostics.qualityVector.scoreBeautyEvidence.entryFormulaNovelty.reviewRequiredFormulaCount;
-  const entryBoundaryResetCost = diagnostics.entryBoundaryContinuity.synchronizedResetCount;
   const texture = {
     cost:
       diagnostics.samePitchOverlapCount * EVALUATION_WEIGHTS.texture.samePitchOverlap +
@@ -167,14 +101,13 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
         EVALUATION_WEIGHTS.texture.fourBeatBassUpperSameDirection +
       diagnostics.pitchContourMotion.eightBeat.bassUpperSameDirectionRatio *
         EVALUATION_WEIGHTS.texture.eightBeatBassUpperSameDirection +
-      upperNeighborFifthClimbContourSelectionCost +
+      ascendingFifthTurnbackContourCost +
       diagnostics.pitchContourMotion.fourBeat.outerVoiceSameDirectionRatio *
         EVALUATION_WEIGHTS.texture.fourBeatOuterVoiceSameDirection +
       diagnostics.sharedRhythmOverlapCount * EVALUATION_WEIGHTS.texture.sharedRhythmOverlap +
       diagnostics.allVoiceSilenceGapCount * EVALUATION_WEIGHTS.texture.allVoiceSilenceGap +
       lineAgencyCost * EVALUATION_WEIGHTS.texture.lineAgency +
-      entryFormulaNoveltyCost * EVALUATION_WEIGHTS.texture.entryFormulaNovelty +
-      entryBoundaryResetCost * EVALUATION_WEIGHTS.texture.entryBoundaryReset,
+      entryFormulaNoveltyCost * EVALUATION_WEIGHTS.texture.entryFormulaNovelty,
     reward:
       diagnostics.rhythmicIndependenceScore * EVALUATION_WEIGHTS.texture.rhythmicIndependence +
       diagnostics.supportTextureRepetitionScore * EVALUATION_WEIGHTS.texture.supportTextureRepetition +
@@ -196,7 +129,7 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
       fourBeatBassUpperContraryRatio: diagnostics.pitchContourMotion.fourBeat.bassUpperContraryRatio,
       eightBeatBassUpperSameDirectionRatio: diagnostics.pitchContourMotion.eightBeat.bassUpperSameDirectionRatio,
       eightBeatBassUpperContraryRatio: diagnostics.pitchContourMotion.eightBeat.bassUpperContraryRatio,
-      selectedUpperNeighborFifthClimbContourCost: upperNeighborFifthClimbContourSelectionCost,
+      ascendingFifthTurnbackContourCost,
       fourBeatOuterVoiceSameDirectionRatio: diagnostics.pitchContourMotion.fourBeat.outerVoiceSameDirectionRatio,
       fourBeatOuterVoiceContraryRatio: diagnostics.pitchContourMotion.fourBeat.outerVoiceContraryRatio,
       sharedRhythmOverlapCount: diagnostics.sharedRhythmOverlapCount,
@@ -211,7 +144,7 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
       qualityVectorDurationBasedLockstep: qualityVectorAxisValue(diagnostics, "durationBasedLockstep"),
       lineAgencyCost,
       entryFormulaNoveltyCost,
-      entryBoundaryResetCost,
+      entryBoundaryResetCount: diagnostics.entryBoundaryContinuity.synchronizedResetCount,
       shortStrongBeatEntryNoteCount: diagnostics.shortStrongBeatEntryNoteCount,
       entrySupportInstabilityCount: diagnostics.entrySupportInstabilityCount,
       allVoiceSilenceGapCount: diagnostics.allVoiceSilenceGapCount,
@@ -237,12 +170,7 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
   const subjectClarity = {
     cost:
       diagnostics.subjectIdentityViolations * EVALUATION_WEIGHTS.subjectClarity.subjectIdentityViolation +
-      diagnostics.answerPlanViolations * EVALUATION_WEIGHTS.subjectClarity.answerPlanViolation +
-      diagnostics.qualityVector.scoreBeautyEvidence.counterSubjectSurvivability.tradeoffWindowCount *
-        EVALUATION_WEIGHTS.subjectClarity.counterSubjectSurvivability +
-      diagnostics.qualityVector.scoreBeautyEvidence.counterSubjectSurvivability.weakWindowCount *
-        EVALUATION_WEIGHTS.subjectClarity.counterSubjectSurvivability *
-        2,
+      diagnostics.answerPlanViolations * EVALUATION_WEIGHTS.subjectClarity.answerPlanViolation,
     reward:
       diagnostics.counterSubjectIdentityRetention * EVALUATION_WEIGHTS.subjectClarity.counterSubjectIdentityRetention +
       modalCounterSubjectIdentitySelectionReward(
@@ -269,18 +197,11 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
     cost:
       entryHarmonyRiskCost +
       diagnostics.unresolvedDissonanceCount * EVALUATION_WEIGHTS.harmony.unresolvedDissonance +
-      diagnostics.strongBeatDissonanceCount * EVALUATION_WEIGHTS.harmony.strongBeatDissonance +
-      diagnostics.harmonicFunctionMismatches * EVALUATION_WEIGHTS.harmony.harmonicFunctionMismatch +
-      diagnostics.texturePlanningReview.metricalHarmony.strongBeatStructuralIntentMismatchCount *
-        EVALUATION_WEIGHTS.harmony.strongBeatStructuralIntentMismatch +
-      diagnostics.texturePlanningReview.metricalHarmony.weakBeatUnresolvedNonChordToneCount *
-        EVALUATION_WEIGHTS.harmony.weakBeatUnresolvedNonChordTone +
       diagnostics.predominantDirectionMisses * EVALUATION_WEIGHTS.harmony.predominantDirectionMiss +
       diagnostics.unresolvedAmbiguityWarnings * EVALUATION_WEIGHTS.harmony.unresolvedAmbiguity,
     reward:
       diagnostics.controlledAmbiguityScore * EVALUATION_WEIGHTS.harmony.controlledAmbiguity +
-      diagnostics.styleModulationFit * EVALUATION_WEIGHTS.harmony.styleModulationFit +
-      diagnostics.harmonicFunctionMatches * EVALUATION_WEIGHTS.harmony.harmonicFunctionMatch,
+      diagnostics.styleModulationFit * EVALUATION_WEIGHTS.harmony.styleModulationFit,
     features: {
       unresolvedDissonanceCount: diagnostics.unresolvedDissonanceCount,
       strongBeatDissonanceCount: diagnostics.strongBeatDissonanceCount,
@@ -368,8 +289,8 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
     form.reward;
 
   return {
-    featureVersion: 6,
-    evaluationModelVersion: 12,
+    featureVersion: CANDIDATE_EVALUATION_FEATURE_VERSION,
+    evaluationModelVersion: CANDIDATE_EVALUATION_MODEL_VERSION,
     totalCost: Math.round(totalCost * 1000) / 1000,
     hardFailures,
     explanations,
@@ -453,8 +374,25 @@ function qualityVectorAxisValue(diagnostics: ReturnType<typeof analyzeScore>, ax
   return diagnostics.qualityVector.axes.find((summary) => summary.axis === axis)?.value ?? 0;
 }
 
-function upperNeighborFifthClimbPatternIsPresent(candidate: Exposition): number {
-  return Number(
-    candidate.subjectEntries.some((entry) => entry.expectedDegreePattern.slice(0, 8).join("-") === "0-1-2-3-4-3-1-2"),
+function hasAscendingFifthTurnbackSubjectContour(candidate: Exposition): number {
+  return Number(candidate.subjectEntries.some((entry) => isAscendingFifthTurnback(entry.expectedDegreePattern)));
+}
+
+function isAscendingFifthTurnback(degrees: readonly number[]): boolean {
+  const opening = degrees.slice(0, 8);
+  if (opening.length < 8) {
+    return false;
+  }
+
+  const [start, second, third, fourth, peak, turnback, lowerNeighbor, recovery] = opening;
+  return (
+    second === start + 1 &&
+    third === second + 1 &&
+    fourth === third + 1 &&
+    peak === start + 4 &&
+    turnback === peak - 1 &&
+    lowerNeighbor < turnback &&
+    recovery === lowerNeighbor + 1 &&
+    recovery <= turnback
   );
 }
