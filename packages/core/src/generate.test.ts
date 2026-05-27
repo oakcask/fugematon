@@ -15,7 +15,6 @@ test("generateScore is deterministic for identical input", () => {
   const input = {
     seed: "bach-001",
     lengthTicks: 7680,
-    parameters: { strictness: 0.75 },
   };
 
   assert.deepEqual(generateScore(input), generateScore(input));
@@ -53,23 +52,17 @@ test("generateScore emits a tick-based exposition", () => {
 test("generateScore validates reproducibility inputs", () => {
   assert.throws(() => generateScore({ seed: "", lengthTicks: 960 }), /seed/);
   assert.throws(() => generateScore({ seed: "x", lengthTicks: 0 }), /lengthTicks/);
-  assert.throws(() => generateScore({ seed: "x", lengthTicks: 960, parameters: { strictness: 2 } }), /strictness/);
 });
 
 test("generateScore keeps public event and diagnostics counts aligned", () => {
   const output = generateScore({
     seed: "event-contract",
     lengthTicks: REVIEW_LENGTH_TICKS,
-    parameters: { density: 0.25, subjectPresence: 1 },
   });
   const notes = output.events.filter((event): event is NoteEvent => event.kind === "note");
   const stateChanges = output.events.filter(
     (event): event is Extract<MetaEvent, { type: "state-change" }> =>
       event.kind === "meta" && event.type === "state-change",
-  );
-  const parameterChange = output.events.find(
-    (event): event is Extract<MetaEvent, { type: "parameter-change" }> =>
-      event.kind === "meta" && event.type === "parameter-change",
   );
 
   assert.equal(output.diagnostics.eventCount, output.events.length);
@@ -78,10 +71,6 @@ test("generateScore keeps public event and diagnostics counts aligned", () => {
     stateChanges.map((event) => event.payload.state),
     output.diagnostics.stateTransitions,
   );
-  assert.equal(parameterChange?.payload.parameters.strictness, 0.8);
-  assert.equal(parameterChange?.payload.parameters.density, 0.25);
-  assert.equal(parameterChange?.payload.parameters.subjectPresence, 1);
-
   for (const note of notes) {
     assert.ok(Number.isSafeInteger(note.startTick));
     assert.ok(Number.isSafeInteger(note.durationTicks));

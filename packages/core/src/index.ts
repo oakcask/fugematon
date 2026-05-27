@@ -3,7 +3,6 @@ export {
   BEAUTY_TEXTURE_DIAGNOSTICS_PROFILE,
   CONTOUR_MOTION_DIAGNOSTICS_PROFILE,
   COUNTERPOINT_HARMONY_DIAGNOSTICS_PROFILE,
-  DEFAULT_GENERATION_PARAMETERS,
   DEFAULT_SELECTION_MODEL,
   EXPOSITION_DIAGNOSTICS_PROFILE,
   EXPOSITION_REPRESENTATIVE_SEEDS,
@@ -60,7 +59,6 @@ export type {
   GenerationDiagnostics,
   GenerationInput,
   GenerationOutput,
-  GenerationParameters,
   HarmonicAnchor,
   HarmonicFunction,
   HarmonicPlan,
@@ -133,7 +131,7 @@ export type {
   VoicePairUnisonSummary,
 } from "./events.js";
 export { normalizeSelectionModel } from "./events.js";
-export { generateScore, normalizeParameters } from "./generate.js";
+export { generateScore } from "./generate.js";
 export { seedToUint32State, Xoshiro128StarStar } from "./prng.js";
 export type {
   HistoricalReferenceCalibrationMetricRole,

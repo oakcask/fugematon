@@ -15,20 +15,16 @@ test("public API emits the stable score metadata envelope", () => {
   const output = generateScore({
     seed: "public-contract",
     lengthTicks: REVIEW_LENGTH_TICKS,
-    parameters: { density: 0.25, subjectPresence: 1 },
   });
   const metadata = output.events.filter((event): event is MetaEvent => event.kind === "meta");
   const notes = output.events.filter((event): event is NoteEvent => event.kind === "note");
-  const firstMetadataTypes = metadata.slice(0, 7).map((event) => event.type);
+  const firstMetadataTypes = metadata.slice(0, 6).map((event) => event.type);
   const scoreEnd = output.events.at(-1);
   const generatorVersion = metadata.find(
     (event): event is Extract<MetaEvent, { type: "generator-version" }> => event.type === "generator-version",
   );
   const timebase = metadata.find(
     (event): event is Extract<MetaEvent, { type: "timebase" }> => event.type === "timebase",
-  );
-  const parameterChange = metadata.find(
-    (event): event is Extract<MetaEvent, { type: "parameter-change" }> => event.type === "parameter-change",
   );
 
   assert.deepEqual(firstMetadataTypes, [
@@ -37,16 +33,16 @@ test("public API emits the stable score metadata envelope", () => {
     "tempo-change",
     "time-signature",
     "key-signature",
-    "parameter-change",
     "state-change",
   ]);
   assert.equal(generatorVersion?.tick, 0);
   assert.equal(generatorVersion?.payload.version, GENERATOR_VERSION);
   assert.equal(timebase?.tick, 0);
   assert.equal(timebase?.payload.ticksPerQuarter, TICKS_PER_QUARTER);
-  assert.equal(parameterChange?.payload.parameters.strictness, 0.8);
-  assert.equal(parameterChange?.payload.parameters.density, 0.25);
-  assert.equal(parameterChange?.payload.parameters.subjectPresence, 1);
+  assert.equal(
+    metadata.some((event) => String(event.type) === "parameter-change"),
+    false,
+  );
   assert.equal(scoreEnd?.kind, "meta");
   assert.equal(scoreEnd?.type, "score-end");
   assert.equal(scoreEnd?.tick, output.diagnostics.generatedUntilTick);

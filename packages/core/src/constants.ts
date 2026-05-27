@@ -13,12 +13,6 @@ export const VOICE_RANGES = {
   bass: { min: 36, max: 60 },
 } as const;
 
-export const DEFAULT_GENERATION_PARAMETERS = {
-  strictness: 0.8,
-  density: 0.5,
-  subjectPresence: 0.7,
-} as const;
-
 export const DEFAULT_SELECTION_MODEL = "section-local-planner" satisfies SelectionModel;
 
 export const EXPOSITION_DIAGNOSTICS_PROFILE = {
