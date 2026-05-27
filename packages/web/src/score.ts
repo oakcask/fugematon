@@ -1,6 +1,7 @@
 import type {
   FugueState,
   GenerationOutput,
+  KeySignature,
   MetaEvent,
   NoteRole,
   PlannedEntry,
@@ -40,6 +41,7 @@ export type PlaybackModel = {
   bpm: number;
   ticksPerQuarter: number;
   timeSignature: TimeSignature;
+  keySignature: KeySignature;
   totalTicks: number;
   totalSeconds: number;
   notes: PlaybackNote[];
@@ -64,6 +66,7 @@ export function createPlaybackModel(
   const bpm = readBpm(output.events) ?? DEFAULT_BPM;
   const ticksPerQuarter = readTicksPerQuarter(output.events) ?? DEFAULT_TICKS_PER_QUARTER;
   const timeSignature = readTimeSignature(output.events) ?? DEFAULT_TIME_SIGNATURE;
+  const keySignature = readKeySignature(output.events) ?? { tonic: "C", mode: "major" };
   const totalTicks = readScoreEndTick(output.events) ?? output.diagnostics.generatedUntilTick;
   const subjectEntries = output.diagnostics.subjectEntries.map((entry) => ({ ...entry }));
   const subjectEntryByNoteStart = new Map(
@@ -100,6 +103,7 @@ export function createPlaybackModel(
     bpm,
     ticksPerQuarter,
     timeSignature,
+    keySignature,
     totalTicks,
     totalSeconds: ticksToSeconds(totalTicks, bpm, ticksPerQuarter),
     notes,
@@ -128,6 +132,14 @@ export function ticksPerBar(timeSignature: TimeSignature, ticksPerQuarter: numbe
 
 export function formatTimeSignature(timeSignature: TimeSignature): string {
   return `${timeSignature.numerator}/${timeSignature.denominator}`;
+}
+
+export function formatKeySignature(keySignature: KeySignature): string {
+  return `${keySignature.tonic} ${formatKeyMode(keySignature)}`;
+}
+
+function formatKeyMode(keySignature: KeySignature): string {
+  return keySignature.mode.charAt(0).toUpperCase() + keySignature.mode.slice(1);
 }
 
 export function formatBarBeatPosition(ticks: number, timeSignature: TimeSignature, ticksPerQuarter: number): string {
@@ -159,7 +171,11 @@ export function formatBarBeatDuration(ticks: number, timeSignature: TimeSignatur
 
 export function formatPlaybackPosition(seconds: number, model: PlaybackModel): string {
   const playbackTick = secondsToTicks(seconds, model.bpm, model.ticksPerQuarter);
-  return `${Math.floor(seconds)}s / ${formatBarBeatPosition(playbackTick, model.timeSignature, model.ticksPerQuarter)}`;
+  return `${Math.floor(seconds)}s / ${model.totalSeconds.toFixed(1)}s | bar ${formatBarBeatPosition(
+    playbackTick,
+    model.timeSignature,
+    model.ticksPerQuarter,
+  )} / ${formatBarBeatPosition(model.totalTicks, model.timeSignature, model.ticksPerQuarter)}`;
 }
 
 function computePitchRange(notes: readonly PlaybackNote[]): PlaybackModel["pitchRange"] {
@@ -188,6 +204,10 @@ function readTicksPerQuarter(events: readonly ScoreEvent[]): number | undefined 
 
 function readTimeSignature(events: readonly ScoreEvent[]): TimeSignature | undefined {
   return findMetaEvent(events, "time-signature")?.payload;
+}
+
+function readKeySignature(events: readonly ScoreEvent[]): KeySignature | undefined {
+  return findMetaEvent(events, "key-signature")?.payload;
 }
 
 function readScoreEndTick(events: readonly ScoreEvent[]): number | undefined {

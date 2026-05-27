@@ -5,6 +5,7 @@ import {
   createPlaybackModel,
   formatBarBeatDuration,
   formatBarBeatPosition,
+  formatKeySignature,
   formatPlaybackPosition,
   formatTimeSignature,
   secondsToTicks,
@@ -20,6 +21,8 @@ test("createPlaybackModel extracts timing metadata and notes", () => {
   assert.equal(model.ticksPerQuarter, 480);
   assert.ok([3, 4, 6].includes(model.timeSignature.numerator));
   assert.ok([4, 8].includes(model.timeSignature.denominator));
+  assert.ok(model.keySignature.tonic.length > 0);
+  assert.ok(["major", "minor", "dorian", "mixolydian", "aeolian"].includes(model.keySignature.mode));
   assert.equal(model.totalTicks, output.diagnostics.generatedUntilTick);
   assert.equal(model.notes.length, output.diagnostics.noteCount);
   assert.deepEqual(model.stateTransitions, output.diagnostics.stateTransitions);
@@ -51,6 +54,10 @@ test("createPlaybackModel can select the organ default performance profile", () 
   assert.equal(model.notes.find((note) => note.voice === "soprano")?.gain, 0.18);
 });
 
+test("key signature helpers format tonic and mode metadata", () => {
+  assert.equal(formatKeySignature({ tonic: "Bb", mode: "dorian" }), "Bb Dorian");
+});
+
 test("ticksToSeconds maps score ticks to playback seconds", () => {
   assert.equal(ticksToSeconds(480, 120, 480), 0.5);
   assert.equal(ticksToSeconds(960, 60, 480), 2);
@@ -79,9 +86,23 @@ test("bar and beat helpers use score time signature metadata", () => {
   assert.equal(formatBarBeatDuration(1440 * 3, compoundTime, 480), "3 bars");
 });
 
-test("formatPlaybackPosition reports seconds and bar-beat location", () => {
+test("formatPlaybackPosition reports seconds and bar-beat positions", () => {
   const model = createPlaybackModel(generateScore({ seed: "fugue-smoke", lengthTicks: 7680 }));
 
-  assert.equal(formatPlaybackPosition(0, model), "0s / 1:1");
-  assert.match(formatPlaybackPosition(2.75, model), /^2s \/ \d+:\d+$/);
+  assert.equal(
+    formatPlaybackPosition(0, model),
+    `0s / ${model.totalSeconds.toFixed(1)}s | bar 1:1 / ${formatBarBeatPosition(
+      model.totalTicks,
+      model.timeSignature,
+      model.ticksPerQuarter,
+    )}`,
+  );
+  assert.equal(
+    formatPlaybackPosition(2.75, model),
+    `2s / ${model.totalSeconds.toFixed(1)}s | bar ${formatBarBeatPosition(
+      secondsToTicks(2.75, model.bpm, model.ticksPerQuarter),
+      model.timeSignature,
+      model.ticksPerQuarter,
+    )} / ${formatBarBeatPosition(model.totalTicks, model.timeSignature, model.ticksPerQuarter)}`,
+  );
 });

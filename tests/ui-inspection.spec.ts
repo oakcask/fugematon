@@ -68,6 +68,10 @@ for (const viewport of VIEWPORTS) {
     await expect(page).toHaveURL(/[?&]seed=fugue-smoke(?:&|$)/);
     await expect(page.getByRole("button", { name: "Random seed" })).toBeVisible();
     await expect(page.getByText("Tempo")).toBeVisible();
+    await expect(page.getByText("Key")).toBeVisible();
+    await expect(page.getByText("Mode")).toBeHidden();
+    await expect(page.getByText("Duration")).toBeHidden();
+    await expect(page.locator("#playback-position")).toHaveText(/^\d+s \/ \d+\.\d+s \| bar \d+:\d+ \/ \d+:\d+$/);
     await expect(page.getByRole("button", { name: "Play score" })).toBeVisible();
 
     await page.getByRole("button", { name: "Random seed" }).click();

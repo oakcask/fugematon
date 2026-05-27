@@ -6,7 +6,7 @@ import { drawPianoRoll } from "./piano-roll.js";
 import {
   createPlaybackModel,
   DEFAULT_WEB_PERFORMANCE_PROFILE_ID,
-  formatBarBeatDuration,
+  formatKeySignature,
   formatPlaybackPosition,
   formatTimeSignature,
   type PlaybackModel,
@@ -55,8 +55,8 @@ app.innerHTML = `
         <strong id="meter"></strong>
       </div>
       <div>
-        <span class="metric-label">Duration</span>
-        <strong id="duration"></strong>
+        <span class="metric-label">Key</span>
+        <strong id="key-signature"></strong>
       </div>
       <div>
         <span class="metric-label">Notes</span>
@@ -104,7 +104,7 @@ const randomSeedButton = requireElement(
 );
 const tempo = requireElement(document.querySelector<HTMLElement>("#tempo"), "tempo metric");
 const meter = requireElement(document.querySelector<HTMLElement>("#meter"), "meter metric");
-const duration = requireElement(document.querySelector<HTMLElement>("#duration"), "duration metric");
+const keySignature = requireElement(document.querySelector<HTMLElement>("#key-signature"), "key signature metric");
 const notes = requireElement(document.querySelector<HTMLElement>("#notes"), "notes metric");
 const pitchSpan = requireElement(document.querySelector<HTMLElement>("#pitch-span"), "pitch span metric");
 const states = requireElement(document.querySelector<HTMLElement>("#states"), "states metric");
@@ -226,11 +226,7 @@ function writeUrlSeed(seed: string, mode: UrlUpdateMode): void {
 function render(nextState: AppState): void {
   tempo.textContent = `${nextState.model.bpm} bpm`;
   meter.textContent = formatTimeSignature(nextState.model.timeSignature);
-  duration.textContent = `${nextState.model.totalSeconds.toFixed(1)} s / ${formatBarBeatDuration(
-    nextState.model.totalTicks,
-    nextState.model.timeSignature,
-    nextState.model.ticksPerQuarter,
-  )}`;
+  keySignature.textContent = formatKeySignature(nextState.model.keySignature);
   notes.textContent = `${nextState.model.notes.length}`;
   pitchSpan.textContent = `${nextState.model.pitchRange.min}-${nextState.model.pitchRange.max}`;
   states.textContent = `${new Set(nextState.model.stateTransitions).size}`;
