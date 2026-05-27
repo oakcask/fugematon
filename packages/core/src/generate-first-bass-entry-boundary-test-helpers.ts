@@ -65,6 +65,27 @@ export function collectFirstBassEntryBoundaryMetrics(seeds: readonly string[]): 
   };
 }
 
+export function assertFirstBassEntryBoundaryContract(seeds: readonly string[]) {
+  const metrics = collectFirstBassEntryBoundaryMetrics(seeds);
+
+  assert.equal(metrics.seedCount, seeds.length);
+  assert.equal(metrics.firstBassEntryResetSeedCount, 0);
+  assert.equal(metrics.postExpositionSynchronizedResetCount, 0);
+  assert.ok(metrics.postExpositionWindowCount >= metrics.seedCount);
+  assert.ok(
+    metrics.windows.every(
+      (window) =>
+        window.state === "exposition" &&
+        window.form === "answer" &&
+        window.entryVoice === "bass" &&
+        (window.startTick === 5760 || window.startTick === 4320) &&
+        window.outsideOnsetVoices.length < 3 &&
+        window.outsideEndedAtEntryVoices.length < 3 &&
+        window.carriedOutsideVoices.length + window.delayedOutsideVoices.length > 0,
+    ),
+  );
+}
+
 export function assertFirstBassEntryBoundaryContinuityEvidence(seeds: readonly string[]): void {
   const metrics = collectFirstBassEntryBoundaryMetrics(seeds);
   const continuitySeeds = metrics.windows

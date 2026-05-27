@@ -58,3 +58,27 @@ test("fugue-smoke repairs the reopened rhythm and harmony handoff", () => {
   assert.equal(acceptanceWindow?.response, "accepted-context");
   assert.deepEqual(harmonicSonorityFailures, []);
 });
+
+test("fugue-smoke handoff diagnostics still expose the transition-rhythm coverage gap", () => {
+  const diagnostics = generateScore({
+    seed: "fugue-smoke",
+    lengthTicks: TICKS_PER_QUARTER * 288,
+  }).diagnostics;
+  const transitionTick = TICKS_PER_QUARTER * 19;
+  const transitionWindows = diagnostics.meterConsistencyReview.windows.filter(
+    (window) => window.tick === transitionTick,
+  );
+  const transitionRhythmWindows = diagnostics.scoreWindowAcceptance.windows.filter(
+    (window) => (window.kind as string) === "transition-rhythm" && window.startTick === transitionTick,
+  );
+
+  assert.equal(transitionWindows.length, 3);
+  assert.ok(
+    transitionWindows.every(
+      (window) =>
+        window.measureOffsetTicks === TICKS_PER_QUARTER * 3 &&
+        window.classification === "pickup-or-cross-metric",
+    ),
+  );
+  assert.equal(transitionRhythmWindows.length, 0);
+});
