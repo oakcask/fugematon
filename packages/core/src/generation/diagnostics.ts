@@ -26,6 +26,7 @@ import type {
   StepwisePatternRoleSummary,
   StepwisePatternSummary,
   TexturePlanningReviewSummary,
+  TransitionRhythmReviewSummary,
   Voice,
 } from "../events.js";
 import { analyzeBassAnswerTailTexture } from "./bass-answer-tail-texture.js";
@@ -47,6 +48,7 @@ import {
   VOICE_ENTRY_ORDER,
 } from "./shared.js";
 import { analyzeExposedFreeCounterpointSolo, analyzeSoloTexture } from "./solo-texture.js";
+import { analyzeTransitionRhythm } from "./transition-rhythm-review.js";
 import type { ActivePitch, ActiveVerticality, TextureDiagnostics } from "./types.js";
 import { type HalfBeatVerticality, halfBeatVerticalities } from "./verticality.js";
 
@@ -95,6 +97,7 @@ export function analyzeScore(
   qualityVector: QualityVector;
   dissonanceTriage: DissonanceTriageSummary;
   harmonicContinuity: HarmonicContinuitySummary;
+  transitionRhythmReview: TransitionRhythmReviewSummary;
   ornamentCandidateCount: number;
   ornamentDensity: number;
   ornamentPlacementReasons: OrnamentPlacementReasons;
@@ -173,6 +176,7 @@ export function analyzeScore(
   const leapRecoveryMisses = countIssues(issues, "leap-recovery-miss");
   const harmonicDiagnostics = analyzeHarmonicPlans(notes, sectionPlans, subjectEntries);
   const harmonicContinuity = analyzeHarmonicContinuity(notes, sectionPlans);
+  const transitionRhythmReview = analyzeTransitionRhythm(notes, subjectEntries, sectionPlans);
   const warnings: string[] = [];
   if (rangeViolations > 0) {
     warnings.push("range violations detected");
@@ -233,6 +237,7 @@ export function analyzeScore(
     leapRecoveryMisses,
     ...harmonicDiagnostics,
     harmonicContinuity,
+    transitionRhythmReview,
     issues,
     warnings,
   };

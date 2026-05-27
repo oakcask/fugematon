@@ -2,10 +2,11 @@
 
 Phase 14 is inserted after Phase 13Z and before Phase 8. Its purpose is to make musical beauty the primary acceptance criterion for the generator. Existing metrics, compatibility fields, and guardrail margins are secondary when they contradict the score.
 
-Status: reopened for Phase 8 handoff. The earlier score-led beauty, metrical repair, texture-continuity, and `seed-1dxb2n8-1miapx7` harmonic-continuity repairs remain accepted evidence. The latest `fugue-smoke` diagnostics refresh shows that measure 7 remains locally visible through `harmonic-sonority` review windows even when top-level `harmonicContinuity` reads as accepted context, while measure 5 still lacks a windowed rhythm diagnostic for the free-counterpoint surface. Phase 8 remains blocked until focused handoff evidence covers both local sonority truthfulness and transition-rhythm truthfulness.
+Status: complete for Phase 8 handoff. The earlier score-led beauty, metrical repair, texture-continuity, and `seed-1dxb2n8-1miapx7` harmonic-continuity repairs remain accepted evidence. The reopened `fugue-smoke` handoff is now covered by local sonority truthfulness and local transition-rhythm truthfulness: accepted short episodes are checked against child `harmonic-sonority` windows, and the measure 5 off-downbeat boundary is exposed through a `transitionRhythmReview` score window before aggregate rhythm metrics are used as context.
 
 Planning reviews:
 
+* [Phase 14 transition-rhythm truthfulness completion review](../reviews/phase-14-transition-rhythm-truthfulness-completion.md): latest accepted handoff evidence for `fugue-smoke` measure 5 transition-rhythm truthfulness, measure 7 sonority-truthfulness, focused seed scope, and remaining review-required signals.
 * [Phase 14 fugue-smoke rhythm and harmony replan](../reviews/phase-14-fugue-smoke-rhythm-harmony-replan.md): latest evidence reopening the handoff for `fugue-smoke` measure 5 transition rhythm, measure 7 harmonic continuity, and related 22 seed patterns.
 * [Phase 14 rhythm and harmony handoff completion review](../reviews/phase-14-rhythm-harmony-handoff-completion.md): superseded completion evidence for the reopened transition-rhythm, generalized harmonic-continuity, and refreshed focused seed review. Read it as historical acceptance evidence, not current handoff status.
 * [Phase 14 harmonic continuity generation review](../reviews/phase-14-harmonic-continuity-generation.md): completion evidence for the Phase 14C4 generator response and the remaining focused-seed review-required tradeoff.
@@ -158,6 +159,8 @@ Reopened implementation note: the first post-exposition continuation may keep a 
 
 Diagnostics gap: the current metric surface can locate the off-downbeat section boundary but not the reported free-counterpoint rhythm pattern as a measure-local symptom. Add a transition-rhythm window to `scoreWindowAcceptance` or an adjacent review summary before accepting a generator repair. The window should report attack count, short-attack count, active voices, role mix, section-boundary kind, meter offset, and whether the pickup is supported by cadence, held tone, suspension, or directed contour.
 
+Implementation note: `transitionRhythmReview` now records local section-boundary windows with attack count, short-attack count, active voices, role mix, boundary kind, meter offset, and support rhetoric. The `fugue-smoke` measure 5 handoff is classified as `prepared-pickup` from sustained pickup and directed-contour evidence, and the same windows are surfaced through `scoreWindowAcceptance` as `transition-rhythm` entries. See the [Phase 14 transition-rhythm truthfulness completion review](../reviews/phase-14-transition-rhythm-truthfulness-completion.md).
+
 ### 14D: Metric truthfulness and scope cleanup
 
 Reclassify or remove metrics that cannot explain the accepted score windows. Keep reference aggregate and Phase 7B readiness as `ci-observed` or safety/context evidence, not beauty acceptance. Keep pitch-class unison, lockstep, entry severe interval, line agency, counter-subject survivability, entry formula novelty, and subject-stem concentration as `review-required` until score-window evidence, fix target, and runtime justify CI promotion.
@@ -174,6 +177,8 @@ Reopened note: 14E must be refreshed again after the stricter rhythm and harmony
 
 Refresh requirement: the next handoff bundle must report both the local sonority child windows inside accepted short episodes and the new transition-rhythm windows. A bundle that only improves broad rhythmic-independence, free-counterpoint repetition, or top-level harmonic-continuity counts is not sufficient Phase 8 evidence.
 
+Completion note: the refreshed handoff evidence reports both local sonority child windows inside accepted short episodes and local transition-rhythm windows. Remaining later transition, line-agency, counter-subject, phrase-development, and listening signals stay `review-required`; they are not promoted to Phase 8 blockers without a new score-window review.
+
 ## Phase 8 Handoff
 
-Phase 8 remains blocked. Infinite playback must not use segment boundaries, visual smoothing, playback profiles, or UI controls to make weak counterpoint, repeated formulae, entry resets, same-family fatigue, unresolved semitone-friction tradeoffs, unclear harmonic progressions, unsettled transition rhythm, or meter mismatch less audible.
+Phase 8 may resume from this handoff. Infinite playback must not use segment boundaries, visual smoothing, playback profiles, or UI controls to make weak counterpoint, repeated formulae, entry resets, same-family fatigue, unresolved semitone-friction tradeoffs, unclear harmonic progressions, unsettled transition rhythm, or meter mismatch less audible.

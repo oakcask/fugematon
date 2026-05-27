@@ -635,6 +635,40 @@ export type MeterConsistencyReviewSummary = {
   windows: MeterConsistencyWindow[];
 };
 
+export type TransitionRhythmSupportKind =
+  | "held-support"
+  | "cadential-support"
+  | "suspension-support"
+  | "directed-contour"
+  | "sustained-pickup";
+
+export type TransitionRhythmWindow = {
+  startTick: number;
+  durationTicks: number;
+  measureStartTick: number;
+  measureOffsetTicks: number;
+  beatStrength: BeatStrength;
+  state: Extract<FugueState, "episode">;
+  boundaryKinds: Array<"entry-start" | "phrase-boundary" | "harmonic-anchor">;
+  attackCount: number;
+  shortAttackCount: number;
+  activeVoiceCount: number;
+  activeVoices: Voice[];
+  roleMix: NoteRole[];
+  supportKinds: TransitionRhythmSupportKind[];
+  classification: "prepared-pickup" | "meter-confirming" | "review-required";
+  response: "accepted-context" | "review-required";
+};
+
+export type TransitionRhythmReviewSummary = {
+  schemaVersion: 1;
+  focusedWindowCount: number;
+  preparedPickupWindowCount: number;
+  meterConfirmingWindowCount: number;
+  reviewRequiredWindowCount: number;
+  windows: TransitionRhythmWindow[];
+};
+
 export type TexturePlanningReviewSummary = {
   schemaVersion: 1;
   adjacentVoiceIntervals: AdjacentVoiceIntervalSummary[];
@@ -1158,6 +1192,7 @@ export type ScoreWindowAcceptanceKind =
   | "important-entry-continuity"
   | "harmonic-continuity"
   | "harmonic-sonority"
+  | "transition-rhythm"
   | "dissonance-triage"
   | "active-voice-pair-span"
   | "counter-subject-survival"
@@ -1189,6 +1224,7 @@ export type ScoreWindowAcceptanceSummary = {
   importantEntryWindowCount: number;
   harmonicContinuityWindowCount: number;
   harmonicSonorityWindowCount: number;
+  transitionRhythmWindowCount: number;
   dissonanceWindowCount: number;
   activeVoicePairSpanCount: number;
   counterSubjectWindowCount: number;
@@ -1258,6 +1294,7 @@ export type GenerationDiagnostics = {
   phraseDevelopmentReview: PhraseDevelopmentReviewSummary;
   dissonanceTriage: DissonanceTriageSummary;
   harmonicContinuity: HarmonicContinuitySummary;
+  transitionRhythmReview: TransitionRhythmReviewSummary;
   scoreWindowAcceptance: ScoreWindowAcceptanceSummary;
   ornamentCandidateCount: number;
   ornamentDensity: number;

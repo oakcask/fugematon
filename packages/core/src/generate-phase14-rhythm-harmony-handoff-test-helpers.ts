@@ -22,6 +22,14 @@ export function assertPhase14ReviewSeedsImproveHarmonicContinuityEvidence(seeds:
         (window) => window.response === "generator-response-required",
       ).length,
       audibleProgressionWindowCount: diagnostics.harmonicContinuity.audibleProgressionWindowCount,
+      transitionRhythmWindowCount: diagnostics.transitionRhythmReview.focusedWindowCount,
+      transitionRhythmEvidenceCount: diagnostics.transitionRhythmReview.windows.filter(
+        (window) =>
+          window.attackCount > 0 &&
+          window.shortAttackCount > 0 &&
+          window.activeVoiceCount > 1 &&
+          window.roleMix.includes("free-counterpoint"),
+      ).length,
       earlyStrettoSonorityFailures: diagnostics.harmonicContinuity.windows
         .filter(
           (window) =>
@@ -47,6 +55,14 @@ export function assertPhase14ReviewSeedsImproveHarmonicContinuityEvidence(seeds:
   );
   assert.ok(
     summaries.every((summary) => summary.generatorResponseWindowCount <= 3),
+    JSON.stringify(summaries, null, 2),
+  );
+  assert.ok(
+    summaries.every((summary) => summary.transitionRhythmWindowCount > 0),
+    JSON.stringify(summaries, null, 2),
+  );
+  assert.ok(
+    summaries.every((summary) => summary.transitionRhythmEvidenceCount > 0),
     JSON.stringify(summaries, null, 2),
   );
   assert.ok(
