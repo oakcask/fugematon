@@ -54,8 +54,8 @@ export function requireSelectedCandidateEvaluation(
   const selectedEvaluation = selectedCandidateEvaluations[0];
 
   assert.ok(selectedEvaluation !== undefined);
-  assert.equal(selectedEvaluation.featureVersion, 6);
-  assert.equal(selectedEvaluation.evaluationModelVersion, 12);
+  assert.equal(selectedEvaluation.featureVersion, 7);
+  assert.equal(selectedEvaluation.evaluationModelVersion, 13);
   assert.ok(selectedEvaluation.explanations.entries.length > 0);
   assert.ok(selectedEvaluation.explanations.voicePairs.length > 0);
   assert.ok(selectedEvaluation.explanations.voices.length > 0);

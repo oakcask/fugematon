@@ -1,4 +1,5 @@
 import type { CandidateEvaluation, SelectionModel } from "../events.js";
+import { CANDIDATE_SELECTION_RISK_WEIGHTS } from "./evaluation-model.js";
 
 export function candidateSelectionScore(evaluation: CandidateEvaluation, selectionModel: SelectionModel): number {
   if (selectionModel === "baseline") {
@@ -34,10 +35,10 @@ function entryHarmonySelectionRiskAdjustment(evaluation: CandidateEvaluation): n
   const unresolvedDuration = evaluation.dimensions.harmony.features.qualityVectorUnresolvedEntrySevereIntervalDuration;
 
   return (
-    entrySupportInstabilityCount * 1.5 +
-    severeEntryIntervalCount * 3 +
-    unresolvedSevereEntryIntervalCount * 5 +
-    unresolvedDuration * 0.6
+    entrySupportInstabilityCount * CANDIDATE_SELECTION_RISK_WEIGHTS.entryHarmony.instability +
+    severeEntryIntervalCount * CANDIDATE_SELECTION_RISK_WEIGHTS.entryHarmony.severeInterval +
+    unresolvedSevereEntryIntervalCount * CANDIDATE_SELECTION_RISK_WEIGHTS.entryHarmony.unresolvedSevereInterval +
+    unresolvedDuration * CANDIDATE_SELECTION_RISK_WEIGHTS.entryHarmony.unresolvedDuration
   );
 }
 
@@ -45,7 +46,10 @@ function stepwiseFixationSelectionRiskAdjustment(evaluation: CandidateEvaluation
   const { selectedFreeCounterpointStepwiseFixationCost, freeCounterpointRepeatedDegreePatternCount } =
     evaluation.dimensions.melody.features;
 
-  return selectedFreeCounterpointStepwiseFixationCost * 1.5 + freeCounterpointRepeatedDegreePatternCount * 0.01;
+  return (
+    selectedFreeCounterpointStepwiseFixationCost * CANDIDATE_SELECTION_RISK_WEIGHTS.stepwiseFixation.selectedCost +
+    freeCounterpointRepeatedDegreePatternCount * CANDIDATE_SELECTION_RISK_WEIGHTS.stepwiseFixation.repeatedDegreePattern
+  );
 }
 
 function voicePairLockstepSelectionRiskAdjustment(evaluation: CandidateEvaluation): number {
@@ -57,15 +61,19 @@ function voicePairLockstepSelectionRiskAdjustment(evaluation: CandidateEvaluatio
   } = evaluation.dimensions.texture.features;
 
   return (
-    selectedVoicePairLockstepSelectionCost * 2.2 +
-    samePitchOverlapCount * 3 +
-    qualityVectorPitchClassUnisonDuration * 0.65 +
-    qualityVectorDurationBasedLockstep * 0.85
+    selectedVoicePairLockstepSelectionCost * CANDIDATE_SELECTION_RISK_WEIGHTS.voicePairLockstep.selectedCost +
+    samePitchOverlapCount * CANDIDATE_SELECTION_RISK_WEIGHTS.voicePairLockstep.samePitchOverlap +
+    qualityVectorPitchClassUnisonDuration *
+      CANDIDATE_SELECTION_RISK_WEIGHTS.voicePairLockstep.pitchClassUnisonDuration +
+    qualityVectorDurationBasedLockstep * CANDIDATE_SELECTION_RISK_WEIGHTS.voicePairLockstep.durationBasedLockstep
   );
 }
 
 function melodyPreservationRiskAdjustment(evaluation: CandidateEvaluation): number {
-  return evaluation.dimensions.melody.features.leapRecoveryMisses * 20;
+  return (
+    evaluation.dimensions.melody.features.leapRecoveryMisses *
+    CANDIDATE_SELECTION_RISK_WEIGHTS.melodyPreservation.leapRecoveryMiss
+  );
 }
 
 function sectionLocalPlannerSelectionRiskAdjustment(
@@ -79,5 +87,5 @@ function sectionLocalPlannerSelectionRiskAdjustment(
   const highSoloTextureSections = evaluation.explanations.sections.filter((section) => section.soloTextureRisk >= 6);
   const soloTextureRisk = highSoloTextureSections.reduce((sum, section) => sum + section.soloTextureRisk, 0);
 
-  return soloTextureRisk * 12;
+  return soloTextureRisk * CANDIDATE_SELECTION_RISK_WEIGHTS.sectionLocalPlanner.soloTextureRisk;
 }
