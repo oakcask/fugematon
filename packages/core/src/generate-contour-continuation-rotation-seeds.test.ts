@@ -1,17 +1,16 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { REPRESENTATIVE_REVIEW_SEEDS, REVIEW_LENGTH_TICKS } from "./constants.js";
+import { REVIEW_LENGTH_TICKS, ROTATION_REVIEW_SEEDS } from "./constants.js";
 import { generateScore } from "./generate.js";
 import { summarizeContinuationPatterns } from "./generate-test-helpers.js";
 import { evaluateContourMotionGate, evaluateMelodyTextureGate } from "./review-gate.js";
 
-test("generateScore rotates representative long-run continuation patterns without gate regressions", () => {
-  const seeds = REPRESENTATIVE_REVIEW_SEEDS;
+test("generateScore rotates rotation-seed long-run continuation patterns without gate regressions", () => {
   let highSelectedSectionSoloTextureRiskCount = 0;
   let uniqueContinuationPatternCount = 0;
   let maxRepeatedContinuationPatternCount = 0;
 
-  for (const { seed } of seeds) {
+  for (const { seed } of ROTATION_REVIEW_SEEDS) {
     const output = generateScore({ seed, lengthTicks: REVIEW_LENGTH_TICKS, selectionModel: "baseline" });
     const gate6 = evaluateMelodyTextureGate(seed, output.diagnostics);
     const gate7 = evaluateContourMotionGate(seed, output.diagnostics);
@@ -35,7 +34,7 @@ test("generateScore rotates representative long-run continuation patterns withou
     );
   }
 
-  assert.ok(highSelectedSectionSoloTextureRiskCount <= 210);
-  assert.ok(uniqueContinuationPatternCount >= 71);
+  assert.ok(highSelectedSectionSoloTextureRiskCount <= 128);
+  assert.ok(uniqueContinuationPatternCount >= 37);
   assert.ok(maxRepeatedContinuationPatternCount <= 7);
 });
