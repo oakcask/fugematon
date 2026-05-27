@@ -152,24 +152,12 @@ export type MetaEvent =
     }
   | {
       kind: "meta";
-      type: "parameter-change";
-      tick: number;
-      payload: { parameters: GenerationParameters };
-    }
-  | {
-      kind: "meta";
       type: "score-end";
       tick: number;
       payload: { lengthTicks: number };
     };
 
 export type ScoreEvent = NoteEvent | MetaEvent;
-
-export type GenerationParameters = {
-  strictness: number;
-  density: number;
-  subjectPresence: number;
-};
 
 export type CurrentSelectionModel = "baseline" | "candidate-oracle-selection" | "section-local-planner";
 
@@ -182,7 +170,6 @@ export function normalizeSelectionModel(selectionModel: SelectionModel): Current
 export type GenerationInput = {
   seed: string;
   lengthTicks: number;
-  parameters?: Partial<GenerationParameters>;
   selectionModel?: SelectionModel;
 };
 

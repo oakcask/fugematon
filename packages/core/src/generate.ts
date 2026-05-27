@@ -1,10 +1,5 @@
-import {
-  DEFAULT_GENERATION_PARAMETERS,
-  DEFAULT_SELECTION_MODEL,
-  GENERATOR_VERSION,
-  TICKS_PER_QUARTER,
-} from "./constants.js";
-import type { GenerationInput, GenerationOutput, GenerationParameters, ScoreEvent } from "./events.js";
+import { DEFAULT_SELECTION_MODEL, GENERATOR_VERSION, TICKS_PER_QUARTER } from "./constants.js";
+import type { GenerationInput, GenerationOutput, ScoreEvent } from "./events.js";
 import { normalizeSelectionModel } from "./events.js";
 import { analyzeScore } from "./generation/diagnostics.js";
 import { chooseKeySignature, chooseTempo, chooseTimeSignature } from "./generation/key.js";
@@ -21,7 +16,6 @@ export function generateScore(input: GenerationInput): GenerationOutput {
   validateInput(input);
 
   const rng = Xoshiro128StarStar.fromSeed(input.seed);
-  const parameters = normalizeParameters(input.parameters);
   const keySignature = chooseKeySignature(rng, input.seed);
   const timeSignature = chooseTimeSignature(rng);
   const meterContext = createMeterContext(timeSignature);
@@ -83,12 +77,6 @@ export function generateScore(input: GenerationInput): GenerationOutput {
       type: "key-signature",
       tick: 0,
       payload: keySignature,
-    },
-    {
-      kind: "meta",
-      type: "parameter-change",
-      tick: 0,
-      payload: { parameters },
     },
     {
       kind: "meta",
@@ -203,21 +191,6 @@ export function generateScore(input: GenerationInput): GenerationOutput {
       warnings: diagnostics.warnings,
     },
   };
-}
-
-export function normalizeParameters(parameters: Partial<GenerationParameters> | undefined): GenerationParameters {
-  const merged = {
-    ...DEFAULT_GENERATION_PARAMETERS,
-    ...parameters,
-  };
-
-  for (const [name, value] of Object.entries(merged)) {
-    if (!Number.isFinite(value) || value < 0 || value > 1) {
-      throw new Error(`${name} must be a finite number between 0 and 1`);
-    }
-  }
-
-  return merged;
 }
 
 function validateInput(input: GenerationInput): void {

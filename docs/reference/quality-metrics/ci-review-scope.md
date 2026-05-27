@@ -16,7 +16,7 @@ CI の seed と metric は、生成器の破綻を早く止めるための最小
 
 `ci-blocking` にしてよい metric は、次をすべて満たすものに限ります。
 
-* deterministic で、同じ generator version、seed、parameters から安定して再現する。
+* deterministic で、同じ generator version、seed、selection model、snapshot derivation から安定して再現する。
 * failure が具体的な修正先を持つ。例: generator、planner、scoring、diagnostics schema、public API。
 * 単独の数値が音楽的症状を十分に表すか、hard constraint として症状の説明を必要としない。
 * PR CI での実行時間増加が小さい、または既存の軽量 seed set で計測できる。
