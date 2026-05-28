@@ -5,6 +5,7 @@
 ## Read First
 
 * [Episode motivic development replan](episode-motivic-development-replan.md): 現在の品質 blocker の根拠。自由唱と episode の課題を長さではなく、主題・応答・対主題からの断片化、脚色、ゼクエンツ、転調準備として説明できない問題に再編する。
+* [Episode motivic development completion review](episode-motivic-development-completion.md): Episode Motivic Development の完了 evidence。subject-free free counterpoint の derivation metadata、generic duration、repeated stock formula の review scope、Phase 8 handoff。
 * [Historical reference calibration completion review](historical-reference-calibration-completion.md): Historical reference calibration の完了 evidence。focused seed と 22 seed の voice-pair coupling / entry severe-interval 改善、reference-readiness scope、manual-listening gap、Phase 8 handoff。
 * [Modern surface brilliance review](modern-surface-brilliance-review.md): `seed-19l7uit-1u226cc` の現代的なきらめきを、短音価密度、support motion、modal color、tradeoff として review-only diagnostic にする根拠。
 * [Candidate evaluation model refactor review](candidate-evaluation-model-refactor.md): 次実装前の評価モデル整理 evidence。literal fifth-climb 補正を構造的 contour cost へ置き換え、placeholder / repeated-degree add-on weight を削除し、22 seed before/after bundle で譜面出力が変わらないことを確認した。

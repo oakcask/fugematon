@@ -2,6 +2,7 @@ import { DEFAULT_SELECTION_MODEL, GENERATOR_VERSION, TICKS_PER_QUARTER } from ".
 import type { GenerationInput, GenerationOutput, ScoreEvent } from "./events.js";
 import { normalizeSelectionModel } from "./events.js";
 import { analyzeScore } from "./generation/diagnostics.js";
+import { annotateEpisodeMotivicDerivations } from "./generation/episode-motivic-development.js";
 import { chooseKeySignature, chooseTempo, chooseTimeSignature } from "./generation/key.js";
 import { buildLocalSentinelCandidateTraceSummary } from "./generation/local-sentinel-candidate-trace.js";
 import { createMeterContext } from "./generation/meter.js";
@@ -23,6 +24,7 @@ export function generateScore(input: GenerationInput): GenerationOutput {
   const selectionModel = normalizeSelectionModel(input.selectionModel ?? DEFAULT_SELECTION_MODEL);
   const subject = buildSubject(rng, keySignature, selectionModel, meterContext);
   const score = buildFugueScore(subject, keySignature, input.lengthTicks, rng, selectionModel, meterContext);
+  annotateEpisodeMotivicDerivations(score.notes, score.sectionPlans);
   const diagnostics = analyzeScore(score.notes, score.subjectEntries, score.sectionPlans);
   const localSentinelCandidateTrace = buildLocalSentinelCandidateTraceSummary(
     score.selectedCandidateEvaluations,
@@ -151,6 +153,7 @@ export function generateScore(input: GenerationInput): GenerationOutput {
       texturePlanningReview: diagnostics.texturePlanningReview,
       meterConsistencyReview: diagnostics.meterConsistencyReview,
       phraseRepetitionReview: diagnostics.phraseRepetitionReview,
+      episodeMotivicDevelopment: diagnostics.episodeMotivicDevelopment,
       entryBoundaryContinuity: diagnostics.entryBoundaryContinuity,
       bassAnswerTailTexture: diagnostics.bassAnswerTailTexture,
       qualityVector: diagnostics.qualityVector,
