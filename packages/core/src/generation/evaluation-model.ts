@@ -1,5 +1,5 @@
 export const CANDIDATE_EVALUATION_FEATURE_VERSION = 7;
-export const CANDIDATE_EVALUATION_MODEL_VERSION = 13;
+export const CANDIDATE_EVALUATION_MODEL_VERSION = 14;
 
 export const CANDIDATE_EVALUATION_WEIGHTS = {
   hardFailure: 10_000,
@@ -75,7 +75,6 @@ export const CANDIDATE_SELECTION_RISK_WEIGHTS = {
   },
   stepwiseFixation: {
     selectedCost: 1.5,
-    repeatedDegreePattern: 0.01,
   },
   voicePairLockstep: {
     selectedCost: 2.2,

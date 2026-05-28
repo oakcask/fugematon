@@ -43,12 +43,9 @@ function entryHarmonySelectionRiskAdjustment(evaluation: CandidateEvaluation): n
 }
 
 function stepwiseFixationSelectionRiskAdjustment(evaluation: CandidateEvaluation): number {
-  const { selectedFreeCounterpointStepwiseFixationCost, freeCounterpointRepeatedDegreePatternCount } =
-    evaluation.dimensions.melody.features;
-
   return (
-    selectedFreeCounterpointStepwiseFixationCost * CANDIDATE_SELECTION_RISK_WEIGHTS.stepwiseFixation.selectedCost +
-    freeCounterpointRepeatedDegreePatternCount * CANDIDATE_SELECTION_RISK_WEIGHTS.stepwiseFixation.repeatedDegreePattern
+    evaluation.dimensions.melody.features.selectedFreeCounterpointStepwiseFixationCost *
+    CANDIDATE_SELECTION_RISK_WEIGHTS.stepwiseFixation.selectedCost
   );
 }
 
