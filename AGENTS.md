@@ -32,18 +32,7 @@
 - Follow `docs/reference/error-message-guidelines.md` when adding or changing CI, exception, warning, or log messages.
 - Place scripts invoked from GitHub Workflows under `workflow-scripts/`.
 
-## Task-Specific Skills
+## Required Skill Guardrails
 
-- Use `docs-progressive-disclosure` when creating, reorganizing, splitting, merging, or maintaining documentation structure.
-- Use `repo-guardrails` when adding, revising, or evaluating agent behavior rules, repository policies, AGENTS.md instructions, workflow safety, or enforcement mechanisms.
-- Use `symbol-rename-audit` when renaming, removing, or replacing symbols, fields, exported types, JSON keys, CLI output keys, metric names, diagnostics names, or compatibility aliases.
-- Use `git-editor-guardrail` when running git commands that may open an editor or when choosing the noninteractive form of commit, amend, rebase, merge, revert, or tag operations.
-- Use `conventional-commits` when authoring commit messages or PR titles.
-- Use `change-rationale-writing` when drafting commit bodies, PR descriptions, changelog entries, release notes, or decision records.
-- Use `github-pr-operations` when creating, editing, merging, or managing pull requests with GitHub CLI.
-- Use `github-actions-inspection` when inspecting GitHub Actions workflow runs, jobs, logs, artifacts, or check failures with GitHub CLI.
-- Use `ui-inspection` when browser-level Web UI validation is needed.
 - Use `dependency-review` before adding, choosing, upgrading, or approving third-party dependencies.
-- Use `music-theory-review` when reviewing generated music, diagnostics, MIDI, score events, music-quality gates, or phase plans for counterpoint, harmony, fugue form, style fit, or literature-grounded music-theory issues.
-- Use `bibliography-fetch` when finding references, citations, source lists, papers, books, standards, URLs, or source verification for research, writing, documentation, or literature reviews.
-- Use `bibliography-cache` when creating, updating, inspecting, normalizing, or validating cached bibliography records for references, citations, search results, source metadata, and access dates.
+- Use `bibliography-fetch` and `bibliography-cache` when literature or citation evidence affects implementation direction, phase scope, quality gates, review acceptance, or license policy.
