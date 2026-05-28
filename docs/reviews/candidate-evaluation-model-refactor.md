@@ -20,12 +20,22 @@ Theory basis: these are useful review surfaces only when localized to seed, tick
 
 Project response: keep the diagnostics and selected-candidate features visible for review, but remove inert weights from `totalCost`. Harmonic and counter-subject review acceptance still belongs to score-window review and manual listening, not placeholder selection costs.
 
+3. The repeated-degree pattern selection-risk add-on was too small and indirect to justify as a model parameter.
+
+Affected seeds: standard 22 seed review bundle, with attention to `fugue-smoke`, `restless-line`, and modal rotation seeds because broader trial removals changed local texture or entry-risk summaries.
+
+Theory basis: repeated free-counterpoint degree formulas can indicate melodic fatigue, but the musically meaningful signal is the weighted stepwise-fixation cost already derived from stepwise-run ratio and monotone step-run evidence. A `0.01` repeated-pattern add-on was a bookkeeping nudge rather than a defensible counterpoint, phrase, or texture preference.
+
+Project response: remove the repeated-degree pattern add-on from candidate-oracle selection risk while keeping repeated-pattern diagnostics visible for review. Keep leap-recovery preservation, entry-harmony, and voice-pair lockstep selection risks because trial removal changed selected score output or worsened local review summaries. Selected-candidate evaluation moves to `evaluationModelVersion` 14 because the public model version changed; `featureVersion` stays 7 because the exposed feature map did not change.
+
 ## Before / After Evidence
 
 Generated review bundles:
 
 * Baseline: `samples/refactor-evaluation-baseline`
 * Variant: `samples/refactor-evaluation-variant`
+* Follow-up baseline: `samples/model-risk-refactor-baseline`
+* Follow-up adopted variant: `samples/model-risk-refactor-variant-c`
 
 Both bundles used the standard 22 seed review set at 129600 ticks.
 
@@ -41,6 +51,17 @@ Summary comparison:
 | top subject-fragment family share | 0.227 | 0.227 |
 
 No seed-level review-signal, local-sentinel, leap-recovery, unison-overlap, shared-rhythm, or selected-candidate total-cost regression appeared in the summary comparison. MIDI hashes were identical for all 22 generated files, so the refactor did not change the generated score output.
+
+Follow-up comparison:
+
+| Signal | Baseline | Adopted variant |
+| --- | ---: | ---: |
+| seed count | 22 | 22 |
+| adoption-ready seeds | 22 | 22 |
+| MIDI files changed | 0 | 0 |
+| top subject-fragment family share | 0.227 | 0.227 |
+
+The only summary differences in the adopted variant were `evaluationModelVersion: 13 -> 14` for the 22 seeds. Broader attempted removals were rejected before adoption: removing the voice-pair and stepwise multipliers changed many MIDI files and raised `restless-line` selected entry severe-interval risk; removing leap-recovery preservation changed multiple MIDI files and raised `fugue-smoke` high solo-texture risk. Those trials show that the remaining risks still carry musical selection value.
 
 Focused checks:
 
@@ -67,6 +88,7 @@ Project response: keep candidate scoring tied to contour, voice independence, an
 | Item | Classification | Reason | Action |
 | --- | --- | --- | --- |
 | `ascendingFifthTurnbackContourCost` | `ci-observed` | It is a selected-candidate feature and versioned evaluation-model signal, but its musical value depends on score context. | Assert through existing focused guardrail tests and public contract versioning. |
+| repeated-degree selection-risk add-on | `remove-or-archive` | The diagnostic remains useful, but the tiny add-on did not represent an independently defensible musical selection signal. | Remove the add-on from selection cost; keep stepwise-pattern diagnostics and focused contour tests. |
 | Standard 22 seed before/after bundle | `review-required` | Broad score quality and metric truthfulness evidence, too expensive and aesthetic for PR CI blocking. | Keep as generated review evidence under `samples/`; do not commit bundle files. |
 | Removed placeholder weights | `remove-or-archive` | They added parameter surface without meaningful selection effect. The underlying diagnostics remain. | Keep diagnostics as review signals; remove selection-cost parameters. |
 
