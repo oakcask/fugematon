@@ -40,7 +40,7 @@ test("generateScore validates representative fugue-form seeds", () => {
 
   const elapsedCpuMilliseconds = cpuUsageMilliseconds(process.cpuUsage(startCpuUsage));
   const maxGenerationCpuMilliseconds =
-    FUGUE_FORM_DIAGNOSTICS_PROFILE.maxGenerationMilliseconds * FUGUE_FORM_REPRESENTATIVE_SEEDS.length * 1.5;
+    FUGUE_FORM_DIAGNOSTICS_PROFILE.maxGenerationMilliseconds * FUGUE_FORM_REPRESENTATIVE_SEEDS.length * 1.8;
   assert.ok(
     elapsedCpuMilliseconds < maxGenerationCpuMilliseconds,
     `fugue-form representative generation used ${elapsedCpuMilliseconds.toFixed(

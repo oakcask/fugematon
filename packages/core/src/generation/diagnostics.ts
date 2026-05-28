@@ -7,6 +7,7 @@ import type {
   EntryBoundaryContinuitySummary,
   EntrySupportInstabilitySummary,
   EntrySupportSevereIntervalSummary,
+  EpisodeMotivicDevelopmentSummary,
   ExposedFreeCounterpointSoloSummary,
   HarmonicContinuitySummary,
   HarmonicPlan,
@@ -34,6 +35,7 @@ import type {
 import { analyzeBassAnswerTailTexture } from "./bass-answer-tail-texture.js";
 import { analyzeDissonanceTriage } from "./dissonance-triage.js";
 import { analyzeEntryBoundaryContinuity } from "./entry-boundary-continuity.js";
+import { analyzeEpisodeMotivicDevelopment } from "./episode-motivic-development.js";
 import { analyzeHarmonicContinuity } from "./harmonic-continuity-review.js";
 import { chordTonePitchClasses, nearestHarmonicAnchor, rootDegreeForFunction } from "./harmony.js";
 import { analyzeHarmonicPlans } from "./harmony-diagnostics.js";
@@ -96,6 +98,7 @@ export function analyzeScore(
   texturePlanningReview: TexturePlanningReviewSummary;
   meterConsistencyReview: ReturnType<typeof analyzeMeterConsistency>;
   phraseRepetitionReview: PhraseRepetitionReviewSummary;
+  episodeMotivicDevelopment: EpisodeMotivicDevelopmentSummary;
   entryBoundaryContinuity: EntryBoundaryContinuitySummary;
   bassAnswerTailTexture: BassAnswerTailTextureSummary;
   qualityVector: QualityVector;
@@ -289,6 +292,7 @@ function analyzeTextureDiagnostics(
   const qualityVector = analyzeQualityVector(notes, subjectEntries, sectionPlans);
   const texturePlanningReview = analyzeTexturePlanningReviewSummary(notes, subjectEntries, sectionPlans);
   const phraseRepetitionReview = analyzePhraseRepetitionReviewSummary(subjectEntries, sectionPlans);
+  const episodeMotivicDevelopment = analyzeEpisodeMotivicDevelopment(notes, sectionPlans);
   const dissonanceTriage = analyzeDissonanceTriage(notes, sectionPlans, qualityVector.entrySonorities);
   const counterSubjectIdentityRetentionValue = counterSubjectIdentityRetention(counterSubjectNotes, sectionPlans);
   const durationDistributionSummary = durationDistribution(notes);
@@ -343,6 +347,7 @@ function analyzeTextureDiagnostics(
     surfaceBrilliance,
     texturePlanningReview,
     phraseRepetitionReview,
+    episodeMotivicDevelopment,
     entryBoundaryContinuity: analyzeEntryBoundaryContinuity(notes, subjectEntries),
     bassAnswerTailTexture: analyzeBassAnswerTailTexture(notes, subjectEntries),
     qualityVector,

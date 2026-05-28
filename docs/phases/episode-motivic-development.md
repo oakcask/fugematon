@@ -2,11 +2,12 @@
 
 Episode motivic development is inserted after Historical reference calibration and before Infinite playback MVP. Its purpose is to make free-counterpoint and episode material audibly derive from the subject, answer, or counter-subject instead of functioning as generic filler.
 
-Status: planned. This plan reorganizes the next quality lane from "make free counterpoint longer" to "make free counterpoint explainable as motivic development." Historical examples show that short subject-free spans can be stylistically normal, but they usually develop already heard material through fragmentation, sequencing, inversion, imitation, or modulatory preparation.
+Status: complete for Phase 8 handoff. This plan reorganized the quality lane from "make free counterpoint longer" to "make free counterpoint explainable as motivic development." Historical examples show that short subject-free spans can be stylistically normal, but they usually develop already heard material through fragmentation, sequencing, inversion, imitation, or modulatory preparation.
 
 Planning review:
 
 * [Episode motivic development replan](../reviews/episode-motivic-development-replan.md): user-reported concern, historical-fugue comparison, existing Fugematon evidence, structural hypothesis, and CI / review scope.
+* [Episode motivic development completion review](../reviews/episode-motivic-development-completion.md): before/after review bundle, derivation metadata coverage, repeated formula classification, and Phase 8 handoff.
 
 ## Rationale
 
@@ -82,4 +83,4 @@ Record concrete score-window examples where free counterpoint is accepted becaus
 
 ## Phase 8 Handoff
 
-Infinite playback MVP may resume only after subject-free material has a review-visible derivation model. Segment boundaries and regeneration modes must not hide generic free-counterpoint filler, stock episode formulas, or subject-free spans that do not prepare a later entry, cadence, or deliberate texture function.
+Infinite playback MVP may resume because subject-free material now has a review-visible derivation model. Segment boundaries and regeneration modes must continue to expose generic free-counterpoint filler, stock episode formulas, or subject-free spans that do not prepare a later entry, cadence, or deliberate texture function.
