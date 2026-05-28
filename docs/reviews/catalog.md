@@ -4,8 +4,9 @@
 
 ## Current Quality Lane
 
-* [Episode motivic development replan](episode-motivic-development-replan.md): 現在の品質 blocker の根拠。自由唱と episode を、長さではなく主題・応答・対主題からの motivic derivation として説明できるかで扱う。
-* [Episode motivic development](../phases/episode-motivic-development.md): planned quality blocker。episode motive plan、motivic free-counterpoint generation、derivation metadata、focused review を Infinite playback MVP 前に扱う。
+* [Episode motivic development completion review](episode-motivic-development-completion.md): 完了 evidence。subject-free free counterpoint の derivation metadata、generic duration、repeated stock formula の review scope、Phase 8 handoff。
+* [Episode motivic development replan](episode-motivic-development-replan.md): 品質 blocker の根拠。自由唱と episode を、長さではなく主題・応答・対主題からの motivic derivation として説明できるかで扱った。
+* [Episode motivic development](../phases/episode-motivic-development.md): 完了済み品質 blocker。episode motive plan、motivic free-counterpoint generation、derivation metadata、focused review を Infinite playback MVP 前に扱った。
 * [Modern surface brilliance review](modern-surface-brilliance-review.md): `surfaceBrilliance` review-only diagnostic の根拠。現代的なきらめきを、短音価密度、support motion、modal color、stretto compression と fugue-identity tradeoff に分けて読む。
 * [Candidate evaluation model refactor review](candidate-evaluation-model-refactor.md): 次実装前の評価モデル整理 evidence。literal fifth-climb 補正を構造的 contour cost へ置き換え、placeholder weight を削除し、22 seed before/after bundle で譜面出力が変わらないことを確認した。
 * [Historical reference calibration completion review](historical-reference-calibration-completion.md): 完了 evidence。focused seed と 22 seed の voice-pair coupling / entry severe-interval 改善、reference-readiness scope、manual-listening gap、Phase 8 handoff。
@@ -100,7 +101,7 @@
 
 ## Read When
 
-* 最新の品質方針を見る場合は Episode motivic development replan と Episode motivic development を先に読む。必要な場合だけ Historical reference calibration、Texture continuity repair、Metrical generation repair、Phase 14、Phase 13Z、Phase 13Y、Phase 13X2、Phase 13X、Phase 13W、Phase 13V、Phase 13U、Phase 13T、Phase 13S、Phase 13R、Phase 13Q へ戻る。
+* 最新の品質方針を見る場合は Episode motivic development completion review と Episode motivic development を先に読む。必要な場合だけ Historical reference calibration、Texture continuity repair、Metrical generation repair、Phase 14、Phase 13Z、Phase 13Y、Phase 13X2、Phase 13X、Phase 13W、Phase 13V、Phase 13U、Phase 13T、Phase 13S、Phase 13R、Phase 13Q へ戻る。
 * Phase 11 の実装済み観察軸を見る場合は [Phase 11 review summary diagnostics](phase-11-review-summary.md) を読む。
 * Phase 7 以降の gate 再構成を見る場合は [Phase 7 参照作品 diagnostics 計画](phase-7-reference-diagnostics-plan.md) を読む。
 * Phase 12 挿入前の blocker evidence を見る場合は [Phase 11 post-completion score review](phase-11-post-review.md) を読む。

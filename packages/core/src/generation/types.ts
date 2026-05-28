@@ -7,6 +7,7 @@ import type {
   EntryBoundaryContinuitySummary,
   EntrySupportInstabilitySummary,
   EntrySupportSevereIntervalSummary,
+  EpisodeMotivicDevelopmentSummary,
   ExposedFreeCounterpointSoloSummary,
   FugueState,
   GenerationOutput,
@@ -105,6 +106,7 @@ export type TextureDiagnostics = {
   surfaceBrilliance: SurfaceBrillianceSummary;
   texturePlanningReview: TexturePlanningReviewSummary;
   phraseRepetitionReview: PhraseRepetitionReviewSummary;
+  episodeMotivicDevelopment: EpisodeMotivicDevelopmentSummary;
   entryBoundaryContinuity: EntryBoundaryContinuitySummary;
   bassAnswerTailTexture: BassAnswerTailTextureSummary;
   qualityVector: QualityVector;
