@@ -113,6 +113,11 @@ test("public diagnostics expose finite candidate score dimensions", () => {
   assert.ok(output.diagnostics.phraseRepetitionReview.answerTransformFamilies.length > 0);
   assert.ok(output.diagnostics.phraseRepetitionReview.phraseFunctions.length > 0);
   assert.ok(output.diagnostics.phraseRepetitionReview.sectionStatePatterns.topPatterns.length > 0);
+  assert.equal(output.diagnostics.episodeMotivicDevelopment.schemaVersion, 1);
+  assert.equal(typeof output.diagnostics.episodeMotivicDevelopment.derivationCoverage, "number");
+  assert.equal(typeof output.diagnostics.episodeMotivicDevelopment.genericFreeCounterpointDurationTicks, "number");
+  assert.ok(Array.isArray(output.diagnostics.episodeMotivicDevelopment.sourceMotiveDurations));
+  assert.ok(Array.isArray(output.diagnostics.episodeMotivicDevelopment.repeatedFormulas));
   assert.equal(output.diagnostics.entryBoundaryContinuity.schemaVersion, 4);
   assert.equal(typeof output.diagnostics.entryBoundaryContinuity.firstBassEntrySynchronizedReset, "boolean");
   assert.equal(output.diagnostics.entryBoundaryContinuity.firstBassEntryWindow?.entryVoice, "bass");

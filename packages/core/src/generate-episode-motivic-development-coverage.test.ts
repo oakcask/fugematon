@@ -87,8 +87,7 @@ function scoreForSeed(seed: string): GenerationOutput {
 function notesInStates(output: GenerationOutput, states: readonly FugueState[]): NoteEvent[] {
   const plans = output.diagnostics.sectionPlans.filter((plan) => states.includes(plan.state));
   return output.events.filter(
-    (event): event is NoteEvent =>
-      event.kind === "note" && plans.some((plan) => noteStartsInPlan(event, plan)),
+    (event): event is NoteEvent => event.kind === "note" && plans.some((plan) => noteStartsInPlan(event, plan)),
   );
 }
 

@@ -1,0 +1,42 @@
+# Episode Motivic Development Completion Review
+
+This review records the Episode Motivic Development handoff after adding review-visible motivic derivation metadata and diagnostics for subject-free free counterpoint.
+
+## Findings
+
+### 1. Subject-free material is now derivation-visible
+
+Affected seeds: the representative review bundle seeds from `samples/episode-motivic-development-before` and `samples/episode-motivic-development-after`, including `bach-001`, `fugue-smoke`, `dark-episode`, `modal-dorian`, `angular-answer`, `modal-answer`, and `dense-modal`.
+
+Theory basis: fugue episodes can be short or long, but subject-free spans should still show a relationship to earlier material through sequence, inversion, imitation, rhythmic paraphrase, fragmentation, or cadence preparation.
+
+Evidence: after implementation, every reviewed seed reports `episodeMotivicDevelopment.derivationCoverage` of `1`, `genericFreeCounterpointDurationTicks` of `0`, and transformation variety between `5` and `8`. The metadata is attached to emitted support notes as source motive, transformation kind, target function, sequence direction, next-entry preparation, and cadence preparation.
+
+Project response: accept as Phase 8 handoff evidence. Infinite playback segment semantics should preserve this metadata rather than hiding subject-free spans behind regeneration boundaries.
+
+### 2. The change improves review truthfulness, not note content
+
+Affected seeds: all reviewed before/after bundle seeds.
+
+Evidence: note-count deltas were `0` for the focused before/after bundle comparison. Hard failures stayed at zero for the sampled seeds inspected directly, and the focused bundle retained zero unsupported exposed free-counterpoint solo windows and no first-bass-answer tail review requirement.
+
+Project response: do not treat this as an audible beauty improvement by itself. The musical beauty improvement is that reviewers can now distinguish derived material from generic filler. Existing generated-note regression tests should be kept because the model output did not musically change in this step.
+
+### 3. Repeated stock formula remains review-required
+
+Affected seeds: all reviewed seeds still report repeated episode formulas. Representative repeated formula counts range from `198` to `375` across the reviewed bundle.
+
+Theory basis: repetition can be motivic development when the source and function are audible, but high local formula recurrence can also become mechanical filler or listening fatigue.
+
+Project response: classify repeated stock formula as `review-required`, not CI-blocking. The next generator or scoring follow-up should decide whether repeated formulas are acceptable motivic sequence, intentional pedal or cadence rhetoric, or a generator vocabulary problem.
+
+## CI / Review Scope
+
+* `episodeMotivicDevelopment.derivationCoverage`: `ci-observed`. It is stable and cheap enough to expose in public diagnostics, but thresholds should stay review-calibrated until audible correspondence is checked.
+* `genericFreeCounterpointDurationTicks`: `ci-observed`. Use as the first signal that subject-free material lost derivation metadata.
+* `repeatedStockFormulaCount`: `review-required`. It flags possible fatigue without making every repeated motivic formula illegal.
+* Focused listening: `manual-listening`. The metadata is structurally plausible, but no human listening pass has yet confirmed that each derivation is audible.
+
+## Handoff
+
+Episode Motivic Development is complete for Phase 8 handoff because subject-free material has source and transformation metadata, short episodes can be accepted by local function, medium episodes are review-visible, generic duration is exposed, and remaining stock formulas are explicitly classified as review-required follow-up rather than hidden by playback semantics.

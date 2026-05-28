@@ -6,6 +6,44 @@ export type NoteRole = "subject" | "answer" | "subject-fragment" | "counter-subj
 
 export type BeatStrength = "strong" | "weak" | "offbeat";
 
+export type EpisodeMotiveSource =
+  | "subject-head"
+  | "subject-tail"
+  | "answer-form"
+  | "counter-subject-head"
+  | "counter-subject-tail"
+  | "cadence-figure"
+  | "prior-episode-figure";
+
+export type EpisodeTransformationKind =
+  | "fragmentation"
+  | "sequence"
+  | "inversion"
+  | "contour-paraphrase"
+  | "rhythmic-paraphrase"
+  | "imitation"
+  | "diminution"
+  | "augmentation"
+  | "cadential-continuation"
+  | "generic";
+
+export type EpisodeTargetFunction =
+  | "connect-exposition-entries"
+  | "prepare-subject-return"
+  | "modulate-local-key"
+  | "relax-after-density"
+  | "extend-cadence"
+  | "maintain-pedal-or-suspension";
+
+export type EpisodeMotivicDerivation = {
+  sourceMotive: EpisodeMotiveSource;
+  transformationKind: EpisodeTransformationKind;
+  targetFunction: EpisodeTargetFunction;
+  sequenceDirection?: "ascending" | "descending" | "circle" | "parallel" | "none";
+  preparesNextEntry: boolean;
+  preparesCadence: boolean;
+};
+
 export type MetricalHarmonyIntent =
   | "structural-chord-tone"
   | "structural-root-support"
@@ -24,6 +62,7 @@ export type NoteEvent = {
   velocity: number;
   role?: NoteRole;
   metricalHarmonyIntent?: MetricalHarmonyIntent;
+  motivicDerivation?: EpisodeMotivicDerivation;
 };
 
 export type TimeSignature = {
@@ -608,6 +647,37 @@ export type SectionStatePatternSummary = {
   pattern: FugueState[];
   count: number;
   share: number;
+};
+
+export type EpisodeMotivicDevelopmentBucket = {
+  key: string;
+  durationTicks: number;
+  share: number;
+};
+
+export type EpisodeRepeatedFormulaSummary = {
+  signature: string;
+  count: number;
+  durationTicks: number;
+  sourceMotive: EpisodeMotiveSource | "mixed" | "unclassified";
+  transformationKind: EpisodeTransformationKind | "mixed" | "unclassified";
+};
+
+export type EpisodeMotivicDevelopmentSummary = {
+  schemaVersion: 1;
+  subjectFreeDurationTicks: number;
+  derivedDurationTicks: number;
+  genericFreeCounterpointDurationTicks: number;
+  derivationCoverage: number;
+  transformationVariety: number;
+  sourceMotiveConcentration: number;
+  nextEntryPreparationTicks: number;
+  cadencePreparationTicks: number;
+  repeatedStockFormulaCount: number;
+  reviewRequired: boolean;
+  sourceMotiveDurations: EpisodeMotivicDevelopmentBucket[];
+  transformationDurations: EpisodeMotivicDevelopmentBucket[];
+  repeatedFormulas: EpisodeRepeatedFormulaSummary[];
 };
 
 export type MetricalHarmonyReviewSummary = {
@@ -1304,6 +1374,7 @@ export type GenerationDiagnostics = {
   texturePlanningReview: TexturePlanningReviewSummary;
   meterConsistencyReview: MeterConsistencyReviewSummary;
   phraseRepetitionReview: PhraseRepetitionReviewSummary;
+  episodeMotivicDevelopment: EpisodeMotivicDevelopmentSummary;
   entryBoundaryContinuity: EntryBoundaryContinuitySummary;
   bassAnswerTailTexture: BassAnswerTailTextureSummary;
   qualityVector: QualityVector;
