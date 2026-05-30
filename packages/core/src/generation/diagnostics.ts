@@ -11,6 +11,7 @@ import type {
   ExposedFreeCounterpointSoloSummary,
   HarmonicContinuitySummary,
   HarmonicPlan,
+  HarmonicStasisRearticulationSummary,
   KeySignature,
   LowerVoiceVocalitySummary,
   LowerVoiceVocalityVoiceSummary,
@@ -37,6 +38,7 @@ import { analyzeDissonanceTriage } from "./dissonance-triage.js";
 import { analyzeEntryBoundaryContinuity } from "./entry-boundary-continuity.js";
 import { analyzeEpisodeMotivicDevelopment } from "./episode-motivic-development.js";
 import { analyzeHarmonicContinuity } from "./harmonic-continuity-review.js";
+import { analyzeHarmonicStasisRearticulation } from "./harmonic-stasis-rearticulation.js";
 import { chordTonePitchClasses, nearestHarmonicAnchor, rootDegreeForFunction } from "./harmony.js";
 import { analyzeHarmonicPlans } from "./harmony-diagnostics.js";
 import { isModalMode, tonicPitchClass } from "./key.js";
@@ -104,6 +106,7 @@ export function analyzeScore(
   qualityVector: QualityVector;
   dissonanceTriage: DissonanceTriageSummary;
   harmonicContinuity: HarmonicContinuitySummary;
+  harmonicStasisRearticulation: HarmonicStasisRearticulationSummary;
   transitionRhythmReview: TransitionRhythmReviewSummary;
   ornamentCandidateCount: number;
   ornamentDensity: number;
@@ -183,6 +186,7 @@ export function analyzeScore(
   const leapRecoveryMisses = countIssues(issues, "leap-recovery-miss");
   const harmonicDiagnostics = analyzeHarmonicPlans(notes, sectionPlans, subjectEntries);
   const harmonicContinuity = analyzeHarmonicContinuity(notes, sectionPlans);
+  const harmonicStasisRearticulation = analyzeHarmonicStasisRearticulation(notes, sectionPlans);
   const transitionRhythmReview = analyzeTransitionRhythm(notes, subjectEntries, sectionPlans);
   const warnings: string[] = [];
   if (rangeViolations > 0) {
@@ -244,6 +248,7 @@ export function analyzeScore(
     leapRecoveryMisses,
     ...harmonicDiagnostics,
     harmonicContinuity,
+    harmonicStasisRearticulation,
     transitionRhythmReview,
     issues,
     warnings,
@@ -294,6 +299,7 @@ function analyzeTextureDiagnostics(
   const phraseRepetitionReview = analyzePhraseRepetitionReviewSummary(subjectEntries, sectionPlans);
   const episodeMotivicDevelopment = analyzeEpisodeMotivicDevelopment(notes, sectionPlans);
   const dissonanceTriage = analyzeDissonanceTriage(notes, sectionPlans, qualityVector.entrySonorities);
+  const harmonicStasisRearticulation = analyzeHarmonicStasisRearticulation(notes, sectionPlans);
   const counterSubjectIdentityRetentionValue = counterSubjectIdentityRetention(counterSubjectNotes, sectionPlans);
   const durationDistributionSummary = durationDistribution(notes);
   const severeEntryIntervalCount = entrySupportSevereIntervalDetails.reduce(
@@ -352,6 +358,7 @@ function analyzeTextureDiagnostics(
     bassAnswerTailTexture: analyzeBassAnswerTailTexture(notes, subjectEntries),
     qualityVector,
     dissonanceTriage,
+    harmonicStasisRearticulation,
     ornamentCandidateCount,
     ornamentDensity,
     ornamentPlacementReasons: analyzeOrnamentPlacementReasons(notes, subjectEntries, sectionPlans),

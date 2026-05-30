@@ -38,7 +38,21 @@ Evidence: `harmonicSonority` already reports `non-chord-structural-support` in t
 
 Project response: introduce a review-first diagnostic such as `harmonicStasisRearticulation`. It should attach same-voice rearticulation to section state, first-bass-answer handoff, all-free texture, metrical intent, harmonic function, active voices, harmonic-sonority classification, and whether the run appears before or after final support repair.
 
-### 4. The repair should prefer better pitch choices over longer notes
+### 4. First-episode handoff can pass continuity checks while still sounding disconnected
+
+Affected seed: `seed-1syy921-0025pp1`.
+
+User-reported symptom: "5-7小節のコード進行やリズム感が不自然で、前後のつながりや主題や対主題との対応性も見えない".
+
+Representative location: 4/4 A major, first episode in D major, measures 5-7. The episode starts late in measure 5 after the exposition bass answer and moves through a pivot-harmony plan toward the first stretto-like section.
+
+Theory basis: fugue episodes can use subject fragments, answer-derived figures, and counter-subject material, but the sequence must still create directed harmonic and rhythmic continuation. A harmonic-continuity pass based on root and chord-tone support is not enough when the surface rhythm turns into repeated short attacks that do not clarify the motivic sequence.
+
+Evidence from ScoreEvent inspection: `harmonicContinuity` classifies the episode as `audible-progression`, and `transitionRhythmReview` classifies the boundary as `prepared-pickup`. The score window still contains all-free-texture rearticulations at quarters 23-27: tenor repeats a structural chord tone from `subject-head/inversion`, bass repeats dominant root support from `answer-form/cadential-continuation`, and tenor repeats another structural chord tone from `answer-form/inversion`. The new `harmonicStasisRearticulation` diagnostic exposes 15 focused windows for the seed, with 4 `generator-response` windows and 10 `review-required` windows. This shows a metric false acceptance: continuity support exists, but the audible surface still reads as mechanical and weakly connected.
+
+Project response: add `seed-1syy921-0025pp1` as a focused first-episode handoff representative. The repair must not hard-code the seed, measure numbers, A major, D major, or specific pitches; it should target first-episode handoff windows where all active voices are free counterpoint and motivic labels sit on short same-pitch structural support.
+
+### 5. The repair should prefer better pitch choices over longer notes
 
 Affected seeds: all focused seeds.
 
@@ -48,9 +62,9 @@ Project response: use the right layer for the source of the run. Penalize short 
 
 ## Structural Hypothesis
 
-Symptom: after the first bass answer, all active voices can become free counterpoint and reuse subject / answer rhythm while bass and inner voices rearticulate the same pitch at short durations.
+Symptom: after the first bass answer or first episode handoff, all active voices can become free counterpoint and reuse subject / answer rhythm while bass and inner voices rearticulate the same pitch at short durations.
 
-Repeated pattern: the issue is most likely when `freeCounterpointPhraseVariation`, post-bass-answer support, and final functional-support repair combine with a short episode handoff, because the phrase vocabulary and texture floor improve while candidate scoring and final support generation do not yet model same-voice harmonic stasis.
+Repeated pattern: the issue is most likely when `freeCounterpointPhraseVariation`, post-bass-answer support, and final functional-support repair combine with a short episode handoff, because the phrase vocabulary and texture floor improve while candidate scoring and final support generation do not yet model same-voice harmonic stasis. `seed-1syy921-0025pp1` confirms the selected episode can carry motive labels and pass continuity checks while still exposing all-free short rearticulation in the handoff.
 
 Theory basis: fugue episodes may sequence or fragment subject material, but the sequence must imply directed harmonic motion. If support pitches repeat without a pedal, suspension, cadence, or voice-leading reason, the episode sounds like filler even when the rhythm is motivically derived.
 
@@ -62,6 +76,7 @@ Project response: diagnostic first, functional-support guard second for post-pro
 
 * `seed-07mwf08-1te3e2o`: `review-required`; reported representative for first-bass-answer handoff rearticulation with weak harmonic direction. Action: add focused regression evidence and score-window notes.
 * `seed-1db5j19-1nhjtae`: `review-required`; reported representative for post-processing functional-support rearticulation in the tenor around measure 7. Action: preserve as final-score regression evidence and verify the repair is structural, not tied to the pitch, measure, voice, key, or `cadential-tonic` label.
+* `seed-1syy921-0025pp1`: `review-required`; reported representative for first-episode handoff continuity false acceptance, where motivic labels and root support exist but all-free short rearticulation makes measures 5-7 sound disconnected. Action: keep as focused evidence for diagnostic and generator-response review, not as a literal measure/key/pitch exception.
 * `harmonicStasisRearticulation`: `review-required`; new diagnostic should be visible in review bundles before becoming CI-blocking. Action: record windows with accepted / review-required / generator-response classification.
 * Focused controls `fugue-smoke`, `modal-cadence`, `dark-episode`, and `tight-stretto`: `review-required`; verify the repair does not overfit the reported seed. Action: compare rearticulation windows, harmonic-sonority windows, leap recovery, counter-subject identity, weak dissonance, and repeated-stock formula pressure.
 * Focused listening: `manual-listening`; agent-side score review can identify the structural problem, but audible acceptance still needs `organ-default` and `strict-counterpoint` checks.
