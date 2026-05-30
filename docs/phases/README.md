@@ -10,7 +10,8 @@
 
 ## Read First
 
-* [Infinite playback MVP](phase-8.md): 現在の operational target。旧 Phase 8。Score-led beauty handoff、Metrical generation repair、Texture continuity repair、Historical reference calibration、Episode motivic development 後に、`continuous fugue`、`endless program`、`regenerative cycle` の 3 再生モード semantics と segment snapshot contract を扱う。
+* [Stretto entry harmony repair](stretto-entry-harmony-repair.md): 最新の planned quality blocker。`seed-1db5j19-1nhjtae` 7-8小節の harmony failure を seed 固有ではなく、stretto / entry 周辺の unresolved accented clash と support sonority 問題として Infinite playback MVP 前に扱う。
+* [Infinite playback MVP](phase-8.md): 現在の operational target。旧 Phase 8。Score-led beauty handoff、Metrical generation repair、Texture continuity repair、Historical reference calibration、Episode motivic development、Stretto entry harmony repair 後に、`continuous fugue`、`endless program`、`regenerative cycle` の 3 再生モード semantics と segment snapshot contract を扱う。
 * [Episode motivic development](episode-motivic-development.md): 完了済み品質 blocker。Historical reference calibration 後に、自由唱と episode を generic filler ではなく主題・応答・対主題から導かれる motivic development として扱った。
 * [Score-led beauty handoff](phase-14.md): 完了済み品質 blocker。旧 Phase 14。`fugue-smoke` 第5小節の transition rhythm と第7小節の short-episode harmonic-continuity を、Infinite playback MVP の前に generalized score-window repair として扱った。
 * [Historical reference calibration](historical-reference-calibration.md): 完了済み品質 blocker。探索的な Bach WTC diagnostics と現行生成 bundle の比較から、persistent voice-pair coupling、long pitch-class reinforcement、entry severe-interval pressure を Infinite playback MVP の前に扱った。
