@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { analyzeTypeScriptFile, createRefactorFinding, normalizeGitHubBaseRef } from "./check-code-metrics.mjs";
+import {
+  analyzeTypeScriptFile,
+  createRefactorFinding,
+  formatFindingMessage,
+  normalizeGitHubBaseRef,
+} from "./check-code-metrics.mjs";
 
 test("measures the most complex function in a TypeScript source file", () => {
   const source = [
@@ -102,6 +107,20 @@ test("creates advisory findings only for changed files with risky metrics", () =
     )?.id,
     "ci.code-metrics.refactor-candidate",
   );
+});
+
+test("formats refactor findings as design-focused advisory guidance", () => {
+  const message = formatFindingMessage({
+    id: "ci.code-metrics.refactor-candidate",
+    maxComplexity: 13,
+    maxFunctionLines: 121,
+  });
+
+  assert.match(message, /ci\.code-metrics\.refactor-candidate/);
+  assert.match(message, /improves cohesion within one concern/);
+  assert.match(message, /decouples distinct concepts/);
+  assert.match(message, /adds focused tests/);
+  assert.match(message, /This is advisory/);
 });
 
 test("normalizes GitHub base refs for pull request and push events", () => {

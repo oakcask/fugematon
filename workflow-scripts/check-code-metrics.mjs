@@ -271,11 +271,11 @@ function parseNumstatValue(value) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-function formatFindingMessage(finding) {
+export function formatFindingMessage(finding) {
   return [
     `${finding.id}: changed TypeScript file has refactor-risk code metrics.`,
     `why=This file is being changed while its largest function has complexity ${finding.maxComplexity} and ${finding.maxFunctionLines} lines, which raises regression risk for future agent edits.`,
-    "action=Consider a small behavior-preserving refactor or add focused tests before adding more logic here.",
+    "action=Prefer a small behavior-preserving refactor that improves cohesion within one concern, decouples distinct concepts, or adds focused tests before adding more logic here.",
     "ignore=This is advisory; leave it alone when the PR only touches formatting, docs, generated output, or unrelated code paths.",
   ].join(" ");
 }
