@@ -4,9 +4,9 @@ import { REVIEW_LENGTH_TICKS } from "./constants.js";
 import { generateScore } from "./generate.js";
 import { evaluateReviewGatePolicy } from "./review-gate.js";
 
-const PHRASE_DEVELOPMENT_FOCUSED_REVIEW_SEEDS = ["modal-answer", "minor-entry", "sparse-cadence"] as const;
+const PHRASE_DEVELOPMENT_FOCUSED_REVIEW_SEEDS = ["random-listen-check", "seed-0zereox-1v729ih"] as const;
 
-test("phrase-development focused seeds preserve hard constraints and repair subject-stem concentration, group B1", () => {
+test("phrase-development focused seeds preserve hard constraints and repair subject-stem concentration, group B2", () => {
   for (const seed of PHRASE_DEVELOPMENT_FOCUSED_REVIEW_SEEDS) {
     const output = generateScore({ seed, lengthTicks: REVIEW_LENGTH_TICKS });
     const gate = evaluateReviewGatePolicy(seed, output.diagnostics);
