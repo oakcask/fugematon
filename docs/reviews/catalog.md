@@ -4,6 +4,8 @@
 
 ## Current Quality Lane
 
+* [Stretto entry harmony repair plan](stretto-entry-harmony-repair-plan.md): 最新の replan evidence。`seed-1db5j19-1nhjtae` 7-8小節の harmony failure を、31 seed の stretto / entry sonority scan、subject-family correlation、candidate scoring / support-texture repair plan として Infinite playback MVP 前へ戻す根拠。
+* [Stretto entry harmony repair](../phases/stretto-entry-harmony-repair.md): planned quality blocker。unresolved accented entry clash、first-stretto entry-dissonance、thin-unrooted support を generator / scoring response として扱う。
 * [Episode motivic development completion review](episode-motivic-development-completion.md): 完了 evidence。subject-free free counterpoint の derivation metadata、generic duration、repeated stock formula の review scope、Phase 8 handoff。
 * [Episode motivic development replan](episode-motivic-development-replan.md): 品質 blocker の根拠。自由唱と episode を、長さではなく主題・応答・対主題からの motivic derivation として説明できるかで扱った。
 * [Episode motivic development](../phases/episode-motivic-development.md): 完了済み品質 blocker。episode motive plan、motivic free-counterpoint generation、derivation metadata、focused review を Infinite playback MVP 前に扱った。
