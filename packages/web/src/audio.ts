@@ -10,21 +10,24 @@ export type ScheduledNote = {
 };
 
 export type PlayOptions = {
+  offsetSecond?: number;
   signal?: AbortSignal;
 };
 
 const START_DELAY_SECONDS = 0.12;
 const MASTER_GAIN = 0.68;
 
-export function createScheduledNotes(model: PlaybackModel, startAtSecond: number): ScheduledNote[] {
-  return model.notes.map((note) => ({
-    note,
-    startSecond: startAtSecond + note.startSecond,
-    stopSecond: startAtSecond + note.startSecond + note.durationSecond,
-    frequency: midiToFrequency(note.pitch),
-    gain: note.gain * (note.volume / 127) * (note.velocity / 127),
-    pan: (note.pan - 64) / 63,
-  }));
+export function createScheduledNotes(model: PlaybackModel, startAtSecond: number, offsetSecond = 0): ScheduledNote[] {
+  return model.notes
+    .filter((note) => note.startSecond + note.durationSecond > offsetSecond)
+    .map((note) => ({
+      note,
+      startSecond: startAtSecond + Math.max(0, note.startSecond - offsetSecond),
+      stopSecond: startAtSecond + note.startSecond + note.durationSecond - offsetSecond,
+      frequency: midiToFrequency(note.pitch),
+      gain: note.gain * (note.volume / 127) * (note.velocity / 127),
+      pan: (note.pan - 64) / 63,
+    }));
 }
 
 export function midiToFrequency(pitch: number): number {
@@ -39,6 +42,7 @@ export class ScorePlayer {
   private readonly activePanners = new Set<StereoPannerNode>();
   private startedAtSecond: number | undefined;
   private durationSecond = 0;
+  private playbackOffsetSecond = 0;
 
   constructor(context = new AudioContext()) {
     this.context = context;
@@ -62,10 +66,12 @@ export class ScorePlayer {
       return false;
     }
 
+    const offsetSecond = clamp(options.offsetSecond ?? 0, 0, model.totalSeconds);
     const startAtSecond = this.context.currentTime + START_DELAY_SECONDS;
     this.startedAtSecond = startAtSecond;
     this.durationSecond = model.totalSeconds;
-    for (const scheduled of createScheduledNotes(model, startAtSecond)) {
+    this.playbackOffsetSecond = offsetSecond;
+    for (const scheduled of createScheduledNotes(model, startAtSecond, offsetSecond)) {
       if (options.signal?.aborted) {
         this.stop();
         return false;
@@ -79,17 +85,39 @@ export class ScorePlayer {
 
   get playbackSecond(): number {
     if (this.startedAtSecond === undefined) {
-      return 0;
+      return this.playbackOffsetSecond;
     }
 
-    return Math.min(this.durationSecond, Math.max(0, this.context.currentTime - this.startedAtSecond));
+    return Math.min(
+      this.durationSecond,
+      Math.max(0, this.playbackOffsetSecond + this.context.currentTime - this.startedAtSecond),
+    );
   }
 
   get isPlaying(): boolean {
-    return this.startedAtSecond !== undefined && this.context.currentTime < this.startedAtSecond + this.durationSecond;
+    return (
+      this.startedAtSecond !== undefined &&
+      this.playbackSecond < this.durationSecond &&
+      this.context.currentTime < this.startedAtSecond + this.durationSecond - this.playbackOffsetSecond
+    );
+  }
+
+  pause(): number {
+    const pausedAtSecond = this.playbackSecond;
+    this.clearScheduledNodes();
+    this.startedAtSecond = undefined;
+    this.playbackOffsetSecond = pausedAtSecond;
+    return pausedAtSecond;
   }
 
   stop(): void {
+    this.clearScheduledNodes();
+    this.startedAtSecond = undefined;
+    this.durationSecond = 0;
+    this.playbackOffsetSecond = 0;
+  }
+
+  private clearScheduledNodes(): void {
     for (const source of this.activeSources) {
       try {
         source.stop();
@@ -110,8 +138,6 @@ export class ScorePlayer {
     this.activeSources.clear();
     this.activeGains.clear();
     this.activePanners.clear();
-    this.startedAtSecond = undefined;
-    this.durationSecond = 0;
   }
 
   private scheduleOrganNote(scheduled: ScheduledNote): void {
@@ -150,4 +176,8 @@ export class ScorePlayer {
       { once: true },
     );
   }
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
 }

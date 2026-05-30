@@ -73,6 +73,8 @@ for (const viewport of VIEWPORTS) {
     await expect(page.getByText("Duration")).toBeHidden();
     await expect(page.locator("#playback-position")).toHaveText(/^\d+s \/ \d+\.\d+s \| bar \d+:\d+ \/ \d+:\d+$/);
     await expect(page.getByRole("button", { name: "Play score" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Pause" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Pause" })).toBeDisabled();
 
     await page.getByRole("button", { name: "Random seed" }).click();
     await expect(seedInput).toHaveValue(/^seed-[0-9a-z]{7}-[0-9a-z]{7}$/);
