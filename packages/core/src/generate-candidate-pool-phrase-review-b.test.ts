@@ -4,6 +4,6 @@ import {
   PHRASE_REPETITION_REVIEW_SEEDS,
 } from "./generate-candidate-pool-phrase-review-test-helpers.js";
 
-test("generateScore exposes phrase-repetition family diagnostics for seed batch A", () => {
-  assertPhraseRepetitionFamilyDiagnostics(PHRASE_REPETITION_REVIEW_SEEDS.slice(0, 3));
+test("generateScore exposes phrase-repetition family diagnostics for seed batch B", () => {
+  assertPhraseRepetitionFamilyDiagnostics(PHRASE_REPETITION_REVIEW_SEEDS.slice(3));
 });
