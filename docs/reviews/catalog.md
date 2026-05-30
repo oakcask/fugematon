@@ -6,6 +6,8 @@
 
 * [Stretto entry harmony repair plan](stretto-entry-harmony-repair-plan.md): 最新の replan evidence。`seed-1db5j19-1nhjtae` 7-8小節の harmony failure を、31 seed の stretto / entry sonority scan、subject-family correlation、candidate scoring / support-texture repair plan として Infinite playback MVP 前へ戻す根拠。
 * [Stretto entry harmony repair](../phases/stretto-entry-harmony-repair.md): planned quality blocker。unresolved accented entry clash、first-stretto entry-dissonance、thin-unrooted support を generator / scoring response として扱う。
+* [Harmonic stasis rearticulation replan](harmonic-stasis-rearticulation-replan.md): 計画根拠。`seed-07mwf08-1te3e2o` の first bass answer 後と `seed-1db5j19-1nhjtae` の functional-support 後処理で確認した同音連打と和声停滞を Phase 8 前 blocker として扱う。
+* [Harmonic stasis rearticulation repair](../phases/harmonic-stasis-rearticulation-repair.md): 計画中の品質 blocker。same-voice short rearticulation と harmonic stasis を同じ score-window で扱う。
 * [Episode motivic development completion review](episode-motivic-development-completion.md): 完了 evidence。subject-free free counterpoint の derivation metadata、generic duration、repeated stock formula の review scope、Phase 8 handoff。
 * [Episode motivic development replan](episode-motivic-development-replan.md): 品質 blocker の根拠。自由唱と episode を、長さではなく主題・応答・対主題からの motivic derivation として説明できるかで扱った。
 * [Episode motivic development](../phases/episode-motivic-development.md): 完了済み品質 blocker。episode motive plan、motivic free-counterpoint generation、derivation metadata、focused review を Infinite playback MVP 前に扱った。
@@ -83,7 +85,7 @@
 * [Phase 10](../phases/phase-10.md): 操作機能より先に進める reference corpus、oracle-driven model update、section-local planner、pairwise preference の品質基盤計画。
 * [Metrical generation repair completion review](metrical-generation-repair-completion.md): Metrical generation repair の完了 evidence。3/4 focused seeds、6/8 compound-meter seeds、4/4 controls、focused profile notes、Phase 8 handoff を記録する。
 * [Metrical generation repair](../phases/metrical-generation-repair.md): 完了済み handoff baseline。time-signature metadata を generator、scoring、diagnostics へ接続した。
-* [Phase 8](../phases/phase-8.md): 次の operational lane。Phase 13X、Phase 13Y、Phase 13Z、Phase 14、Metrical generation repair、Texture continuity repair、Historical reference calibration、Episode motivic development の evidence baseline を前提に無限再生 operational lane を再開する。
+* [Phase 8](../phases/phase-8.md): 次の operational lane。Phase 13X、Phase 13Y、Phase 13Z、Phase 14、Metrical generation repair、Texture continuity repair、Historical reference calibration、Episode motivic development、Harmonic stasis rearticulation repair、Stretto entry harmony repair の evidence baseline を前提に無限再生 operational lane を再開する。
 
 ## Earlier Reviews
 
@@ -103,7 +105,7 @@
 
 ## Read When
 
-* 最新の品質方針を見る場合は Episode motivic development completion review と Episode motivic development を先に読む。必要な場合だけ Historical reference calibration、Texture continuity repair、Metrical generation repair、Phase 14、Phase 13Z、Phase 13Y、Phase 13X2、Phase 13X、Phase 13W、Phase 13V、Phase 13U、Phase 13T、Phase 13S、Phase 13R、Phase 13Q へ戻る。
+* 最新の品質方針を見る場合は Stretto entry harmony repair plan と Stretto entry harmony repair を先に読む。関連する直前の planned blocker が必要な場合だけ Harmonic stasis rearticulation replan、Harmonic stasis rearticulation repair、Episode motivic development、Historical reference calibration、Texture continuity repair、Metrical generation repair、Phase 14、Phase 13Z、Phase 13Y、Phase 13X2、Phase 13X、Phase 13W、Phase 13V、Phase 13U、Phase 13T、Phase 13S、Phase 13R、Phase 13Q へ戻る。
 * Phase 11 の実装済み観察軸を見る場合は [Phase 11 review summary diagnostics](phase-11-review-summary.md) を読む。
 * Phase 7 以降の gate 再構成を見る場合は [Phase 7 参照作品 diagnostics 計画](phase-7-reference-diagnostics-plan.md) を読む。
 * Phase 12 挿入前の blocker evidence を見る場合は [Phase 11 post-completion score review](phase-11-post-review.md) を読む。

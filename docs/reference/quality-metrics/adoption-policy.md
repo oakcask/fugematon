@@ -51,6 +51,8 @@ Completed exception: Phase 13Z は、Phase 13Y 後に確認した long-run phras
 
 Completed exception: Phase 14 は、Phase 13Z 後に確認した metric false acceptance を Phase 8/9 前の開始条件へ昇格しました。Reference aggregate、quality vector、Phase 7B readiness は、譜面上の entry continuity、line agency、counter-subject survivability、phrase development を説明できる場合だけ美しさの採用 evidence として扱います。採用には score-window musical acceptance、focused seed evidence、`organ-default` / `strict-counterpoint` listening note、生成譜面の改善と metric reclassification の区別、seed / metric の CI-review scope 分類を必要とします。uncertain beauty signals は CI blocking ではなく `review-required` に残します。
 
+Planned exception: Harmonic stasis rearticulation repair は、Episode motivic development 後に確認した motivic labels without harmonic tension / release と、functional support repair が導入する safe-pitch rearticulation を Phase 8/9 前の開始条件へ昇格します。`harmonicStasisRearticulation` は repeated-note ban ではなく、same-voice short rearticulation、first-bass-answer handoff、all-free texture、functional-support provenance、harmonic-sonority classification を同じ score-window で読む review surface とします。採用には focused seed evidence、accepted context と generator-response の分類、候補選択と後処理のどちらで生じたかの区別、長音化で line agency を失っていないことの確認を必要とします。
+
 ## A/B Review
 
 Model adoption では、A/B summary の次の項目を合わせて読む。
@@ -67,6 +69,7 @@ Model adoption では、A/B summary の次の項目を合わせて読む。
 * Phase 13U では reusable entry formula、voice-pair coupling span、fragment transformation、modal counter-subject preservation、metric truthfulness が、metric movement ではなく生成譜面の改善として説明される。
 * Phase 13V では line agency、entry-formula novelty、counter-subject survivability、adjacent-section contrast、long-window development、focused listening notes が、metric explanation と beauty acceptance の違いを説明する。
 * Phase 14 では score-window musical acceptance、entry continuity、line agency、counter-subject survivability、phrase development、metric truthfulness が、reference aggregate や quality vector の green state より先に説明される。
+* Harmonic stasis rearticulation repair では same-voice short rearticulation、first-bass-answer handoff、all-free texture、functional-support provenance、harmonic function、harmonic-sonority classification、line agency retention が、motivic derivation labels の有無より先に説明される。
 * metric reconstruction がある場合は、old axis と new axis を同じ改善量として扱わず、何が reclassification で何が generated score の改善かを分けて記録する。
 * manual listening gap が残る場合は、採用根拠として未実施であることを明記する。
 

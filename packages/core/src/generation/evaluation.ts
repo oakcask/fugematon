@@ -1,5 +1,12 @@
 import { TICKS_PER_QUARTER } from "../constants.js";
-import type { CandidateEvaluation, NoteEvent, NoteRole, StepwisePatternSummary } from "../events.js";
+import type {
+  CandidateEvaluation,
+  HarmonicPlan,
+  NoteEvent,
+  NoteRole,
+  PlannedEntry,
+  StepwisePatternSummary,
+} from "../events.js";
 import {
   buildCandidateRiskContexts,
   type CandidateRiskContexts,
@@ -11,14 +18,25 @@ import {
   CANDIDATE_EVALUATION_MODEL_VERSION,
   CANDIDATE_EVALUATION_WEIGHTS,
 } from "./evaluation-model.js";
+import { buildPhraseDevelopmentReviewSummary } from "./phrase-development-review.js";
 import type { Exposition } from "./types.js";
 
 const EVALUATION_WEIGHTS = CANDIDATE_EVALUATION_WEIGHTS;
 
-export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate: Exposition): CandidateEvaluation {
+export function evaluateCandidate(
+  previousNotes: readonly NoteEvent[],
+  candidate: Exposition,
+  previousSubjectEntries: readonly PlannedEntry[] = [],
+  previousSectionPlans: readonly HarmonicPlan[] = [],
+): CandidateEvaluation {
   const recentNotes = previousNotes.slice(-64);
   const candidateNotes = [...recentNotes, ...candidate.notes];
   const diagnostics = analyzeScore(candidateNotes, candidate.subjectEntries, candidate.sectionPlans);
+  const phraseDevelopmentReview = buildPhraseDevelopmentReviewSummary(
+    [...previousSubjectEntries, ...candidate.subjectEntries],
+    [...previousSectionPlans, ...candidate.sectionPlans],
+    diagnostics.phraseRepetitionReview,
+  );
   const riskContexts = buildCandidateRiskContexts(candidateNotes, candidate, diagnostics);
   const explanations = explainCandidateRiskContexts(riskContexts);
   const ascendingFifthTurnbackContourCost =
@@ -50,20 +68,24 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
     },
   };
   const freeCounterpointStepwise = roleStepwisePattern(diagnostics.stepwisePattern, "free-counterpoint");
+  const modalStepwiseCostMultiplier = diagnostics.modalContextCount > 0 ? 0.35 : 1;
   const freeCounterpointStepwiseFixationCost =
-    diagnostics.modalContextCount > 0
-      ? 0
-      : Math.max(0, freeCounterpointStepwise.stepwiseRunRatio - 0.7) *
-          EVALUATION_WEIGHTS.melody.freeCounterpointStepwiseRunRatio +
-        Math.max(0, freeCounterpointStepwise.maxMonotoneStepRun - 3) *
-          EVALUATION_WEIGHTS.melody.freeCounterpointMonotoneStepRun;
+    (Math.max(0, freeCounterpointStepwise.stepwiseRunRatio - 0.7) *
+      EVALUATION_WEIGHTS.melody.freeCounterpointStepwiseRunRatio +
+      Math.max(0, freeCounterpointStepwise.maxMonotoneStepRun - 3) *
+        EVALUATION_WEIGHTS.melody.freeCounterpointMonotoneStepRun) *
+    modalStepwiseCostMultiplier;
+  const episodeRepeatedStockFormulaCost =
+    diagnostics.episodeMotivicDevelopment.repeatedStockFormulaCount *
+    EVALUATION_WEIGHTS.melody.episodeRepeatedStockFormula;
   const melody = {
     cost:
       diagnostics.leapRecoveryMisses * EVALUATION_WEIGHTS.melody.leapRecoveryMiss +
       diagnostics.melodicStagnationWarnings * EVALUATION_WEIGHTS.melody.melodicStagnation +
       (diagnostics.lowerVoiceVocality.unvocalLongSupportDurationTicks / TICKS_PER_QUARTER) *
         EVALUATION_WEIGHTS.melody.lowerVoiceUnvocalLongSupportQuarter +
-      freeCounterpointStepwiseFixationCost,
+      freeCounterpointStepwiseFixationCost +
+      episodeRepeatedStockFormulaCost,
     reward:
       diagnostics.freeCounterpointContourScore * EVALUATION_WEIGHTS.melody.freeCounterpointContour +
       diagnostics.ornamentDensity * EVALUATION_WEIGHTS.melody.ornamentDensity,
@@ -80,6 +102,8 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
       freeCounterpointRepeatedDegreePatternCount: freeCounterpointStepwise.repeatedDegreePatternCount,
       freeCounterpointRolePatternEntropy: freeCounterpointStepwise.rolePatternEntropy,
       selectedFreeCounterpointStepwiseFixationCost: freeCounterpointStepwiseFixationCost,
+      episodeRepeatedStockFormulaCount: diagnostics.episodeMotivicDevelopment.repeatedStockFormulaCount,
+      selectedEpisodeRepeatedStockFormulaCost: episodeRepeatedStockFormulaCost,
       ornamentDensity: diagnostics.ornamentDensity,
     },
   };
@@ -250,6 +274,7 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
   const form = {
     cost:
       diagnostics.formRepetitionWarnings * EVALUATION_WEIGHTS.form.formRepetition +
+      phraseDevelopmentReview.mechanicalReuseWindowCount * EVALUATION_WEIGHTS.form.phraseMechanicalReuseWindow +
       diagnostics.qualityVector.scoreBeautyEvidence.longWindowDevelopment.reviewRequiredClaimCount *
         EVALUATION_WEIGHTS.form.longWindowDevelopment +
       Math.max(0, diagnostics.qualityVector.scoreBeautyEvidence.longWindowDevelopment.topFunctionShare - 0.34) *
@@ -260,6 +285,7 @@ export function evaluateCandidate(previousNotes: readonly NoteEvent[], candidate
       diagnostics.strettoClarityScore * EVALUATION_WEIGHTS.form.strettoClarity,
     features: {
       formRepetitionWarnings: diagnostics.formRepetitionWarnings,
+      phraseMechanicalReuseWindowCount: phraseDevelopmentReview.mechanicalReuseWindowCount,
       episodeDirectionScore: diagnostics.episodeDirectionScore,
       strettoClarityScore: diagnostics.strettoClarityScore,
       stateGrammarMostRepeatedPatternCount:

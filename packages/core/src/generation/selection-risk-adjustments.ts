@@ -18,7 +18,7 @@ function candidateOracleSelectionRiskAdjustment(evaluation: CandidateEvaluation)
     return 0;
   }
   if (evaluation.dimensions.harmony.features.modalContextCount > 0) {
-    return entryHarmonySelectionRiskAdjustment(evaluation);
+    return entryHarmonySelectionRiskAdjustment(evaluation) + stepwiseFixationSelectionRiskAdjustment(evaluation) * 0.35;
   }
 
   return (

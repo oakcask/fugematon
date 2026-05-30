@@ -30,6 +30,16 @@ Theory basis: repetition can be motivic development when the source and function
 
 Project response: classify repeated stock formula as `review-required`, not CI-blocking. The next generator or scoring follow-up should decide whether repeated formulas are acceptable motivic sequence, intentional pedal or cadence rhetoric, or a generator vocabulary problem.
 
+### 4. Follow-up: episode repetition pressure is reduced
+
+Affected seeds: the standard 22 seed review bundle, with focused checks on `modal-cadence`, `modal-answer`, `angular-answer`, and `dark-episode`.
+
+Theory basis: repeated episode material can be developmental when cadence, sequence, local key, voice, and source motive change. Exact reuse of the same short free-counterpoint contour and duration formula across the same phrase window reads more like mechanical filler.
+
+Evidence: the current review bundle keeps `derivationCoverage` at `1`, `genericFreeCounterpointDurationTicks` at `0`, hard failures at `0`, unsupported exposed free-counterpoint solo windows at `0`, and no bass-answer tail review blocker. Bundle-level `repeatedStockFormulaCount` is `1920`, and phrase-development mechanical reuse windows total `58`. Focused seeds now report: `modal-cadence` has `3` mechanical windows; `modal-answer` has `120` repeated stock formulas; `angular-answer` has no repeated `uuuuu|eeeeee` top formula; `dark-episode` keeps transformation variety at `8` with source motive concentration `0.242`.
+
+Project response: keep repeated stock formula and remaining phrase mechanical reuse as `review-required`, not CI-blocking. The generator now rotates episode voice/key/sequence support and the candidate model scores exact phrase-window recurrence, but final audible acceptance still needs listening review.
+
 ## CI / Review Scope
 
 * `episodeMotivicDevelopment.derivationCoverage`: `ci-observed`. It is stable and cheap enough to expose in public diagnostics, but thresholds should stay review-calibrated until audible correspondence is checked.

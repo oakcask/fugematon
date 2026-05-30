@@ -43,6 +43,7 @@ export type ContinuityCounterpointInput = {
   maxVoiceCount?: number;
   voiceOrder?: readonly Voice[];
   lineKind?: ContinuityLineKind;
+  freeCounterpointPhraseVariation?: boolean;
 };
 
 export type ContinuityTexturePlan = ContinuityCounterpointInput & {
@@ -69,6 +70,7 @@ type EntryCounterpointTextureInput = {
   eligibleVoices?: readonly Voice[];
   harmonicPlan?: HarmonicPlan;
   counterSubjectSupportRepair?: boolean;
+  freeCounterpointPhraseVariation?: boolean;
 };
 
 type TextureNotePattern = {
@@ -104,7 +106,7 @@ export function addCounterpointTexture(
   addEntryCounterSubject(notes, subject, entry, counterSubjectVoice);
   addEntryFreeCounterpoint(notes, subject, entry, eligibleVoices, counterSubjectVoice);
 
-  if (entry.eligibleVoices !== undefined) {
+  if (entry.eligibleVoices !== undefined || entry.freeCounterpointPhraseVariation === true) {
     repairTextureVoiceCrossings(notes, entry.startTick, entry.durationTicks);
   }
 }
@@ -157,7 +159,7 @@ function addEntryFreeCounterpoint(
       role: "free-counterpoint",
       harmonicPlan: entry.harmonicPlan,
       counterSubjectSupportRepair: entry.counterSubjectSupportRepair,
-      freeCounterpointPhraseVariation: entry.counterSubjectSupportRepair,
+      freeCounterpointPhraseVariation: entry.counterSubjectSupportRepair || entry.freeCounterpointPhraseVariation,
     });
   }
 }
@@ -354,7 +356,8 @@ export function addPatternCounterpoint(
   let elapsedTicks = 0;
   for (let index = 0; index < subject.length && elapsedTicks < pattern.maxDurationTicks; index += 1) {
     const subjectNote = subject[index]!;
-    const durationTicks = Math.min(subjectNote.durationTicks, pattern.maxDurationTicks - elapsedTicks);
+    const remainingTicks = pattern.maxDurationTicks - elapsedTicks;
+    const durationTicks = Math.min(subjectNote.durationTicks, remainingTicks);
     const startTick = pattern.startTick + elapsedTicks;
     if (hasOverlap(notes, pattern.voice, startTick, durationTicks)) {
       elapsedTicks += subjectNote.durationTicks;
@@ -362,6 +365,18 @@ export function addPatternCounterpoint(
     }
 
     const degree = pattern.degrees[index % pattern.degrees.length]!;
+    const combinedShortDurationTicks = combinedShortFreeCounterpointDuration(
+      pattern,
+      index,
+      durationTicks,
+      remainingTicks,
+    );
+    if (combinedShortDurationTicks !== undefined) {
+      addTextureNote(notes, pattern, degree, startTick, combinedShortDurationTicks);
+      elapsedTicks += combinedShortDurationTicks;
+      index += 1;
+      continue;
+    }
     if (
       pattern.role === "free-counterpoint" &&
       pattern.preserveDurations !== true &&
@@ -373,6 +388,27 @@ export function addPatternCounterpoint(
     }
     elapsedTicks += subjectNote.durationTicks;
   }
+}
+
+function combinedShortFreeCounterpointDuration(
+  pattern: Parameters<typeof addPatternCounterpoint>[2],
+  index: number,
+  durationTicks: number,
+  remainingTicks: number,
+): number | undefined {
+  if (
+    pattern.role !== "free-counterpoint" ||
+    pattern.freeCounterpointPhraseVariation !== true ||
+    pattern.harmonicPlan === undefined ||
+    pattern.harmonicPlan.state === "exposition" ||
+    durationTicks > TICKS_PER_QUARTER / 2 ||
+    remainingTicks < TICKS_PER_QUARTER
+  ) {
+    return undefined;
+  }
+
+  const variant = freeCounterpointPhraseVariant(pattern, index);
+  return variant === 1 || variant === 3 ? TICKS_PER_QUARTER : undefined;
 }
 
 function addFreeCounterpointPatternNote(
@@ -658,9 +694,55 @@ function repairTextureVoiceCrossings(notes: Exposition["notes"], startTick: numb
         lowerNote.pitch -= 12;
       } else if (canMoveUpWithoutCrossing(notes, higherNote, higherNote.pitch + 12)) {
         higherNote.pitch += 12;
+      } else if (canMoveDownBelowHigherAtTick(notes, lowerNote, higherNote, tick)) {
+        lowerNote.pitch -= 12;
       }
     }
   }
+  repairResidualAdjacentVoiceCrossings(notes, checkpoints);
+}
+
+function repairResidualAdjacentVoiceCrossings(notes: Exposition["notes"], checkpoints: readonly number[]): void {
+  const adjacentPairs: readonly (readonly [higher: Voice, lower: Voice])[] = [
+    ["soprano", "alto"],
+    ["alto", "tenor"],
+    ["tenor", "bass"],
+  ];
+  for (const tick of checkpoints) {
+    for (const [higher, lower] of adjacentPairs) {
+      const higherNote = activeNoteAt(notes, higher, tick);
+      const lowerNote = activeNoteAt(notes, lower, tick);
+      if (higherNote === undefined || lowerNote === undefined || higherNote.pitch >= lowerNote.pitch) {
+        continue;
+      }
+      const loweredPitch = lowerNote.pitch - 12;
+      if (canMoveDownBelowHigherAtTick(notes, lowerNote, higherNote, tick)) {
+        lowerNote.pitch = loweredPitch;
+        continue;
+      }
+      const raisedPitch = higherNote.pitch + 12;
+      if (raisedPitch <= VOICE_RANGES[higherNote.voice].max) {
+        higherNote.pitch = raisedPitch;
+      }
+    }
+  }
+}
+
+function canMoveDownBelowHigherAtTick(
+  notes: readonly NoteEvent[],
+  lowerNote: NoteEvent,
+  higherNote: NoteEvent,
+  tick: number,
+): boolean {
+  const movedPitch = lowerNote.pitch - 12;
+  if (movedPitch < VOICE_RANGES[lowerNote.voice].min || movedPitch > higherNote.pitch) {
+    return false;
+  }
+  const registerOrder: readonly Voice[] = ["soprano", "alto", "tenor", "bass"];
+  const lowerVoiceIndex = registerOrder.indexOf(lowerNote.voice);
+  const nextLowerVoice = registerOrder[lowerVoiceIndex + 1];
+  const nextLowerNote = nextLowerVoice === undefined ? undefined : activeNoteAt(notes, nextLowerVoice, tick);
+  return nextLowerNote === undefined || movedPitch >= nextLowerNote.pitch;
 }
 
 function activeNoteAt(notes: readonly NoteEvent[], voice: Voice, tick: number): NoteEvent | undefined {
@@ -713,6 +795,9 @@ export function addContinuityCounterpoint(notes: Exposition["notes"], input: Con
   for (const [index, voice] of plan.voices.entries()) {
     addContinuityLine(notes, voice, plan, index);
   }
+  if (input.freeCounterpointPhraseVariation === true) {
+    repairTextureVoiceCrossings(notes, input.startTick, input.durationTicks);
+  }
 }
 
 export function buildContinuityTexturePlan(
@@ -756,7 +841,10 @@ function addContinuityLine(
     return;
   }
 
-  const degrees = rotateContinuityDegrees(freeCounterpointDegreesForMode(plan.localKey.mode), lineIndex * 2);
+  const degrees = rotateContinuityDegrees(
+    freeCounterpointDegreesForMode(plan.localKey.mode),
+    lineIndex * 2 + (plan.freeCounterpointPhraseVariation === true ? episodeContinuityRotation(plan.harmonicPlan) : 0),
+  );
   const startTick = plan.startTick + (lineIndex === 0 ? 0 : TICKS_PER_QUARTER / 2);
   const maxDurationTicks = Math.max(0, plan.durationTicks - (startTick - plan.startTick));
   if (maxDurationTicks <= 0) {
@@ -772,7 +860,9 @@ function addContinuityLine(
     velocity: lineIndex === 0 ? 58 : 52,
     role: "free-counterpoint",
     harmonicPlan: plan.harmonicPlan,
-    preserveDurations: plan.harmonicPlan?.meterContext.timeSignature.numerator === 3,
+    preserveDurations:
+      (plan.freeCounterpointPhraseVariation === true && plan.harmonicPlan?.state === "episode") ||
+      plan.harmonicPlan?.meterContext.timeSignature.numerator === 3,
   });
 }
 
@@ -781,18 +871,20 @@ function continuityFillerSubject(
   plan: ContinuityCounterpointInput,
 ): readonly SubjectNote[] {
   const durations =
-    plan.harmonicPlan?.meterContext.timeSignature.numerator === 3
-      ? [
-          TICKS_PER_QUARTER,
-          TICKS_PER_QUARTER / 2,
-          TICKS_PER_QUARTER / 2,
-          TICKS_PER_QUARTER,
-          TICKS_PER_QUARTER,
-          TICKS_PER_QUARTER / 2,
-          TICKS_PER_QUARTER / 2,
-          TICKS_PER_QUARTER,
-        ]
-      : degrees.map(() => TICKS_PER_QUARTER / 2);
+    plan.freeCounterpointPhraseVariation === true && plan.harmonicPlan?.state === "episode"
+      ? episodeContinuityDurations(plan.harmonicPlan)
+      : plan.harmonicPlan?.meterContext.timeSignature.numerator === 3
+        ? [
+            TICKS_PER_QUARTER,
+            TICKS_PER_QUARTER / 2,
+            TICKS_PER_QUARTER / 2,
+            TICKS_PER_QUARTER,
+            TICKS_PER_QUARTER,
+            TICKS_PER_QUARTER / 2,
+            TICKS_PER_QUARTER / 2,
+            TICKS_PER_QUARTER,
+          ]
+        : degrees.map(() => TICKS_PER_QUARTER / 2);
   let offsetTick = 0;
 
   return degrees.map((scaleDegree, index) => {
@@ -809,6 +901,57 @@ function continuityFillerSubject(
     offsetTick += durationTicks;
     return subjectNote;
   });
+}
+
+function episodeContinuityRotation(harmonicPlan: HarmonicPlan | undefined): number {
+  if (harmonicPlan?.state !== "episode") {
+    return 0;
+  }
+  const sequenceOffset =
+    harmonicPlan.sequencePattern === "circle-fifths"
+      ? 2
+      : harmonicPlan.sequencePattern === "descending-step"
+        ? 1
+        : harmonicPlan.sequencePattern === "parallel-shift"
+          ? 3
+          : 0;
+  const transformOffset =
+    harmonicPlan.fragmentTransform === "inversion" ? 2 : harmonicPlan.fragmentTransform === "contrary-motion" ? 1 : 0;
+  return (
+    Math.floor(harmonicPlan.startTick / Math.max(1, harmonicPlan.meterContext.measureTicks)) +
+    sequenceOffset +
+    transformOffset
+  );
+}
+
+function episodeContinuityDurations(harmonicPlan: HarmonicPlan): readonly number[] {
+  const variants: readonly (readonly number[])[] = [
+    [
+      TICKS_PER_QUARTER / 2,
+      TICKS_PER_QUARTER,
+      TICKS_PER_QUARTER / 2,
+      TICKS_PER_QUARTER / 2,
+      TICKS_PER_QUARTER,
+      TICKS_PER_QUARTER / 2,
+    ],
+    [
+      TICKS_PER_QUARTER,
+      TICKS_PER_QUARTER / 2,
+      TICKS_PER_QUARTER / 2,
+      TICKS_PER_QUARTER,
+      TICKS_PER_QUARTER / 2,
+      TICKS_PER_QUARTER / 2,
+    ],
+    [
+      TICKS_PER_QUARTER / 2,
+      TICKS_PER_QUARTER / 2,
+      TICKS_PER_QUARTER,
+      TICKS_PER_QUARTER / 2,
+      TICKS_PER_QUARTER,
+      TICKS_PER_QUARTER / 2,
+    ],
+  ];
+  return variants[episodeContinuityRotation(harmonicPlan) % variants.length]!;
 }
 
 function addObliqueContinuitySupport(
@@ -1696,7 +1839,10 @@ function repairTextureVoiceCrossingsForPlans(notes: Exposition["notes"], section
   );
 }
 
-function repairTextureVoiceCrossingsForNotes(notes: Exposition["notes"], sectionPlans: readonly HarmonicPlan[]): void {
+export function repairTextureVoiceCrossingsForNotes(
+  notes: Exposition["notes"],
+  sectionPlans: readonly HarmonicPlan[],
+): void {
   const startTick = Math.min(...sectionPlans.map((plan) => plan.startTick), ...notes.map((note) => note.startTick));
   const endTick = Math.max(
     ...sectionPlans.map((plan) => plan.startTick + plan.durationTicks),
@@ -1738,8 +1884,10 @@ function functionalSupportProfile(
 function shouldUseDerivedMotivicSupport(harmonicPlan: HarmonicPlan): boolean {
   return (
     harmonicPlan.state === "episode" &&
-    harmonicPlan.startTick <= TICKS_PER_QUARTER * 24 &&
-    harmonicPlan.ambiguityIntent === "pivot-harmony"
+    (harmonicPlan.ambiguityIntent === "pivot-harmony" ||
+      harmonicPlan.startTick <= TICKS_PER_QUARTER * 24 ||
+      harmonicPlan.fragmentTransform !== undefined ||
+      harmonicPlan.sequencePattern !== undefined)
   );
 }
 
@@ -1807,7 +1955,23 @@ function motifDurationPattern(
   const durations = motif
     .map((note) => Math.min(note.durationTicks, maxNoteTicks))
     .filter((durationTicks) => durationTicks >= TICKS_PER_QUARTER / 2);
-  return durations.length === 0 ? [Math.min(maxNoteTicks, fallbackTicks)] : durations;
+  if (durations.length === 0) {
+    return [Math.min(maxNoteTicks, fallbackTicks)];
+  }
+  if (isRepeatedShortDurationPattern(durations)) {
+    const rotatedLongerTicks = Math.min(maxNoteTicks, Math.max(TICKS_PER_QUARTER, fallbackTicks));
+    return Math.floor(input.harmonicPlan.startTick / Math.max(1, input.harmonicPlan.meterContext.measureTicks)) % 2 ===
+      0
+      ? [TICKS_PER_QUARTER / 2, rotatedLongerTicks, TICKS_PER_QUARTER / 2, Math.min(maxNoteTicks, fallbackTicks)]
+      : [rotatedLongerTicks, TICKS_PER_QUARTER / 2, Math.min(maxNoteTicks, fallbackTicks), TICKS_PER_QUARTER / 2];
+  }
+  return durations;
+}
+
+function isRepeatedShortDurationPattern(durations: readonly number[]): boolean {
+  return (
+    durations.length >= 4 && durations.slice(0, 4).every((durationTicks) => durationTicks <= TICKS_PER_QUARTER / 2)
+  );
 }
 
 function pitchScaleDegree(pitch: number, key: KeySignature): number | undefined {
@@ -1831,6 +1995,15 @@ function normalizedDegreeMotion(interval: number): number {
 
 function transformMotivicIntervals(intervals: readonly number[], harmonicPlan: HarmonicPlan): readonly number[] {
   const singableIntervals = intervals.map((interval) => Math.max(-2, Math.min(2, interval)));
+  if (isRepeatedStepwiseFormula(singableIntervals)) {
+    const rotation = Math.floor(harmonicPlan.startTick / Math.max(1, harmonicPlan.meterContext.measureTicks)) % 3;
+    if (rotation === 1) {
+      return singableIntervals.map((interval, index) => (index % 3 === 1 ? -interval : interval));
+    }
+    if (rotation === 2) {
+      return singableIntervals.map((interval, index) => (index % 3 === 2 ? 0 : interval));
+    }
+  }
   if (harmonicPlan.fragmentTransform === "contrary-motion" || harmonicPlan.fragmentTransform === "inversion") {
     return singableIntervals.map((interval) => -interval);
   }
@@ -1841,6 +2014,14 @@ function transformMotivicIntervals(intervals: readonly number[], harmonicPlan: H
     return singableIntervals.map((interval) => (interval < 0 ? interval + 1 : interval));
   }
   return singableIntervals;
+}
+
+function isRepeatedStepwiseFormula(intervals: readonly number[]): boolean {
+  const nonZero = intervals.filter((interval) => interval !== 0);
+  if (nonZero.length < 5) {
+    return false;
+  }
+  return nonZero.every((interval) => Math.abs(interval) === 1 && Math.sign(interval) === Math.sign(nonZero[0]!));
 }
 
 function supportStartingDegree(voice: Voice, rootDegree: number): number {
