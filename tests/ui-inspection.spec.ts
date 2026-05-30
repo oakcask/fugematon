@@ -72,7 +72,7 @@ for (const viewport of VIEWPORTS) {
     await expect(page.getByText("Mode")).toBeHidden();
     await expect(page.getByText("Duration")).toBeHidden();
     await expect(page.locator("#playback-position")).toHaveText(/^\d+s \/ \d+\.\d+s \| bar \d+:\d+ \/ \d+:\d+$/);
-    await expect(page.getByRole("button", { name: "Play score" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Play" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Pause" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Pause" })).toBeDisabled();
 
@@ -138,7 +138,7 @@ test("animates the background only while playback is active", async ({ page }) =
   const body = page.locator("body");
   await expect(body).not.toHaveClass(/is-playing/);
 
-  await page.getByRole("button", { name: "Play score" }).click();
+  await page.getByRole("button", { name: "Play" }).click();
   await expect(body).toHaveClass(/is-playing/);
   await expect(body).toHaveCSS("animation-name", "playback-background-flow");
 
@@ -232,7 +232,7 @@ test("cancels pending playback before regenerating the score", async ({ page }) 
   });
 
   await page.goto("/");
-  await page.getByRole("button", { name: "Play score" }).click();
+  await page.getByRole("button", { name: "Play" }).click();
   await expect(page.getByText("Starting playback")).toBeVisible();
 
   const seedInput = page.getByLabel("Seed");

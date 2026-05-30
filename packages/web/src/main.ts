@@ -82,7 +82,7 @@ app.innerHTML = `
         <span class="playback-position" id="playback-position"></span>
       </div>
       <div class="transport-actions">
-        <button type="button" id="start">Play score</button>
+        <button type="button" id="start">Play</button>
         <button type="button" class="secondary" id="pause">Pause</button>
         <button type="button" class="secondary" id="stop">Stop</button>
       </div>
@@ -346,7 +346,7 @@ function renderTransportButtons(): void {
   const isStarting = playbackStartController !== undefined;
   const isPlaying = player?.isPlaying ?? false;
   startButton.disabled = isStarting;
-  startButton.textContent = pausedAtSecond > 0 ? "Resume score" : "Play score";
+  startButton.textContent = pausedAtSecond > 0 ? "Resume score" : "Play";
   pauseButton.disabled = isStarting || !isPlaying;
 }
 
