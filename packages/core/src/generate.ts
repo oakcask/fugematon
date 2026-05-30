@@ -3,6 +3,7 @@ import type { GenerationInput, GenerationOutput, ScoreEvent } from "./events.js"
 import { normalizeSelectionModel } from "./events.js";
 import { analyzeScore } from "./generation/diagnostics.js";
 import { annotateEpisodeMotivicDerivations } from "./generation/episode-motivic-development.js";
+import { repairHarmonicStasisRearticulation } from "./generation/harmonic-stasis-rearticulation.js";
 import { chooseKeySignature, chooseTempo, chooseTimeSignature } from "./generation/key.js";
 import { buildLocalSentinelCandidateTraceSummary } from "./generation/local-sentinel-candidate-trace.js";
 import { createMeterContext } from "./generation/meter.js";
@@ -25,6 +26,9 @@ export function generateScore(input: GenerationInput): GenerationOutput {
   const subject = buildSubject(rng, keySignature, selectionModel, meterContext);
   const score = buildFugueScore(subject, keySignature, input.lengthTicks, rng, selectionModel, meterContext);
   annotateEpisodeMotivicDerivations(score.notes, score.sectionPlans);
+  if (selectionModel !== "baseline") {
+    repairHarmonicStasisRearticulation(score.notes, score.sectionPlans);
+  }
   const diagnostics = analyzeScore(score.notes, score.subjectEntries, score.sectionPlans);
   const localSentinelCandidateTrace = buildLocalSentinelCandidateTraceSummary(
     score.selectedCandidateEvaluations,
@@ -42,6 +46,7 @@ export function generateScore(input: GenerationInput): GenerationOutput {
   const scoreWindowAcceptance = buildScoreWindowAcceptanceSummary(
     diagnostics.entryBoundaryContinuity,
     diagnostics.harmonicContinuity,
+    diagnostics.harmonicStasisRearticulation,
     diagnostics.transitionRhythmReview,
     diagnostics.dissonanceTriage,
     diagnostics.qualityVector,

@@ -224,11 +224,17 @@ export function evaluateCandidate(
       EVALUATION_WEIGHTS.harmony.harmonicSonorityReviewWindow +
     diagnostics.qualityVector.harmonicSonorities.generatorResponseWindowCount *
       EVALUATION_WEIGHTS.harmony.harmonicSonorityGeneratorWindow;
+  const harmonicStasisRearticulationCost =
+    diagnostics.harmonicStasisRearticulation.reviewRequiredWindowCount *
+      EVALUATION_WEIGHTS.harmony.harmonicStasisRearticulationReviewWindow +
+    diagnostics.harmonicStasisRearticulation.generatorResponseWindowCount *
+      EVALUATION_WEIGHTS.harmony.harmonicStasisRearticulationGeneratorWindow;
   const entryHarmonyRiskCost =
     scoreBalancedEntryHarmonyRisk(riskContexts) +
     modalCadenceEntrySupportRiskCost +
     unresolvedAccentedEntryClashCost +
-    harmonicSonorityCost;
+    harmonicSonorityCost +
+    harmonicStasisRearticulationCost;
   const harmony = {
     cost:
       entryHarmonyRiskCost +
@@ -285,8 +291,13 @@ export function evaluateCandidate(
       harmonicSonorityReviewRequiredWindowCount: diagnostics.qualityVector.harmonicSonorities.reviewRequiredWindowCount,
       harmonicSonorityGeneratorResponseWindowCount:
         diagnostics.qualityVector.harmonicSonorities.generatorResponseWindowCount,
+      harmonicStasisRearticulationReviewRequiredWindowCount:
+        diagnostics.harmonicStasisRearticulation.reviewRequiredWindowCount,
+      harmonicStasisRearticulationGeneratorResponseWindowCount:
+        diagnostics.harmonicStasisRearticulation.generatorResponseWindowCount,
       selectedUnresolvedAccentedEntryClashCost: unresolvedAccentedEntryClashCost,
       selectedHarmonicSonorityCost: harmonicSonorityCost,
+      selectedHarmonicStasisRearticulationCost: harmonicStasisRearticulationCost,
     },
   };
   const form = {

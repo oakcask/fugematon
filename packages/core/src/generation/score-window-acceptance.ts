@@ -7,6 +7,8 @@ import type {
   HarmonicContinuitySummary,
   HarmonicContinuityWindow,
   HarmonicSonorityWindow,
+  HarmonicStasisRearticulationSummary,
+  HarmonicStasisRearticulationWindow,
   MetricExplanationSummary,
   PhraseDevelopmentJudgement,
   PhraseDevelopmentReviewSummary,
@@ -28,6 +30,7 @@ const VOICE_NAMES = new Set<Voice>(["soprano", "alto", "tenor", "bass"]);
 export function buildScoreWindowAcceptanceSummary(
   entryBoundaryContinuity: EntryBoundaryContinuitySummary,
   harmonicContinuity: HarmonicContinuitySummary,
+  harmonicStasisRearticulation: HarmonicStasisRearticulationSummary,
   transitionRhythmReview: TransitionRhythmReviewSummary,
   dissonanceTriage: DissonanceTriageSummary,
   qualityVector: QualityVector,
@@ -39,6 +42,7 @@ export function buildScoreWindowAcceptanceSummary(
   const windows = collectScoreWindowAcceptanceWindows(
     importantEntryWindows,
     harmonicContinuity,
+    harmonicStasisRearticulation,
     transitionRhythmReview,
     dissonanceTriage,
     qualityVector,
@@ -50,6 +54,7 @@ export function buildScoreWindowAcceptanceSummary(
     schemaVersion: 1,
     importantEntryWindowCount: importantEntryWindows.length,
     harmonicContinuityWindowCount: harmonicContinuity.windows.length,
+    harmonicStasisRearticulationWindowCount: harmonicStasisRearticulation.windows.length,
     harmonicSonorityWindowCount: qualityVector.harmonicSonorities.windows.length,
     transitionRhythmWindowCount: transitionRhythmReview.windows.length,
     dissonanceWindowCount: dissonanceTriage.windows.length,
@@ -68,6 +73,7 @@ export function buildScoreWindowAcceptanceSummary(
 function collectScoreWindowAcceptanceWindows(
   importantEntryWindows: readonly EntryBoundaryContinuityWindow[],
   harmonicContinuity: HarmonicContinuitySummary,
+  harmonicStasisRearticulation: HarmonicStasisRearticulationSummary,
   transitionRhythmReview: TransitionRhythmReviewSummary,
   dissonanceTriage: DissonanceTriageSummary,
   qualityVector: QualityVector,
@@ -77,6 +83,7 @@ function collectScoreWindowAcceptanceWindows(
     ...importantEntryWindows.map(scoreWindowFromEntryContinuity),
     ...harmonicContinuity.windows.map(scoreWindowFromHarmonicContinuity),
     ...transitionRhythmReview.windows.map(scoreWindowFromTransitionRhythm),
+    ...harmonicStasisRearticulation.windows.map(scoreWindowFromHarmonicStasisRearticulation),
     ...qualityVector.harmonicSonorities.windows.map(scoreWindowFromHarmonicSonority),
     ...dissonanceTriage.windows.map(scoreWindowFromDissonance),
     ...qualityVector.voicePairSpans.map(scoreWindowFromVoicePairSpan),
@@ -126,6 +133,26 @@ function scoreWindowFromHarmonicContinuity(window: HarmonicContinuityWindow): Sc
       window.classification === "audible-progression"
         ? "short pivot episode has enough bass-root and chord-tone support to carry the planned progression"
         : "short pivot episode does not yet make the planned harmonic path audible",
+    theoryBasis: "harmony",
+    response: window.response,
+  };
+}
+
+function scoreWindowFromHarmonicStasisRearticulation(
+  window: HarmonicStasisRearticulationWindow,
+): ScoreWindowAcceptanceWindow {
+  return {
+    kind: "harmonic-stasis-rearticulation",
+    startTick: window.startTick,
+    durationTicks: window.durationTicks,
+    state: window.state,
+    voices: [window.voice],
+    roles: [window.role],
+    classification: window.classification,
+    symptom:
+      window.classification === "accepted-context"
+        ? "same-pitch rearticulation has cadence, pedal, or rhetorical context"
+        : "short same-pitch free-counterpoint rearticulation needs harmonic or line-agency justification",
     theoryBasis: "harmony",
     response: window.response,
   };

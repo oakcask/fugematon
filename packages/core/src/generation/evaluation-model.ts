@@ -1,5 +1,5 @@
-export const CANDIDATE_EVALUATION_FEATURE_VERSION = 8;
-export const CANDIDATE_EVALUATION_MODEL_VERSION = 16;
+export const CANDIDATE_EVALUATION_FEATURE_VERSION = 9;
+export const CANDIDATE_EVALUATION_MODEL_VERSION = 17;
 
 export const CANDIDATE_EVALUATION_WEIGHTS = {
   hardFailure: 10_000,
@@ -53,6 +53,8 @@ export const CANDIDATE_EVALUATION_WEIGHTS = {
     unresolvedAccentedEntryClash: 0,
     harmonicSonorityReviewWindow: 0,
     harmonicSonorityGeneratorWindow: 0,
+    harmonicStasisRearticulationReviewWindow: 0.05,
+    harmonicStasisRearticulationGeneratorWindow: 0.2,
     modalCadenceEntryInstability: 1,
     modalCadenceSevereEntryInterval: 2,
     modalCadenceUnresolvedSevereEntryInterval: 3,

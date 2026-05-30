@@ -4,8 +4,9 @@
 
 ## Current Quality Lane
 
+* [Harmonic stasis rearticulation repair completion](harmonic-stasis-rearticulation-completion.md): 完了 evidence。same-voice short rearticulation と harmonic stasis を diagnostics、candidate scoring、final support repair、focused / standard seed evidence として記録する。
 * [Harmonic stasis rearticulation replan](harmonic-stasis-rearticulation-replan.md): 計画根拠。`seed-07mwf08-1te3e2o` の first bass answer 後、`seed-1db5j19-1nhjtae` の functional-support 後処理、`seed-1syy921-0025pp1` の first-episode handoff で確認した同音連打、和声停滞、continuity false acceptance を Phase 8 前 blocker として扱う。
-* [Harmonic stasis rearticulation repair](../phases/harmonic-stasis-rearticulation-repair.md): 計画中の品質 blocker。same-voice short rearticulation と harmonic stasis を同じ score-window で扱う。
+* [Harmonic stasis rearticulation repair](../phases/harmonic-stasis-rearticulation-repair.md): 完了済み品質 blocker。same-voice short rearticulation と harmonic stasis を同じ score-window で扱った。
 * [Stretto entry harmony repair completion](stretto-entry-harmony-repair-completion.md): 完了 evidence。`seed-1db5j19-1nhjtae` 7-8小節の harmony failure を、focused seed before/after、candidate scoring、support construction、handoff sonority repair として記録する。
 * [Stretto entry harmony repair plan](stretto-entry-harmony-repair-plan.md): replan evidence。`seed-1db5j19-1nhjtae` 7-8小節の harmony failure を、31 seed の stretto / entry sonority scan、subject-family correlation、candidate scoring / support-texture repair plan として Infinite playback MVP 前へ戻す根拠。
 * [Stretto entry harmony repair](../phases/stretto-entry-harmony-repair.md): 完了済み品質 blocker。unresolved accented entry clash、first-stretto entry-dissonance、thin-unrooted support を generator / scoring response として扱った。
@@ -106,7 +107,7 @@
 
 ## Read When
 
-* 最新の品質方針を見る場合は Harmonic stasis rearticulation replan と、直近完了の Stretto entry harmony repair completion を先に読む。関連する過去 blocker が必要な場合だけ Episode motivic development、Historical reference calibration、Texture continuity repair、Metrical generation repair、Phase 14、Phase 13Z、Phase 13Y、Phase 13X2、Phase 13X、Phase 13W、Phase 13V、Phase 13U、Phase 13T、Phase 13S、Phase 13R、Phase 13Q へ戻る。
+* 最新の品質方針を見る場合は Harmonic stasis rearticulation repair completion と、直前完了の Stretto entry harmony repair completion を先に読む。関連する過去 blocker が必要な場合だけ Episode motivic development、Historical reference calibration、Texture continuity repair、Metrical generation repair、Phase 14、Phase 13Z、Phase 13Y、Phase 13X2、Phase 13X、Phase 13W、Phase 13V、Phase 13U、Phase 13T、Phase 13S、Phase 13R、Phase 13Q へ戻る。
 * Phase 11 の実装済み観察軸を見る場合は [Phase 11 review summary diagnostics](phase-11-review-summary.md) を読む。
 * Phase 7 以降の gate 再構成を見る場合は [Phase 7 参照作品 diagnostics 計画](phase-7-reference-diagnostics-plan.md) を読む。
 * Phase 12 挿入前の blocker evidence を見る場合は [Phase 11 post-completion score review](phase-11-post-review.md) を読む。
