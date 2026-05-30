@@ -109,10 +109,7 @@ const notes = requireElement(document.querySelector<HTMLElement>("#notes"), "not
 const pitchSpan = requireElement(document.querySelector<HTMLElement>("#pitch-span"), "pitch span metric");
 const states = requireElement(document.querySelector<HTMLElement>("#states"), "states metric");
 const entries = requireElement(document.querySelector<HTMLElement>("#entries"), "entries metric");
-const playPauseButton = requireElement(
-  document.querySelector<HTMLButtonElement>("#play-pause"),
-  "play/pause button",
-);
+const playPauseButton = requireElement(document.querySelector<HTMLButtonElement>("#play-pause"), "play/pause button");
 const stopButton = requireElement(document.querySelector<HTMLButtonElement>("#stop"), "stop button");
 const transportStatus = requireElement(document.querySelector<HTMLElement>("#transport-status"), "transport status");
 const playbackPosition = requireElement(document.querySelector<HTMLElement>("#playback-position"), "playback position");

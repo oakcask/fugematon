@@ -799,8 +799,8 @@ test("review command writes diagnostics and MIDI files for review seeds", async 
     }
     for (const seed of ["fugue-smoke", "modal-cadence", "modal-answer"] as const) {
       const candidateEvaluation = findReviewSeed(summary.seeds, seed).diagnosticsSummary.candidateEvaluation;
-      assert.equal(candidateEvaluation.featureVersion, 8);
-      assert.equal(candidateEvaluation.evaluationModelVersion, 16);
+      assert.equal(candidateEvaluation.featureVersion, 9);
+      assert.equal(candidateEvaluation.evaluationModelVersion, 17);
       assert.ok(candidateEvaluation.selectedCandidateEvaluationCount > 0);
       assert.ok(candidateEvaluation.totalSectionExplanationCount > 0);
       assert.equal(candidateEvaluation.sectionSoloTextureRiskWarningThreshold, 6);

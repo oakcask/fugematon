@@ -185,6 +185,7 @@ test("public diagnostics expose finite candidate score dimensions", () => {
   assert.equal(output.diagnostics.scoreWindowAcceptance.schemaVersion, 1);
   assert.equal(typeof output.diagnostics.scoreWindowAcceptance.importantEntryWindowCount, "number");
   assert.equal(typeof output.diagnostics.scoreWindowAcceptance.harmonicContinuityWindowCount, "number");
+  assert.equal(typeof output.diagnostics.scoreWindowAcceptance.harmonicStasisRearticulationWindowCount, "number");
   assert.equal(typeof output.diagnostics.scoreWindowAcceptance.harmonicSonorityWindowCount, "number");
   assert.equal(typeof output.diagnostics.scoreWindowAcceptance.transitionRhythmWindowCount, "number");
   assert.equal(typeof output.diagnostics.scoreWindowAcceptance.counterSubjectWindowCount, "number");
@@ -230,8 +231,8 @@ test("public subject entry diagnostics correspond to emitted entry notes", () =>
 });
 
 function assertCandidateEvaluation(evaluation: CandidateEvaluation): void {
-  assert.equal(evaluation.featureVersion, 8);
-  assert.equal(evaluation.evaluationModelVersion, 16);
+  assert.equal(evaluation.featureVersion, 9);
+  assert.equal(evaluation.evaluationModelVersion, 17);
   assert.ok(Number.isFinite(evaluation.totalCost));
   assert.ok(evaluation.explanations.entries.length > 0);
   assert.ok(evaluation.explanations.voicePairs.length > 0);

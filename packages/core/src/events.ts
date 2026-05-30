@@ -282,8 +282,8 @@ export type CandidateEvaluationExplanations = {
 };
 
 export type CandidateEvaluation = {
-  featureVersion: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
-  evaluationModelVersion: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16;
+  featureVersion: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+  evaluationModelVersion: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17;
   totalCost: number;
   hardFailures: DiagnosticIssueCode[];
   explanations: CandidateEvaluationExplanations;
@@ -1310,6 +1310,7 @@ export type HarmonicStasisRearticulationSummary = {
 export type ScoreWindowAcceptanceKind =
   | "important-entry-continuity"
   | "harmonic-continuity"
+  | "harmonic-stasis-rearticulation"
   | "harmonic-sonority"
   | "transition-rhythm"
   | "dissonance-triage"
@@ -1342,6 +1343,7 @@ export type ScoreWindowAcceptanceSummary = {
   schemaVersion: 1;
   importantEntryWindowCount: number;
   harmonicContinuityWindowCount: number;
+  harmonicStasisRearticulationWindowCount: number;
   harmonicSonorityWindowCount: number;
   transitionRhythmWindowCount: number;
   dissonanceWindowCount: number;
