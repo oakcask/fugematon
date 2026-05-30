@@ -31,6 +31,17 @@ test("createScheduledNotes preserves default voice dynamics", () => {
   assert.equal(round(firstByVoice.get("bass")!.pan), round((104 - 64) / 63));
 });
 
+test("createScheduledNotes can schedule playback from an offset", () => {
+  const model = createPlaybackModel(generateScore({ seed: "fugue-smoke", lengthTicks: 7680 }));
+  const offsetSecond = model.notes.find((note) => note.startSecond > 0)!.startSecond;
+  const scheduled = createScheduledNotes(model, 10, offsetSecond);
+
+  assert.ok(scheduled.length < model.notes.length);
+  assert.ok(scheduled.every((note) => note.stopSecond > note.startSecond));
+  assert.ok(scheduled.every((note) => note.note.startSecond + note.note.durationSecond > offsetSecond));
+  assert.equal(Math.min(...scheduled.map((note) => note.startSecond)), 10);
+});
+
 test("midiToFrequency uses A4 as 440hz", () => {
   assert.equal(midiToFrequency(69), 440);
   assert.ok(Math.abs(midiToFrequency(60) - 261.625565) < 0.000001);

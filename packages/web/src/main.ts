@@ -83,6 +83,7 @@ app.innerHTML = `
       </div>
       <div class="transport-actions">
         <button type="button" id="start">Play score</button>
+        <button type="button" class="secondary" id="pause">Pause</button>
         <button type="button" class="secondary" id="stop">Stop</button>
       </div>
     </section>
@@ -110,6 +111,7 @@ const pitchSpan = requireElement(document.querySelector<HTMLElement>("#pitch-spa
 const states = requireElement(document.querySelector<HTMLElement>("#states"), "states metric");
 const entries = requireElement(document.querySelector<HTMLElement>("#entries"), "entries metric");
 const startButton = requireElement(document.querySelector<HTMLButtonElement>("#start"), "start button");
+const pauseButton = requireElement(document.querySelector<HTMLButtonElement>("#pause"), "pause button");
 const stopButton = requireElement(document.querySelector<HTMLButtonElement>("#stop"), "stop button");
 const transportStatus = requireElement(document.querySelector<HTMLElement>("#transport-status"), "transport status");
 const playbackPosition = requireElement(document.querySelector<HTMLElement>("#playback-position"), "playback position");
@@ -128,6 +130,8 @@ writeUrlSeed(state.seed, "replace");
 let player: ScorePlayer | undefined;
 let animationFrame: number | undefined;
 let playbackStartController: AbortController | undefined;
+let pausedAtSecond = 0;
+renderTransportButtons();
 
 seedForm.addEventListener("submit", (event) => {
   event.preventDefault();
@@ -147,6 +151,10 @@ stopButton.addEventListener("click", () => {
   drawPianoRoll(pianoRoll, state.model, 0);
   renderPlaybackPosition(0);
   transportStatus.textContent = "Playback stopped";
+});
+
+pauseButton.addEventListener("click", () => {
+  pausePlayback();
 });
 
 window.addEventListener("resize", () => {
@@ -239,21 +247,25 @@ function renderPlaybackPosition(playbackSecond: number): void {
 
 async function startPlayback(): Promise<void> {
   const controller = new AbortController();
+  const offsetSecond = pausedAtSecond;
   playbackStartController?.abort();
   playbackStartController = controller;
   startButton.disabled = true;
+  pauseButton.disabled = true;
   transportStatus.textContent = "Starting playback";
-  renderPlaybackPosition(0);
+  renderPlaybackPosition(offsetSecond);
 
   try {
     player ??= new ScorePlayer();
-    const started = await player.play(state.model, { signal: controller.signal });
+    const started = await player.play(state.model, { offsetSecond, signal: controller.signal });
     if (!started || controller.signal.aborted) {
       return;
     }
 
+    pausedAtSecond = 0;
     transportStatus.textContent = "Playing score";
     setPlaybackFeedback(true);
+    renderTransportButtons();
     startVisualizerLoop();
   } catch (error) {
     if (!controller.signal.aborted) {
@@ -265,7 +277,7 @@ async function startPlayback(): Promise<void> {
       playbackStartController = undefined;
     }
     if (playbackStartController === undefined) {
-      startButton.disabled = false;
+      renderTransportButtons();
     }
   }
 }
@@ -273,10 +285,27 @@ async function startPlayback(): Promise<void> {
 function cancelPlayback(): void {
   playbackStartController?.abort();
   playbackStartController = undefined;
-  startButton.disabled = false;
   player?.stop();
+  pausedAtSecond = 0;
   cancelVisualizerLoop();
   setPlaybackFeedback(false);
+  renderTransportButtons();
+}
+
+function pausePlayback(): void {
+  if (player === undefined || !player.isPlaying) {
+    return;
+  }
+
+  playbackStartController?.abort();
+  playbackStartController = undefined;
+  pausedAtSecond = player.pause();
+  cancelVisualizerLoop();
+  setPlaybackFeedback(false);
+  drawPianoRoll(pianoRoll, state.model, pausedAtSecond);
+  renderPlaybackPosition(pausedAtSecond);
+  transportStatus.textContent = "Playback paused";
+  renderTransportButtons();
 }
 
 function startVisualizerLoop(): void {
@@ -294,7 +323,9 @@ function startVisualizerLoop(): void {
 
     animationFrame = undefined;
     setPlaybackFeedback(false);
+    pausedAtSecond = 0;
     transportStatus.textContent = "Playback complete";
+    renderTransportButtons();
   };
 
   animationFrame = window.requestAnimationFrame(drawFrame);
@@ -309,6 +340,14 @@ function cancelVisualizerLoop(): void {
 
 function setPlaybackFeedback(isPlaying: boolean): void {
   document.body.classList.toggle("is-playing", isPlaying);
+}
+
+function renderTransportButtons(): void {
+  const isStarting = playbackStartController !== undefined;
+  const isPlaying = player?.isPlaying ?? false;
+  startButton.disabled = isStarting;
+  startButton.textContent = pausedAtSecond > 0 ? "Resume score" : "Play score";
+  pauseButton.disabled = isStarting || !isPlaying;
 }
 
 function requireElement<TElement extends Element>(element: TElement | null, name: string): TElement {
