@@ -2,13 +2,13 @@ import assert from "node:assert/strict";
 import { TICKS_PER_QUARTER } from "./constants.js";
 import { generateScore } from "./generate.js";
 
-export const PHASE_14_REOPENED_REVIEW_SEED_GROUPS = {
+export const SHORT_EPISODE_HARMONIC_CONTINUITY_REGRESSION_SEED_GROUPS = {
   initial: ["fugue-smoke", "bach-001", "bright-answer", "dark-episode"],
   middle: ["ornament-test", "long-arc", "circle-fifths", "tight-stretto"],
   final: ["modal-cadence", "dense-modal", "seed-1dxb2n8-1miapx7"],
 } as const;
 
-export function assertPhase14ReviewSeedsImproveHarmonicContinuityEvidence(seeds: readonly string[]) {
+export function assertShortEpisodeHarmonicContinuityRegressionSeedsAreRepaired(seeds: readonly string[]) {
   const summaries = seeds.map((seed) => {
     const diagnostics = generateScore({
       seed,
