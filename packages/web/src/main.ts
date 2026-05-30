@@ -82,8 +82,7 @@ app.innerHTML = `
         <span class="playback-position" id="playback-position"></span>
       </div>
       <div class="transport-actions">
-        <button type="button" id="start">Play</button>
-        <button type="button" class="secondary" id="pause">Pause</button>
+        <button type="button" id="play-pause">Play</button>
         <button type="button" class="secondary" id="stop">Stop</button>
       </div>
     </section>
@@ -110,8 +109,10 @@ const notes = requireElement(document.querySelector<HTMLElement>("#notes"), "not
 const pitchSpan = requireElement(document.querySelector<HTMLElement>("#pitch-span"), "pitch span metric");
 const states = requireElement(document.querySelector<HTMLElement>("#states"), "states metric");
 const entries = requireElement(document.querySelector<HTMLElement>("#entries"), "entries metric");
-const startButton = requireElement(document.querySelector<HTMLButtonElement>("#start"), "start button");
-const pauseButton = requireElement(document.querySelector<HTMLButtonElement>("#pause"), "pause button");
+const playPauseButton = requireElement(
+  document.querySelector<HTMLButtonElement>("#play-pause"),
+  "play/pause button",
+);
 const stopButton = requireElement(document.querySelector<HTMLButtonElement>("#stop"), "stop button");
 const transportStatus = requireElement(document.querySelector<HTMLElement>("#transport-status"), "transport status");
 const playbackPosition = requireElement(document.querySelector<HTMLElement>("#playback-position"), "playback position");
@@ -142,7 +143,12 @@ randomSeedButton.addEventListener("click", () => {
   regenerateScore(createRandomSeed());
 });
 
-startButton.addEventListener("click", () => {
+playPauseButton.addEventListener("click", () => {
+  if (player?.isPlaying) {
+    pausePlayback();
+    return;
+  }
+
   void startPlayback();
 });
 
@@ -151,10 +157,6 @@ stopButton.addEventListener("click", () => {
   drawPianoRoll(pianoRoll, state.model, 0);
   renderPlaybackPosition(0);
   transportStatus.textContent = "Playback stopped";
-});
-
-pauseButton.addEventListener("click", () => {
-  pausePlayback();
 });
 
 window.addEventListener("resize", () => {
@@ -250,9 +252,8 @@ async function startPlayback(): Promise<void> {
   const offsetSecond = pausedAtSecond;
   playbackStartController?.abort();
   playbackStartController = controller;
-  startButton.disabled = true;
-  pauseButton.disabled = true;
   transportStatus.textContent = "Starting playback";
+  renderTransportButtons();
   renderPlaybackPosition(offsetSecond);
 
   try {
@@ -345,9 +346,16 @@ function setPlaybackFeedback(isPlaying: boolean): void {
 function renderTransportButtons(): void {
   const isStarting = playbackStartController !== undefined;
   const isPlaying = player?.isPlaying ?? false;
-  startButton.disabled = isStarting;
-  startButton.textContent = pausedAtSecond > 0 ? "Resume" : "Play";
-  pauseButton.disabled = isStarting || !isPlaying;
+  playPauseButton.disabled = isStarting;
+  playPauseButton.textContent = isStarting ? "Starting" : renderPlayPauseLabel(isPlaying);
+}
+
+function renderPlayPauseLabel(isPlaying: boolean): string {
+  if (isPlaying) {
+    return "Pause";
+  }
+
+  return pausedAtSecond > 0 ? "Resume" : "Play";
 }
 
 function requireElement<TElement extends Element>(element: TElement | null, name: string): TElement {
