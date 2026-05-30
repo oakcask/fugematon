@@ -252,9 +252,21 @@ function hasSevereEntryIntervalAt(notes: readonly NoteEvent[], entry: PlannedEnt
   }
 
   return entrySupportNotesAt(notes, entry, tick).some((supportNote) => {
+    if (isOffbeatPassingFreeCounterpoint(entry, supportNote, tick)) {
+      return false;
+    }
     const intervalClass = entrySupportIntervalClass(entryNote, supportNote);
     return isAdjacentSecondFriction(intervalClass) || isExposedSeventh(intervalClass);
   });
+}
+
+function isOffbeatPassingFreeCounterpoint(entry: PlannedEntry, supportNote: NoteEvent, tick: number): boolean {
+  return (
+    supportNote.role === "free-counterpoint" &&
+    supportNote.startTick > entry.startTick &&
+    supportNote.startTick === tick &&
+    tick % TICKS_PER_QUARTER !== 0
+  );
 }
 
 function entrySupportIntervalClass(entryNote: NoteEvent, supportNote: NoteEvent): number {

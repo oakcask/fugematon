@@ -51,8 +51,8 @@ test("fugue-smoke repairs the reopened rhythm and harmony handoff", () => {
         window.state === "episode",
     ),
   );
-  assert.equal(harmonicWindow?.sequencePattern, "ascending-step");
-  assert.equal(harmonicWindow?.fragmentTransform, "contrary-motion");
+  assert.equal(harmonicWindow?.sequencePattern, "circle-fifths");
+  assert.equal(harmonicWindow?.fragmentTransform, "inversion");
   assert.equal(harmonicWindow?.classification, "audible-progression");
   assert.equal(harmonicWindow?.response, "accepted-context");
   assert.equal(acceptanceWindow?.response, "accepted-context");

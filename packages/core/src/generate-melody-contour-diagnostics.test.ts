@@ -51,7 +51,7 @@ test("generateScore reports contour motion diagnostics", () => {
   assert.ok(output.diagnostics.selectedCandidateEvaluations[0]!.explanations.entries.length > 0);
   assert.ok(output.diagnostics.selectedCandidateEvaluations[0]!.explanations.voicePairs.length > 0);
   assert.ok(output.diagnostics.selectedCandidateEvaluations[0]!.explanations.sections.length > 0);
-  assert.equal(output.diagnostics.selectedCandidateEvaluations[0]!.evaluationModelVersion, 14);
+  assert.equal(output.diagnostics.selectedCandidateEvaluations[0]!.evaluationModelVersion, 15);
   assert.ok(
     "fourBeatBassUpperSameDirectionRatio" in
       output.diagnostics.selectedCandidateEvaluations[0]!.dimensions.texture.features,

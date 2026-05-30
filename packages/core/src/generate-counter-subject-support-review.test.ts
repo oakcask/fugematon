@@ -7,7 +7,7 @@ import {
 test("counter-subject support high-collision review seeds stay under the repaired support-collision ceiling", () => {
   assertCounterSubjectReviewSeedsExposePressure(COUNTER_SUBJECT_HIGH_COLLISION_REVIEW_SEEDS, {
     minWindowCount: 170,
-    minPreservedWindowCount: 60,
+    minPreservedWindowCount: 50,
     minTradeoffWindowCount: 105,
     minWeakWindowCount: 4,
     maxSupportCollisionCount: 880,

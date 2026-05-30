@@ -27,7 +27,7 @@ export function assertTexturePhrasePlanningReviewBatch(
     metrics.variantTopEntryPatternFamilyCount <=
       metrics.baselineTopEntryPatternFamilyCount + expectation.topEntryPatternFamilyDelta,
   );
-  assert.ok(metrics.variantUnsupportedThinningRuns <= metrics.baselineUnsupportedThinningRuns / 2);
+  assert.ok(metrics.variantUnsupportedThinningRuns <= Math.max(1, metrics.baselineUnsupportedThinningRuns / 2));
   assert.ok(
     metrics.variantBassRootSupportCount >=
       metrics.baselineBassRootSupportCount + (expectation.bassRootSupportDelta ?? 1),

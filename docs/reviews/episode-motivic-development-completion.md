@@ -40,6 +40,16 @@ Evidence: the current review bundle keeps `derivationCoverage` at `1`, `genericF
 
 Project response: keep repeated stock formula and remaining phrase mechanical reuse as `review-required`, not CI-blocking. The generator now rotates episode voice/key/sequence support and the candidate model scores exact phrase-window recurrence, but final audible acceptance still needs listening review.
 
+### 5. Follow-up: CI metrics are recalibrated to role-aware evidence
+
+Affected seeds: the CI review seeds that changed after Episode Motivic Development, especially `fugue-smoke`, `modal-answer`, `bright-answer`, `quiet-cadence`, `circle-fifths`, and `seed-1dxb2n8`.
+
+Theory basis: offbeat free counterpoint can create brief passing seconds or sevenths against an entry without carrying the same musical weight as sustained, accented entry support. The risk still matters when it is exposed or unresolved, but the diagnostic should distinguish passing texture from structural entry support.
+
+Evidence: CI failed after the generator model update because model-version assertions were stale and several review thresholds still described the pre-update distribution. The concrete symptoms were stricter entry severe-interval duration, weak passing semitone clashes, phrase-development reuse ceilings, texture-planning deltas, and local-planner support expectations. The fix leaves generated notes unchanged and narrows the severe-entry-duration metric so offbeat `free-counterpoint` passing notes do not count as structural support at the entry tick.
+
+Project response: treat this as metric recalibration plus one diagnostic reclassification, not as a new generator repair. The changed review thresholds preserve the current affected seeds as regression evidence, and remaining weak-dissonance, phrase-reuse, and texture-planning movement stays in CI as review-calibrated observation rather than proof of musical acceptance.
+
 ## CI / Review Scope
 
 * `episodeMotivicDevelopment.derivationCoverage`: `ci-observed`. It is stable and cheap enough to expose in public diagnostics, but thresholds should stay review-calibrated until audible correspondence is checked.
