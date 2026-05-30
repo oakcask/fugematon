@@ -1211,6 +1211,8 @@ function preservesSectionLocalGuardrails(
     evaluationHarmony.entrySupportInstabilityCount <= baselineHarmony.entrySupportInstabilityCount &&
     evaluationHarmony.severeEntryIntervalCount <= baselineHarmony.severeEntryIntervalCount &&
     evaluationHarmony.unresolvedSevereEntryIntervalCount <= baselineHarmony.unresolvedSevereEntryIntervalCount &&
+    (evaluationHarmony.unresolvedAccentedEntryClashCount ?? 0) <=
+      (baselineHarmony.unresolvedAccentedEntryClashCount ?? 0) &&
     evaluationHarmony.qualityVectorUnresolvedEntrySevereIntervalDuration <=
       baselineHarmony.qualityVectorUnresolvedEntrySevereIntervalDuration
   );

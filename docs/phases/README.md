@@ -10,8 +10,8 @@
 
 ## Read First
 
-* [Stretto entry harmony repair](stretto-entry-harmony-repair.md): 最新の planned quality blocker。`seed-1db5j19-1nhjtae` 7-8小節の harmony failure を seed 固有ではなく、stretto / entry 周辺の unresolved accented clash と support sonority 問題として Infinite playback MVP 前に扱う。
 * [Harmonic stasis rearticulation repair](harmonic-stasis-rearticulation-repair.md): 計画中の品質 blocker。`seed-07mwf08-1te3e2o` の first bass answer 後と `seed-1db5j19-1nhjtae` の functional-support 後処理で確認した、自由唱の同音連打と和声停滞を Phase 8 前に扱う。
+* [Stretto entry harmony repair](stretto-entry-harmony-repair.md): 完了済み品質 blocker。`seed-1db5j19-1nhjtae` 7-8小節の harmony failure を seed 固有ではなく、stretto / entry 周辺の unresolved accented clash と support sonority 問題として Infinite playback MVP 前に扱った。
 * [Infinite playback MVP](phase-8.md): 現在の operational target。旧 Phase 8。Score-led beauty handoff、Metrical generation repair、Texture continuity repair、Historical reference calibration、Episode motivic development、Harmonic stasis rearticulation repair、Stretto entry harmony repair 後に、`continuous fugue`、`endless program`、`regenerative cycle` の 3 再生モード semantics と segment snapshot contract を扱う。
 * [Episode motivic development](episode-motivic-development.md): 完了済み品質 blocker。Historical reference calibration 後に、自由唱と episode を generic filler ではなく主題・応答・対主題から導かれる motivic development として扱った。
 * [Score-led beauty handoff](phase-14.md): 完了済み品質 blocker。旧 Phase 14。`fugue-smoke` 第5小節の transition rhythm と第7小節の short-episode harmonic-continuity を、Infinite playback MVP の前に generalized score-window repair として扱った。

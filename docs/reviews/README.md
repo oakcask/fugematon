@@ -4,7 +4,8 @@
 
 ## Read First
 
-* [Stretto entry harmony repair plan](stretto-entry-harmony-repair-plan.md): 最新のユーザー報告 quality blocker。`seed-1db5j19-1nhjtae` 7-8小節のひどい和音を、stretto / entry 周辺の unresolved accented clash と thin support の seed 横断問題として扱い、修正計画と verification seed set を記録する。
+* [Stretto entry harmony repair completion](stretto-entry-harmony-repair-completion.md): 完了済み quality blocker。`seed-1db5j19-1nhjtae` 7-8小節のひどい和音を、stretto / entry 周辺の unresolved accented clash と thin support の seed 横断問題として修理した evidence、tradeoff、listening gap を記録する。
+* [Stretto entry harmony repair plan](stretto-entry-harmony-repair-plan.md): 計画根拠。`seed-1db5j19-1nhjtae` 7-8小節のひどい和音を、stretto / entry 周辺の unresolved accented clash と thin support の seed 横断問題として扱い、修正計画と verification seed set を記録する。
 * [Harmonic stasis rearticulation replan](harmonic-stasis-rearticulation-replan.md): 直前の planned quality blocker の根拠。`seed-07mwf08-1te3e2o` の motivic free-counterpoint 同音連打と、`seed-1db5j19-1nhjtae` の functional-support 後処理による同音再発音を Phase 8 前の repair に統合する。
 * [Episode motivic development replan](episode-motivic-development-replan.md): 品質 blocker の根拠。自由唱と episode の課題を長さではなく、主題・応答・対主題からの断片化、脚色、ゼクエンツ、転調準備として説明できない問題に再編した。
 * [Episode motivic development completion review](episode-motivic-development-completion.md): Episode Motivic Development の完了 evidence。subject-free free counterpoint の derivation metadata、generic duration、repeated stock formula の review scope、Phase 8 handoff。

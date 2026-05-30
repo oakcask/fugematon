@@ -33,12 +33,23 @@ function entryHarmonySelectionRiskAdjustment(evaluation: CandidateEvaluation): n
   const { entrySupportInstabilityCount, severeEntryIntervalCount, unresolvedSevereEntryIntervalCount } =
     evaluation.dimensions.harmony.features;
   const unresolvedDuration = evaluation.dimensions.harmony.features.qualityVectorUnresolvedEntrySevereIntervalDuration;
+  const unresolvedAccentedEntryClashCount =
+    evaluation.dimensions.harmony.features.unresolvedAccentedEntryClashCount ?? 0;
+  const harmonicSonorityReviewRequiredWindowCount =
+    evaluation.dimensions.harmony.features.harmonicSonorityReviewRequiredWindowCount ?? 0;
+  const harmonicSonorityGeneratorResponseWindowCount =
+    evaluation.dimensions.harmony.features.harmonicSonorityGeneratorResponseWindowCount ?? 0;
 
   return (
     entrySupportInstabilityCount * CANDIDATE_SELECTION_RISK_WEIGHTS.entryHarmony.instability +
     severeEntryIntervalCount * CANDIDATE_SELECTION_RISK_WEIGHTS.entryHarmony.severeInterval +
     unresolvedSevereEntryIntervalCount * CANDIDATE_SELECTION_RISK_WEIGHTS.entryHarmony.unresolvedSevereInterval +
-    unresolvedDuration * CANDIDATE_SELECTION_RISK_WEIGHTS.entryHarmony.unresolvedDuration
+    unresolvedDuration * CANDIDATE_SELECTION_RISK_WEIGHTS.entryHarmony.unresolvedDuration +
+    unresolvedAccentedEntryClashCount * CANDIDATE_SELECTION_RISK_WEIGHTS.entryHarmony.unresolvedAccentedEntryClash +
+    harmonicSonorityReviewRequiredWindowCount *
+      CANDIDATE_SELECTION_RISK_WEIGHTS.entryHarmony.harmonicSonorityReviewWindow +
+    harmonicSonorityGeneratorResponseWindowCount *
+      CANDIDATE_SELECTION_RISK_WEIGHTS.entryHarmony.harmonicSonorityGeneratorWindow
   );
 }
 

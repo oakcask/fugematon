@@ -225,8 +225,8 @@ test("public subject entry diagnostics correspond to emitted entry notes", () =>
 });
 
 function assertCandidateEvaluation(evaluation: CandidateEvaluation): void {
-  assert.equal(evaluation.featureVersion, 7);
-  assert.equal(evaluation.evaluationModelVersion, 15);
+  assert.equal(evaluation.featureVersion, 8);
+  assert.equal(evaluation.evaluationModelVersion, 16);
   assert.ok(Number.isFinite(evaluation.totalCost));
   assert.ok(evaluation.explanations.entries.length > 0);
   assert.ok(evaluation.explanations.voicePairs.length > 0);
