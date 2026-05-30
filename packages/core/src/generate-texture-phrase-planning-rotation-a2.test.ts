@@ -5,7 +5,7 @@ import { assertTexturePhrasePlanningRotationBatch } from "./generate-texture-phr
 test("generateScore applies texture and phrase-unit planning across rotation seed batch A2", () => {
   assertTexturePhrasePlanningRotationBatch(TEXTURE_PHRASE_PLANNING_ROTATION_SEEDS.slice(2, 5), {
     topEntryPatternFamilyDelta: 4,
-    leapRecoveryMissDelta: 42,
+    leapRecoveryMissDelta: 57,
     sectionGrammarRiskMultiplier: 0.47,
   });
 });

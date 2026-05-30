@@ -42,6 +42,7 @@ import {
   addShortEpisodeHarmonicContinuitySupport,
   type ContinuityLineKind,
   fillAllVoiceSilenceGaps,
+  repairTextureVoiceCrossingsForNotes,
   shapeLongRestPhraseClosures,
   softenBassEntryBoundaryResets,
   softenFirstBassEntryBoundaryReset,
@@ -140,7 +141,7 @@ export function buildFugueScore(
     if (selectionModel === "section-local-planner") {
       softenBassEntryBoundaryResets(selection.section.notes, selection.section.subjectEntries, notes);
       selection.section.notes.sort(compareNoteEvents);
-      selection.evaluation = evaluateCandidate(notes, selection.section);
+      selection.evaluation = evaluateCandidate(notes, selection.section, subjectEntries, sectionPlans);
     }
     const selectedState = selection.section.sectionPlans[0]?.state ?? state;
     stateTransitions.push(selectedState);
@@ -167,8 +168,13 @@ export function buildFugueScore(
     shapeLongRestPhraseClosures(notes, sectionPlans);
     addBassAnswerTailTextureSupport(notes, subjectEntries, sectionPlans);
     addShortEpisodeHarmonicContinuitySupport(notes, sectionPlans);
+    repairTextureVoiceCrossingsForNotes(notes, sectionPlans);
   }
   notes.sort(compareNoteEvents);
+  if (selectionModel === "section-local-planner") {
+    repairTextureVoiceCrossingsForNotes(notes, sectionPlans);
+    notes.sort(compareNoteEvents);
+  }
 
   return {
     notes,
@@ -597,6 +603,50 @@ export function chooseFragmentTransform(rng: Xoshiro128StarStar): FragmentTransf
   ]);
 }
 
+function chooseEpisodeSequencePattern(
+  rng: Xoshiro128StarStar,
+  selectionModel: SelectionModel,
+  voice: Voice,
+  pitchClassOffset: number,
+  startTick: number,
+  phraseIntent: ContinuationPhraseSectionIntent | undefined,
+): SequencePattern {
+  if (selectionModel !== "section-local-planner") {
+    return chooseSequencePattern(rng);
+  }
+
+  const patterns: readonly SequencePattern[] =
+    phraseIntent?.cadenceKind === "modal"
+      ? ["descending-step", "parallel-shift", "circle-fifths", "ascending-step"]
+      : ["ascending-step", "circle-fifths", "descending-step", "parallel-shift"];
+  const rotation =
+    VOICE_ENTRY_ORDER.indexOf(voice) + Math.floor(startTick / TICKS_PER_QUARTER / 4) + Math.floor(pitchClassOffset / 2);
+  return patterns[rotation % patterns.length]!;
+}
+
+function chooseEpisodeFragmentTransform(
+  rng: Xoshiro128StarStar,
+  selectionModel: SelectionModel,
+  voice: Voice,
+  pitchClassOffset: number,
+  startTick: number,
+  phraseIntent: ContinuationPhraseSectionIntent | undefined,
+): FragmentTransform {
+  if (selectionModel !== "section-local-planner") {
+    return chooseFragmentTransform(rng);
+  }
+
+  const transforms: readonly FragmentTransform[] =
+    phraseIntent?.cadenceKind === "modal"
+      ? ["contrary-motion", "sequence", "inversion"]
+      : ["sequence", "inversion", "contrary-motion"];
+  const rotation =
+    VOICE_ENTRY_ORDER.indexOf(voice) +
+    Math.floor(startTick / TICKS_PER_QUARTER / 8) +
+    (pitchClassOffset === 0 ? 1 : pitchClassOffset);
+  return transforms[rotation % transforms.length]!;
+}
+
 export function buildExposition(
   subject: readonly SubjectNote[],
   keySignature: KeySignature,
@@ -698,7 +748,9 @@ export function chooseContinuationSection(
     counterSubjectSupportRepair,
     meterContext,
   );
-  const evaluations = candidates.map((candidate) => evaluateCandidate(previousNotes, candidate));
+  const evaluations = candidates.map((candidate) =>
+    evaluateCandidate(previousNotes, candidate, previousSubjectEntries, previousSectionPlans),
+  );
   const selectionWindow = continuationCandidateSelectionWindow(state, selectionModel, candidates.length);
   let bestIndex = bestContinuationCandidateIndex(
     evaluations.slice(0, selectionWindow.baselineCandidateCount),
@@ -735,13 +787,24 @@ export function chooseContinuationSection(
             evaluation,
             historyContext,
             candidateBand === "section-grammar",
-          ) + phraseDevelopmentSelectionRiskAdjustment(candidates[index]!, previousSubjectEntries, historyContext)
+          ) +
+          phraseDevelopmentSelectionRiskAdjustment(
+            candidates[index]!,
+            previousSubjectEntries,
+            previousSectionPlans,
+            historyContext,
+          )
         : 0);
     const bestScore =
       selectionModel === "section-local-planner" && bestIndex < selectionWindow.baselineCandidateCount
         ? candidateSelectionScore(evaluations[bestIndex]!, "candidate-oracle-selection") +
           sectionGrammarPlannerSelectionRiskAdjustment(evaluations[bestIndex]!, historyContext, false) +
-          phraseDevelopmentSelectionRiskAdjustment(candidates[bestIndex]!, previousSubjectEntries, historyContext)
+          phraseDevelopmentSelectionRiskAdjustment(
+            candidates[bestIndex]!,
+            previousSubjectEntries,
+            previousSectionPlans,
+            historyContext,
+          )
         : candidateSelectionScore(evaluations[bestIndex]!, selectionModel) +
           (selectionModel === "section-local-planner"
             ? sectionGrammarPlannerSelectionRiskAdjustment(
@@ -749,7 +812,12 @@ export function chooseContinuationSection(
                 historyContext,
                 continuationCandidateSelectionBand(bestIndex, selectionWindow, selectionModel) === "section-grammar",
               ) +
-              phraseDevelopmentSelectionRiskAdjustment(candidates[bestIndex]!, previousSubjectEntries, historyContext)
+              phraseDevelopmentSelectionRiskAdjustment(
+                candidates[bestIndex]!,
+                previousSubjectEntries,
+                previousSectionPlans,
+                historyContext,
+              )
             : 0);
     if (candidateScore < bestScore) {
       bestIndex = index;
@@ -1028,6 +1096,7 @@ function sectionGrammarPlannerSelectionRiskAdjustment(
 function phraseDevelopmentSelectionRiskAdjustment(
   candidate: Exposition,
   previousSubjectEntries: readonly PlannedEntry[],
+  previousSectionPlans: readonly HarmonicPlan[],
   context: HistoryAwareSelectionContext,
 ): number {
   if (!context.enabled) {
@@ -1045,26 +1114,54 @@ function phraseDevelopmentSelectionRiskAdjustment(
     .filter((entry) => entry.state !== "exposition" && entry.form === candidateEntry.form)
     .slice(-12);
   const candidateStem = candidateEntry.expectedDegreePattern.join("-");
+  const candidateSection = candidate.sectionPlans[0];
+  const candidatePhraseFunction = phraseFunctionDescriptor(candidateSection);
+  const candidateKeySignature = keySignatureDescriptor(candidateEntry.localKey);
   const sameStemCount = recentEntries.filter((entry) => entry.expectedDegreePattern.join("-") === candidateStem).length;
   const sameStemSameVoiceCount = recentEntries.filter(
     (entry) => entry.expectedDegreePattern.join("-") === candidateStem && entry.voice === candidateEntry.voice,
   ).length;
-  const section = candidate.sectionPlans[0];
+  const sameFullPhraseSignatureCount = recentEntries.filter(
+    (entry) =>
+      entry.expectedDegreePattern.join("-") === candidateStem &&
+      entry.voice === candidateEntry.voice &&
+      keySignatureDescriptor(entry.localKey) === candidateKeySignature &&
+      phraseFunctionDescriptor(sectionForTick(previousSectionPlans, entry.startTick) ?? candidateSection) ===
+        candidatePhraseFunction,
+  ).length;
+  const hasChangedFunctionForStem = recentEntries.some(
+    (entry) =>
+      entry.expectedDegreePattern.join("-") === candidateStem &&
+      (entry.voice !== candidateEntry.voice ||
+        keySignatureDescriptor(entry.localKey) !== candidateKeySignature ||
+        phraseFunctionDescriptor(sectionForTick(previousSectionPlans, entry.startTick) ?? candidateSection) !==
+          candidatePhraseFunction),
+  );
   const functionBearingReward =
-    section?.cadenceKind === "authentic" ||
-    section?.cadenceKind === "modal" ||
-    section?.state === "stretto-like" ||
-    recentEntries.some(
-      (entry) =>
-        entry.expectedDegreePattern.join("-") === candidateStem &&
-        (entry.voice !== candidateEntry.voice ||
-          entry.localKey.tonic !== candidateEntry.localKey.tonic ||
-          entry.localKey.mode !== candidateEntry.localKey.mode),
-    )
+    candidateSection?.cadenceKind === "authentic" ||
+    candidateSection?.cadenceKind === "modal" ||
+    candidateSection?.state === "stretto-like" ||
+    hasChangedFunctionForStem
       ? 24
       : 0;
+  const unchangedEpisodeSignaturePressure =
+    candidateEntry.state === "episode" && sameStemCount > 0 && !hasChangedFunctionForStem ? 1400 : 0;
 
-  return sameStemCount * 180 + sameStemSameVoiceCount * 90 - functionBearingReward;
+  return (
+    sameStemCount * 180 +
+    sameStemSameVoiceCount * 90 +
+    sameFullPhraseSignatureCount * 720 +
+    unchangedEpisodeSignaturePressure -
+    functionBearingReward
+  );
+}
+
+function sectionForTick(sectionPlans: readonly HarmonicPlan[], tick: number): HarmonicPlan | undefined {
+  return sectionPlans.find((plan) => plan.startTick <= tick && tick < plan.startTick + plan.durationTicks);
+}
+
+function keySignatureDescriptor(keySignature: KeySignature): string {
+  return `${keySignature.tonic}:${keySignature.mode}`;
 }
 
 function bestContinuationCandidateIndex(
@@ -1159,9 +1256,24 @@ export function buildContinuationCandidates(
           supportDurationTicks: Math.min(sectionDurationTicks, subjectDuration(phraseSubject.slice(0, 4))),
           sectionDurationTicks,
           styleProfile: chooseStyleProfile(rng),
-          sequencePattern: chooseSequencePattern(rng),
-          fragmentTransform: chooseFragmentTransform(rng),
+          sequencePattern: chooseEpisodeSequencePattern(
+            rng,
+            selectionModel,
+            voice,
+            pitchClassOffset,
+            startTick,
+            phraseIntent,
+          ),
+          fragmentTransform: chooseEpisodeFragmentTransform(
+            rng,
+            selectionModel,
+            voice,
+            pitchClassOffset,
+            startTick,
+            phraseIntent,
+          ),
           cadenceKind: phraseIntent?.cadenceKind,
+          freeCounterpointPhraseVariation: includeSectionLocalPlannerCandidates,
         };
         candidates.push(
           buildContinuationSection(phraseSubject.slice(0, 4), input, counterSubjectSupportRepair, meterContext),
@@ -1173,6 +1285,7 @@ export function buildContinuationCandidates(
               {
                 ...input,
                 continuityVoiceCount: phraseContinuityVoiceCount(phraseIntent, 2),
+                freeCounterpointPhraseVariation: true,
               },
               counterSubjectSupportRepair,
               meterContext,
@@ -1186,6 +1299,7 @@ export function buildContinuationCandidates(
                 continuityVoiceCount: phraseContinuityVoiceCount(phraseIntent, 2),
                 continuityVoiceOrder: voicePairSupportContinuityVoiceOrder(voice),
                 continuityLineKind: "oblique-support",
+                freeCounterpointPhraseVariation: true,
               },
               counterSubjectSupportRepair,
               meterContext,
@@ -1198,6 +1312,7 @@ export function buildContinuationCandidates(
                 ...input,
                 continuityVoiceCount: phraseContinuityVoiceCount(phraseIntent, 2),
                 continuityVoiceOrder: registerBlendedContinuityVoiceOrder(voice),
+                freeCounterpointPhraseVariation: true,
               },
               counterSubjectSupportRepair,
               meterContext,
@@ -1221,6 +1336,7 @@ export function buildContinuationCandidates(
           sectionDurationTicks,
           styleProfile: chooseStyleProfile(rng),
           cadenceKind: phraseIntent?.cadenceKind,
+          freeCounterpointPhraseVariation: includeSectionLocalPlannerCandidates,
         };
         candidates.push(buildContinuationSection(phraseSubject, input, counterSubjectSupportRepair, meterContext));
         if (includeSectionLocalPlannerCandidates) {
@@ -1230,6 +1346,7 @@ export function buildContinuationCandidates(
               {
                 ...input,
                 continuityVoiceCount: phraseContinuityVoiceCount(phraseIntent, 2),
+                freeCounterpointPhraseVariation: true,
               },
               counterSubjectSupportRepair,
               meterContext,
@@ -1243,6 +1360,7 @@ export function buildContinuationCandidates(
                 continuityVoiceCount: phraseContinuityVoiceCount(phraseIntent, 2),
                 continuityVoiceOrder: voicePairSupportContinuityVoiceOrder(voice),
                 continuityLineKind: "oblique-support",
+                freeCounterpointPhraseVariation: true,
               },
               counterSubjectSupportRepair,
               meterContext,
@@ -1255,6 +1373,7 @@ export function buildContinuationCandidates(
                 ...input,
                 continuityVoiceCount: phraseContinuityVoiceCount(phraseIntent, 2),
                 continuityVoiceOrder: registerBlendedContinuityVoiceOrder(voice),
+                freeCounterpointPhraseVariation: true,
               },
               counterSubjectSupportRepair,
               meterContext,
@@ -1449,6 +1568,7 @@ function buildPhraseFamilyOracleCandidates(
           fragmentTransform: "inversion",
           continuityVoiceCount: 2,
           continuityVoiceOrder: registerBlendedContinuityVoiceOrder("alto"),
+          freeCounterpointPhraseVariation: true,
         },
         false,
         meterContext,
@@ -1470,6 +1590,7 @@ function buildPhraseFamilyOracleCandidates(
           fragmentTransform: "contrary-motion",
           continuityVoiceCount: 2,
           continuityVoiceOrder: registerBlendedContinuityVoiceOrder("tenor"),
+          freeCounterpointPhraseVariation: true,
         },
         false,
         meterContext,
@@ -1495,6 +1616,7 @@ function buildPhraseFamilyOracleCandidates(
           styleProfile: isModalMode(keySignature.mode) ? "hybrid" : "strict-classical",
           continuityVoiceCount: 2,
           continuityVoiceOrder: registerBlendedContinuityVoiceOrder("alto"),
+          freeCounterpointPhraseVariation: true,
         },
         false,
         meterContext,
@@ -1514,6 +1636,7 @@ function buildPhraseFamilyOracleCandidates(
           styleProfile: "hybrid",
           continuityVoiceCount: 2,
           continuityVoiceOrder: registerBlendedContinuityVoiceOrder("tenor"),
+          freeCounterpointPhraseVariation: true,
         },
         false,
         meterContext,
@@ -1598,6 +1721,7 @@ function buildEpisodeGrammarOracleCandidates(
         fragmentTransform: "contrary-motion",
         continuityVoiceCount: 2,
         continuityVoiceOrder: registerBlendedContinuityVoiceOrder("alto"),
+        freeCounterpointPhraseVariation: true,
       },
       false,
       meterContext,
@@ -1619,6 +1743,7 @@ function buildEpisodeGrammarOracleCandidates(
         fragmentTransform: "sequence",
         continuityVoiceCount: 2,
         continuityVoiceOrder: registerBlendedContinuityVoiceOrder("tenor"),
+        freeCounterpointPhraseVariation: true,
       },
       false,
       meterContext,
@@ -1649,6 +1774,7 @@ function buildSubjectReturnGrammarOracleCandidates(
         styleProfile: "strict-classical",
         continuityVoiceCount: 2,
         continuityVoiceOrder: registerBlendedContinuityVoiceOrder("alto"),
+        freeCounterpointPhraseVariation: true,
       },
       false,
       meterContext,
@@ -1668,6 +1794,7 @@ function buildSubjectReturnGrammarOracleCandidates(
         styleProfile: "hybrid",
         continuityVoiceCount: 2,
         continuityVoiceOrder: registerBlendedContinuityVoiceOrder("tenor"),
+        freeCounterpointPhraseVariation: true,
       },
       false,
       meterContext,
@@ -1759,6 +1886,7 @@ export function buildContinuationSection(
     continuityVoiceCount?: number;
     continuityVoiceOrder?: readonly Voice[];
     continuityLineKind?: ContinuityLineKind;
+    freeCounterpointPhraseVariation?: boolean;
     cadenceKind?: CadenceKind;
   },
   counterSubjectSupportRepair = false,
@@ -1793,6 +1921,7 @@ export function buildContinuationSection(
     localKey: entry.localKey,
     harmonicPlan,
     counterSubjectSupportRepair,
+    freeCounterpointPhraseVariation: entry.freeCounterpointPhraseVariation,
   });
   addContinuityCounterpoint(notes, {
     startTick: entry.startTick + entry.supportDurationTicks,
@@ -1802,6 +1931,7 @@ export function buildContinuationSection(
     maxVoiceCount: entry.continuityVoiceCount,
     voiceOrder: entry.continuityVoiceOrder,
     lineKind: entry.continuityLineKind,
+    freeCounterpointPhraseVariation: entry.freeCounterpointPhraseVariation,
   });
   notes.sort(compareNoteEvents);
 

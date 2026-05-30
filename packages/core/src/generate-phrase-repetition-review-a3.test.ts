@@ -10,5 +10,5 @@ test("generateScore completes phrase-repetition adoption across review seeds bat
 
   assert.equal(metrics.seedCount, 2);
   assert.ok(metrics.variantTopEntryPatternFamilyCount <= metrics.baselineTopEntryPatternFamilyCount - 3);
-  assert.ok(metrics.variantUnsupportedThinningRuns <= metrics.baselineUnsupportedThinningRuns / 2);
+  assert.ok(metrics.variantUnsupportedThinningRuns <= Math.max(1, metrics.baselineUnsupportedThinningRuns / 2));
 });

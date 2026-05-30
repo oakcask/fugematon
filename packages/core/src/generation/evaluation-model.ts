@@ -1,5 +1,5 @@
 export const CANDIDATE_EVALUATION_FEATURE_VERSION = 7;
-export const CANDIDATE_EVALUATION_MODEL_VERSION = 14;
+export const CANDIDATE_EVALUATION_MODEL_VERSION = 15;
 
 export const CANDIDATE_EVALUATION_WEIGHTS = {
   hardFailure: 10_000,
@@ -15,6 +15,7 @@ export const CANDIDATE_EVALUATION_WEIGHTS = {
     lowerVoiceUnvocalLongSupportQuarter: 18,
     freeCounterpointStepwiseRunRatio: 8,
     freeCounterpointMonotoneStepRun: 2,
+    episodeRepeatedStockFormula: 0.08,
     freeCounterpointContour: 12,
     ornamentDensity: 6,
   },
@@ -63,6 +64,7 @@ export const CANDIDATE_EVALUATION_WEIGHTS = {
     episodeDirection: 10,
     strettoClarity: 10,
     longWindowDevelopment: 2,
+    phraseMechanicalReuseWindow: 28,
   },
 } as const;
 

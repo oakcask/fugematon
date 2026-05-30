@@ -42,7 +42,7 @@ function collectPhraseDevelopmentWindows(
   subjectEntries: readonly PlannedEntry[],
   sectionPlans: readonly HarmonicPlan[],
 ): PhraseDevelopmentWindow[] {
-  const previousByStem = new Map<string, PhraseDevelopmentWindow>();
+  const previousByStem = new Map<string, { window: PhraseDevelopmentWindow; phraseSignature: string }>();
   const windows: PhraseDevelopmentWindow[] = [];
 
   for (const entry of subjectEntries) {
@@ -52,14 +52,16 @@ function collectPhraseDevelopmentWindows(
 
     const section = sectionForEntry(sectionPlans, entry);
     const phraseFunction = phraseDevelopmentFunction(section);
+    const phraseSignature = phraseDevelopmentSignature(section);
     const stemKey = `${entry.form}:${entry.expectedDegreePattern.join("-")}`;
-    const previous = previousByStem.get(stemKey);
+    const previousRecord = previousByStem.get(stemKey);
+    const previous = previousRecord?.window;
     const recentStemReuseCount = previous === undefined ? 0 : previous.recentStemReuseCount + 1;
     const changedEntryVoice = previous !== undefined && previous.entryVoice !== entry.voice;
     const changedLocalKey =
       previous !== undefined &&
       (previous.localKey.tonic !== entry.localKey.tonic || previous.localKey.mode !== entry.localKey.mode);
-    const changedPhraseFunction = previous !== undefined && previous.phraseFunction !== phraseFunction;
+    const changedPhraseFunction = previousRecord !== undefined && previousRecord.phraseSignature !== phraseSignature;
     const window: PhraseDevelopmentWindow = {
       startTick: entry.startTick,
       state: entry.state,
@@ -82,10 +84,24 @@ function collectPhraseDevelopmentWindows(
     };
 
     windows.push(window);
-    previousByStem.set(stemKey, window);
+    previousByStem.set(stemKey, { window, phraseSignature });
   }
 
   return windows;
+}
+
+function phraseDevelopmentSignature(section: HarmonicPlan | undefined): string {
+  if (section === undefined) {
+    return "entry-preparation";
+  }
+  return [
+    phraseDevelopmentFunction(section),
+    section.cadenceKind,
+    section.sequencePattern ?? "none",
+    section.fragmentTransform ?? "none",
+    `${section.departureKey.tonic}:${section.departureKey.mode}`,
+    `${section.targetKey.tonic}:${section.targetKey.mode}`,
+  ].join(":");
 }
 
 function sectionForEntry(sectionPlans: readonly HarmonicPlan[], entry: PlannedEntry): HarmonicPlan | undefined {

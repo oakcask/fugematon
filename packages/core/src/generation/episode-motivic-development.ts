@@ -125,13 +125,14 @@ function subjectFreePlanContexts(sectionPlans: readonly HarmonicPlan[]): Subject
       return [];
     }
     const cadenceTicks = plan.anchors.filter((anchor) => anchor.cadenceTarget).map((anchor) => anchor.tick);
+    const cadenceProximityTicks = plan.meterContext.beatTicks;
     return [
       {
         index,
         plan,
         endTick: plan.startTick + plan.durationTicks,
-        cadenceWindowStartTick: Math.min(Number.POSITIVE_INFINITY, ...cadenceTicks) - plan.meterContext.measureTicks,
-        cadenceWindowEndTick: Math.max(Number.NEGATIVE_INFINITY, ...cadenceTicks) + plan.meterContext.measureTicks,
+        cadenceWindowStartTick: Math.min(Number.POSITIVE_INFINITY, ...cadenceTicks) - cadenceProximityTicks,
+        cadenceWindowEndTick: Math.max(Number.NEGATIVE_INFINITY, ...cadenceTicks) + cadenceProximityTicks,
         nextEntryStartTick: plan.startTick + Math.max(plan.meterContext.beatTicks, plan.durationTicks / 2),
       },
     ];
@@ -144,7 +145,7 @@ function deriveMotivicPlan(note: DerivableNote, context: SubjectFreePlanContext)
   const preparesNextEntry =
     plan.state === "episode" && !preparesCadence && note.startTick >= context.nextEntryStartTick;
   return {
-    sourceMotive: sourceMotiveForNote(note, plan),
+    sourceMotive: sourceMotiveForNote(note, plan, preparesCadence),
     transformationKind: transformationKindForNote(note, plan, preparesCadence),
     targetFunction: targetFunctionForPlan(plan, preparesCadence),
     sequenceDirection: sequenceDirection(plan.sequencePattern),
@@ -181,25 +182,48 @@ function preparesCadenceForNote(note: DerivableNote, context: SubjectFreePlanCon
   return context.cadenceWindowStartTick <= note.startTick && note.startTick <= context.cadenceWindowEndTick;
 }
 
-function sourceMotiveForNote(note: DerivableNote, plan: HarmonicPlan): EpisodeMotiveSource {
-  if (plan.cadenceKind === "authentic" || plan.cadenceKind === "modal") {
+function sourceMotiveForNote(note: DerivableNote, plan: HarmonicPlan, preparesCadence: boolean): EpisodeMotiveSource {
+  if (preparesCadence) {
     return "cadence-figure";
-  }
-  if (plan.fragmentTransform === "inversion") {
-    return "subject-tail";
-  }
-  if (plan.sequencePattern === "circle-fifths") {
-    return "answer-form";
   }
   if (note.role === "counter-subject") {
     return note.startTick - plan.startTick <= plan.meterContext.measureTicks
       ? "counter-subject-head"
       : "counter-subject-tail";
   }
+  if (plan.fragmentTransform === "sequence" || plan.sequencePattern !== undefined) {
+    const beatIndex = Math.floor((note.startTick - plan.startTick) / Math.max(1, plan.meterContext.beatTicks));
+    const developmentalSources: readonly EpisodeMotiveSource[] = [
+      "subject-head",
+      "answer-form",
+      "counter-subject-tail",
+      "prior-episode-figure",
+    ];
+    const planRotation = Math.floor(plan.startTick / Math.max(1, plan.meterContext.measureTicks));
+    return developmentalSources[(beatIndex + planRotation) % developmentalSources.length]!;
+  }
+  if (plan.sequencePattern === "circle-fifths") {
+    return "answer-form";
+  }
+  if (plan.fragmentTransform === "inversion") {
+    return note.startTick - plan.startTick <= plan.meterContext.measureTicks ? "subject-head" : "subject-tail";
+  }
+  if (plan.fragmentTransform === "contrary-motion") {
+    return note.startTick - plan.startTick <= plan.meterContext.measureTicks ? "answer-form" : "prior-episode-figure";
+  }
   if (note.startTick - plan.startTick > plan.meterContext.measureTicks * 2) {
     return "prior-episode-figure";
   }
-  return note.startTick - plan.startTick <= plan.meterContext.measureTicks ? "subject-head" : "counter-subject-tail";
+  const beatIndex = Math.floor((note.startTick - plan.startTick) / Math.max(1, plan.meterContext.beatTicks));
+  const continuationSources: readonly EpisodeMotiveSource[] = [
+    "subject-head",
+    "counter-subject-tail",
+    "answer-form",
+    "prior-episode-figure",
+  ];
+  return continuationSources[
+    (beatIndex + Math.floor(plan.startTick / Math.max(1, plan.meterContext.measureTicks))) % continuationSources.length
+  ]!;
 }
 
 function transformationKindForNote(

@@ -66,10 +66,10 @@ test("generateScore balances entry harmony scoring with preservation guardrails"
 
 test("generateScore preserves voice-pair independence blocker evidence under scoring changes", () => {
   const blockerSeeds = [
-    ["contrary-motion", 24, 534, 786, 2, 2, 21, 7, 50, 12],
-    ["fugue-smoke", 15, 576, 830, 0, 0, 22, 7, 50, 12],
+    ["contrary-motion", 24, 537, 786, 2, 2, 21, 7, 50, 12],
+    ["fugue-smoke", 18, 576, 830, 0, 0, 22, 7, 50, 12],
     ["minor-entry", 26, 731, 902, 0, 0, 45, 15, 66, 20],
-    ["modal-answer", 13, 752, 902, 0, 0, 47, 14, 66, 21],
+    ["modal-answer", 12, 752, 902, 0, 0, 47, 14, 66, 21],
   ] as const;
 
   for (const [
@@ -113,8 +113,8 @@ test("generateScore preserves voice-pair independence blocker evidence under sco
 
 test("generateScore guards exact pitch lockstep without gate regressions", () => {
   const blockerSeeds = [
-    ["bright-answer", 8, 737, 630, 31, 0.9],
-    ["quiet-cadence", 8, 729, 656, 15, 0.87],
+    ["bright-answer", 8, 737, 630, 32, 0.9],
+    ["quiet-cadence", 8, 729, 656, 17, 0.87],
     ["modal-answer", 13, 752, 814, 33, 0.573],
   ] as const;
 

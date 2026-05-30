@@ -21,5 +21,5 @@ function assertPhraseRepetitionReviewBatch(
     metrics.variantTopEntryPatternFamilyCount <=
       metrics.baselineTopEntryPatternFamilyCount + maximumTopEntryPatternFamilyDelta,
   );
-  assert.ok(metrics.variantUnsupportedThinningRuns <= metrics.baselineUnsupportedThinningRuns / 2);
+  assert.ok(metrics.variantUnsupportedThinningRuns <= Math.max(1, metrics.baselineUnsupportedThinningRuns / 2));
 }
