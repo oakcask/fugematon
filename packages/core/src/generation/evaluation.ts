@@ -216,7 +216,19 @@ export function evaluateCandidate(
     },
   };
   const modalCadenceEntrySupportRiskCost = scoreModalCadenceEntrySupportRisk(candidate, riskContexts);
-  const entryHarmonyRiskCost = scoreBalancedEntryHarmonyRisk(riskContexts) + modalCadenceEntrySupportRiskCost;
+  const unresolvedAccentedEntryClashCost =
+    diagnostics.dissonanceTriage.unresolvedAccentedEntryClashCount *
+    EVALUATION_WEIGHTS.harmony.unresolvedAccentedEntryClash;
+  const harmonicSonorityCost =
+    diagnostics.qualityVector.harmonicSonorities.reviewRequiredWindowCount *
+      EVALUATION_WEIGHTS.harmony.harmonicSonorityReviewWindow +
+    diagnostics.qualityVector.harmonicSonorities.generatorResponseWindowCount *
+      EVALUATION_WEIGHTS.harmony.harmonicSonorityGeneratorWindow;
+  const entryHarmonyRiskCost =
+    scoreBalancedEntryHarmonyRisk(riskContexts) +
+    modalCadenceEntrySupportRiskCost +
+    unresolvedAccentedEntryClashCost +
+    harmonicSonorityCost;
   const harmony = {
     cost:
       entryHarmonyRiskCost +
@@ -269,6 +281,12 @@ export function evaluateCandidate(
       ),
       selectedEntryHarmonyRiskCost: entryHarmonyRiskCost,
       selectedModalCadenceEntrySupportRiskCost: modalCadenceEntrySupportRiskCost,
+      unresolvedAccentedEntryClashCount: diagnostics.dissonanceTriage.unresolvedAccentedEntryClashCount,
+      harmonicSonorityReviewRequiredWindowCount: diagnostics.qualityVector.harmonicSonorities.reviewRequiredWindowCount,
+      harmonicSonorityGeneratorResponseWindowCount:
+        diagnostics.qualityVector.harmonicSonorities.generatorResponseWindowCount,
+      selectedUnresolvedAccentedEntryClashCost: unresolvedAccentedEntryClashCost,
+      selectedHarmonicSonorityCost: harmonicSonorityCost,
     },
   };
   const form = {

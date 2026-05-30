@@ -88,6 +88,7 @@ type TextureNotePattern = {
 
 const LONG_REST_PHRASE_CLOSURE_TICKS = TICKS_PER_QUARTER * 2;
 const PHRASE_CLOSURE_CADENCE_PROXIMITY_TICKS = TICKS_PER_QUARTER;
+const STRETTO_ENTRY_HARMONY_REPAIR_MAX_START_TICKS = TICKS_PER_QUARTER * 54;
 
 export function addCounterpointTexture(
   notes: Exposition["notes"],
@@ -455,6 +456,14 @@ export function addTextureNote(
   durationTicks: number,
 ): void {
   const previous = previousTextureNote(notes, pattern.voice, startTick);
+  const metricalHarmonyIntent =
+    pattern.metricalHarmonyIntent ??
+    metricalHarmonyIntentForDegree({
+      degree,
+      tick: startTick,
+      voice: pattern.voice,
+      harmonicPlan: pattern.harmonicPlan,
+    });
   let pitchClass = scaleDegreePitchClass(degree, 0, pattern.localKey);
   let pitch = placePitchInRegister(pitchClass, pattern.voice, VOICE_REGISTER_TARGETS[pattern.voice]);
   if (previous?.pitch === pitch && pattern.role === "free-counterpoint") {
@@ -466,6 +475,7 @@ export function addTextureNote(
   }
   pitch = weakDissonanceSafePitch(notes, pattern, startTick, durationTicks, pitch);
   pitch = counterSubjectSafePitch(notes, pattern, startTick, durationTicks, pitch);
+  pitch = entryHarmonySafePitch(notes, { ...pattern, metricalHarmonyIntent }, startTick, durationTicks, pitch);
   notes.push({
     kind: "note",
     voice: pattern.voice,
@@ -474,15 +484,56 @@ export function addTextureNote(
     pitch,
     velocity: pattern.velocity,
     role: pattern.role,
-    metricalHarmonyIntent:
-      pattern.metricalHarmonyIntent ??
-      metricalHarmonyIntentForDegree({
-        degree,
-        tick: startTick,
-        voice: pattern.voice,
-        harmonicPlan: pattern.harmonicPlan,
-      }),
+    metricalHarmonyIntent,
   });
+}
+
+function entryHarmonySafePitch(
+  notes: readonly NoteEvent[],
+  pattern: TextureNotePattern,
+  startTick: number,
+  durationTicks: number,
+  pitch: number,
+): number {
+  if (
+    (pattern.role !== "free-counterpoint" && pattern.role !== "counter-subject") ||
+    pattern.harmonicPlan === undefined ||
+    pattern.harmonicPlan.state !== "stretto-like" ||
+    pattern.harmonicPlan.startTick > STRETTO_ENTRY_HARMONY_REPAIR_MAX_START_TICKS ||
+    beatStrengthAtTick(startTick, pattern.harmonicPlan.meterContext) !== "strong" ||
+    isFunctionBearingPassingIntent(pattern.metricalHarmonyIntent) ||
+    !createsUnresolvedEntrySupportClashAtTick(notes, pattern.voice, startTick, durationTicks, pitch)
+  ) {
+    return pitch;
+  }
+
+  const anchor = nearestHarmonicAnchor(startTick, [pattern.harmonicPlan]);
+  if (anchor === undefined) {
+    return pitch;
+  }
+
+  const previous = previousTextureNote(notes, pattern.voice, startTick);
+  const noteShape = textureNoteShape(pattern, startTick, durationTicks, pitch);
+  const chordTonePitchClassesAtTick = chordTonePitchClasses(anchor.localKey, anchor.function);
+  const candidates = nearbyChordTonePitches({
+    pitch,
+    voice: pattern.voice,
+    steps: [-5, -4, -3, -2, -1, 1, 2, 3, 4, 5],
+    chordTonePitchClasses: chordTonePitchClassesAtTick,
+  })
+    .filter((candidatePitch) => previous === undefined || Math.abs(candidatePitch - previous.pitch) <= 5)
+    .filter((candidatePitch) => keepsAdjacentVoiceOrder(notes, noteShape, candidatePitch))
+    .filter(
+      (candidatePitch) =>
+        !createsUnresolvedEntrySupportClashAtTick(notes, pattern.voice, startTick, durationTicks, candidatePitch),
+    )
+    .filter((candidatePitch) => !createsPitchClassUnisonAtTick(notes, pattern.voice, startTick, candidatePitch));
+
+  return nearestPitch(candidates, pitch) ?? pitch;
+}
+
+function isFunctionBearingPassingIntent(intent: MetricalHarmonyIntent | undefined): boolean {
+  return intent === "weak-passing-tone" || intent === "weak-neighbor-tone" || intent === "offbeat-motion";
 }
 
 function weakDissonanceSafePitch(
@@ -620,6 +671,32 @@ function createsCounterSubjectSupportCollision(
       startTick < note.startTick + note.durationTicks &&
       pitchClassDistance(pitch, note.pitch) <= 2,
   );
+}
+
+function createsUnresolvedEntrySupportClashAtTick(
+  notes: readonly NoteEvent[],
+  voice: Voice,
+  startTick: number,
+  durationTicks: number,
+  pitch: number,
+): boolean {
+  return notes.some(
+    (note) =>
+      isEntryRole(note.role) &&
+      note.voice !== voice &&
+      note.startTick < startTick + durationTicks &&
+      startTick < note.startTick + note.durationTicks &&
+      isEntryAccentedSupportFriction(pitch, note.pitch),
+  );
+}
+
+function isEntryRole(role: NoteEvent["role"] | undefined): boolean {
+  return role === "subject" || role === "answer" || role === "subject-fragment";
+}
+
+function isEntryAccentedSupportFriction(supportPitch: number, entryPitch: number): boolean {
+  const intervalClass = Math.abs(supportPitch - entryPitch) % 12;
+  return intervalClass === 1 || intervalClass === 2 || intervalClass === 10 || intervalClass === 11;
 }
 
 function createsSemitoneAtTick(notes: readonly NoteEvent[], voice: Voice, tick: number, pitch: number): boolean {
@@ -1267,7 +1344,83 @@ export function addShortEpisodeHarmonicContinuitySupport(
       }
     }
   }
+  for (const plan of sortedPlans.filter((candidate) =>
+    shouldRepairShortEpisodeHarmonicContinuity(candidate, sortedPlans),
+  )) {
+    if (!shouldRepairStrettoEntryHandoffSupport(plan)) {
+      continue;
+    }
+    for (const tick of harmonicContinuityRepairTicks(notes, plan).filter((supportTick) =>
+      isFinalHandoffTextureCheckpoint(plan, supportTick),
+    )) {
+      const anchor = nearestHarmonicAnchor(tick, [plan]);
+      if (anchor !== undefined) {
+        supportHandoffBassRootAtTick(notes, plan, tick, anchor);
+        repairStructuralSupportAtTick(notes, tick, anchor);
+      }
+    }
+  }
   repairFocusedBassRootSupport(notes, sortedPlans);
+}
+
+function isFinalHandoffTextureCheckpoint(plan: HarmonicPlan, tick: number): boolean {
+  const handoffStartTick = plan.startTick + plan.durationTicks - plan.meterContext.measureTicks;
+  return handoffStartTick <= tick && tick < plan.startTick + plan.durationTicks;
+}
+
+function shouldRepairStrettoEntryHandoffSupport(plan: HarmonicPlan & { state: "episode" }): boolean {
+  return (
+    plan.durationTicks <= plan.meterContext.measureTicks * 4 &&
+    plan.startTick + plan.durationTicks <= STRETTO_ENTRY_HARMONY_REPAIR_MAX_START_TICKS
+  );
+}
+
+function supportHandoffBassRootAtTick(
+  notes: Exposition["notes"],
+  plan: HarmonicPlan,
+  tick: number,
+  anchor: NonNullable<ReturnType<typeof nearestHarmonicAnchor>>,
+): void {
+  if (bassSupportsAnchorRoot(notes, tick, anchor)) {
+    return;
+  }
+
+  const rootPitch = harmonicRootBassPitch(
+    anchor.localKey,
+    anchor.function,
+    previousTextureNote(notes, "bass", tick)?.pitch,
+  );
+  const supportDuration = Math.min(TICKS_PER_QUARTER / 2, harmonicContinuitySupportDuration(notes, "bass", plan, tick));
+  const activeBass = activeNoteAt(notes, "bass", tick);
+  if (activeBass !== undefined && activeBass.role === "free-counterpoint") {
+    const bassSupport = splitTextureNoteAtTick(notes, activeBass, tick);
+    if (supportDuration < bassSupport.durationTicks) {
+      notes.push({
+        ...bassSupport,
+        startTick: tick + supportDuration,
+        durationTicks: bassSupport.durationTicks - supportDuration,
+      });
+    }
+    bassSupport.pitch = rootPitch;
+    bassSupport.durationTicks = Math.min(bassSupport.durationTicks, supportDuration);
+    bassSupport.metricalHarmonyIntent = "structural-root-support";
+    return;
+  }
+
+  if (activeBass !== undefined || supportDuration <= 0) {
+    return;
+  }
+
+  notes.push({
+    kind: "note",
+    voice: "bass",
+    startTick: tick,
+    durationTicks: supportDuration,
+    pitch: rootPitch,
+    velocity: 50,
+    role: "free-counterpoint",
+    metricalHarmonyIntent: "structural-root-support",
+  });
 }
 
 function shouldRepairShortEpisodeHarmonicContinuity(

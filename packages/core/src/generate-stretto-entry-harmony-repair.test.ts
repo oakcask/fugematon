@@ -1,0 +1,75 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { TICKS_PER_QUARTER } from "./constants.js";
+import { generateScore } from "./generate.js";
+
+const FOCUSED_LENGTH_TICKS = TICKS_PER_QUARTER * 64;
+const HIGH_RISK_SEEDS = ["long-arc", "dark-episode", "ornament-test", "bach-001"] as const;
+
+test("stretto entry harmony repair clears the reported handoff window", () => {
+  const metrics = strettoEntryHarmonyMetrics("seed-1db5j19-1nhjtae");
+
+  assert.equal(metrics.firstStrettoUnresolvedAccentedEntryClashes, 0);
+  assert.equal(metrics.handoffHarmonicSonorityWindows, 0);
+  assert.equal(metrics.hardConstraintFailures, 0);
+});
+
+test("stretto entry harmony repair improves high-risk first-stretto windows without hard failures", () => {
+  const metrics = HIGH_RISK_SEEDS.map(strettoEntryHarmonyMetrics);
+
+  assert.ok(
+    sum(metrics.map((seed) => seed.firstStrettoDissonanceWindows)) <= 14,
+    "high-risk first-stretto dissonance windows should stay below the focused repair ceiling",
+  );
+  assert.ok(
+    sum(metrics.map((seed) => seed.firstStrettoUnresolvedAccentedEntryClashes)) <= 2,
+    "high-risk first-stretto unresolved accented clashes should stay below the focused repair ceiling",
+  );
+  assert.equal(sum(metrics.map((seed) => seed.handoffHarmonicSonorityWindows)), 0);
+  assert.equal(sum(metrics.map((seed) => seed.hardConstraintFailures)), 0);
+});
+
+test("stretto entry harmony repair preserves lower-risk stretto tension", () => {
+  const tightStretto = strettoEntryHarmonyMetrics("tight-stretto");
+  const modalDorian = strettoEntryHarmonyMetrics("modal-dorian");
+
+  assert.equal(tightStretto.firstStrettoUnresolvedAccentedEntryClashes, 0);
+  assert.ok(tightStretto.firstStrettoDissonanceWindows > 0);
+  assert.equal(modalDorian.firstStrettoUnresolvedAccentedEntryClashes, 0);
+  assert.equal(tightStretto.hardConstraintFailures + modalDorian.hardConstraintFailures, 0);
+});
+
+function strettoEntryHarmonyMetrics(seed: string) {
+  const { diagnostics } = generateScore({ seed, lengthTicks: FOCUSED_LENGTH_TICKS });
+  const firstStretto = diagnostics.sectionPlans.find((plan) => plan.state === "stretto-like");
+  assert.ok(firstStretto);
+
+  const startTick = firstStretto.startTick;
+  const endTick = firstStretto.startTick + firstStretto.durationTicks;
+  const firstStrettoDissonanceWindows = diagnostics.dissonanceTriage.windows.filter(
+    (window) => window.state === "stretto-like" && startTick <= window.startTick && window.startTick < endTick,
+  );
+  const handoffHarmonicSonorityWindows = diagnostics.qualityVector.harmonicSonorities.windows.filter(
+    (window) =>
+      startTick - diagnostics.sectionPlans[0]!.meterContext.measureTicks <= window.startTick &&
+      window.startTick < endTick,
+  );
+
+  return {
+    firstStrettoDissonanceWindows: firstStrettoDissonanceWindows.length,
+    firstStrettoUnresolvedAccentedEntryClashes: firstStrettoDissonanceWindows.filter(
+      (window) => window.classification === "unresolved-accented-entry-clash",
+    ).length,
+    handoffHarmonicSonorityWindows: handoffHarmonicSonorityWindows.length,
+    hardConstraintFailures:
+      diagnostics.rangeViolations +
+      diagnostics.voiceCrossings +
+      diagnostics.subjectIdentityViolations +
+      diagnostics.answerPlanViolations +
+      diagnostics.keyMetadataMismatches,
+  };
+}
+
+function sum(values: readonly number[]): number {
+  return values.reduce((total, value) => total + value, 0);
+}

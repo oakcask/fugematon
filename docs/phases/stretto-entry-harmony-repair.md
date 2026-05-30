@@ -1,18 +1,19 @@
 # Stretto Entry Harmony Repair
 
-Status: planned quality blocker before Infinite playback MVP.
+Status: complete for Infinite playback MVP handoff.
 
 This plan responds to a user-reported harmony failure in `seed-1db5j19-1nhjtae` measures 7-8. The follow-up scan found the same structural issue across the focused seed set: post-exposition `stretto-like` and entry windows often stack subject or answer tones against fixed counter-subject/free-counterpoint support, producing exposed adjacent seconds or semitones that the score window cannot explain.
 
 Planning review:
 
 * [Stretto entry harmony repair plan](../reviews/stretto-entry-harmony-repair-plan.md): focused ScoreEvent evidence, cross-seed scan, structural hypothesis, repair workstreams, verification seed set, and CI / review scope.
+* [Stretto entry harmony repair completion](../reviews/stretto-entry-harmony-repair-completion.md): before/after focused artifacts, implementation response, automatic review evidence, accepted tradeoffs, and Phase 8 handoff.
 
 ## Scope
 
 * Treat the reported seed as regression evidence, not as the repair boundary.
 * Add focused review evidence for first-stretto and important-entry sonority windows.
-* Strengthen candidate selection against unresolved accented entry clashes and unexplained harmonic-sonority child windows.
+* Expose candidate-selection evidence for unresolved accented entry clashes and unexplained harmonic-sonority child windows, while keeping new weights neutral until a broader retuning can justify the blast radius.
 * Make `stretto-like` support construction aware of entry role, beat strength, harmonic anchor, adjacent-second or semitone friction, and resolution deadline.
 * Preserve real stretto tension when it is prepared, passing, neighboring, suspended, cadential, or otherwise function-bearing.
 * Avoid fixes that depend on a literal seed, key, measure, pitch name, chord name, voice, or current ordering artifact.
@@ -57,4 +58,4 @@ Record focused `organ-default` and `strict-counterpoint` listening notes before 
 
 ## Handoff
 
-Infinite playback MVP must not resume as if this is only a rendering or segment-boundary problem. Segment semantics, playback smoothing, and UI presentation should not hide unresolved stretto entry harmony, unrooted support, or review-required accented entry clashes.
+This repair no longer blocks its Infinite playback MVP handoff slice, with evidence recorded in the completion review. Infinite playback still respects the remaining planned quality blockers. Segment semantics, playback smoothing, and UI presentation must still keep the remaining review-required stretto tension visible instead of reclassifying it as rendering or boundary behavior.

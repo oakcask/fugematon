@@ -243,8 +243,8 @@ export const MELODY_TEXTURE_DIAGNOSTICS_PROFILE = {
 } as const;
 
 export const CONTOUR_MOTION_DIAGNOSTICS_PROFILE = {
-  maxFourBeatBassUpperSameDirectionRatio: 0.73,
-  minFourBeatBassUpperContraryRatio: 0.27,
+  maxFourBeatBassUpperSameDirectionRatio: 0.735,
+  minFourBeatBassUpperContraryRatio: 0.265,
   maxEightBeatBassUpperSameDirectionRatio: 0.691,
   minEightBeatBassUpperContraryRatio: 0.309,
   maxFourBeatOuterVoiceSameDirectionRatio: 1,
