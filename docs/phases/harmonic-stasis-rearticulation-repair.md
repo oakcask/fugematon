@@ -2,7 +2,7 @@
 
 Harmonic stasis rearticulation repair is inserted after Episode motivic development and before Infinite playback MVP. Its purpose is to stop motivically labeled free counterpoint from falling into short same-pitch rearticulation when the local harmony is not creating audible tension, release, pedal, suspension, or cadence preparation.
 
-Status: planned. This is a score-led quality blocker, not an operational playback task. It follows from the review that `seed-07mwf08-1te3e2o` uses subject / answer / counter-subject-derived rhythm after the first bass answer, but the generated free-counterpoint voices still settle into short same-pitch rearticulation over a weak harmonic arc. A later focused inspection of `seed-1db5j19-1nhjtae` adds a second path: final post-processing can add a functional support line whose pitches are harmonically safe but mechanically rearticulated.
+Status: planned. This is a score-led quality blocker, not an operational playback task. It follows from the review that `seed-07mwf08-1te3e2o` uses subject / answer / counter-subject-derived rhythm after the first bass answer, but the generated free-counterpoint voices still settle into short same-pitch rearticulation over a weak harmonic arc. A later focused inspection of `seed-1db5j19-1nhjtae` adds a second path: final post-processing can add a functional support line whose pitches are harmonically safe but mechanically rearticulated. `seed-1syy921-0025pp1` adds a first-episode handoff path: continuity and transition-rhythm diagnostics can accept the window while measures 5-7 still sound disconnected because all-free motivic texture rearticulates short structural support.
 
 Planning review:
 
@@ -84,6 +84,7 @@ Review at least the reported seed, fixed controls, modal / rotation controls, an
 
 * `seed-07mwf08-1te3e2o`: reported representative for first-bass-answer handoff rearticulation with weak harmonic direction.
 * `seed-1db5j19-1nhjtae`: reported representative for post-processing functional-support rearticulation in the tenor around measure 7.
+* `seed-1syy921-0025pp1`: reported representative for first-episode handoff false acceptance, where motivic labels and root support exist but the audible surface lacks directed connection through measures 5-7.
 * `fugue-smoke`: fixed control with known first-bass-answer and short-episode history.
 * `modal-cadence`: modal rotation control where all-free windows can expose support stasis.
 * `dark-episode`: episode texture control.

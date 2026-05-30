@@ -12,6 +12,7 @@ import type {
   FugueState,
   GenerationOutput,
   HarmonicPlan,
+  HarmonicStasisRearticulationSummary,
   LowerVoiceVocalitySummary,
   MetricalHarmonyIntent,
   NoteEvent,
@@ -111,6 +112,7 @@ export type TextureDiagnostics = {
   bassAnswerTailTexture: BassAnswerTailTextureSummary;
   qualityVector: QualityVector;
   dissonanceTriage: DissonanceTriageSummary;
+  harmonicStasisRearticulation: HarmonicStasisRearticulationSummary;
   ornamentCandidateCount: number;
   ornamentDensity: number;
   ornamentPlacementReasons: OrnamentPlacementReasons;

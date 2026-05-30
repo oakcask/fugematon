@@ -4,7 +4,7 @@
 
 ## Current Quality Lane
 
-* [Harmonic stasis rearticulation replan](harmonic-stasis-rearticulation-replan.md): 計画根拠。`seed-07mwf08-1te3e2o` の first bass answer 後と `seed-1db5j19-1nhjtae` の functional-support 後処理で確認した同音連打と和声停滞を Phase 8 前 blocker として扱う。
+* [Harmonic stasis rearticulation replan](harmonic-stasis-rearticulation-replan.md): 計画根拠。`seed-07mwf08-1te3e2o` の first bass answer 後、`seed-1db5j19-1nhjtae` の functional-support 後処理、`seed-1syy921-0025pp1` の first-episode handoff で確認した同音連打、和声停滞、continuity false acceptance を Phase 8 前 blocker として扱う。
 * [Harmonic stasis rearticulation repair](../phases/harmonic-stasis-rearticulation-repair.md): 計画中の品質 blocker。same-voice short rearticulation と harmonic stasis を同じ score-window で扱う。
 * [Stretto entry harmony repair completion](stretto-entry-harmony-repair-completion.md): 完了 evidence。`seed-1db5j19-1nhjtae` 7-8小節の harmony failure を、focused seed before/after、candidate scoring、support construction、handoff sonority repair として記録する。
 * [Stretto entry harmony repair plan](stretto-entry-harmony-repair-plan.md): replan evidence。`seed-1db5j19-1nhjtae` 7-8小節の harmony failure を、31 seed の stretto / entry sonority scan、subject-family correlation、candidate scoring / support-texture repair plan として Infinite playback MVP 前へ戻す根拠。

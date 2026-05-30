@@ -162,6 +162,7 @@ export function generateScore(input: GenerationInput): GenerationOutput {
       phraseDevelopmentReview,
       dissonanceTriage: diagnostics.dissonanceTriage,
       harmonicContinuity: diagnostics.harmonicContinuity,
+      harmonicStasisRearticulation: diagnostics.harmonicStasisRearticulation,
       transitionRhythmReview: diagnostics.transitionRhythmReview,
       scoreWindowAcceptance,
       ornamentCandidateCount: diagnostics.ornamentCandidateCount,

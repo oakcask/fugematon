@@ -1275,6 +1275,38 @@ export type HarmonicContinuitySummary = {
   windows: HarmonicContinuityWindow[];
 };
 
+export type HarmonicStasisRearticulationWindow = {
+  startTick: number;
+  durationTicks: number;
+  state: FugueState | "mixed";
+  voice: Voice;
+  pitch: number;
+  attackCount: number;
+  role: NoteRole;
+  metricalHarmonyIntent?: MetricalHarmonyIntent;
+  localKey?: KeySignature;
+  harmonicFunction?: HarmonicFunction;
+  activeVoiceCount: number;
+  activeVoices: Voice[];
+  allActiveVoicesFreeCounterpoint: boolean;
+  firstEpisodeHandoff: boolean;
+  preparesNextEntry: boolean;
+  sourceMotive?: EpisodeMotiveSource;
+  transformationKind?: EpisodeTransformationKind;
+  sequenceDirection?: EpisodeMotivicDerivation["sequenceDirection"];
+  classification: "accepted-context" | "review-required" | "generator-response";
+  response: "accepted-context" | "review-required" | "generator-response-required";
+};
+
+export type HarmonicStasisRearticulationSummary = {
+  schemaVersion: 1;
+  focusedWindowCount: number;
+  acceptedContextWindowCount: number;
+  reviewRequiredWindowCount: number;
+  generatorResponseWindowCount: number;
+  windows: HarmonicStasisRearticulationWindow[];
+};
+
 export type ScoreWindowAcceptanceKind =
   | "important-entry-continuity"
   | "harmonic-continuity"
@@ -1383,6 +1415,7 @@ export type GenerationDiagnostics = {
   phraseDevelopmentReview: PhraseDevelopmentReviewSummary;
   dissonanceTriage: DissonanceTriageSummary;
   harmonicContinuity: HarmonicContinuitySummary;
+  harmonicStasisRearticulation: HarmonicStasisRearticulationSummary;
   transitionRhythmReview: TransitionRhythmReviewSummary;
   scoreWindowAcceptance: ScoreWindowAcceptanceSummary;
   ornamentCandidateCount: number;
