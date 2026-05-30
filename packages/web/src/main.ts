@@ -346,7 +346,7 @@ function renderTransportButtons(): void {
   const isStarting = playbackStartController !== undefined;
   const isPlaying = player?.isPlaying ?? false;
   startButton.disabled = isStarting;
-  startButton.textContent = pausedAtSecond > 0 ? "Resume score" : "Play";
+  startButton.textContent = pausedAtSecond > 0 ? "Resume" : "Play";
   pauseButton.disabled = isStarting || !isPlaying;
 }
 
