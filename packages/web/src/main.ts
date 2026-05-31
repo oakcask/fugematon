@@ -7,6 +7,7 @@ import {
 import { listPerformanceProfiles, type PerformanceProfileId } from "@fugematon/performance";
 import "./style.css";
 import { ScorePlayer } from "./audio.js";
+import { computeEndlessPrefetchDeadlineMs } from "./endless-playback.js";
 import type { GenerationWorkerResponse, GenerationWorkerReviewSnapshot } from "./generation-worker-protocol.js";
 import { drawPianoRoll } from "./piano-roll.js";
 import {
@@ -640,6 +641,7 @@ function prefetchNextEndlessSegment(): void {
     return;
   }
 
+  const model = state.model;
   const segmentIndex = Math.max(nextSegmentIndex, state.segmentIndex + 1);
   nextSegmentIndex = segmentIndex;
   const requestId = nextRequestId();
@@ -654,7 +656,12 @@ function prefetchNextEndlessSegment(): void {
     seed: nextSegmentSeed(state.seed, segmentIndex),
     performanceProfileId: state.performanceProfileId,
     lengthTicks: SCORE_LENGTH_TICKS,
-    deadlineMs: GENERATION_DEADLINE_MS,
+    deadlineMs: computeEndlessPrefetchDeadlineMs({
+      modelTotalSeconds: model.totalSeconds,
+      playbackSecond: player?.playbackSecond ?? 0,
+      boundaryPauseMs: ENDLESS_BOUNDARY_PAUSE_MS,
+      minimumDeadlineMs: GENERATION_DEADLINE_MS,
+    }),
     segmentIndex,
     mode: "endless-program",
   });
