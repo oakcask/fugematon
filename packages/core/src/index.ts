@@ -135,6 +135,39 @@ export type {
 } from "./events.js";
 export { normalizeSelectionModel } from "./events.js";
 export { generateScore } from "./generate.js";
+export type {
+  BoundedPastEventContext,
+  InfinitePlaybackMode,
+  InfinitePlaybackModeSemantics,
+  InfinitePlaybackReviewSignal,
+  InitialSegmentSnapshotInput,
+  SegmentAnswerTransformMemory,
+  SegmentBoundaryVisibility,
+  SegmentCadencePreparationMemory,
+  SegmentCadenceRequirement,
+  SegmentDensityArcMemory,
+  SegmentFragmentDerivationMemory,
+  SegmentHarmonicContext,
+  SegmentMetricalContext,
+  SegmentNoveltyFatigueBudget,
+  SegmentPrngInternalState,
+  SegmentSectionBridge,
+  SegmentSectionFunctionContext,
+  SegmentSectionPlannerState,
+  SegmentSnapshot,
+  SegmentSnapshotTimebase,
+  SegmentSubjectFamilyMemory,
+  SegmentSubjectMemory,
+  SegmentTonalRegionMemory,
+  SegmentVoiceContinuity,
+} from "./infinite-playback.js";
+export {
+  createInitialSegmentSnapshot,
+  DEFAULT_BOUNDED_PAST_EVENT_CONTEXT_TICKS,
+  INFINITE_PLAYBACK_MODE_SEMANTICS,
+  INFINITE_PLAYBACK_SNAPSHOT_SCHEMA_VERSION,
+  normalizeInfinitePlaybackMode,
+} from "./infinite-playback.js";
 export { seedToUint32State, Xoshiro128StarStar } from "./prng.js";
 export type {
   HistoricalReferenceCalibrationMetricRole,

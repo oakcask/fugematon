@@ -4,6 +4,7 @@
 
 ## Current Quality Lane
 
+* [Phase 8 completion review](phase-8-completion-review.md): Infinite playback MVP の完了 evidence。TARGET baseline と現行 22 seed review bundle の ScoreEvent / MIDI / diagnostics / summary が一致し、3 再生モード semantics と segment snapshot contract が review signal を隠さないことを記録する。
 * [Harmonic stasis rearticulation repair completion](harmonic-stasis-rearticulation-completion.md): 完了 evidence。same-voice short rearticulation と harmonic stasis を diagnostics、candidate scoring、final support repair、focused / standard seed evidence として記録する。
 * [Harmonic stasis rearticulation replan](harmonic-stasis-rearticulation-replan.md): 計画根拠。`seed-07mwf08-1te3e2o` の first bass answer 後、`seed-1db5j19-1nhjtae` の functional-support 後処理、`seed-1syy921-0025pp1` の first-episode handoff で確認した同音連打、和声停滞、continuity false acceptance を Phase 8 前 blocker として扱う。
 * [Harmonic stasis rearticulation repair](../phases/harmonic-stasis-rearticulation-repair.md): 完了済み品質 blocker。same-voice short rearticulation と harmonic stasis を同じ score-window で扱った。
@@ -87,7 +88,7 @@
 * [Phase 10](../phases/phase-10.md): 操作機能より先に進める reference corpus、oracle-driven model update、section-local planner、pairwise preference の品質基盤計画。
 * [Metrical generation repair completion review](metrical-generation-repair-completion.md): Metrical generation repair の完了 evidence。3/4 focused seeds、6/8 compound-meter seeds、4/4 controls、focused profile notes、Phase 8 handoff を記録する。
 * [Metrical generation repair](../phases/metrical-generation-repair.md): 完了済み handoff baseline。time-signature metadata を generator、scoring、diagnostics へ接続した。
-* [Phase 8](../phases/phase-8.md): 次の operational lane。Phase 13X、Phase 13Y、Phase 13Z、Phase 14、Metrical generation repair、Texture continuity repair、Historical reference calibration、Episode motivic development、Harmonic stasis rearticulation repair、Stretto entry harmony repair の evidence baseline を前提に無限再生 operational lane を再開する。
+* [Phase 8](../phases/phase-8.md): 完了済み operational lane。Phase 13X、Phase 13Y、Phase 13Z、Phase 14、Metrical generation repair、Texture continuity repair、Historical reference calibration、Episode motivic development、Harmonic stasis rearticulation repair、Stretto entry harmony repair の evidence baseline を前提に、3 再生モード semantics と segment snapshot contract を定義した。
 
 ## Earlier Reviews
 
