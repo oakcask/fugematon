@@ -69,7 +69,12 @@ for (const viewport of VIEWPORTS) {
     await expect(page.getByRole("button", { name: "Random seed" })).toBeVisible();
     await expect(page.getByText("Tempo")).toBeVisible();
     await expect(page.getByText("Key")).toBeVisible();
-    await expect(page.getByText("Mode")).toBeHidden();
+    await expect(page.getByRole("combobox", { name: "Playback mode" })).toHaveValue("continuous-fugue");
+    await expect(page.getByText("Mode")).toBeVisible();
+    await expect(page.locator("#mode-status")).toHaveText("continuous fugue");
+    await expect(page.locator("#terminal-closure-status")).toHaveText("not-required");
+    await expect(page.locator("#deadline-status")).toHaveText(/^(met|missed by \d+ ms)$/);
+    await expect(page.locator("#fallback-status")).toHaveText(/^(generated|best-so-far|conservative-fallback)$/);
     await expect(page.getByText("Duration")).toBeHidden();
     await expect(page.locator("#playback-position")).toHaveText(/^\d+s \/ \d+\.\d+s \| bar \d+:\d+ \/ \d+:\d+$/);
     await expect(page.getByRole("button", { name: "Play" })).toBeVisible();

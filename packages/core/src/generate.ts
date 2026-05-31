@@ -12,11 +12,14 @@ import { buildPhraseDevelopmentReviewSummary } from "./generation/phrase-develop
 import { buildScoreWindowAcceptanceSummary } from "./generation/score-window-acceptance.js";
 import { buildFugueScore } from "./generation/sections.js";
 import { buildSubject } from "./generation/subject.js";
+import { applyTerminalClosureIntent, buildTerminalClosureReviewSummary } from "./generation/terminal-closure-review.js";
+import { normalizeInfinitePlaybackMode } from "./infinite-playback.js";
 import { Xoshiro128StarStar } from "./prng.js";
 
 export function generateScore(input: GenerationInput): GenerationOutput {
   validateInput(input);
 
+  const mode = normalizeInfinitePlaybackMode(input.mode);
   const rng = Xoshiro128StarStar.fromSeed(input.seed);
   const keySignature = chooseKeySignature(rng, input.seed);
   const timeSignature = chooseTimeSignature(rng);
@@ -25,6 +28,7 @@ export function generateScore(input: GenerationInput): GenerationOutput {
   const selectionModel = normalizeSelectionModel(input.selectionModel ?? DEFAULT_SELECTION_MODEL);
   const subject = buildSubject(rng, keySignature, selectionModel, meterContext);
   const score = buildFugueScore(subject, keySignature, input.lengthTicks, rng, selectionModel, meterContext);
+  applyTerminalClosureIntent(score, Math.max(input.lengthTicks, score.endTick), mode);
   annotateEpisodeMotivicDerivations(score.notes, score.sectionPlans);
   if (selectionModel !== "baseline") {
     repairHarmonicStasisRearticulation(score.notes, score.sectionPlans);
@@ -105,6 +109,12 @@ export function generateScore(input: GenerationInput): GenerationOutput {
       payload: { lengthTicks: generatedUntilTick },
     },
   ];
+  const terminalClosureReview = buildTerminalClosureReviewSummary({
+    events,
+    sectionPlans: score.sectionPlans,
+    mode,
+    segmentIndex: 0,
+  });
 
   return {
     events,
@@ -170,6 +180,7 @@ export function generateScore(input: GenerationInput): GenerationOutput {
       harmonicStasisRearticulation: diagnostics.harmonicStasisRearticulation,
       transitionRhythmReview: diagnostics.transitionRhythmReview,
       scoreWindowAcceptance,
+      terminalClosureReview,
       ornamentCandidateCount: diagnostics.ornamentCandidateCount,
       ornamentDensity: diagnostics.ornamentDensity,
       ornamentPlacementReasons: diagnostics.ornamentPlacementReasons,

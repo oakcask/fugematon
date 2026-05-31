@@ -10,7 +10,7 @@
 
 ## Read First
 
-* [Endless program terminal cadence validation](endless-program-terminal-cadence-validation.md): planned current work. Before implementing `endless-program` UI chaining, validate that each segment can end with a musically meaningful terminal cadence and keep closure evidence visible.
+* [Endless program terminal cadence validation](endless-program-terminal-cadence-validation.md): completed current target. Validated and repaired `endless-program` terminal cadence evidence, then exposed mode selection, segment chaining, deadline, fallback, and terminal closure status in the Web UI.
 
 ## Read When
 

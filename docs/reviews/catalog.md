@@ -4,6 +4,7 @@
 
 ## Current Quality Lane
 
+* [Endless Program Terminal Cadence Review](endless-program-terminal-cadence-review.md): 完了 evidence。baseline focused seeds の terminal closure failure、`endless-program` / `regenerative-cycle` terminal sonority repair、focused after-pass、CI / review scope を記録する。
 * [Phase 9 completion review](phase-9-completion-review.md): 完了 evidence。Dedicated Web Worker generation、deadline / fallback recording、long-run replay / state-change / boundary history、Web UI best-so-far fallback を operational contract として記録する。
 * [WebAudio synth interpretation completion review](webaudio-synth-interpretation-completion.md): 完了 evidence。TARGET baseline と現行 `organ-default` / `strict-counterpoint` 22 seed review bundle が一致し、WebAudio envelope / velocity 解釈を rendering change として閉じる。
 * [Phase 8 completion review](phase-8-completion-review.md): Infinite playback MVP の完了 evidence。TARGET baseline と現行 22 seed review bundle の ScoreEvent / MIDI / diagnostics / summary が一致し、3 再生モード semantics と segment snapshot contract が review signal を隠さないことを記録する。

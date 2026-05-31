@@ -191,6 +191,17 @@ test("public diagnostics expose finite candidate score dimensions", () => {
   assert.equal(typeof output.diagnostics.scoreWindowAcceptance.counterSubjectWindowCount, "number");
   assert.equal(typeof output.diagnostics.scoreWindowAcceptance.generatorResponseWindowCount, "number");
   assert.ok(Array.isArray(output.diagnostics.scoreWindowAcceptance.windows));
+  assert.equal(output.diagnostics.terminalClosureReview.schemaVersion, 1);
+  assert.match(
+    output.diagnostics.terminalClosureReview.classification,
+    /^(not-required|accepted|review-required|generator-response-required)$/,
+  );
+  assert.equal(typeof output.diagnostics.terminalClosureReview.lowVoiceSupport, "string");
+  assert.equal(typeof output.diagnostics.terminalClosureReview.outerVoiceLandingStatus, "string");
+  assert.equal(typeof output.diagnostics.terminalClosureReview.unresolvedBoundaryDissonanceCount, "number");
+  assert.equal(typeof output.diagnostics.terminalClosureReview.thinningExplanation, "string");
+  assert.equal(typeof output.diagnostics.terminalClosureReview.finalRestClassification, "string");
+  assert.ok(Array.isArray(output.diagnostics.terminalClosureReview.windows));
   assert.equal(output.diagnostics.lowerVoiceVocality.schemaVersion, 1);
   assert.ok(output.diagnostics.lowerVoiceVocality.score >= 0);
   assert.ok(output.diagnostics.lowerVoiceVocality.score <= 1);

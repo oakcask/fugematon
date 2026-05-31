@@ -1,6 +1,6 @@
 # Endless program terminal cadence validation
 
-Status: planned.
+Status: completed.
 
 This plan turns `endless-program` from a defined playback semantic into a validated Web UI experience. The first question is not whether the UI can queue another segment, but whether the generator can make a segment end like a piece. If terminal closure is weak, the generator and diagnostics must be repaired before the UI hides the problem behind automatic playback.
 
@@ -78,6 +78,23 @@ Do not hard-code repairs to one seed, key, time signature, pitch name, cadence l
 * Each played `endless-program` segment exposes terminal closure status, deadline result, and fallback status.
 * `continuous-fugue` still avoids terminal cadence requirements and preserves hidden-boundary semantics.
 * Existing review signals from Phase 8 and Phase 9 remain visible and are not masked by boundary silence, playback smoothing, fallback, or UI presentation.
+
+## Completion Record
+
+Implemented `TerminalClosureReviewSummary` in core diagnostics and carried its status through worker and UI review snapshots. Core generation now accepts the infinite playback mode intent: `continuous-fugue` keeps hidden-boundary semantics and reports terminal closure as `not-required`, while `endless-program` and `regenerative-cycle` reserve the final boundary for an authentic or modal terminal sonority.
+
+Focused baseline evidence is recorded in [Endless Program Terminal Cadence Review](../reviews/endless-program-terminal-cadence-review.md). The baseline focused seeds were generator-response-required because cadence targets lacked low-voice support and stable outer-voice landing at the inspected boundary. After repair, the focused seeds classify as accepted with root-supported low voice, stable outer voices, and zero unresolved boundary dissonances.
+
+The Web Worker request carries the selected playback mode, the UI exposes `continuous fugue` and `endless program`, and `endless program` prefetches the next segment while the current segment plays. At the boundary it starts the next generated segment after a short audible pause and keeps segment index, generation status, deadline result, fallback status, and terminal closure status visible.
+
+Verification:
+
+* Focused current review outputs under `samples/endless-program-terminal-cadence-current/`, compared against the baseline ScoreEvent and diagnostics outputs linked from `prompts/TARGET.md`.
+* `node --test packages/core/dist/generate-terminal-closure-review.test.js packages/core/dist/public-contract.integration.test.js packages/core/dist/infinite-playback.test.js`
+* `node --test packages/web/dist/generation-worker.test.js`
+* `pnpm --filter @fugematon/web build`
+* `pnpm ui:inspect`
+* `pnpm test`
 
 ## Out Of Scope
 

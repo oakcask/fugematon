@@ -4,6 +4,7 @@
 
 ## Read First
 
+* [Endless Program Terminal Cadence Review](endless-program-terminal-cadence-review.md): completed current target evidence。`endless-program` segment 末尾の baseline failure、terminal closure repair、focused seed after-pass、CI / review scope、listening gap を記録する。
 * [Phase 9 completion review](phase-9-completion-review.md): Worker 化、deadline / fallback recording、long-run playback history の完了 evidence。Phase 8 baseline の review signal を fallback や UI presentation で隠さないことを記録する。
 * [WebAudio synth interpretation completion review](webaudio-synth-interpretation-completion.md): Infinite playback MVP 後の rendering follow-up 完了 evidence。`organ-default` / `strict-counterpoint` の 22 seed bundle が TARGET baseline と一致し、WebAudio envelope / velocity 解釈だけが変わったことを記録する。
 * [Harmonic stasis rearticulation repair completion](harmonic-stasis-rearticulation-completion.md): 完了済み quality blocker。motivic free-counterpoint の短い同音再発音と和声停滞を、diagnostics、candidate scoring、final support repair、focused seed evidence として記録する。

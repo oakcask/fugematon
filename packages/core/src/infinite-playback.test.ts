@@ -46,8 +46,10 @@ test("Phase 8 playback modes define distinct segment boundary semantics", () => 
     reviewSignalsRemainVisible: PHASE_8_REVIEW_SIGNALS,
   });
   assert.equal(INFINITE_PLAYBACK_MODE_SEMANTICS["endless-program"].boundaryVisibility, "audible");
+  assert.equal(INFINITE_PLAYBACK_MODE_SEMANTICS["endless-program"].cadenceRequirement, "require-terminal-cadence");
   assert.equal(INFINITE_PLAYBACK_MODE_SEMANTICS["endless-program"].sectionBridge, "not-required");
   assert.equal(INFINITE_PLAYBACK_MODE_SEMANTICS["regenerative-cycle"].boundaryVisibility, "cadential-bridge");
+  assert.equal(INFINITE_PLAYBACK_MODE_SEMANTICS["regenerative-cycle"].cadenceRequirement, "require-terminal-cadence");
   assert.equal(INFINITE_PLAYBACK_MODE_SEMANTICS["regenerative-cycle"].sectionBridge, "required");
 
   for (const semantics of Object.values(INFINITE_PLAYBACK_MODE_SEMANTICS)) {

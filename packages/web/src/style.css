@@ -134,7 +134,7 @@ h1 {
 
 .seed-row {
   display: grid;
-  grid-template-columns: 1fr minmax(12rem, auto) auto auto;
+  grid-template-columns: 1fr minmax(12rem, auto) minmax(12rem, auto) auto auto;
   gap: 0.7rem;
   margin-top: 0.65rem;
 }
