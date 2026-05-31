@@ -169,6 +169,7 @@ h1 {
 
 .score-card {
   grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  margin-top: 1rem;
 }
 
 .transport-card {
