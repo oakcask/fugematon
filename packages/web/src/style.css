@@ -134,9 +134,19 @@ h1 {
 
 .seed-row {
   display: grid;
-  grid-template-columns: 1fr minmax(12rem, auto) minmax(12rem, auto) auto auto;
+  grid-template-columns: minmax(11rem, 1fr) minmax(11rem, 1fr) auto auto;
   gap: 0.7rem;
   margin-top: 0.65rem;
+}
+
+.seed-row input {
+  grid-column: 1 / 4;
+  grid-row: 1;
+}
+
+#random-seed {
+  grid-column: 4;
+  grid-row: 1;
 }
 
 .seed-row button {
@@ -278,6 +288,12 @@ h1 {
   .score-card,
   .transport-card {
     grid-template-columns: 1fr;
+  }
+
+  .seed-row input,
+  #random-seed {
+    grid-column: 1;
+    grid-row: auto;
   }
 
   .transport-actions {
