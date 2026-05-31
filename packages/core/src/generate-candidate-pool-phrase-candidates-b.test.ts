@@ -3,8 +3,8 @@ import test from "node:test";
 import { REVIEW_LENGTH_TICKS } from "./constants.js";
 import { generateScore } from "./generate.js";
 
-function assertPhraseFamilyCandidatesTraceable(reviewSeeds: readonly string[]) {
-  for (const seed of reviewSeeds) {
+test("generateScore keeps phrase family candidates traceable when selectable, batch B", () => {
+  for (const seed of ["modal-cadence", "dense-modal"] as const) {
     const output = generateScore({
       seed,
       lengthTicks: REVIEW_LENGTH_TICKS,
@@ -21,8 +21,4 @@ function assertPhraseFamilyCandidatesTraceable(reviewSeeds: readonly string[]) {
       assert.ok(blocker.representative.selectedCandidateIndex < blocker.representative.candidateCount);
     }
   }
-}
-
-test("generateScore keeps phrase family candidates traceable when selectable", () => {
-  assertPhraseFamilyCandidatesTraceable(["angular-answer", "modal-dorian", "modal-answer"]);
 });
