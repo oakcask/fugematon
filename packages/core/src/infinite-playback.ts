@@ -45,6 +45,68 @@ export type InfinitePlaybackModeSemantics = {
   reviewSignalsRemainVisible: readonly InfinitePlaybackReviewSignal[];
 };
 
+export type SegmentGenerationCandidateKind = "generated" | "best-so-far" | "conservative-fallback";
+
+export type SegmentGenerationDeadlineInput = {
+  mode: InfinitePlaybackMode | "continuous fugue" | "endless program" | "regenerative cycle";
+  segmentIndex: number;
+  startedAtMs: number;
+  completedAtMs?: number;
+  deadlineMs: number;
+  generatedCandidateSatisfiesHardConstraints: boolean;
+  bestSoFarCandidateSatisfiesHardConstraints: boolean;
+};
+
+export type SegmentGenerationDeadlineResult = {
+  mode: InfinitePlaybackMode;
+  segmentIndex: number;
+  elapsedMs: number;
+  deadlineExceededByMs: number;
+  timedOut: boolean;
+  hardConstraintSatisfied: boolean;
+  returnedCandidateKind: SegmentGenerationCandidateKind;
+  hardConstraintSource: SegmentGenerationCandidateKind;
+  referenceDiagnosticsPreserved: boolean;
+  qualityVectorPreserved: boolean;
+  reviewSignalsRemainVisible: readonly InfinitePlaybackReviewSignal[];
+};
+
+export type SegmentReplayHistoryEntry = {
+  segmentIndex: number;
+  startTick: number;
+  endTick: number;
+  eventCount: number;
+};
+
+export type SegmentStateChangeHistoryEntry = {
+  segmentIndex: number;
+  tick: number;
+  state: FugueState;
+};
+
+export type SegmentBoundaryHistoryEntry = {
+  segmentIndex: number;
+  tick: number;
+  mode: InfinitePlaybackMode;
+  returnedCandidateKind: SegmentGenerationCandidateKind;
+  timedOut: boolean;
+};
+
+export type InfinitePlaybackLongRunHistory = {
+  replay: readonly SegmentReplayHistoryEntry[];
+  stateChanges: readonly SegmentStateChangeHistoryEntry[];
+  boundaries: readonly SegmentBoundaryHistoryEntry[];
+  reviewSignalsRemainVisible: readonly InfinitePlaybackReviewSignal[];
+};
+
+export type AppendInfinitePlaybackSegmentHistoryInput = {
+  previous?: InfinitePlaybackLongRunHistory;
+  mode: InfinitePlaybackMode | "continuous fugue" | "endless program" | "regenerative cycle";
+  segmentIndex: number;
+  events: readonly ScoreEvent[];
+  deadlineResult: SegmentGenerationDeadlineResult;
+};
+
 export type SegmentSnapshotTimebase = {
   ticksPerQuarter: number;
 };
@@ -287,6 +349,72 @@ export function createInitialSegmentSnapshot(input: InitialSegmentSnapshotInput)
   };
 }
 
+export function planSegmentGenerationDeadlineResult(
+  input: SegmentGenerationDeadlineInput,
+): SegmentGenerationDeadlineResult {
+  validateSegmentGenerationDeadlineInput(input);
+
+  const mode = normalizeInfinitePlaybackMode(input.mode);
+  const completedAtMs = input.completedAtMs ?? input.startedAtMs + input.deadlineMs;
+  const elapsedMs = completedAtMs - input.startedAtMs;
+  const timedOut = elapsedMs > input.deadlineMs || input.completedAtMs === undefined;
+  const returnedCandidateKind = selectReturnedCandidateKind(input, timedOut);
+  const hardConstraintSatisfied =
+    returnedCandidateKind !== "generated" || input.generatedCandidateSatisfiesHardConstraints;
+
+  return {
+    mode,
+    segmentIndex: input.segmentIndex,
+    elapsedMs,
+    deadlineExceededByMs: Math.max(0, elapsedMs - input.deadlineMs),
+    timedOut,
+    hardConstraintSatisfied,
+    returnedCandidateKind,
+    hardConstraintSource: returnedCandidateKind,
+    referenceDiagnosticsPreserved: true,
+    qualityVectorPreserved: true,
+    reviewSignalsRemainVisible: INFINITE_PLAYBACK_MODE_SEMANTICS[mode].reviewSignalsRemainVisible,
+  };
+}
+
+export function appendInfinitePlaybackSegmentHistory(
+  input: AppendInfinitePlaybackSegmentHistoryInput,
+): InfinitePlaybackLongRunHistory {
+  validateAppendInfinitePlaybackSegmentHistoryInput(input);
+
+  const mode = normalizeInfinitePlaybackMode(input.mode);
+  const replayEntry = createReplayHistoryEntry(input.segmentIndex, input.events);
+  const stateChanges = input.events.flatMap((event): SegmentStateChangeHistoryEntry[] =>
+    event.kind === "meta" && event.type === "state-change"
+      ? [
+          {
+            segmentIndex: input.segmentIndex,
+            tick: event.tick,
+            state: event.payload.state,
+          },
+        ]
+      : [],
+  );
+  const boundary = {
+    segmentIndex: input.segmentIndex,
+    tick: replayEntry.endTick,
+    mode,
+    returnedCandidateKind: input.deadlineResult.returnedCandidateKind,
+    timedOut: input.deadlineResult.timedOut,
+  };
+  const reviewSignalsRemainVisible = unionReviewSignals(
+    input.previous?.reviewSignalsRemainVisible ?? [],
+    input.deadlineResult.reviewSignalsRemainVisible,
+  );
+
+  return {
+    replay: [...(input.previous?.replay ?? []), replayEntry],
+    stateChanges: [...(input.previous?.stateChanges ?? []), ...stateChanges],
+    boundaries: [...(input.previous?.boundaries ?? []), boundary],
+    reviewSignalsRemainVisible,
+  };
+}
+
 function isInfinitePlaybackMode(mode: string): mode is InfinitePlaybackMode {
   return mode in INFINITE_PLAYBACK_MODE_SEMANTICS;
 }
@@ -324,4 +452,89 @@ function validateInitialSegmentSnapshotInput(input: InitialSegmentSnapshotInput)
       "core.infinite-playback.invalid-context-window: invalid bounded past event context window; why=snapshot resume must restore a finite non-negative lookback range; action=pass a non-negative safe integer tick count or omit the field",
     );
   }
+}
+
+function selectReturnedCandidateKind(
+  input: SegmentGenerationDeadlineInput,
+  timedOut: boolean,
+): SegmentGenerationCandidateKind {
+  if (!timedOut && input.generatedCandidateSatisfiesHardConstraints) {
+    return "generated";
+  }
+
+  if (input.bestSoFarCandidateSatisfiesHardConstraints) {
+    return "best-so-far";
+  }
+
+  return "conservative-fallback";
+}
+
+function validateSegmentGenerationDeadlineInput(input: SegmentGenerationDeadlineInput): void {
+  if (!Number.isSafeInteger(input.segmentIndex) || input.segmentIndex < 0) {
+    throw new Error(
+      "core.infinite-playback.invalid-segment-index: invalid segment index; why=Phase 9 worker fallback records must attach to a stable replay segment; action=pass a non-negative safe integer segmentIndex",
+    );
+  }
+
+  if (!Number.isFinite(input.startedAtMs) || input.startedAtMs < 0) {
+    throw new Error(
+      "core.infinite-playback.invalid-start-time: invalid generation start time; why=deadline handling needs a finite relative start time; action=pass a non-negative finite startedAtMs",
+    );
+  }
+
+  if (!Number.isFinite(input.deadlineMs) || input.deadlineMs <= 0) {
+    throw new Error(
+      "core.infinite-playback.invalid-deadline: invalid generation deadline; why=Phase 9 worker generation must have a positive finite deadline before fallback selection; action=pass a positive finite deadlineMs",
+    );
+  }
+
+  if (
+    input.completedAtMs !== undefined &&
+    (!Number.isFinite(input.completedAtMs) || input.completedAtMs < input.startedAtMs)
+  ) {
+    throw new Error(
+      "core.infinite-playback.invalid-completion-time: invalid generation completion time; why=deadline handling cannot record negative elapsed generation time; action=omit completedAtMs for timeout or pass a finite value greater than or equal to startedAtMs",
+    );
+  }
+}
+
+function validateAppendInfinitePlaybackSegmentHistoryInput(input: AppendInfinitePlaybackSegmentHistoryInput): void {
+  if (!Number.isSafeInteger(input.segmentIndex) || input.segmentIndex < 0) {
+    throw new Error(
+      "core.infinite-playback.invalid-history-segment-index: invalid segment index; why=long-run replay and boundary histories require stable segment ordering; action=pass a non-negative safe integer segmentIndex",
+    );
+  }
+
+  if (input.deadlineResult.segmentIndex !== input.segmentIndex) {
+    throw new Error(
+      "core.infinite-playback.history-deadline-segment-mismatch: deadline result segment mismatch; why=fallback review signals must attach to the same replay segment as the emitted events; action=append history with a matching deadlineResult.segmentIndex",
+    );
+  }
+}
+
+function createReplayHistoryEntry(segmentIndex: number, events: readonly ScoreEvent[]): SegmentReplayHistoryEntry {
+  if (events.length === 0) {
+    return {
+      segmentIndex,
+      startTick: 0,
+      endTick: 0,
+      eventCount: 0,
+    };
+  }
+
+  const ticks = events.map((event) => (event.kind === "note" ? event.startTick + event.durationTicks : event.tick));
+
+  return {
+    segmentIndex,
+    startTick: Math.min(...events.map((event) => (event.kind === "note" ? event.startTick : event.tick))),
+    endTick: Math.max(...ticks),
+    eventCount: events.length,
+  };
+}
+
+function unionReviewSignals(
+  left: readonly InfinitePlaybackReviewSignal[],
+  right: readonly InfinitePlaybackReviewSignal[],
+): readonly InfinitePlaybackReviewSignal[] {
+  return [...new Set([...left, ...right])];
 }

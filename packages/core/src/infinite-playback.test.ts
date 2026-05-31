@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  appendInfinitePlaybackSegmentHistory,
   createInitialSegmentSnapshot,
   DEFAULT_BOUNDED_PAST_EVENT_CONTEXT_TICKS,
   DEFAULT_SELECTION_MODEL,
@@ -8,6 +9,7 @@ import {
   INFINITE_PLAYBACK_MODE_SEMANTICS,
   INFINITE_PLAYBACK_SNAPSHOT_SCHEMA_VERSION,
   normalizeInfinitePlaybackMode,
+  planSegmentGenerationDeadlineResult,
   seedToUint32State,
   TICKS_PER_QUARTER,
 } from "./index.js";
@@ -149,5 +151,216 @@ test("validates initial segment snapshot reproducibility inputs", () => {
   assert.throws(
     () => createInitialSegmentSnapshot({ seed: "phase-8", boundedPastEventContextTicks: -1 }),
     /core\.infinite-playback\.invalid-context-window/,
+  );
+});
+
+test("Phase 9 deadline planning returns generated candidates that satisfy hard constraints", () => {
+  const result = planSegmentGenerationDeadlineResult({
+    mode: "continuous fugue",
+    segmentIndex: 3,
+    startedAtMs: 1000,
+    completedAtMs: 1320,
+    deadlineMs: 500,
+    generatedCandidateSatisfiesHardConstraints: true,
+    bestSoFarCandidateSatisfiesHardConstraints: false,
+  });
+
+  assert.equal(result.mode, "continuous-fugue");
+  assert.equal(result.segmentIndex, 3);
+  assert.equal(result.elapsedMs, 320);
+  assert.equal(result.deadlineExceededByMs, 0);
+  assert.equal(result.timedOut, false);
+  assert.equal(result.hardConstraintSatisfied, true);
+  assert.equal(result.returnedCandidateKind, "generated");
+  assert.equal(result.hardConstraintSource, "generated");
+  assert.equal(result.referenceDiagnosticsPreserved, true);
+  assert.equal(result.qualityVectorPreserved, true);
+  assert.deepEqual(result.reviewSignalsRemainVisible, PHASE_8_REVIEW_SIGNALS);
+});
+
+test("Phase 9 deadline planning falls back to best-so-far without hiding review signals", () => {
+  const result = planSegmentGenerationDeadlineResult({
+    mode: "endless-program",
+    segmentIndex: 4,
+    startedAtMs: 0,
+    completedAtMs: 751,
+    deadlineMs: 750,
+    generatedCandidateSatisfiesHardConstraints: true,
+    bestSoFarCandidateSatisfiesHardConstraints: true,
+  });
+
+  assert.equal(result.mode, "endless-program");
+  assert.equal(result.elapsedMs, 751);
+  assert.equal(result.deadlineExceededByMs, 1);
+  assert.equal(result.timedOut, true);
+  assert.equal(result.hardConstraintSatisfied, true);
+  assert.equal(result.returnedCandidateKind, "best-so-far");
+  assert.equal(result.hardConstraintSource, "best-so-far");
+  assert.equal(result.referenceDiagnosticsPreserved, true);
+  assert.equal(result.qualityVectorPreserved, true);
+  assert.deepEqual(result.reviewSignalsRemainVisible, PHASE_8_REVIEW_SIGNALS);
+});
+
+test("Phase 9 deadline planning records conservative fallback when no hard-safe candidate is ready", () => {
+  const result = planSegmentGenerationDeadlineResult({
+    mode: "regenerative cycle",
+    segmentIndex: 5,
+    startedAtMs: 2000,
+    deadlineMs: 600,
+    generatedCandidateSatisfiesHardConstraints: false,
+    bestSoFarCandidateSatisfiesHardConstraints: false,
+  });
+
+  assert.equal(result.mode, "regenerative-cycle");
+  assert.equal(result.elapsedMs, 600);
+  assert.equal(result.deadlineExceededByMs, 0);
+  assert.equal(result.timedOut, true);
+  assert.equal(result.hardConstraintSatisfied, true);
+  assert.equal(result.returnedCandidateKind, "conservative-fallback");
+  assert.equal(result.hardConstraintSource, "conservative-fallback");
+  assert.equal(result.referenceDiagnosticsPreserved, true);
+  assert.equal(result.qualityVectorPreserved, true);
+  assert.deepEqual(result.reviewSignalsRemainVisible, PHASE_8_REVIEW_SIGNALS);
+});
+
+test("Phase 9 long-run history preserves replay state changes and segment boundaries", () => {
+  const firstDeadline = planSegmentGenerationDeadlineResult({
+    mode: "continuous-fugue",
+    segmentIndex: 0,
+    startedAtMs: 0,
+    completedAtMs: 250,
+    deadlineMs: 500,
+    generatedCandidateSatisfiesHardConstraints: true,
+    bestSoFarCandidateSatisfiesHardConstraints: false,
+  });
+  const firstHistory = appendInfinitePlaybackSegmentHistory({
+    mode: "continuous fugue",
+    segmentIndex: 0,
+    deadlineResult: firstDeadline,
+    events: [
+      {
+        kind: "meta",
+        type: "state-change",
+        tick: 0,
+        payload: { state: "exposition" },
+      },
+      {
+        kind: "note",
+        voice: "soprano",
+        startTick: 0,
+        durationTicks: TICKS_PER_QUARTER,
+        pitch: 72,
+        velocity: 88,
+        role: "subject",
+      },
+    ],
+  });
+  const fallbackDeadline = planSegmentGenerationDeadlineResult({
+    mode: "continuous-fugue",
+    segmentIndex: 1,
+    startedAtMs: 250,
+    completedAtMs: 801,
+    deadlineMs: 500,
+    generatedCandidateSatisfiesHardConstraints: false,
+    bestSoFarCandidateSatisfiesHardConstraints: true,
+  });
+  const secondHistory = appendInfinitePlaybackSegmentHistory({
+    previous: firstHistory,
+    mode: "continuous-fugue",
+    segmentIndex: 1,
+    deadlineResult: fallbackDeadline,
+    events: [
+      {
+        kind: "meta",
+        type: "state-change",
+        tick: TICKS_PER_QUARTER,
+        payload: { state: "episode" },
+      },
+      {
+        kind: "note",
+        voice: "alto",
+        startTick: TICKS_PER_QUARTER,
+        durationTicks: TICKS_PER_QUARTER * 2,
+        pitch: 64,
+        velocity: 84,
+        role: "free-counterpoint",
+      },
+    ],
+  });
+
+  assert.deepEqual(secondHistory.replay, [
+    {
+      segmentIndex: 0,
+      startTick: 0,
+      endTick: TICKS_PER_QUARTER,
+      eventCount: 2,
+    },
+    {
+      segmentIndex: 1,
+      startTick: TICKS_PER_QUARTER,
+      endTick: TICKS_PER_QUARTER * 3,
+      eventCount: 2,
+    },
+  ]);
+  assert.deepEqual(secondHistory.stateChanges, [
+    { segmentIndex: 0, tick: 0, state: "exposition" },
+    { segmentIndex: 1, tick: TICKS_PER_QUARTER, state: "episode" },
+  ]);
+  assert.deepEqual(secondHistory.boundaries, [
+    {
+      segmentIndex: 0,
+      tick: TICKS_PER_QUARTER,
+      mode: "continuous-fugue",
+      returnedCandidateKind: "generated",
+      timedOut: false,
+    },
+    {
+      segmentIndex: 1,
+      tick: TICKS_PER_QUARTER * 3,
+      mode: "continuous-fugue",
+      returnedCandidateKind: "best-so-far",
+      timedOut: true,
+    },
+  ]);
+  assert.deepEqual(secondHistory.reviewSignalsRemainVisible, PHASE_8_REVIEW_SIGNALS);
+});
+
+test("validates Phase 9 deadline planning inputs", () => {
+  assert.throws(
+    () =>
+      planSegmentGenerationDeadlineResult({
+        mode: "continuous-fugue",
+        segmentIndex: -1,
+        startedAtMs: 0,
+        deadlineMs: 500,
+        generatedCandidateSatisfiesHardConstraints: true,
+        bestSoFarCandidateSatisfiesHardConstraints: false,
+      }),
+    /core\.infinite-playback\.invalid-segment-index/,
+  );
+  assert.throws(
+    () =>
+      planSegmentGenerationDeadlineResult({
+        mode: "continuous-fugue",
+        segmentIndex: 0,
+        startedAtMs: 10,
+        completedAtMs: 9,
+        deadlineMs: 500,
+        generatedCandidateSatisfiesHardConstraints: true,
+        bestSoFarCandidateSatisfiesHardConstraints: false,
+      }),
+    /core\.infinite-playback\.invalid-completion-time/,
+  );
+  assert.throws(
+    () =>
+      planSegmentGenerationDeadlineResult({
+        mode: "continuous-fugue",
+        segmentIndex: 0,
+        startedAtMs: 0,
+        deadlineMs: 0,
+        generatedCandidateSatisfiesHardConstraints: true,
+        bestSoFarCandidateSatisfiesHardConstraints: false,
+      }),
+    /core\.infinite-playback\.invalid-deadline/,
   );
 });

@@ -26,3 +26,11 @@ Phase 9 は Phase 8 後の operational lane である。目的は生成探索を
 * 長時間再生で replay、state-change history、boundary history が壊れない。
 * 生成、描画、再生、内部状態 visualizer が分離されても、操作感と音声が安定する。
 * Phase 13X の first-bass score-window evidence、Phase 13X2 の bass-answer-tail texture evidence and role visibility、Phase 13Y の generalized entry-continuity evidence、Phase 13Z の long-run phrase-development evidence、focused manual listening、検出された音楽的問題の修正と再レビューを Phase 8 baseline として維持している。
+
+## Completion Record
+
+Phase 9 is complete for its operational contract. Dedicated Web Worker generation is used by the Web UI, deadline results record generated / best-so-far / conservative fallback selection, and fallback records keep reference diagnostics, review signal, and quality vector visibility explicit.
+
+Long-run stability is covered by the core segment history contract: replay summaries, state-change history, and segment boundary history append across segments without replacing previous entries. The Web UI keeps drawing and playback separate from worker generation, and uses the previous generated model as best-so-far fallback when a later request exceeds the generation deadline.
+
+Completion evidence: [Phase 9 completion review](../reviews/phase-9-completion-review.md).
