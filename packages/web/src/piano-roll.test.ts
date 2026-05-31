@@ -171,7 +171,7 @@ test("computeActivePitchMarkerLayout separates black and white key labels in the
   const cSharp4 = markers.find((marker) => marker.pitch === 61)!;
 
   assert.equal(c4.name, "C4");
-  assert.equal(cSharp4.name, "C#4");
+  assert.equal(cSharp4.name, "C♯4");
   assert.equal(c4.isBlackKey, false);
   assert.equal(cSharp4.isBlackKey, true);
   assert.equal(c4.textAlign, "right");

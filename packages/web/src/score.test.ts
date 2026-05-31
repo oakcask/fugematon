@@ -58,7 +58,8 @@ test("createPlaybackModel can select the organ default performance profile", () 
 });
 
 test("key signature helpers format tonic and mode metadata", () => {
-  assert.equal(formatKeySignature({ tonic: "Bb", mode: "dorian" }), "Bb Dorian");
+  assert.equal(formatKeySignature({ tonic: "Bb", mode: "dorian" }), "B♭ Dorian");
+  assert.equal(formatKeySignature({ tonic: "F#", mode: "major" }), "F♯ Major");
 });
 
 test("ticksToSeconds maps score ticks to playback seconds", () => {

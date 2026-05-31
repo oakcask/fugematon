@@ -136,11 +136,15 @@ export function formatTimeSignature(timeSignature: TimeSignature): string {
 }
 
 export function formatKeySignature(keySignature: KeySignature): string {
-  return `${keySignature.tonic} ${formatKeyMode(keySignature)}`;
+  return `${formatAccidentals(keySignature.tonic)} ${formatKeyMode(keySignature)}`;
 }
 
 function formatKeyMode(keySignature: KeySignature): string {
   return keySignature.mode.charAt(0).toUpperCase() + keySignature.mode.slice(1);
+}
+
+function formatAccidentals(value: string): string {
+  return value.replaceAll("#", "♯").replaceAll("b", "♭");
 }
 
 export function formatBarBeatPosition(ticks: number, timeSignature: TimeSignature, ticksPerQuarter: number): string {
