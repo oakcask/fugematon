@@ -13,6 +13,8 @@ const VIEWPORTS = [
   { name: "desktop", size: { width: 1280, height: 900 } },
   { name: "mobile", size: { width: 390, height: 844 } },
 ] as const;
+const RANDOM_SEED_PATTERN = /^seed-[0-9a-z]{7}-[0-9a-z]{7}$/;
+const INITIAL_GENERATION_TIMEOUT_MS = 20_000;
 
 for (const viewport of VIEWPORTS) {
   test(`renders the Web UI in ${viewport.name}`, async ({ page }, testInfo) => {
@@ -64,15 +66,17 @@ for (const viewport of VIEWPORTS) {
     await expect(page.getByText("deterministic counterpoint machine")).toBeVisible();
     await expect(page.getByText("Generate four-voice fugue for browser playback.")).toBeVisible();
     const seedInput = page.getByLabel("Seed");
-    await expect(seedInput).toHaveValue("fugue-smoke");
-    await expect(page).toHaveURL(/[?&]seed=fugue-smoke(?:&|$)/);
+    await expect(seedInput).toHaveValue(RANDOM_SEED_PATTERN);
+    expect(new URL(page.url()).searchParams.get("seed")).toMatch(RANDOM_SEED_PATTERN);
     await expect(page.getByRole("button", { name: "Random seed" })).toBeVisible();
     await expect(page.getByText("Tempo")).toBeVisible();
     await expect(page.getByText("Key")).toBeVisible();
     await expect(page.getByRole("combobox", { name: "Playback mode" })).toHaveValue("continuous-fugue");
     await expect(page.getByText("Mode")).toBeVisible();
     await expect(page.locator("#mode-status")).toHaveText("continuous fugue");
-    await expect(page.locator("#terminal-closure-status")).toHaveText("not-required");
+    await expect(page.locator("#terminal-closure-status")).toHaveText("not-required", {
+      timeout: INITIAL_GENERATION_TIMEOUT_MS,
+    });
     await expect(page.locator("#deadline-status")).toHaveText(/^(met|missed by \d+ ms)$/);
     await expect(page.locator("#fallback-status")).toHaveText(/^(generated|best-so-far|conservative-fallback)$/);
     await expect(page.getByText("Duration")).toBeHidden();
@@ -81,8 +85,8 @@ for (const viewport of VIEWPORTS) {
     await expect(page.getByRole("button", { name: "Pause" })).toHaveCount(0);
 
     await page.getByRole("button", { name: "Random seed" }).click();
-    await expect(seedInput).toHaveValue(/^seed-[0-9a-z]{7}-[0-9a-z]{7}$/);
-    expect(new URL(page.url()).searchParams.get("seed")).toMatch(/^seed-[0-9a-z]{7}-[0-9a-z]{7}$/);
+    await expect(seedInput).toHaveValue(RANDOM_SEED_PATTERN);
+    expect(new URL(page.url()).searchParams.get("seed")).toMatch(RANDOM_SEED_PATTERN);
 
     const pianoRoll = page.locator("#piano-roll");
     await expect(pianoRoll).toBeVisible();

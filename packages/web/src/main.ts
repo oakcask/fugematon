@@ -22,7 +22,6 @@ import {
   type PlaybackModel,
 } from "./score.js";
 
-const DEFAULT_SEED = "fugue-smoke";
 const URL_SEED_PARAM = "seed";
 const URL_DEBUG_PARAM = "debug";
 const ENDLESS_DEBUG_VALUE = "endless";
@@ -59,7 +58,7 @@ type DebugValue = string | number | boolean | undefined;
 
 const app = requireElement(document.querySelector<HTMLDivElement>("#app"), "app root");
 
-let state = createPendingState(readUrlSeed(DEFAULT_SEED));
+let state = createPendingState(readInitialSeed());
 
 app.innerHTML = `
   <section class="shell">
@@ -273,7 +272,7 @@ window.addEventListener("resize", () => {
 });
 
 window.addEventListener("popstate", () => {
-  regenerateScore(readUrlSeed(DEFAULT_SEED), "none");
+  regenerateScore(readInitialSeed(), "none");
 });
 
 function regenerateScore(seed: string, urlUpdateMode: UrlUpdateMode = "push"): void {
@@ -325,6 +324,10 @@ function createRandomSeed(): string {
   const values = new Uint32Array(2);
   window.crypto.getRandomValues(values);
   return `seed-${Array.from(values, (value) => value.toString(36).padStart(7, "0")).join("-")}`;
+}
+
+function readInitialSeed(): string {
+  return readUrlSeed(createRandomSeed());
 }
 
 function createPendingState(
