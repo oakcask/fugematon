@@ -50,6 +50,10 @@ test("generation worker returns a playback model with deadline and review signal
     response.reviewSnapshot.terminalClosureStatus,
     /^(not-required|accepted|review-required|generator-response-required)$/,
   );
+  assert.match(
+    response.reviewSnapshot.terminalClosureSource,
+    /^(generated-coda|fallback-terminal-closure|bridge-compatible-closure|ordinary-terminal-cadence|not-required)$/,
+  );
 });
 
 test("generation worker passes continuous-fugue snapshots into continuation generation", async () => {
@@ -102,7 +106,7 @@ test("generation worker preserves endless-program mode in deadline records", asy
   assert.equal(response.reviewSnapshot.terminalClosureStatus, "accepted");
 });
 
-test("generation worker keeps audible endless output when review-only hard signals fail", async () => {
+test("generation worker keeps audible endless output with generated coda review signals", async () => {
   const response = await dispatchWorkerRequest({
     requestId: 44,
     seed: "seed-19l7uit-1u226cc-segment-1",
@@ -116,8 +120,9 @@ test("generation worker keeps audible endless output when review-only hard signa
   assert.equal(response.type, "generated");
   assert.equal(response.deadlineResult.returnedCandidateKind, "generated");
   assert.equal(response.deadlineResult.segmentIndex, 1);
-  assert.equal(response.reviewSnapshot.hardConstraintsSatisfied, false);
+  assert.equal(response.reviewSnapshot.hardConstraintsSatisfied, true);
   assert.equal(response.reviewSnapshot.terminalClosureStatus, "accepted");
+  assert.equal(response.reviewSnapshot.terminalClosureSource, "generated-coda");
   assert.ok(response.model.notes.length > 0);
 });
 

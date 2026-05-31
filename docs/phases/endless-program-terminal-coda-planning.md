@@ -1,6 +1,6 @@
 # Endless program terminal coda planning
 
-Status: planned.
+Status: complete.
 
 This plan follows [Endless program terminal cadence validation](endless-program-terminal-cadence-validation.md). The previous target proved that `endless-program` can expose terminal closure evidence, but the current repair still behaves like a terminal-boundary override: the last score material is clipped and replaced by a short four-voice terminal sonority. That can satisfy cadence diagnostics while sounding abrupt, especially when voices that were resting re-enter together at the final boundary.
 
@@ -122,3 +122,11 @@ If fallback is used, worker and UI snapshots should continue to expose terminal 
 This plan changes phase scope from terminal cadence validation to terminal coda generation. It should be implemented before using `endless-program` closure as evidence that segment boundaries are musically satisfying.
 
 The durable design principle is: `endless-program` boundaries are audible piece boundaries, so they need generated form-level closure. A stable final chord is necessary evidence, but not sufficient evidence, when the preceding texture makes the ending sound pasted on.
+
+## Completion Record
+
+Implemented planner-visible coda generation for `endless-program` by reserving a terminal section with `terminalIntent: "self-contained-coda"` before the boundary. The coda generates staggered cadence preparation and a stable terminal landing before `applyTerminalClosureIntent` runs, so the terminal sonority override is now a fallback rather than the normal successful path.
+
+`TerminalClosureReviewSummary` schema version 2 distinguishes `generated-coda`, `fallback-terminal-closure`, `bridge-compatible-closure`, ordinary cadence, and `not-required` sources. It also exposes prepared voice re-entry and final-attack re-entry counts while keeping low-voice support, outer-voice landing, unresolved boundary dissonance, thinning, and final-rest evidence.
+
+Focused evidence is recorded in [Endless Program Terminal Coda Review](../reviews/endless-program-terminal-coda-review.md). The focused `endless-program` seeds all report generated coda source, prepared re-entry, accepted root-supported terminal closure, no unresolved boundary dissonance, no hidden all-voice silence, and no range, crossing, subject identity, or answer plan hard failures. `continuous-fugue` still reports terminal closure as `not-required` and receives no coda. `regenerative-cycle` remains bridge-compatible and does not receive a self-contained coda.

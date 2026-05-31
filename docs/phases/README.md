@@ -10,7 +10,7 @@
 
 ## Read First
 
-* [Endless program terminal coda planning](endless-program-terminal-coda-planning.md): current planned target after continuous-boundary repair. Replace the short terminal-boundary sonority override with planner-visible coda generation for `endless-program` segment endings.
+* [Endless program terminal coda planning](endless-program-terminal-coda-planning.md): completed target. Replaces the short terminal-boundary sonority override with planner-visible coda generation for `endless-program` segment endings.
 * [Continuous fugue segment continuity planning](continuous-fugue-segment-continuity-planning.md): completed target. Connects `continuous-fugue` segment chaining to the snapshot contract so hidden boundaries do not restart exposition or reset the piano-roll experience.
 
 ## Read When
