@@ -5,6 +5,7 @@ Status: implementation evidence recorded and revalidated.
 ## Scope
 
 This review covers the `continuous-fugue` hidden boundary between segment 0 and segment 1 after snapshot-based continuation generation was added. It does not cover `endless-program` terminal coda or terminal-boundary work.
+Segment 0 is the initial generation and has no hidden boundary to reset; the reset classification only applies to later segments that fail to carry continuation evidence.
 
 Human symptom preserved from the phase plan: continuous playback sounded and looked like a fresh alto / soprano / tenor / bass exposition at every hidden boundary instead of continuing from the prior segment tail.
 
