@@ -67,6 +67,25 @@ test("generation worker preserves endless-program mode in deadline records", asy
   assert.equal(response.reviewSnapshot.terminalClosureStatus, "accepted");
 });
 
+test("generation worker keeps audible endless output when review-only hard signals fail", async () => {
+  const response = await dispatchWorkerRequest({
+    requestId: 44,
+    seed: "seed-19l7uit-1u226cc-segment-1",
+    performanceProfileId: "strict-counterpoint",
+    lengthTicks: 129_600,
+    deadlineMs: 240_000,
+    segmentIndex: 1,
+    mode: "endless-program",
+  });
+
+  assert.equal(response.type, "generated");
+  assert.equal(response.deadlineResult.returnedCandidateKind, "generated");
+  assert.equal(response.deadlineResult.segmentIndex, 1);
+  assert.equal(response.reviewSnapshot.hardConstraintsSatisfied, false);
+  assert.equal(response.reviewSnapshot.terminalClosureStatus, "accepted");
+  assert.ok(response.model.notes.length > 0);
+});
+
 test("generation worker reports invalid deadline requests as error responses", async () => {
   const response = await dispatchWorkerRequest({
     requestId: 42,

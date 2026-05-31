@@ -20,6 +20,9 @@ import {
 
 const DEFAULT_SEED = "fugue-smoke";
 const URL_SEED_PARAM = "seed";
+const URL_DEBUG_PARAM = "debug";
+const ENDLESS_DEBUG_VALUE = "endless";
+const DEBUG_STORAGE_KEY = "fugematon.debug";
 const SCORE_LENGTH_TICKS = FUGUE_FORM_REVIEW_LENGTH_TICKS;
 const GENERATION_DEADLINE_MS = 10_000;
 const ENDLESS_BOUNDARY_PAUSE_MS = 750;
@@ -47,6 +50,8 @@ type PrefetchedSegment = {
   deadlineResult: SegmentGenerationDeadlineResult;
   reviewSnapshot: GenerationWorkerReviewSnapshot;
 };
+
+type DebugValue = string | number | boolean | undefined;
 
 const app = requireElement(document.querySelector<HTMLDivElement>("#app"), "app root");
 
@@ -364,6 +369,50 @@ function writeUrlSeed(seed: string, mode: UrlUpdateMode): void {
   window.history.pushState(null, "", nextUrl);
 }
 
+function logEndlessDebug(event: string, details: Record<string, DebugValue> = {}): void {
+  if (!isEndlessDebugEnabled()) {
+    return;
+  }
+
+  console.debug("[fugematon:endless]", event, {
+    seed: state.seed,
+    mode: state.playbackMode,
+    segmentIndex: state.segmentIndex,
+    nextSegmentStatus: state.nextSegmentStatus,
+    activePrefetchGenerationRequestId,
+    prefetchedSegmentIndex: prefetchedSegment?.deadlineResult.segmentIndex,
+    playerSecond: roundDebugSecond(player?.playbackSecond),
+    modelNotes: state.model?.notes.length,
+    ...details,
+  });
+}
+
+function isEndlessDebugEnabled(): boolean {
+  const urlDebug = new URLSearchParams(window.location.search).get(URL_DEBUG_PARAM);
+  const storedDebug = safeReadDebugStorage();
+
+  return debugValueIncludes(urlDebug, ENDLESS_DEBUG_VALUE) || debugValueIncludes(storedDebug, ENDLESS_DEBUG_VALUE);
+}
+
+function safeReadDebugStorage(): string | undefined {
+  try {
+    return window.localStorage.getItem(DEBUG_STORAGE_KEY) ?? undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function debugValueIncludes(value: string | undefined | null, expected: string): boolean {
+  return (value ?? "")
+    .split(",")
+    .map((part) => part.trim())
+    .includes(expected);
+}
+
+function roundDebugSecond(value: number | undefined): number | undefined {
+  return value === undefined ? undefined : Math.round(value * 1000) / 1000;
+}
+
 function render(nextState: AppState): void {
   const model = nextState.model;
 
@@ -553,6 +602,21 @@ function queueGenerationFallback(requestId: number, segmentIndex: number): void 
 }
 
 function handleGenerationWorkerResponse(response: GenerationWorkerResponse): void {
+  logEndlessDebug("worker-response", {
+    requestId: response.requestId,
+    responseType: response.type,
+    responseSeed: response.seed,
+    responseSegmentIndex: response.type === "generated" ? response.deadlineResult.segmentIndex : undefined,
+    responseCandidateKind: response.type === "generated" ? response.deadlineResult.returnedCandidateKind : undefined,
+    responseElapsedMs: response.type === "generated" ? Math.round(response.deadlineResult.elapsedMs) : undefined,
+    responseTimedOut: response.type === "generated" ? response.deadlineResult.timedOut : undefined,
+    responseNotes: response.type === "generated" ? response.model.notes.length : undefined,
+    reviewHardConstraintsSatisfied:
+      response.type === "generated" ? response.reviewSnapshot.hardConstraintsSatisfied : undefined,
+    responseIssueCount: response.type === "generated" ? response.reviewSnapshot.issueCount : undefined,
+    responseWarningCount: response.type === "generated" ? response.reviewSnapshot.warningCount : undefined,
+  });
+
   if (response.requestId === activePrefetchGenerationRequestId) {
     handlePrefetchGenerationWorkerResponse(response);
     return;
@@ -609,6 +673,10 @@ function handlePrefetchGenerationWorkerResponse(response: GenerationWorkerRespon
   activePrefetchGenerationRequestId = undefined;
 
   if (response.type === "error") {
+    logEndlessDebug("prefetch-error", {
+      requestId: response.requestId,
+      responseSeed: response.seed,
+    });
     state = {
       ...state,
       nextSegmentStatus: "failed",
@@ -624,6 +692,19 @@ function handlePrefetchGenerationWorkerResponse(response: GenerationWorkerRespon
     deadlineResult: response.deadlineResult,
     reviewSnapshot: response.reviewSnapshot,
   };
+  logEndlessDebug("prefetch-ready", {
+    requestId: response.requestId,
+    responseSeed: response.seed,
+    responseSegmentIndex: response.deadlineResult.segmentIndex,
+    responseCandidateKind: response.deadlineResult.returnedCandidateKind,
+    responseElapsedMs: Math.round(response.deadlineResult.elapsedMs),
+    responseTimedOut: response.deadlineResult.timedOut,
+    responseNotes: response.model.notes.length,
+    reviewHardConstraintsSatisfied: response.reviewSnapshot.hardConstraintsSatisfied,
+    responseIssueCount: response.reviewSnapshot.issueCount,
+    responseWarningCount: response.reviewSnapshot.warningCount,
+    terminalClosureStatus: response.reviewSnapshot.terminalClosureStatus,
+  });
   state = {
     ...state,
     nextSegmentStatus: "ready",
@@ -645,29 +726,44 @@ function prefetchNextEndlessSegment(): void {
   const segmentIndex = Math.max(nextSegmentIndex, state.segmentIndex + 1);
   nextSegmentIndex = segmentIndex;
   const requestId = nextRequestId();
+  const playbackSecond = player?.playbackSecond ?? 0;
+  const deadlineMs = computeEndlessPrefetchDeadlineMs({
+    modelTotalSeconds: model.totalSeconds,
+    playbackSecond,
+    boundaryPauseMs: ENDLESS_BOUNDARY_PAUSE_MS,
+    minimumDeadlineMs: GENERATION_DEADLINE_MS,
+  });
+  const seed = nextSegmentSeed(state.seed, segmentIndex);
   activePrefetchGenerationRequestId = requestId;
   state = {
     ...state,
     nextSegmentStatus: "prefetching",
   };
   render(state);
+  logEndlessDebug("prefetch-request", {
+    requestId,
+    requestSeed: seed,
+    requestSegmentIndex: segmentIndex,
+    requestDeadlineMs: deadlineMs,
+    currentModelTotalSeconds: roundDebugSecond(model.totalSeconds),
+    currentPlaybackSecond: roundDebugSecond(playbackSecond),
+    currentModelNotes: model.notes.length,
+  });
   generationWorker.postMessage({
     requestId,
-    seed: nextSegmentSeed(state.seed, segmentIndex),
+    seed,
     performanceProfileId: state.performanceProfileId,
     lengthTicks: SCORE_LENGTH_TICKS,
-    deadlineMs: computeEndlessPrefetchDeadlineMs({
-      modelTotalSeconds: model.totalSeconds,
-      playbackSecond: player?.playbackSecond ?? 0,
-      boundaryPauseMs: ENDLESS_BOUNDARY_PAUSE_MS,
-      minimumDeadlineMs: GENERATION_DEADLINE_MS,
-    }),
+    deadlineMs,
     segmentIndex,
     mode: "endless-program",
   });
 }
 
 async function continueEndlessPlayback(): Promise<void> {
+  logEndlessDebug("boundary-start", {
+    boundaryPauseMs: ENDLESS_BOUNDARY_PAUSE_MS,
+  });
   transportStatus.textContent = "Segment boundary";
   renderTransportButtons();
   await delay(ENDLESS_BOUNDARY_PAUSE_MS);
@@ -675,6 +771,10 @@ async function continueEndlessPlayback(): Promise<void> {
   const nextSegment = await waitForPrefetchedSegment();
 
   if (!endlessChainActive || state.playbackMode !== "endless-program" || nextSegment === undefined) {
+    logEndlessDebug("chain-stop", {
+      endlessChainActive,
+      nextSegmentAvailable: nextSegment !== undefined,
+    });
     endlessChainActive = false;
     transportStatus.textContent = "Playback complete";
     renderTransportButtons();
@@ -686,6 +786,17 @@ async function continueEndlessPlayback(): Promise<void> {
 }
 
 function adoptPrefetchedSegment(segment: PrefetchedSegment): void {
+  logEndlessDebug("adopt-prefetch", {
+    adoptedSeed: segment.seed,
+    adoptedSegmentIndex: segment.deadlineResult.segmentIndex,
+    adoptedCandidateKind: segment.deadlineResult.returnedCandidateKind,
+    adoptedTimedOut: segment.deadlineResult.timedOut,
+    adoptedNotes: segment.model.notes.length,
+    reviewHardConstraintsSatisfied: segment.reviewSnapshot.hardConstraintsSatisfied,
+    responseIssueCount: segment.reviewSnapshot.issueCount,
+    responseWarningCount: segment.reviewSnapshot.warningCount,
+    terminalClosureStatus: segment.reviewSnapshot.terminalClosureStatus,
+  });
   prefetchedSegment = undefined;
   nextSegmentIndex = segment.deadlineResult.segmentIndex + 1;
   state = {
@@ -707,24 +818,41 @@ function adoptPrefetchedSegment(segment: PrefetchedSegment): void {
 
 function waitForPrefetchedSegment(): Promise<PrefetchedSegment | undefined> {
   if (prefetchedSegment !== undefined) {
+    logEndlessDebug("wait-prefetch-immediate", {
+      waitSegmentIndex: prefetchedSegment.deadlineResult.segmentIndex,
+      waitNotes: prefetchedSegment.model.notes.length,
+    });
     return Promise.resolve(prefetchedSegment);
   }
 
+  logEndlessDebug("wait-prefetch-start");
   return new Promise((resolve) => {
     const startedAtMs = performance.now();
     const interval = window.setInterval(() => {
       if (!endlessChainActive || state.playbackMode !== "endless-program" || state.nextSegmentStatus === "failed") {
         window.clearInterval(interval);
+        logEndlessDebug("wait-prefetch-abort", {
+          waitedMs: Math.round(performance.now() - startedAtMs),
+          endlessChainActive,
+        });
         resolve(undefined);
         return;
       }
       if (prefetchedSegment !== undefined) {
         window.clearInterval(interval);
+        logEndlessDebug("wait-prefetch-ready", {
+          waitedMs: Math.round(performance.now() - startedAtMs),
+          waitSegmentIndex: prefetchedSegment.deadlineResult.segmentIndex,
+          waitNotes: prefetchedSegment.model.notes.length,
+        });
         resolve(prefetchedSegment);
         return;
       }
       if (performance.now() - startedAtMs > GENERATION_DEADLINE_MS * 2) {
         window.clearInterval(interval);
+        logEndlessDebug("wait-prefetch-timeout", {
+          waitedMs: Math.round(performance.now() - startedAtMs),
+        });
         resolve(undefined);
       }
     }, 100);

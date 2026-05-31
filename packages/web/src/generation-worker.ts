@@ -32,13 +32,14 @@ workerScope.onmessage = (event) => {
     });
     const completedAtMs = performance.now();
     const hardConstraintsSatisfied = satisfiesGenerationHardConstraints(output);
+    const playbackBlockingConstraintsSatisfied = satisfiesPlaybackBlockingConstraints(output);
     const deadlineResult = planSegmentGenerationDeadlineResult({
       mode: request.mode ?? "continuous-fugue",
       segmentIndex: request.segmentIndex,
       startedAtMs,
       completedAtMs,
       deadlineMs: request.deadlineMs,
-      generatedCandidateSatisfiesHardConstraints: hardConstraintsSatisfied,
+      generatedCandidateSatisfiesHardConstraints: playbackBlockingConstraintsSatisfied,
       bestSoFarCandidateSatisfiesHardConstraints: false,
     });
     const playbackOutput = createGenerationWorkerPlaybackOutput(output, deadlineResult, request.lengthTicks);
@@ -82,6 +83,18 @@ function satisfiesGenerationHardConstraints(output: GenerationOutput): boolean {
     diagnostics.voiceCrossings === 0 &&
     diagnostics.subjectIdentityViolations === 0 &&
     diagnostics.answerPlanViolations === 0 &&
+    diagnostics.keyMetadataMismatches === 0 &&
+    diagnostics.unresolvedDissonanceCount === 0 &&
+    diagnostics.allVoiceSilenceGapCount === 0
+  );
+}
+
+function satisfiesPlaybackBlockingConstraints(output: GenerationOutput): boolean {
+  const diagnostics = output.diagnostics;
+
+  return (
+    diagnostics.rangeViolations === 0 &&
+    diagnostics.voiceCrossings === 0 &&
     diagnostics.keyMetadataMismatches === 0 &&
     diagnostics.unresolvedDissonanceCount === 0 &&
     diagnostics.allVoiceSilenceGapCount === 0
