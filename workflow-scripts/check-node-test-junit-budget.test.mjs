@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { parseJUnitTestCases, summarizeTestFileDurations } from "./check-node-test-junit-budget.mjs";
+import {
+  buildSlowTestFilesStepSummary,
+  parseJUnitTestCases,
+  summarizeTestFileDurations,
+} from "./check-node-test-junit-budget.mjs";
 
 test("aggregates JUnit durations by source test file", () => {
   const xml = [
@@ -46,4 +50,35 @@ test("normalizes dist testcase file paths to source test files", () => {
     parseJUnitTestCases(xml).map((testCase) => testCase.file),
     ["packages/core/src/generate.test.ts", "falls back from name"],
   );
+});
+
+test("formats slow test files as a refactor signal in the workflow summary", () => {
+  const testFiles = [
+    {
+      file: "packages/core/src/generate.test.ts",
+      seconds: 39.5,
+      testCases: [
+        {
+          file: "packages/core/src/generate.test.ts",
+          name: "slower batch",
+          seconds: 20,
+        },
+        {
+          file: "packages/core/src/generate.test.ts",
+          name: "second batch",
+          seconds: 19.5,
+        },
+      ],
+    },
+  ];
+
+  const summary = buildSlowTestFilesStepSummary({
+    maxSeconds: 35,
+    slowTestFiles: testFiles,
+    testFiles,
+  });
+
+  assert.match(summary, /id: `ci\.slow-test-files\.refactor-signal`/);
+  assert.match(summary, /This does not fail the workflow\./);
+  assert.match(summary, /\| packages\/core\/src\/generate\.test\.ts \| 39\.50s \| 2 \| slower batch: 20\.00s \|/);
 });
