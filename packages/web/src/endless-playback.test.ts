@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { computeEndlessPrefetchDeadlineMs } from "./endless-playback.js";
+import {
+  computeEndlessPrefetchDeadlineMs,
+  isSegmentChainingPlaybackMode,
+  segmentBoundaryPauseMs,
+} from "./endless-playback.js";
 
 test("endless prefetch deadline uses the remaining playback window", () => {
   assert.equal(
@@ -36,4 +40,14 @@ test("endless prefetch deadline clamps completed playback to the minimum", () =>
     }),
     10_000,
   );
+});
+
+test("continuous fugue participates in segment chaining without an audible boundary pause", () => {
+  assert.equal(isSegmentChainingPlaybackMode("continuous-fugue"), true);
+  assert.equal(segmentBoundaryPauseMs("continuous-fugue", 750), 0);
+});
+
+test("endless program keeps an audible segment boundary pause", () => {
+  assert.equal(isSegmentChainingPlaybackMode("endless-program"), true);
+  assert.equal(segmentBoundaryPauseMs("endless-program", 750), 750);
 });

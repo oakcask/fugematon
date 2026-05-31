@@ -7,7 +7,11 @@ import {
 import { listPerformanceProfiles, type PerformanceProfileId } from "@fugematon/performance";
 import "./style.css";
 import { ScorePlayer } from "./audio.js";
-import { computeEndlessPrefetchDeadlineMs } from "./endless-playback.js";
+import {
+  computeEndlessPrefetchDeadlineMs,
+  isSegmentChainingPlaybackMode,
+  segmentBoundaryPauseMs,
+} from "./endless-playback.js";
 import type { GenerationWorkerResponse, GenerationWorkerReviewSnapshot } from "./generation-worker-protocol.js";
 import { drawPianoRoll } from "./piano-roll.js";
 import {
@@ -25,7 +29,7 @@ const ENDLESS_DEBUG_VALUE = "endless";
 const DEBUG_STORAGE_KEY = "fugematon.debug";
 const SCORE_LENGTH_TICKS = FUGUE_FORM_REVIEW_LENGTH_TICKS;
 const GENERATION_DEADLINE_MS = 10_000;
-const ENDLESS_BOUNDARY_PAUSE_MS = 750;
+const AUDIBLE_BOUNDARY_PAUSE_MS = 750;
 
 type UrlUpdateMode = "push" | "replace" | "none";
 type GenerationStatus = "idle" | "generating" | "best-so-far-fallback" | "ready" | "failed";
@@ -217,7 +221,7 @@ let activePrefetchGenerationRequestId: number | undefined;
 let nextGenerationRequestId = 0;
 let nextSegmentIndex = 0;
 let prefetchedSegment: PrefetchedSegment | undefined;
-let endlessChainActive = false;
+let segmentChainActive = false;
 const generationWorker = new Worker(new URL("./generation-worker.ts", import.meta.url), { type: "module" });
 
 generationWorker.addEventListener("message", (event: MessageEvent<GenerationWorkerResponse>) => {
@@ -465,11 +469,13 @@ async function startPlayback(): Promise<void> {
 
     pausedAtSecond = 0;
     hasPausedPlayback = false;
-    endlessChainActive = state.playbackMode === "endless-program";
-    transportStatus.textContent = state.playbackMode === "endless-program" ? "Playing segment" : "Playing score";
+    segmentChainActive = isSegmentChainingPlaybackMode(state.playbackMode);
+    transportStatus.textContent = isSegmentChainingPlaybackMode(state.playbackMode)
+      ? "Playing segment"
+      : "Playing score";
     setPlaybackFeedback(true);
     renderTransportButtons();
-    prefetchNextEndlessSegment();
+    prefetchNextSegment();
     startVisualizerLoop();
   } catch (error) {
     if (!controller.signal.aborted) {
@@ -487,7 +493,7 @@ async function startPlayback(): Promise<void> {
 }
 
 function cancelPlayback(): void {
-  endlessChainActive = false;
+  segmentChainActive = false;
   playbackStartController?.abort();
   playbackStartController = undefined;
   player?.stop();
@@ -504,7 +510,7 @@ function pausePlayback(): void {
   }
 
   playbackStartController?.abort();
-  endlessChainActive = false;
+  segmentChainActive = false;
   playbackStartController = undefined;
   pausedAtSecond = player.pause();
   hasPausedPlayback = true;
@@ -540,8 +546,8 @@ function startVisualizerLoop(): void {
     setPlaybackFeedback(false);
     pausedAtSecond = 0;
     hasPausedPlayback = false;
-    if (endlessChainActive && state.playbackMode === "endless-program") {
-      void continueEndlessPlayback();
+    if (segmentChainActive && isSegmentChainingPlaybackMode(state.playbackMode)) {
+      void continueSegmentPlayback();
       return;
     }
 
@@ -712,9 +718,9 @@ function handlePrefetchGenerationWorkerResponse(response: GenerationWorkerRespon
   render(state);
 }
 
-function prefetchNextEndlessSegment(): void {
+function prefetchNextSegment(): void {
   if (
-    state.playbackMode !== "endless-program" ||
+    !isSegmentChainingPlaybackMode(state.playbackMode) ||
     state.model === undefined ||
     activePrefetchGenerationRequestId !== undefined ||
     prefetchedSegment !== undefined
@@ -730,7 +736,7 @@ function prefetchNextEndlessSegment(): void {
   const deadlineMs = computeEndlessPrefetchDeadlineMs({
     modelTotalSeconds: model.totalSeconds,
     playbackSecond,
-    boundaryPauseMs: ENDLESS_BOUNDARY_PAUSE_MS,
+    boundaryPauseMs: segmentBoundaryPauseMs(state.playbackMode, AUDIBLE_BOUNDARY_PAUSE_MS),
     minimumDeadlineMs: GENERATION_DEADLINE_MS,
   });
   const seed = nextSegmentSeed(state.seed, segmentIndex);
@@ -756,26 +762,27 @@ function prefetchNextEndlessSegment(): void {
     lengthTicks: SCORE_LENGTH_TICKS,
     deadlineMs,
     segmentIndex,
-    mode: "endless-program",
+    mode: state.playbackMode,
   });
 }
 
-async function continueEndlessPlayback(): Promise<void> {
-  logEndlessDebug("boundary-start", {
-    boundaryPauseMs: ENDLESS_BOUNDARY_PAUSE_MS,
-  });
-  transportStatus.textContent = "Segment boundary";
+async function continueSegmentPlayback(): Promise<void> {
+  const boundaryPauseMs = segmentBoundaryPauseMs(state.playbackMode, AUDIBLE_BOUNDARY_PAUSE_MS);
+  if (boundaryPauseMs > 0) {
+    transportStatus.textContent = "Segment boundary";
+    renderTransportButtons();
+    await delay(boundaryPauseMs);
+  }
   renderTransportButtons();
-  await delay(ENDLESS_BOUNDARY_PAUSE_MS);
-  prefetchNextEndlessSegment();
+  prefetchNextSegment();
   const nextSegment = await waitForPrefetchedSegment();
 
-  if (!endlessChainActive || state.playbackMode !== "endless-program" || nextSegment === undefined) {
+  if (!segmentChainActive || !isSegmentChainingPlaybackMode(state.playbackMode) || nextSegment === undefined) {
     logEndlessDebug("chain-stop", {
-      endlessChainActive,
+      segmentChainActive,
       nextSegmentAvailable: nextSegment !== undefined,
     });
-    endlessChainActive = false;
+    segmentChainActive = false;
     transportStatus.textContent = "Playback complete";
     renderTransportButtons();
     return;
@@ -802,7 +809,7 @@ function adoptPrefetchedSegment(segment: PrefetchedSegment): void {
   state = {
     seed: segment.seed,
     performanceProfileId: segment.performanceProfileId,
-    playbackMode: "endless-program",
+    playbackMode: segment.deadlineResult.mode,
     segmentIndex: segment.deadlineResult.segmentIndex,
     model: segment.model,
     generationStatus: "ready",
@@ -829,11 +836,15 @@ function waitForPrefetchedSegment(): Promise<PrefetchedSegment | undefined> {
   return new Promise((resolve) => {
     const startedAtMs = performance.now();
     const interval = window.setInterval(() => {
-      if (!endlessChainActive || state.playbackMode !== "endless-program" || state.nextSegmentStatus === "failed") {
+      if (
+        !segmentChainActive ||
+        !isSegmentChainingPlaybackMode(state.playbackMode) ||
+        state.nextSegmentStatus === "failed"
+      ) {
         window.clearInterval(interval);
         logEndlessDebug("wait-prefetch-abort", {
           waitedMs: Math.round(performance.now() - startedAtMs),
-          endlessChainActive,
+          segmentChainActive,
         });
         resolve(undefined);
         return;
