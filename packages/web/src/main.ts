@@ -1,10 +1,14 @@
-import { DEFAULT_SELECTION_MODEL, FUGUE_FORM_REVIEW_LENGTH_TICKS, generateScore } from "@fugematon/core";
+import {
+  FUGUE_FORM_REVIEW_LENGTH_TICKS,
+  planSegmentGenerationDeadlineResult,
+  type SegmentGenerationDeadlineResult,
+} from "@fugematon/core";
 import { listPerformanceProfiles, type PerformanceProfileId } from "@fugematon/performance";
 import "./style.css";
 import { ScorePlayer } from "./audio.js";
+import type { GenerationWorkerResponse, GenerationWorkerReviewSnapshot } from "./generation-worker-protocol.js";
 import { drawPianoRoll } from "./piano-roll.js";
 import {
-  createPlaybackModel,
   DEFAULT_WEB_PERFORMANCE_PROFILE_ID,
   formatKeySignature,
   formatPlaybackPosition,
@@ -15,18 +19,23 @@ import {
 const DEFAULT_SEED = "fugue-smoke";
 const URL_SEED_PARAM = "seed";
 const SCORE_LENGTH_TICKS = FUGUE_FORM_REVIEW_LENGTH_TICKS;
+const GENERATION_DEADLINE_MS = 10_000;
 
 type UrlUpdateMode = "push" | "replace" | "none";
+type GenerationStatus = "idle" | "generating" | "best-so-far-fallback" | "ready" | "failed";
 
 type AppState = {
   seed: string;
   performanceProfileId: PerformanceProfileId;
-  model: PlaybackModel;
+  model?: PlaybackModel;
+  generationStatus: GenerationStatus;
+  deadlineResult?: SegmentGenerationDeadlineResult;
+  reviewSnapshot?: GenerationWorkerReviewSnapshot;
 };
 
 const app = requireElement(document.querySelector<HTMLDivElement>("#app"), "app root");
 
-let state = createState(readUrlSeed(DEFAULT_SEED));
+let state = createPendingState(readUrlSeed(DEFAULT_SEED));
 
 app.innerHTML = `
   <section class="shell">
@@ -74,6 +83,10 @@ app.innerHTML = `
         <span class="metric-label">Entries</span>
         <strong id="entries"></strong>
       </div>
+      <div>
+        <span class="metric-label">Generation</span>
+        <strong id="generation-status"></strong>
+      </div>
     </section>
     <section class="transport-card" aria-label="Playback controls">
       <div class="transport-summary">
@@ -109,6 +122,10 @@ const notes = requireElement(document.querySelector<HTMLElement>("#notes"), "not
 const pitchSpan = requireElement(document.querySelector<HTMLElement>("#pitch-span"), "pitch span metric");
 const states = requireElement(document.querySelector<HTMLElement>("#states"), "states metric");
 const entries = requireElement(document.querySelector<HTMLElement>("#entries"), "entries metric");
+const generationStatus = requireElement(
+  document.querySelector<HTMLElement>("#generation-status"),
+  "generation status metric",
+);
 const playPauseButton = requireElement(document.querySelector<HTMLButtonElement>("#play-pause"), "play/pause button");
 const stopButton = requireElement(document.querySelector<HTMLButtonElement>("#stop"), "stop button");
 const transportStatus = requireElement(document.querySelector<HTMLElement>("#transport-status"), "transport status");
@@ -121,15 +138,24 @@ for (const profile of listPerformanceProfiles()) {
 }
 performanceProfileSelect.value = state.performanceProfileId;
 render(state);
-drawPianoRoll(pianoRoll, state.model, 0);
 renderPlaybackPosition(0);
-writeUrlSeed(state.seed, "replace");
 
 let player: ScorePlayer | undefined;
 let animationFrame: number | undefined;
 let playbackStartController: AbortController | undefined;
 let pausedAtSecond = 0;
+let hasPausedPlayback = false;
+let generationTimeout: number | undefined;
+let activeGenerationRequestId = 0;
+let nextSegmentIndex = 0;
+const generationWorker = new Worker(new URL("./generation-worker.ts", import.meta.url), { type: "module" });
+
+generationWorker.addEventListener("message", (event: MessageEvent<GenerationWorkerResponse>) => {
+  handleGenerationWorkerResponse(event.data);
+});
+
 renderTransportButtons();
+regenerateScore(state.seed, "replace");
 
 seedForm.addEventListener("submit", (event) => {
   event.preventDefault();
@@ -151,12 +177,18 @@ playPauseButton.addEventListener("click", () => {
 
 stopButton.addEventListener("click", () => {
   cancelPlayback();
-  drawPianoRoll(pianoRoll, state.model, 0);
+  if (state.model !== undefined) {
+    drawPianoRoll(pianoRoll, state.model, 0);
+  }
   renderPlaybackPosition(0);
   transportStatus.textContent = "Playback stopped";
 });
 
 window.addEventListener("resize", () => {
+  if (state.model === undefined) {
+    return;
+  }
+
   const playbackSecond = player?.playbackSecond ?? 0;
   drawPianoRoll(pianoRoll, state.model, playbackSecond);
   renderPlaybackPosition(playbackSecond);
@@ -175,12 +207,32 @@ function regenerateScore(seed: string, urlUpdateMode: UrlUpdateMode = "push"): v
 
   seedInput.value = nextSeed;
   cancelPlayback();
-  state = createState(nextSeed, performanceProfileSelect.value as PerformanceProfileId);
+  activeGenerationRequestId += 1;
+  const requestId = activeGenerationRequestId;
+  const segmentIndex = nextSegmentIndex;
+  const performanceProfileId = performanceProfileSelect.value as PerformanceProfileId;
+  state = {
+    seed: nextSeed,
+    performanceProfileId,
+    model: state.model,
+    generationStatus: "generating",
+  };
   render(state);
-  drawPianoRoll(pianoRoll, state.model, 0);
+  if (state.model !== undefined) {
+    drawPianoRoll(pianoRoll, state.model, 0);
+  }
   renderPlaybackPosition(0);
-  transportStatus.textContent = "Ready to play";
+  transportStatus.textContent = "Generating score";
   writeUrlSeed(nextSeed, urlUpdateMode);
+  queueGenerationFallback(requestId, segmentIndex);
+  generationWorker.postMessage({
+    requestId,
+    seed: nextSeed,
+    performanceProfileId,
+    lengthTicks: SCORE_LENGTH_TICKS,
+    deadlineMs: GENERATION_DEADLINE_MS,
+    segmentIndex,
+  });
 }
 
 function createRandomSeed(): string {
@@ -189,17 +241,14 @@ function createRandomSeed(): string {
   return `seed-${Array.from(values, (value) => value.toString(36).padStart(7, "0")).join("-")}`;
 }
 
-function createState(
+function createPendingState(
   seed: string,
   performanceProfileId: PerformanceProfileId = DEFAULT_WEB_PERFORMANCE_PROFILE_ID,
 ): AppState {
   return {
     seed,
     performanceProfileId,
-    model: createPlaybackModel(
-      generateScore({ seed, lengthTicks: SCORE_LENGTH_TICKS, selectionModel: DEFAULT_SELECTION_MODEL }),
-      performanceProfileId,
-    ),
+    generationStatus: "idle",
   };
 }
 
@@ -231,20 +280,34 @@ function writeUrlSeed(seed: string, mode: UrlUpdateMode): void {
 }
 
 function render(nextState: AppState): void {
-  tempo.textContent = `${nextState.model.bpm} bpm`;
-  meter.textContent = formatTimeSignature(nextState.model.timeSignature);
-  keySignature.textContent = formatKeySignature(nextState.model.keySignature);
-  notes.textContent = `${nextState.model.notes.length}`;
-  pitchSpan.textContent = `${nextState.model.pitchRange.min}-${nextState.model.pitchRange.max}`;
-  states.textContent = `${new Set(nextState.model.stateTransitions).size}`;
-  entries.textContent = `${nextState.model.subjectEntries.length}`;
+  const model = nextState.model;
+
+  tempo.textContent = model === undefined ? "..." : `${model.bpm} bpm`;
+  meter.textContent = model === undefined ? "..." : formatTimeSignature(model.timeSignature);
+  keySignature.textContent = model === undefined ? "..." : formatKeySignature(model.keySignature);
+  notes.textContent = model === undefined ? "..." : `${model.notes.length}`;
+  pitchSpan.textContent = model === undefined ? "..." : `${model.pitchRange.min}-${model.pitchRange.max}`;
+  states.textContent = model === undefined ? "..." : `${new Set(model.stateTransitions).size}`;
+  entries.textContent = model === undefined ? "..." : `${model.subjectEntries.length}`;
+  generationStatus.textContent = formatGenerationStatus(nextState);
 }
 
 function renderPlaybackPosition(playbackSecond: number): void {
+  if (state.model === undefined) {
+    playbackPosition.textContent = "0s / pending";
+    return;
+  }
+
   playbackPosition.textContent = formatPlaybackPosition(playbackSecond, state.model);
 }
 
 async function startPlayback(): Promise<void> {
+  if (state.model === undefined) {
+    transportStatus.textContent = "Waiting for generated score";
+    renderTransportButtons();
+    return;
+  }
+
   const controller = new AbortController();
   const offsetSecond = pausedAtSecond;
   playbackStartController?.abort();
@@ -255,12 +318,14 @@ async function startPlayback(): Promise<void> {
 
   try {
     player ??= new ScorePlayer();
-    const started = await player.play(state.model, { offsetSecond, signal: controller.signal });
+    const model = state.model;
+    const started = await player.play(model, { offsetSecond, signal: controller.signal });
     if (!started || controller.signal.aborted) {
       return;
     }
 
     pausedAtSecond = 0;
+    hasPausedPlayback = false;
     transportStatus.textContent = "Playing score";
     setPlaybackFeedback(true);
     renderTransportButtons();
@@ -285,6 +350,7 @@ function cancelPlayback(): void {
   playbackStartController = undefined;
   player?.stop();
   pausedAtSecond = 0;
+  hasPausedPlayback = false;
   cancelVisualizerLoop();
   setPlaybackFeedback(false);
   renderTransportButtons();
@@ -298,9 +364,12 @@ function pausePlayback(): void {
   playbackStartController?.abort();
   playbackStartController = undefined;
   pausedAtSecond = player.pause();
+  hasPausedPlayback = true;
   cancelVisualizerLoop();
   setPlaybackFeedback(false);
-  drawPianoRoll(pianoRoll, state.model, pausedAtSecond);
+  if (state.model !== undefined) {
+    drawPianoRoll(pianoRoll, state.model, pausedAtSecond);
+  }
   renderPlaybackPosition(pausedAtSecond);
   transportStatus.textContent = "Playback paused";
   renderTransportButtons();
@@ -310,6 +379,11 @@ function startVisualizerLoop(): void {
   cancelVisualizerLoop();
 
   const drawFrame = () => {
+    if (state.model === undefined) {
+      animationFrame = undefined;
+      return;
+    }
+
     const playbackSecond = player?.playbackSecond ?? 0;
     drawPianoRoll(pianoRoll, state.model, playbackSecond);
     renderPlaybackPosition(playbackSecond);
@@ -322,6 +396,7 @@ function startVisualizerLoop(): void {
     animationFrame = undefined;
     setPlaybackFeedback(false);
     pausedAtSecond = 0;
+    hasPausedPlayback = false;
     transportStatus.textContent = "Playback complete";
     renderTransportButtons();
   };
@@ -343,8 +418,109 @@ function setPlaybackFeedback(isPlaying: boolean): void {
 function renderTransportButtons(): void {
   const isStarting = playbackStartController !== undefined;
   const isPlaying = player?.isPlaying ?? false;
-  playPauseButton.disabled = isStarting;
+  playPauseButton.disabled = isStarting || state.model === undefined;
   playPauseButton.textContent = isStarting ? "Starting" : renderPlayPauseLabel(isPlaying);
+}
+
+function queueGenerationFallback(requestId: number, segmentIndex: number): void {
+  if (generationTimeout !== undefined) {
+    window.clearTimeout(generationTimeout);
+  }
+
+  generationTimeout = window.setTimeout(() => {
+    generationTimeout = undefined;
+
+    if (requestId !== activeGenerationRequestId || state.model === undefined) {
+      return;
+    }
+
+    state = {
+      ...state,
+      generationStatus: "best-so-far-fallback",
+      deadlineResult: planSegmentGenerationDeadlineResult({
+        mode: "continuous-fugue",
+        segmentIndex,
+        startedAtMs: 0,
+        completedAtMs: GENERATION_DEADLINE_MS + 1,
+        deadlineMs: GENERATION_DEADLINE_MS,
+        generatedCandidateSatisfiesHardConstraints: false,
+        bestSoFarCandidateSatisfiesHardConstraints: true,
+      }),
+    };
+    render(state);
+    transportStatus.textContent = "Using best-so-far while generation finishes";
+    renderTransportButtons();
+  }, GENERATION_DEADLINE_MS);
+}
+
+function handleGenerationWorkerResponse(response: GenerationWorkerResponse): void {
+  if (response.requestId !== activeGenerationRequestId) {
+    return;
+  }
+
+  if (generationTimeout !== undefined) {
+    window.clearTimeout(generationTimeout);
+    generationTimeout = undefined;
+  }
+
+  if (response.type === "error") {
+    state = {
+      ...state,
+      generationStatus: "failed",
+    };
+    render(state);
+    transportStatus.textContent = response.message;
+    renderTransportButtons();
+    return;
+  }
+
+  nextSegmentIndex = response.deadlineResult.segmentIndex + 1;
+  const preserveBestSoFarModel =
+    state.generationStatus === "best-so-far-fallback" &&
+    state.model !== undefined &&
+    response.deadlineResult.returnedCandidateKind === "conservative-fallback";
+  const model = preserveBestSoFarModel ? (state.model ?? response.model) : response.model;
+  const generationStatus = preserveBestSoFarModel ? "best-so-far-fallback" : "ready";
+
+  state = {
+    seed: response.seed,
+    performanceProfileId: response.performanceProfileId,
+    model,
+    generationStatus,
+    deadlineResult: response.deadlineResult,
+    reviewSnapshot: response.reviewSnapshot,
+  };
+  seedInput.value = response.seed;
+  render(state);
+  drawPianoRoll(pianoRoll, model, 0);
+  renderPlaybackPosition(0);
+  transportStatus.textContent = preserveBestSoFarModel ? "Keeping best-so-far after deadline" : "Ready to play";
+  renderTransportButtons();
+}
+
+function formatGenerationStatus(nextState: AppState): string {
+  switch (nextState.generationStatus) {
+    case "idle":
+      return "Pending worker";
+    case "generating":
+      return "Worker running";
+    case "best-so-far-fallback":
+      return "Best-so-far fallback";
+    case "failed":
+      return "Failed";
+    case "ready":
+      return formatReadyGenerationStatus(nextState);
+  }
+}
+
+function formatReadyGenerationStatus(nextState: AppState): string {
+  if (nextState.deadlineResult === undefined) {
+    return "Ready";
+  }
+
+  const candidate = nextState.deadlineResult.returnedCandidateKind;
+  const elapsed = Math.round(nextState.deadlineResult.elapsedMs);
+  return `${candidate}, ${elapsed} ms`;
 }
 
 function renderPlayPauseLabel(isPlaying: boolean): string {
@@ -352,7 +528,7 @@ function renderPlayPauseLabel(isPlaying: boolean): string {
     return "Pause";
   }
 
-  return pausedAtSecond > 0 ? "Resume" : "Play";
+  return hasPausedPlayback ? "Resume" : "Play";
 }
 
 function requireElement<TElement extends Element>(element: TElement | null, name: string): TElement {

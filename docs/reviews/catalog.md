@@ -4,6 +4,7 @@
 
 ## Current Quality Lane
 
+* [Phase 9 completion review](phase-9-completion-review.md): 完了 evidence。Dedicated Web Worker generation、deadline / fallback recording、long-run replay / state-change / boundary history、Web UI best-so-far fallback を operational contract として記録する。
 * [WebAudio synth interpretation completion review](webaudio-synth-interpretation-completion.md): 完了 evidence。TARGET baseline と現行 `organ-default` / `strict-counterpoint` 22 seed review bundle が一致し、WebAudio envelope / velocity 解釈を rendering change として閉じる。
 * [Phase 8 completion review](phase-8-completion-review.md): Infinite playback MVP の完了 evidence。TARGET baseline と現行 22 seed review bundle の ScoreEvent / MIDI / diagnostics / summary が一致し、3 再生モード semantics と segment snapshot contract が review signal を隠さないことを記録する。
 * [Harmonic stasis rearticulation repair completion](harmonic-stasis-rearticulation-completion.md): 完了 evidence。same-voice short rearticulation と harmonic stasis を diagnostics、candidate scoring、final support repair、focused / standard seed evidence として記録する。
