@@ -1,5 +1,7 @@
 # WebAudio synth interpretation follow-up
 
+Status: complete. Completion evidence is recorded in [WebAudio synth interpretation completion review](../reviews/webaudio-synth-interpretation-completion.md).
+
 This follow-up runs after [Infinite playback MVP](phase-8.md). It refines how WebAudio interprets `PerformanceProfile` for synth playback without changing generated `ScoreEvent` output, generator scoring, quality diagnostics thresholds, or `generatorVersion`.
 
 ## Rationale
@@ -38,6 +40,13 @@ This is a rendering follow-up, not a score-continuity repair. If voices stop, re
 5. Add focused playback-review notes for bass subject and bass answer windows under `organ-default` and `strict-counterpoint`.
 6. Keep MIDI export deterministic and avoid writing synth-specific envelope semantics into standard MIDI unless a portable representation is deliberately introduced.
 
+## Implementation Notes
+
+* `organ-default` and `strict-counterpoint` version 3 add profile-owned WebAudio synth envelope settings.
+* WebAudio scheduling now derives separate attack peak and sustain gain from the profile instead of using score velocity as direct sustained gain.
+* `listening-review.json` schema version 2 records the performance profile id/version and adds focused bass subject/answer balance notes for `organ-default` and `strict-counterpoint`.
+* Automated coverage checks profile-owned synth settings, envelope timing, attack/sustain velocity separation, score-event immutability through performance conversion, and removal of the old direct playback `releaseSeconds` field.
+
 ## Completion Conditions
 
 * WebAudio playback no longer maps velocity linearly to sustained gain for the default synth profile.
@@ -46,3 +55,5 @@ This is a rendering follow-up, not a score-continuity repair. If voices stop, re
 * Generated `ScoreEvent` output, diagnostics, and quality-vector values are unchanged for representative review seeds.
 * Review artifacts identify the performance profile id and version used for any listening comparison.
 * The implementation notes classify accepted changes as rendering changes, not generation changes.
+
+The completion review regenerated the 22 seed `organ-default` and `strict-counterpoint` bundles at `129600` ticks and compared them with the TARGET baseline under `samples/webaudio-synth-interpretation-current`. Both profile comparisons produced no file differences. Focused scheduling review confirms the default synth now separates bass subject/answer attack emphasis from reduced sustain, while `strict-counterpoint` keeps score-level attacks and clashes exposed. Human listening remains a manual-listening gap, but the rendering follow-up no longer blocks the next target.

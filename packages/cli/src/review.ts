@@ -64,7 +64,7 @@ export async function writeReviewBundle(
   const performanceProfile = performanceProfileMetadata(getPerformanceProfile(performanceProfileId));
   const summarySeeds: ReviewSummarySeed[] = [];
   const referenceComparisons: ReferenceDiagnosticsComparison[] = [];
-  const listeningReview = createListeningReview(lengthTicks);
+  const listeningReview = createListeningReview(lengthTicks, performanceProfile);
   const pairwisePreferences = createPairwisePreferences(lengthTicks, performanceProfile);
 
   for (const { seed, category } of [...REPRESENTATIVE_REVIEW_SEEDS, ...ROTATION_REVIEW_SEEDS]) {
@@ -372,14 +372,18 @@ type ListeningCriterion =
   | "nonEntryVoiceSingability"
   | "episodeMomentum"
   | "strettoTension"
-  | "longRunInterest";
+  | "longRunInterest"
+  | "bassSubjectAnswerBalance"
+  | "scoreClashExposure";
 
 type ListeningReview = {
-  schemaVersion: 1;
+  schemaVersion: 2;
   lengthTicks: number;
+  performanceProfile: PerformanceProfileMetadata;
   judgementScale: readonly ["pass", "needs-work", "fail", "not-reviewed"];
   criteria: Record<ListeningCriterion, string>;
   regressionChecks: readonly string[];
+  focusedPlaybackNotes: readonly string[];
   seeds: ListeningSeedReview[];
 };
 
@@ -877,10 +881,11 @@ function roundRatio(value: number): number {
   return Math.round(value * 1000) / 1000;
 }
 
-function createListeningReview(lengthTicks: number): ListeningReview {
+function createListeningReview(lengthTicks: number, performanceProfile: PerformanceProfileMetadata): ListeningReview {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     lengthTicks,
+    performanceProfile,
     judgementScale: ["pass", "needs-work", "fail", "not-reviewed"],
     criteria: {
       subjectMemorability: "The subject remains recognizable after the exposition and returns.",
@@ -889,6 +894,10 @@ function createListeningReview(lengthTicks: number): ListeningReview {
       episodeMomentum: "Episodes move toward the next local key, cadence, or subject return.",
       strettoTension: "Stretto-like sections increase tension without obscuring the subject contour.",
       longRunInterest: "The seed avoids mechanical repetition or fatigue over the full review length.",
+      bassSubjectAnswerBalance:
+        "Bass subject and answer attacks speak clearly while sustained bass support avoids persistent alto and tenor masking.",
+      scoreClashExposure:
+        "Profile rendering still exposes entry clashes, lockstep, unisons, and articulation problems as score-level review signals.",
     },
     regressionChecks: [
       "fugue-smoke exposition entries are staggered instead of all voices entering at once.",
@@ -898,7 +907,10 @@ function createListeningReview(lengthTicks: number): ListeningReview {
       "fugue-smoke ornaments have audible placement reasons near entries, cadences, or held notes.",
       "fugue-smoke has no unexplained all-voice silence gaps.",
       "fugue-smoke first soprano answer avoids unstable seconds, unsupported fourths, and answer-root conflicts.",
+      "Bass subject and answer windows remain audible without long bass sustain persistently masking middle voices.",
+      "strict-counterpoint exposes score-level attacks and clashes instead of smoothing them into the envelope.",
     ],
+    focusedPlaybackNotes: focusedPlaybackNotes(performanceProfile),
     seeds: [],
   };
 }
@@ -922,10 +934,26 @@ function createListeningSeedReview(
       episodeMomentum: "not-reviewed",
       strettoTension: "not-reviewed",
       longRunInterest: "not-reviewed",
+      bassSubjectAnswerBalance: "not-reviewed",
+      scoreClashExposure: "not-reviewed",
     },
     notes: "",
     blockers: manualListeningBlockers(category, "not-reviewed"),
   };
+}
+
+function focusedPlaybackNotes(performanceProfile: PerformanceProfileMetadata): string[] {
+  if (performanceProfile.id === "strict-counterpoint") {
+    return [
+      "Use strict-counterpoint to inspect whether bass subject and answer attacks reveal entry timing, severe intervals, and articulation resets.",
+      "Do not mark smoothness as a pass signal here; unresolved clashes and lockstep remain score-level blockers.",
+    ];
+  }
+
+  return [
+    "Use organ-default to inspect whether bass subject and answer attacks speak without sustained bass masking alto and tenor continuity.",
+    "Treat any hidden entry-boundary reset, thinning, lockstep, or unison as a score-level blocker rather than a synth pass.",
+  ];
 }
 
 function createPairwisePreferences(
@@ -1021,6 +1049,8 @@ function createUnreviewedListeningCriteria(): Record<ListeningCriterion, "not-re
     episodeMomentum: "not-reviewed",
     strettoTension: "not-reviewed",
     longRunInterest: "not-reviewed",
+    bassSubjectAnswerBalance: "not-reviewed",
+    scoreClashExposure: "not-reviewed",
   };
 }
 

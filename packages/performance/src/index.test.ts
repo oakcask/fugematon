@@ -21,13 +21,15 @@ test("scoreToPerformanceEvents resolves deterministic default performance events
   assert.ok(first.some((event) => event.role === "free-counterpoint"));
   assert.ok(first.every((event) => event.durationTicks > 0));
   assert.ok(first.every((event) => event.velocity >= 1 && event.velocity <= 127));
+  assert.ok(first.every((event) => Object.hasOwn(event, "webAudioSynth")));
+  assert.ok(first.every((event) => !Object.hasOwn(event, "releaseSeconds")));
 });
 
 test("default profile keeps current voice mapping metadata", () => {
   const profile = getPerformanceProfile(DEFAULT_PERFORMANCE_PROFILE_ID);
   const metadata = performanceProfileMetadata(profile);
 
-  assert.deepEqual(metadata, { id: "organ-default", version: 2 });
+  assert.deepEqual(metadata, { id: "organ-default", version: 3 });
   assert.equal(profile.voices.soprano.channel, 0);
   assert.equal(profile.voices.alto.channel, 1);
   assert.equal(profile.voices.tenor.channel, 2);
@@ -42,10 +44,31 @@ test("default profile keeps current voice mapping metadata", () => {
   assert.deepEqual(profile.voices.alto.velocityCurve, { kind: "linear", scale: 1, minimum: 64, maximum: 112 });
 });
 
+test("profiles own WebAudio synth envelope interpretation", () => {
+  const organDefault = getPerformanceProfile("organ-default");
+  const strictCounterpoint = getPerformanceProfile("strict-counterpoint");
+
+  assert.ok(organDefault.voices.bass.webAudioSynth.attackSeconds > 0);
+  assert.ok(
+    organDefault.voices.bass.webAudioSynth.decaySeconds > organDefault.voices.soprano.webAudioSynth.attackSeconds,
+  );
+  assert.ok(
+    organDefault.voices.bass.webAudioSynth.sustainLevel < strictCounterpoint.voices.bass.webAudioSynth.sustainLevel,
+  );
+  assert.ok(
+    organDefault.voices.bass.webAudioSynth.velocityToSustainGain <
+      strictCounterpoint.voices.bass.webAudioSynth.velocityToSustainGain,
+  );
+  assert.ok(
+    organDefault.voices.bass.webAudioSynth.velocityToAttackEmphasis >
+      organDefault.voices.bass.webAudioSynth.velocityToSustainGain,
+  );
+});
+
 test("profile registry exposes reviewable profile ids", () => {
   assert.deepEqual(listPerformanceProfiles(), [
-    { id: "organ-default", version: 2 },
-    { id: "strict-counterpoint", version: 2 },
+    { id: "organ-default", version: 3 },
+    { id: "strict-counterpoint", version: 3 },
   ]);
 });
 
@@ -57,4 +80,14 @@ test("default profile keeps quiet support notes audible", () => {
   );
 
   assert.equal(quietSupport?.velocity, 64);
+});
+
+test("performance conversion does not mutate generated score events", () => {
+  const score = generateScore({ seed: "bach-001", lengthTicks: 7680 });
+  const before = structuredClone(score.events);
+
+  scoreToPerformanceEvents({ events: score.events, seed: score.diagnostics.seed, profile: "organ-default" });
+  scoreToPerformanceEvents({ events: score.events, seed: score.diagnostics.seed, profile: "strict-counterpoint" });
+
+  assert.deepEqual(score.events, before);
 });

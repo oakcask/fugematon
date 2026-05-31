@@ -17,7 +17,7 @@
 * [Episode motivic development](episode-motivic-development.md): 完了済み品質 blocker。Historical reference calibration 後に、自由唱と episode を generic filler ではなく主題・応答・対主題から導かれる motivic development として扱った。
 * [Score-led beauty handoff](phase-14.md): 完了済み品質 blocker。旧 Phase 14。`fugue-smoke` 第5小節の transition rhythm と第7小節の short-episode harmonic-continuity を、Infinite playback MVP の前に generalized score-window repair として扱った。
 * [Historical reference calibration](historical-reference-calibration.md): 完了済み品質 blocker。探索的な Bach WTC diagnostics と現行生成 bundle の比較から、persistent voice-pair coupling、long pitch-class reinforcement、entry severe-interval pressure を Infinite playback MVP の前に扱った。
-* [WebAudio synth interpretation follow-up](webaudio-synth-interpretation.md): Infinite playback MVP 後の rendering follow-up。`PerformanceProfile` の WebAudio envelope / velocity 解釈を調整し、生成譜面の欠陥を隠さず長時間再生の聴き取りやすさを改善する。
+* [WebAudio synth interpretation follow-up](webaudio-synth-interpretation.md): 完了済み rendering follow-up。`PerformanceProfile` の WebAudio envelope / velocity 解釈を調整し、生成譜面の欠陥を隠さず長時間再生の聴き取りやすさを改善した。完了 evidence は [WebAudio synth interpretation completion review](../reviews/webaudio-synth-interpretation-completion.md) を読む。
 * [Texture continuity repair](texture-continuity-repair.md): 完了済み品質 blocker。`seed-0i335vx-1n54a1x` の5小節目、9小節目、28小節目で確認した bass-answer tail thinning、exposed free-counterpoint solo、退屈な solo formula を Infinite playback MVP の前に扱った。
 * [Metrical generation repair](metrical-generation-repair.md): 完了済み handoff baseline。3/4 や 6/8 の time-signature metadata を generator、scoring、diagnostics へ接続し、譜面の拍子と聴感上の拍節感を揃えた品質 lane。
 * [Quality-first reorg](phase-7-plus-reorg.md): Phase 12 以降の品質優先再編と Phase 8/9 defer の理由。

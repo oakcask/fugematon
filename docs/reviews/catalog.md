@@ -4,6 +4,7 @@
 
 ## Current Quality Lane
 
+* [WebAudio synth interpretation completion review](webaudio-synth-interpretation-completion.md): 完了 evidence。TARGET baseline と現行 `organ-default` / `strict-counterpoint` 22 seed review bundle が一致し、WebAudio envelope / velocity 解釈を rendering change として閉じる。
 * [Phase 8 completion review](phase-8-completion-review.md): Infinite playback MVP の完了 evidence。TARGET baseline と現行 22 seed review bundle の ScoreEvent / MIDI / diagnostics / summary が一致し、3 再生モード semantics と segment snapshot contract が review signal を隠さないことを記録する。
 * [Harmonic stasis rearticulation repair completion](harmonic-stasis-rearticulation-completion.md): 完了 evidence。same-voice short rearticulation と harmonic stasis を diagnostics、candidate scoring、final support repair、focused / standard seed evidence として記録する。
 * [Harmonic stasis rearticulation replan](harmonic-stasis-rearticulation-replan.md): 計画根拠。`seed-07mwf08-1te3e2o` の first bass answer 後、`seed-1db5j19-1nhjtae` の functional-support 後処理、`seed-1syy921-0025pp1` の first-episode handoff で確認した同音連打、和声停滞、continuity false acceptance を Phase 8 前 blocker として扱う。
