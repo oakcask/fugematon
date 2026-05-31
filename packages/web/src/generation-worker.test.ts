@@ -33,6 +33,11 @@ test("generation worker returns a playback model with deadline and review signal
   assert.equal(response.deadlineResult.qualityVectorPreserved, true);
   assert.ok(response.deadlineResult.reviewSignalsRemainVisible.length > 0);
   assert.equal(response.deadlineResult.hardConstraintSatisfied, true);
+  assert.equal(response.nextSegmentSnapshot.segmentIndex, 7);
+  assert.match(
+    response.reviewSnapshot.continuousSegmentContinuityStatus,
+    /^(accepted-continuation|prepared-subject-return|prepared-stretto|developmental-episode|review-required-reexposition|generator-response-required-reset)$/,
+  );
   assert.equal(
     response.reviewSnapshot.hardConstraintsSatisfied,
     response.deadlineResult.returnedCandidateKind === "generated",
@@ -45,6 +50,36 @@ test("generation worker returns a playback model with deadline and review signal
     response.reviewSnapshot.terminalClosureStatus,
     /^(not-required|accepted|review-required|generator-response-required)$/,
   );
+});
+
+test("generation worker passes continuous-fugue snapshots into continuation generation", async () => {
+  const first = await dispatchWorkerRequest({
+    requestId: 45,
+    seed: "fugue-smoke",
+    performanceProfileId: "strict-counterpoint",
+    lengthTicks: 7680,
+    deadlineMs: 60_000,
+    segmentIndex: 0,
+    mode: "continuous-fugue",
+  });
+  assert.equal(first.type, "generated");
+
+  const second = await dispatchWorkerRequest({
+    requestId: 46,
+    seed: "fugue-smoke",
+    performanceProfileId: "strict-counterpoint",
+    lengthTicks: 7680,
+    deadlineMs: 60_000,
+    segmentIndex: 1,
+    mode: "continuous-fugue",
+    previousSegmentSnapshot: first.nextSegmentSnapshot,
+  });
+
+  assert.equal(second.type, "generated");
+  assert.equal(second.seed, "fugue-smoke");
+  assert.equal(second.nextSegmentSnapshot.segmentIndex, 1);
+  assert.notEqual(second.model.stateTransitions[0], "exposition");
+  assert.notEqual(second.reviewSnapshot.continuousSegmentContinuityStatus, "generator-response-required-reset");
 });
 
 test("generation worker preserves endless-program mode in deadline records", async () => {

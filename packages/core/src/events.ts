@@ -209,7 +209,9 @@ export function normalizeSelectionModel(selectionModel: SelectionModel): Current
 export type GenerationInput = {
   seed: string;
   lengthTicks: number;
+  segmentIndex?: number;
   selectionModel?: SelectionModel;
+  previousSegmentSnapshot?: import("./infinite-playback.js").SegmentSnapshot;
   mode?:
     | "continuous-fugue"
     | "endless-program"
@@ -217,6 +219,37 @@ export type GenerationInput = {
     | "continuous fugue"
     | "endless program"
     | "regenerative cycle";
+};
+
+export type ContinuousSegmentContinuityClassification =
+  | "accepted-continuation"
+  | "prepared-subject-return"
+  | "prepared-stretto"
+  | "developmental-episode"
+  | "review-required-reexposition"
+  | "generator-response-required-reset";
+
+export type ContinuousSegmentContinuityEntrySummary = {
+  voice: Voice;
+  form: EntryForm;
+  state: FugueState;
+  startTick: number;
+};
+
+export type ContinuousSegmentContinuitySummary = {
+  schemaVersion: 1;
+  segmentIndex: number;
+  boundaryTick: number;
+  previousTailState?: FugueState;
+  nextFirstState?: FugueState;
+  firstEntries: ContinuousSegmentContinuityEntrySummary[];
+  entryOrderSimilarityToInitialExposition: number;
+  carriedSubjectFamily: boolean;
+  tonalRegionContinuous: boolean;
+  densityContinuity: boolean;
+  pianoRollSessionTimelineContinuous: boolean;
+  classification: ContinuousSegmentContinuityClassification;
+  reasons: string[];
 };
 
 export type DiagnosticIssueCode =
@@ -1476,6 +1509,7 @@ export type GenerationDiagnostics = {
   transitionRhythmReview: TransitionRhythmReviewSummary;
   scoreWindowAcceptance: ScoreWindowAcceptanceSummary;
   terminalClosureReview: TerminalClosureReviewSummary;
+  continuousSegmentContinuity: ContinuousSegmentContinuitySummary;
   ornamentCandidateCount: number;
   ornamentDensity: number;
   ornamentPlacementReasons: OrnamentPlacementReasons;
@@ -1510,4 +1544,5 @@ export type GenerationDiagnostics = {
 export type GenerationOutput = {
   events: ScoreEvent[];
   diagnostics: GenerationDiagnostics;
+  nextSegmentSnapshot: import("./infinite-playback.js").SegmentSnapshot;
 };

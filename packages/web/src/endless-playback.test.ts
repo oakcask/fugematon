@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  adoptedSegmentSessionSeed,
   computeEndlessPrefetchDeadlineMs,
   isSegmentChainingPlaybackMode,
   segmentBoundaryPauseMs,
+  segmentRequestSeed,
 } from "./endless-playback.js";
 
 test("endless prefetch deadline uses the remaining playback window", () => {
@@ -87,5 +89,65 @@ test("audible boundary modes reserve boundary pause time in the prefetch deadlin
       minimumDeadlineMs: 10_000,
     }),
     163_630,
+  );
+});
+
+test("continuous fugue prefetch keeps the session seed for snapshot-based continuation", () => {
+  assert.equal(
+    segmentRequestSeed({
+      mode: "continuous-fugue",
+      sessionSeed: "fugue-smoke",
+      segmentIndex: 1,
+    }),
+    "fugue-smoke",
+  );
+});
+
+test("audible boundary modes still derive per-segment seeds", () => {
+  assert.equal(
+    segmentRequestSeed({
+      mode: "endless-program",
+      sessionSeed: "fugue-smoke",
+      segmentIndex: 1,
+    }),
+    "fugue-smoke-segment-1",
+  );
+  assert.equal(
+    segmentRequestSeed({
+      mode: "regenerative-cycle",
+      sessionSeed: "fugue-smoke-segment-1",
+      segmentIndex: 2,
+    }),
+    "fugue-smoke-segment-1-segment-2",
+  );
+});
+
+test("continuous fugue adoption preserves the visible session seed", () => {
+  assert.equal(
+    adoptedSegmentSessionSeed({
+      mode: "continuous-fugue",
+      currentSessionSeed: "fugue-smoke",
+      responseSeed: "fugue-smoke-segment-1",
+    }),
+    "fugue-smoke",
+  );
+});
+
+test("audible boundary adoption uses the generated segment seed", () => {
+  assert.equal(
+    adoptedSegmentSessionSeed({
+      mode: "endless-program",
+      currentSessionSeed: "fugue-smoke",
+      responseSeed: "fugue-smoke-segment-1",
+    }),
+    "fugue-smoke-segment-1",
+  );
+  assert.equal(
+    adoptedSegmentSessionSeed({
+      mode: "regenerative-cycle",
+      currentSessionSeed: "fugue-smoke",
+      responseSeed: "fugue-smoke-segment-1",
+    }),
+    "fugue-smoke-segment-1",
   );
 });

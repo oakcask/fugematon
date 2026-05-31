@@ -115,6 +115,47 @@ export function createPlaybackModel(
   };
 }
 
+export function appendPlaybackModelSessionTimeline(current: PlaybackModel, segment: PlaybackModel): PlaybackModel {
+  const tickOffset = current.totalTicks;
+  const secondOffset = current.totalSeconds;
+  const subjectEntries = [
+    ...current.subjectEntries.map((entry) => ({ ...entry })),
+    ...segment.subjectEntries.map((entry) => ({
+      ...entry,
+      startTick: entry.startTick + tickOffset,
+    })),
+  ];
+  const shiftedEntryBySegmentKey = new Map(
+    subjectEntries
+      .slice(current.subjectEntries.length)
+      .map((entry) => [entryKey(entry.voice, entry.startTick - tickOffset), entry]),
+  );
+  const notes = [
+    ...current.notes.map((note) => ({ ...note, webAudioSynth: { ...note.webAudioSynth } })),
+    ...segment.notes.map((note) => ({
+      ...note,
+      startTick: note.startTick + tickOffset,
+      endTick: note.endTick + tickOffset,
+      startSecond: note.startSecond + secondOffset,
+      webAudioSynth: { ...note.webAudioSynth },
+      entry:
+        note.entry === undefined
+          ? undefined
+          : shiftedEntryBySegmentKey.get(entryKey(note.entry.voice, note.entry.startTick)),
+    })),
+  ];
+
+  return {
+    ...current,
+    totalTicks: current.totalTicks + segment.totalTicks,
+    totalSeconds: current.totalSeconds + segment.totalSeconds,
+    notes,
+    stateTransitions: [...current.stateTransitions, ...segment.stateTransitions],
+    subjectEntries,
+    pitchRange: computePitchRange(notes),
+  };
+}
+
 export function ticksToSeconds(ticks: number, bpm: number, ticksPerQuarter: number): number {
   return (ticks / ticksPerQuarter) * (60 / bpm);
 }

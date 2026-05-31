@@ -15,7 +15,7 @@ import {
   shouldDrawNoteRoleStroke,
   shouldDrawStrokeOnlyNote,
 } from "./piano-roll.js";
-import { createPlaybackModel, type PlaybackModel } from "./score.js";
+import { appendPlaybackModelSessionTimeline, createPlaybackModel, type PlaybackModel } from "./score.js";
 
 test("computePianoRollLayout maps visible notes into canvas bounds", () => {
   const model = createPlaybackModel(
@@ -49,6 +49,50 @@ test("computePianoRollViewport starts at the opening and follows playback", () =
   assert.ok(following.startSecond > opening.startSecond);
   assert.ok(following.startSecond < DEFAULT_VIEWPORT_SECONDS * 2);
   assert.equal(following.endSecond - following.startSecond, DEFAULT_VIEWPORT_SECONDS);
+});
+
+test("appendPlaybackModelSessionTimeline keeps continuous segments on one piano-roll timeline", () => {
+  const first = createPlaybackModel(generateScore({ seed: "fugue-smoke", lengthTicks: 7680 }));
+  const second = createPlaybackModel(generateScore({ seed: "fugue-smoke-segment-1", lengthTicks: 7680 }));
+  const session = appendPlaybackModelSessionTimeline(first, second);
+  const firstSecondNote = second.notes[0]!;
+  const shiftedNote = session.notes.find(
+    (note) => note.startTick === firstSecondNote.startTick + first.totalTicks && note.voice === firstSecondNote.voice,
+  );
+
+  assert.equal(session.totalTicks, first.totalTicks + second.totalTicks);
+  assert.equal(session.totalSeconds, first.totalSeconds + second.totalSeconds);
+  assert.ok(shiftedNote !== undefined);
+  assert.equal(shiftedNote.startSecond, firstSecondNote.startSecond + first.totalSeconds);
+  assert.ok(session.subjectEntries.some((entry) => entry.startTick >= first.totalTicks));
+});
+
+test("appendPlaybackModelSessionTimeline retargets note entries to shifted session entries", () => {
+  const first = createPlaybackModel(generateScore({ seed: "fugue-smoke", lengthTicks: 7680 }));
+  const second = createPlaybackModel(generateScore({ seed: "bright-answer", lengthTicks: 7680 }));
+  const session = appendPlaybackModelSessionTimeline(first, second);
+  const segmentEntryNote = second.notes.find((note) => note.entry !== undefined)!;
+  const shiftedNote = session.notes.find(
+    (note) =>
+      note.startTick === segmentEntryNote.startTick + first.totalTicks &&
+      note.voice === segmentEntryNote.voice &&
+      note.entry !== undefined,
+  )!;
+
+  assert.notEqual(shiftedNote.entry, segmentEntryNote.entry);
+  assert.equal(shiftedNote.entry?.voice, segmentEntryNote.entry?.voice);
+  assert.equal(shiftedNote.entry?.startTick, segmentEntryNote.entry!.startTick + first.totalTicks);
+  assert.equal(segmentEntryNote.entry?.startTick, second.subjectEntries[0]?.startTick);
+});
+
+test("computePianoRollViewport can scroll past a continuous segment boundary", () => {
+  const first = createPlaybackModel(generateScore({ seed: "fugue-smoke", lengthTicks: 7680 }));
+  const second = createPlaybackModel(generateScore({ seed: "fugue-smoke-segment-1", lengthTicks: 7680 }));
+  const session = appendPlaybackModelSessionTimeline(first, second);
+  const viewport = computePianoRollViewport(session, first.totalSeconds + 1);
+
+  assert.ok(viewport.startSecond > 0);
+  assert.ok(viewport.endSecond > first.totalSeconds);
 });
 
 test("computePianoRollGridLineLayout marks time-signature bar boundaries", () => {
