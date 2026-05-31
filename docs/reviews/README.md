@@ -4,6 +4,7 @@
 
 ## Read First
 
+* [WebAudio synth interpretation completion review](webaudio-synth-interpretation-completion.md): Infinite playback MVP 後の rendering follow-up 完了 evidence。`organ-default` / `strict-counterpoint` の 22 seed bundle が TARGET baseline と一致し、WebAudio envelope / velocity 解釈だけが変わったことを記録する。
 * [Harmonic stasis rearticulation repair completion](harmonic-stasis-rearticulation-completion.md): 完了済み quality blocker。motivic free-counterpoint の短い同音再発音と和声停滞を、diagnostics、candidate scoring、final support repair、focused seed evidence として記録する。
 * [Phase 8 completion review](phase-8-completion-review.md): Infinite playback MVP の完了 evidence。22 seed readiness bundle の ScoreEvent、MIDI、diagnostics、summary 比較と、3 再生モード semantics / segment snapshot contract が既存 review signal を隠さないことを記録する。
 * [Stretto entry harmony repair completion](stretto-entry-harmony-repair-completion.md): 完了済み quality blocker。`seed-1db5j19-1nhjtae` 7-8小節のひどい和音を、stretto / entry 周辺の unresolved accented clash と thin support の seed 横断問題として修理した evidence、tradeoff、listening gap を記録する。

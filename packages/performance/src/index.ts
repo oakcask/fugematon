@@ -31,9 +31,18 @@ export type VoicePerformanceSettings = {
   velocityCurve: VelocityCurve;
   articulation: {
     noteLengthRatio: number;
-    releaseSeconds: number;
   };
+  webAudioSynth: WebAudioSynthSettings;
   humanize: DeterministicHumanize;
+};
+
+export type WebAudioSynthSettings = {
+  attackSeconds: number;
+  decaySeconds: number;
+  sustainLevel: number;
+  releaseSeconds: number;
+  velocityToAttackEmphasis: number;
+  velocityToSustainGain: number;
 };
 
 export type PerformanceProfile = PerformanceProfileMetadata & {
@@ -55,7 +64,7 @@ export type PerformanceEvent = {
   volume: number;
   gain: number;
   oscillatorType: VoicePerformanceSettings["oscillatorType"];
-  releaseSeconds: number;
+  webAudioSynth: WebAudioSynthSettings;
 };
 
 export type PerformanceConversionInput = {
@@ -68,23 +77,51 @@ export const DEFAULT_PERFORMANCE_PROFILE_ID: PerformanceProfileId = "organ-defau
 
 const ORGAN_DEFAULT: PerformanceProfile = {
   id: "organ-default",
-  version: 2,
+  version: 3,
   voices: {
-    soprano: voiceSettings("soprano", 0, 19, 84, 127, 0.18, "triangle"),
-    alto: voiceSettings("alto", 1, 19, 44, 127, 0.16, "triangle"),
-    tenor: voiceSettings("tenor", 2, 19, 58, 127, 0.15, "triangle"),
-    bass: voiceSettings("bass", 3, 32, 64, 127, 0.2, "sawtooth"),
+    soprano: voiceSettings("soprano", 0, 19, 84, 127, 0.18, "triangle", {
+      attackSeconds: 0.024,
+      decaySeconds: 0.08,
+      sustainLevel: 0.66,
+      releaseSeconds: 0.1,
+      velocityToAttackEmphasis: 0.34,
+      velocityToSustainGain: 0.18,
+    }),
+    alto: voiceSettings("alto", 1, 19, 44, 127, 0.16, "triangle", {
+      attackSeconds: 0.026,
+      decaySeconds: 0.09,
+      sustainLevel: 0.64,
+      releaseSeconds: 0.1,
+      velocityToAttackEmphasis: 0.3,
+      velocityToSustainGain: 0.16,
+    }),
+    tenor: voiceSettings("tenor", 2, 19, 58, 127, 0.15, "triangle", {
+      attackSeconds: 0.026,
+      decaySeconds: 0.09,
+      sustainLevel: 0.64,
+      releaseSeconds: 0.1,
+      velocityToAttackEmphasis: 0.3,
+      velocityToSustainGain: 0.16,
+    }),
+    bass: voiceSettings("bass", 3, 32, 64, 127, 0.2, "sawtooth", {
+      attackSeconds: 0.022,
+      decaySeconds: 0.1,
+      sustainLevel: 0.56,
+      releaseSeconds: 0.12,
+      velocityToAttackEmphasis: 0.42,
+      velocityToSustainGain: 0.12,
+    }),
   },
 };
 
 const STRICT_COUNTERPOINT: PerformanceProfile = {
   id: "strict-counterpoint",
-  version: 2,
+  version: 3,
   voices: {
-    soprano: voiceSettings("soprano", 0, 73, 24, 127, 0.2, "sine"),
-    alto: voiceSettings("alto", 1, 73, 52, 127, 0.18, "sine"),
-    tenor: voiceSettings("tenor", 2, 73, 76, 127, 0.18, "sine"),
-    bass: voiceSettings("bass", 3, 73, 104, 127, 0.22, "sine"),
+    soprano: voiceSettings("soprano", 0, 73, 24, 127, 0.2, "sine", strictSynthSettings()),
+    alto: voiceSettings("alto", 1, 73, 52, 127, 0.18, "sine", strictSynthSettings()),
+    tenor: voiceSettings("tenor", 2, 73, 76, 127, 0.18, "sine", strictSynthSettings()),
+    bass: voiceSettings("bass", 3, 73, 104, 127, 0.22, "sine", strictSynthSettings()),
   },
 };
 
@@ -137,7 +174,7 @@ export function scoreToPerformanceEvents(input: PerformanceConversionInput): Per
         volume: settings.volume,
         gain: settings.gain,
         oscillatorType: settings.oscillatorType,
-        releaseSeconds: settings.articulation.releaseSeconds,
+        webAudioSynth: { ...settings.webAudioSynth },
       };
     });
 }
@@ -150,6 +187,7 @@ function voiceSettings(
   volume: number,
   gain: number,
   oscillatorType: VoicePerformanceSettings["oscillatorType"],
+  webAudioSynth: WebAudioSynthSettings,
 ): VoicePerformanceSettings {
   return {
     trackName,
@@ -167,12 +205,23 @@ function voiceSettings(
     },
     articulation: {
       noteLengthRatio: 1,
-      releaseSeconds: 0.08,
     },
+    webAudioSynth,
     humanize: {
       maxOffsetTicks: 0,
       seedSalt: "performance-profile-default",
     },
+  };
+}
+
+function strictSynthSettings(): WebAudioSynthSettings {
+  return {
+    attackSeconds: 0.012,
+    decaySeconds: 0.035,
+    sustainLevel: 0.88,
+    releaseSeconds: 0.05,
+    velocityToAttackEmphasis: 0.18,
+    velocityToSustainGain: 0.72,
   };
 }
 
@@ -211,6 +260,7 @@ function cloneVoiceSettings(settings: VoicePerformanceSettings): VoicePerformanc
     ...settings,
     velocityCurve: { ...settings.velocityCurve },
     articulation: { ...settings.articulation },
+    webAudioSynth: { ...settings.webAudioSynth },
     humanize: { ...settings.humanize },
   };
 }

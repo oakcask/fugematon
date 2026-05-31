@@ -16,6 +16,7 @@ import {
   performanceProfileMetadata,
   scoreToPerformanceEvents,
   type VoicePerformanceSettings,
+  type WebAudioSynthSettings,
 } from "@fugematon/performance";
 
 export type PlaybackEntry = PlannedEntry;
@@ -33,7 +34,7 @@ export type PlaybackNote = {
   gain: number;
   pan: number;
   oscillatorType: VoicePerformanceSettings["oscillatorType"];
-  releaseSeconds: number;
+  webAudioSynth: WebAudioSynthSettings;
   entry?: PlaybackEntry;
 };
 
@@ -94,7 +95,7 @@ export function createPlaybackModel(
       gain: note.gain,
       pan: note.pan,
       oscillatorType: note.oscillatorType,
-      releaseSeconds: note.releaseSeconds,
+      webAudioSynth: { ...note.webAudioSynth },
       entry: subjectEntryByNoteStart.get(entryKey(note.voice, note.startTick)),
     };
   });

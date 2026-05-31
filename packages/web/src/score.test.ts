@@ -27,11 +27,13 @@ test("createPlaybackModel extracts timing metadata and notes", () => {
   assert.equal(model.notes.length, output.diagnostics.noteCount);
   assert.deepEqual(model.stateTransitions, output.diagnostics.stateTransitions);
   assert.equal(model.subjectEntries.length, output.diagnostics.subjectEntries.length);
-  assert.deepEqual(model.performanceProfile, { id: "strict-counterpoint", version: 2 });
+  assert.deepEqual(model.performanceProfile, { id: "strict-counterpoint", version: 3 });
   assert.ok(model.notes.some((note) => note.entry?.state === "exposition"));
   assert.ok(model.notes.some((note) => note.entry?.answerKind === "tonal"));
   assert.ok(model.notes.some((note) => note.role === "counter-subject"));
   assert.ok(model.notes.some((note) => note.role === "free-counterpoint"));
+  assert.ok(model.notes.every((note) => Object.hasOwn(note, "webAudioSynth")));
+  assert.ok(model.notes.every((note) => !Object.hasOwn(note, "releaseSeconds")));
   assert.ok(model.notes.every((note) => note.entry === undefined || note.entry.localKey.tonic.length > 0));
   assert.ok(
     model.notes.every(
@@ -49,9 +51,10 @@ test("createPlaybackModel can select the organ default performance profile", () 
   const output = generateScore({ seed: "fugue-smoke", lengthTicks: 7680 });
   const model = createPlaybackModel(output, "organ-default");
 
-  assert.deepEqual(model.performanceProfile, { id: "organ-default", version: 2 });
+  assert.deepEqual(model.performanceProfile, { id: "organ-default", version: 3 });
   assert.ok(model.notes.some((note) => note.oscillatorType === "triangle"));
   assert.equal(model.notes.find((note) => note.voice === "soprano")?.gain, 0.18);
+  assert.equal(model.notes.find((note) => note.voice === "bass")?.webAudioSynth.sustainLevel, 0.56);
 });
 
 test("key signature helpers format tonic and mode metadata", () => {

@@ -469,7 +469,10 @@ test("review command writes diagnostics and MIDI files for review seeds", async 
     const listeningReview = JSON.parse(await readFile(join(directory, "listening-review.json"), "utf8")) as {
       schemaVersion: number;
       lengthTicks: number;
+      performanceProfile: { id: string; version: number };
+      criteria: Record<string, string>;
       regressionChecks: string[];
+      focusedPlaybackNotes: string[];
       seeds: {
         seed: string;
         diagnosticsFile: string;
@@ -495,7 +498,7 @@ test("review command writes diagnostics and MIDI files for review seeds", async 
     assert.equal(summary.schemaVersion, 19);
     assert.equal(summary.lengthTicks, 9600);
     assert.equal(summary.selectionModel, "section-local-planner");
-    assert.deepEqual(summary.performanceProfile, { id: "organ-default", version: 2 });
+    assert.deepEqual(summary.performanceProfile, { id: "organ-default", version: 3 });
     assert.ok(summary.seeds.length > 1);
     assert.equal(summary.referenceDiagnostics.profile.profileId, "fugue-reference-profile");
     assert.equal(summary.referenceDiagnostics.profile.sources[0]?.sourceFormat, "profile-fixture");
@@ -544,13 +547,17 @@ test("review command writes diagnostics and MIDI files for review seeds", async 
     assert.ok(summary.subjectFamilyDiversity.initialSubjectFamilies[0]!.degreePattern.length > 0);
     assert.ok(summary.subjectFamilyDiversity.initialSubjectFamilies[0]!.rhythmPattern.length > 0);
     assert.ok(summary.subjectFamilyDiversity.subjectFragmentFamilies.length > 0);
-    assert.equal(listeningReview.schemaVersion, 1);
+    assert.equal(listeningReview.schemaVersion, 2);
     assert.equal(listeningReview.lengthTicks, 9600);
+    assert.deepEqual(listeningReview.performanceProfile, { id: "organ-default", version: 3 });
+    assert.match(listeningReview.criteria.bassSubjectAnswerBalance, /Bass subject and answer/);
     assert.ok(listeningReview.regressionChecks.some((check) => check.includes("fugue-smoke")));
+    assert.ok(listeningReview.regressionChecks.some((check) => check.includes("Bass subject and answer")));
+    assert.ok(listeningReview.focusedPlaybackNotes.some((note) => note.includes("organ-default")));
     assert.deepEqual(pairwisePreferences, {
       schemaVersion: 2,
       lengthTicks: 9600,
-      performanceProfile: { id: "organ-default", version: 2 },
+      performanceProfile: { id: "organ-default", version: 3 },
       instructions:
         "Fill preferredSide only after manual pairwise listening. These records are candidates for future aesthetic scoring weights and do not override hard constraints.",
       manualListeningStatus: "not-reviewed",
@@ -993,7 +1000,7 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
     assert.ok(variantFiles.includes("summary.json"));
     assert.equal(pairwisePreferences.schemaVersion, 2);
     assert.equal(pairwisePreferences.lengthTicks, 960);
-    assert.deepEqual(pairwisePreferences.performanceProfile, { id: "strict-counterpoint", version: 2 });
+    assert.deepEqual(pairwisePreferences.performanceProfile, { id: "strict-counterpoint", version: 3 });
     assert.equal(pairwisePreferences.manualListeningStatus, "not-reviewed");
     assert.equal(pairwisePreferences.manualListeningGap.unlistened, true);
     assert.match(pairwisePreferences.manualListeningGap.note, /no preference judgement/);
@@ -1005,14 +1012,14 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
       directory: "baseline",
       summaryFile: "baseline/summary.json",
       selectionModel: "baseline",
-      performanceProfile: { id: "strict-counterpoint", version: 2 },
+      performanceProfile: { id: "strict-counterpoint", version: 3 },
     });
     assert.deepEqual(comparison.variant, {
       label: "candidate",
       directory: "variant",
       summaryFile: "variant/summary.json",
       selectionModel: "candidate-oracle-selection",
-      performanceProfile: { id: "strict-counterpoint", version: 2 },
+      performanceProfile: { id: "strict-counterpoint", version: 3 },
     });
     assert.equal(comparison.subjectFamilyDiversity.baseline.seedCount, comparison.seeds.length);
     assert.equal(comparison.subjectFamilyDiversity.variant.seedCount, comparison.seeds.length);
@@ -1127,14 +1134,9 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
       assert.match(entry.variant.diagnosticsFile, /^variant\/.+\.diagnostics\.json$/);
       assert.match(entry.variant.midiFile, /^variant\/.+\.mid$/);
       assert.equal(entry.preferredSide, "not-reviewed");
-      assert.deepEqual(Object.values(entry.criteria), [
-        "not-reviewed",
-        "not-reviewed",
-        "not-reviewed",
-        "not-reviewed",
-        "not-reviewed",
-        "not-reviewed",
-      ]);
+      assert.equal(entry.criteria.bassSubjectAnswerBalance, "not-reviewed");
+      assert.equal(entry.criteria.scoreClashExposure, "not-reviewed");
+      assert.ok(Object.values(entry.criteria).every((value) => value === "not-reviewed"));
       assert.equal(entry.reason, "");
       assert.equal(entry.manualListeningStatus, "not-reviewed");
       assert.equal(entry.manualListeningGap.unlistened, true);

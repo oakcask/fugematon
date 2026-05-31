@@ -77,7 +77,7 @@ test("exportMidi writes performance profile metadata", () => {
   const score = generateScore({ seed: "fugue-smoke", lengthTicks: 7680 });
   const tracks = parseMidiTracks(exportMidi(score.events, { performanceProfileId: "strict-counterpoint" }));
 
-  assert.ok(tracks[0]!.textEvents.includes("PerformanceProfile strict-counterpoint@2"));
+  assert.ok(tracks[0]!.textEvents.includes("PerformanceProfile strict-counterpoint@3"));
   assert.deepEqual(
     tracks.slice(1).map((track) => track.programChange),
     [

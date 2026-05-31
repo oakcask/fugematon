@@ -6,7 +6,19 @@ export type ScheduledNote = {
   stopSecond: number;
   frequency: number;
   gain: number;
+  attackPeakGain: number;
+  sustainGain: number;
   pan: number;
+};
+
+export type GainEnvelope = {
+  startSecond: number;
+  attackEndSecond: number;
+  decayEndSecond: number;
+  releaseStartSecond: number;
+  releaseEndSecond: number;
+  attackPeakGain: number;
+  sustainGain: number;
 };
 
 export type PlayOptions = {
@@ -20,18 +32,49 @@ const MASTER_GAIN = 0.68;
 export function createScheduledNotes(model: PlaybackModel, startAtSecond: number, offsetSecond = 0): ScheduledNote[] {
   return model.notes
     .filter((note) => note.startSecond + note.durationSecond > offsetSecond)
-    .map((note) => ({
-      note,
-      startSecond: startAtSecond + Math.max(0, note.startSecond - offsetSecond),
-      stopSecond: startAtSecond + note.startSecond + note.durationSecond - offsetSecond,
-      frequency: midiToFrequency(note.pitch),
-      gain: note.gain * (note.volume / 127) * (note.velocity / 127),
-      pan: (note.pan - 64) / 63,
-    }));
+    .map((note) => {
+      const baseGain = note.gain * (note.volume / 127);
+      const velocityRatio = note.velocity / 127;
+      const sustainVelocityScale =
+        1 - note.webAudioSynth.velocityToSustainGain + velocityRatio * note.webAudioSynth.velocityToSustainGain;
+      const sustainGain = baseGain * note.webAudioSynth.sustainLevel * sustainVelocityScale;
+      const attackPeakGain = baseGain * (1 + velocityRatio * note.webAudioSynth.velocityToAttackEmphasis);
+
+      return {
+        note,
+        startSecond: startAtSecond + Math.max(0, note.startSecond - offsetSecond),
+        stopSecond: startAtSecond + note.startSecond + note.durationSecond - offsetSecond,
+        frequency: midiToFrequency(note.pitch),
+        gain: sustainGain,
+        attackPeakGain,
+        sustainGain,
+        pan: (note.pan - 64) / 63,
+      };
+    });
 }
 
 export function midiToFrequency(pitch: number): number {
   return 440 * 2 ** ((pitch - 69) / 12);
+}
+
+export function createGainEnvelope(scheduled: ScheduledNote): GainEnvelope {
+  const releaseSeconds = scheduled.note.webAudioSynth.releaseSeconds;
+  const attackEndSecond = Math.min(
+    scheduled.stopSecond,
+    scheduled.startSecond + scheduled.note.webAudioSynth.attackSeconds,
+  );
+  const decayEndSecond = Math.min(scheduled.stopSecond, attackEndSecond + scheduled.note.webAudioSynth.decaySeconds);
+  const releaseStartSecond = Math.max(decayEndSecond, scheduled.stopSecond - releaseSeconds);
+
+  return {
+    startSecond: scheduled.startSecond,
+    attackEndSecond,
+    decayEndSecond,
+    releaseStartSecond,
+    releaseEndSecond: scheduled.stopSecond + releaseSeconds,
+    attackPeakGain: scheduled.attackPeakGain,
+    sustainGain: scheduled.sustainGain,
+  };
 }
 
 export class ScorePlayer {
@@ -144,21 +187,21 @@ export class ScorePlayer {
     const oscillator = this.context.createOscillator();
     const gain = this.context.createGain();
     const panner = this.context.createStereoPanner();
-    const attackEnd = scheduled.startSecond + 0.025;
-    const releaseStart = Math.max(scheduled.startSecond, scheduled.stopSecond - scheduled.note.releaseSeconds);
+    const envelope = createGainEnvelope(scheduled);
 
     oscillator.type = scheduled.note.oscillatorType;
     oscillator.frequency.setValueAtTime(scheduled.frequency, scheduled.startSecond);
 
-    gain.gain.setValueAtTime(0, scheduled.startSecond);
-    gain.gain.linearRampToValueAtTime(scheduled.gain, attackEnd);
-    gain.gain.setValueAtTime(scheduled.gain, releaseStart);
-    gain.gain.linearRampToValueAtTime(0.0001, scheduled.stopSecond + scheduled.note.releaseSeconds);
+    gain.gain.setValueAtTime(0, envelope.startSecond);
+    gain.gain.linearRampToValueAtTime(envelope.attackPeakGain, envelope.attackEndSecond);
+    gain.gain.linearRampToValueAtTime(envelope.sustainGain, envelope.decayEndSecond);
+    gain.gain.setValueAtTime(envelope.sustainGain, envelope.releaseStartSecond);
+    gain.gain.linearRampToValueAtTime(0.0001, envelope.releaseEndSecond);
     panner.pan.setValueAtTime(scheduled.pan, scheduled.startSecond);
 
     oscillator.connect(gain).connect(panner).connect(this.master);
     oscillator.start(scheduled.startSecond);
-    oscillator.stop(scheduled.stopSecond + scheduled.note.releaseSeconds);
+    oscillator.stop(envelope.releaseEndSecond);
 
     this.activeSources.add(oscillator);
     this.activeGains.add(gain);
