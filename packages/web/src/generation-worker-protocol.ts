@@ -4,6 +4,7 @@ import type {
   SegmentGenerationDeadlineResult,
   SegmentSnapshot,
   TerminalClosureClassification,
+  TerminalClosureSource,
 } from "@fugematon/core";
 import type { PerformanceProfileId } from "@fugematon/performance";
 import type { PlaybackModel } from "./score.js";
@@ -26,6 +27,7 @@ export type GenerationWorkerReviewSnapshot = {
   warningCount: number;
   qualityVectorStatus: string;
   terminalClosureStatus: TerminalClosureClassification;
+  terminalClosureSource: TerminalClosureSource;
   continuousSegmentContinuityStatus: ContinuousSegmentContinuityClassification;
 };
 

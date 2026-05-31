@@ -117,6 +117,7 @@ function createReviewSnapshot(
       ? "review-required"
       : "within-profile",
     terminalClosureStatus: output.diagnostics.terminalClosureReview.classification,
+    terminalClosureSource: output.diagnostics.terminalClosureReview.terminalClosureSource,
     continuousSegmentContinuityStatus: output.diagnostics.continuousSegmentContinuity.classification,
   };
 }
@@ -145,6 +146,10 @@ function createConservativeFallbackOutput(output: GenerationOutput, lengthTicks:
         ...output.diagnostics.terminalClosureReview,
         terminalCadenceKind: undefined,
         cadenceTargetTick: undefined,
+        terminalClosureSource: "fallback-terminal-closure",
+        codaStartTick: undefined,
+        preparedVoiceReentry: "not-applicable",
+        finalAttackReentryVoiceCount: 0,
         lowVoiceSupport: "missing",
         outerVoiceLandingStatus: "missing",
         unresolvedBoundaryDissonanceCount: 0,

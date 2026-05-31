@@ -104,6 +104,8 @@ export type SequencePattern = "ascending-step" | "descending-step" | "circle-fif
 
 export type FragmentTransform = "sequence" | "contrary-motion" | "inversion";
 
+export type TerminalSectionIntent = "self-contained-coda" | "fallback-terminal-closure" | "bridge-compatible-closure";
+
 export type HarmonicAnchor = {
   tick: number;
   localKey: KeySignature;
@@ -126,6 +128,7 @@ export type HarmonicPlan = {
   parallelKeyShift: boolean;
   sequencePattern?: SequencePattern;
   fragmentTransform?: FragmentTransform;
+  terminalIntent?: TerminalSectionIntent;
   anchors: HarmonicAnchor[];
 };
 
@@ -1418,8 +1421,17 @@ export type TerminalClosureThinningExplanation =
 
 export type TerminalClosureFinalRestClassification = "none" | "piece-boundary" | "silence-failure";
 
+export type TerminalClosureSource =
+  | "generated-coda"
+  | "fallback-terminal-closure"
+  | "bridge-compatible-closure"
+  | "ordinary-terminal-cadence"
+  | "not-required";
+
+export type TerminalClosurePreparedReentryStatus = "prepared" | "sudden-final-attack" | "not-applicable";
+
 export type TerminalClosureReviewWindow = {
-  kind: "terminal-cadence" | "final-sonority" | "boundary-rest" | "texture-thinning";
+  kind: "terminal-cadence" | "final-sonority" | "boundary-rest" | "texture-thinning" | "voice-reentry";
   startTick: number;
   endTick: number;
   voices: Voice[];
@@ -1428,7 +1440,7 @@ export type TerminalClosureReviewWindow = {
 };
 
 export type TerminalClosureReviewSummary = {
-  schemaVersion: 1;
+  schemaVersion: 2;
   segmentIndex: number;
   inspectedTickRange: {
     startTick: number;
@@ -1436,6 +1448,10 @@ export type TerminalClosureReviewSummary = {
   };
   terminalCadenceKind?: CadenceKind;
   cadenceTargetTick?: number;
+  terminalClosureSource: TerminalClosureSource;
+  codaStartTick?: number;
+  preparedVoiceReentry: TerminalClosurePreparedReentryStatus;
+  finalAttackReentryVoiceCount: number;
   lowVoiceSupport: TerminalClosureSupportStatus;
   outerVoiceLandingStatus: TerminalClosureOuterVoiceLandingStatus;
   unresolvedBoundaryDissonanceCount: number;

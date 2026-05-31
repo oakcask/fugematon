@@ -11,6 +11,7 @@ import type {
   MetricalHarmonyIntent,
   SequencePattern,
   StyleProfile,
+  TerminalSectionIntent,
   Voice,
 } from "../events.js";
 import { isModalMode } from "./key.js";
@@ -33,6 +34,7 @@ export function buildHarmonicPlan(plan: {
   meterContext?: MeterContext;
   sequencePattern?: SequencePattern;
   fragmentTransform?: FragmentTransform;
+  terminalIntent?: TerminalSectionIntent;
 }): HarmonicPlan {
   const meterContext = plan.meterContext ?? createLegacyMeterContext();
   const cadenceTick = cadenceAnchorTick(plan.startTick, plan.durationTicks, meterContext);
@@ -80,6 +82,7 @@ export function buildHarmonicPlan(plan: {
     parallelKeyShift: plan.localKey.tonic === plan.targetKey.tonic && plan.localKey.mode !== plan.targetKey.mode,
     sequencePattern: plan.sequencePattern,
     fragmentTransform: plan.fragmentTransform,
+    terminalIntent: plan.terminalIntent,
     anchors,
   };
 }

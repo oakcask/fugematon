@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { TICKS_PER_QUARTER } from "./constants.js";
+import { FUGUE_FORM_REVIEW_LENGTH_TICKS, TICKS_PER_QUARTER } from "./constants.js";
 import type { CadenceKind, KeySignature, NoteEvent, ScoreEvent } from "./events.js";
 import { generateScore } from "./generate.js";
 import { buildHarmonicPlan } from "./generation/harmony.js";
@@ -11,6 +11,16 @@ const C_MAJOR: KeySignature = { tonic: "C", mode: "major" };
 const D_DORIAN: KeySignature = { tonic: "D", mode: "dorian" };
 const LENGTH_TICKS = TICKS_PER_QUARTER * 4;
 const CADENCE_TICK = TICKS_PER_QUARTER * 3;
+const TERMINAL_CODA_TARGET_SEEDS = [
+  "fugue-smoke",
+  "modal-cadence",
+  "sparse-cadence",
+  "dense-modal",
+  "tight-stretto",
+  "circle-fifths",
+  "bach-001",
+  "minor-entry",
+] as const;
 
 test("terminal closure review accepts authentic and modal terminal sonorities", () => {
   for (const [key, cadenceKind] of [
@@ -25,7 +35,10 @@ test("terminal closure review accepts authentic and modal terminal sonorities", 
     });
 
     assert.equal(summary.segmentIndex, 2);
+    assert.equal(summary.schemaVersion, 2);
     assert.equal(summary.terminalCadenceKind, cadenceKind);
+    assert.equal(summary.terminalClosureSource, "ordinary-terminal-cadence");
+    assert.equal(summary.preparedVoiceReentry, "not-applicable");
     assert.equal(summary.lowVoiceSupport, "root-supported");
     assert.equal(summary.outerVoiceLandingStatus, "stable");
     assert.equal(summary.unresolvedBoundaryDissonanceCount, 0);
@@ -79,7 +92,51 @@ test("continuous-fugue generation does not require terminal closure", () => {
   assert.equal(output.diagnostics.terminalClosureReview.classification, "not-required");
 });
 
-test("endless-program intent changes only terminal-boundary score material", () => {
+test("endless-program target seeds keep stable terminal closure evidence", () => {
+  for (const seed of TERMINAL_CODA_TARGET_SEEDS) {
+    const output = generateScore({
+      seed,
+      lengthTicks: FUGUE_FORM_REVIEW_LENGTH_TICKS,
+      mode: "endless-program",
+    });
+    const summary = output.diagnostics.terminalClosureReview;
+
+    assert.equal(summary.classification, "accepted", seed);
+    assert.equal(summary.terminalClosureSource, "generated-coda", seed);
+    assert.equal(summary.preparedVoiceReentry, "prepared", seed);
+    assert.equal(summary.finalAttackReentryVoiceCount, 0, seed);
+    assert.ok(summary.codaStartTick !== undefined, seed);
+    assert.ok(summary.cadenceTargetTick !== undefined, seed);
+    assert.ok(summary.cadenceTargetTick >= FUGUE_FORM_REVIEW_LENGTH_TICKS - TICKS_PER_QUARTER * 4, seed);
+    assert.match(summary.terminalCadenceKind ?? "", /^(authentic|modal)$/, seed);
+    assert.equal(summary.lowVoiceSupport, "root-supported", seed);
+    assert.equal(summary.outerVoiceLandingStatus, "stable", seed);
+    assert.equal(summary.unresolvedBoundaryDissonanceCount, 0, seed);
+    assert.ok(
+      output.diagnostics.sectionPlans.some((plan) => plan.terminalIntent === "self-contained-coda"),
+      seed,
+    );
+  }
+});
+
+test("terminal closure intent preserves mode-specific boundary requirements", () => {
+  const lengthTicks = TICKS_PER_QUARTER * 16;
+  const continuous = generateScore({ seed: "fugue-smoke", lengthTicks, mode: "continuous-fugue" });
+  const endless = generateScore({ seed: "fugue-smoke", lengthTicks, mode: "endless-program" });
+  const regenerative = generateScore({ seed: "fugue-smoke", lengthTicks, mode: "regenerative-cycle" });
+
+  assert.equal(continuous.diagnostics.terminalClosureReview.classification, "not-required");
+  assert.equal(continuous.diagnostics.terminalClosureReview.terminalClosureSource, "not-required");
+  assert.equal(continuous.nextSegmentSnapshot.mode, "continuous-fugue");
+  assert.equal(endless.diagnostics.terminalClosureReview.classification, "accepted");
+  assert.equal(endless.diagnostics.terminalClosureReview.terminalClosureSource, "fallback-terminal-closure");
+  assert.equal(endless.nextSegmentSnapshot.mode, "endless-program");
+  assert.equal(regenerative.diagnostics.terminalClosureReview.classification, "accepted");
+  assert.equal(regenerative.diagnostics.terminalClosureReview.terminalClosureSource, "bridge-compatible-closure");
+  assert.equal(regenerative.nextSegmentSnapshot.mode, "regenerative-cycle");
+});
+
+test("short endless-program intent keeps fallback terminal-boundary safety net", () => {
   const lengthTicks = TICKS_PER_QUARTER * 16;
   const terminalStartTick = lengthTicks - TICKS_PER_QUARTER;
   const continuous = generateScore({ seed: "fugue-smoke", lengthTicks, mode: "continuous-fugue" });
@@ -90,11 +147,28 @@ test("endless-program intent changes only terminal-boundary score material", () 
     endless.events.filter(isNoteBefore(terminalStartTick - TICKS_PER_QUARTER)),
   );
   assert.equal(endless.diagnostics.terminalClosureReview.classification, "accepted");
+  assert.equal(endless.diagnostics.terminalClosureReview.terminalClosureSource, "fallback-terminal-closure");
+  assert.ok(!endless.diagnostics.sectionPlans.some((plan) => plan.terminalIntent === "self-contained-coda"));
   assert.ok(
     endless.events.some(
       (event) => event.kind === "note" && event.startTick === terminalStartTick && event.voice === "bass",
     ),
   );
+});
+
+test("endless-program coda reserves planner-visible phrase time before the boundary", () => {
+  const lengthTicks = FUGUE_FORM_REVIEW_LENGTH_TICKS;
+  const output = generateScore({ seed: "fugue-smoke", lengthTicks, mode: "endless-program" });
+  const coda = output.diagnostics.sectionPlans.find((plan) => plan.terminalIntent === "self-contained-coda");
+
+  assert.ok(coda);
+  assert.equal(coda.state, "subject-return");
+  assert.equal(coda.cadenceKind, "authentic");
+  assert.equal(coda.ambiguityIntent, "none");
+  assert.ok(coda.durationTicks >= coda.meterContext.measureTicks * 2);
+  assert.equal(output.diagnostics.terminalClosureReview.terminalClosureSource, "generated-coda");
+  assert.equal(output.diagnostics.terminalClosureReview.codaStartTick, coda.startTick);
+  assert.ok(output.diagnostics.stateTransitions.includes("subject-return"));
 });
 
 function stableSonorityNotes(key: KeySignature, durationTicks: number): NoteEvent[] {

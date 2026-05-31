@@ -55,7 +55,9 @@ export function generateScore(input: GenerationInput): GenerationOutput {
         firstStateHint: input.previousSegmentSnapshot!.sectionPlannerState.nextStateHint,
         previousDensityArc: input.previousSegmentSnapshot!.densityArc.recentVoiceCounts,
       })
-    : buildFugueScore(subject, keySignature, input.lengthTicks, rng, selectionModel, meterContext);
+    : buildFugueScore(subject, keySignature, input.lengthTicks, rng, selectionModel, meterContext, {
+        terminalCodaIntent: mode === "endless-program" ? "self-contained-coda" : undefined,
+      });
   applyTerminalClosureIntent(score, Math.max(input.lengthTicks, score.endTick), mode);
   annotateEpisodeMotivicDerivations(score.notes, score.sectionPlans);
   if (selectionModel !== "baseline") {

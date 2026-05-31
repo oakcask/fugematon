@@ -1,5 +1,5 @@
 import { classifyCandidatePoolOracleSection, summarizeCandidatePoolOracleSections } from "../candidate-pool-oracle.js";
-import { TICKS_PER_QUARTER } from "../constants.js";
+import { TICKS_PER_QUARTER, VOICE_RANGES } from "../constants.js";
 import type {
   AnswerKind,
   CadenceKind,
@@ -16,6 +16,7 @@ import type {
   SelectionModel,
   SequencePattern,
   StyleProfile,
+  TerminalSectionIntent,
   Voice,
 } from "../events.js";
 import type { Xoshiro128StarStar } from "../prng.js";
@@ -23,12 +24,13 @@ import { addSubjectEntry, chooseAnswerKind } from "./entries.js";
 import { evaluateCandidate } from "./evaluation.js";
 import { buildHarmonicPlan, cadenceKindForSection } from "./harmony.js";
 import { isModalMode, tonicPitchClass, transposeKey } from "./key.js";
-import { createLegacyMeterContext } from "./meter.js";
-import { melodicRoleForScaleDegree } from "./pitch.js";
+import { createLegacyMeterContext, previousMeasureDownbeat } from "./meter.js";
+import { melodicRoleForScaleDegree, scaleDegreePitchClass } from "./pitch.js";
 import { candidateSelectionScore } from "./selection-risk-adjustments.js";
 import {
   compareNoteEvents,
   ENTRY_SPACING_TICKS,
+  positiveModulo,
   STRETTO_ENTRY_SPACING_TICKS,
   subjectDuration,
   VOICE_ENTRY_ORDER,
@@ -69,6 +71,15 @@ type ContinuationPhraseUnit = {
   sections: ContinuationPhraseSectionIntent[];
 };
 
+type TerminalCodaOptions = {
+  terminalCodaIntent?: Extract<TerminalSectionIntent, "self-contained-coda">;
+};
+
+type TerminalCodaReservation = {
+  startTick: number;
+  durationTicks: number;
+};
+
 export function buildFugueScore(
   subject: readonly SubjectNote[],
   keySignature: KeySignature,
@@ -76,6 +87,7 @@ export function buildFugueScore(
   rng: Xoshiro128StarStar,
   selectionModel: SelectionModel = "baseline",
   meterContext: MeterContext = createLegacyMeterContext(),
+  options: TerminalCodaOptions = {},
 ): FugueScore {
   const counterSubjectSupportRepair = lengthTicks >= TICKS_PER_QUARTER * 288;
   const exposition = buildExposition(subject, keySignature, counterSubjectSupportRepair, meterContext);
@@ -94,8 +106,13 @@ export function buildFugueScore(
   let stateIndex = 0;
   let phraseUnit: ContinuationPhraseUnit | undefined;
   let phraseSectionIndex = 0;
+  const terminalCodaReservation =
+    options.terminalCodaIntent === "self-contained-coda"
+      ? planTerminalCodaReservation(lengthTicks, exposition.endTick, meterContext)
+      : undefined;
+  const ordinaryGenerationEndTick = terminalCodaReservation?.startTick ?? lengthTicks;
 
-  while (sectionStartTick < lengthTicks) {
+  while (sectionStartTick < ordinaryGenerationEndTick) {
     const statePattern = continuationPatternForCycle(
       continuationPattern,
       continuationPatternIndex,
@@ -122,6 +139,13 @@ export function buildFugueScore(
     const phraseIntent = phraseUnit?.sections[phraseSectionIndex];
     const state = phraseIntent?.state ?? statePattern[stateIndex]!;
     const sectionDurationTicks = chooseContinuationSectionTicks(state, rng, meterContext);
+    if (terminalCodaReservation !== undefined) {
+      const remainingTicks = ordinaryGenerationEndTick - sectionStartTick;
+      const minimumSectionTicks = minimumContinuationSectionTicks(meterContext);
+      if (remainingTicks < minimumSectionTicks || sectionDurationTicks > remainingTicks) {
+        break;
+      }
+    }
     const selection = chooseContinuationSection(
       subject,
       keySignature,
@@ -161,6 +185,15 @@ export function buildFugueScore(
     phraseSectionIndex += 1;
   }
 
+  if (terminalCodaReservation !== undefined) {
+    const terminalCoda = buildTerminalCodaSection(keySignature, terminalCodaReservation, meterContext);
+    clipNotesAtTick(notes, terminalCodaReservation.startTick);
+    stateTransitions.push("subject-return");
+    stateChanges.push({ tick: terminalCodaReservation.startTick, state: "subject-return" });
+    notes.push(...terminalCoda.notes);
+    sectionPlans.push(...terminalCoda.sectionPlans);
+  }
+
   fillAllVoiceSilenceGaps(notes, keySignature);
   if (selectionModel === "section-local-planner") {
     addFunctionalThinningSupport(notes, sectionPlans);
@@ -188,6 +221,213 @@ export function buildFugueScore(
     endTick: Math.max(...notes.map((note) => note.startTick + note.durationTicks)),
     durationTicks: Math.max(...notes.map((note) => note.startTick + note.durationTicks)),
   };
+}
+
+function planTerminalCodaReservation(
+  lengthTicks: number,
+  expositionEndTick: number,
+  meterContext: MeterContext,
+): TerminalCodaReservation | undefined {
+  const desiredDurationTicks = meterContext.measureTicks * 2;
+  const startTick = previousMeasureDownbeat(Math.max(0, lengthTicks - desiredDurationTicks), meterContext);
+  if (startTick < expositionEndTick || lengthTicks - startTick < desiredDurationTicks) {
+    return undefined;
+  }
+  return {
+    startTick,
+    durationTicks: lengthTicks - startTick,
+  };
+}
+
+function minimumContinuationSectionTicks(meterContext: MeterContext): number {
+  if (meterContext.timeSignature.numerator === 4) {
+    return TICKS_PER_QUARTER * 6;
+  }
+  return meterContext.measureTicks * 2;
+}
+
+function clipNotesAtTick(notes: NoteEvent[], tick: number): void {
+  const clippedNotes = notes.flatMap((note): NoteEvent[] => {
+    if (note.startTick >= tick) {
+      return [];
+    }
+    const noteEndTick = note.startTick + note.durationTicks;
+    if (noteEndTick <= tick) {
+      return [note];
+    }
+    const durationTicks = tick - note.startTick;
+    return durationTicks > 0 ? [{ ...note, durationTicks }] : [];
+  });
+  notes.splice(0, notes.length, ...clippedNotes);
+}
+
+function buildTerminalCodaSection(
+  keySignature: KeySignature,
+  reservation: TerminalCodaReservation,
+  meterContext: MeterContext,
+): Exposition {
+  const cadenceKind: CadenceKind = isModalMode(keySignature.mode) ? "modal" : "authentic";
+  const sectionPlans = [
+    buildHarmonicPlan({
+      state: "subject-return",
+      startTick: reservation.startTick,
+      durationTicks: reservation.durationTicks,
+      globalKey: keySignature,
+      localKey: keySignature,
+      targetKey: keySignature,
+      styleProfile: isModalMode(keySignature.mode) ? "hybrid" : "strict-classical",
+      cadenceKind,
+      ambiguityIntent: "none",
+      meterContext,
+      terminalIntent: "self-contained-coda",
+    }),
+  ];
+  const harmonicPlan = sectionPlans[0]!;
+  const finalStartTick =
+    harmonicPlan.anchors.find((anchor) => anchor.cadenceTarget)?.tick ??
+    reservation.startTick + Math.max(0, reservation.durationTicks - meterContext.beatTicks);
+  const notes = buildTerminalCodaNotes(keySignature, reservation.startTick, finalStartTick, meterContext);
+  notes.sort(compareNoteEvents);
+
+  return {
+    notes,
+    subjectEntries: [],
+    sectionPlans,
+    endTick: reservation.startTick + reservation.durationTicks,
+    durationTicks: reservation.durationTicks,
+  };
+}
+
+function buildTerminalCodaNotes(
+  keySignature: KeySignature,
+  codaStartTick: number,
+  finalStartTick: number,
+  meterContext: MeterContext,
+): NoteEvent[] {
+  const reentryOffsets: Record<Voice, number> = {
+    bass: 0,
+    tenor: meterContext.beatTicks,
+    alto: meterContext.beatTicks * 2,
+    soprano: meterContext.beatTicks * 3,
+  };
+  const preparationDegrees: Record<Voice, readonly number[]> = {
+    bass: [3, 4],
+    tenor: [4, 2],
+    alto: [1, 2],
+    soprano: [5, 4],
+  };
+  const finalDegrees: Record<Voice, number> = {
+    bass: 0,
+    tenor: 4,
+    alto: 2,
+    soprano: 0,
+  };
+  const targetPitches: Record<Voice, number> = {
+    bass: 48,
+    tenor: 55,
+    alto: 64,
+    soprano: 72,
+  };
+  const notes: NoteEvent[] = [];
+
+  for (const voice of ["bass", "tenor", "alto", "soprano"] as const) {
+    const voiceStartTick = Math.min(finalStartTick - meterContext.beatTicks, codaStartTick + reentryOffsets[voice]);
+    const preparationEndTick = finalStartTick;
+    const preparationTicks = Math.max(meterContext.beatTicks, preparationEndTick - voiceStartTick);
+    const degrees = preparationDegrees[voice];
+    const firstDurationTicks = Math.max(meterContext.beatTicks, Math.floor(preparationTicks / 2));
+    const secondStartTick = Math.min(finalStartTick - meterContext.beatTicks, voiceStartTick + firstDurationTicks);
+
+    notes.push(
+      terminalCodaNote({
+        voice,
+        keySignature,
+        degree: degrees[0]!,
+        targetPitch: targetPitches[voice],
+        startTick: voiceStartTick,
+        durationTicks: Math.max(meterContext.beatTicks, secondStartTick - voiceStartTick),
+        velocity: voice === "bass" ? 66 : 60,
+        harmonicIntent: voice === "bass" ? "structural-root-support" : "structural-chord-tone",
+      }),
+    );
+    notes.push(
+      terminalCodaNote({
+        voice,
+        keySignature,
+        degree: degrees[1]!,
+        targetPitch: targetPitches[voice],
+        startTick: secondStartTick,
+        durationTicks: Math.max(meterContext.beatTicks, finalStartTick - secondStartTick),
+        velocity: voice === "bass" ? 72 : 64,
+        harmonicIntent: voice === "bass" ? "structural-root-support" : "structural-chord-tone",
+      }),
+    );
+    notes.push(
+      terminalCodaNote({
+        voice,
+        keySignature,
+        degree: finalDegrees[voice],
+        targetPitch: targetPitches[voice],
+        startTick: finalStartTick,
+        durationTicks: meterContext.beatTicks,
+        velocity: voice === "bass" ? 78 : 70,
+        harmonicIntent: voice === "bass" ? "structural-root-support" : "structural-chord-tone",
+      }),
+    );
+  }
+
+  return notes;
+}
+
+function terminalCodaNote(input: {
+  voice: Voice;
+  keySignature: KeySignature;
+  degree: number;
+  targetPitch: number;
+  startTick: number;
+  durationTicks: number;
+  velocity: number;
+  harmonicIntent: NonNullable<NoteEvent["metricalHarmonyIntent"]>;
+}): NoteEvent {
+  return {
+    kind: "note",
+    voice: input.voice,
+    startTick: input.startTick,
+    durationTicks: input.durationTicks,
+    pitch: nearestVoicePitchForPitchClass(
+      scaleDegreePitchClass(input.degree, 0, input.keySignature),
+      input.targetPitch,
+      input.voice,
+    ),
+    velocity: input.velocity,
+    role: "free-counterpoint",
+    metricalHarmonyIntent: input.harmonicIntent,
+    motivicDerivation: {
+      sourceMotive: "cadence-figure",
+      transformationKind: "cadential-continuation",
+      targetFunction: "extend-cadence",
+      sequenceDirection: "none",
+      preparesNextEntry: false,
+      preparesCadence: true,
+    },
+  };
+}
+
+function nearestVoicePitchForPitchClass(pitchClass: number, targetPitch: number, voice: Voice): number {
+  const range = VOICE_RANGES[voice];
+  let bestPitch = range.min;
+  let bestDistance = Number.POSITIVE_INFINITY;
+  for (let pitch = range.min; pitch <= range.max; pitch += 1) {
+    if (positiveModulo(pitch, 12) !== pitchClass) {
+      continue;
+    }
+    const distance = Math.abs(pitch - targetPitch);
+    if (distance < bestDistance) {
+      bestPitch = pitch;
+      bestDistance = distance;
+    }
+  }
+  return bestPitch;
 }
 
 export function buildFugueContinuationScore(

@@ -8,8 +8,10 @@ import type {
   TerminalClosureClassification,
   TerminalClosureFinalRestClassification,
   TerminalClosureOuterVoiceLandingStatus,
+  TerminalClosurePreparedReentryStatus,
   TerminalClosureReviewSummary,
   TerminalClosureReviewWindow,
+  TerminalClosureSource,
   TerminalClosureSupportStatus,
   TerminalClosureThinningExplanation,
   Voice,
@@ -20,7 +22,7 @@ import { isModalMode } from "./key.js";
 import { scaleDegreePitchClass } from "./pitch.js";
 import type { FugueScore } from "./types.js";
 
-const TERMINAL_CLOSURE_SCHEMA_VERSION = 1;
+const TERMINAL_CLOSURE_SCHEMA_VERSION = 2;
 const TERMINAL_CHORD_DURATION_TICKS = TICKS_PER_QUARTER;
 const SEVERE_DISSONANCE_CLASSES = new Set([1, 2, 10, 11]);
 
@@ -41,10 +43,16 @@ export function applyTerminalClosureIntent(score: FugueScore, lengthTicks: numbe
   }
 
   const finalStartTick = Math.max(0, lengthTicks - TERMINAL_CHORD_DURATION_TICKS);
+  if (mode === "endless-program" && finalPlan.terminalIntent === "self-contained-coda") {
+    score.endTick = Math.max(score.endTick, lengthTicks);
+    return;
+  }
+
   finalPlan.durationTicks = Math.max(finalPlan.durationTicks, lengthTicks - finalPlan.startTick);
   finalPlan.cadenceKind = isModalMode(finalPlan.targetKey.mode) ? "modal" : "authentic";
   finalPlan.ambiguityIntent = "none";
   finalPlan.ambiguityRecoveryTick = undefined;
+  finalPlan.terminalIntent = mode === "regenerative-cycle" ? "bridge-compatible-closure" : "fallback-terminal-closure";
   finalPlan.anchors = [
     ...finalPlan.anchors.filter((anchor) => !anchor.cadenceTarget),
     {
@@ -91,6 +99,8 @@ export function buildTerminalClosureReviewSummary(input: {
   const terminalCadenceKind = terminalPlan?.cadenceKind;
   const cadenceTargetTick = terminalAnchor?.tick;
   const terminalTick = cadenceTargetTick ?? Math.max(0, endTick - 1);
+  const terminalClosureSource = classifyTerminalClosureSource(input.mode, terminalPlan);
+  const codaStartTick = terminalPlan?.terminalIntent === "self-contained-coda" ? terminalPlan.startTick : undefined;
   const activeAtTerminal = activeNotesAt(notes, terminalTick);
   const targetKey = terminalAnchor?.localKey ?? terminalPlan?.targetKey ?? input.sectionPlans.at(-1)?.targetKey;
   const chordPitchClasses = targetKey === undefined ? [] : chordTonePitchClasses(targetKey, "cadential-tonic");
@@ -100,6 +110,16 @@ export function buildTerminalClosureReviewSummary(input: {
   const unresolvedBoundaryDissonanceCount = countUnresolvedBoundaryDissonances(activeAtTerminal, chordPitchClasses);
   const thinningExplanation = classifyThinning(notes, inspectedTickRange.startTick, terminalTick, activeAtTerminal);
   const finalRestClassification = classifyFinalRest(notes, endTick, terminalTick, terminalCadenceKind, lowVoiceSupport);
+  const finalAttackReentryVoiceCount = countFinalAttackReentryVoices({
+    notes,
+    activeAtTerminal,
+    terminalTick,
+    preparedStartTick: codaStartTick ?? inspectedTickRange.startTick,
+  });
+  const preparedVoiceReentry = classifyPreparedVoiceReentry({
+    source: terminalClosureSource,
+    finalAttackReentryVoiceCount,
+  });
   const classification = classifyTerminalClosure({
     mode: input.mode,
     terminalCadenceKind,
@@ -125,6 +145,10 @@ export function buildTerminalClosureReviewSummary(input: {
     inspectedTickRange,
     terminalCadenceKind,
     cadenceTargetTick,
+    terminalClosureSource,
+    codaStartTick,
+    preparedVoiceReentry,
+    finalAttackReentryVoiceCount,
     lowVoiceSupport,
     outerVoiceLandingStatus,
     unresolvedBoundaryDissonanceCount,
@@ -136,11 +160,32 @@ export function buildTerminalClosureReviewSummary(input: {
       terminalTick,
       endTick,
       activeAtTerminal,
+      preparedVoiceReentry,
+      finalAttackReentryVoiceCount,
       classification,
       reasons,
     }),
     reasons,
   };
+}
+
+function classifyTerminalClosureSource(
+  mode: InfinitePlaybackMode,
+  terminalPlan: HarmonicPlan | undefined,
+): TerminalClosureSource {
+  if (!appliesTerminalClosureIntent(mode)) {
+    return "not-required";
+  }
+  if (terminalPlan?.terminalIntent === "self-contained-coda") {
+    return "generated-coda";
+  }
+  if (terminalPlan?.terminalIntent === "fallback-terminal-closure") {
+    return "fallback-terminal-closure";
+  }
+  if (terminalPlan?.terminalIntent === "bridge-compatible-closure") {
+    return "bridge-compatible-closure";
+  }
+  return "ordinary-terminal-cadence";
 }
 
 function buildTerminalSonorityNotes(plan: HarmonicPlan, startTick: number, durationTicks: number): NoteEvent[] {
@@ -321,6 +366,41 @@ function classifyFinalRest(
   return stableTerminal ? "piece-boundary" : "silence-failure";
 }
 
+function countFinalAttackReentryVoices(input: {
+  notes: readonly NoteEvent[];
+  activeAtTerminal: readonly NoteEvent[];
+  terminalTick: number;
+  preparedStartTick: number;
+}): number {
+  const voices = new Set<Voice>();
+  for (const note of input.activeAtTerminal) {
+    if (note.startTick !== input.terminalTick) {
+      continue;
+    }
+    const preparedEarlier = input.notes.some(
+      (candidate) =>
+        candidate.voice === note.voice &&
+        candidate.startTick >= input.preparedStartTick &&
+        candidate.startTick < input.terminalTick &&
+        candidate.startTick + candidate.durationTicks >= input.terminalTick - TICKS_PER_QUARTER,
+    );
+    if (!preparedEarlier) {
+      voices.add(note.voice);
+    }
+  }
+  return voices.size;
+}
+
+function classifyPreparedVoiceReentry(input: {
+  source: TerminalClosureSource;
+  finalAttackReentryVoiceCount: number;
+}): TerminalClosurePreparedReentryStatus {
+  if (input.source !== "generated-coda") {
+    return "not-applicable";
+  }
+  return input.finalAttackReentryVoiceCount === 0 ? "prepared" : "sudden-final-attack";
+}
+
 function classifyTerminalClosure(input: {
   mode: InfinitePlaybackMode;
   terminalCadenceKind: CadenceKind | undefined;
@@ -418,6 +498,8 @@ function terminalClosureWindows(input: {
   terminalTick: number;
   endTick: number;
   activeAtTerminal: readonly NoteEvent[];
+  preparedVoiceReentry: TerminalClosurePreparedReentryStatus;
+  finalAttackReentryVoiceCount: number;
   classification: TerminalClosureClassification;
   reasons: readonly string[];
 }): TerminalClosureReviewWindow[] {
@@ -437,6 +519,14 @@ function terminalClosureWindows(input: {
       voices: [...new Set(input.activeAtTerminal.map((note) => note.voice))],
       classification: input.classification,
       reason: "final two to four measures were checked for cadence-supported thinning",
+    },
+    {
+      kind: "voice-reentry",
+      startTick: input.inspectedTickRange.startTick,
+      endTick: Math.min(input.endTick, input.terminalTick + TICKS_PER_QUARTER),
+      voices: input.activeAtTerminal.map((note) => note.voice),
+      classification: input.preparedVoiceReentry === "sudden-final-attack" ? "review-required" : input.classification,
+      reason: `${input.finalAttackReentryVoiceCount} terminal voice(s) first appear at the final attack in the prepared window`,
     },
   ];
 }
