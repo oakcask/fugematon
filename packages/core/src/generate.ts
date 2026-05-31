@@ -313,27 +313,34 @@ function buildContinuousSegmentContinuitySummary(input: {
   const startsWithExposition =
     nextFirstState === "exposition" || firstEntries.some((entry) => entry.state === "exposition");
   const repeatsInitialOrder = firstEntries.length >= 4 && entryOrderSimilarityToInitialExposition >= 1;
-  const classification = startsWithExposition
-    ? repeatsInitialOrder
-      ? "generator-response-required-reset"
-      : "review-required-reexposition"
-    : nextFirstState === "subject-return"
-      ? "prepared-subject-return"
-      : nextFirstState === "stretto-like"
-        ? "prepared-stretto"
-        : nextFirstState === "episode"
-          ? "developmental-episode"
-          : "accepted-continuation";
+  const classification =
+    input.segmentIndex === 0
+      ? "accepted-continuation"
+      : startsWithExposition
+        ? repeatsInitialOrder
+          ? "generator-response-required-reset"
+          : "review-required-reexposition"
+        : nextFirstState === "subject-return"
+          ? "prepared-subject-return"
+          : nextFirstState === "stretto-like"
+            ? "prepared-stretto"
+            : nextFirstState === "episode"
+              ? "developmental-episode"
+              : "accepted-continuation";
   const reasons = [
-    input.previousSnapshot === undefined
-      ? "segment has no previous snapshot and is treated as an initial generation"
-      : "segment was generated with a carried snapshot",
+    input.segmentIndex === 0
+      ? "segment 0 has no previous boundary and is treated as an initial generation"
+      : input.previousSnapshot === undefined
+        ? "segment has no previous snapshot and cannot be treated as a continuation"
+        : "segment was generated with a carried snapshot",
     startsWithExposition
       ? "first structural state is exposition"
       : `first structural state is ${nextFirstState ?? "unknown"}`,
-    repeatsInitialOrder
-      ? "first entries repeat the initial alto/soprano/tenor/bass order"
-      : "first entries do not repeat the complete initial entry order",
+    input.segmentIndex === 0 && repeatsInitialOrder
+      ? "initial segment uses the expected exposition entry order"
+      : repeatsInitialOrder
+        ? "first entries repeat the initial alto/soprano/tenor/bass order"
+        : "first entries do not repeat the complete initial entry order",
   ];
 
   return {

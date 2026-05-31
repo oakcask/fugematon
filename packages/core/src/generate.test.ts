@@ -178,6 +178,29 @@ test("generateScore continues continuous-fugue segments from a carried snapshot"
   );
 });
 
+test("generateScore treats continuous-fugue segment zero as initial boundary context", () => {
+  const first = generateScore({
+    seed: "seed-10tymfq-0udkhlm",
+    lengthTicks: 7680,
+    mode: "continuous-fugue",
+    segmentIndex: 0,
+  });
+  const second = generateScore({
+    seed: "seed-10tymfq-0udkhlm",
+    lengthTicks: 7680,
+    mode: "continuous-fugue",
+    segmentIndex: 1,
+    previousSegmentSnapshot: first.nextSegmentSnapshot,
+  });
+
+  assert.equal(first.diagnostics.sectionPlans[0]?.state, "exposition");
+  assert.equal(first.diagnostics.continuousSegmentContinuity.classification, "accepted-continuation");
+  assert.equal(first.diagnostics.continuousSegmentContinuity.carriedSubjectFamily, false);
+  assert.equal(first.diagnostics.continuousSegmentContinuity.pianoRollSessionTimelineContinuous, true);
+  assert.equal(second.diagnostics.continuousSegmentContinuity.classification, "prepared-subject-return");
+  assert.equal(second.diagnostics.continuousSegmentContinuity.carriedSubjectFamily, true);
+});
+
 test("generateScore uses carried planner hint and tonal region for continuous-fugue continuation", () => {
   const first = generateScore({
     seed: "wide-key",
