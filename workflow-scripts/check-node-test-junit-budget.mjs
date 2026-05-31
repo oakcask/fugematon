@@ -1,4 +1,4 @@
-import { access, readdir, readFile, stat } from "node:fs/promises";
+import { appendFile, readdir, readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -23,15 +23,20 @@ async function main() {
   const slowTestFiles = testFiles.filter((testFile) => testFile.seconds > maxSeconds);
 
   if (slowTestFiles.length > 0) {
-    console.error(`Slow test files exceeded the ${maxSeconds.toFixed(2)}s budget:`);
+    console.warn(
+      `ci.slow-test-files.refactor-signal: ${slowTestFiles.length} test file(s) exceeded the ${maxSeconds.toFixed(
+        2,
+      )}s budget.`,
+    );
+    console.warn("why: slow test files reduce node --test shard parallelism and can lengthen PR feedback.");
+    console.warn("action: split or narrow the listed test files when touching their ownership boundary.");
     for (const testFile of slowTestFiles) {
-      console.error(`- ${formatTestFileDuration(testFile)}`);
+      console.warn(`- ${formatTestFileDuration(testFile)}`);
       for (const testCase of testFile.testCases.slice(0, slowTestCaseSampleLimit)) {
-        console.error(`  - ${formatTestCaseDuration(testCase)}`);
+        console.warn(`  - ${formatTestCaseDuration(testCase)}`);
       }
-      await reportSlowTestFile(testFile, maxSeconds);
     }
-    console.error("\nSplit slow test files so node --test can distribute the work across more test processes.");
+    console.warn("\nThis is a refactor signal only; it does not fail the workflow.");
   }
 
   console.log("JUnit test file durations:");
@@ -39,9 +44,11 @@ async function main() {
     console.log(`- ${formatTestFileDuration(testFile)}; slowest ${formatTestCaseDuration(testFile.testCases[0])}`);
   }
 
-  if (slowTestFiles.length > 0) {
-    process.exit(1);
-  }
+  await writeSlowTestFilesStepSummary({
+    maxSeconds,
+    slowTestFiles,
+    testFiles,
+  });
 }
 
 async function readJUnitReports(reportPath) {
@@ -188,25 +195,61 @@ function toPosixRelativePath(filePath) {
   return path.relative(cwd, path.resolve(cwd, filePath)).split(path.sep).join("/");
 }
 
-async function reportSlowTestFile(testFile, maxSeconds) {
-  if (!isGitHubActions) {
+async function writeSlowTestFilesStepSummary({ maxSeconds, slowTestFiles, testFiles }) {
+  const summaryPath = process.env.GITHUB_STEP_SUMMARY;
+  if (summaryPath === undefined) {
     return;
   }
 
-  const annotationFile = await resolveAnnotationFile(testFile.file);
-  const message = `${testFile.file} took ${testFile.seconds.toFixed(2)}s across ${formatTestCaseCount(
-    testFile.testCases.length,
-  )}, exceeding the ${maxSeconds.toFixed(
-    2,
-  )}s node --test file duration budget. Slowest test case: ${formatTestCaseDuration(
-    testFile.testCases[0],
-  )}. Split the file so node --test can distribute the work across more test processes.`;
+  await appendFile(summaryPath, buildSlowTestFilesStepSummary({ maxSeconds, slowTestFiles, testFiles }));
+}
 
-  writeGitHubErrorAnnotation({
-    file: annotationFile,
-    title: "Slow node --test file",
-    message,
-  });
+export function buildSlowTestFilesStepSummary({ maxSeconds, slowTestFiles, testFiles }) {
+  const lines = [
+    "## Slow test files",
+    "",
+    "id: `ci.slow-test-files.refactor-signal`",
+    "",
+    "why: Slow test files reduce `node --test` shard parallelism and can lengthen PR feedback.",
+    "",
+    "action: Split or narrow the listed test files when touching their ownership boundary.",
+    "",
+  ];
+
+  if (slowTestFiles.length === 0) {
+    lines.push(`No test file exceeded the ${maxSeconds.toFixed(2)}s refactor signal threshold.`, "");
+  } else {
+    lines.push(
+      `The following test files exceeded the ${maxSeconds.toFixed(
+        2,
+      )}s refactor signal threshold. This does not fail the workflow.`,
+      "",
+      "| Test file | Duration | Test cases | Slowest test case |",
+      "| --- | ---: | ---: | --- |",
+    );
+
+    for (const testFile of slowTestFiles) {
+      lines.push(
+        `| ${escapeMarkdownTableCell(testFile.file)} | ${testFile.seconds.toFixed(2)}s | ${
+          testFile.testCases.length
+        } | ${escapeMarkdownTableCell(formatTestCaseDuration(testFile.testCases[0]))} |`,
+      );
+    }
+
+    lines.push("");
+  }
+
+  const slowestFiles = testFiles.slice(0, 10);
+  lines.push("### Slowest test files", "", "| Test file | Duration | Test cases |", "| --- | ---: | ---: |");
+
+  for (const testFile of slowestFiles) {
+    lines.push(
+      `| ${escapeMarkdownTableCell(testFile.file)} | ${testFile.seconds.toFixed(2)}s | ${testFile.testCases.length} |`,
+    );
+  }
+
+  lines.push("");
+  return `${lines.join("\n")}\n`;
 }
 
 function reportScriptError(error) {
@@ -220,28 +263,8 @@ function reportScriptError(error) {
   console.error(message);
 }
 
-async function resolveAnnotationFile(testCaseName) {
-  const sourceFile = testCaseName.replace(/\/dist\/(.+)\.js$/, "/src/$1.ts");
-  if (await fileExists(sourceFile)) {
-    return sourceFile;
-  }
-  if (await fileExists(testCaseName)) {
-    return testCaseName;
-  }
-  return undefined;
-}
-
 function isMainModule() {
   return process.argv[1] !== undefined && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
-}
-
-async function fileExists(filePath) {
-  try {
-    await access(filePath);
-    return true;
-  } catch {
-    return false;
-  }
 }
 
 function writeGitHubErrorAnnotation({ file, title, message }) {
@@ -261,6 +284,10 @@ function escapeGitHubAnnotationProperty(value) {
 
 function escapeGitHubAnnotationMessage(value) {
   return value.replaceAll("%", "%25").replaceAll("\r", "%0D").replaceAll("\n", "%0A");
+}
+
+function escapeMarkdownTableCell(value) {
+  return value.replaceAll("\\", "\\\\").replaceAll("|", "\\|").replaceAll("\n", " ");
 }
 
 function parseArguments(args) {
