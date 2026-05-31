@@ -10,24 +10,16 @@
 
 ## Read First
 
-* [Harmonic stasis rearticulation repair](harmonic-stasis-rearticulation-repair.md): 完了済み品質 blocker。`seed-07mwf08-1te3e2o` の first bass answer 後、`seed-1db5j19-1nhjtae` の functional-support 後処理、`seed-1syy921-0025pp1` の first-episode handoff で確認した自由唱の同音連打と和声停滞を Phase 8 前に扱った。
-* [Stretto entry harmony repair](stretto-entry-harmony-repair.md): 完了済み品質 blocker。`seed-1db5j19-1nhjtae` 7-8小節の harmony failure を seed 固有ではなく、stretto / entry 周辺の unresolved accented clash と support sonority 問題として Infinite playback MVP 前に扱った。
-* [Infinite playback MVP](phase-8.md): 完了済み operational target。旧 Phase 8。Score-led beauty handoff、Metrical generation repair、Texture continuity repair、Historical reference calibration、Episode motivic development、Harmonic stasis rearticulation repair、Stretto entry harmony repair 後に、`continuous fugue`、`endless program`、`regenerative cycle` の 3 再生モード semantics と segment snapshot contract を定義した。完了 evidence は [Phase 8 completion review](../reviews/phase-8-completion-review.md) を読む。
-* [Phase 9](phase-9.md): 完了済み operational lane。Worker 化、生成期限、fallback、長時間再生 stability を扱った。fallback や UI presentation は Phase 8 で可視化した review signal を隠す代替にしない。完了 evidence は [Phase 9 completion review](../reviews/phase-9-completion-review.md) を読む。
-* [Episode motivic development](episode-motivic-development.md): 完了済み品質 blocker。Historical reference calibration 後に、自由唱と episode を generic filler ではなく主題・応答・対主題から導かれる motivic development として扱った。
-* [Score-led beauty handoff](phase-14.md): 完了済み品質 blocker。旧 Phase 14。`fugue-smoke` 第5小節の transition rhythm と第7小節の short-episode harmonic-continuity を、Infinite playback MVP の前に generalized score-window repair として扱った。
-* [Historical reference calibration](historical-reference-calibration.md): 完了済み品質 blocker。探索的な Bach WTC diagnostics と現行生成 bundle の比較から、persistent voice-pair coupling、long pitch-class reinforcement、entry severe-interval pressure を Infinite playback MVP の前に扱った。
-* [WebAudio synth interpretation follow-up](webaudio-synth-interpretation.md): 完了済み rendering follow-up。`PerformanceProfile` の WebAudio envelope / velocity 解釈を調整し、生成譜面の欠陥を隠さず長時間再生の聴き取りやすさを改善した。完了 evidence は [WebAudio synth interpretation completion review](../reviews/webaudio-synth-interpretation-completion.md) を読む。
-* [Texture continuity repair](texture-continuity-repair.md): 完了済み品質 blocker。`seed-0i335vx-1n54a1x` の5小節目、9小節目、28小節目で確認した bass-answer tail thinning、exposed free-counterpoint solo、退屈な solo formula を Infinite playback MVP の前に扱った。
-* [Metrical generation repair](metrical-generation-repair.md): 完了済み handoff baseline。3/4 や 6/8 の time-signature metadata を generator、scoring、diagnostics へ接続し、譜面の拍子と聴感上の拍節感を揃えた品質 lane。
-* [Quality-first reorg](phase-7-plus-reorg.md): Phase 12 以降の品質優先再編と Phase 8/9 defer の理由。
+* [Endless program terminal cadence validation](endless-program-terminal-cadence-validation.md): planned current work. Before implementing `endless-program` UI chaining, validate that each segment can end with a musically meaningful terminal cadence and keep closure evidence visible.
 
 ## Read When
 
 * 実装対象の計画が分かっている場合は、その計画だけ読む。
 * 計画 scope や実装順序を変える場合は、該当計画と [../reference/technical-plan.md](../reference/technical-plan.md) を合わせて読む。
+* Phase 12 以降の品質優先再編や Phase 8/9 defer の理由を確認する場合は [Quality-first reorg](phase-7-plus-reorg.md) を読む。
 * 指標の意味や採否 policy を確認する場合は、計画文書ではなく [../reference/quality-metrics.md](../reference/quality-metrics.md) を読む。
-* Stretto entry harmony repair、Harmonic stasis rearticulation repair、Episode motivic development、Historical reference calibration、Score-led beauty handoff のレビュー根拠が必要な場合は [../reviews/README.md](../reviews/README.md) から最新レビューを選ぶ。
+* 完了済み計画、supersede 関係、旧 Phase ラベル、完了 evidence が必要な場合は [catalog.md](catalog.md) から該当項目を選ぶ。
+* 品質 blocker や完了レビューの根拠が必要な場合は [../reviews/README.md](../reviews/README.md) から最新レビューを選ぶ。
 
 ## Catalog
 
