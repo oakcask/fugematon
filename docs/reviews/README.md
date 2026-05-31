@@ -4,7 +4,7 @@
 
 ## Read First
 
-* [Continuous fugue segment continuity review](continuous-fugue-segment-continuity-review.md): completed current target evidence. `continuous-fugue` segment 1 now consumes a carried snapshot, starts from continuation material, and keeps piano-roll session timeline evidence separate from `endless-program` terminal coda work.
+* [Continuous fugue segment continuity review](continuous-fugue-segment-continuity-review.md): completed current target evidence. 22 seed revalidation shows `continuous-fugue` segment 1 consumes a carried snapshot, starts from continuation material, no longer repeats the initial exposition order, and keeps piano-roll session timeline evidence separate from `endless-program` terminal coda work.
 * [Endless Program Terminal Cadence Review](endless-program-terminal-cadence-review.md): completed current target evidence。`endless-program` segment 末尾の baseline failure、terminal closure repair、focused seed after-pass、CI / review scope、listening gap を記録する。
 * [Phase 9 completion review](phase-9-completion-review.md): Worker 化、deadline / fallback recording、long-run playback history の完了 evidence。Phase 8 baseline の review signal を fallback や UI presentation で隠さないことを記録する。
 * [WebAudio synth interpretation completion review](webaudio-synth-interpretation-completion.md): Infinite playback MVP 後の rendering follow-up 完了 evidence。`organ-default` / `strict-counterpoint` の 22 seed bundle が TARGET baseline と一致し、WebAudio envelope / velocity 解釈だけが変わったことを記録する。
