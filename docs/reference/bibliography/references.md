@@ -49,3 +49,43 @@
 * Verification: medium - page text was checked for the note that the subject is absent only in measure 23 and the final two measures.
 * Cache key: sources/historical-fugue-episode-lengths-2026-05-28.json
 * Notes: Contrasting example of near-continuous subject treatment.
+
+## prykhodko-wtc-fugue-endings
+
+* Citation: Prykhodko, Igor. "Polyphonic Setting of Endings in Fugues from The Well-Tempered Clavier by Johann Sebastian Bach." *Scientific Herald of Tchaikovsky National Music Academy of Ukraine*, no. 129, 2020, pp. 180-200.
+* Stable identifier: https://doi.org/10.31318/2522-4190.2020.129.219737
+* Source type: article
+* Accessed: 2026-06-01
+* Verification: medium - article metadata and abstract were checked for ending-technique categories and DOI.
+* Cache key: sources/historical-fugue-endings-2026-06-01.json
+* Notes: Discusses WTC fugue ending signals including texture compaction, added or delayed voices, splitting, thematic load, and broad ending types.
+
+## teoria-bwv861-final
+
+* Citation: Rodríguez Alvira, José, and José D. Sandín. "Analysis of Bach's G Minor Fugue (BWV 861): Final measures." teoría.
+* Stable identifier: https://www.teoria.com/en/articles/BWV861/final.php
+* Source type: web-page
+* Accessed: 2026-06-01
+* Verification: medium - page text was checked for the final episode and final stretto descriptions.
+* Cache key: sources/historical-fugue-endings-2026-06-01.json
+* Notes: WTC I G minor example where the close is driven by final episode material and multiple subject presentations.
+
+## teoria-bwv851-final
+
+* Citation: Rodríguez Alvira, José. "Analysis of Bach's fugue BWV 851 in D Minor (WTC I): Final Measures." teoría.
+* Stable identifier: https://www.teoria.com/en/articles/2017/BWV851/03.php
+* Source type: web-page
+* Accessed: 2026-06-01
+* Verification: medium - page text was checked for the final episode, inverted motive, final stretto, and motive-doubling descriptions.
+* Cache key: sources/historical-fugue-endings-2026-06-01.json
+* Notes: WTC I D minor example where terminal energy is carried by motivic inversion, stretto, and doubled motive forms.
+
+## walker-bwv847-kunstderfuge
+
+* Citation: Walker, Paul. "Fugue." Grove Music Online excerpt, hosted by Kunst der Fuge.
+* Stable identifier: https://www.kunstderfuge.com/theory/fugue.htm
+* Source type: web-page
+* Accessed: 2026-06-01
+* Verification: medium - hosted excerpt was checked for the BWV 847 final subject and pedal-point description.
+* Cache key: sources/historical-fugue-endings-2026-06-01.json
+* Notes: Uses Bach WTC I C minor fugue as a textbook example, including the final subject over a pedal point.

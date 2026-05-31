@@ -14,12 +14,24 @@ Make music-theory review reproducible enough that an agent can find problems, co
 1. Start from `docs/README.md`, then open only the relevant phase, reference, and review docs.
 2. Identify the concrete musical concern: counterpoint, harmony, fugue form, melody, rhythm, texture, style fit, listening fatigue, or diagnostics coverage.
 3. For any change to a music-quality gate, diagnostics threshold, generator model, candidate scoring model, evaluation weights, or section/planner model, review generated scores across several relevant seeds before finalizing, without waiting for human listening. Treat the review as agent-side musical judgement that approximates a human first pass, while explicitly recording any remaining listening gaps.
-4. Do a literature pass before making strong theory claims. Use Fux/species counterpoint as the default counterpoint baseline, then check broader classical, jazz, and popular-music sources when the issue touches harmony, rhythm, form, phrase design, texture, or style.
+4. Do a literature and repertoire pass before designing or revising a generator model, and before making strong theory claims. Use Fux/species counterpoint as the default counterpoint baseline, then check broader classical, jazz, popular-music, generative-music evaluation, and historically relevant repertoire sources when the issue touches harmony, rhythm, form, phrase design, texture, style, or evaluation.
 5. Generate or inspect evidence across the relevant review seeds. Prefer existing review bundles and diagnostics when they answer the question; otherwise regenerate a bundle under `samples/<review-name>` or derive focused metrics from ScoreEvent data.
 6. When a symptom repeats across seeds, test whether it comes from a generator pattern, not only from the local diagnostics. Compare subject degree patterns, answer transforms, entry spacing, role assignments, section states, voice/register placement, and support-texture formulas against the affected metrics.
 7. If the review touches seed or metric scope, classify each affected item with `docs/reference/quality-metrics/ci-review-scope.md` before recommending CI expansion. Default uncertain beauty signals to `review-required`, not CI blocking.
 8. Separate findings into source-backed rules, project policy, and inference from generated artifacts.
 9. Update docs when the review changes phase scope, gate rationale, diagnostics priorities, seed selection, or music-quality expectations.
+
+## Generator Model Design Rules
+
+When designing or revising a generator model, treat research and historical works as design inputs, not after-the-fact decoration.
+
+* Identify the model boundary: subject generation, answer treatment, episode planning, harmony, texture, rhythm, section planning, scoring, or evaluation.
+* Choose at least one relevant source family from [references/literature-map.md](references/literature-map.md), plus historical repertoire examples when the model claims a style, form, or idiom.
+* Use `bibliography-fetch` and `bibliography-cache` for exact citations when a source affects implementation direction, phase scope, quality gates, review acceptance, or license policy. Promote only sanitized ref ids, source-family ids, and claim ids through `docs/reference/bibliography/`.
+* Translate each source-backed idea into an explicit project decision: hard constraint, soft score, style-profile preference, diagnostic, manual-listening criterion, rejected option, or future research question.
+* Record the design effect, not only the citation. State which generator behavior changed, what musical risk it addresses, and what boundary cases or style exceptions remain.
+* Verify the design against generated evidence and, when possible, repertoire-facing expectations: representative seeds, boundary seeds, related controls, score-event checks, diagnostics, or listening notes.
+* If repertoire examples are unavailable or source access is incomplete, mark the claim as provisional and avoid turning it into a hard constraint.
 
 ## Human Feedback Ambiguity Rules
 
@@ -51,6 +63,8 @@ Use [references/literature-map.md](references/literature-map.md) to choose sourc
 * Use Bach/fugue and broader classical sources for exposition, answer treatment, episode design, stretto, invertible counterpoint, cadence, sequence, and long-range form.
 * Use jazz theory sources for chord members, extensions, avoid notes, guide tones, tension/resolution, modal color, and reharmonization-like behavior.
 * Use popular-music sources for loop tolerance, groove, phrase repetition, hook-like memorability, bass-line behavior, texture density, and long-duration listener fatigue.
+* Use historical works as repertoire evidence when designing style- or form-specific generator behavior. Record the observed pattern and the project decision separately, so an example does not become an accidental universal rule.
+* Use generative-music evaluation sources when changing model evaluation, learned weights, preference signals, or listening gates.
 * When citing a specific text, edition, page, chapter, or quote, verify it first. If network access or source access is unavailable, say the claim is unverified and keep it as a provisional review note.
 * Do not force every style rule into a hard constraint. Mark whether the rule is a hard failure, soft cost, style-profile preference, manual-listening criterion, or future research question.
 

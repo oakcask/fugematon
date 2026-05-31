@@ -20,6 +20,7 @@
 - When literature or citation evidence affects implementation direction, phase scope, quality gates, review acceptance, or license policy, keep `.bibliography-cache/` as working cache and promote the sanitized citation or claim mapping through `docs/reference/bibliography/`.
 - When a rejected implementation, failed experiment, or decision not to proceed changes future work, record the durable lesson in the relevant phase, review, or reference doc.
 - Use `music-theory-review` before finalizing changes to generation quality, diagnostics thresholds, music-quality gates, scoring models, or section/planner behavior.
+- When designing or revising generator models, ground the model in relevant research sources and historical works, then record how that evidence affected the design, limits, and verification plan.
 - When repairing model behavior from a user-reported musical symptom, do not hard-code the fix to one seed, time signature, key signature, pitch name, chord, voice name, or measure unless the feature is explicitly scoped that way. Preserve the reported case as regression evidence, then express the repair in terms of the underlying musical structure and verify it against at least one related variant or control.
 - When handling music-quality metric regressions, do not treat the number alone as the reason to accept or reject a change. Record the affected seed or section, the concrete musical symptom, the tradeoff, and whether the response belongs in generation, scoring, diagnostics, docs, or manual listening.
 
