@@ -41,6 +41,30 @@ test("generation worker returns a playback model with deadline and review signal
   assert.ok(response.reviewSnapshot.issueCount >= 0);
   assert.ok(response.reviewSnapshot.warningCount >= 0);
   assert.match(response.reviewSnapshot.qualityVectorStatus, /^(review-required|within-profile)$/);
+  assert.match(
+    response.reviewSnapshot.terminalClosureStatus,
+    /^(not-required|accepted|review-required|generator-response-required)$/,
+  );
+});
+
+test("generation worker preserves endless-program mode in deadline records", async () => {
+  const response = await dispatchWorkerRequest({
+    requestId: 43,
+    seed: "modal-cadence",
+    performanceProfileId: "strict-counterpoint",
+    lengthTicks: 1920,
+    deadlineMs: 60_000,
+    segmentIndex: 10,
+    mode: "endless-program",
+  });
+
+  assert.equal(response.type, "generated");
+  assert.equal(response.deadlineResult.mode, "endless-program");
+  assert.equal(response.deadlineResult.segmentIndex, 10);
+  assert.equal(response.deadlineResult.referenceDiagnosticsPreserved, true);
+  assert.equal(response.deadlineResult.qualityVectorPreserved, true);
+  assert.ok(response.deadlineResult.reviewSignalsRemainVisible.includes("score-window-acceptance"));
+  assert.equal(response.reviewSnapshot.terminalClosureStatus, "accepted");
 });
 
 test("generation worker reports invalid deadline requests as error responses", async () => {

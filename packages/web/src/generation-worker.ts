@@ -28,11 +28,12 @@ workerScope.onmessage = (event) => {
       seed: request.seed,
       lengthTicks: request.lengthTicks,
       selectionModel: DEFAULT_SELECTION_MODEL,
+      mode: request.mode,
     });
     const completedAtMs = performance.now();
     const hardConstraintsSatisfied = satisfiesGenerationHardConstraints(output);
     const deadlineResult = planSegmentGenerationDeadlineResult({
-      mode: "continuous-fugue",
+      mode: request.mode ?? "continuous-fugue",
       segmentIndex: request.segmentIndex,
       startedAtMs,
       completedAtMs,
@@ -99,6 +100,7 @@ function createReviewSnapshot(
     qualityVectorStatus: output.diagnostics.qualityVector.axes.some((axis) => axis.status === "review-required")
       ? "review-required"
       : "within-profile",
+    terminalClosureStatus: output.diagnostics.terminalClosureReview.classification,
   };
 }
 
@@ -121,6 +123,19 @@ function createConservativeFallbackOutput(output: GenerationOutput, lengthTicks:
       keyMetadataMismatches: 0,
       unresolvedDissonanceCount: 0,
       allVoiceSilenceGapCount: 0,
+      terminalClosureReview: {
+        ...output.diagnostics.terminalClosureReview,
+        terminalCadenceKind: undefined,
+        cadenceTargetTick: undefined,
+        lowVoiceSupport: "missing",
+        outerVoiceLandingStatus: "missing",
+        unresolvedBoundaryDissonanceCount: 0,
+        thinningExplanation: "unsupported-collapse",
+        finalRestClassification: "silence-failure",
+        classification: "generator-response-required",
+        windows: [],
+        reasons: ["conservative fallback has no score events for terminal closure evidence"],
+      },
     },
   };
 }

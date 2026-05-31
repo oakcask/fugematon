@@ -210,6 +210,13 @@ export type GenerationInput = {
   seed: string;
   lengthTicks: number;
   selectionModel?: SelectionModel;
+  mode?:
+    | "continuous-fugue"
+    | "endless-program"
+    | "regenerative-cycle"
+    | "continuous fugue"
+    | "endless program"
+    | "regenerative cycle";
 };
 
 export type DiagnosticIssueCode =
@@ -1358,6 +1365,54 @@ export type ScoreWindowAcceptanceSummary = {
   windows: ScoreWindowAcceptanceWindow[];
 };
 
+export type TerminalClosureClassification =
+  | "accepted"
+  | "review-required"
+  | "generator-response-required"
+  | "not-required";
+
+export type TerminalClosureSupportStatus = "root-supported" | "stable-chord-tone" | "unsupported" | "missing";
+
+export type TerminalClosureOuterVoiceLandingStatus = "stable" | "review-required" | "unstable" | "missing";
+
+export type TerminalClosureThinningExplanation =
+  | "cadence-support"
+  | "prepared-reduction"
+  | "suspension-or-pedal"
+  | "phrase-closure"
+  | "unsupported-collapse"
+  | "not-thinned";
+
+export type TerminalClosureFinalRestClassification = "none" | "piece-boundary" | "silence-failure";
+
+export type TerminalClosureReviewWindow = {
+  kind: "terminal-cadence" | "final-sonority" | "boundary-rest" | "texture-thinning";
+  startTick: number;
+  endTick: number;
+  voices: Voice[];
+  classification: TerminalClosureClassification;
+  reason: string;
+};
+
+export type TerminalClosureReviewSummary = {
+  schemaVersion: 1;
+  segmentIndex: number;
+  inspectedTickRange: {
+    startTick: number;
+    endTick: number;
+  };
+  terminalCadenceKind?: CadenceKind;
+  cadenceTargetTick?: number;
+  lowVoiceSupport: TerminalClosureSupportStatus;
+  outerVoiceLandingStatus: TerminalClosureOuterVoiceLandingStatus;
+  unresolvedBoundaryDissonanceCount: number;
+  thinningExplanation: TerminalClosureThinningExplanation;
+  finalRestClassification: TerminalClosureFinalRestClassification;
+  classification: TerminalClosureClassification;
+  windows: TerminalClosureReviewWindow[];
+  reasons: string[];
+};
+
 export type GenerationDiagnostics = {
   generatorVersion: number;
   selectionModel: SelectionModel;
@@ -1420,6 +1475,7 @@ export type GenerationDiagnostics = {
   harmonicStasisRearticulation: HarmonicStasisRearticulationSummary;
   transitionRhythmReview: TransitionRhythmReviewSummary;
   scoreWindowAcceptance: ScoreWindowAcceptanceSummary;
+  terminalClosureReview: TerminalClosureReviewSummary;
   ornamentCandidateCount: number;
   ornamentDensity: number;
   ornamentPlacementReasons: OrnamentPlacementReasons;

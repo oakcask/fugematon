@@ -1,4 +1,8 @@
-import type { SegmentGenerationDeadlineResult } from "@fugematon/core";
+import type {
+  InfinitePlaybackMode,
+  SegmentGenerationDeadlineResult,
+  TerminalClosureClassification,
+} from "@fugematon/core";
 import type { PerformanceProfileId } from "@fugematon/performance";
 import type { PlaybackModel } from "./score.js";
 
@@ -9,6 +13,7 @@ export type GenerationWorkerRequest = {
   lengthTicks: number;
   deadlineMs: number;
   segmentIndex: number;
+  mode?: InfinitePlaybackMode;
 };
 
 export type GenerationWorkerReviewSnapshot = {
@@ -17,6 +22,7 @@ export type GenerationWorkerReviewSnapshot = {
   issueCount: number;
   warningCount: number;
   qualityVectorStatus: string;
+  terminalClosureStatus: TerminalClosureClassification;
 };
 
 export type GenerationWorkerSuccessResponse = {
