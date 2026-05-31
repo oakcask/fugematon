@@ -40,6 +40,9 @@ export type {
   CandidatePoolOracleClassification,
   CandidatePoolOracleRepresentative,
   CandidatePoolOracleSummary,
+  ContinuousSegmentContinuityClassification,
+  ContinuousSegmentContinuityEntrySummary,
+  ContinuousSegmentContinuitySummary,
   CounterSubjectWindowSummary,
   DissonanceTriageSummary,
   DissonanceTriageWindow,
@@ -145,6 +148,7 @@ export { generateScore } from "./generate.js";
 export type {
   AppendInfinitePlaybackSegmentHistoryInput,
   BoundedPastEventContext,
+  CreateSegmentEndSnapshotInput,
   InfinitePlaybackLongRunHistory,
   InfinitePlaybackMode,
   InfinitePlaybackModeSemantics,
@@ -179,6 +183,7 @@ export type {
 export {
   appendInfinitePlaybackSegmentHistory,
   createInitialSegmentSnapshot,
+  createSegmentEndSnapshot,
   DEFAULT_BOUNDED_PAST_EVENT_CONTEXT_TICKS,
   INFINITE_PLAYBACK_MODE_SEMANTICS,
   INFINITE_PLAYBACK_SNAPSHOT_SCHEMA_VERSION,

@@ -3,18 +3,22 @@ import {
   type InfinitePlaybackMode,
   planSegmentGenerationDeadlineResult,
   type SegmentGenerationDeadlineResult,
+  type SegmentSnapshot,
 } from "@fugematon/core";
 import { listPerformanceProfiles, type PerformanceProfileId } from "@fugematon/performance";
 import "./style.css";
 import { ScorePlayer } from "./audio.js";
 import {
+  adoptedSegmentSessionSeed,
   computeEndlessPrefetchDeadlineMs,
   isSegmentChainingPlaybackMode,
   segmentBoundaryPauseMs,
+  segmentRequestSeed,
 } from "./endless-playback.js";
 import type { GenerationWorkerResponse, GenerationWorkerReviewSnapshot } from "./generation-worker-protocol.js";
 import { drawPianoRoll } from "./piano-roll.js";
 import {
+  appendPlaybackModelSessionTimeline,
   DEFAULT_WEB_PERFORMANCE_PROFILE_ID,
   formatKeySignature,
   formatPlaybackPosition,
@@ -40,10 +44,13 @@ type AppState = {
   playbackMode: InfinitePlaybackMode;
   segmentIndex: number;
   model?: PlaybackModel;
+  sessionModel?: PlaybackModel;
+  segmentPlaybackOffsetSecond: number;
   generationStatus: GenerationStatus;
   nextSegmentStatus: NextSegmentStatus;
   deadlineResult?: SegmentGenerationDeadlineResult;
   reviewSnapshot?: GenerationWorkerReviewSnapshot;
+  nextSegmentSnapshot?: SegmentSnapshot;
 };
 
 type PrefetchedSegment = {
@@ -52,6 +59,7 @@ type PrefetchedSegment = {
   model: PlaybackModel;
   deadlineResult: SegmentGenerationDeadlineResult;
   reviewSnapshot: GenerationWorkerReviewSnapshot;
+  nextSegmentSnapshot: SegmentSnapshot;
 };
 
 type DebugValue = string | number | boolean | undefined;
@@ -141,6 +149,10 @@ app.innerHTML = `
         <strong id="terminal-closure-status"></strong>
       </div>
       <div>
+        <span class="metric-label">Continuity</span>
+        <strong id="continuity-status"></strong>
+      </div>
+      <div>
         <span class="metric-label">Deadline</span>
         <strong id="deadline-status"></strong>
       </div>
@@ -185,6 +197,10 @@ const segmentIndexStatus = requireElement(
 const terminalClosureStatus = requireElement(
   document.querySelector<HTMLElement>("#terminal-closure-status"),
   "terminal closure status metric",
+);
+const continuityStatus = requireElement(
+  document.querySelector<HTMLElement>("#continuity-status"),
+  "continuity status metric",
 );
 const deadlineStatus = requireElement(
   document.querySelector<HTMLElement>("#deadline-status"),
@@ -255,7 +271,7 @@ playPauseButton.addEventListener("click", () => {
 stopButton.addEventListener("click", () => {
   cancelPlayback();
   if (state.model !== undefined) {
-    drawPianoRoll(pianoRoll, state.model, 0);
+    drawPianoRoll(pianoRoll, visualPlaybackModel(state), 0);
   }
   renderPlaybackPosition(0);
   transportStatus.textContent = "Playback stopped";
@@ -267,8 +283,9 @@ window.addEventListener("resize", () => {
   }
 
   const playbackSecond = player?.playbackSecond ?? 0;
-  drawPianoRoll(pianoRoll, state.model, playbackSecond);
-  renderPlaybackPosition(playbackSecond);
+  const visualSecond = visualPlaybackSecond(state, playbackSecond);
+  drawPianoRoll(pianoRoll, visualPlaybackModel(state), visualSecond);
+  renderPlaybackPosition(visualSecond);
 });
 
 window.addEventListener("popstate", () => {
@@ -298,12 +315,14 @@ function regenerateScore(seed: string, urlUpdateMode: UrlUpdateMode = "push"): v
     playbackMode,
     segmentIndex,
     model: state.model,
+    sessionModel: state.sessionModel,
+    segmentPlaybackOffsetSecond: 0,
     generationStatus: "generating",
     nextSegmentStatus: "idle",
   };
   render(state);
   if (state.model !== undefined) {
-    drawPianoRoll(pianoRoll, state.model, 0);
+    drawPianoRoll(pianoRoll, visualPlaybackModel(state), 0);
   }
   renderPlaybackPosition(0);
   transportStatus.textContent = "Generating score";
@@ -339,6 +358,7 @@ function createPendingState(
     performanceProfileId,
     playbackMode: "continuous-fugue",
     segmentIndex: 0,
+    segmentPlaybackOffsetSecond: 0,
     generationStatus: "idle",
     nextSegmentStatus: "idle",
   };
@@ -434,6 +454,7 @@ function render(nextState: AppState): void {
   modeStatus.textContent = formatPlaybackMode(nextState.playbackMode);
   segmentIndexStatus.textContent = `${nextState.segmentIndex}`;
   terminalClosureStatus.textContent = nextState.reviewSnapshot?.terminalClosureStatus ?? "...";
+  continuityStatus.textContent = nextState.reviewSnapshot?.continuousSegmentContinuityStatus ?? "...";
   deadlineStatus.textContent = formatDeadlineStatus(nextState);
   fallbackStatus.textContent = formatFallbackStatus(nextState);
 }
@@ -444,7 +465,19 @@ function renderPlaybackPosition(playbackSecond: number): void {
     return;
   }
 
-  playbackPosition.textContent = formatPlaybackPosition(playbackSecond, state.model);
+  playbackPosition.textContent = formatPlaybackPosition(playbackSecond, visualPlaybackModel(state));
+}
+
+function visualPlaybackModel(nextState: AppState): PlaybackModel {
+  return nextState.playbackMode === "continuous-fugue" && nextState.sessionModel !== undefined
+    ? nextState.sessionModel
+    : nextState.model!;
+}
+
+function visualPlaybackSecond(nextState: AppState, segmentSecond: number): number {
+  return nextState.playbackMode === "continuous-fugue"
+    ? nextState.segmentPlaybackOffsetSecond + segmentSecond
+    : segmentSecond;
 }
 
 async function startPlayback(): Promise<void> {
@@ -460,7 +493,7 @@ async function startPlayback(): Promise<void> {
   playbackStartController = controller;
   transportStatus.textContent = "Starting playback";
   renderTransportButtons();
-  renderPlaybackPosition(offsetSecond);
+  renderPlaybackPosition(visualPlaybackSecond(state, offsetSecond));
 
   try {
     player ??= new ScorePlayer();
@@ -520,9 +553,9 @@ function pausePlayback(): void {
   cancelVisualizerLoop();
   setPlaybackFeedback(false);
   if (state.model !== undefined) {
-    drawPianoRoll(pianoRoll, state.model, pausedAtSecond);
+    drawPianoRoll(pianoRoll, visualPlaybackModel(state), visualPlaybackSecond(state, pausedAtSecond));
   }
-  renderPlaybackPosition(pausedAtSecond);
+  renderPlaybackPosition(visualPlaybackSecond(state, pausedAtSecond));
   transportStatus.textContent = "Playback paused";
   renderTransportButtons();
 }
@@ -537,8 +570,9 @@ function startVisualizerLoop(): void {
     }
 
     const playbackSecond = player?.playbackSecond ?? 0;
-    drawPianoRoll(pianoRoll, state.model, playbackSecond);
-    renderPlaybackPosition(playbackSecond);
+    const visualSecond = visualPlaybackSecond(state, playbackSecond);
+    drawPianoRoll(pianoRoll, visualPlaybackModel(state), visualSecond);
+    renderPlaybackPosition(visualSecond);
 
     if (player?.isPlaying) {
       animationFrame = window.requestAnimationFrame(drawFrame);
@@ -624,6 +658,8 @@ function handleGenerationWorkerResponse(response: GenerationWorkerResponse): voi
       response.type === "generated" ? response.reviewSnapshot.hardConstraintsSatisfied : undefined,
     responseIssueCount: response.type === "generated" ? response.reviewSnapshot.issueCount : undefined,
     responseWarningCount: response.type === "generated" ? response.reviewSnapshot.warningCount : undefined,
+    continuousSegmentContinuityStatus:
+      response.type === "generated" ? response.reviewSnapshot.continuousSegmentContinuityStatus : undefined,
   });
 
   if (response.requestId === activePrefetchGenerationRequestId) {
@@ -665,14 +701,17 @@ function handleGenerationWorkerResponse(response: GenerationWorkerResponse): voi
     playbackMode: response.deadlineResult.mode,
     segmentIndex: response.deadlineResult.segmentIndex,
     model,
+    sessionModel: model,
+    segmentPlaybackOffsetSecond: 0,
     generationStatus,
     nextSegmentStatus: state.nextSegmentStatus,
     deadlineResult: response.deadlineResult,
     reviewSnapshot: response.reviewSnapshot,
+    nextSegmentSnapshot: response.nextSegmentSnapshot,
   };
   seedInput.value = response.seed;
   render(state);
-  drawPianoRoll(pianoRoll, model, 0);
+  drawPianoRoll(pianoRoll, visualPlaybackModel(state), 0);
   renderPlaybackPosition(0);
   transportStatus.textContent = preserveBestSoFarModel ? "Keeping best-so-far after deadline" : "Ready to play";
   renderTransportButtons();
@@ -700,6 +739,7 @@ function handlePrefetchGenerationWorkerResponse(response: GenerationWorkerRespon
     model: response.model,
     deadlineResult: response.deadlineResult,
     reviewSnapshot: response.reviewSnapshot,
+    nextSegmentSnapshot: response.nextSegmentSnapshot,
   };
   logEndlessDebug("prefetch-ready", {
     requestId: response.requestId,
@@ -713,6 +753,7 @@ function handlePrefetchGenerationWorkerResponse(response: GenerationWorkerRespon
     responseIssueCount: response.reviewSnapshot.issueCount,
     responseWarningCount: response.reviewSnapshot.warningCount,
     terminalClosureStatus: response.reviewSnapshot.terminalClosureStatus,
+    continuousSegmentContinuityStatus: response.reviewSnapshot.continuousSegmentContinuityStatus,
   });
   state = {
     ...state,
@@ -742,7 +783,11 @@ function prefetchNextSegment(): void {
     boundaryPauseMs: segmentBoundaryPauseMs(state.playbackMode, AUDIBLE_BOUNDARY_PAUSE_MS),
     minimumDeadlineMs: GENERATION_DEADLINE_MS,
   });
-  const seed = nextSegmentSeed(state.seed, segmentIndex);
+  const seed = segmentRequestSeed({
+    mode: state.playbackMode,
+    sessionSeed: state.seed,
+    segmentIndex,
+  });
   activePrefetchGenerationRequestId = requestId;
   state = {
     ...state,
@@ -766,6 +811,7 @@ function prefetchNextSegment(): void {
     deadlineMs,
     segmentIndex,
     mode: state.playbackMode,
+    previousSegmentSnapshot: state.playbackMode === "continuous-fugue" ? state.nextSegmentSnapshot : undefined,
   });
 }
 
@@ -809,21 +855,37 @@ function adoptPrefetchedSegment(segment: PrefetchedSegment): void {
   });
   prefetchedSegment = undefined;
   nextSegmentIndex = segment.deadlineResult.segmentIndex + 1;
+  const seed = adoptedSegmentSessionSeed({
+    mode: segment.deadlineResult.mode,
+    currentSessionSeed: state.seed,
+    responseSeed: segment.seed,
+  });
+  const sessionModel =
+    segment.deadlineResult.mode === "continuous-fugue" && state.sessionModel !== undefined
+      ? appendPlaybackModelSessionTimeline(state.sessionModel, segment.model)
+      : segment.model;
+  const segmentPlaybackOffsetSecond =
+    segment.deadlineResult.mode === "continuous-fugue" && state.sessionModel !== undefined
+      ? state.sessionModel.totalSeconds
+      : 0;
   state = {
-    seed: segment.seed,
+    seed,
     performanceProfileId: segment.performanceProfileId,
     playbackMode: segment.deadlineResult.mode,
     segmentIndex: segment.deadlineResult.segmentIndex,
     model: segment.model,
+    sessionModel,
+    segmentPlaybackOffsetSecond,
     generationStatus: "ready",
     nextSegmentStatus: "idle",
     deadlineResult: segment.deadlineResult,
     reviewSnapshot: segment.reviewSnapshot,
+    nextSegmentSnapshot: segment.nextSegmentSnapshot,
   };
-  seedInput.value = segment.seed;
+  seedInput.value = seed;
   render(state);
-  drawPianoRoll(pianoRoll, segment.model, 0);
-  renderPlaybackPosition(0);
+  drawPianoRoll(pianoRoll, visualPlaybackModel(state), visualPlaybackSecond(state, 0));
+  renderPlaybackPosition(visualPlaybackSecond(state, 0));
 }
 
 function waitForPrefetchedSegment(): Promise<PrefetchedSegment | undefined> {
@@ -871,10 +933,6 @@ function waitForPrefetchedSegment(): Promise<PrefetchedSegment | undefined> {
       }
     }, 100);
   });
-}
-
-function nextSegmentSeed(seed: string, segmentIndex: number): string {
-  return `${seed}-segment-${segmentIndex}`;
 }
 
 function delay(ms: number): Promise<void> {

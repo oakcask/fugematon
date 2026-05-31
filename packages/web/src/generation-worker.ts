@@ -29,6 +29,8 @@ workerScope.onmessage = (event) => {
       lengthTicks: request.lengthTicks,
       selectionModel: DEFAULT_SELECTION_MODEL,
       mode: request.mode,
+      segmentIndex: request.segmentIndex,
+      previousSegmentSnapshot: request.previousSegmentSnapshot,
     });
     const completedAtMs = performance.now();
     const hardConstraintsSatisfied = satisfiesGenerationHardConstraints(output);
@@ -52,6 +54,7 @@ workerScope.onmessage = (event) => {
       model: createPlaybackModel(playbackOutput, request.performanceProfileId),
       deadlineResult,
       reviewSnapshot: createReviewSnapshot(output, hardConstraintsSatisfied),
+      nextSegmentSnapshot: output.nextSegmentSnapshot,
     });
   } catch (error) {
     workerScope.postMessage({
@@ -114,6 +117,7 @@ function createReviewSnapshot(
       ? "review-required"
       : "within-profile",
     terminalClosureStatus: output.diagnostics.terminalClosureReview.classification,
+    continuousSegmentContinuityStatus: output.diagnostics.continuousSegmentContinuity.classification,
   };
 }
 
@@ -122,6 +126,7 @@ function createConservativeFallbackOutput(output: GenerationOutput, lengthTicks:
 
   return {
     events,
+    nextSegmentSnapshot: output.nextSegmentSnapshot,
     diagnostics: {
       ...output.diagnostics,
       generatedUntilTick: lengthTicks,
@@ -148,6 +153,17 @@ function createConservativeFallbackOutput(output: GenerationOutput, lengthTicks:
         classification: "generator-response-required",
         windows: [],
         reasons: ["conservative fallback has no score events for terminal closure evidence"],
+      },
+      continuousSegmentContinuity: {
+        ...output.diagnostics.continuousSegmentContinuity,
+        classification:
+          output.diagnostics.continuousSegmentContinuity.segmentIndex === 0
+            ? output.diagnostics.continuousSegmentContinuity.classification
+            : "generator-response-required-reset",
+        reasons: [
+          ...output.diagnostics.continuousSegmentContinuity.reasons,
+          "conservative fallback has no continuation score events",
+        ],
       },
     },
   };

@@ -7,7 +7,7 @@ import {
   REVIEW_LENGTH_TICKS,
   VOICES,
 } from "./constants.js";
-import type { MetaEvent, NoteEvent } from "./events.js";
+import type { KeySignature, MetaEvent, NoteEvent } from "./events.js";
 import { generateScore } from "./generate.js";
 import { asMetaEvent, countIssues } from "./generate-test-helpers.js";
 
@@ -130,6 +130,128 @@ test("generateScore extends long scores with fugue-form states", () => {
     output.diagnostics.stateTransitions,
   );
   assert.ok(output.diagnostics.candidateEvaluations > 0);
+});
+
+test("generateScore continues continuous-fugue segments from a carried snapshot", () => {
+  const first = generateScore({
+    seed: "fugue-smoke",
+    lengthTicks: FUGUE_FORM_REVIEW_LENGTH_TICKS,
+    mode: "continuous-fugue",
+    segmentIndex: 0,
+  });
+  const second = generateScore({
+    seed: "fugue-smoke",
+    lengthTicks: FUGUE_FORM_REVIEW_LENGTH_TICKS,
+    mode: "continuous-fugue",
+    segmentIndex: 1,
+    previousSegmentSnapshot: first.nextSegmentSnapshot,
+  });
+  const firstStateChange = second.events.find(
+    (event): event is Extract<MetaEvent, { type: "state-change" }> =>
+      event.kind === "meta" && event.type === "state-change",
+  );
+
+  assert.equal(first.nextSegmentSnapshot.segmentIndex, 0);
+  assert.equal(second.nextSegmentSnapshot.segmentIndex, 1);
+  assert.notEqual(firstStateChange?.payload.state, "exposition");
+  assert.notEqual(second.diagnostics.sectionPlans[0]?.state, "exposition");
+  assert.ok(second.diagnostics.continuousSegmentContinuity.carriedSubjectFamily);
+  assert.notEqual(second.diagnostics.continuousSegmentContinuity.classification, "generator-response-required-reset");
+  assert.notDeepEqual(
+    second.diagnostics.subjectEntries.slice(0, 4).map((entry) => [entry.voice, entry.state]),
+    [
+      ["alto", "exposition"],
+      ["soprano", "exposition"],
+      ["tenor", "exposition"],
+      ["bass", "exposition"],
+    ],
+  );
+  assert.deepEqual(
+    generateScore({
+      seed: "fugue-smoke",
+      lengthTicks: FUGUE_FORM_REVIEW_LENGTH_TICKS,
+      mode: "continuous-fugue",
+      segmentIndex: 1,
+      previousSegmentSnapshot: first.nextSegmentSnapshot,
+    }),
+    second,
+  );
+});
+
+test("generateScore uses carried planner hint and tonal region for continuous-fugue continuation", () => {
+  const first = generateScore({
+    seed: "wide-key",
+    lengthTicks: 7680,
+    mode: "continuous-fugue",
+    segmentIndex: 0,
+  });
+  const carriedKey = { tonic: "D", mode: "minor" } satisfies KeySignature;
+  const previousSegmentSnapshot = {
+    ...first.nextSegmentSnapshot,
+    tonalRegion: {
+      ...first.nextSegmentSnapshot.tonalRegion,
+      currentKey: carriedKey,
+      targetKey: carriedKey,
+    },
+    densityArc: {
+      ...first.nextSegmentSnapshot.densityArc,
+      currentVoiceCount: 2,
+      recentVoiceCounts: [2],
+    },
+    sectionPlannerState: {
+      ...first.nextSegmentSnapshot.sectionPlannerState,
+      currentState: "stretto-like" as const,
+      nextStateHint: "stretto-like" as const,
+      stateHistory: [...first.nextSegmentSnapshot.sectionPlannerState.stateHistory, "stretto-like" as const],
+    },
+  };
+  const second = generateScore({
+    seed: "wide-key",
+    lengthTicks: 7680,
+    mode: "continuous-fugue",
+    segmentIndex: 1,
+    previousSegmentSnapshot,
+  });
+
+  assert.equal(second.diagnostics.sectionPlans[0]?.state, "stretto-like");
+  assert.deepEqual(second.diagnostics.sectionPlans[0]?.localKey, carriedKey);
+  assert.equal(second.diagnostics.continuousSegmentContinuity.previousTailState, "stretto-like");
+  assert.equal(second.diagnostics.continuousSegmentContinuity.nextFirstState, "stretto-like");
+  assert.equal(second.diagnostics.continuousSegmentContinuity.classification, "prepared-stretto");
+});
+
+test("generateScore flags continuous-fugue segment restarts when no snapshot is carried", () => {
+  const output = generateScore({
+    seed: "fugue-smoke",
+    lengthTicks: 7680,
+    mode: "continuous-fugue",
+    segmentIndex: 1,
+  });
+
+  assert.equal(output.diagnostics.sectionPlans[0]?.state, "exposition");
+  assert.equal(output.diagnostics.continuousSegmentContinuity.classification, "generator-response-required-reset");
+  assert.equal(output.diagnostics.continuousSegmentContinuity.carriedSubjectFamily, false);
+  assert.deepEqual(
+    output.diagnostics.continuousSegmentContinuity.firstEntries.map((entry) => [entry.voice, entry.state]),
+    [
+      ["alto", "exposition"],
+      ["soprano", "exposition"],
+      ["tenor", "exposition"],
+      ["bass", "exposition"],
+    ],
+  );
+});
+
+test("endless-program segment generation remains a fresh terminal segment without snapshot continuation", () => {
+  const first = generateScore({
+    seed: "fugue-smoke",
+    lengthTicks: 7680,
+    mode: "endless-program",
+    segmentIndex: 1,
+  });
+
+  assert.equal(first.diagnostics.sectionPlans[0]?.state, "exposition");
+  assert.equal(first.diagnostics.terminalClosureReview.classification, "accepted");
 });
 
 test("generateScore emits section plans with bounded harmonic anchors", () => {

@@ -1,6 +1,6 @@
 # Continuous fugue segment continuity planning
 
-Status: planned.
+Status: completed.
 
 This plan follows the Phase 8 segment snapshot contract and should be handled before treating continuous playback as musically continuous in the Web UI.
 
@@ -195,3 +195,11 @@ Manual / agent review:
 This is a repair to the implementation of existing Phase 8 semantics, not a change to the durable definition of `continuous-fugue`.
 
 The current implementation behaves like a sequence of fresh pieces because the chaining path does not yet consume the snapshot contract. The durable design principle is: a hidden boundary is allowed to be a generation boundary, but it must not be a musical or visual restart.
+
+## Completion Record
+
+Implemented snapshot-based `continuous-fugue` continuation generation and Web prefetch handoff. Segment 1 and later receive the previous segment snapshot, resume the carried PRNG state, preserve subject-family / tonal-region / density / bounded-context evidence, and begin with continuation states rather than a fresh initial exposition.
+
+Added `continuousSegmentContinuity` diagnostics with classifications for prepared returns, stretto, developmental episodes, re-exposition review cases, and generator resets. The Web worker response now carries the next snapshot and continuity status, while continuous-mode piano-roll rendering appends segments into a session timeline.
+
+Focused implementation evidence is recorded in [Continuous fugue segment continuity review](../reviews/continuous-fugue-segment-continuity-review.md). Human listening remains a gap; score-window diagnostics and automated piano-roll timeline tests cover the implementation acceptance evidence.

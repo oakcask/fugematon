@@ -1,5 +1,12 @@
 import { DEFAULT_SELECTION_MODEL, GENERATOR_VERSION, TICKS_PER_QUARTER } from "./constants.js";
-import type { GenerationInput, GenerationOutput, ScoreEvent } from "./events.js";
+import type {
+  ContinuousSegmentContinuitySummary,
+  GenerationInput,
+  GenerationOutput,
+  HarmonicPlan,
+  PlannedEntry,
+  ScoreEvent,
+} from "./events.js";
 import { normalizeSelectionModel } from "./events.js";
 import { analyzeScore } from "./generation/diagnostics.js";
 import { annotateEpisodeMotivicDerivations } from "./generation/episode-motivic-development.js";
@@ -10,24 +17,45 @@ import { createMeterContext } from "./generation/meter.js";
 import { buildPhraseConvergenceReviewSummary } from "./generation/phrase-convergence-review.js";
 import { buildPhraseDevelopmentReviewSummary } from "./generation/phrase-development-review.js";
 import { buildScoreWindowAcceptanceSummary } from "./generation/score-window-acceptance.js";
-import { buildFugueScore } from "./generation/sections.js";
+import { buildFugueContinuationScore, buildFugueScore } from "./generation/sections.js";
 import { buildSubject } from "./generation/subject.js";
 import { applyTerminalClosureIntent, buildTerminalClosureReviewSummary } from "./generation/terminal-closure-review.js";
-import { normalizeInfinitePlaybackMode } from "./infinite-playback.js";
+import { createSegmentEndSnapshot, normalizeInfinitePlaybackMode } from "./infinite-playback.js";
 import { Xoshiro128StarStar } from "./prng.js";
 
 export function generateScore(input: GenerationInput): GenerationOutput {
   validateInput(input);
 
   const mode = normalizeInfinitePlaybackMode(input.mode);
-  const rng = Xoshiro128StarStar.fromSeed(input.seed);
-  const keySignature = chooseKeySignature(rng, input.seed);
-  const timeSignature = chooseTimeSignature(rng);
-  const meterContext = createMeterContext(timeSignature);
-  const bpm = chooseTempo(rng);
+  const initialRng = Xoshiro128StarStar.fromSeed(input.seed);
+  const initialKeySignature = chooseKeySignature(initialRng, input.seed);
+  const initialTimeSignature = chooseTimeSignature(initialRng);
+  const initialMeterContext = createMeterContext(initialTimeSignature);
+  const initialBpm = chooseTempo(initialRng);
+  const bpm = input.previousSegmentSnapshot?.timebase.bpm ?? initialBpm;
   const selectionModel = normalizeSelectionModel(input.selectionModel ?? DEFAULT_SELECTION_MODEL);
-  const subject = buildSubject(rng, keySignature, selectionModel, meterContext);
-  const score = buildFugueScore(subject, keySignature, input.lengthTicks, rng, selectionModel, meterContext);
+  const subject = buildSubject(initialRng, initialKeySignature, selectionModel, initialMeterContext);
+  const isContinuousContinuation =
+    mode === "continuous-fugue" && input.previousSegmentSnapshot !== undefined && (input.segmentIndex ?? 0) > 0;
+  const rng = isContinuousContinuation
+    ? new Xoshiro128StarStar(input.previousSegmentSnapshot!.prngInternalState.state)
+    : initialRng;
+  const timeSignature = input.previousSegmentSnapshot?.timebase.timeSignature ?? initialTimeSignature;
+  const meterContext = createMeterContext(timeSignature);
+  const keySignature =
+    isContinuousContinuation && input.previousSegmentSnapshot?.tonalRegion.currentKey !== undefined
+      ? input.previousSegmentSnapshot.tonalRegion.currentKey
+      : initialKeySignature;
+  const score = isContinuousContinuation
+    ? buildFugueContinuationScore(subject, keySignature, input.lengthTicks, rng, {
+        selectionModel,
+        meterContext,
+        previousEvents: input.previousSegmentSnapshot!.boundedPastEventContext.events,
+        previousSectionFunctions: input.previousSegmentSnapshot!.boundedPastEventContext.sectionFunctions,
+        firstStateHint: input.previousSegmentSnapshot!.sectionPlannerState.nextStateHint,
+        previousDensityArc: input.previousSegmentSnapshot!.densityArc.recentVoiceCounts,
+      })
+    : buildFugueScore(subject, keySignature, input.lengthTicks, rng, selectionModel, meterContext);
   applyTerminalClosureIntent(score, Math.max(input.lengthTicks, score.endTick), mode);
   annotateEpisodeMotivicDerivations(score.notes, score.sectionPlans);
   if (selectionModel !== "baseline") {
@@ -58,6 +86,7 @@ export function generateScore(input: GenerationInput): GenerationOutput {
   );
   const generatedUntilTick = Math.max(input.lengthTicks, score.endTick);
 
+  const firstState = score.stateTransitions[0] ?? (isContinuousContinuation ? "episode" : "exposition");
   const events: ScoreEvent[] = [
     {
       kind: "meta",
@@ -93,14 +122,16 @@ export function generateScore(input: GenerationInput): GenerationOutput {
       kind: "meta",
       type: "state-change",
       tick: 0,
-      payload: { state: "exposition" },
+      payload: { state: firstState },
     },
-    ...score.stateChanges.map((stateChange) => ({
-      kind: "meta" as const,
-      type: "state-change" as const,
-      tick: stateChange.tick,
-      payload: { state: stateChange.state },
-    })),
+    ...score.stateChanges
+      .filter((stateChange) => stateChange.tick !== 0 || stateChange.state !== firstState)
+      .map((stateChange) => ({
+        kind: "meta" as const,
+        type: "state-change" as const,
+        tick: stateChange.tick,
+        payload: { state: stateChange.state },
+      })),
     ...score.notes,
     {
       kind: "meta",
@@ -113,7 +144,28 @@ export function generateScore(input: GenerationInput): GenerationOutput {
     events,
     sectionPlans: score.sectionPlans,
     mode,
-    segmentIndex: 0,
+    segmentIndex: input.segmentIndex ?? 0,
+  });
+  const continuousSegmentContinuity = buildContinuousSegmentContinuitySummary({
+    segmentIndex: input.segmentIndex ?? 0,
+    previousSnapshot: input.previousSegmentSnapshot,
+    sectionPlans: score.sectionPlans,
+    subjectEntries: score.subjectEntries,
+  });
+  const nextSegmentSnapshot = createSegmentEndSnapshot({
+    previous: input.previousSegmentSnapshot,
+    seed: input.seed,
+    mode,
+    segmentIndex: input.segmentIndex ?? 0,
+    tick: generatedUntilTick,
+    events,
+    subjectEntries: score.subjectEntries,
+    sectionPlans: score.sectionPlans,
+    selectionModel,
+    timeSignature,
+    bpm,
+    prngState: rng.snapshot(),
+    pianoRollSessionTimelineContinuous: continuousSegmentContinuity.pianoRollSessionTimelineContinuous,
   });
 
   return {
@@ -181,6 +233,7 @@ export function generateScore(input: GenerationInput): GenerationOutput {
       transitionRhythmReview: diagnostics.transitionRhythmReview,
       scoreWindowAcceptance,
       terminalClosureReview,
+      continuousSegmentContinuity,
       ornamentCandidateCount: diagnostics.ornamentCandidateCount,
       ornamentDensity: diagnostics.ornamentDensity,
       ornamentPlacementReasons: diagnostics.ornamentPlacementReasons,
@@ -211,6 +264,7 @@ export function generateScore(input: GenerationInput): GenerationOutput {
       issues: diagnostics.issues,
       warnings: diagnostics.warnings,
     },
+    nextSegmentSnapshot,
   };
 }
 
@@ -222,4 +276,91 @@ function validateInput(input: GenerationInput): void {
   if (!Number.isSafeInteger(input.lengthTicks) || input.lengthTicks <= 0) {
     throw new Error("lengthTicks must be a positive safe integer");
   }
+}
+
+function buildContinuousSegmentContinuitySummary(input: {
+  segmentIndex: number;
+  previousSnapshot: GenerationInput["previousSegmentSnapshot"];
+  sectionPlans: readonly HarmonicPlan[];
+  subjectEntries: readonly PlannedEntry[];
+}): ContinuousSegmentContinuitySummary {
+  const firstPlan = input.sectionPlans[0];
+  const firstEntries = input.subjectEntries
+    .filter((entry) => entry.startTick < (firstPlan?.durationTicks ?? TICKS_PER_QUARTER * 8))
+    .slice(0, 4)
+    .map((entry) => ({
+      voice: entry.voice,
+      form: entry.form,
+      state: entry.state,
+      startTick: entry.startTick,
+    }));
+  const initialOrder = ["alto", "soprano", "tenor", "bass"];
+  const matchingInitialOrder = firstEntries.filter((entry, index) => entry.voice === initialOrder[index]).length;
+  const entryOrderSimilarityToInitialExposition = matchingInitialOrder / initialOrder.length;
+  const carriedSubjectFamily = (input.previousSnapshot?.subjectFamily.stemPitchClasses.length ?? 0) > 0;
+  const previousTailState = input.previousSnapshot?.sectionPlannerState.currentState;
+  const nextFirstState = firstPlan?.state ?? firstEntries[0]?.state;
+  const tonalRegionContinuous =
+    input.previousSnapshot?.tonalRegion.currentKey === undefined ||
+    firstPlan === undefined ||
+    keySignatureIdentity(input.previousSnapshot.tonalRegion.currentKey) === keySignatureIdentity(firstPlan.localKey) ||
+    keySignatureIdentity(input.previousSnapshot.tonalRegion.targetKey) === keySignatureIdentity(firstPlan.localKey);
+  const previousDensity = input.previousSnapshot?.densityArc.currentVoiceCount ?? 0;
+  const densityContinuity =
+    previousDensity === 0 || Math.abs(previousDensity - expectedFirstSectionDensity(nextFirstState)) <= 2;
+  const startsWithExposition =
+    nextFirstState === "exposition" || firstEntries.some((entry) => entry.state === "exposition");
+  const repeatsInitialOrder = firstEntries.length >= 4 && entryOrderSimilarityToInitialExposition >= 1;
+  const classification = startsWithExposition
+    ? repeatsInitialOrder
+      ? "generator-response-required-reset"
+      : "review-required-reexposition"
+    : nextFirstState === "subject-return"
+      ? "prepared-subject-return"
+      : nextFirstState === "stretto-like"
+        ? "prepared-stretto"
+        : nextFirstState === "episode"
+          ? "developmental-episode"
+          : "accepted-continuation";
+  const reasons = [
+    input.previousSnapshot === undefined
+      ? "segment has no previous snapshot and is treated as an initial generation"
+      : "segment was generated with a carried snapshot",
+    startsWithExposition
+      ? "first structural state is exposition"
+      : `first structural state is ${nextFirstState ?? "unknown"}`,
+    repeatsInitialOrder
+      ? "first entries repeat the initial alto/soprano/tenor/bass order"
+      : "first entries do not repeat the complete initial entry order",
+  ];
+
+  return {
+    schemaVersion: 1,
+    segmentIndex: input.segmentIndex,
+    boundaryTick: input.previousSnapshot?.tick ?? 0,
+    previousTailState,
+    nextFirstState,
+    firstEntries,
+    entryOrderSimilarityToInitialExposition,
+    carriedSubjectFamily,
+    tonalRegionContinuous,
+    densityContinuity,
+    pianoRollSessionTimelineContinuous: input.segmentIndex === 0 || input.previousSnapshot !== undefined,
+    classification,
+    reasons,
+  };
+}
+
+function keySignatureIdentity(keySignature: HarmonicPlan["localKey"] | undefined): string | undefined {
+  return keySignature === undefined ? undefined : `${keySignature.tonic}:${keySignature.mode}`;
+}
+
+function expectedFirstSectionDensity(state: HarmonicPlan["state"] | undefined): number {
+  if (state === "stretto-like") {
+    return 4;
+  }
+  if (state === "subject-return") {
+    return 3;
+  }
+  return 2;
 }

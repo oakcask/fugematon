@@ -2,10 +2,14 @@ import { DEFAULT_SELECTION_MODEL, GENERATOR_VERSION, TICKS_PER_QUARTER } from ".
 import type {
   CadenceKind,
   FugueState,
+  HarmonicPlan,
   KeySignature,
   MeterContext,
+  NoteEvent,
+  PlannedEntry,
   ScoreEvent,
   SelectionModel,
+  TimeSignature,
   Voice,
 } from "./events.js";
 import { normalizeSelectionModel } from "./events.js";
@@ -109,6 +113,8 @@ export type AppendInfinitePlaybackSegmentHistoryInput = {
 
 export type SegmentSnapshotTimebase = {
   ticksPerQuarter: number;
+  timeSignature?: TimeSignature;
+  bpm?: number;
 };
 
 export type SegmentSubjectFamilyMemory = {
@@ -222,6 +228,25 @@ export type InitialSegmentSnapshotInput = {
   generatorVersion?: number;
   selectionModel?: SelectionModel;
   ticksPerQuarter?: number;
+  boundedPastEventContextTicks?: number;
+};
+
+export type CreateSegmentEndSnapshotInput = {
+  previous?: SegmentSnapshot;
+  seed: string;
+  mode?: InfinitePlaybackMode | "continuous fugue" | "endless program" | "regenerative cycle";
+  segmentIndex: number;
+  tick: number;
+  events: readonly ScoreEvent[];
+  subjectEntries: readonly PlannedEntry[];
+  sectionPlans: readonly HarmonicPlan[];
+  selectionModel?: SelectionModel;
+  generatorVersion?: number;
+  ticksPerQuarter?: number;
+  timeSignature?: TimeSignature;
+  bpm?: number;
+  prngState: readonly [number, number, number, number];
+  pianoRollSessionTimelineContinuous?: boolean;
   boundedPastEventContextTicks?: number;
 };
 
@@ -349,6 +374,135 @@ export function createInitialSegmentSnapshot(input: InitialSegmentSnapshotInput)
   };
 }
 
+export function createSegmentEndSnapshot(input: CreateSegmentEndSnapshotInput): SegmentSnapshot {
+  validateSegmentEndSnapshotInput(input);
+
+  const previous = input.previous;
+  const mode = normalizeInfinitePlaybackMode(input.mode ?? previous?.mode);
+  const maxLookbackTicks =
+    input.boundedPastEventContextTicks ??
+    previous?.boundedPastEventContext.maxLookbackTicks ??
+    DEFAULT_BOUNDED_PAST_EVENT_CONTEXT_TICKS;
+  const tailStartTick = Math.max(0, input.tick - maxLookbackTicks);
+  const tailEvents = input.events
+    .filter((event) => eventTouchesWindow(event, tailStartTick, input.tick))
+    .map((event) => shiftEventTick(event, -input.tick));
+  const recentSections = input.sectionPlans
+    .filter((plan) => plan.startTick + plan.durationTicks >= tailStartTick)
+    .slice(-8);
+  const recentEntries = input.subjectEntries.filter((entry) => entry.startTick >= tailStartTick).slice(-12);
+  const currentSection = sectionAtOrBefore(input.sectionPlans, input.tick) ?? input.sectionPlans.at(-1);
+  const currentKey = currentSection?.targetKey ?? currentSection?.localKey;
+  const recentRegions = input.sectionPlans
+    .slice(-6)
+    .map((plan) => plan.targetKey)
+    .filter((key, index, keys) => index === 0 || keySignatureKey(key) !== keySignatureKey(keys[index - 1]!));
+  const previousFamily = previous?.subjectFamily;
+  const primaryEntry =
+    input.subjectEntries.find((entry) => entry.form === "subject") ??
+    input.subjectEntries.find((entry) => entry.form === "answer");
+  const subjectPitchClasses = primaryEntry?.actualPitchClassSequence ?? previousFamily?.stemPitchClasses ?? [];
+  const stateHistory = [
+    ...(previous?.sectionPlannerState.stateHistory ?? []),
+    ...input.sectionPlans.map((plan) => plan.state),
+  ].slice(-16);
+  const currentState = currentSection?.state ?? stateHistory.at(-1) ?? "exposition";
+
+  return {
+    schemaVersion: INFINITE_PLAYBACK_SNAPSHOT_SCHEMA_VERSION,
+    generatorVersion: input.generatorVersion ?? GENERATOR_VERSION,
+    selectionModel: normalizeSelectionModel(
+      input.selectionModel ?? previous?.selectionModel ?? DEFAULT_SELECTION_MODEL,
+    ),
+    segmentIndex: input.segmentIndex,
+    tick: input.tick,
+    mode,
+    timebase: {
+      ticksPerQuarter: input.ticksPerQuarter ?? previous?.timebase.ticksPerQuarter ?? TICKS_PER_QUARTER,
+      timeSignature: input.timeSignature ?? previous?.timebase.timeSignature,
+      bpm: input.bpm ?? previous?.timebase.bpm,
+    },
+    subjectFamily: {
+      familyId: subjectPitchClasses.length > 0 ? `pc:${subjectPitchClasses.slice(0, 8).join("-")}` : "initial",
+      stemPitchClasses: subjectPitchClasses.slice(0, 8),
+      activeTransformations: [
+        ...(previousFamily?.activeTransformations ?? []),
+        ...recentEntries.map((entry) => entry.form),
+      ].slice(-12),
+    },
+    answerTransform: {
+      answerKind: segmentAnswerKind(lastMatchingEntry(recentEntries, "answer")?.answerKind),
+      intervalShift: lastMatchingEntry(recentEntries, "answer") === undefined ? undefined : 7,
+      recentTransforms: [
+        ...(previous?.answerTransform.recentTransforms ?? []),
+        ...recentEntries
+          .filter((entry) => entry.form === "answer")
+          .map((entry) => `${entry.answerKind ?? "unknown"}:${entry.voice}`),
+      ].slice(-12),
+    },
+    fragmentDerivation: {
+      sourceMotiveIds: [
+        ...(previous?.fragmentDerivation.sourceMotiveIds ?? []),
+        ...recentEntries.filter((entry) => entry.form === "subject-fragment").map((entry) => `${entry.voice}:fragment`),
+      ].slice(-12),
+      transformations: [
+        ...(previous?.fragmentDerivation.transformations ?? []),
+        ...recentSections.flatMap((plan) => (plan.fragmentTransform === undefined ? [] : [plan.fragmentTransform])),
+      ].slice(-12),
+      sequencePatterns: [
+        ...(previous?.fragmentDerivation.sequencePatterns ?? []),
+        ...recentSections.flatMap((plan) => (plan.sequencePattern === undefined ? [] : [plan.sequencePattern])),
+      ].slice(-12),
+    },
+    tonalRegion: {
+      currentKey,
+      targetKey: currentSection?.targetKey,
+      recentRegions: recentRegions.length > 0 ? recentRegions : (previous?.tonalRegion.recentRegions ?? []),
+    },
+    cadencePreparation: {
+      targetKind: currentSection?.cadenceKind,
+      preparedAtTick:
+        currentSection === undefined ? previous?.cadencePreparation.preparedAtTick : currentSection.startTick,
+      unresolved: currentSection?.cadenceKind === "half" || currentSection?.cadenceKind === "evaded",
+    },
+    densityArc: summarizeDensityArc(input.events, input.tick, maxLookbackTicks, previous?.densityArc),
+    noveltyFatigueBudget: {
+      noveltyBudget: Math.max(0.1, (previous?.noveltyFatigueBudget.noveltyBudget ?? 1) - recentEntries.length * 0.03),
+      fatigue: Math.min(1, (previous?.noveltyFatigueBudget.fatigue ?? 0) + repeatedEntryFamilyRatio(recentEntries)),
+      repeatedSubjectFamilyCount:
+        (previous?.noveltyFatigueBudget.repeatedSubjectFamilyCount ?? 0) + repeatedSubjectFamilyCount(recentEntries),
+    },
+    sectionPlannerState: {
+      currentState,
+      nextStateHint: nextContinuationStateHint(currentState, input.sectionPlans, input.events, input.tick),
+      stateHistory,
+    },
+    unresolvedVoiceContinuity: summarizeVoiceContinuity(input.events, tailStartTick, input.tick),
+    prngInternalState: {
+      algorithm: "xoshiro128**",
+      state: [...input.prngState] as [number, number, number, number],
+    },
+    boundedPastEventContext: {
+      maxLookbackTicks,
+      events: tailEvents,
+      voiceRoleContinuity: summarizeVoiceContinuity(input.events, tailStartTick, input.tick),
+      metricalContexts:
+        input.timeSignature === undefined
+          ? (previous?.boundedPastEventContext.metricalContexts ?? [])
+          : [{ startTick: -input.tick, meter: meterContextFromTimeSignature(input.timeSignature) }],
+      harmonicContexts: recentSections.map((plan) => ({
+        startTick: plan.startTick - input.tick,
+        key: plan.localKey,
+        cadenceKind: plan.cadenceKind,
+      })),
+      sectionFunctions: recentSections.map((plan) => ({
+        startTick: plan.startTick - input.tick,
+        state: plan.state,
+      })),
+    },
+  };
+}
+
 export function planSegmentGenerationDeadlineResult(
   input: SegmentGenerationDeadlineInput,
 ): SegmentGenerationDeadlineResult {
@@ -452,6 +606,219 @@ function validateInitialSegmentSnapshotInput(input: InitialSegmentSnapshotInput)
       "core.infinite-playback.invalid-context-window: invalid bounded past event context window; why=snapshot resume must restore a finite non-negative lookback range; action=pass a non-negative safe integer tick count or omit the field",
     );
   }
+}
+
+function validateSegmentEndSnapshotInput(input: CreateSegmentEndSnapshotInput): void {
+  if (!Number.isSafeInteger(input.segmentIndex) || input.segmentIndex < 0) {
+    throw new Error(
+      "core.infinite-playback.invalid-snapshot-segment-index: invalid snapshot segment index; why=segment snapshots must be ordered for deterministic continuation; action=pass a non-negative safe integer segmentIndex",
+    );
+  }
+
+  if (!Number.isSafeInteger(input.tick) || input.tick < 0) {
+    throw new Error(
+      "core.infinite-playback.invalid-snapshot-tick: invalid snapshot tick; why=bounded past context is measured from a concrete segment boundary; action=pass a non-negative safe integer boundary tick",
+    );
+  }
+
+  if (input.prngState.length !== 4 || input.prngState.every((part) => part === 0)) {
+    throw new Error(
+      "core.infinite-playback.invalid-snapshot-prng-state: invalid snapshot PRNG state; why=continuation generation resumes from the carried random stream; action=pass a non-zero xoshiro128** state",
+    );
+  }
+}
+
+function eventTouchesWindow(event: ScoreEvent, startTick: number, endTick: number): boolean {
+  if (event.kind === "note") {
+    return event.startTick + event.durationTicks >= startTick && event.startTick <= endTick;
+  }
+
+  return event.tick >= startTick && event.tick <= endTick;
+}
+
+function shiftEventTick(event: ScoreEvent, offsetTicks: number): ScoreEvent {
+  if (event.kind === "note") {
+    return {
+      ...event,
+      startTick: event.startTick + offsetTicks,
+    };
+  }
+
+  return {
+    ...event,
+    tick: event.tick + offsetTicks,
+  };
+}
+
+function sectionAtOrBefore(plans: readonly HarmonicPlan[], tick: number): HarmonicPlan | undefined {
+  return (
+    plans.find((plan) => plan.startTick <= tick && tick < plan.startTick + plan.durationTicks) ??
+    lastPlanAtOrBefore(plans, tick)
+  );
+}
+
+function lastMatchingEntry(entries: readonly PlannedEntry[], form: PlannedEntry["form"]): PlannedEntry | undefined {
+  for (let index = entries.length - 1; index >= 0; index -= 1) {
+    if (entries[index]!.form === form) {
+      return entries[index];
+    }
+  }
+
+  return undefined;
+}
+
+function segmentAnswerKind(
+  answerKind: PlannedEntry["answerKind"] | undefined,
+): SegmentAnswerTransformMemory["answerKind"] {
+  if (answerKind === "true") {
+    return "real";
+  }
+
+  return answerKind;
+}
+
+function lastPlanAtOrBefore(plans: readonly HarmonicPlan[], tick: number): HarmonicPlan | undefined {
+  for (let index = plans.length - 1; index >= 0; index -= 1) {
+    if (plans[index]!.startTick <= tick) {
+      return plans[index];
+    }
+  }
+
+  return undefined;
+}
+
+function keySignatureKey(key: KeySignature): string {
+  return `${key.tonic}:${key.mode}`;
+}
+
+function summarizeDensityArc(
+  events: readonly ScoreEvent[],
+  endTick: number,
+  maxLookbackTicks: number,
+  previous: SegmentDensityArcMemory | undefined,
+): SegmentDensityArcMemory {
+  const noteEvents = events.filter((event): event is NoteEvent => event.kind === "note");
+  const windowTicks = Math.max(TICKS_PER_QUARTER * 4, Math.floor(maxLookbackTicks / 4));
+  const windows = [3, 2, 1, 0].map((index) => {
+    const startTick = Math.max(0, endTick - windowTicks * (index + 1));
+    const windowEndTick = Math.max(startTick, endTick - windowTicks * index);
+    return activeVoiceCount(noteEvents, startTick, windowEndTick);
+  });
+
+  return {
+    currentVoiceCount: windows.at(-1) ?? previous?.currentVoiceCount ?? 0,
+    recentVoiceCounts: [...(previous?.recentVoiceCounts ?? []), ...windows].slice(-8),
+    targetVoiceCount: targetVoiceCountForDensity(windows.at(-1) ?? 0),
+  };
+}
+
+function activeVoiceCount(notes: readonly NoteEvent[], startTick: number, endTick: number): number {
+  const voices = new Set<Voice>();
+  for (const note of notes) {
+    if (note.startTick < endTick && note.startTick + note.durationTicks > startTick) {
+      voices.add(note.voice);
+    }
+  }
+  return voices.size;
+}
+
+function targetVoiceCountForDensity(currentVoiceCount: number): number {
+  if (currentVoiceCount >= 4) {
+    return 2;
+  }
+  if (currentVoiceCount <= 1) {
+    return 3;
+  }
+  return currentVoiceCount;
+}
+
+function repeatedEntryFamilyRatio(entries: readonly PlannedEntry[]): number {
+  if (entries.length <= 1) {
+    return 0;
+  }
+
+  return repeatedSubjectFamilyCount(entries) / entries.length;
+}
+
+function repeatedSubjectFamilyCount(entries: readonly PlannedEntry[]): number {
+  const seen = new Set<string>();
+  let repeated = 0;
+  for (const entry of entries) {
+    const key = `${entry.form}:${entry.expectedDegreePattern.join("-")}`;
+    if (seen.has(key)) {
+      repeated += 1;
+    }
+    seen.add(key);
+  }
+  return repeated;
+}
+
+function nextContinuationStateHint(
+  currentState: FugueState,
+  sectionPlans: readonly HarmonicPlan[],
+  events: readonly ScoreEvent[],
+  endTick: number,
+): FugueState {
+  const density = activeVoiceCount(
+    events.filter((event): event is NoteEvent => event.kind === "note"),
+    Math.max(0, endTick - TICKS_PER_QUARTER * 4),
+    endTick,
+  );
+  const cadenceKind = sectionPlans.at(-1)?.cadenceKind;
+
+  if (density >= 4) {
+    return "episode";
+  }
+  if (cadenceKind === "half" || cadenceKind === "evaded") {
+    return "subject-return";
+  }
+  if (currentState === "subject-return") {
+    return "episode";
+  }
+  if (currentState === "episode" && density <= 2) {
+    return "subject-return";
+  }
+  return "episode";
+}
+
+function summarizeVoiceContinuity(
+  events: readonly ScoreEvent[],
+  tailStartTick: number,
+  boundaryTick: number,
+): SegmentVoiceContinuity[] {
+  const latestByVoice = new Map<Voice, NoteEvent>();
+  for (const event of events) {
+    if (
+      event.kind !== "note" ||
+      event.startTick + event.durationTicks < tailStartTick ||
+      event.startTick > boundaryTick
+    ) {
+      continue;
+    }
+
+    const previous = latestByVoice.get(event.voice);
+    if (previous === undefined || previous.startTick <= event.startTick) {
+      latestByVoice.set(event.voice, event);
+    }
+  }
+
+  return [...latestByVoice.values()].map((note) => ({
+    voice: note.voice,
+    role: note.role ?? "free-counterpoint",
+    untilTick: note.startTick + note.durationTicks - boundaryTick,
+  }));
+}
+
+function meterContextFromTimeSignature(timeSignature: TimeSignature): MeterContext {
+  const beatTicks = TICKS_PER_QUARTER * (4 / timeSignature.denominator);
+  return {
+    timeSignature,
+    measureTicks: beatTicks * timeSignature.numerator,
+    beatTicks,
+    strongBeatIntervalTicks: timeSignature.numerator === 6 ? beatTicks * 3 : beatTicks,
+    weakBeatIntervalTicks: beatTicks,
+    compound: timeSignature.numerator === 6,
+  };
 }
 
 function selectReturnedCandidateKind(

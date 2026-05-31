@@ -1,6 +1,8 @@
 import type {
+  ContinuousSegmentContinuityClassification,
   InfinitePlaybackMode,
   SegmentGenerationDeadlineResult,
+  SegmentSnapshot,
   TerminalClosureClassification,
 } from "@fugematon/core";
 import type { PerformanceProfileId } from "@fugematon/performance";
@@ -14,6 +16,7 @@ export type GenerationWorkerRequest = {
   deadlineMs: number;
   segmentIndex: number;
   mode?: InfinitePlaybackMode;
+  previousSegmentSnapshot?: SegmentSnapshot;
 };
 
 export type GenerationWorkerReviewSnapshot = {
@@ -23,6 +26,7 @@ export type GenerationWorkerReviewSnapshot = {
   warningCount: number;
   qualityVectorStatus: string;
   terminalClosureStatus: TerminalClosureClassification;
+  continuousSegmentContinuityStatus: ContinuousSegmentContinuityClassification;
 };
 
 export type GenerationWorkerSuccessResponse = {
@@ -33,6 +37,7 @@ export type GenerationWorkerSuccessResponse = {
   model: PlaybackModel;
   deadlineResult: SegmentGenerationDeadlineResult;
   reviewSnapshot: GenerationWorkerReviewSnapshot;
+  nextSegmentSnapshot: SegmentSnapshot;
 };
 
 export type GenerationWorkerErrorResponse = {

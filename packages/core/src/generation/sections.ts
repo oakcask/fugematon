@@ -190,6 +190,165 @@ export function buildFugueScore(
   };
 }
 
+export function buildFugueContinuationScore(
+  subject: readonly SubjectNote[],
+  keySignature: KeySignature,
+  lengthTicks: number,
+  rng: Xoshiro128StarStar,
+  input: {
+    selectionModel?: SelectionModel;
+    meterContext?: MeterContext;
+    previousEvents: readonly import("../events.js").ScoreEvent[];
+    previousSectionFunctions: readonly { state: FugueState; startTick: number }[];
+    previousSubjectEntries?: readonly PlannedEntry[];
+    previousSectionPlans?: readonly HarmonicPlan[];
+    firstStateHint?: FugueState;
+    previousDensityArc?: readonly number[];
+  },
+): FugueScore {
+  const selectionModel = input.selectionModel ?? "baseline";
+  const meterContext = input.meterContext ?? createLegacyMeterContext();
+  const counterSubjectSupportRepair = lengthTicks >= TICKS_PER_QUARTER * 288;
+  const notes: NoteEvent[] = [];
+  const subjectEntries: PlannedEntry[] = [];
+  const sectionPlans: HarmonicPlan[] = [];
+  const stateTransitions: FugueState[] = [];
+  const stateChanges: FugueScore["stateChanges"] = [];
+  const selectedCandidateEvaluations: CandidateEvaluation[] = [];
+  const candidatePoolOracleSections: ReturnType<typeof classifyCandidatePoolOracleSection>[] = [];
+  const previousNotes = input.previousEvents.filter((event): event is NoteEvent => event.kind === "note");
+  const previousSectionHistory = input.previousSectionFunctions.map((section) => section.state);
+  const previousSubjectEntries = input.previousSubjectEntries ?? [];
+  const previousSectionPlans = input.previousSectionPlans ?? [];
+  let candidateEvaluations = 0;
+  let sectionStartTick = 0;
+  const continuationPattern = chooseBoundaryContinuationStatePattern(
+    input.firstStateHint,
+    previousSectionHistory,
+    input.previousDensityArc ?? [],
+  );
+  let stateIndex = 0;
+  let phraseUnit: ContinuationPhraseUnit | undefined;
+  let phraseSectionIndex = 0;
+
+  while (sectionStartTick < lengthTicks) {
+    const stateHistory = [...previousSectionHistory, ...stateTransitions];
+    if (
+      selectionModel === "section-local-planner" &&
+      (phraseUnit === undefined || phraseSectionIndex >= phraseUnit.sections.length)
+    ) {
+      phraseUnit = chooseContinuationPhraseUnit({
+        primaryPattern: continuationPattern,
+        stateIndex,
+        stateHistory,
+        previousSectionPlans: [...previousSectionPlans, ...sectionPlans],
+        previousNotes: [...previousNotes, ...notes],
+        keySignature,
+        preserveSubjectFamily: isModalMode(keySignature.mode) && latestContinuationPatternRepeatCount(stateHistory) < 4,
+      });
+      phraseSectionIndex = 0;
+    }
+
+    const phraseIntent = phraseUnit?.sections[phraseSectionIndex];
+    const state = phraseIntent?.state ?? continuationPattern[stateIndex]!;
+    const sectionDurationTicks = chooseContinuationSectionTicks(state, rng, meterContext);
+    const selection = chooseContinuationSection(
+      subject,
+      keySignature,
+      state,
+      sectionStartTick,
+      sectionDurationTicks,
+      rng,
+      [...previousNotes, ...notes],
+      selectionModel,
+      [...stateHistory, state],
+      [...previousSectionPlans, ...sectionPlans],
+      [...previousSubjectEntries, ...subjectEntries],
+      phraseIntent,
+      counterSubjectSupportRepair,
+      meterContext,
+    );
+    if (selectionModel === "section-local-planner") {
+      softenBassEntryBoundaryResets(selection.section.notes, selection.section.subjectEntries, [
+        ...previousNotes,
+        ...notes,
+      ]);
+      selection.section.notes.sort(compareNoteEvents);
+      selection.evaluation = evaluateCandidate(
+        [...previousNotes, ...notes],
+        selection.section,
+        [...previousSubjectEntries, ...subjectEntries],
+        [...previousSectionPlans, ...sectionPlans],
+      );
+    }
+
+    const selectedState = selection.section.sectionPlans[0]?.state ?? state;
+    stateTransitions.push(selectedState);
+    stateChanges.push({ tick: sectionStartTick, state: selectedState });
+    notes.push(...selection.section.notes);
+    subjectEntries.push(...selection.section.subjectEntries);
+    sectionPlans.push(...selection.section.sectionPlans);
+    candidateEvaluations += selection.candidateCount;
+    selectedCandidateEvaluations.push(selection.evaluation);
+    candidatePoolOracleSections.push(selection.oracleSection);
+    sectionStartTick += selection.section.durationTicks;
+    stateIndex = (stateIndex + 1) % continuationPattern.length;
+    phraseSectionIndex += 1;
+  }
+
+  fillAllVoiceSilenceGaps(notes, keySignature);
+  if (selectionModel === "section-local-planner") {
+    addFunctionalThinningSupport(notes, sectionPlans);
+    addPostEntryContinuationSupport(notes, subjectEntries, sectionPlans);
+    shapeLongRestPhraseClosures(notes, sectionPlans);
+    addBassAnswerTailTextureSupport(notes, subjectEntries, sectionPlans);
+    addShortEpisodeHarmonicContinuitySupport(notes, sectionPlans);
+    repairTextureVoiceCrossingsForNotes(notes, sectionPlans);
+  }
+  notes.sort(compareNoteEvents);
+  if (selectionModel === "section-local-planner") {
+    repairTextureVoiceCrossingsForNotes(notes, sectionPlans);
+    notes.sort(compareNoteEvents);
+  }
+
+  return {
+    notes,
+    subjectEntries,
+    sectionPlans,
+    candidateEvaluations,
+    selectedCandidateEvaluations,
+    candidatePoolOracle: summarizeCandidatePoolOracleSections(candidatePoolOracleSections),
+    stateTransitions,
+    stateChanges,
+    endTick: Math.max(...notes.map((note) => note.startTick + note.durationTicks)),
+    durationTicks: Math.max(...notes.map((note) => note.startTick + note.durationTicks)),
+  };
+}
+
+function chooseBoundaryContinuationStatePattern(
+  firstStateHint: FugueState | undefined,
+  previousStateHistory: readonly FugueState[],
+  previousDensityArc: readonly number[],
+): readonly FugueState[] {
+  const lastState = previousStateHistory.at(-1);
+  const currentDensity = previousDensityArc.at(-1) ?? 0;
+  const firstState =
+    firstStateHint !== undefined && firstStateHint !== "exposition"
+      ? firstStateHint
+      : currentDensity >= 4 || lastState === "subject-return"
+        ? "episode"
+        : lastState === "episode"
+          ? "subject-return"
+          : "episode";
+  const followUp: Record<Exclude<FugueState, "exposition">, readonly FugueState[]> = {
+    episode: ["episode", "subject-return", "episode", "stretto-like"],
+    "subject-return": ["subject-return", "episode", "stretto-like", "episode"],
+    "stretto-like": ["stretto-like", "episode", "subject-return", "episode"],
+  };
+
+  return followUp[firstState as Exclude<FugueState, "exposition">];
+}
+
 function chooseContinuationPhraseUnit(input: {
   primaryPattern: readonly FugueState[];
   stateIndex: number;

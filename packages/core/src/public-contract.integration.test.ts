@@ -202,6 +202,14 @@ test("public diagnostics expose finite candidate score dimensions", () => {
   assert.equal(typeof output.diagnostics.terminalClosureReview.thinningExplanation, "string");
   assert.equal(typeof output.diagnostics.terminalClosureReview.finalRestClassification, "string");
   assert.ok(Array.isArray(output.diagnostics.terminalClosureReview.windows));
+  assert.equal(output.diagnostics.continuousSegmentContinuity.schemaVersion, 1);
+  assert.match(
+    output.diagnostics.continuousSegmentContinuity.classification,
+    /^(accepted-continuation|prepared-subject-return|prepared-stretto|developmental-episode|review-required-reexposition|generator-response-required-reset)$/,
+  );
+  assert.ok(Array.isArray(output.diagnostics.continuousSegmentContinuity.firstEntries));
+  assert.equal(output.nextSegmentSnapshot.schemaVersion, 1);
+  assert.equal(output.nextSegmentSnapshot.segmentIndex, 0);
   assert.equal(output.diagnostics.lowerVoiceVocality.schemaVersion, 1);
   assert.ok(output.diagnostics.lowerVoiceVocality.score >= 0);
   assert.ok(output.diagnostics.lowerVoiceVocality.score <= 1);

@@ -1,8 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import type { HarmonicPlan, KeySignature, PlannedEntry, ScoreEvent } from "./index.js";
 import {
   appendInfinitePlaybackSegmentHistory,
   createInitialSegmentSnapshot,
+  createSegmentEndSnapshot,
   DEFAULT_BOUNDED_PAST_EVENT_CONTEXT_TICKS,
   DEFAULT_SELECTION_MODEL,
   GENERATOR_VERSION,
@@ -138,6 +140,143 @@ test("supports explicit resume-compatibility metadata in initial snapshots", () 
   assert.equal(snapshot.mode, "endless-program");
   assert.equal(snapshot.timebase.ticksPerQuarter, 960);
   assert.equal(snapshot.boundedPastEventContext.maxLookbackTicks, 1920);
+});
+
+test("creates a segment-end snapshot with bounded tail context for continuation", () => {
+  const key = { tonic: "D", mode: "minor" } satisfies KeySignature;
+  const meterContext = {
+    timeSignature: { numerator: 4, denominator: 4 },
+    measureTicks: TICKS_PER_QUARTER * 4,
+    beatTicks: TICKS_PER_QUARTER,
+    strongBeatIntervalTicks: TICKS_PER_QUARTER * 2,
+    weakBeatIntervalTicks: TICKS_PER_QUARTER,
+    compound: false,
+  } satisfies HarmonicPlan["meterContext"];
+  const sectionPlans: HarmonicPlan[] = [
+    {
+      state: "episode",
+      startTick: 0,
+      durationTicks: TICKS_PER_QUARTER * 4,
+      meterContext,
+      localKey: { tonic: "A", mode: "minor" },
+      departureKey: { tonic: "A", mode: "minor" },
+      targetKey: { tonic: "C", mode: "major" },
+      styleProfile: "strict-classical",
+      cadenceKind: "modulatory",
+      ambiguityIntent: "pivot-harmony",
+      parallelKeyShift: false,
+      sequencePattern: "circle-fifths",
+      anchors: [],
+    },
+    {
+      state: "subject-return",
+      startTick: TICKS_PER_QUARTER * 4,
+      durationTicks: TICKS_PER_QUARTER * 4,
+      meterContext,
+      localKey: key,
+      departureKey: { tonic: "C", mode: "major" },
+      targetKey: key,
+      styleProfile: "strict-classical",
+      cadenceKind: "half",
+      ambiguityIntent: "none",
+      parallelKeyShift: false,
+      anchors: [],
+    },
+  ];
+  const subjectEntries: PlannedEntry[] = [
+    {
+      voice: "tenor",
+      form: "subject",
+      state: "subject-return",
+      startTick: TICKS_PER_QUARTER * 5,
+      globalKey: key,
+      localKey: key,
+      registerTarget: 60,
+      expectedDegreePattern: [1, 2, 3, 5],
+      actualPitchClassSequence: [2, 4, 5, 9],
+      metricalIntentPattern: [],
+    },
+    {
+      voice: "alto",
+      form: "subject-fragment",
+      state: "subject-return",
+      startTick: TICKS_PER_QUARTER * 6,
+      globalKey: key,
+      localKey: key,
+      registerTarget: 67,
+      expectedDegreePattern: [3, 2],
+      actualPitchClassSequence: [5, 4],
+      metricalIntentPattern: [],
+    },
+  ];
+  const events: ScoreEvent[] = [
+    {
+      kind: "note",
+      voice: "tenor",
+      startTick: TICKS_PER_QUARTER * 5,
+      durationTicks: TICKS_PER_QUARTER * 2,
+      pitch: 62,
+      velocity: 88,
+      role: "subject",
+    },
+    {
+      kind: "note",
+      voice: "alto",
+      startTick: TICKS_PER_QUARTER * 7,
+      durationTicks: TICKS_PER_QUARTER,
+      pitch: 65,
+      velocity: 82,
+      role: "free-counterpoint",
+    },
+    {
+      kind: "meta",
+      type: "state-change",
+      tick: TICKS_PER_QUARTER * 4,
+      payload: { state: "subject-return" },
+    },
+  ];
+  const snapshot = createSegmentEndSnapshot({
+    seed: "continuation-snapshot",
+    mode: "continuous-fugue",
+    segmentIndex: 2,
+    tick: TICKS_PER_QUARTER * 8,
+    events,
+    subjectEntries,
+    sectionPlans,
+    timeSignature: meterContext.timeSignature,
+    bpm: 72,
+    prngState: [1, 2, 3, 4],
+    boundedPastEventContextTicks: TICKS_PER_QUARTER * 4,
+  });
+
+  assert.equal(snapshot.segmentIndex, 2);
+  assert.equal(snapshot.mode, "continuous-fugue");
+  assert.deepEqual(snapshot.timebase, {
+    ticksPerQuarter: TICKS_PER_QUARTER,
+    timeSignature: meterContext.timeSignature,
+    bpm: 72,
+  });
+  assert.deepEqual(snapshot.subjectFamily.stemPitchClasses, [2, 4, 5, 9]);
+  assert.deepEqual(snapshot.tonalRegion.currentKey, key);
+  assert.equal(snapshot.cadencePreparation.unresolved, true);
+  assert.equal(snapshot.sectionPlannerState.currentState, "subject-return");
+  assert.equal(snapshot.sectionPlannerState.nextStateHint, "subject-return");
+  assert.equal(snapshot.densityArc.currentVoiceCount, 2);
+  assert.deepEqual(snapshot.prngInternalState.state, [1, 2, 3, 4]);
+  assert.deepEqual(
+    snapshot.boundedPastEventContext.events.map((event) =>
+      event.kind === "note" ? [event.voice, event.startTick] : [event.type, event.tick],
+    ),
+    [
+      ["tenor", -TICKS_PER_QUARTER * 3],
+      ["alto", -TICKS_PER_QUARTER],
+      ["state-change", -TICKS_PER_QUARTER * 4],
+    ],
+  );
+  assert.deepEqual(snapshot.boundedPastEventContext.sectionFunctions, [
+    { startTick: -TICKS_PER_QUARTER * 8, state: "episode" },
+    { startTick: -TICKS_PER_QUARTER * 4, state: "subject-return" },
+  ]);
 });
 
 test("validates initial segment snapshot reproducibility inputs", () => {
