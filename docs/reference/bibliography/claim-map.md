@@ -29,3 +29,13 @@ Fugematon 固有の設計判断、review 判断、quality policy と文献根拠
 * Verification state: score-example-checked
 * Limits: This claim does not require every episode to be long, every note to literally match the subject, or historical WTC measure counts to become thresholds.
 * Used by: `docs/phases/episode-motivic-development.md`, `docs/reviews/episode-motivic-development-replan.md`, `docs/phases/phase-8.md`
+
+## endless-program-coda-continuity
+
+* Claim: `endless-program` coda quality should not be accepted from stable terminal sonority alone; the terminal span should use a historically plausible ending process such as final subject return, stretto, pedal-supported final entry, thematic liquidation, or texture compaction that preserves recent musical material until the cadence.
+* Applies to: generation | diagnostics | review | phase-scope
+* Evidence: `historical-fugue-endings`; current `buildTerminalCodaNotes` implementation pattern and user-reported all-voice long-tone symptom.
+* Confidence: medium
+* Verification state: score-example-checked
+* Limits: This claim does not require strict Bach style for every style profile, does not ban prepared pedal points or final held sonorities, and does not make every non-thematic final bar a failure when liquidation or cadence function is review-visible.
+* Used by: `docs/phases/endless-program-terminal-coda-historical-style-repair.md`
