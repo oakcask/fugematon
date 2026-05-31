@@ -73,6 +73,20 @@ app.innerHTML = `
       </div>
       <p class="hint">The same seed always produces the same score events.</p>
     </form>
+    <section class="transport-card" aria-label="Playback controls">
+      <div class="transport-summary">
+        <span class="metric-label">Playback</span>
+        <strong id="transport-status">Ready to play</strong>
+        <span class="playback-position" id="playback-position"></span>
+      </div>
+      <div class="transport-actions">
+        <button type="button" id="play-pause">Play</button>
+        <button type="button" class="secondary" id="stop">Stop</button>
+      </div>
+    </section>
+    <section class="visualizer-card" aria-label="Piano roll visualization">
+      <canvas id="piano-roll"></canvas>
+    </section>
     <section class="score-card" aria-live="polite">
       <div>
         <span class="metric-label">Tempo</span>
@@ -126,20 +140,6 @@ app.innerHTML = `
         <span class="metric-label">Fallback</span>
         <strong id="fallback-status"></strong>
       </div>
-    </section>
-    <section class="transport-card" aria-label="Playback controls">
-      <div class="transport-summary">
-        <span class="metric-label">Playback</span>
-        <strong id="transport-status">Ready to play</strong>
-        <span class="playback-position" id="playback-position"></span>
-      </div>
-      <div class="transport-actions">
-        <button type="button" id="play-pause">Play</button>
-        <button type="button" class="secondary" id="stop">Stop</button>
-      </div>
-    </section>
-    <section class="visualizer-card" aria-label="Piano roll visualization">
-      <canvas id="piano-roll"></canvas>
     </section>
   </section>
 `;
