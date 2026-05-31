@@ -19,3 +19,31 @@ Phase 9 does not change generation scoring, quality diagnostics, performance pro
 * `pnpm test`
 * `pnpm lint`
 * `pnpm ui:inspect`
+
+## Target Recheck
+
+The current target recheck generated a fresh 22-seed review bundle with
+`pnpm fugematon review --out samples/phase9-current-review --ticks 129600`
+and regenerated the listed ScoreEvent JSON files with per-seed
+`pnpm fugematon generate --ticks 129600`. The fresh ScoreEvent JSON,
+diagnostics JSON, and review `summary.json` match the target baseline in
+`samples/phase9-target-review` for all 22 seeds.
+
+The comparison confirms that Phase 9 did not alter generation scoring,
+quality diagnostics, or the Phase 8 music-quality baseline. Current aggregate
+evidence remains schema version 19, `section-local-planner`, 22 seeds, zero
+hard-constraint failures, zero reference-profile outside seeds, and zero
+reference-profile max distance. Review-required musical signals remain visible
+in the review policy instead of being hidden by deadline or fallback handling.
+
+Operational completion was rechecked with the current automated suite:
+
+* `pnpm build`
+* `pnpm test`
+* `pnpm lint`
+* `pnpm ui:inspect`
+
+The Phase 9-specific coverage confirms generated, best-so-far, and
+conservative fallback deadline outcomes; preservation of reference diagnostics,
+review signals, and quality vector visibility; long-run segment history append
+semantics; and Web Worker playback output behavior.

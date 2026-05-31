@@ -34,3 +34,8 @@ Phase 9 is complete for its operational contract. Dedicated Web Worker generatio
 Long-run stability is covered by the core segment history contract: replay summaries, state-change history, and segment boundary history append across segments without replacing previous entries. The Web UI keeps drawing and playback separate from worker generation, and uses the previous generated model as best-so-far fallback when a later request exceeds the generation deadline.
 
 Completion evidence: [Phase 9 completion review](../reviews/phase-9-completion-review.md).
+
+Latest target recheck: the current 22-seed ScoreEvent JSON, diagnostics, and
+review summary match the target baseline exactly, while the Worker deadline,
+fallback recording, and long-run history contracts remain covered by the
+automated verification recorded in the completion review.
