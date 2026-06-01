@@ -1,6 +1,7 @@
 import type {
   FugueState,
   GenerationOutput,
+  HarmonicPlan,
   KeySignature,
   MetaEvent,
   NoteRole,
@@ -48,11 +49,33 @@ export type PlaybackModel = {
   notes: PlaybackNote[];
   stateTransitions: FugueState[];
   subjectEntries: PlaybackEntry[];
+  sectionPlans: HarmonicPlan[];
   performanceProfile: PerformanceProfileMetadata;
   pitchRange: {
     min: number;
     max: number;
   };
+};
+
+export type PlaybackTimelineSegment = {
+  segmentIndex: number;
+  seed: string;
+  offsetSecond: number;
+  model: PlaybackModel;
+};
+
+export type PlaybackTimelineSegmentMetadata = {
+  segmentIndex: number;
+  seed: string;
+  offsetSecond?: number;
+};
+
+export type ScoreCardSnapshot = {
+  segmentIndex: number;
+  seed: string;
+  playbackSecond: number;
+  segmentSecond: number;
+  model: PlaybackModel;
 };
 
 const DEFAULT_BPM = 84;
@@ -110,6 +133,7 @@ export function createPlaybackModel(
     notes,
     stateTransitions: output.diagnostics.stateTransitions,
     subjectEntries,
+    sectionPlans: output.diagnostics.sectionPlans,
     performanceProfile: performanceProfileMetadata(getPerformanceProfile(performanceProfileId)),
     pitchRange: computePitchRange(notes),
   };
@@ -152,7 +176,60 @@ export function appendPlaybackModelSessionTimeline(current: PlaybackModel, segme
     notes,
     stateTransitions: [...current.stateTransitions, ...segment.stateTransitions],
     subjectEntries,
+    sectionPlans: [
+      ...current.sectionPlans.map((plan) => ({ ...plan })),
+      ...segment.sectionPlans.map((plan) => ({
+        ...plan,
+        startTick: plan.startTick + tickOffset,
+      })),
+    ],
     pitchRange: computePitchRange(notes),
+  };
+}
+
+export function createPlaybackTimelineSegment(
+  model: PlaybackModel,
+  metadata: PlaybackTimelineSegmentMetadata,
+): PlaybackTimelineSegment {
+  return {
+    segmentIndex: metadata.segmentIndex,
+    seed: metadata.seed,
+    offsetSecond: metadata.offsetSecond ?? 0,
+    model,
+  };
+}
+
+export function findActivePlaybackSegment(
+  timeline: readonly PlaybackTimelineSegment[],
+  playbackSecond: number,
+): PlaybackTimelineSegment | undefined {
+  if (timeline.length === 0) {
+    return undefined;
+  }
+
+  const safePlaybackSecond = Math.max(0, playbackSecond);
+  return [...timeline]
+    .sort((left, right) => left.offsetSecond - right.offsetSecond)
+    .reduce<PlaybackTimelineSegment | undefined>(
+      (active, segment) => (segment.offsetSecond <= safePlaybackSecond ? segment : active),
+      timeline[0],
+    );
+}
+
+export function createScoreCardSnapshot(
+  activeSegment: PlaybackTimelineSegment | undefined,
+  playbackSecond: number,
+): ScoreCardSnapshot | undefined {
+  if (activeSegment === undefined) {
+    return undefined;
+  }
+
+  return {
+    segmentIndex: activeSegment.segmentIndex,
+    seed: activeSegment.seed,
+    playbackSecond,
+    segmentSecond: Math.max(0, playbackSecond - activeSegment.offsetSecond),
+    model: activeSegment.model,
   };
 }
 

@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { generateScore } from "@fugematon/core";
 import {
   adoptedSegmentSessionSeed,
   computeEndlessPrefetchDeadlineMs,
@@ -8,6 +9,7 @@ import {
   segmentRequestSeed,
   shouldDeferContinuousPrefetchUntilSegmentStart,
 } from "./endless-playback.js";
+import { createPlaybackModel, createPlaybackTimelineSegment, findActivePlaybackSegment } from "./score.js";
 
 test("endless prefetch deadline uses the remaining playback window", () => {
   assert.equal(
@@ -170,6 +172,35 @@ test("continuous fugue adoption preserves the visible session seed", () => {
     }),
     "fugue-smoke",
   );
+});
+
+test("continuous fugue queued segment becomes active at its playback boundary", () => {
+  const first = createPlaybackModel(generateScore({ seed: "continuous-boundary", lengthTicks: 7680 }));
+  const second = createPlaybackModel(
+    generateScore({
+      seed: "continuous-boundary",
+      lengthTicks: 7680,
+      mode: "continuous-fugue",
+      segmentIndex: 1,
+      previousSegmentSnapshot: generateScore({
+        seed: "continuous-boundary",
+        lengthTicks: 7680,
+        mode: "continuous-fugue",
+        segmentIndex: 0,
+      }).nextSegmentSnapshot,
+    }),
+  );
+  const timeline = [
+    createPlaybackTimelineSegment(first, { segmentIndex: 0, seed: "continuous-boundary" }),
+    createPlaybackTimelineSegment(second, {
+      segmentIndex: 1,
+      seed: "continuous-boundary",
+      offsetSecond: first.totalSeconds,
+    }),
+  ];
+
+  assert.equal(findActivePlaybackSegment(timeline, first.totalSeconds - 0.001)?.segmentIndex, 0);
+  assert.equal(findActivePlaybackSegment(timeline, first.totalSeconds)?.segmentIndex, 1);
 });
 
 test("audible boundary adoption uses the generated segment seed", () => {

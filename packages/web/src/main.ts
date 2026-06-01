@@ -20,11 +20,16 @@ import type { GenerationWorkerResponse, GenerationWorkerReviewSnapshot } from ".
 import { drawPianoRoll } from "./piano-roll.js";
 import {
   appendPlaybackModelSessionTimeline,
+  createPlaybackTimelineSegment,
+  createScoreCardSnapshot,
   DEFAULT_WEB_PERFORMANCE_PROFILE_ID,
+  findActivePlaybackSegment,
   formatKeySignature,
   formatPlaybackPosition,
   formatTimeSignature,
   type PlaybackModel,
+  type PlaybackTimelineSegment,
+  type ScoreCardSnapshot,
 } from "./score.js";
 
 const URL_SEED_PARAM = "seed";
@@ -46,6 +51,8 @@ type AppState = {
   segmentIndex: number;
   model?: PlaybackModel;
   sessionModel?: PlaybackModel;
+  playbackTimeline: PlaybackTimelineSegment[];
+  scoreCardSnapshot?: ScoreCardSnapshot;
   segmentPlaybackOffsetSecond: number;
   generationStatus: GenerationStatus;
   nextSegmentStatus: NextSegmentStatus;
@@ -108,6 +115,10 @@ app.innerHTML = `
     </section>
     <section class="score-card" aria-live="polite">
       <div>
+        <span class="metric-label">Now playing</span>
+        <strong id="segment-index"></strong>
+      </div>
+      <div>
         <span class="metric-label">Tempo</span>
         <strong id="tempo"></strong>
       </div>
@@ -135,6 +146,8 @@ app.innerHTML = `
         <span class="metric-label">Entries</span>
         <strong id="entries"></strong>
       </div>
+    </section>
+    <section class="generation-card" aria-live="polite">
       <div>
         <span class="metric-label">Generation</span>
         <strong id="generation-status"></strong>
@@ -144,8 +157,8 @@ app.innerHTML = `
         <strong id="mode-status"></strong>
       </div>
       <div>
-        <span class="metric-label">Segment</span>
-        <strong id="segment-index"></strong>
+        <span class="metric-label">Generated segment</span>
+        <strong id="generated-segment-index"></strong>
       </div>
       <div>
         <span class="metric-label">Terminal closure</span>
@@ -196,6 +209,10 @@ const modeStatus = requireElement(document.querySelector<HTMLElement>("#mode-sta
 const segmentIndexStatus = requireElement(
   document.querySelector<HTMLElement>("#segment-index"),
   "segment index metric",
+);
+const generatedSegmentIndexStatus = requireElement(
+  document.querySelector<HTMLElement>("#generated-segment-index"),
+  "generated segment index metric",
 );
 const terminalClosureStatus = requireElement(
   document.querySelector<HTMLElement>("#terminal-closure-status"),
@@ -282,6 +299,7 @@ stopButton.addEventListener("click", () => {
   }
 
   cancelPlayback();
+  updatePlaybackSnapshot(0);
   if (state.model !== undefined) {
     drawPianoRoll(pianoRoll, visualPlaybackModel(state), 0);
   }
@@ -328,6 +346,8 @@ function regenerateScore(seed: string, urlUpdateMode: UrlUpdateMode = "push"): v
     segmentIndex,
     model: state.model,
     sessionModel: state.sessionModel,
+    playbackTimeline: state.playbackTimeline,
+    scoreCardSnapshot: state.scoreCardSnapshot,
     segmentPlaybackOffsetSecond: 0,
     generationStatus: "generating",
     nextSegmentStatus: "idle",
@@ -371,6 +391,7 @@ function createPendingState(
     performanceProfileId,
     playbackMode: "continuous-fugue",
     segmentIndex: 0,
+    playbackTimeline: [],
     segmentPlaybackOffsetSecond: 0,
     generationStatus: "idle",
     nextSegmentStatus: "idle",
@@ -454,7 +475,12 @@ function roundDebugSecond(value: number | undefined): number | undefined {
 }
 
 function render(nextState: AppState): void {
-  const model = nextState.model;
+  renderScoreCard(nextState.scoreCardSnapshot);
+  renderGenerationCard(nextState);
+}
+
+function renderScoreCard(snapshot: ScoreCardSnapshot | undefined): void {
+  const model = snapshot?.model;
 
   tempo.textContent = model === undefined ? "..." : `${model.bpm} bpm`;
   meter.textContent = model === undefined ? "..." : formatTimeSignature(model.timeSignature);
@@ -463,9 +489,13 @@ function render(nextState: AppState): void {
   pitchSpan.textContent = model === undefined ? "..." : `${model.pitchRange.min}-${model.pitchRange.max}`;
   states.textContent = model === undefined ? "..." : `${new Set(model.stateTransitions).size}`;
   entries.textContent = model === undefined ? "..." : `${model.subjectEntries.length}`;
+  segmentIndexStatus.textContent = snapshot === undefined ? "..." : `${snapshot.segmentIndex}`;
+}
+
+function renderGenerationCard(nextState: AppState): void {
   generationStatus.textContent = formatGenerationStatus(nextState);
   modeStatus.textContent = formatPlaybackMode(nextState.playbackMode);
-  segmentIndexStatus.textContent = `${nextState.segmentIndex}`;
+  generatedSegmentIndexStatus.textContent = `${nextState.segmentIndex}`;
   terminalClosureStatus.textContent = nextState.reviewSnapshot?.terminalClosureStatus ?? "...";
   continuityStatus.textContent = nextState.reviewSnapshot?.continuousSegmentContinuityStatus ?? "...";
   deadlineStatus.textContent = formatDeadlineStatus(nextState);
@@ -479,6 +509,33 @@ function renderPlaybackPosition(playbackSecond: number): void {
   }
 
   playbackPosition.textContent = formatPlaybackPosition(playbackSecond, visualPlaybackModel(state));
+}
+
+function updatePlaybackSnapshot(playbackSecond: number): void {
+  const activeSegment = findActivePlaybackSegment(state.playbackTimeline, playbackSecond);
+  const snapshot = createScoreCardSnapshot(activeSegment, playbackSecond);
+  if (snapshot === undefined) {
+    return;
+  }
+
+  const currentSnapshot = state.scoreCardSnapshot;
+  if (
+    currentSnapshot !== undefined &&
+    currentSnapshot.segmentIndex === snapshot.segmentIndex &&
+    currentSnapshot.model === snapshot.model
+  ) {
+    state = {
+      ...state,
+      scoreCardSnapshot: snapshot,
+    };
+    return;
+  }
+
+  state = {
+    ...state,
+    scoreCardSnapshot: snapshot,
+  };
+  renderScoreCard(snapshot);
 }
 
 function visualPlaybackModel(nextState: AppState): PlaybackModel {
@@ -513,6 +570,7 @@ async function startPlayback(): Promise<void> {
   playbackStartController = controller;
   transportStatus.textContent = "Starting playback";
   renderTransportButtons();
+  updatePlaybackSnapshot(pausedAtSecond);
   renderPlaybackPosition(pausedAtSecond);
 
   try {
@@ -575,6 +633,7 @@ function pausePlayback(): void {
   if (state.model !== undefined) {
     drawPianoRoll(pianoRoll, visualPlaybackModel(state), pausedAtSecond);
   }
+  updatePlaybackSnapshot(pausedAtSecond);
   renderPlaybackPosition(pausedAtSecond);
   transportStatus.textContent = "Playback paused";
   renderTransportButtons();
@@ -591,6 +650,7 @@ function startVisualizerLoop(): void {
 
     const playbackSecond = player?.playbackSecond ?? 0;
     drawPianoRoll(pianoRoll, visualPlaybackModel(state), playbackSecond);
+    updatePlaybackSnapshot(playbackSecond);
     renderPlaybackPosition(playbackSecond);
 
     if (player?.isPlaying) {
@@ -723,6 +783,12 @@ function handleGenerationWorkerResponse(response: GenerationWorkerResponse): voi
     response.deadlineResult.returnedCandidateKind === "conservative-fallback";
   const model = preserveBestSoFarModel ? (state.model ?? response.model) : response.model;
   const generationStatus = preserveBestSoFarModel ? "best-so-far-fallback" : "ready";
+  const playbackTimeline = [
+    createPlaybackTimelineSegment(model, {
+      segmentIndex: response.deadlineResult.segmentIndex,
+      seed: response.seed,
+    }),
+  ];
 
   state = {
     seed: response.seed,
@@ -731,6 +797,8 @@ function handleGenerationWorkerResponse(response: GenerationWorkerResponse): voi
     segmentIndex: response.deadlineResult.segmentIndex,
     model,
     sessionModel: model,
+    playbackTimeline,
+    scoreCardSnapshot: createScoreCardSnapshot(playbackTimeline[0], 0),
     segmentPlaybackOffsetSecond: 0,
     generationStatus,
     nextSegmentStatus: state.nextSegmentStatus,
@@ -964,6 +1032,19 @@ function adoptPrefetchedSegment(segment: PrefetchedSegment): void {
       : segment.model;
   const segmentPlaybackOffsetSecond =
     segment.deadlineResult.mode === "continuous-fugue" ? segment.segmentPlaybackOffsetSecond : 0;
+  const timelineSegment = createPlaybackTimelineSegment(segment.model, {
+    segmentIndex: segment.deadlineResult.segmentIndex,
+    seed,
+    offsetSecond: segmentPlaybackOffsetSecond,
+  });
+  const playbackTimeline =
+    segment.deadlineResult.mode === "continuous-fugue"
+      ? [...state.playbackTimeline, timelineSegment]
+      : [timelineSegment];
+  const playbackSecond =
+    segment.deadlineResult.mode === "continuous-fugue"
+      ? (state.scoreCardSnapshot?.playbackSecond ?? player?.playbackSecond ?? 0)
+      : 0;
   state = {
     seed,
     performanceProfileId: segment.performanceProfileId,
@@ -971,6 +1052,11 @@ function adoptPrefetchedSegment(segment: PrefetchedSegment): void {
     segmentIndex: segment.deadlineResult.segmentIndex,
     model: segment.model,
     sessionModel,
+    playbackTimeline,
+    scoreCardSnapshot:
+      segment.deadlineResult.mode === "continuous-fugue"
+        ? state.scoreCardSnapshot
+        : createScoreCardSnapshot(timelineSegment, playbackSecond),
     segmentPlaybackOffsetSecond,
     generationStatus: "ready",
     nextSegmentStatus: "idle",
@@ -980,8 +1066,10 @@ function adoptPrefetchedSegment(segment: PrefetchedSegment): void {
   };
   seedInput.value = seed;
   render(state);
-  drawPianoRoll(pianoRoll, visualPlaybackModel(state), segmentPlaybackOffsetSecond);
-  renderPlaybackPosition(segmentPlaybackOffsetSecond);
+  const visualSecond =
+    segment.deadlineResult.mode === "continuous-fugue" ? (player?.playbackSecond ?? playbackSecond) : playbackSecond;
+  drawPianoRoll(pianoRoll, visualPlaybackModel(state), visualSecond);
+  renderPlaybackPosition(visualSecond);
 }
 
 function waitForPrefetchedSegment(): Promise<PrefetchedSegment | undefined> {
@@ -1057,7 +1145,9 @@ function formatReadyGenerationStatus(nextState: AppState): string {
 
   const candidate = nextState.deadlineResult.returnedCandidateKind;
   const elapsed = Math.round(nextState.deadlineResult.elapsedMs);
-  const nextSegment = nextState.playbackMode === "endless-program" ? `, next ${nextState.nextSegmentStatus}` : "";
+  const nextSegment = isSegmentChainingPlaybackMode(nextState.playbackMode)
+    ? `, next ${nextState.nextSegmentStatus}`
+    : "";
   return `${candidate}, ${elapsed} ms${nextSegment}`;
 }
 

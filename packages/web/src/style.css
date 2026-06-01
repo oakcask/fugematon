@@ -106,6 +106,7 @@ h1 {
 }
 
 .control-card,
+.generation-card,
 .score-card,
 .visualizer-card {
   border: 1px solid rgba(60, 43, 30, 0.15);
@@ -159,6 +160,7 @@ h1 {
 }
 
 .score-card,
+.generation-card,
 .transport-card {
   display: grid;
   gap: 0.8rem;
@@ -167,7 +169,8 @@ h1 {
   animation: rise 580ms ease-out 160ms both;
 }
 
-.score-card {
+.score-card,
+.generation-card {
   grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
   margin-top: 1rem;
 }
@@ -183,13 +186,15 @@ h1 {
   animation-delay: 220ms;
 }
 
-.score-card > div {
+.score-card > div,
+.generation-card > div {
   border-radius: 1rem;
   padding: 1rem;
   background: rgba(255, 255, 255, 0.36);
 }
 
 .score-card strong,
+.generation-card strong,
 .transport-card strong {
   display: block;
   margin-top: 0.35rem;
@@ -211,7 +216,8 @@ h1 {
   line-height: 1.2;
 }
 
-.score-card strong {
+.score-card strong,
+.generation-card strong {
   white-space: nowrap;
 }
 
@@ -281,11 +287,13 @@ h1 {
     font-size: 1.2rem;
   }
 
-  .score-card strong {
+  .score-card strong,
+  .generation-card strong {
     white-space: normal;
   }
 
   .seed-row,
+  .generation-card,
   .score-card,
   .transport-card {
     grid-template-columns: 1fr;
