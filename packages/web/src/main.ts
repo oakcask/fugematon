@@ -234,6 +234,7 @@ let playbackStartController: AbortController | undefined;
 let pausedAtSecond = 0;
 let hasPausedPlayback = false;
 let generationTimeout: number | undefined;
+let primaryGenerationInFlight = false;
 let activePrimaryGenerationRequestId = 0;
 let activePrefetchGenerationRequestId: number | undefined;
 let nextGenerationRequestId = 0;
@@ -263,6 +264,10 @@ playbackModeSelect.addEventListener("change", () => {
 });
 
 playPauseButton.addEventListener("click", () => {
+  if (isTransportLocked()) {
+    return;
+  }
+
   if (player?.isPlaying) {
     pausePlayback();
     return;
@@ -272,6 +277,10 @@ playPauseButton.addEventListener("click", () => {
 });
 
 stopButton.addEventListener("click", () => {
+  if (isTransportLocked()) {
+    return;
+  }
+
   cancelPlayback();
   if (state.model !== undefined) {
     drawPianoRoll(pianoRoll, visualPlaybackModel(state), 0);
@@ -309,6 +318,7 @@ function regenerateScore(seed: string, urlUpdateMode: UrlUpdateMode = "push"): v
   nextSegmentIndex = 0;
   const requestId = nextRequestId();
   activePrimaryGenerationRequestId = requestId;
+  primaryGenerationInFlight = true;
   const segmentIndex = 0;
   const performanceProfileId = performanceProfileSelect.value as PerformanceProfileId;
   state = {
@@ -328,6 +338,7 @@ function regenerateScore(seed: string, urlUpdateMode: UrlUpdateMode = "push"): v
   }
   renderPlaybackPosition(0);
   transportStatus.textContent = "Generating score";
+  renderTransportButtons();
   writeUrlSeed(nextSeed, urlUpdateMode);
   queueGenerationFallback(requestId, segmentIndex);
   generationWorker.postMessage({
@@ -485,6 +496,11 @@ function currentSegmentPlaybackSecond(): number {
 }
 
 async function startPlayback(): Promise<void> {
+  if (isTransportLocked()) {
+    renderTransportButtons();
+    return;
+  }
+
   if (state.model === undefined) {
     transportStatus.textContent = "Waiting for generated score";
     renderTransportButtons();
@@ -615,8 +631,14 @@ function setPlaybackFeedback(isPlaying: boolean): void {
 function renderTransportButtons(): void {
   const isStarting = playbackStartController !== undefined;
   const isPlaying = player?.isPlaying ?? false;
-  playPauseButton.disabled = isStarting || state.model === undefined;
+  const isLocked = isTransportLocked();
+  playPauseButton.disabled = isLocked || isStarting || state.model === undefined;
   playPauseButton.textContent = isStarting ? "Starting" : renderPlayPauseLabel(isPlaying);
+  stopButton.disabled = isLocked || state.model === undefined;
+}
+
+function isTransportLocked(): boolean {
+  return primaryGenerationInFlight;
 }
 
 function queueGenerationFallback(requestId: number, segmentIndex: number): void {
@@ -681,6 +703,7 @@ function handleGenerationWorkerResponse(response: GenerationWorkerResponse): voi
     window.clearTimeout(generationTimeout);
     generationTimeout = undefined;
   }
+  primaryGenerationInFlight = false;
 
   if (response.type === "error") {
     state = {
