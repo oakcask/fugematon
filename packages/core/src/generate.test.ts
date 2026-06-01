@@ -178,6 +178,47 @@ test("generateScore continues continuous-fugue segments from a carried snapshot"
   );
 });
 
+test("generateScore consumes carried PRNG state for continuous-fugue continuation choices", () => {
+  const first = generateScore({
+    seed: "fugue-smoke",
+    lengthTicks: FUGUE_FORM_REVIEW_LENGTH_TICKS,
+    mode: "continuous-fugue",
+    segmentIndex: 0,
+  });
+  const continuationInput = {
+    seed: "fugue-smoke",
+    lengthTicks: 7680,
+    mode: "continuous-fugue" as const,
+    segmentIndex: 1,
+    previousSegmentSnapshot: first.nextSegmentSnapshot,
+  };
+  const baseline = generateScore(continuationInput);
+  const alteredPrngSnapshot = {
+    ...first.nextSegmentSnapshot,
+    prngInternalState: {
+      ...first.nextSegmentSnapshot.prngInternalState,
+      state: [1, 2, 3, 4] as [number, number, number, number],
+    },
+  };
+  const altered = generateScore({
+    ...continuationInput,
+    previousSegmentSnapshot: alteredPrngSnapshot,
+  });
+
+  assert.deepEqual(generateScore(continuationInput), baseline);
+  assert.notDeepEqual(altered.events, baseline.events);
+  assert.notDeepEqual(
+    altered.diagnostics.sectionPlans.map((plan) => [plan.state, plan.localKey]),
+    baseline.diagnostics.sectionPlans.map((plan) => [plan.state, plan.localKey]),
+  );
+  assert.notEqual(altered.diagnostics.continuousSegmentContinuity.classification, "generator-response-required-reset");
+  assert.equal(altered.diagnostics.continuousSegmentContinuity.carriedSubjectFamily, true);
+  assert.notDeepEqual(
+    altered.nextSegmentSnapshot.prngInternalState.state,
+    baseline.nextSegmentSnapshot.prngInternalState.state,
+  );
+});
+
 test("generateScore treats continuous-fugue segment zero as initial boundary context", () => {
   const first = generateScore({
     seed: "seed-10tymfq-0udkhlm",
