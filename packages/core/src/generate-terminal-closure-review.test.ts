@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { FUGUE_FORM_REVIEW_LENGTH_TICKS, TICKS_PER_QUARTER } from "./constants.js";
-import type { CadenceKind, KeySignature, NoteEvent, ScoreEvent } from "./events.js";
+import type { CadenceKind, HarmonicPlan, KeySignature, NoteEvent, ScoreEvent, Voice } from "./events.js";
 import { generateScore } from "./generate.js";
 import { buildHarmonicPlan } from "./generation/harmony.js";
 import { createMeterContext } from "./generation/meter.js";
@@ -35,9 +35,10 @@ test("terminal closure review accepts authentic and modal terminal sonorities", 
     });
 
     assert.equal(summary.segmentIndex, 2);
-    assert.equal(summary.schemaVersion, 2);
+    assert.equal(summary.schemaVersion, 3);
     assert.equal(summary.terminalCadenceKind, cadenceKind);
     assert.equal(summary.terminalClosureSource, "ordinary-terminal-cadence");
+    assert.equal(summary.codaContinuity.classification, "not-applicable");
     assert.equal(summary.preparedVoiceReentry, "not-applicable");
     assert.equal(summary.lowVoiceSupport, "root-supported");
     assert.equal(summary.outerVoiceLandingStatus, "stable");
@@ -116,6 +117,143 @@ test("endless-program target seeds keep stable terminal closure evidence", () =>
       output.diagnostics.sectionPlans.some((plan) => plan.terminalIntent === "self-contained-coda"),
       seed,
     );
+    assert.equal(summary.codaContinuity.classification, "accepted", seed);
+    assert.match(
+      summary.codaContinuity.codaArchetype ?? "",
+      /^(final-fragment-entry|stretto-compaction|pedal-entry-cadence|liquidation-cadence|cadential-echo)$/,
+      seed,
+    );
+    assert.ok(summary.codaContinuity.derivationCount >= 4, seed);
+    assert.ok(summary.codaContinuity.movingVoiceCountBeforeCadence >= 1, seed);
+  }
+});
+
+test("endless-program target codas keep derived pre-cadence motion before the landing", () => {
+  for (const seed of TERMINAL_CODA_TARGET_SEEDS) {
+    const output = generateScore({
+      seed,
+      lengthTicks: FUGUE_FORM_REVIEW_LENGTH_TICKS,
+      mode: "endless-program",
+    });
+    const summary = output.diagnostics.terminalClosureReview;
+    const coda = output.diagnostics.sectionPlans.find((plan) => plan.terminalIntent === "self-contained-coda");
+
+    assert.ok(coda, seed);
+    assert.ok(summary.codaStartTick !== undefined, seed);
+    assert.ok(summary.cadenceTargetTick !== undefined, seed);
+
+    const codaNotesBeforeLanding = output.events.filter(
+      (event): event is NoteEvent =>
+        event.kind === "note" &&
+        event.startTick >= summary.codaStartTick! &&
+        event.startTick < summary.cadenceTargetTick!,
+    );
+    const derivedPreCadenceNotes = codaNotesBeforeLanding.filter(
+      (noteEvent) =>
+        noteEvent.motivicDerivation?.targetFunction === "extend-cadence" &&
+        noteEvent.motivicDerivation.transformationKind !== "generic",
+    );
+    const movingNonBassVoices = (["tenor", "alto", "soprano"] as const).filter(
+      (voice) => distinctStartTicks(codaNotesBeforeLanding, voice).size >= 2,
+    );
+
+    assert.ok(derivedPreCadenceNotes.length >= 4, seed);
+    assert.ok(movingNonBassVoices.length >= 1, seed);
+    assert.ok(
+      derivedPreCadenceNotes.some((noteEvent) =>
+        [
+          "subject-head",
+          "subject-tail",
+          "answer-form",
+          "counter-subject-head",
+          "counter-subject-tail",
+          "cadence-figure",
+          "prior-episode-figure",
+        ].includes(noteEvent.motivicDerivation?.sourceMotive ?? ""),
+      ),
+      seed,
+    );
+    assert.ok(
+      codaNotesBeforeLanding.some(
+        (noteEvent) => noteEvent.voice !== "bass" && noteEvent.metricalHarmonyIntent === "structural-chord-tone",
+      ),
+      seed,
+    );
+  }
+});
+
+test("generated self-contained coda keeps sudden final-attack reentry review-visible", () => {
+  const plan = terminalPlan("authentic", C_MAJOR, "self-contained-coda");
+  const summary = buildTerminalClosureReviewSummary({
+    events: scoreEvents(stableSonorityNotes(C_MAJOR, TICKS_PER_QUARTER), LENGTH_TICKS),
+    sectionPlans: [plan],
+    mode: "endless-program",
+    segmentIndex: 0,
+  });
+  const voiceReentryWindow = summary.windows.find((window) => window.kind === "voice-reentry");
+
+  assert.equal(summary.terminalClosureSource, "generated-coda");
+  assert.equal(summary.preparedVoiceReentry, "sudden-final-attack");
+  assert.equal(summary.finalAttackReentryVoiceCount, 4);
+  assert.equal(summary.codaContinuity.classification, "not-applicable");
+  assert.equal(voiceReentryWindow?.classification, "review-required");
+  assert.match(voiceReentryWindow?.reason ?? "", /4 terminal voice/);
+});
+
+test("generated all-voice long-tone coda is review-visible even with stable final sonority", () => {
+  const plan = terminalPlan("authentic", C_MAJOR, "self-contained-coda");
+  plan.terminalCodaContext = {
+    schemaVersion: 1,
+    archetype: "final-fragment-entry",
+    selectionReason: "synthetic static coda fixture",
+    recentMaterialSource: "subject-head",
+    recentStateSequence: ["subject-return"],
+    recentSubjectStemDegrees: [0, 1, 2, 4],
+    rhythmicCellTicks: [TICKS_PER_QUARTER, TICKS_PER_QUARTER, TICKS_PER_QUARTER, TICKS_PER_QUARTER],
+    activeVoiceCount: 4,
+    textureDensity: 4,
+    contourEnergy: 0,
+    localMode: "major",
+    cadenceKind: "authentic",
+    availableDurationTicks: LENGTH_TICKS,
+    pedalImplied: false,
+  };
+  const summary = buildTerminalClosureReviewSummary({
+    events: scoreEvents(
+      stableSonorityNotes(C_MAJOR, LENGTH_TICKS).map((event) => ({ ...event, startTick: 0 })),
+      LENGTH_TICKS,
+    ),
+    sectionPlans: [plan],
+    mode: "endless-program",
+    segmentIndex: 0,
+  });
+  const codaWindow = summary.windows.find((window) => window.kind === "coda-continuity");
+
+  assert.equal(summary.lowVoiceSupport, "root-supported");
+  assert.equal(summary.outerVoiceLandingStatus, "stable");
+  assert.equal(summary.codaContinuity.classification, "review-required");
+  assert.equal(summary.classification, "review-required");
+  assert.equal(summary.codaContinuity.derivationCount, 0);
+  assert.equal(summary.codaContinuity.movingVoiceCountBeforeCadence, 0);
+  assert.ok(summary.codaContinuity.longestAllVoiceStaticSpanTicks >= TICKS_PER_QUARTER * 3);
+  assert.equal(codaWindow?.classification, "review-required");
+});
+
+test("modal endless-program target codas keep modal terminal rhetoric", () => {
+  for (const seed of ["modal-cadence", "dense-modal"] as const) {
+    const output = generateScore({
+      seed,
+      lengthTicks: FUGUE_FORM_REVIEW_LENGTH_TICKS,
+      mode: "endless-program",
+    });
+    const coda = output.diagnostics.sectionPlans.find((plan) => plan.terminalIntent === "self-contained-coda");
+
+    assert.ok(coda, seed);
+    assert.equal(coda.cadenceKind, "modal", seed);
+    assert.equal(coda.targetKey.mode, "aeolian", seed);
+    assert.equal(output.diagnostics.terminalClosureReview.terminalCadenceKind, "modal", seed);
+    assert.equal(output.diagnostics.terminalClosureReview.terminalClosureSource, "generated-coda", seed);
+    assert.equal(output.diagnostics.tonalCadenceOveruseWarnings, 0, seed);
   }
 });
 
@@ -165,8 +303,12 @@ test("endless-program coda reserves planner-visible phrase time before the bound
   assert.equal(coda.state, "subject-return");
   assert.equal(coda.cadenceKind, "authentic");
   assert.equal(coda.ambiguityIntent, "none");
+  assert.ok(coda.terminalCodaContext);
+  assert.equal(coda.terminalCodaContext.cadenceKind, "authentic");
+  assert.ok(coda.terminalCodaContext.recentSubjectStemDegrees.length > 0);
   assert.ok(coda.durationTicks >= coda.meterContext.measureTicks * 2);
   assert.equal(output.diagnostics.terminalClosureReview.terminalClosureSource, "generated-coda");
+  assert.equal(output.diagnostics.terminalClosureReview.codaContinuity.classification, "accepted");
   assert.equal(output.diagnostics.terminalClosureReview.codaStartTick, coda.startTick);
   assert.ok(output.diagnostics.stateTransitions.includes("subject-return"));
 });
@@ -212,7 +354,11 @@ function scoreEvents(notes: NoteEvent[], lengthTicks: number): ScoreEvent[] {
   ];
 }
 
-function terminalPlan(cadenceKind: CadenceKind, key: KeySignature) {
+function terminalPlan(
+  cadenceKind: CadenceKind,
+  key: KeySignature,
+  terminalIntent?: HarmonicPlan["terminalIntent"],
+): HarmonicPlan {
   return buildHarmonicPlan({
     state: "subject-return",
     startTick: 0,
@@ -224,9 +370,14 @@ function terminalPlan(cadenceKind: CadenceKind, key: KeySignature) {
     cadenceKind,
     ambiguityIntent: "none",
     meterContext: createMeterContext({ numerator: 4, denominator: 4 }),
+    terminalIntent,
   });
 }
 
 function isNoteBefore(tick: number): (event: ScoreEvent) => boolean {
   return (event): boolean => event.kind === "note" && event.startTick + event.durationTicks <= tick;
+}
+
+function distinctStartTicks(notes: readonly NoteEvent[], voice: Voice): Set<number> {
+  return new Set(notes.filter((noteEvent) => noteEvent.voice === voice).map((noteEvent) => noteEvent.startTick));
 }

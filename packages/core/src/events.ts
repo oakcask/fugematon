@@ -106,6 +106,38 @@ export type FragmentTransform = "sequence" | "contrary-motion" | "inversion";
 
 export type TerminalSectionIntent = "self-contained-coda" | "fallback-terminal-closure" | "bridge-compatible-closure";
 
+export type TerminalCodaArchetype =
+  | "final-fragment-entry"
+  | "stretto-compaction"
+  | "pedal-entry-cadence"
+  | "liquidation-cadence"
+  | "cadential-echo";
+
+export type TerminalCodaPedalClassification =
+  | "prepared-pedal"
+  | "cadence-support"
+  | "generic-static-support"
+  | "not-pedal";
+
+export type TerminalCodaContinuityClassification = "accepted" | "review-required" | "not-applicable";
+
+export type TerminalCodaContextSummary = {
+  schemaVersion: 1;
+  archetype: TerminalCodaArchetype;
+  selectionReason: string;
+  recentMaterialSource: EpisodeMotiveSource;
+  recentStateSequence: FugueState[];
+  recentSubjectStemDegrees: number[];
+  rhythmicCellTicks: number[];
+  activeVoiceCount: number;
+  textureDensity: number;
+  contourEnergy: number;
+  localMode: KeyMode;
+  cadenceKind: CadenceKind;
+  availableDurationTicks: number;
+  pedalImplied: boolean;
+};
+
 export type HarmonicAnchor = {
   tick: number;
   localKey: KeySignature;
@@ -129,6 +161,7 @@ export type HarmonicPlan = {
   sequencePattern?: SequencePattern;
   fragmentTransform?: FragmentTransform;
   terminalIntent?: TerminalSectionIntent;
+  terminalCodaContext?: TerminalCodaContextSummary;
   anchors: HarmonicAnchor[];
 };
 
@@ -1431,7 +1464,13 @@ export type TerminalClosureSource =
 export type TerminalClosurePreparedReentryStatus = "prepared" | "sudden-final-attack" | "not-applicable";
 
 export type TerminalClosureReviewWindow = {
-  kind: "terminal-cadence" | "final-sonority" | "boundary-rest" | "texture-thinning" | "voice-reentry";
+  kind:
+    | "terminal-cadence"
+    | "final-sonority"
+    | "boundary-rest"
+    | "texture-thinning"
+    | "voice-reentry"
+    | "coda-continuity";
   startTick: number;
   endTick: number;
   voices: Voice[];
@@ -1439,8 +1478,22 @@ export type TerminalClosureReviewWindow = {
   reason: string;
 };
 
+export type TerminalCodaContinuitySummary = {
+  schemaVersion: 1;
+  classification: TerminalCodaContinuityClassification;
+  codaArchetype?: TerminalCodaArchetype;
+  selectionReason?: string;
+  longestAllVoiceStaticSpanTicks: number;
+  longestNonTerminalHeldSpanTicks: number;
+  movingVoiceCountBeforeCadence: number;
+  derivationCount: number;
+  topDerivationSource?: EpisodeMotiveSource;
+  pedalClassification: TerminalCodaPedalClassification;
+  reasons: string[];
+};
+
 export type TerminalClosureReviewSummary = {
-  schemaVersion: 2;
+  schemaVersion: 3;
   segmentIndex: number;
   inspectedTickRange: {
     startTick: number;
@@ -1457,6 +1510,7 @@ export type TerminalClosureReviewSummary = {
   unresolvedBoundaryDissonanceCount: number;
   thinningExplanation: TerminalClosureThinningExplanation;
   finalRestClassification: TerminalClosureFinalRestClassification;
+  codaContinuity: TerminalCodaContinuitySummary;
   classification: TerminalClosureClassification;
   windows: TerminalClosureReviewWindow[];
   reasons: string[];

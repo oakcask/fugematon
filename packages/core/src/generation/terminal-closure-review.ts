@@ -14,6 +14,9 @@ import type {
   TerminalClosureSource,
   TerminalClosureSupportStatus,
   TerminalClosureThinningExplanation,
+  TerminalCodaContinuityClassification,
+  TerminalCodaContinuitySummary,
+  TerminalCodaPedalClassification,
   Voice,
 } from "../events.js";
 import type { InfinitePlaybackMode } from "../infinite-playback.js";
@@ -22,7 +25,7 @@ import { isModalMode } from "./key.js";
 import { scaleDegreePitchClass } from "./pitch.js";
 import type { FugueScore } from "./types.js";
 
-const TERMINAL_CLOSURE_SCHEMA_VERSION = 2;
+const TERMINAL_CLOSURE_SCHEMA_VERSION = 3;
 const TERMINAL_CHORD_DURATION_TICKS = TICKS_PER_QUARTER;
 const SEVERE_DISSONANCE_CLASSES = new Set([1, 2, 10, 11]);
 
@@ -120,7 +123,7 @@ export function buildTerminalClosureReviewSummary(input: {
     source: terminalClosureSource,
     finalAttackReentryVoiceCount,
   });
-  const classification = classifyTerminalClosure({
+  const terminalCadenceClassification = classifyTerminalClosure({
     mode: input.mode,
     terminalCadenceKind,
     lowVoiceSupport,
@@ -129,7 +132,17 @@ export function buildTerminalClosureReviewSummary(input: {
     thinningExplanation,
     finalRestClassification,
   });
-  const reasons = terminalClosureReasons({
+  const codaContinuity = buildTerminalCodaContinuitySummary({
+    notes,
+    terminalPlan,
+    terminalClosureSource,
+    codaStartTick,
+    cadenceTargetTick,
+    endTick,
+    measureTicks,
+  });
+  const classification = combineTerminalClosureClassification(terminalCadenceClassification, codaContinuity);
+  const cadenceReasons = terminalClosureReasons({
     mode: input.mode,
     terminalCadenceKind,
     lowVoiceSupport,
@@ -138,6 +151,10 @@ export function buildTerminalClosureReviewSummary(input: {
     thinningExplanation,
     finalRestClassification,
   });
+  const reasons =
+    codaContinuity.classification === "review-required"
+      ? [...cadenceReasons, ...codaContinuity.reasons]
+      : cadenceReasons;
 
   return {
     schemaVersion: TERMINAL_CLOSURE_SCHEMA_VERSION,
@@ -154,12 +171,15 @@ export function buildTerminalClosureReviewSummary(input: {
     unresolvedBoundaryDissonanceCount,
     thinningExplanation,
     finalRestClassification,
+    codaContinuity,
     classification,
     windows: terminalClosureWindows({
       inspectedTickRange,
       terminalTick,
       endTick,
       activeAtTerminal,
+      codaStartTick,
+      codaContinuity,
       preparedVoiceReentry,
       finalAttackReentryVoiceCount,
       classification,
@@ -401,6 +421,287 @@ function classifyPreparedVoiceReentry(input: {
   return input.finalAttackReentryVoiceCount === 0 ? "prepared" : "sudden-final-attack";
 }
 
+function buildTerminalCodaContinuitySummary(input: {
+  notes: readonly NoteEvent[];
+  terminalPlan: HarmonicPlan | undefined;
+  terminalClosureSource: TerminalClosureSource;
+  codaStartTick: number | undefined;
+  cadenceTargetTick: number | undefined;
+  endTick: number;
+  measureTicks: number;
+}): TerminalCodaContinuitySummary {
+  if (
+    input.terminalClosureSource !== "generated-coda" ||
+    input.terminalPlan?.terminalCodaContext === undefined ||
+    input.codaStartTick === undefined ||
+    input.cadenceTargetTick === undefined
+  ) {
+    return {
+      schemaVersion: 1,
+      classification: "not-applicable",
+      longestAllVoiceStaticSpanTicks: 0,
+      longestNonTerminalHeldSpanTicks: 0,
+      movingVoiceCountBeforeCadence: 0,
+      derivationCount: 0,
+      pedalClassification: "not-pedal",
+      reasons: ["terminal coda continuity is not applicable to this boundary source"],
+    };
+  }
+
+  const preCadenceNotes = input.notes.filter(
+    (note) =>
+      note.startTick < input.cadenceTargetTick! &&
+      note.startTick + note.durationTicks > input.codaStartTick! &&
+      note.startTick < input.endTick,
+  );
+  const movingVoiceCountBeforeCadence = countMovingVoicesBeforeCadence(
+    preCadenceNotes,
+    input.codaStartTick,
+    input.cadenceTargetTick,
+  );
+  const derivationCount = preCadenceNotes.filter(
+    (note) => note.motivicDerivation !== undefined && note.motivicDerivation.transformationKind !== "generic",
+  ).length;
+  const topDerivationSource = computeTopDerivationSource(preCadenceNotes);
+  const longestNonTerminalHeldSpanTicks = longestNonTerminalHeldSpan(
+    preCadenceNotes,
+    input.codaStartTick,
+    input.cadenceTargetTick,
+  );
+  const longestAllVoiceStaticSpanTicks = longestAllVoiceStaticSpan(
+    preCadenceNotes,
+    input.codaStartTick,
+    input.cadenceTargetTick,
+  );
+  const pedalClassification = classifyTerminalCodaPedal({
+    notes: preCadenceNotes,
+    plan: input.terminalPlan,
+    codaStartTick: input.codaStartTick,
+    cadenceTargetTick: input.cadenceTargetTick,
+    movingVoiceCountBeforeCadence,
+    derivationCount,
+  });
+  const classification = classifyTerminalCodaContinuity({
+    derivationCount,
+    movingVoiceCountBeforeCadence,
+    longestAllVoiceStaticSpanTicks,
+    preparedSpanTicks: input.cadenceTargetTick - input.codaStartTick,
+    measureTicks: input.measureTicks,
+  });
+  const reasons = terminalCodaContinuityReasons({
+    classification,
+    derivationCount,
+    movingVoiceCountBeforeCadence,
+    longestAllVoiceStaticSpanTicks,
+    topDerivationSource,
+    archetype: input.terminalPlan.terminalCodaContext.archetype,
+  });
+
+  return {
+    schemaVersion: 1,
+    classification,
+    codaArchetype: input.terminalPlan.terminalCodaContext.archetype,
+    selectionReason: input.terminalPlan.terminalCodaContext.selectionReason,
+    longestAllVoiceStaticSpanTicks,
+    longestNonTerminalHeldSpanTicks,
+    movingVoiceCountBeforeCadence,
+    derivationCount,
+    topDerivationSource,
+    pedalClassification,
+    reasons,
+  };
+}
+
+function countMovingVoicesBeforeCadence(
+  notes: readonly NoteEvent[],
+  codaStartTick: number,
+  cadenceTargetTick: number,
+): number {
+  let movingVoiceCount = 0;
+  for (const voice of ["bass", "tenor", "alto", "soprano"] as const) {
+    const starts = new Set(
+      notes
+        .filter((note) => note.voice === voice && note.startTick >= codaStartTick && note.startTick < cadenceTargetTick)
+        .map((note) => note.startTick),
+    );
+    if (starts.size >= 2) {
+      movingVoiceCount += 1;
+    }
+  }
+  return movingVoiceCount;
+}
+
+function computeTopDerivationSource(
+  notes: readonly NoteEvent[],
+): NonNullable<NoteEvent["motivicDerivation"]>["sourceMotive"] | undefined {
+  const counts = new Map<NonNullable<NoteEvent["motivicDerivation"]>["sourceMotive"], number>();
+  for (const note of notes) {
+    const source = note.motivicDerivation?.sourceMotive;
+    if (source === undefined || note.motivicDerivation?.transformationKind === "generic") {
+      continue;
+    }
+    counts.set(source, (counts.get(source) ?? 0) + 1);
+  }
+  return [...counts.entries()].sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))[0]?.[0];
+}
+
+function longestNonTerminalHeldSpan(
+  notes: readonly NoteEvent[],
+  codaStartTick: number,
+  cadenceTargetTick: number,
+): number {
+  return Math.max(
+    0,
+    ...notes.map(
+      (note) =>
+        Math.min(cadenceTargetTick, note.startTick + note.durationTicks) - Math.max(codaStartTick, note.startTick),
+    ),
+  );
+}
+
+function longestAllVoiceStaticSpan(
+  notes: readonly NoteEvent[],
+  codaStartTick: number,
+  cadenceTargetTick: number,
+): number {
+  const boundaryTicks = [
+    codaStartTick,
+    cadenceTargetTick,
+    ...notes.flatMap((note) => [
+      Math.max(codaStartTick, note.startTick),
+      Math.min(cadenceTargetTick, note.startTick + note.durationTicks),
+    ]),
+  ]
+    .filter((tick) => tick >= codaStartTick && tick <= cadenceTargetTick)
+    .sort((left, right) => left - right);
+  const uniqueBoundaryTicks = [...new Set(boundaryTicks)];
+  let longest = 0;
+  let current = 0;
+
+  for (let index = 0; index < uniqueBoundaryTicks.length - 1; index += 1) {
+    const startTick = uniqueBoundaryTicks[index]!;
+    const endTick = uniqueBoundaryTicks[index + 1]!;
+    if (endTick <= startTick) {
+      continue;
+    }
+    const activeNotes = notes.filter(
+      (note) => note.startTick <= startTick && note.startTick + note.durationTicks >= endTick,
+    );
+    const allVoicesStatic = new Set(activeNotes.map((note) => note.voice)).size >= 4;
+    if (allVoicesStatic) {
+      current += endTick - startTick;
+      longest = Math.max(longest, current);
+    } else {
+      current = 0;
+    }
+  }
+
+  return longest;
+}
+
+function classifyTerminalCodaPedal(input: {
+  notes: readonly NoteEvent[];
+  plan: HarmonicPlan;
+  codaStartTick: number;
+  cadenceTargetTick: number;
+  movingVoiceCountBeforeCadence: number;
+  derivationCount: number;
+}): TerminalCodaPedalClassification {
+  const rootPitchClass = scaleDegreePitchClass(0, 0, input.plan.targetKey);
+  const preparedSpanTicks = input.cadenceTargetTick - input.codaStartTick;
+  const bassRootTicks = input.notes.reduce((sum, note) => {
+    if (note.voice !== "bass" || positiveModulo(note.pitch, 12) !== rootPitchClass) {
+      return sum;
+    }
+    return (
+      sum +
+      Math.max(
+        0,
+        Math.min(input.cadenceTargetTick, note.startTick + note.durationTicks) -
+          Math.max(input.codaStartTick, note.startTick),
+      )
+    );
+  }, 0);
+
+  if (
+    bassRootTicks >= preparedSpanTicks * 0.75 &&
+    input.derivationCount === 0 &&
+    input.movingVoiceCountBeforeCadence <= 1
+  ) {
+    return "generic-static-support";
+  }
+  if (bassRootTicks >= preparedSpanTicks * 0.45 && input.movingVoiceCountBeforeCadence >= 2) {
+    return "prepared-pedal";
+  }
+  if (bassRootTicks > 0) {
+    return "cadence-support";
+  }
+  return "not-pedal";
+}
+
+function classifyTerminalCodaContinuity(input: {
+  derivationCount: number;
+  movingVoiceCountBeforeCadence: number;
+  longestAllVoiceStaticSpanTicks: number;
+  preparedSpanTicks: number;
+  measureTicks: number;
+}): TerminalCodaContinuityClassification {
+  if (
+    input.derivationCount === 0 ||
+    input.movingVoiceCountBeforeCadence === 0 ||
+    input.longestAllVoiceStaticSpanTicks >= Math.min(input.measureTicks, input.preparedSpanTicks)
+  ) {
+    return "review-required";
+  }
+  return "accepted";
+}
+
+function terminalCodaContinuityReasons(input: {
+  classification: TerminalCodaContinuityClassification;
+  derivationCount: number;
+  movingVoiceCountBeforeCadence: number;
+  longestAllVoiceStaticSpanTicks: number;
+  topDerivationSource: NonNullable<NoteEvent["motivicDerivation"]>["sourceMotive"] | undefined;
+  archetype: string;
+}): string[] {
+  const reasons: string[] = [];
+  if (input.derivationCount === 0) {
+    reasons.push(
+      "generated coda has no review-visible recent-material or cadence-figure derivation before the landing",
+    );
+  }
+  if (input.movingVoiceCountBeforeCadence === 0) {
+    reasons.push("generated coda has no moving voice before the terminal landing");
+  }
+  if (input.longestAllVoiceStaticSpanTicks > 0) {
+    reasons.push(`longest all-voice static span before the landing is ${input.longestAllVoiceStaticSpanTicks} ticks`);
+  }
+  if (reasons.length === 0) {
+    reasons.push(
+      `generated coda uses ${input.archetype} with ${input.derivationCount} derived pre-cadence note(s), led by ${
+        input.topDerivationSource ?? "mixed material"
+      }`,
+    );
+  }
+  return reasons;
+}
+
+function combineTerminalClosureClassification(
+  terminalCadenceClassification: TerminalClosureClassification,
+  codaContinuity: TerminalCodaContinuitySummary,
+): TerminalClosureClassification {
+  if (
+    terminalCadenceClassification === "not-required" ||
+    terminalCadenceClassification === "generator-response-required"
+  ) {
+    return terminalCadenceClassification;
+  }
+  if (codaContinuity.classification === "review-required") {
+    return "review-required";
+  }
+  return terminalCadenceClassification;
+}
+
 function classifyTerminalClosure(input: {
   mode: InfinitePlaybackMode;
   terminalCadenceKind: CadenceKind | undefined;
@@ -498,6 +799,8 @@ function terminalClosureWindows(input: {
   terminalTick: number;
   endTick: number;
   activeAtTerminal: readonly NoteEvent[];
+  codaStartTick: number | undefined;
+  codaContinuity: TerminalCodaContinuitySummary;
   preparedVoiceReentry: TerminalClosurePreparedReentryStatus;
   finalAttackReentryVoiceCount: number;
   classification: TerminalClosureClassification;
@@ -527,6 +830,19 @@ function terminalClosureWindows(input: {
       voices: input.activeAtTerminal.map((note) => note.voice),
       classification: input.preparedVoiceReentry === "sudden-final-attack" ? "review-required" : input.classification,
       reason: `${input.finalAttackReentryVoiceCount} terminal voice(s) first appear at the final attack in the prepared window`,
+    },
+    {
+      kind: "coda-continuity",
+      startTick: input.codaStartTick ?? input.inspectedTickRange.startTick,
+      endTick: input.terminalTick,
+      voices: ["bass", "tenor", "alto", "soprano"].filter((voice) =>
+        input.activeAtTerminal.some((note) => note.voice === voice),
+      ) as Voice[],
+      classification:
+        input.codaContinuity.classification === "not-applicable"
+          ? input.classification
+          : input.codaContinuity.classification,
+      reason: input.codaContinuity.reasons[0] ?? "terminal coda continuity reviewed",
     },
   ];
 }
