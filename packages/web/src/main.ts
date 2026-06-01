@@ -17,7 +17,7 @@ import {
   shouldDeferContinuousPrefetchUntilSegmentStart,
 } from "./endless-playback.js";
 import type { GenerationWorkerResponse, GenerationWorkerReviewSnapshot } from "./generation-worker-protocol.js";
-import { assertValidNoticesData, type NoticesData, noticesData } from "./notices.js";
+import { assertValidNoticesData, NOTICE_TEXT_ARTIFACT, type NoticesData, noticesData } from "./notices.js";
 import { drawPianoRoll } from "./piano-roll.js";
 import {
   appendPlaybackModelSessionTimeline,
@@ -192,6 +192,7 @@ app.innerHTML = `
     </section>
     <section class="notices-card" id="notices" aria-labelledby="notices-heading">
       <h2 id="notices-heading">Notices</h2>
+      <p><a id="notice-text-link" href="./${NOTICE_TEXT_ARTIFACT}">Plain text notices</a></p>
       <div class="notices-grid">
         <section aria-labelledby="software-notices-heading">
           <h3 id="software-notices-heading">Software</h3>

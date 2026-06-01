@@ -4,7 +4,7 @@
   "packageManager": "pnpm@11.1.2",
   "type": "module",
   "scripts": {
-    "build": "tsc -b && pnpm --filter @fugematon/web build:bundle",
+    "build": "tsc -b && node workflow-scripts/web-playback-assets.mjs write-notice && pnpm --filter @fugematon/web build:bundle && node workflow-scripts/web-playback-assets.mjs verify",
     "clean": "pnpm clean:build",
     "clean:build": "tsc -b --clean && node scripts/clean-build-output.mjs",
     "lint": "biome check .",

@@ -21,6 +21,8 @@ export type NoticesData = {
   audioAssets: readonly AudioAssetNotice[];
 };
 
+export const NOTICE_TEXT_ARTIFACT = "NOTICE.txt";
+
 export const noticesData: NoticesData = {
   software: [
     {
@@ -46,6 +48,21 @@ export function assertValidNoticesData(data: NoticesData = noticesData): void {
   if (errors.length > 0) {
     throw new Error(errors.join("\n"));
   }
+}
+
+export function formatNoticesText(data: NoticesData = noticesData): string {
+  assertValidNoticesData(data);
+
+  return [
+    "Fugematon notices",
+    "",
+    "Runtime software",
+    ...formatSoftwareNotices(data.software),
+    "",
+    "Audio assets",
+    ...formatAudioAssetNotices(data.audioAssets),
+    "",
+  ].join("\n");
 }
 
 export function validateNoticesData(data: NoticesData): string[] {
@@ -81,4 +98,36 @@ export function validateNoticesData(data: NoticesData): string[] {
 
 function isBlank(value: string): boolean {
   return value.trim().length === 0;
+}
+
+function formatSoftwareNotices(software: readonly RuntimeSoftwareNotice[]): string[] {
+  if (software.length === 0) {
+    return ["No third-party runtime software is distributed by the web app."];
+  }
+
+  return software.map((notice) =>
+    [
+      `- ${notice.name} ${notice.version}`,
+      `  License: ${notice.license}`,
+      `  Homepage: ${notice.homepage}`,
+      `  Notice: ${notice.notice}`,
+    ].join("\n"),
+  );
+}
+
+function formatAudioAssetNotices(audioAssets: readonly AudioAssetNotice[]): string[] {
+  if (audioAssets.length === 0) {
+    return ["No third-party audio assets are distributed by the web app."];
+  }
+
+  return audioAssets.map((notice) =>
+    [
+      `- ${notice.sourceTitle}`,
+      `  Asset id: ${notice.assetId}`,
+      `  License: ${notice.license}`,
+      `  Source: ${notice.sourceUrl}`,
+      `  Attribution: ${notice.attribution}`,
+      `  Attribution required: ${notice.attributionRequired ? "yes" : "no"}`,
+    ].join("\n"),
+  );
 }

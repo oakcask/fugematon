@@ -28,6 +28,7 @@ export type SoundFontAssetDescriptor = {
   displayName: string;
   fileName: string;
   url: string;
+  integrity?: string;
   license: string;
   sourceUrl: string;
   distributed: boolean;
@@ -49,6 +50,8 @@ export const MUSESCORE_GENERAL_SF3_PROTOTYPE: SoundFontAssetDescriptor = {
   sourceUrl: "https://musescore.org/en/handbook/soundfonts",
   distributed: false,
 };
+
+export const soundFontAssets: readonly SoundFontAssetDescriptor[] = [MUSESCORE_GENERAL_SF3_PROTOTYPE];
 
 export function createSoundFontEvents(
   model: PlaybackModel,

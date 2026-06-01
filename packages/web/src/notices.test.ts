@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { assertValidNoticesData, type NoticesData, noticesData, validateNoticesData } from "./notices.js";
+import {
+  assertValidNoticesData,
+  formatNoticesText,
+  type NoticesData,
+  noticesData,
+  validateNoticesData,
+} from "./notices.js";
 
 test("default notices data is valid before distribution assets are configured", () => {
   assert.doesNotThrow(() => assertValidNoticesData(noticesData));
@@ -24,4 +30,12 @@ test("validateNoticesData rejects distributed audio assets without license metad
   };
 
   assert.match(validateNoticesData(data).join("\n"), /^web\.notices\.missing-audio-asset-metadata:/);
+});
+
+test("formatNoticesText emits the route-addressable release notice artifact body", () => {
+  const text = formatNoticesText(noticesData);
+
+  assert.match(text, /^Fugematon notices\n\nRuntime software\n/);
+  assert.match(text, /spessasynth_lib 4\.3\.6/);
+  assert.match(text, /Audio assets\nNo third-party audio assets are distributed by the web app\.\n$/);
 });
