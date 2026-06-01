@@ -57,6 +57,8 @@ type PrefetchedSegment = {
   seed: string;
   performanceProfileId: PerformanceProfileId;
   model: PlaybackModel;
+  sessionModel?: PlaybackModel;
+  segmentPlaybackOffsetSecond: number;
   deadlineResult: SegmentGenerationDeadlineResult;
   reviewSnapshot: GenerationWorkerReviewSnapshot;
   nextSegmentSnapshot: SegmentSnapshot;
@@ -733,10 +735,20 @@ function handlePrefetchGenerationWorkerResponse(response: GenerationWorkerRespon
     return;
   }
 
+  const segmentPlaybackOffsetSecond =
+    response.deadlineResult.mode === "continuous-fugue" && state.sessionModel !== undefined
+      ? state.sessionModel.totalSeconds
+      : 0;
+  const sessionModel =
+    response.deadlineResult.mode === "continuous-fugue" && state.sessionModel !== undefined
+      ? appendPlaybackModelSessionTimeline(state.sessionModel, response.model)
+      : undefined;
   prefetchedSegment = {
     seed: response.seed,
     performanceProfileId: response.performanceProfileId,
     model: response.model,
+    sessionModel,
+    segmentPlaybackOffsetSecond,
     deadlineResult: response.deadlineResult,
     reviewSnapshot: response.reviewSnapshot,
     nextSegmentSnapshot: response.nextSegmentSnapshot,
@@ -757,9 +769,16 @@ function handlePrefetchGenerationWorkerResponse(response: GenerationWorkerRespon
   });
   state = {
     ...state,
+    sessionModel: sessionModel ?? state.sessionModel,
     nextSegmentStatus: "ready",
   };
   render(state);
+  if (sessionModel !== undefined) {
+    const playbackSecond = player?.playbackSecond ?? 0;
+    const visualSecond = visualPlaybackSecond(state, playbackSecond);
+    drawPianoRoll(pianoRoll, sessionModel, visualSecond);
+    renderPlaybackPosition(visualSecond);
+  }
 }
 
 function prefetchNextSegment(): void {
@@ -861,13 +880,14 @@ function adoptPrefetchedSegment(segment: PrefetchedSegment): void {
     responseSeed: segment.seed,
   });
   const sessionModel =
-    segment.deadlineResult.mode === "continuous-fugue" && state.sessionModel !== undefined
-      ? appendPlaybackModelSessionTimeline(state.sessionModel, segment.model)
+    segment.deadlineResult.mode === "continuous-fugue"
+      ? (segment.sessionModel ??
+        (state.sessionModel === undefined
+          ? segment.model
+          : appendPlaybackModelSessionTimeline(state.sessionModel, segment.model)))
       : segment.model;
   const segmentPlaybackOffsetSecond =
-    segment.deadlineResult.mode === "continuous-fugue" && state.sessionModel !== undefined
-      ? state.sessionModel.totalSeconds
-      : 0;
+    segment.deadlineResult.mode === "continuous-fugue" ? segment.segmentPlaybackOffsetSecond : 0;
   state = {
     seed,
     performanceProfileId: segment.performanceProfileId,
