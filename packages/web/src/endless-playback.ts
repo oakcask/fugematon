@@ -19,11 +19,21 @@ export type AdoptedSegmentSeedInput = {
   responseSeed: string;
 };
 
+export type ContinuousPrefetchReadinessInput = {
+  mode: InfinitePlaybackMode;
+  playbackSecond: number;
+  segmentPlaybackOffsetSecond: number;
+};
+
 export function computeEndlessPrefetchDeadlineMs(input: EndlessPrefetchDeadlineInput): number {
   const remainingPlaybackMs = Math.max(0, input.modelTotalSeconds - input.playbackSecond) * 1000;
   const availableBeforeBoundaryMs = Math.max(0, remainingPlaybackMs - input.boundaryPauseMs);
 
   return Math.max(input.minimumDeadlineMs, Math.ceil(availableBeforeBoundaryMs));
+}
+
+export function shouldDeferContinuousPrefetchUntilSegmentStart(input: ContinuousPrefetchReadinessInput): boolean {
+  return input.mode === "continuous-fugue" && input.playbackSecond < input.segmentPlaybackOffsetSecond;
 }
 
 export function isSegmentChainingPlaybackMode(mode: InfinitePlaybackMode): boolean {

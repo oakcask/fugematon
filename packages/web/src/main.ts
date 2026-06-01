@@ -14,6 +14,7 @@ import {
   isSegmentChainingPlaybackMode,
   segmentBoundaryPauseMs,
   segmentRequestSeed,
+  shouldDeferContinuousPrefetchUntilSegmentStart,
 } from "./endless-playback.js";
 import type { GenerationWorkerResponse, GenerationWorkerReviewSnapshot } from "./generation-worker-protocol.js";
 import { drawPianoRoll } from "./piano-roll.js";
@@ -285,9 +286,8 @@ window.addEventListener("resize", () => {
   }
 
   const playbackSecond = player?.playbackSecond ?? 0;
-  const visualSecond = visualPlaybackSecond(state, playbackSecond);
-  drawPianoRoll(pianoRoll, visualPlaybackModel(state), visualSecond);
-  renderPlaybackPosition(visualSecond);
+  drawPianoRoll(pianoRoll, visualPlaybackModel(state), playbackSecond);
+  renderPlaybackPosition(playbackSecond);
 });
 
 window.addEventListener("popstate", () => {
@@ -476,10 +476,12 @@ function visualPlaybackModel(nextState: AppState): PlaybackModel {
     : nextState.model!;
 }
 
-function visualPlaybackSecond(nextState: AppState, segmentSecond: number): number {
-  return nextState.playbackMode === "continuous-fugue"
-    ? nextState.segmentPlaybackOffsetSecond + segmentSecond
-    : segmentSecond;
+function currentSegmentPlaybackSecond(): number {
+  const playbackSecond = player?.playbackSecond ?? 0;
+
+  return state.playbackMode === "continuous-fugue"
+    ? Math.max(0, playbackSecond - state.segmentPlaybackOffsetSecond)
+    : playbackSecond;
 }
 
 async function startPlayback(): Promise<void> {
@@ -495,11 +497,11 @@ async function startPlayback(): Promise<void> {
   playbackStartController = controller;
   transportStatus.textContent = "Starting playback";
   renderTransportButtons();
-  renderPlaybackPosition(visualPlaybackSecond(state, offsetSecond));
+  renderPlaybackPosition(pausedAtSecond);
 
   try {
     player ??= new ScorePlayer();
-    const model = state.model;
+    const model = visualPlaybackModel(state);
     const started = await player.play(model, { offsetSecond, signal: controller.signal });
     if (!started || controller.signal.aborted) {
       return;
@@ -555,9 +557,9 @@ function pausePlayback(): void {
   cancelVisualizerLoop();
   setPlaybackFeedback(false);
   if (state.model !== undefined) {
-    drawPianoRoll(pianoRoll, visualPlaybackModel(state), visualPlaybackSecond(state, pausedAtSecond));
+    drawPianoRoll(pianoRoll, visualPlaybackModel(state), pausedAtSecond);
   }
-  renderPlaybackPosition(visualPlaybackSecond(state, pausedAtSecond));
+  renderPlaybackPosition(pausedAtSecond);
   transportStatus.textContent = "Playback paused";
   renderTransportButtons();
 }
@@ -572,11 +574,13 @@ function startVisualizerLoop(): void {
     }
 
     const playbackSecond = player?.playbackSecond ?? 0;
-    const visualSecond = visualPlaybackSecond(state, playbackSecond);
-    drawPianoRoll(pianoRoll, visualPlaybackModel(state), visualSecond);
-    renderPlaybackPosition(visualSecond);
+    drawPianoRoll(pianoRoll, visualPlaybackModel(state), playbackSecond);
+    renderPlaybackPosition(playbackSecond);
 
     if (player?.isPlaying) {
+      if (segmentChainActive && state.playbackMode === "continuous-fugue") {
+        prefetchNextSegment();
+      }
       animationFrame = window.requestAnimationFrame(drawFrame);
       return;
     }
@@ -769,15 +773,16 @@ function handlePrefetchGenerationWorkerResponse(response: GenerationWorkerRespon
   });
   state = {
     ...state,
-    sessionModel: sessionModel ?? state.sessionModel,
     nextSegmentStatus: "ready",
   };
   render(state);
-  if (sessionModel !== undefined) {
+  if (state.playbackMode === "continuous-fugue" && queueContinuousSegmentPlayback(prefetchedSegment)) {
+    return;
+  }
+  if (sessionModel !== undefined && state.playbackMode === "continuous-fugue") {
     const playbackSecond = player?.playbackSecond ?? 0;
-    const visualSecond = visualPlaybackSecond(state, playbackSecond);
-    drawPianoRoll(pianoRoll, sessionModel, visualSecond);
-    renderPlaybackPosition(visualSecond);
+    drawPianoRoll(pianoRoll, sessionModel, playbackSecond);
+    renderPlaybackPosition(playbackSecond);
   }
 }
 
@@ -791,11 +796,22 @@ function prefetchNextSegment(): void {
     return;
   }
 
+  const absolutePlaybackSecond = player?.playbackSecond ?? 0;
+  if (
+    shouldDeferContinuousPrefetchUntilSegmentStart({
+      mode: state.playbackMode,
+      playbackSecond: absolutePlaybackSecond,
+      segmentPlaybackOffsetSecond: state.segmentPlaybackOffsetSecond,
+    })
+  ) {
+    return;
+  }
+
   const model = state.model;
   const segmentIndex = Math.max(nextSegmentIndex, state.segmentIndex + 1);
   nextSegmentIndex = segmentIndex;
   const requestId = nextRequestId();
-  const playbackSecond = player?.playbackSecond ?? 0;
+  const playbackSecond = currentSegmentPlaybackSecond();
   const deadlineMs = computeEndlessPrefetchDeadlineMs({
     modelTotalSeconds: model.totalSeconds,
     playbackSecond,
@@ -835,6 +851,16 @@ function prefetchNextSegment(): void {
 }
 
 async function continueSegmentPlayback(): Promise<void> {
+  if (state.playbackMode === "continuous-fugue") {
+    logEndlessDebug("chain-stop-continuous-not-queued", {
+      nextSegmentAvailable: prefetchedSegment !== undefined,
+    });
+    segmentChainActive = false;
+    transportStatus.textContent = "Playback complete";
+    renderTransportButtons();
+    return;
+  }
+
   const boundaryPauseMs = segmentBoundaryPauseMs(state.playbackMode, AUDIBLE_BOUNDARY_PAUSE_MS);
   if (boundaryPauseMs > 0) {
     transportStatus.textContent = "Segment boundary";
@@ -858,6 +884,33 @@ async function continueSegmentPlayback(): Promise<void> {
 
   adoptPrefetchedSegment(nextSegment);
   void startPlayback();
+}
+
+function queueContinuousSegmentPlayback(segment: PrefetchedSegment): boolean {
+  if (state.playbackMode !== "continuous-fugue" || !segmentChainActive || player === undefined) {
+    return false;
+  }
+
+  const queued = player.queueNext(segment.model, segment.segmentPlaybackOffsetSecond);
+  if (!queued) {
+    logEndlessDebug("continuous-queue-rejected", {
+      boundarySecond: roundDebugSecond(segment.segmentPlaybackOffsetSecond),
+      playerSecond: roundDebugSecond(player.playbackSecond),
+    });
+    return false;
+  }
+
+  logEndlessDebug("continuous-queue-next", {
+    boundarySecond: roundDebugSecond(segment.segmentPlaybackOffsetSecond),
+    queuedSegmentIndex: segment.deadlineResult.segmentIndex,
+  });
+  adoptPrefetchedSegment(segment);
+  transportStatus.textContent = "Playing segment";
+  setPlaybackFeedback(true);
+  renderTransportButtons();
+  prefetchNextSegment();
+
+  return true;
 }
 
 function adoptPrefetchedSegment(segment: PrefetchedSegment): void {
@@ -904,8 +957,8 @@ function adoptPrefetchedSegment(segment: PrefetchedSegment): void {
   };
   seedInput.value = seed;
   render(state);
-  drawPianoRoll(pianoRoll, visualPlaybackModel(state), visualPlaybackSecond(state, 0));
-  renderPlaybackPosition(visualPlaybackSecond(state, 0));
+  drawPianoRoll(pianoRoll, visualPlaybackModel(state), segmentPlaybackOffsetSecond);
+  renderPlaybackPosition(segmentPlaybackOffsetSecond);
 }
 
 function waitForPrefetchedSegment(): Promise<PrefetchedSegment | undefined> {
