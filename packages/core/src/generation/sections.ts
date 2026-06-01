@@ -24,7 +24,9 @@ import type {
   TerminalSectionIntent,
   Voice,
 } from "../events.js";
+import type { SegmentSnapshot } from "../infinite-playback.js";
 import type { Xoshiro128StarStar } from "../prng.js";
+import { applyContinuousBoundaryCarryRepair } from "./continuous-boundary-carry.js";
 import { addSubjectEntry, chooseAnswerKind } from "./entries.js";
 import { evaluateCandidate } from "./evaluation.js";
 import { buildHarmonicPlan, cadenceKindForSection } from "./harmony.js";
@@ -839,6 +841,7 @@ export function buildFugueContinuationScore(
     previousSectionFunctions: readonly { state: FugueState; startTick: number }[];
     previousSubjectEntries?: readonly PlannedEntry[];
     previousSectionPlans?: readonly HarmonicPlan[];
+    previousSnapshot?: SegmentSnapshot;
     firstStateHint?: FugueState;
     previousDensityArc?: readonly number[];
   },
@@ -933,6 +936,14 @@ export function buildFugueContinuationScore(
     phraseSectionIndex += 1;
   }
 
+  if (selectionModel === "section-local-planner") {
+    applyContinuousBoundaryCarryRepair({
+      notes,
+      subjectEntries,
+      sectionPlans,
+      previousSnapshot: input.previousSnapshot,
+    });
+  }
   fillAllVoiceSilenceGaps(notes, keySignature);
   if (selectionModel === "section-local-planner") {
     addFunctionalThinningSupport(notes, sectionPlans);

@@ -219,6 +219,15 @@ test("public diagnostics expose finite candidate score dimensions", () => {
     /^(accepted-continuation|prepared-subject-return|prepared-stretto|developmental-episode|review-required-reexposition|generator-response-required-reset)$/,
   );
   assert.ok(Array.isArray(output.diagnostics.continuousSegmentContinuity.firstEntries));
+  assert.equal(output.diagnostics.continuousBoundaryCarry.schemaVersion, 1);
+  assert.match(
+    output.diagnostics.continuousBoundaryCarry.classification,
+    /^(not-required|carried-line-continuation|prepared-reentry|review-required-thin-boundary|generator-response-required-hard-restart)$/,
+  );
+  assert.equal(typeof output.diagnostics.continuousBoundaryCarry.previousSoundingVoiceCountNearBoundary, "number");
+  assert.equal(typeof output.diagnostics.continuousBoundaryCarry.allVoiceGapTicks, "number");
+  assert.ok(Array.isArray(output.diagnostics.continuousBoundaryCarry.voiceTimings));
+  assert.ok(Array.isArray(output.diagnostics.continuousBoundaryCarry.nextFirstAttackRoleMix));
   assert.equal(output.nextSegmentSnapshot.schemaVersion, 1);
   assert.equal(output.nextSegmentSnapshot.segmentIndex, 0);
   assert.equal(output.diagnostics.lowerVoiceVocality.schemaVersion, 1);

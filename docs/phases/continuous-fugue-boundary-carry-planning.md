@@ -1,6 +1,6 @@
 # Continuous fugue boundary carry planning
 
-Status: planned.
+Status: completed.
 
 This plan follows the completed [Continuous fugue segment continuity planning](continuous-fugue-segment-continuity-planning.md). The earlier plan fixed hidden-boundary exposition reset and piano-roll reset. This follow-up treats a narrower musical defect: a segment can be classified as a prepared continuation while still sounding like a new attack because no sounding line or harmonic preparation carries through the boundary.
 
@@ -138,3 +138,15 @@ Record missing human listening if completion relies only on ScoreEvent and diagn
 This is a follow-up to completed segment continuity work, not a rollback. The previous repair made the next segment structurally continue from a snapshot. This plan makes the hidden boundary musically continuous at the sounding-score level.
 
 The expected implementation order is diagnostics first, then snapshot-to-texture repair, then scoring, then focused review. If diagnostics show that the reported seed is isolated and controls already behave well, keep the final response narrow and document why the issue does not generalize.
+
+## Completion Notes
+
+Implemented `continuousBoundaryCarry` in `GenerationDiagnostics` so hidden-boundary audible carry is separate from `continuousSegmentContinuity`. The summary records previous tail density, per-voice timing, all-voice boundary gap, carried / resolving / pedal / staggered / restarted voices, prior tail harmonic-continuity, first attack density, role mix, and `generator-response-required-hard-restart` versus accepted carry classifications.
+
+Continuation generation now uses the previous snapshot tail before the first audible texture of `continuous-fugue` segment 1 and later. Thin-tail hard restarts are repaired with a structurally selected support carry plus staggered support re-entry, while preserving snapshot PRNG continuation and visible session seed behavior.
+
+Focused review evidence is recorded in [Continuous Fugue Boundary Carry Review](../reviews/continuous-fugue-boundary-carry-review.md). The reported seed `seed-1f6nfdt-0sv4of6` remains `prepared-subject-return` at the form level and now classifies audible carry as `prepared-reentry` with bass pedal support, no hard constraint failures, and no all-voice silence gap. Control seeds keep prepared strong returns allowed, including `bach-001` as `carried-line-continuation`, `tight-stretto` as staggered `prepared-reentry`, `modal-cadence` as pedal-supported `prepared-reentry`, and `sparse-cadence` as a developmental episode boundary.
+
+Manual listening remains incomplete; acceptance is based on ScoreEvent diagnostics and agent-side music-theory review.
+
+Revalidated on 2026-06-01 against the TARGET baseline artifacts. The regenerated 22-seed review bundle preserves 0 hard failures, 0 hard-constraint failures, 9 review-required signals, and 22 adoption-ready seeds. The regenerated focused segment bundle preserves the intended segment-continuity classifications and confirms current `continuousBoundaryCarry` classifications for the reported seed and controls without hiding hard constraints. See the review revalidation section for seed-level evidence.

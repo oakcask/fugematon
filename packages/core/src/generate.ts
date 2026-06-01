@@ -8,6 +8,7 @@ import type {
   ScoreEvent,
 } from "./events.js";
 import { normalizeSelectionModel } from "./events.js";
+import { buildContinuousBoundaryCarrySummary } from "./generation/continuous-boundary-carry.js";
 import { analyzeScore } from "./generation/diagnostics.js";
 import { annotateEpisodeMotivicDerivations } from "./generation/episode-motivic-development.js";
 import { repairHarmonicStasisRearticulation } from "./generation/harmonic-stasis-rearticulation.js";
@@ -52,6 +53,7 @@ export function generateScore(input: GenerationInput): GenerationOutput {
         meterContext,
         previousEvents: input.previousSegmentSnapshot!.boundedPastEventContext.events,
         previousSectionFunctions: input.previousSegmentSnapshot!.boundedPastEventContext.sectionFunctions,
+        previousSnapshot: input.previousSegmentSnapshot,
         firstStateHint: input.previousSegmentSnapshot!.sectionPlannerState.nextStateHint,
         previousDensityArc: input.previousSegmentSnapshot!.densityArc.recentVoiceCounts,
       })
@@ -154,6 +156,12 @@ export function generateScore(input: GenerationInput): GenerationOutput {
     sectionPlans: score.sectionPlans,
     subjectEntries: score.subjectEntries,
   });
+  const continuousBoundaryCarry = buildContinuousBoundaryCarrySummary({
+    segmentIndex: input.segmentIndex ?? 0,
+    previousSnapshot: input.previousSegmentSnapshot,
+    notes: score.notes,
+    sectionPlans: score.sectionPlans,
+  });
   const nextSegmentSnapshot = createSegmentEndSnapshot({
     previous: input.previousSegmentSnapshot,
     seed: input.seed,
@@ -236,6 +244,7 @@ export function generateScore(input: GenerationInput): GenerationOutput {
       scoreWindowAcceptance,
       terminalClosureReview,
       continuousSegmentContinuity,
+      continuousBoundaryCarry,
       ornamentCandidateCount: diagnostics.ornamentCandidateCount,
       ornamentDensity: diagnostics.ornamentDensity,
       ornamentPlacementReasons: diagnostics.ornamentPlacementReasons,

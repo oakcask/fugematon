@@ -288,6 +288,42 @@ export type ContinuousSegmentContinuitySummary = {
   reasons: string[];
 };
 
+export type ContinuousBoundaryCarryClassification =
+  | "not-required"
+  | "carried-line-continuation"
+  | "prepared-reentry"
+  | "review-required-thin-boundary"
+  | "generator-response-required-hard-restart";
+
+export type BoundaryCarryVoiceTiming = {
+  voice: Voice;
+  lastEndBeforeBoundary?: number;
+  firstStartAfterBoundary?: number;
+};
+
+export type ContinuousBoundaryCarrySummary = {
+  schemaVersion: 1;
+  segmentIndex: number;
+  boundaryTick: number;
+  previousSoundingVoiceCountNearBoundary: number;
+  allVoiceGapTicks: number;
+  voiceTimings: BoundaryCarryVoiceTiming[];
+  carriedVoices: Voice[];
+  suspendedOrResolvingVoices: Voice[];
+  pedalVoices: Voice[];
+  staggeredVoices: Voice[];
+  restartedVoices: Voice[];
+  priorTailHarmonicContinuity:
+    | "not-required"
+    | "unresolved-cadence-preparation"
+    | "harmonic-continuity-tail"
+    | "clear-break";
+  nextFirstAttackDensity: number;
+  nextFirstAttackRoleMix: NoteRole[];
+  classification: ContinuousBoundaryCarryClassification;
+  reasons: string[];
+};
+
 export type DiagnosticIssueCode =
   | "range-violation"
   | "voice-crossing"
@@ -1580,6 +1616,7 @@ export type GenerationDiagnostics = {
   scoreWindowAcceptance: ScoreWindowAcceptanceSummary;
   terminalClosureReview: TerminalClosureReviewSummary;
   continuousSegmentContinuity: ContinuousSegmentContinuitySummary;
+  continuousBoundaryCarry: ContinuousBoundaryCarrySummary;
   ornamentCandidateCount: number;
   ornamentDensity: number;
   ornamentPlacementReasons: OrnamentPlacementReasons;

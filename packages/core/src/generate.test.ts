@@ -5,6 +5,7 @@ import {
   EXPOSITION_REPRESENTATIVE_SEEDS,
   FUGUE_FORM_REVIEW_LENGTH_TICKS,
   REVIEW_LENGTH_TICKS,
+  TICKS_PER_QUARTER,
   VOICES,
 } from "./constants.js";
 import type { KeySignature, MetaEvent, NoteEvent } from "./events.js";
@@ -178,6 +179,47 @@ test("generateScore continues continuous-fugue segments from a carried snapshot"
   );
 });
 
+test("generateScore consumes carried PRNG state for continuous-fugue continuation choices", () => {
+  const first = generateScore({
+    seed: "fugue-smoke",
+    lengthTicks: FUGUE_FORM_REVIEW_LENGTH_TICKS,
+    mode: "continuous-fugue",
+    segmentIndex: 0,
+  });
+  const continuationInput = {
+    seed: "fugue-smoke",
+    lengthTicks: 7680,
+    mode: "continuous-fugue" as const,
+    segmentIndex: 1,
+    previousSegmentSnapshot: first.nextSegmentSnapshot,
+  };
+  const baseline = generateScore(continuationInput);
+  const alteredPrngSnapshot = {
+    ...first.nextSegmentSnapshot,
+    prngInternalState: {
+      ...first.nextSegmentSnapshot.prngInternalState,
+      state: [1, 2, 3, 4] as [number, number, number, number],
+    },
+  };
+  const altered = generateScore({
+    ...continuationInput,
+    previousSegmentSnapshot: alteredPrngSnapshot,
+  });
+
+  assert.deepEqual(generateScore(continuationInput), baseline);
+  assert.notDeepEqual(altered.events, baseline.events);
+  assert.notDeepEqual(
+    altered.diagnostics.sectionPlans.map((plan) => [plan.state, plan.localKey]),
+    baseline.diagnostics.sectionPlans.map((plan) => [plan.state, plan.localKey]),
+  );
+  assert.notEqual(altered.diagnostics.continuousSegmentContinuity.classification, "generator-response-required-reset");
+  assert.equal(altered.diagnostics.continuousSegmentContinuity.carriedSubjectFamily, true);
+  assert.notDeepEqual(
+    altered.nextSegmentSnapshot.prngInternalState.state,
+    baseline.nextSegmentSnapshot.prngInternalState.state,
+  );
+});
+
 test("generateScore treats continuous-fugue segment zero as initial boundary context", () => {
   const first = generateScore({
     seed: "seed-10tymfq-0udkhlm",
@@ -199,6 +241,89 @@ test("generateScore treats continuous-fugue segment zero as initial boundary con
   assert.equal(first.diagnostics.continuousSegmentContinuity.pianoRollSessionTimelineContinuous, true);
   assert.equal(second.diagnostics.continuousSegmentContinuity.classification, "prepared-subject-return");
   assert.equal(second.diagnostics.continuousSegmentContinuity.carriedSubjectFamily, true);
+});
+
+test("generateScore exposes audible carry for the reported continuous-fugue boundary", () => {
+  const first = generateScore({
+    seed: "seed-1f6nfdt-0sv4of6",
+    lengthTicks: FUGUE_FORM_REVIEW_LENGTH_TICKS,
+    mode: "continuous-fugue",
+    segmentIndex: 0,
+  });
+  const second = generateScore({
+    seed: "seed-1f6nfdt-0sv4of6",
+    lengthTicks: FUGUE_FORM_REVIEW_LENGTH_TICKS,
+    mode: "continuous-fugue",
+    segmentIndex: 1,
+    previousSegmentSnapshot: first.nextSegmentSnapshot,
+  });
+  const carry = second.diagnostics.continuousBoundaryCarry;
+
+  assert.equal(second.diagnostics.continuousSegmentContinuity.classification, "prepared-subject-return");
+  assert.match(carry.classification, /^(carried-line-continuation|prepared-reentry)$/);
+  assert.notEqual(carry.classification, "generator-response-required-hard-restart");
+  assert.notEqual(carry.classification, "review-required-thin-boundary");
+  assert.ok(
+    carry.carriedVoices.length +
+      carry.suspendedOrResolvingVoices.length +
+      carry.pedalVoices.length +
+      carry.staggeredVoices.length >
+      0,
+  );
+});
+
+test("generateScore repairs synthetic thin-tail continuous-fugue hard restarts", () => {
+  const first = generateScore({
+    seed: "fugue-smoke",
+    lengthTicks: 7680,
+    mode: "continuous-fugue",
+    segmentIndex: 0,
+  });
+  const previousSegmentSnapshot = {
+    ...first.nextSegmentSnapshot,
+    cadencePreparation: {
+      ...first.nextSegmentSnapshot.cadencePreparation,
+      unresolved: true,
+      targetKind: "half" as const,
+    },
+    densityArc: {
+      ...first.nextSegmentSnapshot.densityArc,
+      currentVoiceCount: 1,
+      recentVoiceCounts: [1],
+    },
+    boundedPastEventContext: {
+      ...first.nextSegmentSnapshot.boundedPastEventContext,
+      events: [
+        {
+          kind: "note" as const,
+          voice: "bass" as const,
+          startTick: -TICKS_PER_QUARTER * 2,
+          durationTicks: TICKS_PER_QUARTER,
+          pitch: 48,
+          velocity: 62,
+          role: "free-counterpoint" as const,
+          metricalHarmonyIntent: "structural-root-support" as const,
+        },
+      ],
+      voiceRoleContinuity: [],
+    },
+  };
+  const second = generateScore({
+    seed: "fugue-smoke",
+    lengthTicks: 7680,
+    mode: "continuous-fugue",
+    segmentIndex: 1,
+    previousSegmentSnapshot,
+  });
+
+  assert.match(
+    second.diagnostics.continuousBoundaryCarry.classification,
+    /^(carried-line-continuation|prepared-reentry)$/,
+  );
+  assert.notEqual(
+    second.diagnostics.continuousBoundaryCarry.classification,
+    "generator-response-required-hard-restart",
+  );
 });
 
 test("generateScore uses carried planner hint and tonal region for continuous-fugue continuation", () => {
