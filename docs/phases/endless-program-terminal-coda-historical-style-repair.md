@@ -1,6 +1,6 @@
 # Endless program terminal coda historical style repair
 
-Status: planned.
+Status: complete.
 
 This plan follows [Endless program terminal coda planning](endless-program-terminal-coda-planning.md). The completed coda work moved `endless-program` away from a one-beat terminal sonority override, but the current coda generator still has a narrow phrase model: each voice receives fixed preparation degrees and then a fixed final sonority. In practice that can sound like the segment ignores the previous musical character and turns into all-voice long tones.
 
@@ -131,3 +131,15 @@ Before completion, review at least one related variant or control so the repair 
 * Historical reference basis is traceable through `historical-fugue-endings` and `endless-program-coda-continuity`.
 * `continuous-fugue` and `regenerative-cycle` mode boundaries remain unchanged.
 * Any accepted regressions are documented as musical tradeoffs, not only metric deltas.
+
+## Completion Record
+
+Implemented context-aware terminal coda generation for `endless-program`. The coda builder now derives a compact `terminalCodaContext` from the pre-coda score window and section plans, including recent state sequence, subject stem, rhythmic cell, texture density, contour energy, mode, cadence kind, and pedal implication. It selects one of `final-fragment-entry`, `stretto-compaction`, `pedal-entry-cadence`, `liquidation-cadence`, or `cadential-echo` instead of using the previous fixed all-voice preparation recipe.
+
+`TerminalClosureReviewSummary` schema version 3 keeps the cadence safety checks from schema version 2 and adds `codaContinuity` evidence: selected archetype and reason, longest all-voice static span, longest non-terminal held span, moving voice count before cadence, derivation count, top derivation source, and pedal classification. A synthetic stable all-voice long-tone coda is now `review-required`, so stable terminal sonority alone cannot hide missing recent-material or cadence-function evidence.
+
+Focused generated evidence for `fugue-smoke`, `modal-cadence`, `sparse-cadence`, `dense-modal`, `tight-stretto`, `circle-fifths`, `bach-001`, and `minor-entry` reports accepted terminal closure, generated coda source, prepared voice re-entry, root-supported final landing, stable outer voices, zero unresolved boundary dissonance, accepted coda continuity, and at least one moving pre-cadence voice with derivation evidence. The focused set selected several archetypes, including `stretto-compaction`, `cadential-echo`, and `liquidation-cadence`, with source-family rationale still traced through `historical-fugue-endings` and claim `endless-program-coda-continuity`.
+
+Mode boundaries remain unchanged: short `endless-program` segments keep fallback terminal-boundary safety, `continuous-fugue` remains `not-required` for terminal closure and receives no self-contained coda, and `regenerative-cycle` remains bridge-compatible rather than adopting self-contained `endless-program` coda behavior. No accepted metric regressions were introduced in the focused review; human listening of cadence rhetoric and release timing remains a review gap rather than a CI-blocking gate.
+
+Completion refresh: the TARGET focused seeds were regenerated and compared against the TARGET baseline artifacts. The baseline had cadence-stable schema version 2 evidence but no coda-continuity surface or planner-visible `terminalCodaContext`; the refreshed output uses schema version 3, selects `liquidation-cadence`, `stretto-compaction`, and `cadential-echo` across the focused set, reports accepted `codaContinuity` with nonzero derivation evidence, and keeps hard constraint failures at 0. The short fallback control remains fallback-only and review-visible. See [Endless Program Terminal Coda Review](../reviews/endless-program-terminal-coda-review.md) for the seed-by-seed comparison.

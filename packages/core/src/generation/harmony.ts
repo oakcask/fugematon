@@ -11,6 +11,7 @@ import type {
   MetricalHarmonyIntent,
   SequencePattern,
   StyleProfile,
+  TerminalCodaContextSummary,
   TerminalSectionIntent,
   Voice,
 } from "../events.js";
@@ -35,6 +36,7 @@ export function buildHarmonicPlan(plan: {
   sequencePattern?: SequencePattern;
   fragmentTransform?: FragmentTransform;
   terminalIntent?: TerminalSectionIntent;
+  terminalCodaContext?: TerminalCodaContextSummary;
 }): HarmonicPlan {
   const meterContext = plan.meterContext ?? createLegacyMeterContext();
   const cadenceTick = cadenceAnchorTick(plan.startTick, plan.durationTicks, meterContext);
@@ -83,6 +85,7 @@ export function buildHarmonicPlan(plan: {
     sequencePattern: plan.sequencePattern,
     fragmentTransform: plan.fragmentTransform,
     terminalIntent: plan.terminalIntent,
+    terminalCodaContext: plan.terminalCodaContext,
     anchors,
   };
 }

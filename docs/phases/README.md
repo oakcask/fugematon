@@ -10,7 +10,7 @@
 
 ## Read First
 
-* [Endless program terminal coda historical style repair](endless-program-terminal-coda-historical-style-repair.md): planned target. Replaces fixed all-voice long-tone terminal coda generation with context-aware historical ending archetypes.
+* [Endless program terminal coda historical style repair](endless-program-terminal-coda-historical-style-repair.md): completed target. Replaces fixed all-voice long-tone terminal coda generation with context-aware historical ending archetypes and coda-continuity review evidence.
 * [Continuous fugue boundary carry planning](continuous-fugue-boundary-carry-planning.md): planned target. Follows the completed segment-continuity repair by making hidden boundaries preserve audible line / harmony carry, not only avoid exposition reset.
 * [Endless program terminal coda planning](endless-program-terminal-coda-planning.md): completed target. Replaces the short terminal-boundary sonority override with planner-visible coda generation for `endless-program` segment endings.
 * [Continuous fugue segment continuity planning](continuous-fugue-segment-continuity-planning.md): completed target. Connects `continuous-fugue` segment chaining to the snapshot contract so hidden boundaries do not restart exposition or reset the piano-roll experience.

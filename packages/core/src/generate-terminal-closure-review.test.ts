@@ -35,9 +35,10 @@ test("terminal closure review accepts authentic and modal terminal sonorities", 
     });
 
     assert.equal(summary.segmentIndex, 2);
-    assert.equal(summary.schemaVersion, 2);
+    assert.equal(summary.schemaVersion, 3);
     assert.equal(summary.terminalCadenceKind, cadenceKind);
     assert.equal(summary.terminalClosureSource, "ordinary-terminal-cadence");
+    assert.equal(summary.codaContinuity.classification, "not-applicable");
     assert.equal(summary.preparedVoiceReentry, "not-applicable");
     assert.equal(summary.lowVoiceSupport, "root-supported");
     assert.equal(summary.outerVoiceLandingStatus, "stable");
@@ -116,6 +117,14 @@ test("endless-program target seeds keep stable terminal closure evidence", () =>
       output.diagnostics.sectionPlans.some((plan) => plan.terminalIntent === "self-contained-coda"),
       seed,
     );
+    assert.equal(summary.codaContinuity.classification, "accepted", seed);
+    assert.match(
+      summary.codaContinuity.codaArchetype ?? "",
+      /^(final-fragment-entry|stretto-compaction|pedal-entry-cadence|liquidation-cadence|cadential-echo)$/,
+      seed,
+    );
+    assert.ok(summary.codaContinuity.derivationCount >= 4, seed);
+    assert.ok(summary.codaContinuity.movingVoiceCountBeforeCadence >= 1, seed);
   }
 });
 
@@ -186,8 +195,48 @@ test("generated self-contained coda keeps sudden final-attack reentry review-vis
   assert.equal(summary.terminalClosureSource, "generated-coda");
   assert.equal(summary.preparedVoiceReentry, "sudden-final-attack");
   assert.equal(summary.finalAttackReentryVoiceCount, 4);
+  assert.equal(summary.codaContinuity.classification, "not-applicable");
   assert.equal(voiceReentryWindow?.classification, "review-required");
   assert.match(voiceReentryWindow?.reason ?? "", /4 terminal voice/);
+});
+
+test("generated all-voice long-tone coda is review-visible even with stable final sonority", () => {
+  const plan = terminalPlan("authentic", C_MAJOR, "self-contained-coda");
+  plan.terminalCodaContext = {
+    schemaVersion: 1,
+    archetype: "final-fragment-entry",
+    selectionReason: "synthetic static coda fixture",
+    recentMaterialSource: "subject-head",
+    recentStateSequence: ["subject-return"],
+    recentSubjectStemDegrees: [0, 1, 2, 4],
+    rhythmicCellTicks: [TICKS_PER_QUARTER, TICKS_PER_QUARTER, TICKS_PER_QUARTER, TICKS_PER_QUARTER],
+    activeVoiceCount: 4,
+    textureDensity: 4,
+    contourEnergy: 0,
+    localMode: "major",
+    cadenceKind: "authentic",
+    availableDurationTicks: LENGTH_TICKS,
+    pedalImplied: false,
+  };
+  const summary = buildTerminalClosureReviewSummary({
+    events: scoreEvents(
+      stableSonorityNotes(C_MAJOR, LENGTH_TICKS).map((event) => ({ ...event, startTick: 0 })),
+      LENGTH_TICKS,
+    ),
+    sectionPlans: [plan],
+    mode: "endless-program",
+    segmentIndex: 0,
+  });
+  const codaWindow = summary.windows.find((window) => window.kind === "coda-continuity");
+
+  assert.equal(summary.lowVoiceSupport, "root-supported");
+  assert.equal(summary.outerVoiceLandingStatus, "stable");
+  assert.equal(summary.codaContinuity.classification, "review-required");
+  assert.equal(summary.classification, "review-required");
+  assert.equal(summary.codaContinuity.derivationCount, 0);
+  assert.equal(summary.codaContinuity.movingVoiceCountBeforeCadence, 0);
+  assert.ok(summary.codaContinuity.longestAllVoiceStaticSpanTicks >= TICKS_PER_QUARTER * 3);
+  assert.equal(codaWindow?.classification, "review-required");
 });
 
 test("modal endless-program target codas keep modal terminal rhetoric", () => {
@@ -254,8 +303,12 @@ test("endless-program coda reserves planner-visible phrase time before the bound
   assert.equal(coda.state, "subject-return");
   assert.equal(coda.cadenceKind, "authentic");
   assert.equal(coda.ambiguityIntent, "none");
+  assert.ok(coda.terminalCodaContext);
+  assert.equal(coda.terminalCodaContext.cadenceKind, "authentic");
+  assert.ok(coda.terminalCodaContext.recentSubjectStemDegrees.length > 0);
   assert.ok(coda.durationTicks >= coda.meterContext.measureTicks * 2);
   assert.equal(output.diagnostics.terminalClosureReview.terminalClosureSource, "generated-coda");
+  assert.equal(output.diagnostics.terminalClosureReview.codaContinuity.classification, "accepted");
   assert.equal(output.diagnostics.terminalClosureReview.codaStartTick, coda.startTick);
   assert.ok(output.diagnostics.stateTransitions.includes("subject-return"));
 });

@@ -6,6 +6,9 @@ import type {
   CandidateDiversityDescriptor,
   CandidateEvaluation,
   EntryForm,
+  EpisodeMotiveSource,
+  EpisodeTargetFunction,
+  EpisodeTransformationKind,
   FragmentTransform,
   FugueState,
   HarmonicPlan,
@@ -16,6 +19,8 @@ import type {
   SelectionModel,
   SequencePattern,
   StyleProfile,
+  TerminalCodaArchetype,
+  TerminalCodaContextSummary,
   TerminalSectionIntent,
   Voice,
 } from "../events.js";
@@ -186,7 +191,14 @@ export function buildFugueScore(
   }
 
   if (terminalCodaReservation !== undefined) {
-    const terminalCoda = buildTerminalCodaSection(keySignature, terminalCodaReservation, meterContext);
+    const terminalCoda = buildTerminalCodaSection(
+      subject,
+      keySignature,
+      terminalCodaReservation,
+      meterContext,
+      notes,
+      sectionPlans,
+    );
     clipNotesAtTick(notes, terminalCodaReservation.startTick);
     stateTransitions.push("subject-return");
     stateChanges.push({ tick: terminalCodaReservation.startTick, state: "subject-return" });
@@ -262,11 +274,23 @@ function clipNotesAtTick(notes: NoteEvent[], tick: number): void {
 }
 
 function buildTerminalCodaSection(
+  subject: readonly SubjectNote[],
   keySignature: KeySignature,
   reservation: TerminalCodaReservation,
   meterContext: MeterContext,
+  previousNotes: readonly NoteEvent[],
+  previousSectionPlans: readonly HarmonicPlan[],
 ): Exposition {
   const cadenceKind: CadenceKind = isModalMode(keySignature.mode) ? "modal" : "authentic";
+  const context = summarizeTerminalCodaContext({
+    subject,
+    keySignature,
+    reservation,
+    meterContext,
+    previousNotes,
+    previousSectionPlans,
+    cadenceKind,
+  });
   const sectionPlans = [
     buildHarmonicPlan({
       state: "subject-return",
@@ -280,13 +304,14 @@ function buildTerminalCodaSection(
       ambiguityIntent: "none",
       meterContext,
       terminalIntent: "self-contained-coda",
+      terminalCodaContext: context,
     }),
   ];
   const harmonicPlan = sectionPlans[0]!;
   const finalStartTick =
     harmonicPlan.anchors.find((anchor) => anchor.cadenceTarget)?.tick ??
     reservation.startTick + Math.max(0, reservation.durationTicks - meterContext.beatTicks);
-  const notes = buildTerminalCodaNotes(keySignature, reservation.startTick, finalStartTick, meterContext);
+  const notes = buildTerminalCodaNotes(keySignature, reservation.startTick, finalStartTick, meterContext, context);
   notes.sort(compareNoteEvents);
 
   return {
@@ -303,19 +328,8 @@ function buildTerminalCodaNotes(
   codaStartTick: number,
   finalStartTick: number,
   meterContext: MeterContext,
+  context: TerminalCodaContextSummary,
 ): NoteEvent[] {
-  const reentryOffsets: Record<Voice, number> = {
-    bass: 0,
-    tenor: meterContext.beatTicks,
-    alto: meterContext.beatTicks * 2,
-    soprano: meterContext.beatTicks * 3,
-  };
-  const preparationDegrees: Record<Voice, readonly number[]> = {
-    bass: [3, 4],
-    tenor: [4, 2],
-    alto: [1, 2],
-    soprano: [5, 4],
-  };
   const finalDegrees: Record<Voice, number> = {
     bass: 0,
     tenor: 4,
@@ -329,39 +343,249 @@ function buildTerminalCodaNotes(
     soprano: 72,
   };
   const notes: NoteEvent[] = [];
+  const beat = meterContext.beatTicks;
+  const subjectStem = context.recentSubjectStemDegrees.length > 0 ? context.recentSubjectStemDegrees : [0, 1, 2, 4];
+  const firstBeat = codaStartTick;
+  const secondBeat = Math.min(finalStartTick - beat, codaStartTick + beat);
+  const thirdBeat = Math.min(finalStartTick - beat, codaStartTick + beat * 2);
+  const fourthBeat = Math.min(finalStartTick - beat, codaStartTick + beat * 3);
+  const penultimateBeat = Math.max(codaStartTick, finalStartTick - beat);
+  const prePenultimateBeat = Math.max(codaStartTick, finalStartTick - beat * 2);
 
+  const addLine = (input: {
+    voice: Voice;
+    degrees: readonly number[];
+    startTick: number;
+    durationTicks?: number;
+    targetPitch?: number;
+    velocity?: number;
+    sourceMotive: EpisodeMotiveSource;
+    transformationKind: EpisodeTransformationKind;
+    targetFunction?: EpisodeTargetFunction;
+    sequenceDirection?: NonNullable<NoteEvent["motivicDerivation"]>["sequenceDirection"];
+    harmonicIntent?: NonNullable<NoteEvent["metricalHarmonyIntent"]>;
+  }): void => {
+    let startTick = input.startTick;
+    const durationTicks = input.durationTicks ?? beat;
+    for (const degree of input.degrees) {
+      if (startTick >= finalStartTick) {
+        break;
+      }
+      const noteEndTick = Math.min(finalStartTick, startTick + durationTicks);
+      if (noteEndTick > startTick) {
+        notes.push(
+          terminalCodaNote({
+            voice: input.voice,
+            keySignature,
+            degree,
+            targetPitch: input.targetPitch ?? targetPitches[input.voice],
+            startTick,
+            durationTicks: noteEndTick - startTick,
+            velocity: input.velocity ?? (input.voice === "bass" ? 72 : 64),
+            harmonicIntent:
+              input.harmonicIntent ?? (input.voice === "bass" ? "structural-root-support" : "structural-chord-tone"),
+            sourceMotive: input.sourceMotive,
+            transformationKind: input.transformationKind,
+            targetFunction: input.targetFunction ?? "extend-cadence",
+            sequenceDirection: input.sequenceDirection ?? "none",
+          }),
+        );
+      }
+      startTick += durationTicks;
+    }
+  };
+
+  const addPreparedLanding = (): void => {
+    for (const voice of ["bass", "tenor", "alto", "soprano"] as const) {
+      const supportDegree = voice === "bass" ? 4 : finalDegrees[voice] === 0 ? 4 : finalDegrees[voice] - 1;
+      if (
+        !notes.some(
+          (note) =>
+            note.voice === voice &&
+            note.startTick < finalStartTick &&
+            note.startTick + note.durationTicks >= penultimateBeat,
+        )
+      ) {
+        notes.push(
+          terminalCodaNote({
+            voice,
+            keySignature,
+            degree: supportDegree,
+            targetPitch: targetPitches[voice],
+            startTick: penultimateBeat,
+            durationTicks: finalStartTick - penultimateBeat,
+            velocity: voice === "bass" ? 72 : 64,
+            harmonicIntent: voice === "bass" ? "structural-root-support" : "structural-chord-tone",
+            sourceMotive: voice === "bass" ? "cadence-figure" : context.recentMaterialSource,
+            transformationKind: "cadential-continuation",
+            targetFunction: voice === "bass" ? "maintain-pedal-or-suspension" : "extend-cadence",
+            sequenceDirection: "none",
+          }),
+        );
+      }
+    }
+  };
+
+  if (context.archetype === "stretto-compaction") {
+    addLine({
+      voice: "alto",
+      degrees: subjectStem.slice(0, 4),
+      startTick: firstBeat,
+      sourceMotive: "subject-head",
+      transformationKind: "diminution",
+    });
+    addLine({
+      voice: "soprano",
+      degrees: subjectStem.slice(0, 4).map((degree) => degree + 4),
+      startTick: secondBeat,
+      sourceMotive: "answer-form",
+      transformationKind: "imitation",
+    });
+    addLine({
+      voice: "tenor",
+      degrees: subjectStem.slice(0, 3).map((degree) => degree - 1),
+      startTick: thirdBeat,
+      sourceMotive: context.recentMaterialSource,
+      transformationKind: "fragmentation",
+    });
+    addLine({
+      voice: "bass",
+      degrees: [0, 4, 0, 4, 0],
+      startTick: firstBeat,
+      durationTicks: beat,
+      sourceMotive: "cadence-figure",
+      transformationKind: "cadential-continuation",
+      targetFunction: "maintain-pedal-or-suspension",
+    });
+  } else if (context.archetype === "pedal-entry-cadence") {
+    addLine({
+      voice: "bass",
+      degrees: [0, 0, 0, 4, 0, 4, 0],
+      startTick: firstBeat,
+      durationTicks: beat,
+      sourceMotive: "cadence-figure",
+      transformationKind: "augmentation",
+      targetFunction: "maintain-pedal-or-suspension",
+    });
+    addLine({
+      voice: "soprano",
+      degrees: subjectStem.slice(0, 4),
+      startTick: secondBeat,
+      sourceMotive: context.recentMaterialSource,
+      transformationKind: "contour-paraphrase",
+    });
+    addLine({
+      voice: "alto",
+      degrees: [2, 1, 2, 4],
+      startTick: thirdBeat,
+      sourceMotive: "counter-subject-head",
+      transformationKind: "cadential-continuation",
+    });
+    addLine({
+      voice: "tenor",
+      degrees: [4, 3, 2],
+      startTick: fourthBeat,
+      sourceMotive: "cadence-figure",
+      transformationKind: "cadential-continuation",
+    });
+  } else if (context.archetype === "liquidation-cadence") {
+    addLine({
+      voice: "soprano",
+      degrees: subjectStem.slice(-3).length > 0 ? subjectStem.slice(-3) : [2, 1, 0],
+      startTick: firstBeat,
+      sourceMotive: "subject-tail",
+      transformationKind: "fragmentation",
+    });
+    addLine({
+      voice: "alto",
+      degrees: [4, 2, 1, 2],
+      startTick: secondBeat,
+      sourceMotive: "counter-subject-tail",
+      transformationKind: "rhythmic-paraphrase",
+    });
+    addLine({
+      voice: "tenor",
+      degrees: [2, 4, 3, 2],
+      startTick: thirdBeat,
+      sourceMotive: context.recentMaterialSource,
+      transformationKind: "sequence",
+      sequenceDirection: "descending",
+    });
+    addLine({
+      voice: "bass",
+      degrees: [3, 4, 0, 4, 0],
+      startTick: firstBeat,
+      sourceMotive: "cadence-figure",
+      transformationKind: "cadential-continuation",
+    });
+  } else if (context.archetype === "cadential-echo") {
+    addLine({
+      voice: "soprano",
+      degrees: subjectStem.slice(0, 2),
+      startTick: secondBeat,
+      durationTicks: beat,
+      sourceMotive: context.recentMaterialSource,
+      transformationKind: "imitation",
+    });
+    addLine({
+      voice: "alto",
+      degrees: subjectStem.slice(0, 2).map((degree) => degree - 2),
+      startTick: fourthBeat,
+      durationTicks: beat,
+      sourceMotive: context.recentMaterialSource,
+      transformationKind: "fragmentation",
+    });
+    addLine({
+      voice: "tenor",
+      degrees: [4, 2],
+      startTick: prePenultimateBeat,
+      sourceMotive: "cadence-figure",
+      transformationKind: "cadential-continuation",
+    });
+    addLine({
+      voice: "bass",
+      degrees: [0, 4, 0],
+      startTick: firstBeat,
+      durationTicks: beat * 2,
+      sourceMotive: "cadence-figure",
+      transformationKind: "augmentation",
+      targetFunction: "maintain-pedal-or-suspension",
+    });
+  } else {
+    const fragmentVoice = context.textureDensity >= 3 ? "alto" : "soprano";
+    const cadenceVoice = fragmentVoice === "soprano" ? "alto" : "soprano";
+    addLine({
+      voice: fragmentVoice,
+      degrees: subjectStem.slice(0, 4),
+      startTick: firstBeat,
+      sourceMotive: "subject-head",
+      transformationKind: "contour-paraphrase",
+    });
+    addLine({
+      voice: cadenceVoice,
+      degrees: [5, 4, 2, 0],
+      startTick: secondBeat,
+      sourceMotive: "cadence-figure",
+      transformationKind: "cadential-continuation",
+    });
+    addLine({
+      voice: "tenor",
+      degrees: [4, 3, 2, 4],
+      startTick: thirdBeat,
+      sourceMotive: context.recentMaterialSource,
+      transformationKind: "fragmentation",
+    });
+    addLine({
+      voice: "bass",
+      degrees: [0, 3, 4, 0, 4],
+      startTick: firstBeat,
+      sourceMotive: "cadence-figure",
+      transformationKind: "cadential-continuation",
+    });
+  }
+
+  addPreparedLanding();
   for (const voice of ["bass", "tenor", "alto", "soprano"] as const) {
-    const voiceStartTick = Math.min(finalStartTick - meterContext.beatTicks, codaStartTick + reentryOffsets[voice]);
-    const preparationEndTick = finalStartTick;
-    const preparationTicks = Math.max(meterContext.beatTicks, preparationEndTick - voiceStartTick);
-    const degrees = preparationDegrees[voice];
-    const firstDurationTicks = Math.max(meterContext.beatTicks, Math.floor(preparationTicks / 2));
-    const secondStartTick = Math.min(finalStartTick - meterContext.beatTicks, voiceStartTick + firstDurationTicks);
-
-    notes.push(
-      terminalCodaNote({
-        voice,
-        keySignature,
-        degree: degrees[0]!,
-        targetPitch: targetPitches[voice],
-        startTick: voiceStartTick,
-        durationTicks: Math.max(meterContext.beatTicks, secondStartTick - voiceStartTick),
-        velocity: voice === "bass" ? 66 : 60,
-        harmonicIntent: voice === "bass" ? "structural-root-support" : "structural-chord-tone",
-      }),
-    );
-    notes.push(
-      terminalCodaNote({
-        voice,
-        keySignature,
-        degree: degrees[1]!,
-        targetPitch: targetPitches[voice],
-        startTick: secondStartTick,
-        durationTicks: Math.max(meterContext.beatTicks, finalStartTick - secondStartTick),
-        velocity: voice === "bass" ? 72 : 64,
-        harmonicIntent: voice === "bass" ? "structural-root-support" : "structural-chord-tone",
-      }),
-    );
     notes.push(
       terminalCodaNote({
         voice,
@@ -372,6 +596,10 @@ function buildTerminalCodaNotes(
         durationTicks: meterContext.beatTicks,
         velocity: voice === "bass" ? 78 : 70,
         harmonicIntent: voice === "bass" ? "structural-root-support" : "structural-chord-tone",
+        sourceMotive: "cadence-figure",
+        transformationKind: "cadential-continuation",
+        targetFunction: "extend-cadence",
+        sequenceDirection: "none",
       }),
     );
   }
@@ -388,6 +616,10 @@ function terminalCodaNote(input: {
   durationTicks: number;
   velocity: number;
   harmonicIntent: NonNullable<NoteEvent["metricalHarmonyIntent"]>;
+  sourceMotive: EpisodeMotiveSource;
+  transformationKind: EpisodeTransformationKind;
+  targetFunction: EpisodeTargetFunction;
+  sequenceDirection: NonNullable<NoteEvent["motivicDerivation"]>["sequenceDirection"];
 }): NoteEvent {
   return {
     kind: "note",
@@ -403,14 +635,179 @@ function terminalCodaNote(input: {
     role: "free-counterpoint",
     metricalHarmonyIntent: input.harmonicIntent,
     motivicDerivation: {
-      sourceMotive: "cadence-figure",
-      transformationKind: "cadential-continuation",
-      targetFunction: "extend-cadence",
-      sequenceDirection: "none",
+      sourceMotive: input.sourceMotive,
+      transformationKind: input.transformationKind,
+      targetFunction: input.targetFunction,
+      sequenceDirection: input.sequenceDirection,
       preparesNextEntry: false,
       preparesCadence: true,
     },
   };
+}
+
+function summarizeTerminalCodaContext(input: {
+  subject: readonly SubjectNote[];
+  keySignature: KeySignature;
+  reservation: TerminalCodaReservation;
+  meterContext: MeterContext;
+  previousNotes: readonly NoteEvent[];
+  previousSectionPlans: readonly HarmonicPlan[];
+  cadenceKind: CadenceKind;
+}): TerminalCodaContextSummary {
+  const codaStartTick = input.reservation.startTick;
+  const recentPlans = input.previousSectionPlans.filter((plan) => plan.startTick < codaStartTick).slice(-4);
+  const recentStateSequence = recentPlans.map((plan) => plan.state);
+  const previousPlan = recentPlans.at(-1);
+  const reviewStartTick = Math.max(0, codaStartTick - input.meterContext.measureTicks * 2);
+  const recentNotes = input.previousNotes.filter(
+    (note) => note.startTick < codaStartTick && note.startTick + note.durationTicks > reviewStartTick,
+  );
+  const activeVoiceCount = activeVoiceCountAt(
+    input.previousNotes,
+    Math.max(0, codaStartTick - input.meterContext.beatTicks),
+  );
+  const textureDensity =
+    previousPlan === undefined
+      ? activeVoiceCount
+      : averageActiveVoiceDensity(input.previousNotes, previousPlan.startTick, previousPlan.durationTicks);
+  const contourEnergy = averageContourEnergy(recentNotes);
+  const pedalImplied = hasImpliedBassPedal(input.previousNotes, codaStartTick, input.keySignature, input.meterContext);
+  const recentMaterialSource = terminalCodaMaterialSource(previousPlan?.state, previousPlan?.cadenceKind);
+  const archetype = chooseTerminalCodaArchetype({
+    recentStateSequence,
+    previousPlan,
+    textureDensity,
+    contourEnergy,
+    activeVoiceCount,
+    pedalImplied,
+  });
+
+  return {
+    schemaVersion: 1,
+    archetype,
+    selectionReason: terminalCodaSelectionReason(archetype, previousPlan?.state, textureDensity, contourEnergy),
+    recentMaterialSource,
+    recentStateSequence,
+    recentSubjectStemDegrees: input.subject.slice(0, 4).map((note) => note.scaleDegree),
+    rhythmicCellTicks: input.subject.slice(0, 4).map((note) => note.durationTicks),
+    activeVoiceCount,
+    textureDensity: roundMetric(textureDensity),
+    contourEnergy: roundMetric(contourEnergy),
+    localMode: previousPlan?.targetKey.mode ?? input.keySignature.mode,
+    cadenceKind: input.cadenceKind,
+    availableDurationTicks: input.reservation.durationTicks,
+    pedalImplied,
+  };
+}
+
+function terminalCodaMaterialSource(
+  previousState: FugueState | undefined,
+  previousCadenceKind: CadenceKind | undefined,
+): EpisodeMotiveSource {
+  if (previousState === "stretto-like") {
+    return "answer-form";
+  }
+  if (previousState === "subject-return") {
+    return "subject-tail";
+  }
+  if (previousCadenceKind === "authentic" || previousCadenceKind === "modal" || previousCadenceKind === "half") {
+    return "cadence-figure";
+  }
+  return "prior-episode-figure";
+}
+
+function chooseTerminalCodaArchetype(input: {
+  recentStateSequence: readonly FugueState[];
+  previousPlan: HarmonicPlan | undefined;
+  textureDensity: number;
+  contourEnergy: number;
+  activeVoiceCount: number;
+  pedalImplied: boolean;
+}): TerminalCodaArchetype {
+  const recentStrettoCount = input.recentStateSequence.filter((state) => state === "stretto-like").length;
+  if (input.pedalImplied) {
+    return "pedal-entry-cadence";
+  }
+  if (input.previousPlan?.state === "stretto-like" || recentStrettoCount >= 2 || input.contourEnergy >= 4.5) {
+    return "stretto-compaction";
+  }
+  if (input.textureDensity >= 3.25 && input.previousPlan?.state === "subject-return") {
+    return "liquidation-cadence";
+  }
+  if (input.activeVoiceCount <= 2 || input.textureDensity <= 2.1) {
+    return "cadential-echo";
+  }
+  return "final-fragment-entry";
+}
+
+function terminalCodaSelectionReason(
+  archetype: TerminalCodaArchetype,
+  previousState: FugueState | undefined,
+  textureDensity: number,
+  contourEnergy: number,
+): string {
+  if (archetype === "pedal-entry-cadence") {
+    return "recent bass already implies tonic support, so the coda keeps pedal function while upper voices move";
+  }
+  if (archetype === "stretto-compaction") {
+    return `recent ${previousState ?? "unknown"} material or contour energy ${roundMetric(contourEnergy)} supports overlapped fragments`;
+  }
+  if (archetype === "liquidation-cadence") {
+    return `recent subject-return texture density ${roundMetric(textureDensity)} supports thematic liquidation before the cadence`;
+  }
+  if (archetype === "cadential-echo") {
+    return `recent texture density ${roundMetric(textureDensity)} is sparse, so the coda uses echoing fragment support`;
+  }
+  return `recent ${previousState ?? "continuation"} context supports a final subject-fragment entry into the cadence`;
+}
+
+function activeVoiceCountAt(notes: readonly NoteEvent[], tick: number): number {
+  return new Set(
+    notes
+      .filter((note) => note.startTick <= tick && tick < note.startTick + note.durationTicks)
+      .map((note) => note.voice),
+  ).size;
+}
+
+function averageContourEnergy(notes: readonly NoteEvent[]): number {
+  let intervalTotal = 0;
+  let intervalCount = 0;
+  for (const voice of VOICE_ENTRY_ORDER) {
+    const voiceNotes = notes
+      .filter((note) => note.voice === voice)
+      .sort((left, right) => left.startTick - right.startTick || left.pitch - right.pitch);
+    for (let index = 1; index < voiceNotes.length; index += 1) {
+      const previous = voiceNotes[index - 1];
+      const current = voiceNotes[index];
+      if (previous === undefined || current === undefined) {
+        continue;
+      }
+      intervalTotal += Math.abs(current.pitch - previous.pitch);
+      intervalCount += 1;
+    }
+  }
+  return intervalCount === 0 ? 0 : intervalTotal / intervalCount;
+}
+
+function hasImpliedBassPedal(
+  notes: readonly NoteEvent[],
+  codaStartTick: number,
+  keySignature: KeySignature,
+  meterContext: MeterContext,
+): boolean {
+  const tonicClass = scaleDegreePitchClass(0, 0, keySignature);
+  return notes.some(
+    (note) =>
+      note.voice === "bass" &&
+      positiveModulo(note.pitch, 12) === tonicClass &&
+      note.startTick < codaStartTick &&
+      note.startTick + note.durationTicks >= codaStartTick - meterContext.beatTicks &&
+      note.durationTicks >= meterContext.beatTicks * 2,
+  );
+}
+
+function roundMetric(value: number): number {
+  return Math.round(value * 100) / 100;
 }
 
 function nearestVoicePitchForPitchClass(pitchClass: number, targetPitch: number, voice: Voice): number {

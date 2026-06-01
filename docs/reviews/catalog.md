@@ -4,7 +4,7 @@
 
 ## Current Quality Lane
 
-* [Endless Program Terminal Coda Review](endless-program-terminal-coda-review.md): 完了 evidence。focused `endless-program` seeds で generated coda source、prepared voice re-entry、root-supported terminal closure、fallback/source separation を `TerminalClosureReviewSummary` に記録する。
+* [Endless Program Terminal Coda Review](endless-program-terminal-coda-review.md): 完了 evidence。focused `endless-program` seeds で generated coda source、context-aware coda archetype、coda-continuity derivation、prepared voice re-entry、root-supported terminal closure、fallback/source separation を `TerminalClosureReviewSummary` に記録する。
 * [Continuous fugue segment continuity review](continuous-fugue-segment-continuity-review.md): 完了 evidence。22 seed revalidation で `continuous-fugue` segment 1 が carried snapshot から continuation material を開始し、初期 exposition order を繰り返さず、`endless-program` terminal coda work と分離されていることを記録する。
 * [Endless Program Terminal Cadence Review](endless-program-terminal-cadence-review.md): 完了 evidence。baseline focused seeds の terminal closure failure、`endless-program` / `regenerative-cycle` terminal sonority repair、focused after-pass、CI / review scope を記録する。
 * [Phase 9 completion review](phase-9-completion-review.md): 完了 evidence。Dedicated Web Worker generation、deadline / fallback recording、long-run replay / state-change / boundary history、Web UI best-so-far fallback を operational contract として記録する。
