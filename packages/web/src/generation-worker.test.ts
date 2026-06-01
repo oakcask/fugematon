@@ -118,11 +118,28 @@ test("generation worker keeps audible endless output with generated coda review 
   });
 
   assert.equal(response.type, "generated");
-  assert.equal(response.deadlineResult.returnedCandidateKind, "generated");
+  assert.notEqual(response.deadlineResult.returnedCandidateKind, "conservative-fallback");
   assert.equal(response.deadlineResult.segmentIndex, 1);
-  assert.equal(response.reviewSnapshot.hardConstraintsSatisfied, true);
   assert.equal(response.reviewSnapshot.terminalClosureStatus, "accepted");
   assert.equal(response.reviewSnapshot.terminalClosureSource, "generated-coda");
+  assert.ok(response.model.notes.length > 0);
+});
+
+test("generation worker keeps note-bearing endless output when review defects remain", async () => {
+  const response = await dispatchWorkerRequest({
+    requestId: 47,
+    seed: "seed-1bnmddk-0pzsjpu",
+    performanceProfileId: "strict-counterpoint",
+    lengthTicks: 129_600,
+    deadlineMs: 240_000,
+    segmentIndex: 0,
+    mode: "endless-program",
+  });
+
+  assert.equal(response.type, "generated");
+  assert.equal(response.deadlineResult.returnedCandidateKind, "best-so-far");
+  assert.equal(response.reviewSnapshot.hardConstraintsSatisfied, false);
+  assert.equal(response.reviewSnapshot.terminalClosureStatus, "accepted");
   assert.ok(response.model.notes.length > 0);
 });
 
@@ -168,6 +185,83 @@ test("generation worker playback output uses conservative fallback for unsafe de
   assert.equal(fallbackOutput.diagnostics.fallbackPassageCount, output.diagnostics.fallbackPassageCount);
 });
 
+test("generation worker playback output keeps safe best-so-far notes after deadline", async () => {
+  const { createGenerationWorkerPlaybackOutput } = await workerReady;
+  const output = generateScore({ seed: "fugue-smoke", lengthTicks: 1920 });
+  const deadlineResult = planSegmentGenerationDeadlineResult({
+    mode: "endless-program",
+    segmentIndex: 9,
+    startedAtMs: 0,
+    completedAtMs: 2000,
+    deadlineMs: 1500,
+    generatedCandidateSatisfiesHardConstraints: true,
+    bestSoFarCandidateSatisfiesHardConstraints: true,
+  });
+  const playbackOutput = createGenerationWorkerPlaybackOutput(output, deadlineResult, 1920);
+
+  assert.equal(deadlineResult.returnedCandidateKind, "best-so-far");
+  assert.equal(playbackOutput, output);
+  assert.ok(playbackOutput.events.some((event) => event.kind === "note"));
+  assert.ok(playbackOutput.diagnostics.noteCount > 0);
+});
+
+test("generation worker playback output keeps playable review-defective best-so-far notes after deadline", async () => {
+  const { createGenerationWorkerPlaybackOutput } = await workerReady;
+  const output = generateScore({
+    seed: "seed-1bnmddk-0pzsjpu",
+    lengthTicks: 129_600,
+    mode: "endless-program",
+  });
+  const deadlineResult = planSegmentGenerationDeadlineResult({
+    mode: "endless-program",
+    segmentIndex: 0,
+    startedAtMs: 0,
+    completedAtMs: 2000,
+    deadlineMs: 1500,
+    generatedCandidateSatisfiesHardConstraints: false,
+    bestSoFarCandidateSatisfiesHardConstraints: true,
+  });
+  const playbackOutput = createGenerationWorkerPlaybackOutput(output, deadlineResult, 129_600);
+
+  assert.equal(deadlineResult.returnedCandidateKind, "best-so-far");
+  assert.equal(playbackOutput, output);
+  assert.equal(satisfiesReviewHardConstraints(output), false);
+  assert.ok(playbackOutput.events.some((event) => event.kind === "note"));
+  assert.ok(playbackOutput.diagnostics.noteCount > 0);
+});
+
+test("generation worker playback output uses conservative fallback for no-note deadline results", async () => {
+  const { createGenerationWorkerPlaybackOutput } = await workerReady;
+  const output = generateScore({ seed: "fugue-smoke", lengthTicks: 1920 });
+  const noNoteOutput = {
+    ...output,
+    events: output.events.filter((event) => event.kind !== "note"),
+    diagnostics: {
+      ...output.diagnostics,
+      eventCount: output.events.filter((event) => event.kind !== "note").length,
+      noteCount: 0,
+    },
+  };
+  const deadlineResult = planSegmentGenerationDeadlineResult({
+    mode: "continuous-fugue",
+    segmentIndex: 0,
+    startedAtMs: 0,
+    completedAtMs: 2000,
+    deadlineMs: 1500,
+    generatedCandidateSatisfiesHardConstraints: false,
+    bestSoFarCandidateSatisfiesHardConstraints: false,
+  });
+  const fallbackOutput = createGenerationWorkerPlaybackOutput(noNoteOutput, deadlineResult, 1920);
+
+  assert.equal(deadlineResult.returnedCandidateKind, "conservative-fallback");
+  assert.notEqual(fallbackOutput, noNoteOutput);
+  assert.equal(
+    fallbackOutput.events.some((event) => event.kind === "note"),
+    false,
+  );
+  assert.equal(fallbackOutput.diagnostics.noteCount, 0);
+});
+
 async function dispatchWorkerRequest(request: GenerationWorkerRequest): Promise<GenerationWorkerResponse> {
   const messages: GenerationWorkerResponse[] = [];
   workerScope.postMessage = (message) => {
@@ -183,4 +277,18 @@ async function dispatchWorkerRequest(request: GenerationWorkerRequest): Promise<
   assert.equal(messages.length, 1);
 
   return messages[0]!;
+}
+
+function satisfiesReviewHardConstraints(output: ReturnType<typeof generateScore>): boolean {
+  const diagnostics = output.diagnostics;
+
+  return (
+    diagnostics.rangeViolations === 0 &&
+    diagnostics.voiceCrossings === 0 &&
+    diagnostics.subjectIdentityViolations === 0 &&
+    diagnostics.answerPlanViolations === 0 &&
+    diagnostics.keyMetadataMismatches === 0 &&
+    diagnostics.unresolvedDissonanceCount === 0 &&
+    diagnostics.allVoiceSilenceGapCount === 0
+  );
 }

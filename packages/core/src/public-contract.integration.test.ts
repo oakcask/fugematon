@@ -204,12 +204,15 @@ test("public diagnostics expose finite candidate score dimensions", () => {
   assert.equal(typeof output.diagnostics.terminalClosureReview.unresolvedBoundaryDissonanceCount, "number");
   assert.equal(typeof output.diagnostics.terminalClosureReview.thinningExplanation, "string");
   assert.equal(typeof output.diagnostics.terminalClosureReview.finalRestClassification, "string");
-  assert.equal(output.diagnostics.terminalClosureReview.codaContinuity.schemaVersion, 1);
+  assert.equal(output.diagnostics.terminalClosureReview.codaContinuity.schemaVersion, 2);
   assert.match(
     output.diagnostics.terminalClosureReview.codaContinuity.classification,
     /^(not-applicable|accepted|review-required)$/,
   );
   assert.equal(typeof output.diagnostics.terminalClosureReview.codaContinuity.derivationCount, "number");
+  assert.equal(typeof output.diagnostics.terminalClosureReview.codaContinuity.subjectDerivedNoteCount, "number");
+  assert.equal(typeof output.diagnostics.terminalClosureReview.codaContinuity.pedalRootCoverageRatio, "number");
+  assert.ok(Array.isArray(output.diagnostics.terminalClosureReview.codaContinuity.historicalFunctionCoverage));
   assert.equal(typeof output.diagnostics.terminalClosureReview.codaContinuity.movingVoiceCountBeforeCadence, "number");
   assert.equal(typeof output.diagnostics.terminalClosureReview.codaContinuity.pedalClassification, "string");
   assert.ok(Array.isArray(output.diagnostics.terminalClosureReview.windows));

@@ -16,6 +16,13 @@ type GenerationLockTestWindow = Window &
     };
   };
 
+type DelayedRegenerateTestWindow = Window &
+  typeof globalThis & {
+    __delayedRegenerateTest: {
+      resolveNext: () => void;
+    };
+  };
+
 type ContinuousBoundaryTestWindow = Window &
   typeof globalThis & {
     __continuousBoundaryTest: {
@@ -102,6 +109,10 @@ for (const viewport of VIEWPORTS) {
     await page.getByRole("button", { name: "Random seed" }).click();
     await expect(seedInput).toHaveValue(RANDOM_SEED_PATTERN);
     expect(new URL(page.url()).searchParams.get("seed")).toMatch(RANDOM_SEED_PATTERN);
+    await expect(page.locator("#notes")).not.toHaveText(/^(0|\.\.\.)$/, {
+      timeout: INITIAL_GENERATION_TIMEOUT_MS,
+    });
+    await expect(page.locator("#fallback-status")).toHaveText(/^(generated|best-so-far)$/);
 
     const pianoRoll = page.locator("#piano-roll");
     await expect(pianoRoll).toBeVisible();
@@ -136,6 +147,51 @@ for (const viewport of VIEWPORTS) {
     expect(browserErrors).toEqual([]);
   });
 }
+
+test("renders note-bearing endless-program output with review defects", async ({ page }) => {
+  await page.goto("/?seed=seed-1bnmddk-0pzsjpu");
+  await page.locator("#playback-mode").selectOption("endless-program");
+
+  await expect(page.locator("#fallback-status")).toHaveText(/^(generated|best-so-far)$/, {
+    timeout: INITIAL_GENERATION_TIMEOUT_MS,
+  });
+  await expect(page.locator("#notes")).not.toHaveText(/^(0|\.\.\.)$/);
+  await expect(page.locator("#fallback-status")).not.toHaveText("conservative-fallback");
+
+  const hasNoteColoredPixels = await page.locator("#piano-roll").evaluate((canvas: HTMLCanvasElement) => {
+    const context = canvas.getContext("2d");
+    if (context === null || canvas.width === 0 || canvas.height === 0) {
+      return false;
+    }
+
+    const noteColors = [
+      [182, 70, 41],
+      [197, 139, 44],
+      [57, 125, 106],
+      [47, 79, 118],
+    ] as const;
+    const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+    let matchingPixels = 0;
+    for (let index = 0; index < pixels.length; index += 4) {
+      for (const [red, green, blue] of noteColors) {
+        if (
+          Math.abs(pixels[index]! - red) <= 8 &&
+          Math.abs(pixels[index + 1]! - green) <= 8 &&
+          Math.abs(pixels[index + 2]! - blue) <= 8 &&
+          pixels[index + 3]! > 0
+        ) {
+          matchingPixels += 1;
+          if (matchingPixels > 20) {
+            return true;
+          }
+        }
+      }
+    }
+
+    return false;
+  });
+  expect(hasNoteColoredPixels).toBe(true);
+});
 
 test("syncs the seed with the URL query string", async ({ page }) => {
   await page.goto("/?seed=url-smoke");
@@ -181,7 +237,29 @@ test("locks playback controls while primary generation is running", async ({ pag
           keySignature: { tonic: "C", mode: "major" },
           totalTicks: 480,
           totalSeconds: 0.5,
-          notes: [],
+          notes: [
+            {
+              voice: "soprano",
+              startTick: 0,
+              endTick: 480,
+              startSecond: 0,
+              durationSecond: 0.5,
+              pitch: 60,
+              velocity: 92,
+              volume: 96,
+              gain: 0.7,
+              pan: 64,
+              oscillatorType: "sine",
+              webAudioSynth: {
+                attackSeconds: 0.01,
+                decaySeconds: 0.05,
+                releaseSeconds: 0.08,
+                sustainLevel: 0.75,
+                velocityToSustainGain: 0.25,
+                velocityToAttackEmphasis: 0.2,
+              },
+            },
+          ],
           stateTransitions: [],
           subjectEntries: [],
           sectionPlans: [],
@@ -267,6 +345,146 @@ test("locks playback controls while primary generation is running", async ({ pag
   await expect(page.getByRole("button", { name: "Stop" })).toBeDisabled();
 });
 
+test("does not relabel the previous score as best-so-far while a new seed is delayed", async ({ page }) => {
+  await page.addInitScript(() => {
+    type PendingRequest = {
+      requestId: number;
+      seed: string;
+      performanceProfileId: string;
+      segmentIndex: number;
+      mode?: string;
+    };
+
+    const pendingRequests: PendingRequest[] = [];
+    const listeners: Array<(event: MessageEvent) => void> = [];
+    const nativeSetTimeout = window.setTimeout.bind(window);
+    window.setTimeout = ((handler: TimerHandler, timeout?: number, ...args: unknown[]) =>
+      nativeSetTimeout(handler, timeout === 10_000 ? 0 : timeout, ...args)) as typeof window.setTimeout;
+
+    function createNote(pitch: number, startTick: number): unknown {
+      return {
+        voice: "soprano",
+        startTick,
+        endTick: startTick + 480,
+        startSecond: startTick / 960,
+        durationSecond: 0.5,
+        pitch,
+        velocity: 92,
+        volume: 96,
+        gain: 0.7,
+        pan: 64,
+        oscillatorType: "sine",
+        webAudioSynth: {
+          attackSeconds: 0.01,
+          decaySeconds: 0.05,
+          releaseSeconds: 0.08,
+          sustainLevel: 0.75,
+          velocityToSustainGain: 0.25,
+          velocityToAttackEmphasis: 0.2,
+        },
+      };
+    }
+
+    function createResponse(request: PendingRequest): unknown {
+      const notes =
+        request.seed === "delayed-regenerate" ? [createNote(64, 0), createNote(67, 480)] : [createNote(60, 0)];
+
+      return {
+        type: "generated",
+        requestId: request.requestId,
+        seed: request.seed,
+        performanceProfileId: request.performanceProfileId,
+        model: {
+          bpm: 120,
+          ticksPerQuarter: 480,
+          timeSignature: { numerator: 4, denominator: 4 },
+          keySignature: { tonic: request.seed === "delayed-regenerate" ? "G" : "C", mode: "major" },
+          totalTicks: 960,
+          totalSeconds: 1,
+          notes,
+          stateTransitions: ["exposition"],
+          subjectEntries: [],
+          sectionPlans: [],
+          performanceProfile: { id: request.performanceProfileId, name: request.performanceProfileId },
+          pitchRange: { min: 60, max: 67 },
+        },
+        deadlineResult: {
+          mode: request.mode ?? "continuous-fugue",
+          segmentIndex: request.segmentIndex,
+          elapsedMs: 1,
+          deadlineExceededByMs: 0,
+          timedOut: false,
+          hardConstraintSatisfied: true,
+          returnedCandidateKind: "generated",
+          hardConstraintSource: "generated",
+          referenceDiagnosticsPreserved: true,
+          qualityVectorPreserved: true,
+          reviewSignalsRemainVisible: [],
+        },
+        reviewSnapshot: {
+          hardConstraintsSatisfied: true,
+          fallbackPassageCount: 0,
+          issueCount: 0,
+          warningCount: 0,
+          qualityVectorStatus: "within-profile",
+          terminalClosureStatus: "not-required",
+          terminalClosureSource: "not-required",
+          continuousSegmentContinuityStatus: "not-required",
+        },
+        nextSegmentSnapshot: { segmentIndex: request.segmentIndex },
+      };
+    }
+
+    class DeferredGenerationWorker {
+      postMessage(message: PendingRequest): void {
+        pendingRequests.push(message);
+      }
+
+      addEventListener(type: string, listener: EventListenerOrEventListenerObject): void {
+        if (type !== "message") {
+          return;
+        }
+        listeners.push(listener as (event: MessageEvent) => void);
+      }
+
+      terminate(): void {}
+    }
+
+    const target = window as DelayedRegenerateTestWindow;
+    target.Worker = DeferredGenerationWorker as unknown as typeof Worker;
+    target.__delayedRegenerateTest = {
+      resolveNext(): void {
+        const request = pendingRequests.shift();
+        if (request === undefined) {
+          return;
+        }
+
+        const event = new MessageEvent("message", { data: createResponse(request) });
+        for (const listener of listeners) {
+          listener(event);
+        }
+      },
+    };
+  });
+
+  await page.goto("/");
+  await page.evaluate(() => (window as DelayedRegenerateTestWindow).__delayedRegenerateTest.resolveNext());
+  await expect(page.locator("#notes")).toHaveText("1");
+
+  const seedInput = page.getByLabel("Seed");
+  await seedInput.fill("delayed-regenerate");
+  await page.getByRole("button", { name: "Regenerate" }).click();
+
+  await expect(page.locator("#generation-status")).toHaveText("Still generating");
+  await expect(page.locator("#notes")).toHaveText("...");
+  await expect(page.locator("#fallback-status")).toHaveText("...");
+  await expect(page.getByText("Best-so-far fallback")).toHaveCount(0);
+
+  await page.evaluate(() => (window as DelayedRegenerateTestWindow).__delayedRegenerateTest.resolveNext());
+  await expect(page.locator("#notes")).toHaveText("2");
+  await expect(page.locator("#key-signature")).toHaveText("G Major");
+});
+
 test("keeps the score card on the current continuous segment until the playback boundary", async ({ page }) => {
   await page.addInitScript(() => {
     type PendingRequest = {
@@ -293,7 +511,29 @@ test("keeps the score card on the current continuous segment until the playback 
         keySignature: isContinuation ? { tonic: "G", mode: "major" } : { tonic: "C", mode: "major" },
         totalTicks: 9600,
         totalSeconds: 10,
-        notes: [],
+        notes: [
+          {
+            voice: isContinuation ? "alto" : "soprano",
+            startTick: 0,
+            endTick: 960,
+            startSecond: 0,
+            durationSecond: 1,
+            pitch: isContinuation ? 67 : 60,
+            velocity: 92,
+            volume: 96,
+            gain: 0.7,
+            pan: 64,
+            oscillatorType: "sine",
+            webAudioSynth: {
+              attackSeconds: 0.01,
+              decaySeconds: 0.05,
+              releaseSeconds: 0.08,
+              sustainLevel: 0.75,
+              velocityToSustainGain: 0.25,
+              velocityToAttackEmphasis: 0.2,
+            },
+          },
+        ],
         stateTransitions: isContinuation ? ["episode"] : ["exposition"],
         subjectEntries: isContinuation ? [{ voice: "soprano", startTick: 0, state: "episode" }] : [],
         sectionPlans: [],

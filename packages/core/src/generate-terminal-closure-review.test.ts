@@ -21,6 +21,45 @@ const TERMINAL_CODA_TARGET_SEEDS = [
   "bach-001",
   "minor-entry",
 ] as const;
+const TERMINAL_CODA_QUALITY_REVIEW_SEEDS = [
+  "bach-001",
+  "fugue-smoke",
+  "minor-entry",
+  "wide-key",
+  "lyrical-line",
+  "modal-dorian",
+  "circle-fifths",
+  "close-imitation",
+  "sparse-cadence",
+  "bright-answer",
+  "dark-episode",
+  "ornament-test",
+  "long-arc",
+  "contrary-motion",
+  "restless-line",
+  "tight-stretto",
+  "quiet-cadence",
+  "angular-answer",
+  "modal-answer",
+  "modal-cadence",
+  "contrary-answer",
+  "dense-modal",
+] as const;
+const ENDLESS_REVIEW_OUTPUTS = new Map<string, ReturnType<typeof generateScore>>();
+
+function endlessReviewOutput(seed: string): ReturnType<typeof generateScore> {
+  const cached = ENDLESS_REVIEW_OUTPUTS.get(seed);
+  if (cached !== undefined) {
+    return cached;
+  }
+  const output = generateScore({
+    seed,
+    lengthTicks: FUGUE_FORM_REVIEW_LENGTH_TICKS,
+    mode: "endless-program",
+  });
+  ENDLESS_REVIEW_OUTPUTS.set(seed, output);
+  return output;
+}
 
 test("terminal closure review accepts authentic and modal terminal sonorities", () => {
   for (const [key, cadenceKind] of [
@@ -95,11 +134,7 @@ test("continuous-fugue generation does not require terminal closure", () => {
 
 test("endless-program target seeds keep stable terminal closure evidence", () => {
   for (const seed of TERMINAL_CODA_TARGET_SEEDS) {
-    const output = generateScore({
-      seed,
-      lengthTicks: FUGUE_FORM_REVIEW_LENGTH_TICKS,
-      mode: "endless-program",
-    });
+    const output = endlessReviewOutput(seed);
     const summary = output.diagnostics.terminalClosureReview;
 
     assert.equal(summary.classification, "accepted", seed);
@@ -124,17 +159,57 @@ test("endless-program target seeds keep stable terminal closure evidence", () =>
       seed,
     );
     assert.ok(summary.codaContinuity.derivationCount >= 4, seed);
+    assert.ok(summary.codaContinuity.subjectDerivedNoteCount >= 0, seed);
+    assert.ok(summary.codaContinuity.pedalRootCoverageRatio >= 0, seed);
+    assert.ok(Array.isArray(summary.codaContinuity.historicalFunctionCoverage), seed);
     assert.ok(summary.codaContinuity.movingVoiceCountBeforeCadence >= 1, seed);
   }
 });
 
+test("endless-program 22 seed codas expose final-subject and pedal-supported closing functions", () => {
+  const archetypeCounts = new Map<string, number>();
+  let acceptedCount = 0;
+  let finalFragmentCount = 0;
+  let pedalEntryCount = 0;
+  let subjectDerivedSeedCount = 0;
+
+  for (const seed of TERMINAL_CODA_QUALITY_REVIEW_SEEDS) {
+    const output = endlessReviewOutput(seed);
+    const summary = output.diagnostics.terminalClosureReview;
+    const continuity = summary.codaContinuity;
+
+    assert.equal(summary.classification, "accepted", seed);
+    assert.equal(summary.terminalClosureSource, "generated-coda", seed);
+    assert.equal(summary.unresolvedBoundaryDissonanceCount, 0, seed);
+    assert.equal(summary.finalAttackReentryVoiceCount, 0, seed);
+    assert.equal(continuity.classification, "accepted", seed);
+    assert.ok(continuity.codaArchetype, seed);
+    assert.ok(continuity.derivationCount >= 4, seed);
+    assert.ok(continuity.historicalFunctionCoverage.length >= 1, seed);
+
+    acceptedCount += 1;
+    archetypeCounts.set(continuity.codaArchetype, (archetypeCounts.get(continuity.codaArchetype) ?? 0) + 1);
+    finalFragmentCount += Number(continuity.codaArchetype === "final-fragment-entry");
+    pedalEntryCount += Number(continuity.codaArchetype === "pedal-entry-cadence");
+    subjectDerivedSeedCount += Number(continuity.subjectDerivedNoteCount > 0);
+
+    if (continuity.codaArchetype === "pedal-entry-cadence") {
+      assert.ok(continuity.pedalRootCoverageRatio >= 0.45, seed);
+      assert.ok(continuity.movingVoiceCountBeforeCadence >= 2, seed);
+      assert.ok(continuity.historicalFunctionCoverage.includes("pedal-supported"), seed);
+    }
+  }
+
+  assert.equal(acceptedCount, TERMINAL_CODA_QUALITY_REVIEW_SEEDS.length);
+  assert.ok(finalFragmentCount >= 1);
+  assert.ok(pedalEntryCount >= 1);
+  assert.ok((archetypeCounts.get("stretto-compaction") ?? 0) <= TERMINAL_CODA_QUALITY_REVIEW_SEEDS.length / 2);
+  assert.ok(subjectDerivedSeedCount >= 2);
+});
+
 test("endless-program target codas keep derived pre-cadence motion before the landing", () => {
   for (const seed of TERMINAL_CODA_TARGET_SEEDS) {
-    const output = generateScore({
-      seed,
-      lengthTicks: FUGUE_FORM_REVIEW_LENGTH_TICKS,
-      mode: "endless-program",
-    });
+    const output = endlessReviewOutput(seed);
     const summary = output.diagnostics.terminalClosureReview;
     const coda = output.diagnostics.sectionPlans.find((plan) => plan.terminalIntent === "self-contained-coda");
 
@@ -234,6 +309,9 @@ test("generated all-voice long-tone coda is review-visible even with stable fina
   assert.equal(summary.codaContinuity.classification, "review-required");
   assert.equal(summary.classification, "review-required");
   assert.equal(summary.codaContinuity.derivationCount, 0);
+  assert.equal(summary.codaContinuity.subjectDerivedNoteCount, 0);
+  assert.equal(summary.codaContinuity.pedalRootCoverageRatio, 1);
+  assert.deepEqual(summary.codaContinuity.historicalFunctionCoverage, []);
   assert.equal(summary.codaContinuity.movingVoiceCountBeforeCadence, 0);
   assert.ok(summary.codaContinuity.longestAllVoiceStaticSpanTicks >= TICKS_PER_QUARTER * 3);
   assert.equal(codaWindow?.classification, "review-required");
@@ -241,11 +319,7 @@ test("generated all-voice long-tone coda is review-visible even with stable fina
 
 test("modal endless-program target codas keep modal terminal rhetoric", () => {
   for (const seed of ["modal-cadence", "dense-modal"] as const) {
-    const output = generateScore({
-      seed,
-      lengthTicks: FUGUE_FORM_REVIEW_LENGTH_TICKS,
-      mode: "endless-program",
-    });
+    const output = endlessReviewOutput(seed);
     const coda = output.diagnostics.sectionPlans.find((plan) => plan.terminalIntent === "self-contained-coda");
 
     assert.ok(coda, seed);
@@ -296,7 +370,7 @@ test("short endless-program intent keeps fallback terminal-boundary safety net",
 
 test("endless-program coda reserves planner-visible phrase time before the boundary", () => {
   const lengthTicks = FUGUE_FORM_REVIEW_LENGTH_TICKS;
-  const output = generateScore({ seed: "fugue-smoke", lengthTicks, mode: "endless-program" });
+  const output = endlessReviewOutput("fugue-smoke");
   const coda = output.diagnostics.sectionPlans.find((plan) => plan.terminalIntent === "self-contained-coda");
 
   assert.ok(coda);

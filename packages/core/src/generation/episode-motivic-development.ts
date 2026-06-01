@@ -22,6 +22,9 @@ type SubjectFreePlanContext = {
 export function annotateEpisodeMotivicDerivations(notes: NoteEvent[], sectionPlans: readonly HarmonicPlan[]): void {
   const derivationCache = new Map<string, EpisodeMotivicDerivation>();
   forEachSubjectFreeMotivicNoteInPlan(notes, sectionPlans, (note, context) => {
+    if (context.plan.terminalIntent === "self-contained-coda" && note.motivicDerivation !== undefined) {
+      return;
+    }
     const key = motivicDerivationCacheKey(note, context);
     let derivation = derivationCache.get(key);
     if (derivation === undefined) {
