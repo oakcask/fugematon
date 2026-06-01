@@ -9,6 +9,13 @@ type AudioTestWindow = Window &
     };
   };
 
+type GenerationLockTestWindow = Window &
+  typeof globalThis & {
+    __generationLockTest: {
+      resolveNext: () => void;
+    };
+  };
+
 const VIEWPORTS = [
   { name: "desktop", size: { width: 1280, height: 900 } },
   { name: "mobile", size: { width: 390, height: 844 } },
@@ -138,6 +145,117 @@ test("syncs the seed with the URL query string", async ({ page }) => {
   await page.goBack();
   await expect(seedInput).toHaveValue("url-smoke");
   expect(new URL(page.url()).searchParams.get("seed")).toBe("url-smoke");
+});
+
+test("locks playback controls while primary generation is running", async ({ page }) => {
+  await page.addInitScript(() => {
+    type PendingRequest = {
+      requestId: number;
+      seed: string;
+      performanceProfileId: string;
+      segmentIndex: number;
+      mode?: string;
+    };
+
+    const pendingRequests: PendingRequest[] = [];
+    const listeners: Array<(event: MessageEvent) => void> = [];
+
+    function createResponse(request: PendingRequest): unknown {
+      return {
+        type: "generated",
+        requestId: request.requestId,
+        seed: request.seed,
+        performanceProfileId: request.performanceProfileId,
+        model: {
+          bpm: 84,
+          ticksPerQuarter: 480,
+          timeSignature: { numerator: 4, denominator: 4 },
+          keySignature: { tonic: "C", mode: "major" },
+          totalTicks: 480,
+          totalSeconds: 0.5,
+          notes: [],
+          stateTransitions: [],
+          subjectEntries: [],
+          performanceProfile: { id: request.performanceProfileId, name: request.performanceProfileId },
+          pitchRange: { min: 60, max: 60 },
+        },
+        deadlineResult: {
+          mode: request.mode ?? "continuous-fugue",
+          segmentIndex: request.segmentIndex,
+          elapsedMs: 1,
+          deadlineExceededByMs: 0,
+          timedOut: false,
+          hardConstraintSatisfied: true,
+          returnedCandidateKind: "generated",
+          hardConstraintSource: "generated",
+          referenceDiagnosticsPreserved: true,
+          qualityVectorPreserved: true,
+          reviewSignalsRemainVisible: [],
+        },
+        reviewSnapshot: {
+          hardConstraintsSatisfied: true,
+          fallbackPassageCount: 0,
+          issueCount: 0,
+          warningCount: 0,
+          qualityVectorStatus: "passed",
+          terminalClosureStatus: "not-required",
+          terminalClosureSource: "not-required",
+          continuousSegmentContinuityStatus: "not-required",
+        },
+        nextSegmentSnapshot: {},
+      };
+    }
+
+    class DeferredGenerationWorker {
+      postMessage(message: PendingRequest): void {
+        pendingRequests.push(message);
+      }
+
+      addEventListener(type: string, listener: EventListenerOrEventListenerObject): void {
+        if (type !== "message") {
+          return;
+        }
+        listeners.push(listener as (event: MessageEvent) => void);
+      }
+
+      terminate(): void {}
+    }
+
+    const target = window as GenerationLockTestWindow;
+    target.Worker = DeferredGenerationWorker as unknown as typeof Worker;
+    target.__generationLockTest = {
+      resolveNext(): void {
+        const request = pendingRequests.shift();
+        if (request === undefined) {
+          return;
+        }
+
+        const event = new MessageEvent("message", { data: createResponse(request) });
+        for (const listener of listeners) {
+          listener(event);
+        }
+      },
+    };
+  });
+
+  await page.goto("/");
+
+  await expect(page.getByText("Generating score")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Play" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Stop" })).toBeDisabled();
+
+  await page.evaluate(() => (window as GenerationLockTestWindow).__generationLockTest.resolveNext());
+  await expect(page.getByText("Ready to play")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Play" })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Stop" })).toBeEnabled();
+
+  const seedInput = page.getByLabel("Seed");
+  await seedInput.fill("locked-regenerate");
+  await page.getByRole("button", { name: "Regenerate" }).click();
+
+  await expect(page.getByText("Generating score")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Play" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Stop" })).toBeDisabled();
 });
 
 test("animates the background only while playback is active", async ({ page }) => {
