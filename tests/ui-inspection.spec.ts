@@ -16,6 +16,14 @@ type GenerationLockTestWindow = Window &
     };
   };
 
+type ContinuousBoundaryTestWindow = Window &
+  typeof globalThis & {
+    __continuousBoundaryTest: {
+      advanceTo: (second: number) => void;
+      resolvePrefetch: () => void;
+    };
+  };
+
 const VIEWPORTS = [
   { name: "desktop", size: { width: 1280, height: 900 } },
   { name: "mobile", size: { width: 390, height: 844 } },
@@ -176,6 +184,7 @@ test("locks playback controls while primary generation is running", async ({ pag
           notes: [],
           stateTransitions: [],
           subjectEntries: [],
+          sectionPlans: [],
           performanceProfile: { id: request.performanceProfileId, name: request.performanceProfileId },
           pitchRange: { min: 60, max: 60 },
         },
@@ -256,6 +265,199 @@ test("locks playback controls while primary generation is running", async ({ pag
   await expect(page.getByText("Generating score")).toBeVisible();
   await expect(page.getByRole("button", { name: "Play" })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Stop" })).toBeDisabled();
+});
+
+test("keeps the score card on the current continuous segment until the playback boundary", async ({ page }) => {
+  await page.addInitScript(() => {
+    type PendingRequest = {
+      requestId: number;
+      seed: string;
+      performanceProfileId: string;
+      segmentIndex: number;
+      mode?: string;
+    };
+
+    const listeners: Array<(event: MessageEvent) => void> = [];
+    const pendingPrefetches: PendingRequest[] = [];
+    const testState = {
+      currentTime: 0,
+    };
+
+    function createModel(request: PendingRequest): unknown {
+      const isContinuation = request.segmentIndex > 0;
+
+      return {
+        bpm: 120,
+        ticksPerQuarter: 480,
+        timeSignature: { numerator: 4, denominator: 4 },
+        keySignature: isContinuation ? { tonic: "G", mode: "major" } : { tonic: "C", mode: "major" },
+        totalTicks: 9600,
+        totalSeconds: 10,
+        notes: [],
+        stateTransitions: isContinuation ? ["episode"] : ["exposition"],
+        subjectEntries: isContinuation ? [{ voice: "soprano", startTick: 0, state: "episode" }] : [],
+        sectionPlans: [],
+        performanceProfile: { id: request.performanceProfileId, version: 3 },
+        pitchRange: { min: 60, max: 72 },
+      };
+    }
+
+    function createResponse(request: PendingRequest): unknown {
+      return {
+        type: "generated",
+        requestId: request.requestId,
+        seed: request.seed,
+        performanceProfileId: request.performanceProfileId,
+        model: createModel(request),
+        deadlineResult: {
+          mode: request.mode ?? "continuous-fugue",
+          segmentIndex: request.segmentIndex,
+          elapsedMs: 1,
+          deadlineExceededByMs: 0,
+          timedOut: false,
+          hardConstraintSatisfied: true,
+          returnedCandidateKind: "generated",
+          hardConstraintSource: "generated",
+          referenceDiagnosticsPreserved: true,
+          qualityVectorPreserved: true,
+          reviewSignalsRemainVisible: [],
+        },
+        reviewSnapshot: {
+          hardConstraintsSatisfied: true,
+          fallbackPassageCount: 0,
+          issueCount: 0,
+          warningCount: 0,
+          qualityVectorStatus: "passed",
+          terminalClosureStatus: "not-required",
+          terminalClosureSource: "not-required",
+          continuousSegmentContinuityStatus: request.segmentIndex > 0 ? "passed" : "not-required",
+        },
+        nextSegmentSnapshot: { segmentIndex: request.segmentIndex },
+      };
+    }
+
+    function emitResponse(request: PendingRequest): void {
+      const event = new MessageEvent("message", { data: createResponse(request) });
+      for (const listener of listeners) {
+        listener(event);
+      }
+    }
+
+    class ControlledGenerationWorker {
+      postMessage(message: PendingRequest): void {
+        if (message.segmentIndex === 0) {
+          window.setTimeout(() => emitResponse(message), 0);
+          return;
+        }
+
+        pendingPrefetches.push(message);
+      }
+
+      addEventListener(type: string, listener: EventListenerOrEventListenerObject): void {
+        if (type !== "message") {
+          return;
+        }
+        listeners.push(listener as (event: MessageEvent) => void);
+      }
+
+      terminate(): void {}
+    }
+
+    class FakeAudioParam {
+      value = 0;
+
+      setValueAtTime(_value: number, _time: number): void {}
+
+      linearRampToValueAtTime(_value: number, _time: number): void {}
+    }
+
+    class FakeAudioNode {
+      connect<TNode>(node: TNode): TNode {
+        return node;
+      }
+
+      disconnect(): void {}
+    }
+
+    class FakeGainNode extends FakeAudioNode {
+      readonly gain = new FakeAudioParam();
+    }
+
+    class FakeStereoPannerNode extends FakeAudioNode {
+      readonly pan = new FakeAudioParam();
+    }
+
+    class FakeOscillatorNode extends FakeAudioNode {
+      readonly frequency = new FakeAudioParam();
+      type: OscillatorType = "sine";
+
+      start(_time?: number): void {}
+
+      stop(_time?: number): void {}
+
+      addEventListener(
+        _type: string,
+        _listener: EventListenerOrEventListenerObject,
+        _options?: AddEventListenerOptions,
+      ): void {}
+    }
+
+    class FakeAudioContext {
+      readonly destination = new FakeAudioNode();
+
+      get currentTime(): number {
+        return testState.currentTime;
+      }
+
+      createGain(): GainNode {
+        return new FakeGainNode() as unknown as GainNode;
+      }
+
+      createOscillator(): OscillatorNode {
+        return new FakeOscillatorNode() as unknown as OscillatorNode;
+      }
+
+      createStereoPanner(): StereoPannerNode {
+        return new FakeStereoPannerNode() as unknown as StereoPannerNode;
+      }
+
+      resume(): Promise<void> {
+        return Promise.resolve();
+      }
+    }
+
+    const target = window as ContinuousBoundaryTestWindow;
+    target.Worker = ControlledGenerationWorker as unknown as typeof Worker;
+    target.AudioContext = FakeAudioContext as unknown as typeof AudioContext;
+    target.__continuousBoundaryTest = {
+      advanceTo(second: number): void {
+        testState.currentTime = 0.12 + second;
+      },
+      resolvePrefetch(): void {
+        const request = pendingPrefetches.shift();
+        if (request !== undefined) {
+          emitResponse(request);
+        }
+      },
+    };
+  });
+
+  await page.goto("/");
+  await expect(page.locator("#key-signature")).toHaveText("C Major");
+  await expect(page.locator("#segment-index")).toHaveText("0");
+
+  await page.getByRole("button", { name: "Play" }).click();
+  await page.evaluate(() => (window as ContinuousBoundaryTestWindow).__continuousBoundaryTest.advanceTo(5));
+  await expect.poll(() => page.locator("#playback-position").textContent()).toContain("5s / 10.0s");
+
+  await page.evaluate(() => (window as ContinuousBoundaryTestWindow).__continuousBoundaryTest.resolvePrefetch());
+  await expect(page.locator("#generated-segment-index")).toHaveText("1");
+  await expect(page.locator("#key-signature")).toHaveText("C Major");
+  await expect(page.locator("#segment-index")).toHaveText("0");
+
+  await page.evaluate(() => (window as ContinuousBoundaryTestWindow).__continuousBoundaryTest.advanceTo(10));
+  await expect(page.locator("#segment-index")).toHaveText("1");
+  await expect(page.locator("#key-signature")).toHaveText("G Major");
 });
 
 test("animates the background only while playback is active", async ({ page }) => {

@@ -220,6 +220,7 @@ function createTinyPlaybackModel(input: { totalSeconds: number; notes: TinyPlayb
     })),
     stateTransitions: [],
     subjectEntries: [],
+    sectionPlans: [],
     performanceProfile: {
       id: "strict-counterpoint",
       version: 1,

@@ -3,6 +3,9 @@ import test from "node:test";
 import { generateScore } from "@fugematon/core";
 import {
   createPlaybackModel,
+  createPlaybackTimelineSegment,
+  createScoreCardSnapshot,
+  findActivePlaybackSegment,
   formatBarBeatDuration,
   formatBarBeatPosition,
   formatKeySignature,
@@ -27,6 +30,7 @@ test("createPlaybackModel extracts timing metadata and notes", () => {
   assert.equal(model.notes.length, output.diagnostics.noteCount);
   assert.deepEqual(model.stateTransitions, output.diagnostics.stateTransitions);
   assert.equal(model.subjectEntries.length, output.diagnostics.subjectEntries.length);
+  assert.deepEqual(model.sectionPlans, output.diagnostics.sectionPlans);
   assert.deepEqual(model.performanceProfile, { id: "strict-counterpoint", version: 3 });
   assert.ok(model.notes.some((note) => note.entry?.state === "exposition"));
   assert.ok(model.notes.some((note) => note.entry?.answerKind === "tonal"));
@@ -45,6 +49,44 @@ test("createPlaybackModel extracts timing metadata and notes", () => {
   assert.ok(model.bpm >= 66);
   assert.ok(model.totalSeconds > 0);
   assert.ok(model.pitchRange.min <= model.pitchRange.max);
+});
+
+test("playback timeline resolver keeps the prior segment before the next offset", () => {
+  const first = createPlaybackModel(generateScore({ seed: "timeline-first", lengthTicks: 7680 }));
+  const second = createPlaybackModel(generateScore({ seed: "timeline-second", lengthTicks: 7680 }));
+  const timeline = [
+    createPlaybackTimelineSegment(first, { segmentIndex: 0, seed: "timeline-first" }),
+    createPlaybackTimelineSegment(second, {
+      segmentIndex: 1,
+      seed: "timeline-second",
+      offsetSecond: first.totalSeconds,
+    }),
+  ];
+
+  assert.equal(findActivePlaybackSegment(timeline, first.totalSeconds - 0.001)?.segmentIndex, 0);
+  assert.equal(findActivePlaybackSegment(timeline, first.totalSeconds)?.segmentIndex, 1);
+  assert.equal(findActivePlaybackSegment(timeline, first.totalSeconds + 0.001)?.segmentIndex, 1);
+});
+
+test("score-card snapshot reports the active segment context", () => {
+  const first = createPlaybackModel(generateScore({ seed: "snapshot-first", lengthTicks: 7680 }));
+  const second = createPlaybackModel(generateScore({ seed: "snapshot-second", lengthTicks: 7680 }));
+  const active = createPlaybackTimelineSegment(second, {
+    segmentIndex: 2,
+    seed: "snapshot-second",
+    offsetSecond: first.totalSeconds,
+  });
+  const snapshot = createScoreCardSnapshot(active, first.totalSeconds + 1.25);
+
+  assert.equal(snapshot?.segmentIndex, 2);
+  assert.equal(snapshot?.seed, "snapshot-second");
+  assert.ok(snapshot !== undefined);
+  assert.ok(Math.abs(snapshot.segmentSecond - 1.25) < 0.000_001);
+  assert.equal(snapshot?.model.keySignature, second.keySignature);
+  assert.equal(snapshot?.model.bpm, second.bpm);
+  assert.equal(snapshot?.model.notes.length, second.notes.length);
+  assert.equal(snapshot?.model.stateTransitions.length, second.stateTransitions.length);
+  assert.equal(snapshot?.model.subjectEntries.length, second.subjectEntries.length);
 });
 
 test("createPlaybackModel can select the organ default performance profile", () => {
