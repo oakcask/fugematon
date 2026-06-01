@@ -29,6 +29,8 @@ class SpessaSynthSoundFontAdapter implements SoundFontPlaybackAdapter {
   private loadPromise: Promise<void> | undefined;
   private loadingAssetId: string | undefined;
   private loadedAssetId: string | undefined;
+  private cachedAssetId: string | undefined;
+  private cachedSoundBankBuffer: ArrayBuffer | undefined;
 
   constructor(context: BaseAudioContext, options: SpessaSynthAdapterOptions) {
     this.context = context;
@@ -65,12 +67,21 @@ class SpessaSynthSoundFontAdapter implements SoundFontPlaybackAdapter {
   }
 
   stop(): void {
-    this.synth?.stopAll(true);
+    if (this.synth === undefined) {
+      return;
+    }
+
+    this.synth.stopAll(true);
+    this.synth.destroy();
+    this.synth = undefined;
+    this.loadedAssetId = undefined;
+    this.loadingAssetId = undefined;
+    this.loadPromise = undefined;
   }
 
   private async loadAsset(asset: SoundFontAssetDescriptor): Promise<void> {
     try {
-      const soundBankBuffer = await this.fetchSoundFont(asset);
+      const soundBankBuffer = await this.loadSoundBankBuffer(asset);
       await this.ensureWorklet();
       const synth = new WorkletSynthesizer(this.context);
       synth.connect(this.output ?? this.context.destination);
@@ -79,11 +90,24 @@ class SpessaSynthSoundFontAdapter implements SoundFontPlaybackAdapter {
       this.synth?.destroy();
       this.synth = synth;
       this.loadedAssetId = asset.assetId;
+      this.loadingAssetId = undefined;
+      this.loadPromise = undefined;
     } catch (error) {
       this.loadPromise = undefined;
       this.loadingAssetId = undefined;
       throw error;
     }
+  }
+
+  private async loadSoundBankBuffer(asset: SoundFontAssetDescriptor): Promise<ArrayBuffer> {
+    if (this.cachedAssetId === asset.assetId && this.cachedSoundBankBuffer !== undefined) {
+      return this.cachedSoundBankBuffer.slice(0);
+    }
+
+    const soundBankBuffer = await this.fetchSoundFont(asset);
+    this.cachedAssetId = asset.assetId;
+    this.cachedSoundBankBuffer = soundBankBuffer.slice(0);
+    return soundBankBuffer;
   }
 
   private ensureWorklet(): Promise<void> {
@@ -93,17 +117,26 @@ class SpessaSynthSoundFontAdapter implements SoundFontPlaybackAdapter {
 }
 
 async function fetchSoundFontArrayBuffer(asset: SoundFontAssetDescriptor): Promise<ArrayBuffer> {
-  const response = await fetch(
-    asset.url,
-    asset.integrity === undefined ? undefined : { integrity: asset.integrity },
-  );
+  const response = await fetch(asset.url, asset.integrity === undefined ? undefined : { integrity: asset.integrity });
   if (!response.ok) {
     throw new Error(
       `web.audio.soundfont-asset-fetch-failed: SoundFont asset request failed; why=the optional SoundFont file must be reachable before sample playback can start; action=place the configured SF3 asset at the published asset URL and verify notices metadata`,
     );
   }
 
-  return response.arrayBuffer();
+  const buffer = await response.arrayBuffer();
+  if (isLikelyHtmlResponse(buffer)) {
+    throw new Error(
+      "web.audio.soundfont-asset-html-response: SoundFont asset request returned HTML instead of SF3 data; why=SpessaSynth cannot parse the Vite fallback document as a SoundFont; action=run pnpm web:soundfont:prepare or place MuseScore_General.sf3 under packages/web/public/soundfonts before selecting the soundfont pilot",
+    );
+  }
+
+  return buffer;
+}
+
+function isLikelyHtmlResponse(buffer: ArrayBuffer): boolean {
+  const prefix = new TextDecoder("ascii").decode(buffer.slice(0, 16)).trimStart().toLowerCase();
+  return prefix.startsWith("<!do") || prefix.startsWith("<html");
 }
 
 function scheduleEvent(synth: WorkletSynthesizer, event: SoundFontRendererEvent, currentTimeSecond: number): void {

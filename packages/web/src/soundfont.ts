@@ -48,6 +48,7 @@ export type SoundFontAssetEnvironment = {
 
 const MUSESCORE_GENERAL_SF3_FILE_NAME = "MuseScore_General.sf3";
 const MUSESCORE_GENERAL_SF3_LOCAL_URL = `/soundfonts/${MUSESCORE_GENERAL_SF3_FILE_NAME}`;
+const SOUNDFONT_PROTOTYPE_PROGRAM = 46;
 
 export const MUSESCORE_GENERAL_SF3_PROTOTYPE = createMuseScoreGeneralSoundFontDescriptor();
 
@@ -83,15 +84,16 @@ export function createSoundFontEvents(
   for (const note of activeNotes) {
     const noteStartSecond = startAtSecond + Math.max(0, note.startSecond - offsetSecond);
     const noteStopSecond = startAtSecond + note.startSecond + note.durationSecond - offsetSecond;
+    const program = soundFontProgram(note.program);
     const currentProgram = programByChannel.get(note.channel);
 
-    if (currentProgram !== note.program) {
-      programByChannel.set(note.channel, note.program);
+    if (currentProgram !== program) {
+      programByChannel.set(note.channel, program);
       events.push({
         kind: "program-change",
         timeSecond: noteStartSecond,
         channel: note.channel,
-        program: note.program,
+        program,
       });
     }
 
@@ -130,6 +132,10 @@ function eventRank(event: SoundFontRendererEvent): number {
   }
 
   return event.kind === "note-off" ? 1 : 2;
+}
+
+function soundFontProgram(_profileProgram: number): number {
+  return SOUNDFONT_PROTOTYPE_PROGRAM;
 }
 
 function readSoundFontAssetEnvironment(): SoundFontAssetEnvironment {

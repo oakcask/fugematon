@@ -11,6 +11,8 @@ on:
       - playwright.prod.config.ts
       - tests/**
       - packages/**
+      - workflow-scripts/web-playback-assets.mjs
+      - workflow-scripts/web-playback-assets.test.mjs
   push:
     branches:
       - main
@@ -23,6 +25,8 @@ on:
       - playwright.prod.config.ts
       - tests/**
       - packages/**
+      - workflow-scripts/web-playback-assets.mjs
+      - workflow-scripts/web-playback-assets.test.mjs
 
 permissions:
   contents: read
@@ -37,7 +41,7 @@ env:
 
 jobs:
   build-and-ui-smoke:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
 
     steps:
@@ -54,7 +58,15 @@ jobs:
           cache: pnpm
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+      - name: Install MuseScore General SoundFont package
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends musescore-general-soundfont-small
+      - name: Verify MuseScore General SoundFont license
+        run: pnpm web:soundfont:prepare
       - name: Build production bundle
+        env:
+          VITE_FUGEMATON_SOUNDFONT_URL: /soundfonts/MuseScore_General.sf3
         run: pnpm build
       - name: Install Playwright browser
         run: pnpm exec playwright install --with-deps chromium
@@ -83,7 +95,7 @@ jobs:
   deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: build-and-ui-smoke
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       pages: write

@@ -13,8 +13,8 @@ test("createSoundFontEvents maps playback notes to MIDI-style soundfont events",
   const model = createPlaybackModel(generateScore({ seed: "fugue-smoke", lengthTicks: 7680 }), "organ-default");
   const events = createSoundFontEvents(model, 10);
 
-  assert.ok(events.some((event) => event.kind === "program-change" && event.channel === 0 && event.program === 19));
-  assert.ok(events.some((event) => event.kind === "program-change" && event.channel === 3 && event.program === 32));
+  assert.ok(events.some((event) => event.kind === "program-change" && event.channel === 0 && event.program === 46));
+  assert.ok(events.some((event) => event.kind === "program-change" && event.channel === 3 && event.program === 46));
   assert.ok(events.some((event) => event.kind === "note-on" && event.timeSecond >= 10));
   assert.ok(events.some((event) => event.kind === "note-off" && event.timeSecond > 10));
 });
@@ -37,10 +37,10 @@ test("MuseScore General prototype descriptor points at a lazy static asset", () 
 test("MuseScore General descriptor can be configured as an external distributed asset", () => {
   const descriptor = createMuseScoreGeneralSoundFontDescriptor({
     VITE_FUGEMATON_SOUNDFONT_URL: " https://assets.example.invalid/MuseScore_General.sf3 ",
-    VITE_FUGEMATON_SOUNDFONT_INTEGRITY: " sha256-test ",
+    VITE_FUGEMATON_SOUNDFONT_INTEGRITY: " sha256-dGVzdA== ",
   });
 
   assert.equal(descriptor.distributed, true);
   assert.equal(descriptor.url, "https://assets.example.invalid/MuseScore_General.sf3");
-  assert.equal(descriptor.integrity, "sha256-test");
+  assert.equal(descriptor.integrity, "sha256-dGVzdA==");
 });
