@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { generateScore } from "@fugematon/core";
-import { createGainEnvelope, createScheduledNotes, midiToFrequency } from "./audio.js";
-import { createPlaybackModel } from "./score.js";
+import { createGainEnvelope, createScheduledNotes, midiToFrequency, ScorePlayer } from "./audio.js";
+import { createPlaybackModel, type PlaybackModel } from "./score.js";
 
 test("createScheduledNotes maps playback notes to absolute audio times", () => {
   const model = createPlaybackModel(generateScore({ seed: "fugue-smoke", lengthTicks: 7680 }));
@@ -82,6 +82,91 @@ test("midiToFrequency uses A4 as 440hz", () => {
   assert.ok(Math.abs(midiToFrequency(60) - 261.625565) < 0.000001);
 });
 
+test("ScorePlayer queueNext schedules the next segment exactly at the playback boundary", async () => {
+  const context = new FakeAudioContext();
+  const player = new ScorePlayer(context as unknown as AudioContext);
+  const first = createTinyPlaybackModel({
+    totalSeconds: 4,
+    notes: [{ startSecond: 0, durationSecond: 1 }],
+  });
+  const next = createTinyPlaybackModel({
+    totalSeconds: 3,
+    notes: [{ startSecond: 0, durationSecond: 1 }],
+  });
+
+  assert.equal(await player.play(first), true);
+  assert.equal(context.oscillatorStarts[0], 0.12);
+
+  context.currentTime = 1;
+  assert.equal(player.queueNext(next, 4), true);
+
+  assert.equal(context.oscillatorStarts.at(-1), 4.12);
+});
+
+test("ScorePlayer queueNext leaves existing release tails scheduled", async () => {
+  const context = new FakeAudioContext();
+  const player = new ScorePlayer(context as unknown as AudioContext);
+  const releaseSeconds = 0.5;
+  const first = createTinyPlaybackModel({
+    totalSeconds: 4,
+    notes: [{ startSecond: 3.5, durationSecond: 0.5, releaseSeconds }],
+  });
+  const next = createTinyPlaybackModel({
+    totalSeconds: 3,
+    notes: [{ startSecond: 0, durationSecond: 1, releaseSeconds }],
+  });
+
+  assert.equal(await player.play(first), true);
+  const firstTailStop = context.oscillatorStops[0];
+  context.currentTime = 1;
+
+  assert.equal(player.queueNext(next, 4), true);
+
+  assert.equal(context.immediateStops, 0);
+  assert.equal(context.oscillatorStops[0], firstTailStop);
+  assert.ok(context.oscillatorStops[0]! > 4.12);
+});
+
+test("ScorePlayer queueNext extends playback duration across the original segment boundary", async () => {
+  const context = new FakeAudioContext();
+  const player = new ScorePlayer(context as unknown as AudioContext);
+  const first = createTinyPlaybackModel({
+    totalSeconds: 4,
+    notes: [{ startSecond: 0, durationSecond: 1 }],
+  });
+  const next = createTinyPlaybackModel({
+    totalSeconds: 3,
+    notes: [{ startSecond: 0, durationSecond: 1 }],
+  });
+
+  assert.equal(await player.play(first), true);
+  context.currentTime = 1;
+  assert.equal(player.queueNext(next, 4), true);
+
+  context.currentTime = 4.2;
+  assert.equal(player.isPlaying, true);
+  assert.equal(round(player.playbackSecond), 4.08);
+
+  context.currentTime = 7.2;
+  assert.equal(player.isPlaying, false);
+  assert.equal(player.playbackSecond, 7);
+});
+
+test("ScorePlayer queueNext rejects invalid boundaries", async () => {
+  const context = new FakeAudioContext();
+  const player = new ScorePlayer(context as unknown as AudioContext);
+  const model = createTinyPlaybackModel({
+    totalSeconds: 4,
+    notes: [{ startSecond: 0, durationSecond: 1 }],
+  });
+
+  assert.equal(player.queueNext(model, 4), false);
+  assert.equal(await player.play(model), true);
+  context.currentTime = 2;
+  assert.equal(player.queueNext(model, 1), false);
+  assert.equal(player.queueNext(model, Number.NaN), false);
+});
+
 function round(value: number): number {
   return Math.round(value * 1_000_000) / 1_000_000;
 }
@@ -96,4 +181,125 @@ function expectedSustainGain(scheduled: ReturnType<typeof createScheduledNotes>[
   return round(
     scheduled.note.gain * (scheduled.note.volume / 127) * scheduled.note.webAudioSynth.sustainLevel * velocityScale,
   );
+}
+
+type TinyPlaybackNoteInput = {
+  startSecond: number;
+  durationSecond: number;
+  releaseSeconds?: number;
+};
+
+function createTinyPlaybackModel(input: { totalSeconds: number; notes: TinyPlaybackNoteInput[] }): PlaybackModel {
+  return {
+    bpm: 60,
+    ticksPerQuarter: 480,
+    timeSignature: { numerator: 4, denominator: 4 },
+    keySignature: { tonic: "C", mode: "major" },
+    totalTicks: input.totalSeconds * 480,
+    totalSeconds: input.totalSeconds,
+    notes: input.notes.map((note, index) => ({
+      voice: "soprano",
+      startTick: note.startSecond * 480,
+      endTick: (note.startSecond + note.durationSecond) * 480,
+      startSecond: note.startSecond,
+      durationSecond: note.durationSecond,
+      pitch: 60 + index,
+      velocity: 96,
+      volume: 100,
+      gain: 0.2,
+      pan: 64,
+      oscillatorType: "sine",
+      webAudioSynth: {
+        attackSeconds: 0.01,
+        decaySeconds: 0.02,
+        sustainLevel: 0.7,
+        releaseSeconds: note.releaseSeconds ?? 0.1,
+        velocityToAttackEmphasis: 0.1,
+        velocityToSustainGain: 0.2,
+      },
+    })),
+    stateTransitions: [],
+    subjectEntries: [],
+    performanceProfile: {
+      id: "strict-counterpoint",
+      version: 1,
+    },
+    pitchRange: { min: 60, max: 60 + input.notes.length },
+  };
+}
+
+class FakeAudioParam {
+  value = 0;
+
+  setValueAtTime(_value: number, _time: number): void {}
+
+  linearRampToValueAtTime(_value: number, _time: number): void {}
+}
+
+class FakeAudioNode {
+  connect<TNode>(node: TNode): TNode {
+    return node;
+  }
+
+  disconnect(): void {}
+}
+
+class FakeGainNode extends FakeAudioNode {
+  readonly gain = new FakeAudioParam();
+}
+
+class FakeStereoPannerNode extends FakeAudioNode {
+  readonly pan = new FakeAudioParam();
+}
+
+class FakeOscillatorNode extends FakeAudioNode {
+  readonly frequency = new FakeAudioParam();
+  type: OscillatorType = "sine";
+
+  constructor(private readonly context: FakeAudioContext) {
+    super();
+  }
+
+  start(time?: number): void {
+    this.context.oscillatorStarts.push(time ?? this.context.currentTime);
+  }
+
+  stop(time?: number): void {
+    if (time === undefined) {
+      this.context.immediateStops += 1;
+      return;
+    }
+
+    this.context.oscillatorStops.push(time);
+  }
+
+  addEventListener(
+    _type: string,
+    _listener: EventListenerOrEventListenerObject,
+    _options?: AddEventListenerOptions,
+  ): void {}
+}
+
+class FakeAudioContext {
+  currentTime = 0;
+  readonly destination = new FakeAudioNode();
+  readonly oscillatorStarts: number[] = [];
+  readonly oscillatorStops: number[] = [];
+  immediateStops = 0;
+
+  createGain(): GainNode {
+    return new FakeGainNode() as unknown as GainNode;
+  }
+
+  createOscillator(): OscillatorNode {
+    return new FakeOscillatorNode(this) as unknown as OscillatorNode;
+  }
+
+  createStereoPanner(): StereoPannerNode {
+    return new FakeStereoPannerNode() as unknown as StereoPannerNode;
+  }
+
+  resume(): Promise<void> {
+    return Promise.resolve();
+  }
 }

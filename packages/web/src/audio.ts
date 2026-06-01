@@ -126,6 +126,24 @@ export class ScorePlayer {
     return true;
   }
 
+  queueNext(model: PlaybackModel, boundaryPlaybackSecond: number): boolean {
+    if (
+      this.startedAtSecond === undefined ||
+      !Number.isFinite(boundaryPlaybackSecond) ||
+      boundaryPlaybackSecond < this.playbackSecond
+    ) {
+      return false;
+    }
+
+    const startAtSecond = this.startedAtSecond + boundaryPlaybackSecond - this.playbackOffsetSecond;
+    for (const scheduled of createScheduledNotes(model, startAtSecond)) {
+      this.scheduleOrganNote(scheduled);
+    }
+    this.durationSecond = Math.max(this.durationSecond, boundaryPlaybackSecond + model.totalSeconds);
+
+    return true;
+  }
+
   get playbackSecond(): number {
     if (this.startedAtSecond === undefined) {
       return this.playbackOffsetSecond;
