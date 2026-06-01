@@ -27,12 +27,14 @@ export type SoundFontAssetDescriptor = {
   assetId: string;
   displayName: string;
   fileName: string;
+  url: string;
   license: string;
   sourceUrl: string;
   distributed: boolean;
 };
 
 export type SoundFontPlaybackAdapter = {
+  connect?(destination: AudioNode): void;
   load(asset: SoundFontAssetDescriptor): Promise<void>;
   schedule(events: readonly SoundFontRendererEvent[]): void;
   stop(): void;
@@ -42,6 +44,7 @@ export const MUSESCORE_GENERAL_SF3_PROTOTYPE: SoundFontAssetDescriptor = {
   assetId: "musescore-general-sf3-prototype",
   displayName: "MuseScore General SF3 prototype",
   fileName: "MuseScore_General.sf3",
+  url: "/soundfonts/MuseScore_General.sf3",
   license: "MIT",
   sourceUrl: "https://musescore.org/en/handbook/soundfonts",
   distributed: false,

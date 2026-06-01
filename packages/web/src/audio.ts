@@ -122,6 +122,7 @@ export class ScorePlayer {
     this.master = context.createGain();
     this.master.gain.value = MASTER_GAIN;
     this.master.connect(context.destination);
+    this.soundFontAdapter?.connect?.(this.master);
   }
 
   readonly rendererId: PlaybackRendererId;

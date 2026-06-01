@@ -1,6 +1,6 @@
 # Playback source realism feasibility
 
-Status: investigation complete; first prototype scaffold added. This note evaluates whether Fugematon should use SpessaSynth with a SoundFont, build a small browser sampler, or defer both until a notices page and asset metadata path exist.
+Status: investigation complete; SpessaSynth adapter prototype added. This note evaluates whether Fugematon should use SpessaSynth with a SoundFont, build a small browser sampler, or defer both until a notices page and asset metadata path exist.
 
 ## Decision Summary
 
@@ -28,7 +28,7 @@ That boundary is usable for either candidate. The next renderer should remain a 
 
 Feasibility: high for a pilot.
 
-SpessaSynth `spessasynth_lib` is a browser WebAudio wrapper around `spessasynth_core`. The npm page describes the wrapper as a browser library for SF2/SF3/DLS playback and shows the required AudioWorklet processor asset setup. It is Apache-2.0 and has one runtime dependency, `spessasynth_core`. The npm page currently shows `spessasynth_lib` `3.27.8` as published one month before this investigation; the GitHub `master` package metadata has moved to the 4.x line and uses `spessasynth_core: latest`, so implementation must pin exact package versions and re-run dependency review when installing.
+SpessaSynth `spessasynth_lib` is a browser WebAudio wrapper around `spessasynth_core`. The npm page describes the wrapper as a browser library for SF2/SF3/DLS playback and shows the required AudioWorklet processor asset setup. It is Apache-2.0 and has one runtime dependency, `spessasynth_core`. Fresh npm registry metadata checked on 2026-06-01 shows `spessasynth_lib` `4.3.6` and `spessasynth_core` `4.3.7` as the current package line. `spessasynth_lib` still declares `spessasynth_core: latest`, so implementation must keep a package-manager override when installing.
 
 MuseScore_General.sf3 is attractive because it is General MIDI compatible. MuseScore's handbook says MuseScore_General.sf3 is a GM set with more than 128 instruments and lists the compressed `.sf3` at 35.9 MB, with a 208 MB `.sf2` version. The same handbook lists it as MIT licensed and credits S. Christian Collins. The exact asset file distributed with Fugematon must carry the upstream license and attribution file, not just a handbook citation.
 
@@ -49,7 +49,7 @@ Risks and mitigations:
 * Bundle size: do not eagerly include a 35.9 MB soundfont in the initial application bundle. Prefer lazy download with cache headers or a separate optional asset package.
 * License notices: Apache-2.0 and MIT notices are required in the app and release artifact.
 
-Dependency-review result: adopt with mitigations for a prototype, after pinning exact versions and inspecting the installed package contents. Do not adopt through a loose range or through `spessasynth_core: latest`.
+Dependency-review result: adopt with mitigations for a prototype. `spessasynth_lib@4.3.6` and `spessasynth_core@4.3.7` were inspected as published tarballs. The runtime tarballs contain built `dist` files, README, license, package metadata, and the required `spessasynth_processor.min.js` AudioWorklet processor; no install scripts run from the published package. Production audit reported no known vulnerabilities at adoption time. Keep `spessasynth_core` pinned through workspace overrides because the upstream `spessasynth_lib` dependency remains `latest`.
 
 ## Option B: Custom sampler plus VSCO Community WAV
 
@@ -109,6 +109,8 @@ Scope:
 * Add a `soundfont` renderer behind an explicit profile / feature switch.
 * Add SpessaSynth only after pinning exact `spessasynth_lib` and `spessasynth_core` versions and inspecting installed package files.
 * Pilot with a small locally documented `.sf3` asset path; do not load the soundfont on initial page load.
+* Decide and document SoundFont asset delivery before enabling the pilot in deployed builds: either include the `.sf3` in the web deploy artifact as a Vite public asset or fetch it from a documented external asset host / CDN.
+* Add CI coverage for the chosen delivery path so a configured distributed SoundFont URL has a matching asset manifest entry, license metadata, expected file name, and stable checksum or equivalent integrity record.
 * Keep oscillator playback as the default fallback until listening review confirms the SoundFont path improves clarity without masking score-level issues.
 
 Acceptance:
@@ -116,6 +118,7 @@ Acceptance:
 * `pnpm build` passes.
 * UI tests confirm the notices page is reachable and contains software and asset sections.
 * A build or unit test fails with a searchable error id when a configured distributed asset lacks license metadata.
+* A CI or build check fails with a searchable error id when the SoundFont pilot is enabled for deployment but the configured `.sf3` asset is missing from the deploy artifact or external asset manifest.
 * Manual listening review records oscillator vs SoundFont comparison for representative bass subject / answer windows and continuous segment boundaries.
 
 Out of scope:
@@ -128,23 +131,33 @@ Out of scope:
 
 ## Prototype Scaffold Added
 
-The first prototype pass adds the browser-side boundary without adopting SpessaSynth or distributing an audio asset yet:
+The first prototype pass added the browser-side boundary without adopting SpessaSynth or distributing an audio asset yet:
 
 * `packages/web/src/notices.ts` defines the notices data shape and validates distributed audio assets with the searchable error id `web.notices.missing-audio-asset-metadata`.
 * The web UI exposes a `Notices` section with software and audio asset lists. The current default state intentionally reports that no third-party runtime software or audio assets are distributed.
 * `packages/web/src/soundfont.ts` translates `PlaybackModel` notes into MIDI-style `program-change`, `note-on`, and `note-off` events using the existing performance profile channel/program fields.
 * `ScorePlayer` accepts `oscillator` and `soundfont-prototype` renderer ids. The SoundFont path requires an injected adapter and falls back to oscillator playback with `web.audio.soundfont-adapter-missing` until the pinned SpessaSynth adapter and `.sf3` asset metadata are added.
 
+The second prototype pass adds the pinned SpessaSynth adapter without distributing a SoundFont asset:
+
+* `packages/web/src/spessasynth-adapter.ts` lazy-loads `spessasynth_lib`, bundles the upstream AudioWorklet processor as a separate Vite asset, fetches the configured `.sf3` URL only when the SoundFont pilot is selected, and schedules Fugematon note events through SpessaSynth program, controller, note-on, and note-off calls.
+* `pnpm-workspace.yaml` pins `spessasynth_core@4.3.7` through overrides so the upstream `latest` dependency cannot drift on lockfile refresh.
+* Runtime software notices now include `spessasynth_lib@4.3.6` and `spessasynth_core@4.3.7`; audio asset notices remain empty because `MuseScore_General.sf3` is not distributed yet.
+* `pnpm build`, `pnpm --filter @fugematon/web test`, `pnpm audit --prod`, and the web production dependency tree check passed for this prototype.
+
 Still pending:
 
-* Run dependency review for exact pinned `spessasynth_lib` and `spessasynth_core` versions before installation.
-* Add the AudioWorklet processor and actual `.sf3` loading path without eager initial-bundle inclusion.
-* Add concrete runtime package and audio asset notices before distributing SpessaSynth or MuseScore_General.sf3.
+* Add or document the actual `.sf3` asset delivery path without eager initial-bundle inclusion.
+* Choose whether `/soundfonts/MuseScore_General.sf3` is served from the web deploy artifact or replaced with a documented external asset URL before treating the SoundFont pilot as deploy-ready.
+* Add CI verification that the configured SoundFont URL, asset manifest metadata, license notice, and deploy artifact or external asset record stay in sync.
+* Add concrete audio asset notices before distributing MuseScore_General.sf3, and add the route-addressable plain text notice artifact for release bundles.
 * Complete manual listening comparison between oscillator and SoundFont playback.
 
 ## Sources
 
 * `spessasynth_lib` npm page: https://www.npmjs.com/package/spessasynth_lib
+* `spessasynth_lib` npm registry metadata: https://registry.npmjs.org/spessasynth_lib
 * `spessasynth_core` package overview: https://socket.dev/npm/package/spessasynth_core
+* `spessasynth_core` npm registry metadata: https://registry.npmjs.org/spessasynth_core
 * VSCO 2 Community Edition official page: https://versilian-studios.com/vsco-community/
 * MuseScore SoundFonts handbook: https://musescore.org/en/handbook/soundfonts

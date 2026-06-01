@@ -4,6 +4,7 @@ import { assertValidNoticesData, type NoticesData, noticesData, validateNoticesD
 
 test("default notices data is valid before distribution assets are configured", () => {
   assert.doesNotThrow(() => assertValidNoticesData(noticesData));
+  assert.ok(noticesData.software.some((notice) => notice.name === "spessasynth_lib" && notice.version === "4.3.6"));
 });
 
 test("validateNoticesData rejects distributed audio assets without license metadata", () => {
