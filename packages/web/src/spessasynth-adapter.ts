@@ -9,7 +9,7 @@ const MIDI_PAN = 10 as MIDIController;
 
 export type SpessaSynthAdapterOptions = {
   processorUrl?: string;
-  fetchSoundFont?: (url: string) => Promise<ArrayBuffer>;
+  fetchSoundFont?: (asset: SoundFontAssetDescriptor) => Promise<ArrayBuffer>;
 };
 
 export function createSpessaSynthSoundFontAdapter(
@@ -22,7 +22,7 @@ export function createSpessaSynthSoundFontAdapter(
 class SpessaSynthSoundFontAdapter implements SoundFontPlaybackAdapter {
   private readonly context: BaseAudioContext;
   private readonly processorUrl: string;
-  private readonly fetchSoundFont: (url: string) => Promise<ArrayBuffer>;
+  private readonly fetchSoundFont: (asset: SoundFontAssetDescriptor) => Promise<ArrayBuffer>;
   private output: AudioNode | undefined;
   private synth: WorkletSynthesizer | undefined;
   private workletReady: Promise<void> | undefined;
@@ -70,7 +70,7 @@ class SpessaSynthSoundFontAdapter implements SoundFontPlaybackAdapter {
 
   private async loadAsset(asset: SoundFontAssetDescriptor): Promise<void> {
     try {
-      const soundBankBuffer = await this.fetchSoundFont(asset.url);
+      const soundBankBuffer = await this.fetchSoundFont(asset);
       await this.ensureWorklet();
       const synth = new WorkletSynthesizer(this.context);
       synth.connect(this.output ?? this.context.destination);
@@ -92,8 +92,11 @@ class SpessaSynthSoundFontAdapter implements SoundFontPlaybackAdapter {
   }
 }
 
-async function fetchSoundFontArrayBuffer(url: string): Promise<ArrayBuffer> {
-  const response = await fetch(url);
+async function fetchSoundFontArrayBuffer(asset: SoundFontAssetDescriptor): Promise<ArrayBuffer> {
+  const response = await fetch(
+    asset.url,
+    asset.integrity === undefined ? undefined : { integrity: asset.integrity },
+  );
   if (!response.ok) {
     throw new Error(
       `web.audio.soundfont-asset-fetch-failed: SoundFont asset request failed; why=the optional SoundFont file must be reachable before sample playback can start; action=place the configured SF3 asset at the published asset URL and verify notices metadata`,

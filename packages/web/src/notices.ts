@@ -1,3 +1,5 @@
+import { soundFontAssets, type SoundFontAssetDescriptor } from "./soundfont.js";
+
 export type RuntimeSoftwareNotice = {
   name: string;
   version: string;
@@ -23,25 +25,29 @@ export type NoticesData = {
 
 export const NOTICE_TEXT_ARTIFACT = "NOTICE.txt";
 
-export const noticesData: NoticesData = {
-  software: [
-    {
-      name: "spessasynth_lib",
-      version: "4.3.6",
-      license: "Apache-2.0",
-      homepage: "https://github.com/spessasus/spessasynth_lib",
-      notice: "Copyright 2026 Spessasus. Licensed under the Apache License, Version 2.0.",
-    },
-    {
-      name: "spessasynth_core",
-      version: "4.3.7",
-      license: "Apache-2.0",
-      homepage: "https://github.com/spessasus/spessasynth_core",
-      notice: "Copyright 2026 Spessasus. Licensed under the Apache License, Version 2.0.",
-    },
-  ],
-  audioAssets: [],
-};
+export const noticesData = createNoticesData();
+
+export function createNoticesData(soundFontDescriptors: readonly SoundFontAssetDescriptor[] = soundFontAssets): NoticesData {
+  return {
+    software: [
+      {
+        name: "spessasynth_lib",
+        version: "4.3.6",
+        license: "Apache-2.0",
+        homepage: "https://github.com/spessasus/spessasynth_lib",
+        notice: "Copyright 2026 Spessasus. Licensed under the Apache License, Version 2.0.",
+      },
+      {
+        name: "spessasynth_core",
+        version: "4.3.7",
+        license: "Apache-2.0",
+        homepage: "https://github.com/spessasus/spessasynth_core",
+        notice: "Copyright 2026 Spessasus. Licensed under the Apache License, Version 2.0.",
+      },
+    ],
+    audioAssets: soundFontDescriptors.filter((asset) => asset.distributed).map(createSoundFontAudioAssetNotice),
+  };
+}
 
 export function assertValidNoticesData(data: NoticesData = noticesData): void {
   const errors = validateNoticesData(data);
@@ -130,4 +136,16 @@ function formatAudioAssetNotices(audioAssets: readonly AudioAssetNotice[]): stri
       `  Attribution required: ${notice.attributionRequired ? "yes" : "no"}`,
     ].join("\n"),
   );
+}
+
+function createSoundFontAudioAssetNotice(asset: SoundFontAssetDescriptor): AudioAssetNotice {
+  return {
+    assetId: asset.assetId,
+    sourceTitle: asset.displayName,
+    sourceUrl: asset.sourceUrl,
+    license: asset.license,
+    attribution: "S. Christian Collins, MuseScore General SoundFont",
+    attributionRequired: true,
+    distributed: asset.distributed,
+  };
 }
