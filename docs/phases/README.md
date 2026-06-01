@@ -10,6 +10,7 @@
 
 ## Read First
 
+* [Initial subject rhetoric diversity repair](initial-subject-rhetoric-diversity-repair.md): planned quality follow-up. Treats "subjects sound similar every time" as a fixed-profile subject-generator problem and plans a constrained subject-rhetoric generator plus top-N diversity diagnostics.
 * [Playback source realism feasibility](playback-source-realism-feasibility.md): investigation note. Compares a SpessaSynth + SoundFont pilot, a custom VSCO WAV sampler, and notices-page requirements before distributing third-party playback software or audio assets.
 * [Endless program terminal stretta planner](endless-program-terminal-stretta-planner.md): planned follow-up. Treats the current coda as cadence-safe but still potentially appended, and plans a coda-specific terminal process with stretta as the preferred fugal ending when constraints allow it.
 * [Endless program coda quality repair](endless-program-coda-quality-repair.md): completed current target. Makes `final-fragment-entry` and `pedal-entry-cadence` review-visible, extends coda-continuity diagnostics to schema version 2, and keeps archetype diversity review-required rather than a CI hard gate.
@@ -21,6 +22,7 @@
 ## Read When
 
 * 実装対象の計画が分かっている場合は、その計画だけ読む。
+* 主題が seed 横断で似通う問題、初期主題候補、主題 family / rhetoric diversity diagnostics を扱う場合は [Initial subject rhetoric diversity repair](initial-subject-rhetoric-diversity-repair.md) を読む。
 * 再生音源、SoundFont、サンプラー、音源ライセンス表示を扱う場合は [Playback source realism feasibility](playback-source-realism-feasibility.md) を読む。
 * 計画 scope や実装順序を変える場合は、該当計画と [../reference/technical-plan.md](../reference/technical-plan.md) を合わせて読む。
 * `endless-program` の coda が取ってつけた終止に聞こえる問題や、曲末 stretta を優先する設計を扱う場合は [Endless program terminal stretta planner](endless-program-terminal-stretta-planner.md) を読む。
