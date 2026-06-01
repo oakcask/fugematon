@@ -89,3 +89,43 @@
 * Verification: medium - hosted excerpt was checked for the BWV 847 final subject and pedal-point description.
 * Cache key: sources/historical-fugue-endings-2026-06-01.json
 * Notes: Uses Bach WTC I C minor fugue as a textbook example, including the final subject over a pedal point.
+
+## teoria-kdf-contrapunctus-v
+
+* Citation: Rodríguez Alvira, José. "Contrapunctus V from the Art of the Fugue: Structure of the Fugue." teoría.
+* Stable identifier: https://www.teoria.com/en/articles/kdf/V/01.php
+* Source type: web-page
+* Accessed: 2026-06-01
+* Verification: medium - page text was checked for stretto structure and final simultaneous subject presentation.
+* Cache key: sources/historical-terminal-coda-broad-2026-06-01.json
+* Notes: Art of Fugue example where terminal rhetoric is bound to stretto and simultaneous subject combination.
+
+## teoria-inventions-bwv772-786
+
+* Citation: Rodríguez Alvira, José. "Inventions BWV 772-786 by Johann Sebastian Bach." teoría.
+* Stable identifier: https://www.teoria.com/en/articles/2020/bach-inventio/index.php
+* Source type: web-page
+* Accessed: 2026-06-01
+* Verification: medium - page text was checked for single-subject, double-subject, and canonic classifications.
+* Cache key: sources/historical-terminal-coda-broad-2026-06-01.json
+* Notes: Compact two-part repertoire evidence for subject, episode, and canonic continuity in short contrapuntal forms.
+
+## declercq-bach-chorale-cadences
+
+* Citation: de Clercq, Trevor. "A Model for Scale-Degree Reinterpretation: Melodic Structure, Modulation, and Cadence Choice in the Chorale Harmonizations of J. S. Bach." *Empirical Musicology Review* 10, no. 3, 2015, pp. 188-208.
+* Stable identifier: https://www.midside.com/publications/declercq_2015_emr_bach_chorales.pdf
+* Source type: article
+* Accessed: 2026-06-01
+* Verification: medium - PDF text was checked for corpus size, cadence-type distribution, final tonic cadence, and Picardy-third findings.
+* Cache key: sources/historical-terminal-coda-broad-2026-06-01.json
+* Notes: Corpus evidence for Bach chorale cadence behavior and final-cadence norms.
+
+## burridge-bach-chorale-cadences
+
+* Citation: Burridge, C. M. "Lesson 4: Basic Cadences."
+* Stable identifier: https://www.cmburridge.com/teaching/bach-chorales/lesson-4-basic-cadences/
+* Source type: web-page
+* Accessed: 2026-06-01
+* Verification: medium - page text was checked for Bach-chorale cadence fingerprints, passing sevenths, Bach third, and Picardy-third discussion.
+* Cache key: sources/historical-terminal-coda-broad-2026-06-01.json
+* Notes: Pedagogical source for chorale cadence voice-leading features.

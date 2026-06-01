@@ -121,6 +121,13 @@ export type TerminalCodaPedalClassification =
 
 export type TerminalCodaContinuityClassification = "accepted" | "review-required" | "not-applicable";
 
+export type TerminalCodaHistoricalFunction =
+  | "final-subject"
+  | "pedal-supported"
+  | "stretto-combination"
+  | "liquidation"
+  | "cadential-echo";
+
 export type TerminalCodaContextSummary = {
   schemaVersion: 1;
   archetype: TerminalCodaArchetype;
@@ -1515,7 +1522,7 @@ export type TerminalClosureReviewWindow = {
 };
 
 export type TerminalCodaContinuitySummary = {
-  schemaVersion: 1;
+  schemaVersion: 2;
   classification: TerminalCodaContinuityClassification;
   codaArchetype?: TerminalCodaArchetype;
   selectionReason?: string;
@@ -1523,6 +1530,9 @@ export type TerminalCodaContinuitySummary = {
   longestNonTerminalHeldSpanTicks: number;
   movingVoiceCountBeforeCadence: number;
   derivationCount: number;
+  subjectDerivedNoteCount: number;
+  pedalRootCoverageRatio: number;
+  historicalFunctionCoverage: TerminalCodaHistoricalFunction[];
   topDerivationSource?: EpisodeMotiveSource;
   pedalClassification: TerminalCodaPedalClassification;
   reasons: string[];

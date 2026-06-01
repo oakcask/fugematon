@@ -1,7 +1,6 @@
 import {
   FUGUE_FORM_REVIEW_LENGTH_TICKS,
   type InfinitePlaybackMode,
-  planSegmentGenerationDeadlineResult,
   type SegmentGenerationDeadlineResult,
   type SegmentSnapshot,
 } from "@fugematon/core";
@@ -41,7 +40,7 @@ const GENERATION_DEADLINE_MS = 10_000;
 const AUDIBLE_BOUNDARY_PAUSE_MS = 750;
 
 type UrlUpdateMode = "push" | "replace" | "none";
-type GenerationStatus = "idle" | "generating" | "best-so-far-fallback" | "ready" | "failed";
+type GenerationStatus = "idle" | "generating" | "over-deadline" | "ready" | "failed";
 type NextSegmentStatus = "idle" | "prefetching" | "ready" | "failed";
 
 type AppState = {
@@ -344,18 +343,13 @@ function regenerateScore(seed: string, urlUpdateMode: UrlUpdateMode = "push"): v
     performanceProfileId,
     playbackMode,
     segmentIndex,
-    model: state.model,
-    sessionModel: state.sessionModel,
-    playbackTimeline: state.playbackTimeline,
-    scoreCardSnapshot: state.scoreCardSnapshot,
+    playbackTimeline: [],
     segmentPlaybackOffsetSecond: 0,
     generationStatus: "generating",
     nextSegmentStatus: "idle",
   };
   render(state);
-  if (state.model !== undefined) {
-    drawPianoRoll(pianoRoll, visualPlaybackModel(state), 0);
-  }
+  clearPianoRoll(pianoRoll);
   renderPlaybackPosition(0);
   transportStatus.textContent = "Generating score";
   renderTransportButtons();
@@ -701,6 +695,24 @@ function isTransportLocked(): boolean {
   return primaryGenerationInFlight;
 }
 
+function clearPianoRoll(canvas: HTMLCanvasElement): void {
+  const context = canvas.getContext("2d");
+  if (context === null) {
+    return;
+  }
+
+  const pixelRatio = window.devicePixelRatio || 1;
+  const width = Math.max(320, canvas.clientWidth);
+  const height = Math.max(260, canvas.clientHeight);
+  if (canvas.width !== Math.floor(width * pixelRatio) || canvas.height !== Math.floor(height * pixelRatio)) {
+    canvas.width = Math.floor(width * pixelRatio);
+    canvas.height = Math.floor(height * pixelRatio);
+  }
+
+  context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+  context.clearRect(0, 0, width, height);
+}
+
 function queueGenerationFallback(requestId: number, segmentIndex: number): void {
   if (generationTimeout !== undefined) {
     window.clearTimeout(generationTimeout);
@@ -709,25 +721,17 @@ function queueGenerationFallback(requestId: number, segmentIndex: number): void 
   generationTimeout = window.setTimeout(() => {
     generationTimeout = undefined;
 
-    if (requestId !== activePrimaryGenerationRequestId || state.model === undefined) {
+    if (requestId !== activePrimaryGenerationRequestId) {
       return;
     }
 
     state = {
       ...state,
-      generationStatus: "best-so-far-fallback",
-      deadlineResult: planSegmentGenerationDeadlineResult({
-        mode: state.playbackMode,
-        segmentIndex,
-        startedAtMs: 0,
-        completedAtMs: GENERATION_DEADLINE_MS + 1,
-        deadlineMs: GENERATION_DEADLINE_MS,
-        generatedCandidateSatisfiesHardConstraints: false,
-        bestSoFarCandidateSatisfiesHardConstraints: true,
-      }),
+      segmentIndex,
+      generationStatus: "over-deadline",
     };
     render(state);
-    transportStatus.textContent = "Using best-so-far while generation finishes";
+    transportStatus.textContent = "Still generating";
     renderTransportButtons();
   }, GENERATION_DEADLINE_MS);
 }
@@ -777,12 +781,31 @@ function handleGenerationWorkerResponse(response: GenerationWorkerResponse): voi
   }
 
   nextSegmentIndex = response.deadlineResult.segmentIndex + 1;
-  const preserveBestSoFarModel =
-    state.generationStatus === "best-so-far-fallback" &&
-    state.model !== undefined &&
-    response.deadlineResult.returnedCandidateKind === "conservative-fallback";
-  const model = preserveBestSoFarModel ? (state.model ?? response.model) : response.model;
-  const generationStatus = preserveBestSoFarModel ? "best-so-far-fallback" : "ready";
+  if (response.model.notes.length === 0) {
+    state = {
+      ...state,
+      seed: response.seed,
+      performanceProfileId: response.performanceProfileId,
+      playbackMode: response.deadlineResult.mode,
+      segmentIndex: response.deadlineResult.segmentIndex,
+      playbackTimeline: [],
+      scoreCardSnapshot: undefined,
+      segmentPlaybackOffsetSecond: 0,
+      generationStatus: "failed",
+      deadlineResult: response.deadlineResult,
+      reviewSnapshot: response.reviewSnapshot,
+      nextSegmentSnapshot: response.nextSegmentSnapshot,
+    };
+    seedInput.value = response.seed;
+    render(state);
+    clearPianoRoll(pianoRoll);
+    renderPlaybackPosition(0);
+    transportStatus.textContent = "Generated score has no playable notes";
+    renderTransportButtons();
+    return;
+  }
+
+  const model = response.model;
   const playbackTimeline = [
     createPlaybackTimelineSegment(model, {
       segmentIndex: response.deadlineResult.segmentIndex,
@@ -800,7 +823,7 @@ function handleGenerationWorkerResponse(response: GenerationWorkerResponse): voi
     playbackTimeline,
     scoreCardSnapshot: createScoreCardSnapshot(playbackTimeline[0], 0),
     segmentPlaybackOffsetSecond: 0,
-    generationStatus,
+    generationStatus: "ready",
     nextSegmentStatus: state.nextSegmentStatus,
     deadlineResult: response.deadlineResult,
     reviewSnapshot: response.reviewSnapshot,
@@ -810,7 +833,7 @@ function handleGenerationWorkerResponse(response: GenerationWorkerResponse): voi
   render(state);
   drawPianoRoll(pianoRoll, visualPlaybackModel(state), 0);
   renderPlaybackPosition(0);
-  transportStatus.textContent = preserveBestSoFarModel ? "Keeping best-so-far after deadline" : "Ready to play";
+  transportStatus.textContent = "Ready to play";
   renderTransportButtons();
 }
 
@@ -821,6 +844,21 @@ function handlePrefetchGenerationWorkerResponse(response: GenerationWorkerRespon
     logEndlessDebug("prefetch-error", {
       requestId: response.requestId,
       responseSeed: response.seed,
+    });
+    state = {
+      ...state,
+      nextSegmentStatus: "failed",
+    };
+    render(state);
+    return;
+  }
+
+  if (response.model.notes.length === 0) {
+    logEndlessDebug("prefetch-empty", {
+      requestId: response.requestId,
+      responseSeed: response.seed,
+      responseSegmentIndex: response.deadlineResult.segmentIndex,
+      responseCandidateKind: response.deadlineResult.returnedCandidateKind,
     });
     state = {
       ...state,
@@ -1129,8 +1167,8 @@ function formatGenerationStatus(nextState: AppState): string {
       return "Pending worker";
     case "generating":
       return "Worker running";
-    case "best-so-far-fallback":
-      return "Best-so-far fallback";
+    case "over-deadline":
+      return "Still generating";
     case "failed":
       return "Failed";
     case "ready":
