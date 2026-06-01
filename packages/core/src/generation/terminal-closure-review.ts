@@ -437,12 +437,15 @@ function buildTerminalCodaContinuitySummary(input: {
     input.cadenceTargetTick === undefined
   ) {
     return {
-      schemaVersion: 1,
+      schemaVersion: 2,
       classification: "not-applicable",
       longestAllVoiceStaticSpanTicks: 0,
       longestNonTerminalHeldSpanTicks: 0,
       movingVoiceCountBeforeCadence: 0,
       derivationCount: 0,
+      subjectDerivedNoteCount: 0,
+      pedalRootCoverageRatio: 0,
+      historicalFunctionCoverage: [],
       pedalClassification: "not-pedal",
       reasons: ["terminal coda continuity is not applicable to this boundary source"],
     };
@@ -462,6 +465,7 @@ function buildTerminalCodaContinuitySummary(input: {
   const derivationCount = preCadenceNotes.filter(
     (note) => note.motivicDerivation !== undefined && note.motivicDerivation.transformationKind !== "generic",
   ).length;
+  const subjectDerivedNoteCount = countSubjectDerivedNotes(preCadenceNotes);
   const topDerivationSource = computeTopDerivationSource(preCadenceNotes);
   const longestNonTerminalHeldSpanTicks = longestNonTerminalHeldSpan(
     preCadenceNotes,
@@ -473,6 +477,12 @@ function buildTerminalCodaContinuitySummary(input: {
     input.codaStartTick,
     input.cadenceTargetTick,
   );
+  const pedalRootCoverageRatio = computePedalRootCoverageRatio({
+    notes: preCadenceNotes,
+    plan: input.terminalPlan,
+    codaStartTick: input.codaStartTick,
+    cadenceTargetTick: input.cadenceTargetTick,
+  });
   const pedalClassification = classifyTerminalCodaPedal({
     notes: preCadenceNotes,
     plan: input.terminalPlan,
@@ -480,6 +490,14 @@ function buildTerminalCodaContinuitySummary(input: {
     cadenceTargetTick: input.cadenceTargetTick,
     movingVoiceCountBeforeCadence,
     derivationCount,
+    pedalRootCoverageRatio,
+  });
+  const historicalFunctionCoverage = computeHistoricalFunctionCoverage({
+    archetype: input.terminalPlan.terminalCodaContext.archetype,
+    preCadenceNotes,
+    pedalClassification,
+    pedalRootCoverageRatio,
+    subjectDerivedNoteCount,
   });
   const classification = classifyTerminalCodaContinuity({
     derivationCount,
@@ -498,7 +516,7 @@ function buildTerminalCodaContinuitySummary(input: {
   });
 
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     classification,
     codaArchetype: input.terminalPlan.terminalCodaContext.archetype,
     selectionReason: input.terminalPlan.terminalCodaContext.selectionReason,
@@ -506,10 +524,20 @@ function buildTerminalCodaContinuitySummary(input: {
     longestNonTerminalHeldSpanTicks,
     movingVoiceCountBeforeCadence,
     derivationCount,
+    subjectDerivedNoteCount,
+    pedalRootCoverageRatio,
+    historicalFunctionCoverage,
     topDerivationSource,
     pedalClassification,
     reasons,
   };
+}
+
+function countSubjectDerivedNotes(notes: readonly NoteEvent[]): number {
+  return notes.filter((note) => {
+    const source = note.motivicDerivation?.sourceMotive;
+    return source === "subject-head" || source === "subject-tail";
+  }).length;
 }
 
 function countMovingVoicesBeforeCadence(
@@ -606,9 +634,32 @@ function classifyTerminalCodaPedal(input: {
   cadenceTargetTick: number;
   movingVoiceCountBeforeCadence: number;
   derivationCount: number;
+  pedalRootCoverageRatio: number;
 }): TerminalCodaPedalClassification {
+  if (
+    input.pedalRootCoverageRatio >= 0.75 &&
+    input.derivationCount === 0 &&
+    input.movingVoiceCountBeforeCadence <= 1
+  ) {
+    return "generic-static-support";
+  }
+  if (input.pedalRootCoverageRatio >= 0.45 && input.movingVoiceCountBeforeCadence >= 2) {
+    return "prepared-pedal";
+  }
+  if (input.pedalRootCoverageRatio > 0) {
+    return "cadence-support";
+  }
+  return "not-pedal";
+}
+
+function computePedalRootCoverageRatio(input: {
+  notes: readonly NoteEvent[];
+  plan: HarmonicPlan;
+  codaStartTick: number;
+  cadenceTargetTick: number;
+}): number {
   const rootPitchClass = scaleDegreePitchClass(0, 0, input.plan.targetKey);
-  const preparedSpanTicks = input.cadenceTargetTick - input.codaStartTick;
+  const preparedSpanTicks = Math.max(1, input.cadenceTargetTick - input.codaStartTick);
   const bassRootTicks = input.notes.reduce((sum, note) => {
     if (note.voice !== "bass" || positiveModulo(note.pitch, 12) !== rootPitchClass) {
       return sum;
@@ -623,20 +674,48 @@ function classifyTerminalCodaPedal(input: {
     );
   }, 0);
 
+  return roundMetric(bassRootTicks / preparedSpanTicks);
+}
+
+function computeHistoricalFunctionCoverage(input: {
+  archetype: NonNullable<TerminalCodaContinuitySummary["codaArchetype"]>;
+  preCadenceNotes: readonly NoteEvent[];
+  pedalClassification: TerminalCodaPedalClassification;
+  pedalRootCoverageRatio: number;
+  subjectDerivedNoteCount: number;
+}): TerminalCodaContinuitySummary["historicalFunctionCoverage"] {
+  const coverage = new Set<TerminalCodaContinuitySummary["historicalFunctionCoverage"][number]>();
+  if ((input.archetype === "final-fragment-entry" && input.subjectDerivedNoteCount > 0) || input.subjectDerivedNoteCount >= 3) {
+    coverage.add("final-subject");
+  }
   if (
-    bassRootTicks >= preparedSpanTicks * 0.75 &&
-    input.derivationCount === 0 &&
-    input.movingVoiceCountBeforeCadence <= 1
+    input.pedalClassification === "prepared-pedal" ||
+    (input.archetype === "pedal-entry-cadence" && input.pedalRootCoverageRatio >= 0.45)
   ) {
-    return "generic-static-support";
+    coverage.add("pedal-supported");
   }
-  if (bassRootTicks >= preparedSpanTicks * 0.45 && input.movingVoiceCountBeforeCadence >= 2) {
-    return "prepared-pedal";
+  if (
+    input.archetype === "stretto-compaction" ||
+    (input.preCadenceNotes.some((note) => note.motivicDerivation?.sourceMotive === "subject-head") &&
+      input.preCadenceNotes.some((note) => note.motivicDerivation?.sourceMotive === "answer-form"))
+  ) {
+    coverage.add("stretto-combination");
   }
-  if (bassRootTicks > 0) {
-    return "cadence-support";
+  if (
+    input.archetype === "liquidation-cadence" ||
+    input.preCadenceNotes.some((note) =>
+      ["fragmentation", "diminution"].includes(note.motivicDerivation?.transformationKind ?? ""),
+    )
+  ) {
+    coverage.add("liquidation");
   }
-  return "not-pedal";
+  if (input.archetype === "cadential-echo") {
+    coverage.add("cadential-echo");
+  }
+  if (input.pedalRootCoverageRatio >= 0.45 && input.pedalClassification !== "generic-static-support") {
+    coverage.add("pedal-supported");
+  }
+  return [...coverage].sort();
 }
 
 function classifyTerminalCodaContinuity(input: {
@@ -861,6 +940,10 @@ function activeNotesAt(notes: readonly NoteEvent[], tick: number): NoteEvent[] {
 
 function positiveModulo(value: number, modulus: number): number {
   return ((value % modulus) + modulus) % modulus;
+}
+
+function roundMetric(value: number): number {
+  return Math.round(value * 100) / 100;
 }
 
 export type TerminalClosureGenerationMode = NonNullable<GenerationInput["mode"]>;

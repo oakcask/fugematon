@@ -34,15 +34,15 @@ workerScope.onmessage = (event) => {
     });
     const completedAtMs = performance.now();
     const hardConstraintsSatisfied = satisfiesGenerationHardConstraints(output);
-    const playbackBlockingConstraintsSatisfied = satisfiesPlaybackBlockingConstraints(output);
+    const playableScore = hasPlayableScore(output);
     const deadlineResult = planSegmentGenerationDeadlineResult({
       mode: request.mode ?? "continuous-fugue",
       segmentIndex: request.segmentIndex,
       startedAtMs,
       completedAtMs,
       deadlineMs: request.deadlineMs,
-      generatedCandidateSatisfiesHardConstraints: playbackBlockingConstraintsSatisfied,
-      bestSoFarCandidateSatisfiesHardConstraints: false,
+      generatedCandidateSatisfiesHardConstraints: playableScore && hardConstraintsSatisfied,
+      bestSoFarCandidateSatisfiesHardConstraints: playableScore,
     });
     const playbackOutput = createGenerationWorkerPlaybackOutput(output, deadlineResult, request.lengthTicks);
 
@@ -71,7 +71,7 @@ export function createGenerationWorkerPlaybackOutput(
   deadlineResult: SegmentGenerationDeadlineResult,
   lengthTicks: number,
 ): GenerationOutput {
-  if (deadlineResult.returnedCandidateKind === "generated") {
+  if (deadlineResult.returnedCandidateKind === "generated" || deadlineResult.returnedCandidateKind === "best-so-far") {
     return output;
   }
 
@@ -92,16 +92,10 @@ function satisfiesGenerationHardConstraints(output: GenerationOutput): boolean {
   );
 }
 
-function satisfiesPlaybackBlockingConstraints(output: GenerationOutput): boolean {
+function hasPlayableScore(output: GenerationOutput): boolean {
   const diagnostics = output.diagnostics;
 
-  return (
-    diagnostics.rangeViolations === 0 &&
-    diagnostics.voiceCrossings === 0 &&
-    diagnostics.keyMetadataMismatches === 0 &&
-    diagnostics.unresolvedDissonanceCount === 0 &&
-    diagnostics.allVoiceSilenceGapCount === 0
-  );
+  return diagnostics.noteCount > 0 && output.events.some((event) => event.kind === "note");
 }
 
 function createReviewSnapshot(

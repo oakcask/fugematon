@@ -34,11 +34,11 @@ Fugematon 固有の設計判断、review 判断、quality policy と文献根拠
 
 * Claim: `endless-program` coda quality should not be accepted from stable terminal sonority alone; the terminal span should use a historically plausible ending process such as final subject return, stretto, pedal-supported final entry, thematic liquidation, or texture compaction that preserves recent musical material until the cadence.
 * Applies to: generation | diagnostics | review | phase-scope
-* Evidence: `historical-fugue-endings`; current `buildTerminalCodaNotes` implementation pattern and user-reported all-voice long-tone symptom.
+* Evidence: `historical-fugue-endings`; `historical-terminal-cadences`; current `buildTerminalCodaNotes` implementation pattern and user-reported all-voice long-tone symptom.
 * Confidence: medium
 * Verification state: score-example-checked
-* Limits: This claim does not require strict Bach style for every style profile, does not ban prepared pedal points or final held sonorities, and does not make every non-thematic final bar a failure when liquidation or cadence function is review-visible.
-* Used by: `docs/phases/endless-program-terminal-coda-historical-style-repair.md`
+* Limits: This claim does not require strict Bach style for every style profile, does not ban prepared pedal points or final held sonorities, and does not make every non-thematic final bar a failure when liquidation or cadence function is review-visible. Chorale-style final cadence evidence is a closure floor, not sufficient proof of fugal coda quality. Archetype diversity is review-required evidence, not a CI hard gate.
+* Used by: `docs/phases/endless-program-terminal-coda-historical-style-repair.md`, `docs/phases/endless-program-coda-quality-repair.md`, `docs/reviews/endless-program-coda-quality-gap-review.md`
 
 ## playback-source-notices-required
 

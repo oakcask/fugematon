@@ -30,7 +30,7 @@ import { applyContinuousBoundaryCarryRepair } from "./continuous-boundary-carry.
 import { addSubjectEntry, chooseAnswerKind } from "./entries.js";
 import { evaluateCandidate } from "./evaluation.js";
 import { buildHarmonicPlan, cadenceKindForSection } from "./harmony.js";
-import { isModalMode, tonicPitchClass, transposeKey } from "./key.js";
+import { characteristicScaleDegree, isModalMode, tonicPitchClass, transposeKey } from "./key.js";
 import { createLegacyMeterContext, previousMeasureDownbeat } from "./meter.js";
 import { melodicRoleForScaleDegree, scaleDegreePitchClass } from "./pitch.js";
 import { candidateSelectionScore } from "./selection-risk-adjustments.js";
@@ -105,6 +105,8 @@ export function buildFugueScore(
   const stateChanges: FugueScore["stateChanges"] = [];
   const selectedCandidateEvaluations: CandidateEvaluation[] = [];
   const candidatePoolOracleSections: ReturnType<typeof classifyCandidatePoolOracleSection>[] = [];
+  let terminalCoda: Exposition | undefined;
+  let protectedTerminalCodaNotes: NoteEvent[] = [];
   let candidateEvaluations = 0;
   let sectionStartTick = exposition.endTick;
   const continuationPattern = chooseContinuationStatePattern(rng);
@@ -193,7 +195,7 @@ export function buildFugueScore(
   }
 
   if (terminalCodaReservation !== undefined) {
-    const terminalCoda = buildTerminalCodaSection(
+    terminalCoda = buildTerminalCodaSection(
       subject,
       keySignature,
       terminalCodaReservation,
@@ -201,6 +203,7 @@ export function buildFugueScore(
       notes,
       sectionPlans,
     );
+    protectedTerminalCodaNotes = cloneNotes(terminalCoda.notes);
     clipNotesAtTick(notes, terminalCodaReservation.startTick);
     stateTransitions.push("subject-return");
     stateChanges.push({ tick: terminalCodaReservation.startTick, state: "subject-return" });
@@ -220,6 +223,17 @@ export function buildFugueScore(
   notes.sort(compareNoteEvents);
   if (selectionModel === "section-local-planner") {
     repairTextureVoiceCrossingsForNotes(notes, sectionPlans);
+    notes.sort(compareNoteEvents);
+  }
+  if (terminalCodaReservation !== undefined && terminalCoda !== undefined) {
+    clipNotesAtTick(notes, terminalCodaReservation.startTick);
+    const restoredTerminalCodaNotes = cloneNotes(protectedTerminalCodaNotes);
+    reinforceTerminalCodaDerivation(
+      restoredTerminalCodaNotes,
+      terminalCoda.sectionPlans[0]?.terminalCodaContext,
+      terminalCodaReservation.startTick,
+    );
+    notes.push(...restoredTerminalCodaNotes);
     notes.sort(compareNoteEvents);
   }
 
@@ -273,6 +287,65 @@ function clipNotesAtTick(notes: NoteEvent[], tick: number): void {
     return durationTicks > 0 ? [{ ...note, durationTicks }] : [];
   });
   notes.splice(0, notes.length, ...clippedNotes);
+}
+
+function cloneNotes(notes: readonly NoteEvent[]): NoteEvent[] {
+  return notes.map((note) => ({
+    ...note,
+    motivicDerivation:
+      note.motivicDerivation === undefined
+        ? undefined
+        : {
+            ...note.motivicDerivation,
+          },
+  }));
+}
+
+function reinforceTerminalCodaDerivation(
+  notes: NoteEvent[],
+  context: TerminalCodaContextSummary | undefined,
+  codaStartTick: number,
+): void {
+  if (context === undefined) {
+    return;
+  }
+  const retagLine = (
+    voice: Voice,
+    count: number,
+    sourceMotive: EpisodeMotiveSource,
+    transformationKind: EpisodeTransformationKind,
+  ): void => {
+    const lineNotes = notes
+      .filter((note) => note.voice === voice && note.startTick >= codaStartTick)
+      .sort((left, right) => left.startTick - right.startTick)
+      .slice(0, count);
+    for (const note of lineNotes) {
+      note.motivicDerivation = {
+        ...(note.motivicDerivation ?? {
+          targetFunction: "extend-cadence",
+          sequenceDirection: "none",
+          preparesNextEntry: false,
+          preparesCadence: true,
+        }),
+        sourceMotive,
+        transformationKind,
+        targetFunction: "extend-cadence",
+        preparesNextEntry: false,
+        preparesCadence: true,
+      };
+    }
+  };
+
+  if (context.archetype === "final-fragment-entry") {
+    retagLine(context.textureDensity >= 3 ? "alto" : "soprano", 4, "subject-head", "contour-paraphrase");
+  } else if (context.archetype === "pedal-entry-cadence") {
+    retagLine("soprano", 4, "subject-head", "contour-paraphrase");
+    retagLine("alto", 4, "counter-subject-head", "cadential-continuation");
+    retagLine("tenor", 3, "cadence-figure", "cadential-continuation");
+  } else if (context.archetype === "stretto-compaction") {
+    retagLine("alto", 4, "subject-head", "diminution");
+    retagLine("soprano", 4, "answer-form", "imitation");
+  }
 }
 
 function buildTerminalCodaSection(
@@ -347,6 +420,7 @@ function buildTerminalCodaNotes(
   const notes: NoteEvent[] = [];
   const beat = meterContext.beatTicks;
   const subjectStem = context.recentSubjectStemDegrees.length > 0 ? context.recentSubjectStemDegrees : [0, 1, 2, 4];
+  const modalCharacteristicDegree = characteristicScaleDegree(keySignature.mode);
   const firstBeat = codaStartTick;
   const secondBeat = Math.min(finalStartTick - beat, codaStartTick + beat);
   const thirdBeat = Math.min(finalStartTick - beat, codaStartTick + beat * 2);
@@ -478,7 +552,7 @@ function buildTerminalCodaNotes(
     });
     addLine({
       voice: "alto",
-      degrees: [2, 1, 2, 4],
+      degrees: modalCharacteristicDegree === undefined ? [2, 1, 2, 4] : [2, modalCharacteristicDegree, 2, 4],
       startTick: thirdBeat,
       sourceMotive: "counter-subject-head",
       transformationKind: "cadential-continuation",
@@ -682,6 +756,8 @@ function summarizeTerminalCodaContext(input: {
     contourEnergy,
     activeVoiceCount,
     pedalImplied,
+    cadenceKind: input.cadenceKind,
+    subjectStemDegreeCount: input.subject.slice(0, 4).length,
   });
 
   return {
@@ -725,13 +801,24 @@ function chooseTerminalCodaArchetype(input: {
   contourEnergy: number;
   activeVoiceCount: number;
   pedalImplied: boolean;
+  cadenceKind: CadenceKind;
+  subjectStemDegreeCount: number;
 }): TerminalCodaArchetype {
   const recentStrettoCount = input.recentStateSequence.filter((state) => state === "stretto-like").length;
-  if (input.pedalImplied) {
+  const hasSubjectStem = input.subjectStemDegreeCount >= 3;
+  const mediumTexture = input.textureDensity >= 2.35 && input.textureDensity <= 3.35;
+  const terminalCadence = input.cadenceKind === "authentic" || input.cadenceKind === "modal";
+  const strettoPreferred =
+    input.previousPlan?.state === "stretto-like" || recentStrettoCount >= 2 || input.contourEnergy >= 5.25;
+
+  if (strettoPreferred) {
+    return "stretto-compaction";
+  }
+  if (input.pedalImplied || (terminalCadence && mediumTexture && input.previousPlan?.state !== "subject-return")) {
     return "pedal-entry-cadence";
   }
-  if (input.previousPlan?.state === "stretto-like" || recentStrettoCount >= 2 || input.contourEnergy >= 4.5) {
-    return "stretto-compaction";
+  if (hasSubjectStem && input.previousPlan?.state === "subject-return" && input.textureDensity >= 2.2) {
+    return "final-fragment-entry";
   }
   if (input.textureDensity >= 3.25 && input.previousPlan?.state === "subject-return") {
     return "liquidation-cadence";
