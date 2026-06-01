@@ -10,6 +10,7 @@
 
 ## Read First
 
+* [Playback source realism feasibility](playback-source-realism-feasibility.md): investigation note. Compares a SpessaSynth + SoundFont pilot, a custom VSCO WAV sampler, and notices-page requirements before distributing third-party playback software or audio assets.
 * [Endless program terminal coda historical style repair](endless-program-terminal-coda-historical-style-repair.md): completed target. Replaces fixed all-voice long-tone terminal coda generation with context-aware historical ending archetypes and coda-continuity review evidence.
 * [Continuous fugue boundary carry planning](continuous-fugue-boundary-carry-planning.md): completed target. Follows the completed segment-continuity repair by making hidden boundaries preserve audible line / harmony carry, not only avoid exposition reset.
 * [Endless program terminal coda planning](endless-program-terminal-coda-planning.md): completed target. Replaces the short terminal-boundary sonority override with planner-visible coda generation for `endless-program` segment endings.
@@ -18,6 +19,7 @@
 ## Read When
 
 * 実装対象の計画が分かっている場合は、その計画だけ読む。
+* 再生音源、SoundFont、サンプラー、音源ライセンス表示を扱う場合は [Playback source realism feasibility](playback-source-realism-feasibility.md) を読む。
 * 計画 scope や実装順序を変える場合は、該当計画と [../reference/technical-plan.md](../reference/technical-plan.md) を合わせて読む。
 * `endless-program` の coda が全声部ロングトーン化する問題を扱う場合は [Endless program terminal coda historical style repair](endless-program-terminal-coda-historical-style-repair.md) を読む。
 * 直前の terminal cadence validation と Web UI chaining 完了記録を確認する場合は [Endless program terminal cadence validation](endless-program-terminal-cadence-validation.md) を読む。

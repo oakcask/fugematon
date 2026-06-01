@@ -39,3 +39,23 @@ Fugematon 固有の設計判断、review 判断、quality policy と文献根拠
 * Verification state: score-example-checked
 * Limits: This claim does not require strict Bach style for every style profile, does not ban prepared pedal points or final held sonorities, and does not make every non-thematic final bar a failure when liquidation or cadence function is review-visible.
 * Used by: `docs/phases/endless-program-terminal-coda-historical-style-repair.md`
+
+## playback-source-notices-required
+
+* Claim: Fugematon should expose a user-facing notices page before distributing third-party synthesizer software or audio assets; the page must distinguish OSS software licenses from sound/sample-library licenses and must be generated from package and asset metadata where practical.
+* Applies to: license | phase-scope
+* Evidence: `playback-source-licensing`
+* Confidence: medium
+* Verification state: license-page-checked
+* Limits: This does not decide final commercial redistribution rights for a release bundle; exact asset files and bundled notices must be rechecked at implementation time.
+* Used by: `docs/phases/playback-source-realism-feasibility.md`
+
+## playback-source-pilot-order
+
+* Claim: For Fugematon's next audio-realism step, a SoundFont-backed SpessaSynth pilot is lower implementation risk than a custom VSCO WAV sampler, while a curated VSCO sampler remains a stronger long-term path if the product goal shifts from organ-like fugue playback to exposed chamber-instrument realism.
+* Applies to: phase-scope | design
+* Evidence: `playback-source-licensing`; current WebAudio oscillator renderer and `PerformanceProfile` boundary.
+* Confidence: medium
+* Verification state: license-page-checked
+* Limits: This claim assumes browser playback remains the primary target and does not compare native audio engines, paid sample libraries, or server-side rendering.
+* Used by: `docs/phases/playback-source-realism-feasibility.md`

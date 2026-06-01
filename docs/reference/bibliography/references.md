@@ -89,3 +89,53 @@
 * Verification: medium - hosted excerpt was checked for the BWV 847 final subject and pedal-point description.
 * Cache key: sources/historical-fugue-endings-2026-06-01.json
 * Notes: Uses Bach WTC I C minor fugue as a textbook example, including the final subject over a pedal point.
+
+## spessasynth-lib-github
+
+* Citation: Spessasynth, "spessasynth_lib."
+* Stable identifier: https://github.com/spessasus/spessasynth_lib
+* Source type: software-documentation
+* Accessed: 2026-06-01
+* Verification: medium - GitHub README, package metadata, and license file were checked for browser support, package relationship, and Apache-2.0 license.
+* Cache key: sources/playback-source-license-feasibility-2026-06-01.json
+* Notes: Browser-facing synthesizer library that depends on SpessaSynth Core and uses a WebAudio worklet processor.
+
+## spessasynth-core-github
+
+* Citation: Spessasynth, "spessasynth_core."
+* Stable identifier: https://github.com/spessasus/spessasynth_core
+* Source type: software-documentation
+* Accessed: 2026-06-01
+* Verification: medium - GitHub README, package metadata, and license file were checked for SF2/SF3/DLS support, dependency surface, and Apache-2.0 license.
+* Cache key: sources/playback-source-license-feasibility-2026-06-01.json
+* Notes: SoundFont parsing and synthesis core for SpessaSynth.
+
+## versilian-vsco-community
+
+* Citation: Versilian Studios, "VSCO 2 Community Edition."
+* Stable identifier: https://versilian-studios.com/vsco-community/
+* Source type: sample-library-page
+* Accessed: 2026-06-01
+* Verification: medium - official product page was checked for Raw WAV support statement and CC0 licensing statement.
+* Cache key: sources/playback-source-license-feasibility-2026-06-01.json
+* Notes: Community subset of VSCO 2 with Raw WAV, SFZ, and other formats.
+
+## musescore-soundfonts-handbook
+
+* Citation: MuseScore, "SoundFonts and SFZ files."
+* Stable identifier: https://musescore.org/en/handbook/soundfonts
+* Source type: software-documentation
+* Accessed: 2026-06-01
+* Verification: medium - handbook page was checked for MuseScore_General.sf3 size and MIT licensing statement.
+* Cache key: sources/playback-source-license-feasibility-2026-06-01.json
+* Notes: Project documentation for SoundFont usage and bundled MuseScore_General.sf3 metadata.
+
+## musescore-general-license-thread
+
+* Citation: MuseScore, "MIT license for MuseScore_General.sf3?"
+* Stable identifier: https://musescore.org/en/node/317991
+* Source type: project-forum-reference
+* Accessed: 2026-06-01
+* Verification: low - project forum page was checked for SoundFont attribution and MIT license discussion; this is supporting evidence, not the primary license file.
+* Cache key: sources/playback-source-license-feasibility-2026-06-01.json
+* Notes: Useful for attribution leads, but implementation should ship or link the authoritative license/notice text with the asset.
