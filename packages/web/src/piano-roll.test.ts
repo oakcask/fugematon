@@ -37,6 +37,24 @@ test("computePianoRollLayout maps visible notes into canvas bounds", () => {
   assert.ok(layout.some((note) => note.isActive));
 });
 
+test("computePianoRollLayout uses the full vertical roll range", () => {
+  const model = {
+    bpm: 60,
+    ticksPerQuarter: 480,
+    timeSignature: { numerator: 4, denominator: 4 },
+    pitchRange: { min: 36, max: 72 },
+    notes: [layoutPlaybackNote({ pitch: 72, startSecond: 0 }), layoutPlaybackNote({ pitch: 36, startSecond: 1 })],
+  } as PlaybackModel;
+  const layout = computePianoRollLayout(model, 420, 370, { startSecond: 0, endSecond: 4 });
+  const high = layout.find((note) => note.y === 0);
+  const low = layout.find((note) => note.y > 0);
+
+  assert.ok(high !== undefined);
+  assert.ok(low !== undefined);
+  assert.equal(low.y + low.height, 370);
+  assert.ok(layout.every((note) => note.y >= 0 && note.y + note.height <= 370));
+});
+
 test("computePianoRollViewport starts at the opening and follows playback", () => {
   const model = createPlaybackModel(
     generateScore({ seed: "fugue-smoke", lengthTicks: FUGUE_FORM_REVIEW_LENGTH_TICKS }),
@@ -235,6 +253,40 @@ test("computeActivePitchMarkerLayout spaces nearby labels within each key lane",
     assert.ok(whiteMarkers[index]!.labelY - whiteMarkers[index - 1]!.labelY >= 11);
   }
 });
+
+test("computeActivePitchMarkerLayout aligns edge pitches to the full canvas height", () => {
+  const model = { pitchRange: { min: 36, max: 72 } } as PlaybackModel;
+  const markers = computeActivePitchMarkerLayout(model, 370, [36, 72]);
+  const high = markers.find((marker) => marker.pitch === 72)!;
+  const low = markers.find((marker) => marker.pitch === 36)!;
+
+  assert.equal(high.y, 0);
+  assert.equal(low.y + low.height, 370);
+});
+
+function layoutPlaybackNote(input: { pitch: number; startSecond: number }): PlaybackModel["notes"][number] {
+  return {
+    voice: "soprano",
+    startTick: input.startSecond * 480,
+    endTick: input.startSecond * 480 + 480,
+    startSecond: input.startSecond,
+    durationSecond: 1,
+    pitch: input.pitch,
+    velocity: 80,
+    volume: 1,
+    gain: 1,
+    pan: 0,
+    oscillatorType: "triangle",
+    webAudioSynth: {
+      attackSeconds: 0.004,
+      decaySeconds: 0.08,
+      sustainLevel: 0.72,
+      releaseSeconds: 0.14,
+      velocityToAttackEmphasis: 0.1,
+      velocityToSustainGain: 0.2,
+    },
+  };
+}
 
 function layoutNote(input: {
   role: PianoRollNoteLayout["role"];

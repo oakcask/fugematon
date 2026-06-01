@@ -81,6 +81,8 @@ export type ScoreCardSnapshot = {
 const DEFAULT_BPM = 84;
 const DEFAULT_TICKS_PER_QUARTER = 480;
 const DEFAULT_TIME_SIGNATURE: TimeSignature = { numerator: 4, denominator: 4 };
+const DEFAULT_PIANO_ROLL_PITCH_RANGE = { min: 48, max: 72 } as const;
+const PIANO_ROLL_PITCH_PADDING = 1;
 export const DEFAULT_WEB_PERFORMANCE_PROFILE_ID: PerformanceProfileId = "strict-counterpoint";
 
 export function createPlaybackModel(
@@ -303,16 +305,25 @@ export function formatPlaybackPosition(seconds: number, model: PlaybackModel): s
 
 function computePitchRange(notes: readonly PlaybackNote[]): PlaybackModel["pitchRange"] {
   if (notes.length === 0) {
-    return { min: 48, max: 72 };
+    return padPitchRange(DEFAULT_PIANO_ROLL_PITCH_RANGE);
   }
 
-  return notes.reduce(
+  const noteRange = notes.reduce<PlaybackModel["pitchRange"]>(
     (range, note) => ({
       min: Math.min(range.min, note.pitch),
       max: Math.max(range.max, note.pitch),
     }),
     { min: notes[0]!.pitch, max: notes[0]!.pitch },
   );
+
+  return padPitchRange(noteRange);
+}
+
+function padPitchRange(range: PlaybackModel["pitchRange"]): PlaybackModel["pitchRange"] {
+  return {
+    min: range.min - PIANO_ROLL_PITCH_PADDING,
+    max: range.max + PIANO_ROLL_PITCH_PADDING,
+  };
 }
 
 function readBpm(events: readonly ScoreEvent[]): number | undefined {

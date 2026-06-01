@@ -102,8 +102,6 @@ const STROKE_ONLY_NOTE_ROLES = new Set<NoteRole>(["fallback"]);
 
 const LEFT_GUTTER = 62;
 const RIGHT_GUTTER = 20;
-const TOP_GUTTER = 18;
-const BOTTOM_GUTTER = 28;
 const NOTE_NAMES = ["C", "C♯", "D", "E♭", "E", "F", "F♯", "G", "A♭", "A", "B♭", "B"] as const;
 const BLACK_PITCH_CLASSES = new Set([1, 3, 6, 8, 10]);
 const MIN_ACTIVE_LABEL_GAP = 11;
@@ -150,8 +148,10 @@ export function computePianoRollLayout(
   activeSecond?: number,
 ): PianoRollNoteLayout[] {
   const usableWidth = Math.max(1, width - LEFT_GUTTER - RIGHT_GUTTER);
-  const usableHeight = Math.max(1, height - TOP_GUTTER - BOTTOM_GUTTER);
+  const usableHeight = Math.max(1, height);
   const pitchSpan = Math.max(1, model.pitchRange.max - model.pitchRange.min + 1);
+  const pitchHeight = usableHeight / pitchSpan;
+  const noteHeight = Math.min(usableHeight, Math.max(4, pitchHeight));
   const viewportDuration = Math.max(1, viewport.endSecond - viewport.startSecond);
 
   return model.notes.flatMap((note) => {
@@ -162,7 +162,7 @@ export function computePianoRollLayout(
       return [];
     }
 
-    const normalizedPitch = (note.pitch - model.pitchRange.min) / pitchSpan;
+    const pitchOffsetFromTop = model.pitchRange.max - note.pitch;
 
     return [
       {
@@ -170,9 +170,9 @@ export function computePianoRollLayout(
         role: note.role,
         entry: note.entry,
         x: LEFT_GUTTER + ((visibleStartSecond - viewport.startSecond) / viewportDuration) * usableWidth,
-        y: TOP_GUTTER + (1 - normalizedPitch) * usableHeight,
+        y: Math.min(usableHeight - noteHeight, Math.max(0, pitchOffsetFromTop * pitchHeight)),
         width: Math.max(2, ((visibleEndSecond - visibleStartSecond) / viewportDuration) * usableWidth),
-        height: Math.max(4, usableHeight / (pitchSpan + 3)),
+        height: noteHeight,
         isActive: activeSecond !== undefined && note.startSecond <= activeSecond && activeSecond < noteEndSecond,
       },
     ];
@@ -287,8 +287,8 @@ export function computeRoleBackplateLayout(
 ): RoleBackplateLayout[] {
   const rollLeft = LEFT_GUTTER;
   const rollRight = width - RIGHT_GUTTER;
-  const rollTop = TOP_GUTTER;
-  const rollBottom = height - BOTTOM_GUTTER;
+  const rollTop = 0;
+  const rollBottom = height;
   const groups = new Map<string, PianoRollNoteLayout[]>();
 
   for (const note of notes) {
@@ -480,8 +480,8 @@ function drawBackground(
     context.strokeStyle = line.isBarLine ? "rgba(45, 29, 18, 0.34)" : "rgba(60, 43, 30, 0.11)";
     context.lineWidth = line.isBarLine ? 2 : 1;
     context.beginPath();
-    context.moveTo(line.x + 0.5, TOP_GUTTER);
-    context.lineTo(line.x + 0.5, height - BOTTOM_GUTTER);
+    context.moveTo(line.x + 0.5, 0);
+    context.lineTo(line.x + 0.5, height);
     context.stroke();
   }
 
@@ -497,7 +497,7 @@ function drawBarBands(
 ): void {
   for (const band of computePianoRollBarBandLayout(model, width, viewport)) {
     context.fillStyle = "rgba(255, 252, 241, 0.16)";
-    context.fillRect(band.x, TOP_GUTTER, band.width, height - TOP_GUTTER - BOTTOM_GUTTER);
+    context.fillRect(band.x, 0, band.width, height);
   }
 }
 
@@ -513,13 +513,13 @@ function drawPlayhead(
   const x = LEFT_GUTTER + Math.min(1, Math.max(0, progress)) * (width - LEFT_GUTTER - RIGHT_GUTTER);
 
   context.fillStyle = "rgba(255, 248, 237, 0.28)";
-  context.fillRect(x - 5, TOP_GUTTER, 10, height - TOP_GUTTER - BOTTOM_GUTTER);
+  context.fillRect(x - 5, 0, 10, height);
 
   context.strokeStyle = "#2d1d12";
   context.lineWidth = 3;
   context.beginPath();
-  context.moveTo(x, TOP_GUTTER);
-  context.lineTo(x, height - BOTTOM_GUTTER);
+  context.moveTo(x, 0);
+  context.lineTo(x, height);
   context.stroke();
 }
 
@@ -572,7 +572,7 @@ export function computeActivePitchMarkerLayout(
   height: number,
   activePitches: readonly number[],
 ): ActivePitchMarkerLayout[] {
-  const usableHeight = Math.max(1, height - TOP_GUTTER - BOTTOM_GUTTER);
+  const usableHeight = Math.max(1, height);
   const pitchSpan = Math.max(1, model.pitchRange.max - model.pitchRange.min + 1);
   const pitchHeight = usableHeight / pitchSpan;
   const keyHeight = Math.max(7, Math.min(16, pitchHeight * 1.45));
@@ -582,7 +582,7 @@ export function computeActivePitchMarkerLayout(
     const pitchClass = ((pitch % 12) + 12) % 12;
     const isBlackKey = BLACK_PITCH_CLASSES.has(pitchClass);
     const pitchOffset = pitch - model.pitchRange.min;
-    const centerY = TOP_GUTTER + (pitchSpan - pitchOffset - 0.5) * pitchHeight;
+    const centerY = (pitchSpan - pitchOffset - 0.5) * pitchHeight;
     const y = Math.max(0, Math.min(height - keyHeight, centerY - keyHeight / 2));
 
     return {

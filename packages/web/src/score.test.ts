@@ -51,6 +51,14 @@ test("createPlaybackModel extracts timing metadata and notes", () => {
   assert.ok(model.pitchRange.min <= model.pitchRange.max);
 });
 
+test("createPlaybackModel pads the piano roll range around playback notes", () => {
+  const model = createPlaybackModel(generateScore({ seed: "fugue-smoke", lengthTicks: 7680 }));
+  const notePitches = model.notes.map((note) => note.pitch);
+
+  assert.equal(model.pitchRange.min, Math.min(...notePitches) - 1);
+  assert.equal(model.pitchRange.max, Math.max(...notePitches) + 1);
+});
+
 test("playback timeline resolver keeps the prior segment before the next offset", () => {
   const first = createPlaybackModel(generateScore({ seed: "timeline-first", lengthTicks: 7680 }));
   const second = createPlaybackModel(generateScore({ seed: "timeline-second", lengthTicks: 7680 }));
