@@ -4,6 +4,10 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  spessasynth_lib>spessasynth_core: 4.3.7
+  spessasynth_core: 4.3.7
+
 importers:
 
   .:
@@ -58,6 +62,12 @@ importers:
       '@fugematon/performance':
         specifier: workspace:*
         version: link:../performance
+      spessasynth_core:
+        specifier: 4.3.7
+        version: 4.3.7
+      spessasynth_lib:
+        specifier: 4.3.6
+        version: 4.3.6
     devDependencies:
       vite:
         specifier: ^8.0.13
@@ -381,6 +391,12 @@ packages:
     resolution: {integrity: sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==}
     engines: {node: '>=0.10.0'}
 
+  spessasynth_core@4.3.7:
+    resolution: {integrity: sha512-ut9KOPUPjm9n1n4kD4utAluA4pRpFRNtaObR4ocPmhjRnUoGCGtOCkAZod58YoHVEmcXjDtHVz0cmGfjSJEYPg==}
+
+  spessasynth_lib@4.3.6:
+    resolution: {integrity: sha512-EXMQaBHnbsnkTaLKzBYweZsNdT2oOgvF6wUR5AhdEuxwi0s0EAb7hAEVASEuj33E7tiGaH5Nf03jB10MoxCqZg==}
+
   tinyglobby@0.2.16:
     resolution: {integrity: sha512-pn99VhoACYR8nFHhxqix+uvsbXineAasWm5ojXoN8xEwK5Kd3/TrhNn1wByuD52UxWRLy8pu+kRMniEi6Eq9Zg==}
     engines: {node: '>=12.0.0'}
@@ -668,6 +684,12 @@ snapshots:
       '@rolldown/binding-win32-x64-msvc': 1.0.1
 
   source-map-js@1.2.1: {}
+
+  spessasynth_core@4.3.7: {}
+
+  spessasynth_lib@4.3.6:
+    dependencies:
+      spessasynth_core: 4.3.7
 
   tinyglobby@0.2.16:
     dependencies:

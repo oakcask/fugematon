@@ -136,9 +136,9 @@
 * Stable identifier: https://github.com/spessasus/spessasynth_lib
 * Source type: software-documentation
 * Accessed: 2026-06-01
-* Verification: medium - GitHub README, package metadata, and license file were checked for browser support, package relationship, and Apache-2.0 license.
+* Verification: medium - GitHub README, npm package metadata, published package files, and license file were checked for browser support, package relationship, AudioWorklet processor packaging, and Apache-2.0 license.
 * Cache key: sources/playback-source-license-feasibility-2026-06-01.json
-* Notes: Browser-facing synthesizer library that depends on SpessaSynth Core and uses a WebAudio worklet processor.
+* Notes: Browser-facing synthesizer library that depends on SpessaSynth Core and uses a WebAudio worklet processor. `4.3.6` was reviewed for the SoundFont adapter prototype.
 
 ## spessasynth-core-github
 
@@ -146,9 +146,9 @@
 * Stable identifier: https://github.com/spessasus/spessasynth_core
 * Source type: software-documentation
 * Accessed: 2026-06-01
-* Verification: medium - GitHub README, package metadata, and license file were checked for SF2/SF3/DLS support, dependency surface, and Apache-2.0 license.
+* Verification: medium - GitHub README, npm package metadata, published package files, and license file were checked for SF2/SF3/DLS support, dependency surface, and Apache-2.0 license.
 * Cache key: sources/playback-source-license-feasibility-2026-06-01.json
-* Notes: SoundFont parsing and synthesis core for SpessaSynth.
+* Notes: SoundFont parsing and synthesis core for SpessaSynth. `4.3.7` was reviewed and pinned for the SoundFont adapter prototype.
 
 ## versilian-vsco-community
 

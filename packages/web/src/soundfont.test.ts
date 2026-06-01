@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { generateScore } from "@fugematon/core";
 import { createPlaybackModel } from "./score.js";
-import { createSoundFontEvents } from "./soundfont.js";
+import { createSoundFontEvents, MUSESCORE_GENERAL_SF3_PROTOTYPE } from "./soundfont.js";
 
 test("createSoundFontEvents maps playback notes to MIDI-style soundfont events", () => {
   const model = createPlaybackModel(generateScore({ seed: "fugue-smoke", lengthTicks: 7680 }), "organ-default");
@@ -21,4 +21,9 @@ test("createSoundFontEvents schedules from an offset", () => {
 
   assert.ok(events.length < createSoundFontEvents(model, 10).length);
   assert.equal(Math.min(...events.map((event) => event.timeSecond)), 10);
+});
+
+test("MuseScore General prototype descriptor points at a lazy static asset", () => {
+  assert.equal(MUSESCORE_GENERAL_SF3_PROTOTYPE.distributed, false);
+  assert.equal(MUSESCORE_GENERAL_SF3_PROTOTYPE.url, "/soundfonts/MuseScore_General.sf3");
 });

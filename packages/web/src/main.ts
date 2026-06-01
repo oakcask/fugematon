@@ -438,6 +438,23 @@ function readRendererId(): PlaybackRendererId {
   return playbackRendererSelect.value === "soundfont-prototype" ? "soundfont-prototype" : "oscillator";
 }
 
+async function createScorePlayer(rendererId: PlaybackRendererId): Promise<ScorePlayer> {
+  if (rendererId !== "soundfont-prototype") {
+    return new ScorePlayer(undefined, { rendererId });
+  }
+
+  const context = new AudioContext();
+  try {
+    const { createSpessaSynthSoundFontAdapter } = await import("./spessasynth-adapter.js");
+    return new ScorePlayer(context, {
+      rendererId,
+      soundFontAdapter: createSpessaSynthSoundFontAdapter(context),
+    });
+  } catch {
+    return new ScorePlayer(context, { rendererId });
+  }
+}
+
 function createPendingState(
   seed: string,
   performanceProfileId: PerformanceProfileId = DEFAULT_WEB_PERFORMANCE_PROFILE_ID,
@@ -636,7 +653,7 @@ async function startPlayback(): Promise<void> {
       player?.stop();
       player = undefined;
     }
-    player ??= new ScorePlayer(undefined, { rendererId: state.rendererId });
+    player ??= await createScorePlayer(state.rendererId);
     const model = visualPlaybackModel(state);
     const started = await player.play(model, { offsetSecond, signal: controller.signal });
     if (!started || controller.signal.aborted) {
@@ -1310,7 +1327,9 @@ function renderNotices(data: NoticesData): void {
     ...(data.software.length === 0
       ? [noticeListItem("No third-party runtime software is distributed by the web app.")]
       : data.software.map((notice) =>
-          noticeListItem(`${notice.name} ${notice.version} - ${notice.license} - ${notice.homepage}`),
+          noticeListItem(
+            `${notice.name} ${notice.version} - ${notice.license} - ${notice.homepage} - ${notice.notice}`,
+          ),
         )),
   );
   audioAssetNotices.replaceChildren(

@@ -22,7 +22,22 @@ export type NoticesData = {
 };
 
 export const noticesData: NoticesData = {
-  software: [],
+  software: [
+    {
+      name: "spessasynth_lib",
+      version: "4.3.6",
+      license: "Apache-2.0",
+      homepage: "https://github.com/spessasus/spessasynth_lib",
+      notice: "Copyright 2026 Spessasus. Licensed under the Apache License, Version 2.0.",
+    },
+    {
+      name: "spessasynth_core",
+      version: "4.3.7",
+      license: "Apache-2.0",
+      homepage: "https://github.com/spessasus/spessasynth_core",
+      notice: "Copyright 2026 Spessasus. Licensed under the Apache License, Version 2.0.",
+    },
+  ],
   audioAssets: [],
 };
 
@@ -41,7 +56,8 @@ export function validateNoticesData(data: NoticesData): string[] {
       isBlank(software.name) ||
       isBlank(software.version) ||
       isBlank(software.license) ||
-      isBlank(software.homepage)
+      isBlank(software.homepage) ||
+      isBlank(software.notice)
     ) {
       errors.push(
         "web.notices.missing-software-metadata: runtime software notice is incomplete; why=distributed packages need release notices; action=add name, version, license, and homepage metadata",
