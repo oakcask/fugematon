@@ -26,8 +26,6 @@
 
 ## Code Changes
 
-- When changing code, make small, nearby, behavior-preserving refactors that improve progressive disclosure within the touched ownership boundary.
-- Keep PR-sized refactors in prerequisite stacked PRs when they prepare later feature, fix, or scoring work.
 - If a change affects a public contract, generated output shape, or planned behavior, update the relevant tests and docs.
 - When renaming or removing symbols, fields, exported types, JSON keys, CLI output keys, metrics, diagnostics names, or aliases, use `symbol-rename-audit` before reporting the work complete.
 - Follow `docs/reference/error-message-guidelines.md` when adding or changing CI, exception, warning, or log messages.
