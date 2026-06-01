@@ -93,6 +93,8 @@ for (const viewport of VIEWPORTS) {
     await expect(page.getByRole("button", { name: "Random seed" })).toBeVisible();
     await expect(page.getByText("Tempo")).toBeVisible();
     await expect(page.getByText("Key")).toBeVisible();
+    await expect(page.getByRole("combobox", { name: "Playback source" })).toHaveValue("oscillator");
+    await expect(page.locator("#renderer-status")).toHaveText("oscillator");
     await expect(page.getByRole("combobox", { name: "Playback mode" })).toHaveValue("continuous-fugue");
     await expect(page.getByText("Mode")).toBeVisible();
     await expect(page.locator("#mode-status")).toHaveText("continuous fugue");
@@ -105,6 +107,9 @@ for (const viewport of VIEWPORTS) {
     await expect(page.locator("#playback-position")).toHaveText(/^\d+s \/ \d+\.\d+s \| bar \d+:\d+ \/ \d+:\d+$/);
     await expect(page.getByRole("button", { name: "Play" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Pause" })).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "Notices" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Software" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Audio assets" })).toBeVisible();
 
     await page.getByRole("button", { name: "Random seed" }).click();
     await expect(seedInput).toHaveValue(RANDOM_SEED_PATTERN);

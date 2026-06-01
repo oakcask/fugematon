@@ -3,6 +3,7 @@ import test from "node:test";
 import { generateScore } from "@fugematon/core";
 import { createGainEnvelope, createScheduledNotes, midiToFrequency, ScorePlayer } from "./audio.js";
 import { createPlaybackModel, type PlaybackModel } from "./score.js";
+import type { SoundFontPlaybackAdapter, SoundFontRendererEvent } from "./soundfont.js";
 
 test("createScheduledNotes maps playback notes to absolute audio times", () => {
   const model = createPlaybackModel(generateScore({ seed: "fugue-smoke", lengthTicks: 7680 }));
@@ -167,6 +168,43 @@ test("ScorePlayer queueNext rejects invalid boundaries", async () => {
   assert.equal(player.queueNext(model, Number.NaN), false);
 });
 
+test("ScorePlayer schedules soundfont prototype events when an adapter is provided", async () => {
+  const context = new FakeAudioContext();
+  const adapter = new FakeSoundFontAdapter();
+  const player = new ScorePlayer(context as unknown as AudioContext, {
+    rendererId: "soundfont-prototype",
+    soundFontAdapter: adapter,
+  });
+  const model = createTinyPlaybackModel({
+    totalSeconds: 4,
+    notes: [{ startSecond: 0, durationSecond: 1 }],
+  });
+
+  assert.equal(await player.play(model), true);
+
+  assert.equal(adapter.loadCount, 1);
+  assert.equal(context.oscillatorStarts.length, 0);
+  assert.equal(player.rendererStatus.active, "soundfont-prototype");
+  assert.ok(adapter.scheduledEvents.some((event) => event.kind === "program-change" && event.program === 73));
+  assert.ok(adapter.scheduledEvents.some((event) => event.kind === "note-on" && event.pitch === 60));
+  assert.ok(adapter.scheduledEvents.some((event) => event.kind === "note-off" && event.pitch === 60));
+});
+
+test("ScorePlayer falls back to oscillator when soundfont prototype adapter is missing", async () => {
+  const context = new FakeAudioContext();
+  const player = new ScorePlayer(context as unknown as AudioContext, { rendererId: "soundfont-prototype" });
+  const model = createTinyPlaybackModel({
+    totalSeconds: 4,
+    notes: [{ startSecond: 0, durationSecond: 1 }],
+  });
+
+  assert.equal(await player.play(model), true);
+
+  assert.equal(player.rendererStatus.active, "oscillator");
+  assert.match(player.rendererStatus.fallbackReason ?? "", /^web\.audio\.soundfont-adapter-missing:/);
+  assert.equal(context.oscillatorStarts.length, 1);
+});
+
 function round(value: number): number {
   return Math.round(value * 1_000_000) / 1_000_000;
 }
@@ -205,6 +243,8 @@ function createTinyPlaybackModel(input: { totalSeconds: number; notes: TinyPlayb
       durationSecond: note.durationSecond,
       pitch: 60 + index,
       velocity: 96,
+      channel: 0,
+      program: 73,
       volume: 100,
       gain: 0.2,
       pan: 64,
@@ -303,4 +343,20 @@ class FakeAudioContext {
   resume(): Promise<void> {
     return Promise.resolve();
   }
+}
+
+class FakeSoundFontAdapter implements SoundFontPlaybackAdapter {
+  loadCount = 0;
+  readonly scheduledEvents: SoundFontRendererEvent[] = [];
+
+  load(): Promise<void> {
+    this.loadCount += 1;
+    return Promise.resolve();
+  }
+
+  schedule(events: readonly SoundFontRendererEvent[]): void {
+    this.scheduledEvents.push(...events);
+  }
+
+  stop(): void {}
 }

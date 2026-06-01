@@ -31,6 +31,8 @@ export type PlaybackNote = {
   pitch: number;
   velocity: number;
   role?: NoteRole;
+  channel: number;
+  program: number;
   volume: number;
   gain: number;
   pan: number;
@@ -116,6 +118,8 @@ export function createPlaybackModel(
       pitch: note.pitch,
       velocity: note.velocity,
       role: note.role,
+      channel: note.channel,
+      program: note.program,
       volume: note.volume,
       gain: note.gain,
       pan: note.pan,
