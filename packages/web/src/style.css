@@ -108,6 +108,7 @@ h1 {
 .control-card,
 .generation-card,
 .score-card,
+.notices-card,
 .visualizer-card {
   border: 1px solid rgba(60, 43, 30, 0.15);
   border-radius: 1.6rem;
@@ -167,6 +168,58 @@ h1 {
   max-width: 64rem;
   padding: 1rem;
   animation: rise 580ms ease-out 160ms both;
+}
+
+.notices-card {
+  max-width: 64rem;
+  margin-top: 1rem;
+  padding: 1rem;
+  animation: rise 580ms ease-out 360ms both;
+}
+
+.notices-card h2,
+.notices-card h3 {
+  margin: 0;
+  letter-spacing: 0;
+}
+
+.notices-card h2 {
+  font-size: 1.45rem;
+}
+
+.notices-card h3 {
+  color: #6f5136;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+}
+
+.notices-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.notices-grid section {
+  min-width: 0;
+}
+
+.notices-grid ul {
+  margin: 0.65rem 0 0;
+  padding-left: 1.1rem;
+  color: #5b4937;
+  line-height: 1.35;
+}
+
+.app-footer {
+  max-width: 64rem;
+  margin-top: 1rem;
+  text-align: right;
+}
+
+.app-footer a {
+  color: #5b4937;
+  font-weight: 700;
 }
 
 .score-card,
@@ -295,6 +348,7 @@ h1 {
   .seed-row,
   .generation-card,
   .score-card,
+  .notices-grid,
   .transport-card {
     grid-template-columns: 1fr;
   }

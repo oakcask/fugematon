@@ -273,6 +273,8 @@ function layoutPlaybackNote(input: { pitch: number; startSecond: number }): Play
     durationSecond: 1,
     pitch: input.pitch,
     velocity: 80,
+    channel: 0,
+    program: 73,
     volume: 1,
     gain: 1,
     pan: 0,

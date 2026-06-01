@@ -6,6 +6,7 @@ import {
 } from "@fugematon/core";
 import { listPerformanceProfiles, type PerformanceProfileId } from "@fugematon/performance";
 import "./style.css";
+import type { PlaybackRendererId } from "./audio.js";
 import { ScorePlayer } from "./audio.js";
 import {
   adoptedSegmentSessionSeed,
@@ -16,6 +17,7 @@ import {
   shouldDeferContinuousPrefetchUntilSegmentStart,
 } from "./endless-playback.js";
 import type { GenerationWorkerResponse, GenerationWorkerReviewSnapshot } from "./generation-worker-protocol.js";
+import { assertValidNoticesData, type NoticesData, noticesData } from "./notices.js";
 import { drawPianoRoll } from "./piano-roll.js";
 import {
   appendPlaybackModelSessionTimeline,
@@ -38,6 +40,7 @@ const DEBUG_STORAGE_KEY = "fugematon.debug";
 const SCORE_LENGTH_TICKS = FUGUE_FORM_REVIEW_LENGTH_TICKS;
 const GENERATION_DEADLINE_MS = 10_000;
 const AUDIBLE_BOUNDARY_PAUSE_MS = 750;
+const DEFAULT_PLAYBACK_RENDERER_ID: PlaybackRendererId = "oscillator";
 
 type UrlUpdateMode = "push" | "replace" | "none";
 type GenerationStatus = "idle" | "generating" | "over-deadline" | "ready" | "failed";
@@ -46,6 +49,7 @@ type NextSegmentStatus = "idle" | "prefetching" | "ready" | "failed";
 type AppState = {
   seed: string;
   performanceProfileId: PerformanceProfileId;
+  rendererId: PlaybackRendererId;
   playbackMode: InfinitePlaybackMode;
   segmentIndex: number;
   model?: PlaybackModel;
@@ -75,7 +79,9 @@ type DebugValue = string | number | boolean | undefined;
 
 const app = requireElement(document.querySelector<HTMLDivElement>("#app"), "app root");
 
+assertValidNoticesData();
 let state = createPendingState(readInitialSeed());
+let player: ScorePlayer | undefined;
 
 app.innerHTML = `
   <section class="shell">
@@ -89,6 +95,10 @@ app.innerHTML = `
       <div class="seed-row">
         <input id="seed" name="seed" autocomplete="off" spellcheck="false" />
         <select id="performance-profile" name="performance-profile" aria-label="Performance profile"></select>
+        <select id="playback-renderer" name="playback-renderer" aria-label="Playback source">
+          <option value="oscillator">oscillator</option>
+          <option value="soundfont-prototype">soundfont pilot</option>
+        </select>
         <select id="playback-mode" name="playback-mode" aria-label="Playback mode">
           <option value="continuous-fugue">continuous fugue</option>
           <option value="endless-program">endless program</option>
@@ -148,6 +158,10 @@ app.innerHTML = `
     </section>
     <section class="generation-card" aria-live="polite">
       <div>
+        <span class="metric-label">Playback source</span>
+        <strong id="renderer-status"></strong>
+      </div>
+      <div>
         <span class="metric-label">Generation</span>
         <strong id="generation-status"></strong>
       </div>
@@ -176,6 +190,22 @@ app.innerHTML = `
         <strong id="fallback-status"></strong>
       </div>
     </section>
+    <section class="notices-card" id="notices" aria-labelledby="notices-heading">
+      <h2 id="notices-heading">Notices</h2>
+      <div class="notices-grid">
+        <section aria-labelledby="software-notices-heading">
+          <h3 id="software-notices-heading">Software</h3>
+          <ul id="software-notices"></ul>
+        </section>
+        <section aria-labelledby="audio-asset-notices-heading">
+          <h3 id="audio-asset-notices-heading">Audio assets</h3>
+          <ul id="audio-asset-notices"></ul>
+        </section>
+      </div>
+    </section>
+    <footer class="app-footer">
+      <a href="#notices">Notices</a>
+    </footer>
   </section>
 `;
 
@@ -184,6 +214,10 @@ const seedInput = requireElement(document.querySelector<HTMLInputElement>("#seed
 const performanceProfileSelect = requireElement(
   document.querySelector<HTMLSelectElement>("#performance-profile"),
   "performance profile select",
+);
+const playbackRendererSelect = requireElement(
+  document.querySelector<HTMLSelectElement>("#playback-renderer"),
+  "playback renderer select",
 );
 const playbackModeSelect = requireElement(
   document.querySelector<HTMLSelectElement>("#playback-mode"),
@@ -229,22 +263,35 @@ const fallbackStatus = requireElement(
   document.querySelector<HTMLElement>("#fallback-status"),
   "fallback status metric",
 );
+const rendererStatus = requireElement(
+  document.querySelector<HTMLElement>("#renderer-status"),
+  "renderer status metric",
+);
 const playPauseButton = requireElement(document.querySelector<HTMLButtonElement>("#play-pause"), "play/pause button");
 const stopButton = requireElement(document.querySelector<HTMLButtonElement>("#stop"), "stop button");
 const transportStatus = requireElement(document.querySelector<HTMLElement>("#transport-status"), "transport status");
 const playbackPosition = requireElement(document.querySelector<HTMLElement>("#playback-position"), "playback position");
 const pianoRoll = requireElement(document.querySelector<HTMLCanvasElement>("#piano-roll"), "piano roll");
+const softwareNotices = requireElement(
+  document.querySelector<HTMLUListElement>("#software-notices"),
+  "software notices",
+);
+const audioAssetNotices = requireElement(
+  document.querySelector<HTMLUListElement>("#audio-asset-notices"),
+  "audio asset notices",
+);
 
 seedInput.value = state.seed;
 for (const profile of listPerformanceProfiles()) {
   performanceProfileSelect.add(new Option(profile.id, profile.id));
 }
 performanceProfileSelect.value = state.performanceProfileId;
+playbackRendererSelect.value = state.rendererId;
 playbackModeSelect.value = state.playbackMode;
 render(state);
+renderNotices(noticesData);
 renderPlaybackPosition(0);
 
-let player: ScorePlayer | undefined;
 let animationFrame: number | undefined;
 let playbackStartController: AbortController | undefined;
 let pausedAtSecond = 0;
@@ -277,6 +324,16 @@ randomSeedButton.addEventListener("click", () => {
 
 playbackModeSelect.addEventListener("change", () => {
   regenerateScore(seedInput.value, "replace");
+});
+
+playbackRendererSelect.addEventListener("change", () => {
+  cancelPlayback();
+  state = {
+    ...state,
+    rendererId: readRendererId(),
+  };
+  render(state);
+  transportStatus.textContent = formatRendererChangeStatus(state.rendererId);
 });
 
 playPauseButton.addEventListener("click", () => {
@@ -341,6 +398,7 @@ function regenerateScore(seed: string, urlUpdateMode: UrlUpdateMode = "push"): v
   state = {
     seed: nextSeed,
     performanceProfileId,
+    rendererId: readRendererId(),
     playbackMode,
     segmentIndex,
     playbackTimeline: [],
@@ -376,6 +434,10 @@ function readInitialSeed(): string {
   return readUrlSeed(createRandomSeed());
 }
 
+function readRendererId(): PlaybackRendererId {
+  return playbackRendererSelect.value === "soundfont-prototype" ? "soundfont-prototype" : "oscillator";
+}
+
 function createPendingState(
   seed: string,
   performanceProfileId: PerformanceProfileId = DEFAULT_WEB_PERFORMANCE_PROFILE_ID,
@@ -383,6 +445,7 @@ function createPendingState(
   return {
     seed,
     performanceProfileId,
+    rendererId: DEFAULT_PLAYBACK_RENDERER_ID,
     playbackMode: "continuous-fugue",
     segmentIndex: 0,
     playbackTimeline: [],
@@ -487,6 +550,7 @@ function renderScoreCard(snapshot: ScoreCardSnapshot | undefined): void {
 }
 
 function renderGenerationCard(nextState: AppState): void {
+  rendererStatus.textContent = formatRendererStatus(nextState.rendererId, player?.rendererStatus.fallbackReason);
   generationStatus.textContent = formatGenerationStatus(nextState);
   modeStatus.textContent = formatPlaybackMode(nextState.playbackMode);
   generatedSegmentIndexStatus.textContent = `${nextState.segmentIndex}`;
@@ -568,7 +632,11 @@ async function startPlayback(): Promise<void> {
   renderPlaybackPosition(pausedAtSecond);
 
   try {
-    player ??= new ScorePlayer();
+    if (player?.rendererId !== state.rendererId) {
+      player?.stop();
+      player = undefined;
+    }
+    player ??= new ScorePlayer(undefined, { rendererId: state.rendererId });
     const model = visualPlaybackModel(state);
     const started = await player.play(model, { offsetSecond, signal: controller.signal });
     if (!started || controller.signal.aborted) {
@@ -578,6 +646,7 @@ async function startPlayback(): Promise<void> {
     pausedAtSecond = 0;
     hasPausedPlayback = false;
     segmentChainActive = isSegmentChainingPlaybackMode(state.playbackMode);
+    renderGenerationCard(state);
     transportStatus.textContent = isSegmentChainingPlaybackMode(state.playbackMode)
       ? "Playing segment"
       : "Playing score";
@@ -816,6 +885,7 @@ function handleGenerationWorkerResponse(response: GenerationWorkerResponse): voi
   state = {
     seed: response.seed,
     performanceProfileId: response.performanceProfileId,
+    rendererId: state.rendererId,
     playbackMode: response.deadlineResult.mode,
     segmentIndex: response.deadlineResult.segmentIndex,
     model,
@@ -1086,6 +1156,7 @@ function adoptPrefetchedSegment(segment: PrefetchedSegment): void {
   state = {
     seed,
     performanceProfileId: segment.performanceProfileId,
+    rendererId: state.rendererId,
     playbackMode: segment.deadlineResult.mode,
     segmentIndex: segment.deadlineResult.segmentIndex,
     model: segment.model,
@@ -1199,6 +1270,20 @@ function formatPlaybackMode(mode: InfinitePlaybackMode): string {
   return "continuous fugue";
 }
 
+function formatRendererStatus(rendererId: PlaybackRendererId, fallbackReason: string | undefined): string {
+  if (fallbackReason !== undefined) {
+    return rendererId === "soundfont-prototype" ? "soundfont pilot -> oscillator" : "oscillator";
+  }
+
+  return rendererId === "soundfont-prototype" ? "soundfont pilot" : "oscillator";
+}
+
+function formatRendererChangeStatus(rendererId: PlaybackRendererId): string {
+  return rendererId === "soundfont-prototype"
+    ? "SoundFont pilot selected; oscillator fallback remains available"
+    : "Oscillator renderer selected";
+}
+
 function formatDeadlineStatus(nextState: AppState): string {
   if (nextState.deadlineResult === undefined) {
     return "...";
@@ -1218,6 +1303,29 @@ function renderPlayPauseLabel(isPlaying: boolean): string {
   }
 
   return hasPausedPlayback ? "Resume" : "Play";
+}
+
+function renderNotices(data: NoticesData): void {
+  softwareNotices.replaceChildren(
+    ...(data.software.length === 0
+      ? [noticeListItem("No third-party runtime software is distributed by the web app.")]
+      : data.software.map((notice) =>
+          noticeListItem(`${notice.name} ${notice.version} - ${notice.license} - ${notice.homepage}`),
+        )),
+  );
+  audioAssetNotices.replaceChildren(
+    ...(data.audioAssets.length === 0
+      ? [noticeListItem("No third-party audio assets are distributed by the web app.")]
+      : data.audioAssets.map((notice) =>
+          noticeListItem(`${notice.sourceTitle} - ${notice.license} - ${notice.sourceUrl} - ${notice.attribution}`),
+        )),
+  );
+}
+
+function noticeListItem(text: string): HTMLLIElement {
+  const item = document.createElement("li");
+  item.textContent = text;
+  return item;
 }
 
 function requireElement<TElement extends Element>(element: TElement | null, name: string): TElement {

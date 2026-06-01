@@ -1,6 +1,6 @@
 # Playback source realism feasibility
 
-Status: investigation complete. This note evaluates whether Fugematon should use SpessaSynth with a SoundFont, build a small browser sampler, or defer both until a notices page and asset metadata path exist.
+Status: investigation complete; first prototype scaffold added. This note evaluates whether Fugematon should use SpessaSynth with a SoundFont, build a small browser sampler, or defer both until a notices page and asset metadata path exist.
 
 ## Decision Summary
 
@@ -125,6 +125,22 @@ Out of scope:
 * Server-side audio rendering.
 * Treating sample quality as generation-quality acceptance.
 * Bundling large sound assets into the initial JS bundle.
+
+## Prototype Scaffold Added
+
+The first prototype pass adds the browser-side boundary without adopting SpessaSynth or distributing an audio asset yet:
+
+* `packages/web/src/notices.ts` defines the notices data shape and validates distributed audio assets with the searchable error id `web.notices.missing-audio-asset-metadata`.
+* The web UI exposes a `Notices` section with software and audio asset lists. The current default state intentionally reports that no third-party runtime software or audio assets are distributed.
+* `packages/web/src/soundfont.ts` translates `PlaybackModel` notes into MIDI-style `program-change`, `note-on`, and `note-off` events using the existing performance profile channel/program fields.
+* `ScorePlayer` accepts `oscillator` and `soundfont-prototype` renderer ids. The SoundFont path requires an injected adapter and falls back to oscillator playback with `web.audio.soundfont-adapter-missing` until the pinned SpessaSynth adapter and `.sf3` asset metadata are added.
+
+Still pending:
+
+* Run dependency review for exact pinned `spessasynth_lib` and `spessasynth_core` versions before installation.
+* Add the AudioWorklet processor and actual `.sf3` loading path without eager initial-bundle inclusion.
+* Add concrete runtime package and audio asset notices before distributing SpessaSynth or MuseScore_General.sf3.
+* Complete manual listening comparison between oscillator and SoundFont playback.
 
 ## Sources
 

@@ -1,4 +1,5 @@
 import type { PlaybackModel, PlaybackNote } from "./score.js";
+import { createSoundFontEvents, MUSESCORE_GENERAL_SF3_PROTOTYPE, type SoundFontPlaybackAdapter } from "./soundfont.js";
 
 export type ScheduledNote = {
   note: PlaybackNote;
@@ -24,6 +25,19 @@ export type GainEnvelope = {
 export type PlayOptions = {
   offsetSecond?: number;
   signal?: AbortSignal;
+};
+
+export type PlaybackRendererId = "oscillator" | "soundfont-prototype";
+
+export type PlaybackRendererStatus = {
+  requested: PlaybackRendererId;
+  active: PlaybackRendererId;
+  fallbackReason?: string;
+};
+
+export type ScorePlayerOptions = {
+  rendererId?: PlaybackRendererId;
+  soundFontAdapter?: SoundFontPlaybackAdapter;
 };
 
 const START_DELAY_SECONDS = 0.12;
@@ -80,18 +94,40 @@ export function createGainEnvelope(scheduled: ScheduledNote): GainEnvelope {
 export class ScorePlayer {
   private readonly context: AudioContext;
   private readonly master: GainNode;
+  private readonly soundFontAdapter: SoundFontPlaybackAdapter | undefined;
   private readonly activeSources = new Set<OscillatorNode>();
   private readonly activeGains = new Set<GainNode>();
   private readonly activePanners = new Set<StereoPannerNode>();
   private startedAtSecond: number | undefined;
   private durationSecond = 0;
   private playbackOffsetSecond = 0;
+  private activeRendererId: PlaybackRendererId = "oscillator";
+  private rendererStatusValue: PlaybackRendererStatus;
 
-  constructor(context = new AudioContext()) {
+  constructor(context = new AudioContext(), options: ScorePlayerOptions = {}) {
     this.context = context;
+    this.rendererId = options.rendererId ?? "oscillator";
+    this.soundFontAdapter = options.soundFontAdapter;
+    this.rendererStatusValue = {
+      requested: this.rendererId,
+      active:
+        this.rendererId === "soundfont-prototype" && options.soundFontAdapter === undefined
+          ? "oscillator"
+          : this.rendererId,
+      fallbackReason:
+        this.rendererId === "soundfont-prototype" && options.soundFontAdapter === undefined
+          ? soundFontAdapterMissingReason()
+          : undefined,
+    };
     this.master = context.createGain();
     this.master.gain.value = MASTER_GAIN;
     this.master.connect(context.destination);
+  }
+
+  readonly rendererId: PlaybackRendererId;
+
+  get rendererStatus(): PlaybackRendererStatus {
+    return this.rendererStatusValue;
   }
 
   async play(model: PlaybackModel, options: PlayOptions = {}): Promise<boolean> {
@@ -111,15 +147,24 @@ export class ScorePlayer {
 
     const offsetSecond = clamp(options.offsetSecond ?? 0, 0, model.totalSeconds);
     const startAtSecond = this.context.currentTime + START_DELAY_SECONDS;
+    const renderer = await this.resolveRenderer();
+    if (options.signal?.aborted) {
+      return false;
+    }
+
     this.startedAtSecond = startAtSecond;
     this.durationSecond = model.totalSeconds;
     this.playbackOffsetSecond = offsetSecond;
+    if (renderer === "soundfont-prototype") {
+      this.soundFontAdapter?.schedule(createSoundFontEvents(model, startAtSecond, offsetSecond));
+      return true;
+    }
+
     for (const scheduled of createScheduledNotes(model, startAtSecond, offsetSecond)) {
       if (options.signal?.aborted) {
         this.stop();
         return false;
       }
-
       this.scheduleOrganNote(scheduled);
     }
 
@@ -136,8 +181,12 @@ export class ScorePlayer {
     }
 
     const startAtSecond = this.startedAtSecond + boundaryPlaybackSecond - this.playbackOffsetSecond;
-    for (const scheduled of createScheduledNotes(model, startAtSecond)) {
-      this.scheduleOrganNote(scheduled);
+    if (this.activeRendererId === "soundfont-prototype") {
+      this.soundFontAdapter?.schedule(createSoundFontEvents(model, startAtSecond));
+    } else {
+      for (const scheduled of createScheduledNotes(model, startAtSecond)) {
+        this.scheduleOrganNote(scheduled);
+      }
     }
     this.durationSecond = Math.max(this.durationSecond, boundaryPlaybackSecond + model.totalSeconds);
 
@@ -196,9 +245,50 @@ export class ScorePlayer {
       panner.disconnect();
     }
 
+    this.soundFontAdapter?.stop();
     this.activeSources.clear();
     this.activeGains.clear();
     this.activePanners.clear();
+  }
+
+  private async resolveRenderer(): Promise<PlaybackRendererId> {
+    if (this.rendererId !== "soundfont-prototype") {
+      this.activeRendererId = "oscillator";
+      this.rendererStatusValue = {
+        requested: "oscillator",
+        active: "oscillator",
+      };
+      return "oscillator";
+    }
+
+    if (this.soundFontAdapter === undefined) {
+      this.activeRendererId = "oscillator";
+      this.rendererStatusValue = {
+        requested: "soundfont-prototype",
+        active: "oscillator",
+        fallbackReason: soundFontAdapterMissingReason(),
+      };
+      return "oscillator";
+    }
+
+    try {
+      await this.soundFontAdapter.load(MUSESCORE_GENERAL_SF3_PROTOTYPE);
+      this.activeRendererId = "soundfont-prototype";
+      this.rendererStatusValue = {
+        requested: "soundfont-prototype",
+        active: "soundfont-prototype",
+      };
+      return "soundfont-prototype";
+    } catch {
+      this.activeRendererId = "oscillator";
+      this.rendererStatusValue = {
+        requested: "soundfont-prototype",
+        active: "oscillator",
+        fallbackReason:
+          "web.audio.soundfont-load-failed: SoundFont prototype failed to load; why=playback must remain available when optional sample assets fail; action=use oscillator renderer and inspect SoundFont asset setup",
+      };
+      return "oscillator";
+    }
   }
 
   private scheduleOrganNote(scheduled: ScheduledNote): void {
@@ -241,4 +331,8 @@ export class ScorePlayer {
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
+}
+
+function soundFontAdapterMissingReason(): string {
+  return "web.audio.soundfont-adapter-missing: SoundFont prototype adapter is not installed; why=SpessaSynth and SF3 assets are optional during the prototype; action=use oscillator renderer or install the pinned SoundFont adapter and notices metadata";
 }
