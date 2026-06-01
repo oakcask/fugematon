@@ -149,9 +149,15 @@ Still pending:
 
 * Add or document the actual `.sf3` asset delivery path without eager initial-bundle inclusion.
 * Choose whether `/soundfonts/MuseScore_General.sf3` is served from the web deploy artifact or replaced with a documented external asset URL before treating the SoundFont pilot as deploy-ready.
-* Add CI verification that the configured SoundFont URL, asset manifest metadata, license notice, and deploy artifact or external asset record stay in sync.
-* Add concrete audio asset notices before distributing MuseScore_General.sf3, and add the route-addressable plain text notice artifact for release bundles.
+* Add concrete audio asset notices before distributing MuseScore_General.sf3.
 * Complete manual listening comparison between oscillator and SoundFont playback.
+
+The third prototype pass adds the deployment guardrails needed before that asset decision:
+
+* `packages/web/public/NOTICE.txt` is generated from the web notices data and linked from the in-app notices section as a route-addressable plain text artifact.
+* `workflow-scripts/web-playback-assets.mjs` verifies that the checked notice artifact matches the notices data and that any distributed SoundFont descriptor has matching audio asset notice metadata.
+* The same check keeps the configured SoundFont URL tied to delivery: local web-public SoundFont URLs must exist in the public assets and built deploy artifact, while external SoundFont URLs must carry an integrity record.
+* `pnpm build` and `pnpm --filter @fugematon/web build` now run the notice generation and playback asset verification around the Vite bundle step.
 
 ## Sources
 

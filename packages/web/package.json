@@ -16,7 +16,7 @@
     "dev": "vite --host 127.0.0.1",
     "og:image": "node scripts/render-og-image.mjs",
     "og:image:app-dist": "node scripts/render-og-image.mjs --app-dist",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && node ../../workflow-scripts/web-playback-assets.mjs write-notice && vite build && node ../../workflow-scripts/web-playback-assets.mjs verify",
     "build:bundle": "vite build",
     "test": "node --test dist/**/*.test.js"
   }
