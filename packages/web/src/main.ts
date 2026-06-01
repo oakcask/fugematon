@@ -14,6 +14,7 @@ import {
   isSegmentChainingPlaybackMode,
   segmentBoundaryPauseMs,
   segmentRequestSeed,
+  shouldDeferContinuousPrefetchUntilSegmentStart,
 } from "./endless-playback.js";
 import type { GenerationWorkerResponse, GenerationWorkerReviewSnapshot } from "./generation-worker-protocol.js";
 import { drawPianoRoll } from "./piano-roll.js";
@@ -577,6 +578,9 @@ function startVisualizerLoop(): void {
     renderPlaybackPosition(playbackSecond);
 
     if (player?.isPlaying) {
+      if (segmentChainActive && state.playbackMode === "continuous-fugue") {
+        prefetchNextSegment();
+      }
       animationFrame = window.requestAnimationFrame(drawFrame);
       return;
     }
@@ -788,6 +792,17 @@ function prefetchNextSegment(): void {
     state.model === undefined ||
     activePrefetchGenerationRequestId !== undefined ||
     prefetchedSegment !== undefined
+  ) {
+    return;
+  }
+
+  const absolutePlaybackSecond = player?.playbackSecond ?? 0;
+  if (
+    shouldDeferContinuousPrefetchUntilSegmentStart({
+      mode: state.playbackMode,
+      playbackSecond: absolutePlaybackSecond,
+      segmentPlaybackOffsetSecond: state.segmentPlaybackOffsetSecond,
+    })
   ) {
     return;
   }

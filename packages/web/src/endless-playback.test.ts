@@ -6,6 +6,7 @@ import {
   isSegmentChainingPlaybackMode,
   segmentBoundaryPauseMs,
   segmentRequestSeed,
+  shouldDeferContinuousPrefetchUntilSegmentStart,
 } from "./endless-playback.js";
 
 test("endless prefetch deadline uses the remaining playback window", () => {
@@ -68,6 +69,44 @@ test("continuous fugue prefetch deadline does not reserve boundary pause time", 
       minimumDeadlineMs: 10_000,
     }),
     164_380,
+  );
+});
+
+test("continuous fugue defers further prefetch while a queued segment has not started", () => {
+  assert.equal(
+    shouldDeferContinuousPrefetchUntilSegmentStart({
+      mode: "continuous-fugue",
+      playbackSecond: 12,
+      segmentPlaybackOffsetSecond: 30,
+    }),
+    true,
+  );
+  assert.equal(
+    shouldDeferContinuousPrefetchUntilSegmentStart({
+      mode: "continuous-fugue",
+      playbackSecond: 30,
+      segmentPlaybackOffsetSecond: 30,
+    }),
+    false,
+  );
+});
+
+test("audible boundary modes do not use continuous prefetch deferral", () => {
+  assert.equal(
+    shouldDeferContinuousPrefetchUntilSegmentStart({
+      mode: "endless-program",
+      playbackSecond: 12,
+      segmentPlaybackOffsetSecond: 30,
+    }),
+    false,
+  );
+  assert.equal(
+    shouldDeferContinuousPrefetchUntilSegmentStart({
+      mode: "regenerative-cycle",
+      playbackSecond: 12,
+      segmentPlaybackOffsetSecond: 30,
+    }),
+    false,
   );
 });
 
