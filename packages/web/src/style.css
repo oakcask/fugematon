@@ -136,18 +136,23 @@ h1 {
 
 .seed-row {
   display: grid;
-  grid-template-columns: minmax(11rem, 1fr) minmax(11rem, 1fr) auto auto;
+  grid-template-columns: repeat(4, minmax(9rem, 1fr)) auto auto;
   gap: 0.7rem;
   margin-top: 0.65rem;
 }
 
 .seed-row input {
-  grid-column: 1 / 4;
+  grid-column: 1 / 5;
   grid-row: 1;
 }
 
 #random-seed {
-  grid-column: 4;
+  grid-column: 5;
+  grid-row: 1;
+}
+
+.seed-row button[type="submit"] {
+  grid-column: 6;
   grid-row: 1;
 }
 
@@ -354,7 +359,8 @@ h1 {
   }
 
   .seed-row input,
-  #random-seed {
+  #random-seed,
+  .seed-row button[type="submit"] {
     grid-column: 1;
     grid-row: auto;
   }

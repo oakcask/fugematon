@@ -5,6 +5,7 @@ import type {
   SegmentSnapshot,
   TerminalClosureClassification,
   TerminalClosureSource,
+  WritingProfileId,
 } from "@fugematon/core";
 import type { PerformanceProfileId } from "@fugematon/performance";
 import type { PlaybackModel } from "./score.js";
@@ -12,6 +13,7 @@ import type { PlaybackModel } from "./score.js";
 export type GenerationWorkerRequest = {
   requestId: number;
   seed: string;
+  writingProfileId: WritingProfileId;
   performanceProfileId: PerformanceProfileId;
   lengthTicks: number;
   deadlineMs: number;
@@ -35,6 +37,7 @@ export type GenerationWorkerSuccessResponse = {
   type: "generated";
   requestId: number;
   seed: string;
+  writingProfileId: WritingProfileId;
   performanceProfileId: PerformanceProfileId;
   model: PlaybackModel;
   deadlineResult: SegmentGenerationDeadlineResult;

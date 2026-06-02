@@ -1,8 +1,11 @@
 import {
+  DEFAULT_WRITING_PROFILE_ID,
   FUGUE_FORM_REVIEW_LENGTH_TICKS,
   type InfinitePlaybackMode,
   type SegmentGenerationDeadlineResult,
   type SegmentSnapshot,
+  WRITING_PROFILE_IDS,
+  type WritingProfileId,
 } from "@fugematon/core";
 import { listPerformanceProfiles, type PerformanceProfileId } from "@fugematon/performance";
 import "./style.css";
@@ -48,6 +51,7 @@ type NextSegmentStatus = "idle" | "prefetching" | "ready" | "failed";
 
 type AppState = {
   seed: string;
+  writingProfileId: WritingProfileId;
   performanceProfileId: PerformanceProfileId;
   rendererId: PlaybackRendererId;
   playbackMode: InfinitePlaybackMode;
@@ -66,6 +70,7 @@ type AppState = {
 
 type PrefetchedSegment = {
   seed: string;
+  writingProfileId: WritingProfileId;
   performanceProfileId: PerformanceProfileId;
   model: PlaybackModel;
   sessionModel?: PlaybackModel;
@@ -94,6 +99,7 @@ app.innerHTML = `
       <label for="seed">Seed</label>
       <div class="seed-row">
         <input id="seed" name="seed" autocomplete="off" spellcheck="false" />
+        <select id="writing-profile" name="writing-profile" aria-label="Writing profile"></select>
         <select id="performance-profile" name="performance-profile" aria-label="Performance profile"></select>
         <select id="playback-renderer" name="playback-renderer" aria-label="Playback source">
           <option value="oscillator">oscillator</option>
@@ -212,6 +218,10 @@ app.innerHTML = `
 
 const seedForm = requireElement(document.querySelector<HTMLFormElement>("#seed-form"), "seed form");
 const seedInput = requireElement(document.querySelector<HTMLInputElement>("#seed"), "seed input");
+const writingProfileSelect = requireElement(
+  document.querySelector<HTMLSelectElement>("#writing-profile"),
+  "writing profile select",
+);
 const performanceProfileSelect = requireElement(
   document.querySelector<HTMLSelectElement>("#performance-profile"),
   "performance profile select",
@@ -283,6 +293,10 @@ const audioAssetNotices = requireElement(
 );
 
 seedInput.value = state.seed;
+for (const profileId of WRITING_PROFILE_IDS) {
+  writingProfileSelect.add(new Option(profileId, profileId));
+}
+writingProfileSelect.value = state.writingProfileId;
 for (const profile of listPerformanceProfiles()) {
   performanceProfileSelect.add(new Option(profile.id, profile.id));
 }
@@ -324,6 +338,14 @@ randomSeedButton.addEventListener("click", () => {
 });
 
 playbackModeSelect.addEventListener("change", () => {
+  regenerateScore(seedInput.value, "replace");
+});
+
+writingProfileSelect.addEventListener("change", () => {
+  regenerateScore(seedInput.value, "replace");
+});
+
+performanceProfileSelect.addEventListener("change", () => {
   regenerateScore(seedInput.value, "replace");
 });
 
@@ -395,9 +417,11 @@ function regenerateScore(seed: string, urlUpdateMode: UrlUpdateMode = "push"): v
   activePrimaryGenerationRequestId = requestId;
   primaryGenerationInFlight = true;
   const segmentIndex = 0;
+  const writingProfileId = writingProfileSelect.value as WritingProfileId;
   const performanceProfileId = performanceProfileSelect.value as PerformanceProfileId;
   state = {
     seed: nextSeed,
+    writingProfileId,
     performanceProfileId,
     rendererId: readRendererId(),
     playbackMode,
@@ -417,6 +441,7 @@ function regenerateScore(seed: string, urlUpdateMode: UrlUpdateMode = "push"): v
   generationWorker.postMessage({
     requestId,
     seed: nextSeed,
+    writingProfileId,
     performanceProfileId,
     lengthTicks: SCORE_LENGTH_TICKS,
     deadlineMs: GENERATION_DEADLINE_MS,
@@ -458,10 +483,12 @@ async function createScorePlayer(rendererId: PlaybackRendererId): Promise<ScoreP
 
 function createPendingState(
   seed: string,
+  writingProfileId: WritingProfileId = DEFAULT_WRITING_PROFILE_ID,
   performanceProfileId: PerformanceProfileId = DEFAULT_WEB_PERFORMANCE_PROFILE_ID,
 ): AppState {
   return {
     seed,
+    writingProfileId,
     performanceProfileId,
     rendererId: DEFAULT_PLAYBACK_RENDERER_ID,
     playbackMode: "continuous-fugue",
@@ -872,6 +899,7 @@ function handleGenerationWorkerResponse(response: GenerationWorkerResponse): voi
     state = {
       ...state,
       seed: response.seed,
+      writingProfileId: response.writingProfileId ?? state.writingProfileId,
       performanceProfileId: response.performanceProfileId,
       playbackMode: response.deadlineResult.mode,
       segmentIndex: response.deadlineResult.segmentIndex,
@@ -902,6 +930,7 @@ function handleGenerationWorkerResponse(response: GenerationWorkerResponse): voi
 
   state = {
     seed: response.seed,
+    writingProfileId: response.writingProfileId ?? state.writingProfileId,
     performanceProfileId: response.performanceProfileId,
     rendererId: state.rendererId,
     playbackMode: response.deadlineResult.mode,
@@ -918,6 +947,8 @@ function handleGenerationWorkerResponse(response: GenerationWorkerResponse): voi
     nextSegmentSnapshot: response.nextSegmentSnapshot,
   };
   seedInput.value = response.seed;
+  writingProfileSelect.value = state.writingProfileId;
+  performanceProfileSelect.value = state.performanceProfileId;
   render(state);
   drawPianoRoll(pianoRoll, visualPlaybackModel(state), 0);
   renderPlaybackPosition(0);
@@ -966,6 +997,7 @@ function handlePrefetchGenerationWorkerResponse(response: GenerationWorkerRespon
       : undefined;
   prefetchedSegment = {
     seed: response.seed,
+    writingProfileId: response.writingProfileId ?? state.writingProfileId,
     performanceProfileId: response.performanceProfileId,
     model: response.model,
     sessionModel,
@@ -1058,6 +1090,7 @@ function prefetchNextSegment(): void {
   generationWorker.postMessage({
     requestId,
     seed,
+    writingProfileId: state.writingProfileId,
     performanceProfileId: state.performanceProfileId,
     lengthTicks: SCORE_LENGTH_TICKS,
     deadlineMs,
@@ -1173,6 +1206,7 @@ function adoptPrefetchedSegment(segment: PrefetchedSegment): void {
       : 0;
   state = {
     seed,
+    writingProfileId: segment.writingProfileId,
     performanceProfileId: segment.performanceProfileId,
     rendererId: state.rendererId,
     playbackMode: segment.deadlineResult.mode,
@@ -1192,6 +1226,8 @@ function adoptPrefetchedSegment(segment: PrefetchedSegment): void {
     nextSegmentSnapshot: segment.nextSegmentSnapshot,
   };
   seedInput.value = seed;
+  writingProfileSelect.value = state.writingProfileId;
+  performanceProfileSelect.value = state.performanceProfileId;
   render(state);
   const visualSecond =
     segment.deadlineResult.mode === "continuous-fugue" ? (player?.playbackSecond ?? playbackSecond) : playbackSecond;

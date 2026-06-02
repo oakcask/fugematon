@@ -148,7 +148,7 @@ This phase is complete when:
 
 ## Completion Record
 
-Implemented in the core, CLI, and review bundle surfaces.
+Implemented in the core, CLI, Web UI, and review bundle surfaces.
 
 Completion review: [Constrained Keyboard Writing Profiles Completion Review](../reviews/constrained-keyboard-writing-profiles-completion.md).
 
@@ -158,6 +158,7 @@ Completion review: [Constrained Keyboard Writing Profiles Completion Review](../
 * Music-box profiles constrain emitted pitches to supported profile pitch sets and expose diagnostics for unsupported pitches, unavailable pitch classes, simultaneity overflow, and repeated-note speed.
 * Piano and harpsichord profiles expose deterministic hand-assignment evidence, same-hand span violations, ambiguity counts, and same-hand leap cost for review.
 * CLI `generate`, `diagnose`, `midi`, `review`, and `review-ab` accept `--writing-profile` independently from `--performance-profile`; review summaries record the selected writing profile.
+* Web UI playback exposes a writing-profile selector independently from performance profile and sends the selected `writingProfileId` through browser generation, including continuous-segment prefetch requests.
 * Verification: `pnpm test` passed 435 tests, including default determinism, music-box pitch-set enforcement, synthetic mechanism diagnostics, synthetic piano hand-span diagnostics, and segment continuation profile preservation.
 * Revalidation against the target baseline found exact default ScoreEvent JSON and MIDI matches for `bach-001`, `fugue-smoke`, `minor-entry`, `modal-cadence`, `dense-modal`, and `seed-19l7uit-1u226cc`; the 22 seed review summary remains stable except for writing-profile metadata.
 * Focused profile diagnostics across `bach-001`, `fugue-smoke`, and `minor-entry` found no profile pitch violations for `piano-two-hand`, `harpsichord-manual`, `music-box-n20`, or `music-box-n40`; piano and harpsichord hand-span findings and music-box repeated-note speed remain review-visible diagnostics rather than hidden repairs.
