@@ -8,6 +8,11 @@ import type {
   ScoreEvent,
 } from "./events.js";
 import { normalizeSelectionModel } from "./events.js";
+import {
+  buildGeneratorSearchTrace,
+  evaluateScoreDraft,
+  selectBestConstraintCandidate,
+} from "./generation/constraint-core.js";
 import { buildContinuousBoundaryCarrySummary } from "./generation/continuous-boundary-carry.js";
 import { analyzeScore } from "./generation/diagnostics.js";
 import { annotateEpisodeMotivicDerivations } from "./generation/episode-motivic-development.js";
@@ -107,6 +112,27 @@ export function generateScore(input: GenerationInput): GenerationOutput {
     phraseDevelopmentReview,
   );
   const generatedUntilTick = Math.max(input.lengthTicks, score.endTick);
+  const legacyConstraintCandidate = {
+    candidateId: "legacy-generated-score",
+    draft: {
+      notes: score.notes,
+      subjectEntries: score.subjectEntries,
+      sectionPlans: score.sectionPlans,
+      endTick: generatedUntilTick,
+      writingProfile,
+    },
+    result: evaluateScoreDraft({
+      notes: score.notes,
+      subjectEntries: score.subjectEntries,
+      sectionPlans: score.sectionPlans,
+      endTick: generatedUntilTick,
+      writingProfile,
+    }),
+  };
+  const generatorSearchTrace = buildGeneratorSearchTrace(
+    [legacyConstraintCandidate],
+    selectBestConstraintCandidate([legacyConstraintCandidate]),
+  );
 
   const firstState = score.stateTransitions[0] ?? (isContinuousContinuation ? "episode" : "exposition");
   const events: ScoreEvent[] = [
@@ -254,6 +280,7 @@ export function generateScore(input: GenerationInput): GenerationOutput {
       entryBoundaryContinuity: diagnostics.entryBoundaryContinuity,
       bassAnswerTailTexture: diagnostics.bassAnswerTailTexture,
       qualityVector: diagnostics.qualityVector,
+      generatorSearchTrace,
       localSentinelCandidateTrace,
       phraseConvergenceReview,
       phraseDevelopmentReview,

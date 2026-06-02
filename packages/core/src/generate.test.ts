@@ -141,6 +141,8 @@ test("generateScore emits a tick-based exposition", () => {
   assert.equal(output.diagnostics.subjectIdentityViolations, 0);
   assert.equal(output.diagnostics.answerPlanViolations, 0);
   assert.equal(output.diagnostics.keyMetadataMismatches, 0);
+  assert.equal(output.diagnostics.generatorSearchTrace.rejectedCandidateCount, 0);
+  assert.deepEqual(output.diagnostics.generatorSearchTrace.candidates[0]?.hardFailures, []);
   assert.equal(countIssues(output.diagnostics.issues, "range-violation"), output.diagnostics.rangeViolations);
   assert.equal(countIssues(output.diagnostics.issues, "voice-crossing"), output.diagnostics.voiceCrossings);
   assert.equal(countIssues(output.diagnostics.issues, "parallel-perfect"), output.diagnostics.parallelPerfects);

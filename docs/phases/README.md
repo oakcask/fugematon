@@ -10,6 +10,7 @@
 
 ## Read First
 
+* [Generator constraint rebuild](generator-constraint-rebuild.md): in-progress architecture rewrite. Freezes current-contract hard constraints and public schema while moving generation toward deterministic local constraint solving and diagnostics-backed soft scoring.
 * [Constrained keyboard writing profiles](constrained-keyboard-writing-profiles.md): completed follow-up. Adds opt-in `WritingProfile` variants for piano, harpsichord, and programmable music boxes so pitch range, hand reach, and mechanism limits can constrain generation separately from playback `PerformanceProfile`.
 * [Initial subject rhetoric diversity repair](initial-subject-rhetoric-diversity-repair.md): completed quality follow-up. Replaces adopted-path fixed-profile subject selection with a constrained subject-rhetoric generator and extends top-N rhetoric diagnostics.
 * [Playback source realism feasibility](playback-source-realism-feasibility.md): investigation note. Compares a SpessaSynth + SoundFont pilot, a custom VSCO WAV sampler, and notices-page requirements before distributing third-party playback software or audio assets.
@@ -23,6 +24,7 @@
 ## Read When
 
 * 実装対象の計画が分かっている場合は、その計画だけ読む。
+* 生成器を post-generation repair から制約 solver へ置き換える作業、hard/soft/review gate の分離、legacy exact expected value の扱いを確認する場合は [Generator constraint rebuild](generator-constraint-rebuild.md) を読む。
 * ピアノ、チェンバロ、オルゴール向けの音域、手の届きやすさ、機構制約、`WritingProfile` / `PerformanceProfile` 境界を扱う場合は [Constrained keyboard writing profiles](constrained-keyboard-writing-profiles.md) を読む。
 * 主題が seed 横断で似通う問題、初期主題候補、主題 family / rhetoric diversity diagnostics を扱う場合は [Initial subject rhetoric diversity repair](initial-subject-rhetoric-diversity-repair.md) を読む。
 * 再生音源、SoundFont、サンプラー、音源ライセンス表示を扱う場合は [Playback source realism feasibility](playback-source-realism-feasibility.md) を読む。
