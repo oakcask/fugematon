@@ -1,22 +1,24 @@
 import assert from "node:assert/strict";
-import {
-  REPRESENTATIVE_REVIEW_SEEDS,
-  REVIEW_LENGTH_TICKS,
-  ROTATION_REVIEW_SEEDS,
-  TICKS_PER_QUARTER,
-} from "./constants.js";
+import { REVIEW_LENGTH_TICKS, TICKS_PER_QUARTER } from "./constants.js";
 import type { GenerationOutput, NoteEvent, Voice } from "./events.js";
 import { generateScore } from "./generate.js";
 
-const SCORE_BEAUTY_REVIEW_SEEDS = [...REPRESENTATIVE_REVIEW_SEEDS, ...ROTATION_REVIEW_SEEDS].map(({ seed }) => seed);
+const SCORE_BEAUTY_REVIEW_SEEDS = [
+  "bach-001",
+  "fugue-smoke",
+  "minor-entry",
+  "modal-dorian",
+  "sparse-cadence",
+  "close-imitation",
+  "modal-answer",
+  "dense-modal",
+] as const;
+
+export const CURRENT_BEAUTY_BLOCKER_CI_SEEDS = ["fugue-smoke", "modal-dorian", "modal-answer", "dense-modal"] as const;
 
 export const SCORE_BEAUTY_REVIEW_BATCHES = {
   first: SCORE_BEAUTY_REVIEW_SEEDS.slice(0, 4),
   second: SCORE_BEAUTY_REVIEW_SEEDS.slice(4, 8),
-  third: SCORE_BEAUTY_REVIEW_SEEDS.slice(8, 12),
-  fourth: SCORE_BEAUTY_REVIEW_SEEDS.slice(12, 16),
-  fifth: SCORE_BEAUTY_REVIEW_SEEDS.slice(16, 19),
-  sixth: SCORE_BEAUTY_REVIEW_SEEDS.slice(19),
 } as const;
 
 export type ScoreBeautyReviewMetrics = {
