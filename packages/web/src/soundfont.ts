@@ -8,13 +8,18 @@ export type SoundFontRendererEvent =
       program: number;
     }
   | {
+      kind: "controller-change";
+      timeSecond: number;
+      channel: number;
+      controller: number;
+      value: number;
+    }
+  | {
       kind: "note-on";
       timeSecond: number;
       channel: number;
       pitch: number;
       velocity: number;
-      gain: number;
-      pan: number;
     }
   | {
       kind: "note-off";
@@ -49,6 +54,8 @@ export type SoundFontAssetEnvironment = {
 const MUSESCORE_GENERAL_SF3_FILE_NAME = "MuseScore_General.sf3";
 const MUSESCORE_GENERAL_SF3_LOCAL_URL = `/soundfonts/${MUSESCORE_GENERAL_SF3_FILE_NAME}`;
 const SOUNDFONT_PROTOTYPE_PROGRAM = 46;
+const MIDI_MAIN_VOLUME = 7;
+const MIDI_PAN = 10;
 
 export const MUSESCORE_GENERAL_SF3_PROTOTYPE = createMuseScoreGeneralSoundFontDescriptor();
 
@@ -80,12 +87,16 @@ export function createSoundFontEvents(
   const activeNotes = model.notes.filter((note) => note.startSecond + note.durationSecond > offsetSecond);
   const events: SoundFontRendererEvent[] = [];
   const programByChannel = new Map<number, number>();
+  const volumeByChannel = new Map<number, number>();
+  const panByChannel = new Map<number, number>();
 
   for (const note of activeNotes) {
     const noteStartSecond = startAtSecond + Math.max(0, note.startSecond - offsetSecond);
     const noteStopSecond = startAtSecond + note.startSecond + note.durationSecond - offsetSecond;
     const program = soundFontProgram(note.program);
     const currentProgram = programByChannel.get(note.channel);
+    const volume = gainToMidiVolume(note.gain * (note.volume / 127));
+    const pan = panToMidi((note.pan - 64) / 63);
 
     if (currentProgram !== program) {
       programByChannel.set(note.channel, program);
@@ -97,14 +108,34 @@ export function createSoundFontEvents(
       });
     }
 
+    if (volumeByChannel.get(note.channel) !== volume) {
+      volumeByChannel.set(note.channel, volume);
+      events.push({
+        kind: "controller-change",
+        timeSecond: noteStartSecond,
+        channel: note.channel,
+        controller: MIDI_MAIN_VOLUME,
+        value: volume,
+      });
+    }
+
+    if (panByChannel.get(note.channel) !== pan) {
+      panByChannel.set(note.channel, pan);
+      events.push({
+        kind: "controller-change",
+        timeSecond: noteStartSecond,
+        channel: note.channel,
+        controller: MIDI_PAN,
+        value: pan,
+      });
+    }
+
     events.push({
       kind: "note-on",
       timeSecond: noteStartSecond,
       channel: note.channel,
       pitch: note.pitch,
       velocity: note.velocity,
-      gain: note.gain * (note.volume / 127),
-      pan: (note.pan - 64) / 63,
     });
     events.push({
       kind: "note-off",
@@ -131,11 +162,31 @@ function eventRank(event: SoundFontRendererEvent): number {
     return 0;
   }
 
-  return event.kind === "note-off" ? 1 : 2;
+  if (event.kind === "controller-change") {
+    return 2;
+  }
+
+  return event.kind === "note-off" ? 1 : 3;
 }
 
 function soundFontProgram(_profileProgram: number): number {
   return SOUNDFONT_PROTOTYPE_PROGRAM;
+}
+
+function gainToMidiVolume(gain: number): number {
+  return clampMidi(Math.round(Math.sqrt(clamp(gain, 0, 1)) * 127));
+}
+
+function panToMidi(pan: number): number {
+  return clampMidi(Math.round(((clamp(pan, -1, 1) + 1) / 2) * 127));
+}
+
+function clampMidi(value: number): number {
+  return Math.min(127, Math.max(0, value));
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
 }
 
 function readSoundFontAssetEnvironment(): SoundFontAssetEnvironment {

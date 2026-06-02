@@ -15,8 +15,20 @@ test("createSoundFontEvents maps playback notes to MIDI-style soundfont events",
 
   assert.ok(events.some((event) => event.kind === "program-change" && event.channel === 0 && event.program === 46));
   assert.ok(events.some((event) => event.kind === "program-change" && event.channel === 3 && event.program === 46));
+  assert.ok(events.some((event) => event.kind === "controller-change" && event.controller === 7));
+  assert.ok(events.some((event) => event.kind === "controller-change" && event.controller === 10));
   assert.ok(events.some((event) => event.kind === "note-on" && event.timeSecond >= 10));
   assert.ok(events.some((event) => event.kind === "note-off" && event.timeSecond > 10));
+});
+
+test("createSoundFontEvents avoids redundant per-note controller changes", () => {
+  const model = createPlaybackModel(generateScore({ seed: "fugue-smoke", lengthTicks: 7680 }), "organ-default");
+  const events = createSoundFontEvents(model, 10);
+  const noteOnCount = events.filter((event) => event.kind === "note-on").length;
+  const controllerChangeCount = events.filter((event) => event.kind === "controller-change").length;
+
+  assert.ok(noteOnCount > 8);
+  assert.equal(controllerChangeCount, 8);
 });
 
 test("createSoundFontEvents schedules from an offset", () => {

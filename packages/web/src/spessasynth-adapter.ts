@@ -4,12 +4,12 @@ import spessaSynthProcessorUrl from "spessasynth_lib/dist/spessasynth_processor.
 import type { SoundFontAssetDescriptor, SoundFontPlaybackAdapter, SoundFontRendererEvent } from "./soundfont.js";
 
 const MAIN_SOUND_BANK_ID = "fugematon-main";
-const MIDI_MAIN_VOLUME = 7 as MIDIController;
-const MIDI_PAN = 10 as MIDIController;
+const DEFAULT_SCHEDULE_BATCH_SIZE = 32;
 
 export type SpessaSynthAdapterOptions = {
   processorUrl?: string;
   fetchSoundFont?: (asset: SoundFontAssetDescriptor) => Promise<ArrayBuffer>;
+  scheduleBatchSize?: number;
 };
 
 export function createSpessaSynthSoundFontAdapter(
@@ -23,6 +23,7 @@ class SpessaSynthSoundFontAdapter implements SoundFontPlaybackAdapter {
   private readonly context: BaseAudioContext;
   private readonly processorUrl: string;
   private readonly fetchSoundFont: (asset: SoundFontAssetDescriptor) => Promise<ArrayBuffer>;
+  private readonly scheduleBatchSize: number;
   private output: AudioNode | undefined;
   private synth: WorkletSynthesizer | undefined;
   private workletReady: Promise<void> | undefined;
@@ -31,11 +32,14 @@ class SpessaSynthSoundFontAdapter implements SoundFontPlaybackAdapter {
   private loadedAssetId: string | undefined;
   private cachedAssetId: string | undefined;
   private cachedSoundBankBuffer: ArrayBuffer | undefined;
+  private scheduleRevision = 0;
+  private readonly pendingScheduleHandles = new Set<ReturnType<typeof setTimeout>>();
 
   constructor(context: BaseAudioContext, options: SpessaSynthAdapterOptions) {
     this.context = context;
     this.processorUrl = options.processorUrl ?? spessaSynthProcessorUrl;
     this.fetchSoundFont = options.fetchSoundFont ?? fetchSoundFontArrayBuffer;
+    this.scheduleBatchSize = normalizeScheduleBatchSize(options.scheduleBatchSize);
   }
 
   connect(destination: AudioNode): void {
@@ -61,12 +65,16 @@ class SpessaSynthSoundFontAdapter implements SoundFontPlaybackAdapter {
       return;
     }
 
-    for (const event of events) {
-      scheduleEvent(synth, event, this.context.currentTime);
-    }
+    this.scheduleEventBatch({
+      synth,
+      events,
+      revision: this.scheduleRevision,
+      startIndex: 0,
+    });
   }
 
   stop(): void {
+    this.cancelPendingSchedules();
     if (this.synth === undefined) {
       return;
     }
@@ -87,6 +95,7 @@ class SpessaSynthSoundFontAdapter implements SoundFontPlaybackAdapter {
       synth.connect(this.output ?? this.context.destination);
       await synth.isReady;
       await synth.soundBankManager.addSoundBank(soundBankBuffer, MAIN_SOUND_BANK_ID);
+      this.cancelPendingSchedules();
       this.synth?.destroy();
       this.synth = synth;
       this.loadedAssetId = asset.assetId;
@@ -114,6 +123,52 @@ class SpessaSynthSoundFontAdapter implements SoundFontPlaybackAdapter {
     this.workletReady ??= this.context.audioWorklet.addModule(this.processorUrl);
     return this.workletReady;
   }
+
+  private scheduleEventBatch(input: {
+    synth: WorkletSynthesizer;
+    events: readonly SoundFontRendererEvent[];
+    revision: number;
+    startIndex: number;
+  }): void {
+    if (input.revision !== this.scheduleRevision || this.synth !== input.synth) {
+      return;
+    }
+
+    const endIndex = Math.min(input.events.length, input.startIndex + this.scheduleBatchSize);
+    const currentTimeSecond = this.context.currentTime;
+    for (let index = input.startIndex; index < endIndex; index += 1) {
+      scheduleEvent(input.synth, input.events[index]!, currentTimeSecond);
+    }
+
+    if (endIndex >= input.events.length) {
+      return;
+    }
+
+    const handle = setTimeout(() => {
+      this.pendingScheduleHandles.delete(handle);
+      this.scheduleEventBatch({
+        ...input,
+        startIndex: endIndex,
+      });
+    }, 0);
+    this.pendingScheduleHandles.add(handle);
+  }
+
+  private cancelPendingSchedules(): void {
+    this.scheduleRevision += 1;
+    for (const handle of this.pendingScheduleHandles) {
+      clearTimeout(handle);
+    }
+    this.pendingScheduleHandles.clear();
+  }
+}
+
+function normalizeScheduleBatchSize(value: number | undefined): number {
+  if (value === undefined || !Number.isFinite(value)) {
+    return DEFAULT_SCHEDULE_BATCH_SIZE;
+  }
+
+  return Math.max(1, Math.floor(value));
 }
 
 async function fetchSoundFontArrayBuffer(asset: SoundFontAssetDescriptor): Promise<ArrayBuffer> {
@@ -145,29 +200,14 @@ function scheduleEvent(synth: WorkletSynthesizer, event: SoundFontRendererEvent,
     case "program-change":
       synth.programChange(event.channel, event.program, { time });
       return;
+    case "controller-change":
+      synth.controllerChange(event.channel, event.controller as MIDIController, event.value, { time });
+      return;
     case "note-on":
-      synth.controllerChange(event.channel, MIDI_MAIN_VOLUME, gainToMidiVolume(event.gain), { time });
-      synth.controllerChange(event.channel, MIDI_PAN, panToMidi(event.pan), { time });
       synth.noteOn(event.channel, event.pitch, event.velocity, { time });
       return;
     case "note-off":
       synth.noteOff(event.channel, event.pitch, { time });
       return;
   }
-}
-
-function gainToMidiVolume(gain: number): number {
-  return clampMidi(Math.round(Math.sqrt(clamp(gain, 0, 1)) * 127));
-}
-
-function panToMidi(pan: number): number {
-  return clampMidi(Math.round(((clamp(pan, -1, 1) + 1) / 2) * 127));
-}
-
-function clampMidi(value: number): number {
-  return Math.min(127, Math.max(0, value));
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
 }
