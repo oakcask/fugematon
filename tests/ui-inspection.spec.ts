@@ -104,6 +104,7 @@ for (const viewport of VIEWPORTS) {
     await expect(seedInput).toHaveValue(RANDOM_SEED_PATTERN);
     expect(new URL(page.url()).searchParams.get("seed")).toMatch(RANDOM_SEED_PATTERN);
     await expect(page.getByRole("button", { name: "Random seed" })).toBeVisible();
+    await expect(page.getByRole("combobox", { name: "Writing profile" })).toHaveValue("four-voice-default");
     await expect(page.getByText("Tempo")).toBeVisible();
     await expect(page.getByText("Key")).toBeVisible();
     await expect(page.getByRole("combobox", { name: "Playback source" })).toHaveValue("oscillator");
@@ -123,6 +124,9 @@ for (const viewport of VIEWPORTS) {
     await expect(page.getByRole("heading", { name: "Notices" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Software" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Audio assets" })).toBeVisible();
+    await expect
+      .poll(() => page.locator(".seed-row").evaluate((element) => element.scrollWidth <= element.clientWidth + 1))
+      .toBe(true);
 
     await page.getByRole("button", { name: "Random seed" }).click();
     await expect(seedInput).toHaveValue(RANDOM_SEED_PATTERN);
@@ -342,11 +346,27 @@ test("sends the selected writing profile to browser generation", async ({ page }
     target.__writingProfileSelectionTest = { requests };
   });
 
+  await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto("/?seed=writing-profile-ui");
 
   const writingProfile = page.getByRole("combobox", { name: "Writing profile" });
   await expect(writingProfile).toHaveValue("four-voice-default");
   await expect(page.getByRole("combobox", { name: "Performance profile" })).toHaveValue("strict-counterpoint");
+  await expect
+    .poll(() => page.locator(".seed-row").evaluate((element) => element.scrollWidth <= element.clientWidth + 1))
+    .toBe(true);
+  await expect
+    .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1))
+    .toBe(true);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect
+    .poll(() => page.locator(".seed-row").evaluate((element) => element.scrollWidth <= element.clientWidth + 1))
+    .toBe(true);
+  await expect
+    .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1))
+    .toBe(true);
+
   await expect
     .poll(() =>
       page.evaluate(() => (window as WritingProfileSelectionTestWindow).__writingProfileSelectionTest.requests.length),
