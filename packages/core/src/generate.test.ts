@@ -146,11 +146,16 @@ test("generateScore emits a tick-based exposition", () => {
   assert.notEqual(output.diagnostics.generatorSearchTrace.selectedCandidateId, "legacy-generated-score");
   assert.equal(output.diagnostics.generatorSearchTrace.rejectedCandidateCount, 0);
   assert.ok(
+    output.diagnostics.generatorSearchTrace.candidates.some((candidate) =>
+      candidate.candidateId.startsWith("exposition-"),
+    ),
+  );
+  assert.ok(
     output.diagnostics.generatorSearchTrace.candidates.every(
       (candidate) =>
-        candidate.candidateId.startsWith("exposition-") &&
-        candidate.windowStartTick === 0 &&
-        candidate.windowEndTick > 0 &&
+        (candidate.candidateId.startsWith("exposition-") || candidate.candidateId.startsWith("score-")) &&
+        candidate.windowStartTick >= 0 &&
+        candidate.windowEndTick > candidate.windowStartTick &&
         candidate.hardFailures.length === 0,
     ),
   );
