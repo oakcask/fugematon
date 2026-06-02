@@ -23,6 +23,12 @@ import { buildSubject } from "./generation/subject.js";
 import { applyTerminalClosureIntent, buildTerminalClosureReviewSummary } from "./generation/terminal-closure-review.js";
 import { createSegmentEndSnapshot, normalizeInfinitePlaybackMode } from "./infinite-playback.js";
 import { Xoshiro128StarStar } from "./prng.js";
+import {
+  constrainNotesToWritingProfile,
+  DEFAULT_WRITING_PROFILE_ID,
+  resolveWritingProfile,
+  type WritingProfile,
+} from "./writing-profile.js";
 
 export function generateScore(input: GenerationInput): GenerationOutput {
   validateInput(input);
@@ -35,6 +41,7 @@ export function generateScore(input: GenerationInput): GenerationOutput {
   const initialBpm = chooseTempo(initialRng);
   const bpm = input.previousSegmentSnapshot?.timebase.bpm ?? initialBpm;
   const selectionModel = normalizeSelectionModel(input.selectionModel ?? DEFAULT_SELECTION_MODEL);
+  const writingProfile = resolveGenerationWritingProfile(input);
   const subject = buildSubject(initialRng, initialKeySignature, selectionModel, initialMeterContext);
   const isContinuousContinuation =
     mode === "continuous-fugue" && input.previousSegmentSnapshot !== undefined && (input.segmentIndex ?? 0) > 0;
@@ -56,16 +63,27 @@ export function generateScore(input: GenerationInput): GenerationOutput {
         previousSnapshot: input.previousSegmentSnapshot,
         firstStateHint: input.previousSegmentSnapshot!.sectionPlannerState.nextStateHint,
         previousDensityArc: input.previousSegmentSnapshot!.densityArc.recentVoiceCounts,
+        writingProfile,
       })
-    : buildFugueScore(subject, keySignature, input.lengthTicks, rng, selectionModel, meterContext, {
-        terminalCodaIntent: mode === "endless-program" ? "self-contained-coda" : undefined,
-      });
+    : buildFugueScore(
+        subject,
+        keySignature,
+        input.lengthTicks,
+        rng,
+        selectionModel,
+        meterContext,
+        {
+          terminalCodaIntent: mode === "endless-program" ? "self-contained-coda" : undefined,
+        },
+        writingProfile,
+      );
   applyTerminalClosureIntent(score, Math.max(input.lengthTicks, score.endTick), mode);
   annotateEpisodeMotivicDerivations(score.notes, score.sectionPlans);
   if (selectionModel !== "baseline") {
     repairHarmonicStasisRearticulation(score.notes, score.sectionPlans);
   }
-  const diagnostics = analyzeScore(score.notes, score.subjectEntries, score.sectionPlans);
+  constrainNotesToWritingProfile(score.notes, writingProfile);
+  const diagnostics = analyzeScore(score.notes, score.subjectEntries, score.sectionPlans, writingProfile);
   const localSentinelCandidateTrace = buildLocalSentinelCandidateTraceSummary(
     score.selectedCandidateEvaluations,
     diagnostics.qualityVector,
@@ -176,6 +194,7 @@ export function generateScore(input: GenerationInput): GenerationOutput {
     bpm,
     prngState: rng.snapshot(),
     pianoRollSessionTimelineContinuous: continuousSegmentContinuity.pianoRollSessionTimelineContinuous,
+    writingProfileId: writingProfile.id,
   });
 
   return {
@@ -183,6 +202,7 @@ export function generateScore(input: GenerationInput): GenerationOutput {
     diagnostics: {
       generatorVersion: GENERATOR_VERSION,
       selectionModel,
+      writingProfile: { id: writingProfile.id, version: writingProfile.version },
       seed: input.seed,
       lengthTicks: input.lengthTicks,
       generatedUntilTick,
@@ -245,6 +265,14 @@ export function generateScore(input: GenerationInput): GenerationOutput {
       terminalClosureReview,
       continuousSegmentContinuity,
       continuousBoundaryCarry,
+      writingProfileConstraints: diagnostics.writingProfileConstraints,
+      writingProfilePitchViolations: diagnostics.writingProfileConstraints.writingProfilePitchViolations,
+      unavailablePitchClassCount: diagnostics.writingProfileConstraints.unavailablePitchClassCount,
+      handSpanViolations: diagnostics.writingProfileConstraints.handSpanViolations,
+      handAssignmentAmbiguityCount: diagnostics.writingProfileConstraints.handAssignmentAmbiguityCount,
+      sameHandLeapCost: diagnostics.writingProfileConstraints.sameHandLeapCost,
+      musicBoxRepeatRateViolations: diagnostics.writingProfileConstraints.musicBoxRepeatRateViolations,
+      musicBoxSimultaneityViolations: diagnostics.writingProfileConstraints.musicBoxSimultaneityViolations,
       ornamentCandidateCount: diagnostics.ornamentCandidateCount,
       ornamentDensity: diagnostics.ornamentDensity,
       ornamentPlacementReasons: diagnostics.ornamentPlacementReasons,
@@ -287,6 +315,23 @@ function validateInput(input: GenerationInput): void {
   if (!Number.isSafeInteger(input.lengthTicks) || input.lengthTicks <= 0) {
     throw new Error("lengthTicks must be a positive safe integer");
   }
+}
+
+function resolveGenerationWritingProfile(input: GenerationInput): WritingProfile {
+  const previousWritingProfileId = input.previousSegmentSnapshot?.writingProfile?.id ?? DEFAULT_WRITING_PROFILE_ID;
+  const requestedWritingProfileId = input.writingProfileId ?? previousWritingProfileId;
+
+  if (
+    input.previousSegmentSnapshot !== undefined &&
+    input.writingProfileId !== undefined &&
+    input.writingProfileId !== previousWritingProfileId
+  ) {
+    throw new Error(
+      `core.writing-profile.snapshot-mismatch: writing profile changed across segment continuation; why=continuous segment replay must preserve the writing-profile contract used by the previous snapshot; action=start a new segment chain or continue with ${previousWritingProfileId}`,
+    );
+  }
+
+  return resolveWritingProfile(requestedWritingProfileId);
 }
 
 function buildContinuousSegmentContinuitySummary(input: {

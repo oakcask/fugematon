@@ -1,4 +1,4 @@
-import { TICKS_PER_QUARTER, VOICE_RANGES } from "../constants.js";
+import { TICKS_PER_QUARTER } from "../constants.js";
 import type {
   BassAnswerTailTextureSummary,
   DiagnosticIssue,
@@ -33,6 +33,12 @@ import type {
   TransitionRhythmReviewSummary,
   Voice,
 } from "../events.js";
+import {
+  analyzeWritingProfileConstraints,
+  resolveWritingProfile,
+  type WritingProfile,
+  type WritingProfileDiagnostics,
+} from "../writing-profile.js";
 import { analyzeBassAnswerTailTexture } from "./bass-answer-tail-texture.js";
 import { analyzeDissonanceTriage } from "./dissonance-triage.js";
 import { analyzeEntryBoundaryContinuity } from "./entry-boundary-continuity.js";
@@ -63,6 +69,7 @@ export function analyzeScore(
   notes: readonly NoteEvent[],
   subjectEntries: readonly PlannedEntry[],
   sectionPlans: readonly HarmonicPlan[],
+  writingProfile: WritingProfile = resolveWritingProfile(undefined),
 ): {
   rangeViolations: number;
   voiceCrossings: number;
@@ -135,13 +142,14 @@ export function analyzeScore(
   modalCharacteristicToneHits: number;
   modalCadenceHits: number;
   tonalCadenceOveruseWarnings: number;
+  writingProfileConstraints: WritingProfileDiagnostics;
   issues: DiagnosticIssue[];
   warnings: string[];
 } {
   const issues: DiagnosticIssue[] = [];
 
   for (const note of notes) {
-    const range = VOICE_RANGES[note.voice];
+    const range = writingProfile.voiceRanges[note.voice];
     if (note.pitch < range.min || note.pitch > range.max) {
       issues.push({
         code: "range-violation",
@@ -188,6 +196,7 @@ export function analyzeScore(
   const harmonicContinuity = analyzeHarmonicContinuity(notes, sectionPlans);
   const harmonicStasisRearticulation = analyzeHarmonicStasisRearticulation(notes, sectionPlans);
   const transitionRhythmReview = analyzeTransitionRhythm(notes, subjectEntries, sectionPlans);
+  const writingProfileConstraints = analyzeWritingProfileConstraints(notes, writingProfile);
   const warnings: string[] = [];
   if (rangeViolations > 0) {
     warnings.push("range violations detected");
@@ -250,6 +259,7 @@ export function analyzeScore(
     harmonicContinuity,
     harmonicStasisRearticulation,
     transitionRhythmReview,
+    writingProfileConstraints,
     issues,
     warnings,
   };

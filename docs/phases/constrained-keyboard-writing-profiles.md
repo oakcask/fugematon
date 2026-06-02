@@ -1,6 +1,6 @@
 # Constrained Keyboard Writing Profiles
 
-Status: planned.
+Status: completed.
 
 ## Purpose
 
@@ -50,6 +50,8 @@ type WritingProfile = {
 1. Introduce profile selection without changing default output.
 
    Add `writingProfileId?: WritingProfileId` to `GenerationInput`. Resolve it once near generation entry and pass a `WritingProfile` through generation, diagnostics, review summaries, and segment snapshots where reproducibility requires it.
+
+   Current core coverage records resolved writing-profile metadata in diagnostics and segment snapshots, verifies that explicit `four-voice-default` matches the implicit default output, and rejects mismatched continuous-segment continuation profiles. Pitch-set and playability enforcement remain in the later implementation items below.
 
 2. Centralize pitch-range access.
 
@@ -143,6 +145,24 @@ This phase is complete when:
 * Piano profile produces review-visible hand assignment and span evidence.
 * CLI or Web UI can select the writing profile separately from performance profile.
 * Bibliography claim `keyboard-writing-profile-separates-compass-and-playability` remains linked from this plan.
+
+## Completion Record
+
+Implemented in the core, CLI, and review bundle surfaces.
+
+Completion review: [Constrained Keyboard Writing Profiles Completion Review](../reviews/constrained-keyboard-writing-profiles-completion.md).
+
+* `GenerationInput` accepts `writingProfileId?: WritingProfileId`; diagnostics and segment snapshots record resolved writing-profile metadata and reject continuation under a mismatched writing profile.
+* `WritingProfile` now owns absolute pitch sets, voice ranges, register targets, preferred maxima, and initial playability metadata for `four-voice-default`, `piano-two-hand`, `harpsichord-manual`, `music-box-n20`, and `music-box-n40`.
+* Entry, texture, continuation, coda, gap-filler, range diagnostics, and final score normalization use profile-aware pitch helpers. Explicit `four-voice-default` remains identical to the implicit default output.
+* Music-box profiles constrain emitted pitches to supported profile pitch sets and expose diagnostics for unsupported pitches, unavailable pitch classes, simultaneity overflow, and repeated-note speed.
+* Piano and harpsichord profiles expose deterministic hand-assignment evidence, same-hand span violations, ambiguity counts, and same-hand leap cost for review.
+* CLI `generate`, `diagnose`, `midi`, `review`, and `review-ab` accept `--writing-profile` independently from `--performance-profile`; review summaries record the selected writing profile.
+* Verification: `pnpm test` passed 435 tests, including default determinism, music-box pitch-set enforcement, synthetic mechanism diagnostics, synthetic piano hand-span diagnostics, and segment continuation profile preservation.
+* Revalidation against the target baseline found exact default ScoreEvent JSON and MIDI matches for `bach-001`, `fugue-smoke`, `minor-entry`, `modal-cadence`, `dense-modal`, and `seed-19l7uit-1u226cc`; the 22 seed review summary remains stable except for writing-profile metadata.
+* Focused profile diagnostics across `bach-001`, `fugue-smoke`, and `minor-entry` found no profile pitch violations for `piano-two-hand`, `harpsichord-manual`, `music-box-n20`, or `music-box-n40`; piano and harpsichord hand-span findings and music-box repeated-note speed remain review-visible diagnostics rather than hidden repairs.
+
+Manual listening remains review work: generated piano and music-box MIDI can now be selected from the CLI, but this implementation did not record a human listening judgement.
 
 ## Non-Goals
 

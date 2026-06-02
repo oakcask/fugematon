@@ -1,5 +1,5 @@
 import { classifyCandidatePoolOracleSection, summarizeCandidatePoolOracleSections } from "../candidate-pool-oracle.js";
-import { TICKS_PER_QUARTER, VOICE_RANGES } from "../constants.js";
+import { TICKS_PER_QUARTER } from "../constants.js";
 import type {
   AnswerKind,
   CadenceKind,
@@ -26,6 +26,11 @@ import type {
 } from "../events.js";
 import type { SegmentSnapshot } from "../infinite-playback.js";
 import type { Xoshiro128StarStar } from "../prng.js";
+import {
+  nearestWritingProfilePitchForPitchClass,
+  resolveWritingProfile,
+  type WritingProfile,
+} from "../writing-profile.js";
 import { applyContinuousBoundaryCarryRepair } from "./continuous-boundary-carry.js";
 import { addSubjectEntry, chooseAnswerKind } from "./entries.js";
 import { evaluateCandidate } from "./evaluation.js";
@@ -95,9 +100,10 @@ export function buildFugueScore(
   selectionModel: SelectionModel = "baseline",
   meterContext: MeterContext = createLegacyMeterContext(),
   options: TerminalCodaOptions = {},
+  writingProfile: WritingProfile = resolveWritingProfile(undefined),
 ): FugueScore {
   const counterSubjectSupportRepair = lengthTicks >= TICKS_PER_QUARTER * 288;
-  const exposition = buildExposition(subject, keySignature, counterSubjectSupportRepair, meterContext);
+  const exposition = buildExposition(subject, keySignature, counterSubjectSupportRepair, meterContext, writingProfile);
   const notes = [...exposition.notes];
   const subjectEntries = [...exposition.subjectEntries];
   const sectionPlans = [...exposition.sectionPlans];
@@ -170,6 +176,7 @@ export function buildFugueScore(
       phraseIntent,
       counterSubjectSupportRepair,
       meterContext,
+      writingProfile,
     );
     if (selectionModel === "section-local-planner") {
       softenBassEntryBoundaryResets(selection.section.notes, selection.section.subjectEntries, notes);
@@ -202,6 +209,7 @@ export function buildFugueScore(
       meterContext,
       notes,
       sectionPlans,
+      writingProfile,
     );
     protectedTerminalCodaNotes = cloneNotes(terminalCoda.notes);
     clipNotesAtTick(notes, terminalCodaReservation.startTick);
@@ -211,7 +219,7 @@ export function buildFugueScore(
     sectionPlans.push(...terminalCoda.sectionPlans);
   }
 
-  fillAllVoiceSilenceGaps(notes, keySignature);
+  fillAllVoiceSilenceGaps(notes, keySignature, writingProfile);
   if (selectionModel === "section-local-planner") {
     addFunctionalThinningSupport(notes, sectionPlans);
     addPostEntryContinuationSupport(notes, subjectEntries, sectionPlans);
@@ -355,6 +363,7 @@ function buildTerminalCodaSection(
   meterContext: MeterContext,
   previousNotes: readonly NoteEvent[],
   previousSectionPlans: readonly HarmonicPlan[],
+  writingProfile: WritingProfile,
 ): Exposition {
   const cadenceKind: CadenceKind = isModalMode(keySignature.mode) ? "modal" : "authentic";
   const context = summarizeTerminalCodaContext({
@@ -386,7 +395,14 @@ function buildTerminalCodaSection(
   const finalStartTick =
     harmonicPlan.anchors.find((anchor) => anchor.cadenceTarget)?.tick ??
     reservation.startTick + Math.max(0, reservation.durationTicks - meterContext.beatTicks);
-  const notes = buildTerminalCodaNotes(keySignature, reservation.startTick, finalStartTick, meterContext, context);
+  const notes = buildTerminalCodaNotes(
+    keySignature,
+    reservation.startTick,
+    finalStartTick,
+    meterContext,
+    context,
+    writingProfile,
+  );
   notes.sort(compareNoteEvents);
 
   return {
@@ -404,6 +420,7 @@ function buildTerminalCodaNotes(
   finalStartTick: number,
   meterContext: MeterContext,
   context: TerminalCodaContextSummary,
+  writingProfile: WritingProfile,
 ): NoteEvent[] {
   const finalDegrees: Record<Voice, number> = {
     bass: 0,
@@ -464,6 +481,7 @@ function buildTerminalCodaNotes(
             transformationKind: input.transformationKind,
             targetFunction: input.targetFunction ?? "extend-cadence",
             sequenceDirection: input.sequenceDirection ?? "none",
+            writingProfile,
           }),
         );
       }
@@ -496,6 +514,7 @@ function buildTerminalCodaNotes(
             transformationKind: "cadential-continuation",
             targetFunction: voice === "bass" ? "maintain-pedal-or-suspension" : "extend-cadence",
             sequenceDirection: "none",
+            writingProfile,
           }),
         );
       }
@@ -676,6 +695,7 @@ function buildTerminalCodaNotes(
         transformationKind: "cadential-continuation",
         targetFunction: "extend-cadence",
         sequenceDirection: "none",
+        writingProfile,
       }),
     );
   }
@@ -696,16 +716,18 @@ function terminalCodaNote(input: {
   transformationKind: EpisodeTransformationKind;
   targetFunction: EpisodeTargetFunction;
   sequenceDirection: NonNullable<NoteEvent["motivicDerivation"]>["sequenceDirection"];
+  writingProfile: WritingProfile;
 }): NoteEvent {
   return {
     kind: "note",
     voice: input.voice,
     startTick: input.startTick,
     durationTicks: input.durationTicks,
-    pitch: nearestVoicePitchForPitchClass(
+    pitch: nearestWritingProfilePitchForPitchClass(
       scaleDegreePitchClass(input.degree, 0, input.keySignature),
       input.targetPitch,
       input.voice,
+      input.writingProfile,
     ),
     velocity: input.velocity,
     role: "free-counterpoint",
@@ -899,23 +921,6 @@ function roundMetric(value: number): number {
   return Math.round(value * 100) / 100;
 }
 
-function nearestVoicePitchForPitchClass(pitchClass: number, targetPitch: number, voice: Voice): number {
-  const range = VOICE_RANGES[voice];
-  let bestPitch = range.min;
-  let bestDistance = Number.POSITIVE_INFINITY;
-  for (let pitch = range.min; pitch <= range.max; pitch += 1) {
-    if (positiveModulo(pitch, 12) !== pitchClass) {
-      continue;
-    }
-    const distance = Math.abs(pitch - targetPitch);
-    if (distance < bestDistance) {
-      bestPitch = pitch;
-      bestDistance = distance;
-    }
-  }
-  return bestPitch;
-}
-
 export function buildFugueContinuationScore(
   subject: readonly SubjectNote[],
   keySignature: KeySignature,
@@ -931,10 +936,12 @@ export function buildFugueContinuationScore(
     previousSnapshot?: SegmentSnapshot;
     firstStateHint?: FugueState;
     previousDensityArc?: readonly number[];
+    writingProfile?: WritingProfile;
   },
 ): FugueScore {
   const selectionModel = input.selectionModel ?? "baseline";
   const meterContext = input.meterContext ?? createLegacyMeterContext();
+  const writingProfile = input.writingProfile ?? resolveWritingProfile(undefined);
   const counterSubjectSupportRepair = lengthTicks >= TICKS_PER_QUARTER * 288;
   const notes: NoteEvent[] = [];
   const subjectEntries: PlannedEntry[] = [];
@@ -994,6 +1001,7 @@ export function buildFugueContinuationScore(
       phraseIntent,
       counterSubjectSupportRepair,
       meterContext,
+      writingProfile,
     );
     if (selectionModel === "section-local-planner") {
       softenBassEntryBoundaryResets(selection.section.notes, selection.section.subjectEntries, [
@@ -1031,7 +1039,7 @@ export function buildFugueContinuationScore(
       previousSnapshot: input.previousSnapshot,
     });
   }
-  fillAllVoiceSilenceGaps(notes, keySignature);
+  fillAllVoiceSilenceGaps(notes, keySignature, writingProfile);
   if (selectionModel === "section-local-planner") {
     addFunctionalThinningSupport(notes, sectionPlans);
     addPostEntryContinuationSupport(notes, subjectEntries, sectionPlans);
@@ -1546,6 +1554,7 @@ export function buildExposition(
   keySignature: KeySignature,
   counterSubjectSupportRepair = false,
   meterContext: MeterContext = createLegacyMeterContext(),
+  writingProfile: WritingProfile = resolveWritingProfile(undefined),
 ): Exposition {
   const notes: Exposition["notes"] = [];
   const subjectEntries: Exposition["subjectEntries"] = [];
@@ -1578,6 +1587,7 @@ export function buildExposition(
       localKey: form === "answer" ? transposeKey(keySignature, 7) : keySignature,
       answerKind: form === "answer" ? chooseAnswerKind(subject) : undefined,
       harmonicPlan,
+      writingProfile,
     });
     addCounterpointTexture(notes, subject, {
       enteringVoice: voice,
@@ -1587,6 +1597,7 @@ export function buildExposition(
       eligibleVoices: VOICE_ENTRY_ORDER.slice(0, entryIndex),
       harmonicPlan,
       counterSubjectSupportRepair,
+      writingProfile,
     });
   }
 
@@ -1624,6 +1635,7 @@ export function chooseContinuationSection(
   phraseIntent?: ContinuationPhraseSectionIntent,
   counterSubjectSupportRepair = false,
   meterContext: MeterContext = createLegacyMeterContext(),
+  writingProfile: WritingProfile = resolveWritingProfile(undefined),
 ): {
   section: Exposition;
   candidateCount: number;
@@ -1641,6 +1653,7 @@ export function chooseContinuationSection(
     phraseIntent,
     counterSubjectSupportRepair,
     meterContext,
+    writingProfile,
   );
   const evaluations = candidates.map((candidate) =>
     evaluateCandidate(previousNotes, candidate, previousSubjectEntries, previousSectionPlans),
@@ -2127,6 +2140,7 @@ export function buildContinuationCandidates(
   phraseIntent?: ContinuationPhraseSectionIntent,
   counterSubjectSupportRepair = false,
   meterContext: MeterContext = createLegacyMeterContext(),
+  writingProfile: WritingProfile = resolveWritingProfile(undefined),
 ): Exposition[] {
   const notes: Exposition["notes"] = [];
   const candidates: Exposition[] = [];
@@ -2172,7 +2186,13 @@ export function buildContinuationCandidates(
           freeCounterpointPhraseVariation: includeSectionLocalPlannerCandidates,
         };
         candidates.push(
-          buildContinuationSection(phraseSubject.slice(0, 4), input, counterSubjectSupportRepair, meterContext),
+          buildContinuationSection(
+            phraseSubject.slice(0, 4),
+            input,
+            counterSubjectSupportRepair,
+            meterContext,
+            writingProfile,
+          ),
         );
         if (includeSectionLocalPlannerCandidates) {
           sectionLocalPlannerCandidates.push(
@@ -2185,6 +2205,7 @@ export function buildContinuationCandidates(
               },
               counterSubjectSupportRepair,
               meterContext,
+              writingProfile,
             ),
           );
           voicePairSupportCandidates.push(
@@ -2199,6 +2220,7 @@ export function buildContinuationCandidates(
               },
               counterSubjectSupportRepair,
               meterContext,
+              writingProfile,
             ),
           );
           registerPlannerCandidates.push(
@@ -2212,6 +2234,7 @@ export function buildContinuationCandidates(
               },
               counterSubjectSupportRepair,
               meterContext,
+              writingProfile,
             ),
           );
         }
@@ -2234,7 +2257,9 @@ export function buildContinuationCandidates(
           cadenceKind: phraseIntent?.cadenceKind,
           freeCounterpointPhraseVariation: includeSectionLocalPlannerCandidates,
         };
-        candidates.push(buildContinuationSection(phraseSubject, input, counterSubjectSupportRepair, meterContext));
+        candidates.push(
+          buildContinuationSection(phraseSubject, input, counterSubjectSupportRepair, meterContext, writingProfile),
+        );
         if (includeSectionLocalPlannerCandidates) {
           sectionLocalPlannerCandidates.push(
             buildContinuationSection(
@@ -2246,6 +2271,7 @@ export function buildContinuationCandidates(
               },
               counterSubjectSupportRepair,
               meterContext,
+              writingProfile,
             ),
           );
           voicePairSupportCandidates.push(
@@ -2260,6 +2286,7 @@ export function buildContinuationCandidates(
               },
               counterSubjectSupportRepair,
               meterContext,
+              writingProfile,
             ),
           );
           registerPlannerCandidates.push(
@@ -2273,6 +2300,7 @@ export function buildContinuationCandidates(
               },
               counterSubjectSupportRepair,
               meterContext,
+              writingProfile,
             ),
           );
         }
@@ -2296,6 +2324,7 @@ export function buildContinuationCandidates(
             },
             counterSubjectSupportRepair,
             meterContext,
+            writingProfile,
           ),
         );
       }
@@ -2311,10 +2340,19 @@ export function buildContinuationCandidates(
         startTick,
         sectionDurationTicks,
         meterContext,
+        writingProfile,
       ),
     );
     phraseFamilyOracleCandidates.push(
-      ...buildPhraseFamilyOracleCandidates(subject, keySignature, state, startTick, sectionDurationTicks, meterContext),
+      ...buildPhraseFamilyOracleCandidates(
+        subject,
+        keySignature,
+        state,
+        startTick,
+        sectionDurationTicks,
+        meterContext,
+        writingProfile,
+      ),
     );
   }
 
@@ -2402,6 +2440,7 @@ function buildSectionGrammarOracleCandidates(
   startTick: number,
   sectionDurationTicks: number,
   meterContext: MeterContext,
+  writingProfile: WritingProfile,
 ): Exposition[] {
   const candidates: Exposition[] = [];
   const candidateStates = (["episode", "subject-return", "stretto-like"] as const).filter(
@@ -2411,7 +2450,14 @@ function buildSectionGrammarOracleCandidates(
   for (const state of candidateStates) {
     if (state === "episode") {
       candidates.push(
-        ...buildEpisodeGrammarOracleCandidates(subject, keySignature, startTick, sectionDurationTicks, meterContext),
+        ...buildEpisodeGrammarOracleCandidates(
+          subject,
+          keySignature,
+          startTick,
+          sectionDurationTicks,
+          meterContext,
+          writingProfile,
+        ),
       );
     } else if (state === "subject-return") {
       candidates.push(
@@ -2421,11 +2467,19 @@ function buildSectionGrammarOracleCandidates(
           startTick,
           sectionDurationTicks,
           meterContext,
+          writingProfile,
         ),
       );
     } else {
       candidates.push(
-        ...buildStrettoGrammarOracleCandidates(subject, keySignature, startTick, sectionDurationTicks, meterContext),
+        ...buildStrettoGrammarOracleCandidates(
+          subject,
+          keySignature,
+          startTick,
+          sectionDurationTicks,
+          meterContext,
+          writingProfile,
+        ),
       );
     }
   }
@@ -2440,6 +2494,7 @@ function buildPhraseFamilyOracleCandidates(
   startTick: number,
   sectionDurationTicks: number,
   meterContext: MeterContext,
+  writingProfile: WritingProfile,
 ): Exposition[] {
   const subjectVariation = deriveSubjectStem(subject, [0, 2, 1, 3, 4, 2, 3, 1]);
   const modalVariation = deriveSubjectStem(subject, [0, 2, 3, 1, 4, 3, 1, 0]);
@@ -2468,6 +2523,7 @@ function buildPhraseFamilyOracleCandidates(
         },
         false,
         meterContext,
+        writingProfile,
       ),
       buildContinuationSection(
         deriveSubjectStem(subject.slice(0, 4), [0, 3, 1, 2]),
@@ -2490,6 +2546,7 @@ function buildPhraseFamilyOracleCandidates(
         },
         false,
         meterContext,
+        writingProfile,
       ),
     ];
   }
@@ -2516,6 +2573,7 @@ function buildPhraseFamilyOracleCandidates(
         },
         false,
         meterContext,
+        writingProfile,
       ),
       buildContinuationSection(
         subjectVariation,
@@ -2536,6 +2594,7 @@ function buildPhraseFamilyOracleCandidates(
         },
         false,
         meterContext,
+        writingProfile,
       ),
     ];
   }
@@ -2554,6 +2613,7 @@ function buildPhraseFamilyOracleCandidates(
       },
       false,
       meterContext,
+      writingProfile,
     ),
     buildStrettoSection(
       modalVariation.slice(0, 6),
@@ -2568,6 +2628,7 @@ function buildPhraseFamilyOracleCandidates(
       },
       false,
       meterContext,
+      writingProfile,
     ),
   ];
 }
@@ -2598,6 +2659,7 @@ function buildEpisodeGrammarOracleCandidates(
   startTick: number,
   sectionDurationTicks: number,
   meterContext: MeterContext,
+  writingProfile: WritingProfile,
 ): Exposition[] {
   return [
     buildContinuationSection(
@@ -2621,6 +2683,7 @@ function buildEpisodeGrammarOracleCandidates(
       },
       false,
       meterContext,
+      writingProfile,
     ),
     buildContinuationSection(
       subject.slice(0, 4),
@@ -2643,6 +2706,7 @@ function buildEpisodeGrammarOracleCandidates(
       },
       false,
       meterContext,
+      writingProfile,
     ),
   ];
 }
@@ -2653,6 +2717,7 @@ function buildSubjectReturnGrammarOracleCandidates(
   startTick: number,
   sectionDurationTicks: number,
   meterContext: MeterContext,
+  writingProfile: WritingProfile,
 ): Exposition[] {
   return [
     buildContinuationSection(
@@ -2674,6 +2739,7 @@ function buildSubjectReturnGrammarOracleCandidates(
       },
       false,
       meterContext,
+      writingProfile,
     ),
     buildContinuationSection(
       subject,
@@ -2694,6 +2760,7 @@ function buildSubjectReturnGrammarOracleCandidates(
       },
       false,
       meterContext,
+      writingProfile,
     ),
   ];
 }
@@ -2704,6 +2771,7 @@ function buildStrettoGrammarOracleCandidates(
   startTick: number,
   sectionDurationTicks: number,
   meterContext: MeterContext,
+  writingProfile: WritingProfile,
 ): Exposition[] {
   return [
     buildStrettoSection(
@@ -2719,6 +2787,7 @@ function buildStrettoGrammarOracleCandidates(
       },
       false,
       meterContext,
+      writingProfile,
     ),
     buildStrettoSection(
       subject.slice(0, 6),
@@ -2733,6 +2802,7 @@ function buildStrettoGrammarOracleCandidates(
       },
       false,
       meterContext,
+      writingProfile,
     ),
   ];
 }
@@ -2787,6 +2857,7 @@ export function buildContinuationSection(
   },
   counterSubjectSupportRepair = false,
   meterContext: MeterContext = createLegacyMeterContext(),
+  writingProfile: WritingProfile = resolveWritingProfile(undefined),
 ): Exposition {
   const notes: Exposition["notes"] = [];
   const subjectEntries: Exposition["subjectEntries"] = [];
@@ -2809,7 +2880,7 @@ export function buildContinuationSection(
 
   const harmonicPlan = sectionPlans[0]!;
 
-  addSubjectEntry(notes, subjectEntries, subject, { ...entry, harmonicPlan });
+  addSubjectEntry(notes, subjectEntries, subject, { ...entry, harmonicPlan, writingProfile });
   addCounterpointTexture(notes, subject, {
     enteringVoice: entry.voice,
     startTick: entry.startTick,
@@ -2818,6 +2889,7 @@ export function buildContinuationSection(
     harmonicPlan,
     counterSubjectSupportRepair,
     freeCounterpointPhraseVariation: entry.freeCounterpointPhraseVariation,
+    writingProfile,
   });
   addContinuityCounterpoint(notes, {
     startTick: entry.startTick + entry.supportDurationTicks,
@@ -2828,6 +2900,7 @@ export function buildContinuationSection(
     voiceOrder: entry.continuityVoiceOrder,
     lineKind: entry.continuityLineKind,
     freeCounterpointPhraseVariation: entry.freeCounterpointPhraseVariation,
+    writingProfile,
   });
   notes.sort(compareNoteEvents);
 
@@ -2854,6 +2927,7 @@ export function buildStrettoSection(
   },
   counterSubjectSupportRepair = false,
   meterContext: MeterContext = createLegacyMeterContext(),
+  writingProfile: WritingProfile = resolveWritingProfile(undefined),
 ): Exposition {
   const notes: Exposition["notes"] = [];
   const subjectEntries: Exposition["subjectEntries"] = [];
@@ -2882,6 +2956,7 @@ export function buildStrettoSection(
     globalKey: entry.globalKey,
     localKey: entry.globalKey,
     harmonicPlan,
+    writingProfile,
   });
   addSubjectEntry(notes, subjectEntries, subject, {
     state: entry.state,
@@ -2892,6 +2967,7 @@ export function buildStrettoSection(
     localKey: transposeKey(entry.globalKey, 7),
     answerKind: chooseAnswerKind(subject),
     harmonicPlan,
+    writingProfile,
   });
   addCounterpointTexture(notes, subject, {
     enteringVoice: entry.firstVoice,
@@ -2900,12 +2976,14 @@ export function buildStrettoSection(
     localKey: entry.globalKey,
     harmonicPlan,
     counterSubjectSupportRepair,
+    writingProfile,
   });
   addContinuityCounterpoint(notes, {
     startTick: entry.startTick + subjectDuration(subject),
     durationTicks: Math.max(0, entry.sectionDurationTicks - subjectDuration(subject)),
     localKey: transposeKey(entry.globalKey, 7),
     harmonicPlan,
+    writingProfile,
   });
   notes.sort(compareNoteEvents);
 

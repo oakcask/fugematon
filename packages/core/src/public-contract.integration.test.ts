@@ -6,9 +6,11 @@ import {
   DEFAULT_SELECTION_MODEL,
   GENERATOR_VERSION,
   generateScore,
+  INFINITE_PLAYBACK_SNAPSHOT_SCHEMA_VERSION,
   REVIEW_LENGTH_TICKS,
   TICKS_PER_QUARTER,
   VOICES,
+  WRITING_PROFILE_VERSION,
 } from "./index.js";
 
 test("public API emits the stable score metadata envelope", () => {
@@ -53,6 +55,10 @@ test("public API emits the stable score metadata envelope", () => {
   assert.ok(output.diagnostics.candidatePoolOracle.phraseFamilyCandidateCount >= 0);
   assert.equal(output.diagnostics.generatorVersion, GENERATOR_VERSION);
   assert.equal(output.diagnostics.selectionModel, DEFAULT_SELECTION_MODEL);
+  assert.deepEqual(output.diagnostics.writingProfile, {
+    id: "four-voice-default",
+    version: WRITING_PROFILE_VERSION,
+  });
   assert.equal(output.diagnostics.seed, "public-contract");
   assert.equal(output.diagnostics.lengthTicks, REVIEW_LENGTH_TICKS);
 });
@@ -231,8 +237,12 @@ test("public diagnostics expose finite candidate score dimensions", () => {
   assert.equal(typeof output.diagnostics.continuousBoundaryCarry.allVoiceGapTicks, "number");
   assert.ok(Array.isArray(output.diagnostics.continuousBoundaryCarry.voiceTimings));
   assert.ok(Array.isArray(output.diagnostics.continuousBoundaryCarry.nextFirstAttackRoleMix));
-  assert.equal(output.nextSegmentSnapshot.schemaVersion, 1);
+  assert.equal(output.nextSegmentSnapshot.schemaVersion, INFINITE_PLAYBACK_SNAPSHOT_SCHEMA_VERSION);
   assert.equal(output.nextSegmentSnapshot.segmentIndex, 0);
+  assert.deepEqual(output.nextSegmentSnapshot.writingProfile, {
+    id: "four-voice-default",
+    version: WRITING_PROFILE_VERSION,
+  });
   assert.equal(output.diagnostics.lowerVoiceVocality.schemaVersion, 1);
   assert.ok(output.diagnostics.lowerVoiceVocality.score >= 0);
   assert.ok(output.diagnostics.lowerVoiceVocality.score <= 1);

@@ -1,4 +1,11 @@
-import { normalizeSelectionModel, type SelectionModel } from "@fugematon/core";
+import {
+  DEFAULT_WRITING_PROFILE_ID,
+  normalizeSelectionModel,
+  normalizeWritingProfileId,
+  type SelectionModel,
+  WRITING_PROFILE_IDS,
+  type WritingProfileId,
+} from "@fugematon/core";
 import {
   DEFAULT_PERFORMANCE_PROFILE_ID,
   listPerformanceProfiles,
@@ -11,11 +18,13 @@ export type CliCommand =
       seed: string;
       lengthTicks: number;
       out?: string;
+      writingProfileId: WritingProfileId;
     }
   | {
       name: "diagnose";
       seed: string;
       lengthTicks: number;
+      writingProfileId: WritingProfileId;
     }
   | {
       name: "midi";
@@ -23,12 +32,14 @@ export type CliCommand =
       lengthTicks: number;
       out: string;
       performanceProfileId: PerformanceProfileId;
+      writingProfileId: WritingProfileId;
     }
   | {
       name: "review";
       lengthTicks: number;
       out: string;
       performanceProfileId: PerformanceProfileId;
+      writingProfileId: WritingProfileId;
     }
   | {
       name: "review-ab";
@@ -39,6 +50,7 @@ export type CliCommand =
       baselineModel: SelectionModel;
       variantModel: SelectionModel;
       performanceProfileId: PerformanceProfileId;
+      writingProfileId: WritingProfileId;
     }
   | {
       name: "help";
@@ -82,6 +94,7 @@ export function parseArgs(argv: readonly string[]): CliCommand {
           "variant-model",
         ),
         performanceProfileId: parsePerformanceProfileId(options.get("performance-profile")),
+        writingProfileId: parseWritingProfileId(options.get("writing-profile")),
       };
     }
     return {
@@ -89,6 +102,7 @@ export function parseArgs(argv: readonly string[]): CliCommand {
       lengthTicks,
       out: requiredOption(options, "out"),
       performanceProfileId: parsePerformanceProfileId(options.get("performance-profile")),
+      writingProfileId: parseWritingProfileId(options.get("writing-profile")),
     };
   }
 
@@ -100,7 +114,12 @@ export function parseArgs(argv: readonly string[]): CliCommand {
   }
 
   if (command === "diagnose") {
-    return { name: "diagnose", seed, lengthTicks };
+    return {
+      name: "diagnose",
+      seed,
+      lengthTicks,
+      writingProfileId: parseWritingProfileId(options.get("writing-profile")),
+    };
   }
 
   if (command === "midi") {
@@ -110,6 +129,7 @@ export function parseArgs(argv: readonly string[]): CliCommand {
       lengthTicks,
       out: requiredOption(options, "out"),
       performanceProfileId: parsePerformanceProfileId(options.get("performance-profile")),
+      writingProfileId: parseWritingProfileId(options.get("writing-profile")),
     };
   }
 
@@ -118,17 +138,18 @@ export function parseArgs(argv: readonly string[]): CliCommand {
     seed,
     lengthTicks,
     out: options.get("out"),
+    writingProfileId: parseWritingProfileId(options.get("writing-profile")),
   };
 }
 
 export function helpText(): string {
   return [
     "Usage:",
-    "  fugematon generate --seed <seed> --ticks <lengthTicks> [--out <file>]",
-    "  fugematon diagnose --seed <seed> --ticks <lengthTicks>",
-    "  fugematon midi --seed <seed> --ticks <lengthTicks> --out <file> [--performance-profile organ-default|strict-counterpoint]",
-    "  fugematon review --out <directory> [--ticks <lengthTicks>] [--performance-profile organ-default|strict-counterpoint]",
-    "  fugematon review-ab --out <directory> [--ticks <lengthTicks>] [--baseline-label <label>] [--variant-label <label>] [--baseline-model baseline|candidate-oracle-selection|section-local-planner] [--variant-model baseline|candidate-oracle-selection|section-local-planner] [--performance-profile organ-default|strict-counterpoint]",
+    "  fugematon generate --seed <seed> --ticks <lengthTicks> [--out <file>] [--writing-profile four-voice-default|piano-two-hand|harpsichord-manual|music-box-n20|music-box-n40]",
+    "  fugematon diagnose --seed <seed> --ticks <lengthTicks> [--writing-profile four-voice-default|piano-two-hand|harpsichord-manual|music-box-n20|music-box-n40]",
+    "  fugematon midi --seed <seed> --ticks <lengthTicks> --out <file> [--performance-profile organ-default|strict-counterpoint] [--writing-profile four-voice-default|piano-two-hand|harpsichord-manual|music-box-n20|music-box-n40]",
+    "  fugematon review --out <directory> [--ticks <lengthTicks>] [--performance-profile organ-default|strict-counterpoint] [--writing-profile four-voice-default|piano-two-hand|harpsichord-manual|music-box-n20|music-box-n40]",
+    "  fugematon review-ab --out <directory> [--ticks <lengthTicks>] [--baseline-label <label>] [--variant-label <label>] [--baseline-model baseline|candidate-oracle-selection|section-local-planner] [--variant-model baseline|candidate-oracle-selection|section-local-planner] [--performance-profile organ-default|strict-counterpoint] [--writing-profile four-voice-default|piano-two-hand|harpsichord-manual|music-box-n20|music-box-n40]",
   ].join("\n");
 }
 
@@ -150,6 +171,18 @@ function parsePerformanceProfileId(value: string | undefined): PerformanceProfil
   }
 
   throw new Error(`--performance-profile must be ${profileIds.join(", ")}`);
+}
+
+function parseWritingProfileId(value: string | undefined): WritingProfileId {
+  if (value === undefined) {
+    return DEFAULT_WRITING_PROFILE_ID;
+  }
+
+  try {
+    return normalizeWritingProfileId(value);
+  } catch {
+    throw new Error(`--writing-profile must be ${WRITING_PROFILE_IDS.join(", ")}`);
+  }
 }
 
 function parseOptions(args: readonly string[]): Map<string, string> {
