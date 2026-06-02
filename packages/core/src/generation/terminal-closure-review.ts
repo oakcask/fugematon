@@ -636,11 +636,7 @@ function classifyTerminalCodaPedal(input: {
   derivationCount: number;
   pedalRootCoverageRatio: number;
 }): TerminalCodaPedalClassification {
-  if (
-    input.pedalRootCoverageRatio >= 0.75 &&
-    input.derivationCount === 0 &&
-    input.movingVoiceCountBeforeCadence <= 1
-  ) {
+  if (input.pedalRootCoverageRatio >= 0.75 && input.derivationCount === 0 && input.movingVoiceCountBeforeCadence <= 1) {
     return "generic-static-support";
   }
   if (input.pedalRootCoverageRatio >= 0.45 && input.movingVoiceCountBeforeCadence >= 2) {
@@ -685,7 +681,10 @@ function computeHistoricalFunctionCoverage(input: {
   subjectDerivedNoteCount: number;
 }): TerminalCodaContinuitySummary["historicalFunctionCoverage"] {
   const coverage = new Set<TerminalCodaContinuitySummary["historicalFunctionCoverage"][number]>();
-  if ((input.archetype === "final-fragment-entry" && input.subjectDerivedNoteCount > 0) || input.subjectDerivedNoteCount >= 3) {
+  if (
+    (input.archetype === "final-fragment-entry" && input.subjectDerivedNoteCount > 0) ||
+    input.subjectDerivedNoteCount >= 3
+  ) {
     coverage.add("final-subject");
   }
   if (

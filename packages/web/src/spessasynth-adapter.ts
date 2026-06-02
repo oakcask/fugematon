@@ -117,10 +117,7 @@ class SpessaSynthSoundFontAdapter implements SoundFontPlaybackAdapter {
 }
 
 async function fetchSoundFontArrayBuffer(asset: SoundFontAssetDescriptor): Promise<ArrayBuffer> {
-  const response = await fetch(
-    asset.url,
-    asset.integrity === undefined ? undefined : { integrity: asset.integrity },
-  );
+  const response = await fetch(asset.url, asset.integrity === undefined ? undefined : { integrity: asset.integrity });
   if (!response.ok) {
     throw new Error(
       `web.audio.soundfont-asset-fetch-failed: SoundFont asset request failed; why=the optional SoundFont file must be reachable before sample playback can start; action=place the configured SF3 asset at the published asset URL and verify notices metadata`,

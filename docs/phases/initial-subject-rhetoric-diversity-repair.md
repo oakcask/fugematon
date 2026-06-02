@@ -133,6 +133,8 @@ Recorded in [Initial subject rhetoric diversity completion review](../reviews/in
 * Remaining similarity is classified as acceptable subject memorability or function-bearing recurrence when it occurs inside a score. Cross-seed concentration remains review-visible through `subjectFamilyDiversity` schema v3 rather than hidden by top-family-only diagnostics.
 * Manual focused listening remains a review gap; automatic diagnostics do not replace pairwise listening for final aesthetic adoption.
 
+Current revalidation confirms the completion evidence still holds. The regenerated 22 seed current bundle has 20 initial subject families, 13 initial subject-rhetoric families, top-3 initial subject family share 0.227, and top-3 initial subject-rhetoric share 0.455. The current A/B bundle shows the explicit fixed-profile `baseline` at top-3 subject-rhetoric share 0.909 and the adopted `section-local-planner` path at 0.455. The deterministic 100 seed sweep remains 0.84 on `baseline` and 0.26 on `section-local-planner`. The current bundle keeps hard constraint failures, subject identity violations, answer-plan violations, key metadata mismatches, unresolved dissonance, all-voice silence gaps, and review-policy hard failures at 0.
+
 ## Handoff
 
 This plan should be treated as a quality-lane repair before any future claim that long-session generation has enough seed-to-seed variety. If implemented after operational work has resumed, it still must not use playback mode, rendering, or UI presentation to hide subject-rhetoric sameness.

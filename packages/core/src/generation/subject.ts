@@ -165,12 +165,18 @@ function chooseSubjectRhetoricPlan(
   );
   const viable = candidates.filter((candidate) => candidate.rejectionReasons.length === 0);
   const pool = viable.length > 0 ? viable : candidates;
+  const scored = pool.map((candidate) => ({
+    candidate,
+    score: scoreSubjectRhetoricPlan(candidate, keySignature, meterContext),
+  }));
+  const bestScore = Math.max(...scored.map(({ score }) => score));
+  const highScoringPool = scored.filter(({ score }) => score >= bestScore - 5.5);
 
-  return pool.reduce((best, candidate) =>
-    scoreSubjectRhetoricPlan(candidate, keySignature, meterContext) >
-    scoreSubjectRhetoricPlan(best, keySignature, meterContext)
-      ? candidate
-      : best,
+  return rng.chooseWeighted(
+    highScoringPool.map(({ candidate, score }) => ({
+      value: candidate,
+      weight: Math.max(0.5, score - bestScore + 6),
+    })),
   );
 }
 

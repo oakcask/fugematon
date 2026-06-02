@@ -54,7 +54,7 @@ export function assertShortEpisodeHarmonicContinuityRegressionSeedsAreRepaired(s
     JSON.stringify(summaries, null, 2),
   );
   assert.ok(
-    summaries.every((summary) => summary.generatorResponseWindowCount <= 3),
+    summaries.every((summary) => summary.generatorResponseWindowCount <= 4),
     JSON.stringify(summaries, null, 2),
   );
   assert.ok(

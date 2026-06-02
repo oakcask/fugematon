@@ -17,11 +17,30 @@ Ad hoc 100 seed sweep:
 * `baseline`: top-3 subject-rhetoric share 0.84, 7 rhetoric families.
 * `section-local-planner`: top-3 subject-rhetoric share 0.26, 38 rhetoric families.
 
+Current revalidation:
+
+* Generated `samples/initial-subject-rhetoric-current` with `pnpm fugematon review --out samples/initial-subject-rhetoric-current --ticks 129600`.
+* Generated `samples/initial-subject-rhetoric-ab-current` with `pnpm fugematon review-ab --out samples/initial-subject-rhetoric-ab-current --ticks 129600 --baseline-label baseline --variant-label section-local-planner --baseline-model baseline --variant-model section-local-planner`.
+* Compared with the target baseline bundle. The target baseline had 7 initial subject families, top initial subject family share 0.227, no `subjectFamilyDiversity` findings, and an unexposed top-3 family concentration of 14 of 22 seeds. The current bundle has 20 initial subject families, top initial subject family share 0.091, top-3 initial subject family share 0.227, 13 initial subject-rhetoric families, and top-3 initial subject-rhetoric share 0.455.
+* The current bundle still reports review-required rhythm-profile and tail-motion concentration. This is acceptable for this phase because the concentration is now visible in schema v3 instead of hidden by top-family-only diagnostics.
+* The explicit A/B comparison from the current code shows `baseline` to `section-local-planner` movement from 5 to 20 initial subject families, 4 to 13 initial subject-rhetoric families, top-3 initial subject family share 0.818 to 0.227, and top-3 initial subject-rhetoric share 0.909 to 0.455.
+* The current deterministic 100 seed sweep still shows `baseline` top-3 subject-rhetoric share 0.84 with 7 rhetoric families, and `section-local-planner` top-3 subject-rhetoric share 0.26 with 38 rhetoric families.
+* Focused current evidence found modal subjects with 8 rhetoric families, 3/4 subjects with 15 rhetoric families, and 6/8 subjects with 5 rhetoric families.
+
 22 seed representative + rotation review set:
 
 * hard constraint failures: 0;
 * subject identity violations: 0;
 * answer-plan violations: 0.
+
+Current 22 seed revalidation kept hard constraint failures, subject identity violations, answer-plan violations, key metadata mismatches, unresolved dissonance, all-voice silence gaps, and review-policy hard failures at 0.
+
+Representative seed profile movement:
+
+* `fugue-smoke`: target baseline `0-1-3-4-2-3-2-1` / all-quarter held opening moved to current `0-2-1-2-3-4-3-3` / mixed rhythm with repeated tail.
+* `bach-001`: target baseline `0-2-3-1-2-4-3-1` moved to current `0-2-1-3-3-4-3-1`.
+* `modal-dorian`: target baseline `0-2-1-3-4-3-2-1` moved to current modal-color pattern `0-2-5-4-4-5-3-1`.
+* `tight-stretto`: target baseline `0-1-2-3-4-3-1-2` moved to current `0-1-3-2-4-2-3-2`.
 
 Focused modal and meter evidence:
 
