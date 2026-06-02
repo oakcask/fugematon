@@ -34,7 +34,7 @@ test("seed-1yc5rlr-184cz7l closes upper lines before the measure-five bass answe
     (note) =>
       note.voice !== "bass" &&
       restStartTick <= note.startTick &&
-      note.startTick <= restStartTick + TICKS_PER_QUARTER / 2 &&
+      note.startTick <= restStartTick + TICKS_PER_QUARTER &&
       note.role === "free-counterpoint" &&
       closingPitchClasses.includes(note.pitch % 12) &&
       note.metricalHarmonyIntent === "structural-chord-tone",

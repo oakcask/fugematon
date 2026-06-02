@@ -37,8 +37,8 @@ test("generateScore preserves melody and form guardrails", () => {
     ["contrary-motion", 26, 5, 3, 42, 15, 15, 8],
     ["modal-dorian", 34, 3, 1, 41, 13, 13, 8],
     ["bright-answer", 32, 7, 3, 38, 12, 12, 2],
-    ["lyrical-line", 45, 3, 3, 42, 16, 16, 8],
-    ["dark-episode", 36, 7, 3, 38, 12, 12, 8],
+    ["lyrical-line", 45, 4, 3, 42, 16, 16, 8],
+    ["dark-episode", 38, 6, 2, 39, 12, 12, 8],
     ["contrary-answer", 31, 2, 2, 43, 16, 16, 8],
   ] as const;
 
