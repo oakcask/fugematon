@@ -35,6 +35,7 @@ import { type ConstraintCandidate, evaluateScoreDraft } from "./constraint-core.
 import { applyContinuousBoundaryCarryRepair } from "./continuous-boundary-carry.js";
 import { addSubjectEntry, chooseAnswerKind } from "./entries.js";
 import { evaluateCandidate } from "./evaluation.js";
+import { analyzeHarmonicContinuity } from "./harmonic-continuity-review.js";
 import {
   analyzeHarmonicStasisRearticulation,
   repairHarmonicStasisRearticulation,
@@ -236,13 +237,20 @@ export function buildFugueScore(
     addPostEntryContinuationSupport(notes, subjectEntries, sectionPlans);
     shapeLongRestPhraseClosures(notes, sectionPlans);
     addBassAnswerTailTextureSupport(notes, subjectEntries, sectionPlans);
-    addShortEpisodeHarmonicContinuitySupport(notes, sectionPlans);
     repairTextureVoiceCrossingsForNotes(notes, sectionPlans);
   }
   notes.sort(compareNoteEvents);
   if (selectionModel === "section-local-planner") {
     repairTextureVoiceCrossingsForNotes(notes, sectionPlans);
     notes.sort(compareNoteEvents);
+    selectedConstraintCandidates.push(
+      ...applyScoreLevelHarmonicContinuitySolver({
+        notes,
+        subjectEntries,
+        sectionPlans,
+        writingProfile,
+      }),
+    );
     selectedConstraintCandidates.push(
       ...applyScoreLevelHarmonicStasisSolver({
         notes,
@@ -336,6 +344,65 @@ function cloneExposition(section: Exposition): Exposition {
     subjectEntries: [...section.subjectEntries],
     sectionPlans: [...section.sectionPlans],
   };
+}
+
+function applyScoreLevelHarmonicContinuitySolver(input: {
+  notes: NoteEvent[];
+  subjectEntries: readonly PlannedEntry[];
+  sectionPlans: readonly HarmonicPlan[];
+  writingProfile: WritingProfile;
+}): ConstraintCandidate[] {
+  const before = analyzeHarmonicContinuity(input.notes, input.sectionPlans);
+  if (before.focusedWindowCount === 0) {
+    return [];
+  }
+
+  const repairedNotes = cloneNotes(input.notes);
+  addShortEpisodeHarmonicContinuitySupport(repairedNotes, input.sectionPlans);
+  repairTextureVoiceCrossingsForNotes(repairedNotes, input.sectionPlans);
+  repairedNotes.sort(compareNoteEvents);
+  const after = analyzeHarmonicContinuity(repairedNotes, input.sectionPlans);
+  if (
+    after.reviewRequiredWindowCount > before.reviewRequiredWindowCount ||
+    harmonicContinuitySupportCost(after) >= harmonicContinuitySupportCost(before)
+  ) {
+    return [];
+  }
+
+  const beforeNotes = cloneNotes(input.notes);
+  const beforeCandidate = buildScoreLevelConstraintCandidate(
+    "score-harmonic-continuity-unrepaired-final-repair-evidence",
+    beforeNotes,
+    input.subjectEntries,
+    input.sectionPlans,
+    input.writingProfile,
+  );
+  const afterCandidate = buildScoreLevelConstraintCandidate(
+    "score-harmonic-continuity-solver-repaired",
+    repairedNotes,
+    input.subjectEntries,
+    input.sectionPlans,
+    input.writingProfile,
+  );
+  if (afterCandidate.result.hardFailures.length > beforeCandidate.result.hardFailures.length) {
+    return [];
+  }
+
+  input.notes.splice(0, input.notes.length, ...repairedNotes);
+  return [beforeCandidate, afterCandidate];
+}
+
+function harmonicContinuitySupportCost(summary: ReturnType<typeof analyzeHarmonicContinuity>): number {
+  return summary.windows.reduce(
+    (sum, window) =>
+      sum +
+      (window.classification === "review-required" ? 1000 : 0) +
+      Math.max(0, window.structuralBeatCount - window.bassRootSupportCount) * 4 +
+      Math.max(0, window.structuralBeatCount - window.chordToneSupportCount) * 8 +
+      window.structuralBeatMismatchCount * 6 +
+      window.thinStructuralBeatCount * 4,
+    0,
+  );
 }
 
 function applyScoreLevelHarmonicStasisSolver(input: {
@@ -1138,13 +1205,20 @@ export function buildFugueContinuationScore(
     addPostEntryContinuationSupport(notes, subjectEntries, sectionPlans);
     shapeLongRestPhraseClosures(notes, sectionPlans);
     addBassAnswerTailTextureSupport(notes, subjectEntries, sectionPlans);
-    addShortEpisodeHarmonicContinuitySupport(notes, sectionPlans);
     repairTextureVoiceCrossingsForNotes(notes, sectionPlans);
   }
   notes.sort(compareNoteEvents);
   if (selectionModel === "section-local-planner") {
     repairTextureVoiceCrossingsForNotes(notes, sectionPlans);
     notes.sort(compareNoteEvents);
+    selectedConstraintCandidates.push(
+      ...applyScoreLevelHarmonicContinuitySolver({
+        notes,
+        subjectEntries,
+        sectionPlans,
+        writingProfile,
+      }),
+    );
     selectedConstraintCandidates.push(
       ...applyScoreLevelHarmonicStasisSolver({
         notes,

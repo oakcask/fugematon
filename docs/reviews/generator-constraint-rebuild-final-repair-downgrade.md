@@ -52,9 +52,9 @@ This review covers the first focused final-repair downgrade in [Generator Constr
 
    Current score-level before / after rows appear for `bach-001`, `bright-answer`, `contrary-answer`, `contrary-motion`, `lyrical-line`, `modal-dorian`, `quiet-cadence`, `restless-line`, `sparse-cadence`, and `wide-key`.
 
-5. Remaining final repair surfaces are not downgraded by this slice.
+5. Remaining final repair surfaces were not downgraded by this slice.
 
-   Texture crossing, harmonic-continuity support, entry support cleanup, and terminal-support weakness remain review-visible unless their matching solver replacement and focused before / after evidence are present. Terminal closure stays `not-required` for continuous-fugue and is not used as proof that low-voice support is musically solved.
+   Texture crossing, harmonic-continuity support, entry support cleanup, and terminal-support weakness remained review-visible unless their matching solver replacement and focused before / after evidence were present. The later [Generator Constraint Rebuild Harmonic Continuity Support Review](generator-constraint-rebuild-harmonic-continuity-support.md) records the harmonic-continuity support replacement. Terminal closure stays `not-required` for continuous-fugue and is not used as proof that low-voice support is musically solved.
 
 ## Music-Theory Basis
 

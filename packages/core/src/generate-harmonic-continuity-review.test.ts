@@ -32,6 +32,7 @@ test("reported harmonic-continuity seed keeps the short pivot episode review-add
   const acceptanceWindow = diagnostics.scoreWindowAcceptance.windows.find(
     (window) => window.kind === "harmonic-continuity" && window.startTick === TICKS_PER_QUARTER * 19,
   );
+  const traceCandidates = diagnostics.generatorSearchTrace.candidates.map((candidate) => candidate.candidateId);
 
   if (reportedEpisode === undefined || harmonicWindow === undefined) {
     assert.equal(diagnostics.subjectIdentityViolations, 0);
@@ -51,8 +52,11 @@ test("reported harmonic-continuity seed keeps the short pivot episode review-add
   assert.equal(harmonicWindow?.structuralBeatMismatchCount, 0);
   assert.equal(harmonicWindow?.thinStructuralBeatCount, 0);
   assert.equal(acceptanceWindow?.response, "accepted-context");
+  assert.ok(traceCandidates.includes("score-harmonic-continuity-unrepaired-final-repair-evidence"));
+  assert.ok(traceCandidates.includes("score-harmonic-continuity-solver-repaired"));
   assert.ok(diagnostics.texturePlanningReview.metricalHarmony.strongBeatBassRootSupportCount >= 9);
   assert.ok(diagnostics.harmonicFunctionMatches > 0);
+  assert.equal(hardConstraintFailures(diagnostics), 0);
 });
 
 test("focused harmonic-continuity review seeds expose repaired and remaining short-pivot evidence", () => {
@@ -68,6 +72,10 @@ test("focused harmonic-continuity review seeds expose repaired and remaining sho
         (sum, window) => sum + window.structuralBeatMismatchCount,
         0,
       ),
+      hasScoreLevelTrace: diagnostics.generatorSearchTrace.candidates.some(
+        (candidate) => candidate.candidateId === "score-harmonic-continuity-solver-repaired",
+      ),
+      hardConstraintFailures: hardConstraintFailures(diagnostics),
       subjectIdentityViolations: diagnostics.subjectIdentityViolations,
     };
   });
@@ -88,6 +96,14 @@ test("focused harmonic-continuity review seeds expose repaired and remaining sho
   assert.ok((summaries.find((summary) => summary.seed === "circle-fifths")?.structuralBeatMismatchCount ?? 0) >= 0);
   assert.ok(
     summaries.every((summary) => summary.subjectIdentityViolations === 0),
+    JSON.stringify(summaries, null, 2),
+  );
+  assert.ok(
+    summaries.some((summary) => summary.hasScoreLevelTrace),
+    JSON.stringify(summaries, null, 2),
+  );
+  assert.ok(
+    summaries.every((summary) => summary.hardConstraintFailures === 0),
     JSON.stringify(summaries, null, 2),
   );
 });
@@ -258,5 +274,16 @@ function isModulatoryPivotEpisode(plan: HarmonicPlan): boolean {
     plan.sequencePattern !== undefined &&
     plan.fragmentTransform !== undefined &&
     plan.targetKey !== undefined
+  );
+}
+
+function hardConstraintFailures(diagnostics: ReturnType<typeof generateScore>["diagnostics"]): number {
+  return (
+    diagnostics.rangeViolations +
+    diagnostics.voiceCrossings +
+    diagnostics.subjectIdentityViolations +
+    diagnostics.answerPlanViolations +
+    diagnostics.keyMetadataMismatches +
+    diagnostics.writingProfilePitchViolations
   );
 }

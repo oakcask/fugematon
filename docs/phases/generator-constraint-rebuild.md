@@ -22,6 +22,8 @@ The terminal-support slice adds terminal continuation-candidate soft costs for c
 
 The first final-repair downgrade ports harmonic-stasis rearticulation cleanup out of the `generateScore` final pass. Section-local continuation candidates now include harmonic-stasis solver variants, and score-level support cleanup records unrepaired / repaired trace rows before adopting the repaired notes. Other final repair surfaces remain open until their matching solver replacement and focused before / after review evidence are present.
 
+The harmonic-continuity support slice ports short pivot-episode support cleanup into score-level deterministic local search. Score-level rows now preserve unrepaired and repaired harmonic-continuity evidence before adoption, reject repairs that increase hard failures, and keep remaining review-required continuity windows visible rather than accepting them without audible score support.
+
 ## Implementation Order
 
 1. Keep the existing subject, answer, section, harmony, and `WritingProfile` builders as solver input.
@@ -56,3 +58,5 @@ The episode / free-counterpoint slice is reviewed in [Generator Constraint Rebui
 The terminal-support slice is reviewed in [Generator Constraint Rebuild Terminal Support Review](../reviews/generator-constraint-rebuild-terminal-support.md). The 22 seed target bundle keeps hard-contract failures at 0, emits terminal-support reason coverage in every terminal candidate row, and keeps continuous-fugue terminal support weaknesses classified as review-visible `not-required` closure evidence rather than final-repair success.
 
 The first final-repair downgrade is reviewed in [Generator Constraint Rebuild Final Repair Downgrade Review](../reviews/generator-constraint-rebuild-final-repair-downgrade.md). The refreshed 22 seed bundle keeps the target hard failures, reference-profile status, entry/support counters, terminal closure classifications, and harmonic-stasis generator-response windows stable. `generatorSearchTrace` exposes `score-harmonic-stasis-unrepaired-final-repair-evidence` beside `score-harmonic-stasis-solver-repaired` for the 10 seeds where score-level support cleanup needs the solver replacement.
+
+The harmonic-continuity support slice is reviewed in [Generator Constraint Rebuild Harmonic Continuity Support Review](../reviews/generator-constraint-rebuild-harmonic-continuity-support.md). The refreshed 22 seed check keeps hard failures, unsupported solo runs, and abrupt texture drops at 0. `generatorSearchTrace` exposes `score-harmonic-continuity-unrepaired-final-repair-evidence` beside `score-harmonic-continuity-solver-repaired` for the 13 seeds where score-level support cleanup improves the harmonic-continuity support surface. Remaining review-required harmonic-continuity windows stay visible and are not treated as solved without score support.
