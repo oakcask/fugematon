@@ -33,6 +33,7 @@ import {
 } from "../writing-profile.js";
 import { type ConstraintCandidate, evaluateScoreDraft } from "./constraint-core.js";
 import { applyContinuousBoundaryCarryRepair } from "./continuous-boundary-carry.js";
+import { analyzeScore } from "./diagnostics.js";
 import { addSubjectEntry, chooseAnswerKind } from "./entries.js";
 import { evaluateCandidate } from "./evaluation.js";
 import { analyzeHarmonicContinuity } from "./harmonic-continuity-review.js";
@@ -44,6 +45,8 @@ import { buildHarmonicPlan, cadenceKindForSection } from "./harmony.js";
 import { characteristicScaleDegree, isModalMode, tonicPitchClass, transposeKey } from "./key.js";
 import { createLegacyMeterContext, previousMeasureDownbeat } from "./meter.js";
 import { melodicRoleForScaleDegree, scaleDegreePitchClass } from "./pitch.js";
+import { buildPhraseDevelopmentReviewSummary } from "./phrase-development-review.js";
+import { buildScoreWindowAcceptanceSummary } from "./score-window-acceptance.js";
 import { candidateSelectionScore } from "./selection-risk-adjustments.js";
 import {
   compareNoteEvents,
@@ -97,6 +100,19 @@ type TerminalCodaOptions = {
 type TerminalCodaReservation = {
   startTick: number;
   durationTicks: number;
+};
+
+type ScoreLevelSupportCleanupSurface = {
+  id: string;
+  apply: (notes: NoteEvent[]) => void;
+};
+
+type ScoreLevelSupportCleanupReview = {
+  hardFailureCount: number;
+  scoreWindowReviewRequiredCount: number;
+  scoreWindowGeneratorResponseCount: number;
+  scoreWindowAcceptedContextCount: number;
+  harmonicContinuityReviewRequiredCount: number;
 };
 
 export function buildFugueScore(
@@ -233,16 +249,17 @@ export function buildFugueScore(
 
   fillAllVoiceSilenceGaps(notes, keySignature, writingProfile);
   if (selectionModel === "section-local-planner") {
-    addFunctionalThinningSupport(notes, sectionPlans);
-    addPostEntryContinuationSupport(notes, subjectEntries, sectionPlans);
-    shapeLongRestPhraseClosures(notes, sectionPlans);
-    addBassAnswerTailTextureSupport(notes, subjectEntries, sectionPlans);
-    repairTextureVoiceCrossingsForNotes(notes, sectionPlans);
+    selectedConstraintCandidates.push(
+      ...applyScoreLevelSupportCleanupSolvers({
+        notes,
+        subjectEntries,
+        sectionPlans,
+        writingProfile,
+      }),
+    );
   }
   notes.sort(compareNoteEvents);
   if (selectionModel === "section-local-planner") {
-    repairTextureVoiceCrossingsForNotes(notes, sectionPlans);
-    notes.sort(compareNoteEvents);
     selectedConstraintCandidates.push(
       ...applyScoreLevelHarmonicContinuitySolver({
         notes,
@@ -344,6 +361,156 @@ function cloneExposition(section: Exposition): Exposition {
     subjectEntries: [...section.subjectEntries],
     sectionPlans: [...section.sectionPlans],
   };
+}
+
+function applyScoreLevelSupportCleanupSolvers(input: {
+  notes: NoteEvent[];
+  subjectEntries: readonly PlannedEntry[];
+  sectionPlans: readonly HarmonicPlan[];
+  writingProfile: WritingProfile;
+}): ConstraintCandidate[] {
+  const candidates: ConstraintCandidate[] = [];
+  const surfaces: readonly ScoreLevelSupportCleanupSurface[] = [
+    {
+      id: "functional-thinning-support",
+      apply: (notes) => addFunctionalThinningSupport(notes, input.sectionPlans),
+    },
+    {
+      id: "post-entry-continuation-support",
+      apply: (notes) => addPostEntryContinuationSupport(notes, input.subjectEntries, input.sectionPlans),
+    },
+    {
+      id: "long-rest-phrase-closure",
+      apply: (notes) => shapeLongRestPhraseClosures(notes, input.sectionPlans),
+    },
+    {
+      id: "bass-answer-tail-texture-support",
+      apply: (notes) => addBassAnswerTailTextureSupport(notes, input.subjectEntries, input.sectionPlans),
+    },
+    {
+      id: "texture-voice-crossing-repair",
+      apply: (notes) => repairTextureVoiceCrossingsForNotes(notes, input.sectionPlans),
+    },
+  ];
+
+  for (const surface of surfaces) {
+    const beforeNotes = cloneNotes(input.notes);
+    const repairedNotes = cloneNotes(input.notes);
+    surface.apply(repairedNotes);
+    repairedNotes.sort(compareNoteEvents);
+
+    if (noteFingerprint(beforeNotes) === noteFingerprint(repairedNotes)) {
+      continue;
+    }
+
+    const beforeCandidate = buildScoreLevelConstraintCandidate(
+      `score-${surface.id}-unrepaired-final-repair-evidence`,
+      beforeNotes,
+      input.subjectEntries,
+      input.sectionPlans,
+      input.writingProfile,
+    );
+    const afterCandidate = buildScoreLevelConstraintCandidate(
+      `score-${surface.id}-solver-repaired`,
+      repairedNotes,
+      input.subjectEntries,
+      input.sectionPlans,
+      input.writingProfile,
+    );
+    const beforeReview = evaluateScoreLevelSupportCleanupReview(
+      beforeNotes,
+      input.subjectEntries,
+      input.sectionPlans,
+      input.writingProfile,
+      beforeCandidate,
+    );
+    const afterReview = evaluateScoreLevelSupportCleanupReview(
+      repairedNotes,
+      input.subjectEntries,
+      input.sectionPlans,
+      input.writingProfile,
+      afterCandidate,
+    );
+
+    if (!shouldAdoptScoreLevelSupportCleanup(beforeReview, afterReview)) {
+      continue;
+    }
+
+    input.notes.splice(0, input.notes.length, ...repairedNotes);
+    candidates.push(beforeCandidate, afterCandidate);
+  }
+
+  return candidates;
+}
+
+function evaluateScoreLevelSupportCleanupReview(
+  notes: readonly NoteEvent[],
+  subjectEntries: readonly PlannedEntry[],
+  sectionPlans: readonly HarmonicPlan[],
+  writingProfile: WritingProfile,
+  candidate: ConstraintCandidate,
+): ScoreLevelSupportCleanupReview {
+  const diagnostics = analyzeScore(notes, subjectEntries, sectionPlans, writingProfile);
+  const phraseDevelopmentReview = buildPhraseDevelopmentReviewSummary(
+    subjectEntries,
+    sectionPlans,
+    diagnostics.phraseRepetitionReview,
+  );
+  const scoreWindowAcceptance = buildScoreWindowAcceptanceSummary(
+    diagnostics.entryBoundaryContinuity,
+    diagnostics.exposedFreeCounterpointSolo,
+    diagnostics.harmonicContinuity,
+    diagnostics.harmonicStasisRearticulation,
+    diagnostics.transitionRhythmReview,
+    diagnostics.dissonanceTriage,
+    diagnostics.qualityVector,
+    phraseDevelopmentReview,
+  );
+
+  return {
+    hardFailureCount: candidate.result.hardFailures.reduce((sum, failure) => sum + failure.count, 0),
+    scoreWindowReviewRequiredCount: scoreWindowAcceptance.reviewRequiredWindowCount,
+    scoreWindowGeneratorResponseCount: scoreWindowAcceptance.generatorResponseWindowCount,
+    scoreWindowAcceptedContextCount: scoreWindowAcceptance.acceptedContextWindowCount,
+    harmonicContinuityReviewRequiredCount: diagnostics.harmonicContinuity.reviewRequiredWindowCount,
+  };
+}
+
+function shouldAdoptScoreLevelSupportCleanup(
+  before: ScoreLevelSupportCleanupReview,
+  after: ScoreLevelSupportCleanupReview,
+): boolean {
+  return (
+    after.hardFailureCount <= before.hardFailureCount &&
+    hasScoreWindowReviewEvidence(before) &&
+    hasScoreWindowReviewEvidence(after)
+  );
+}
+
+function hasScoreWindowReviewEvidence(review: ScoreLevelSupportCleanupReview): boolean {
+  return [
+    review.scoreWindowReviewRequiredCount,
+    review.scoreWindowGeneratorResponseCount,
+    review.scoreWindowAcceptedContextCount,
+    review.harmonicContinuityReviewRequiredCount,
+  ].every(
+    (count) => Number.isSafeInteger(count) && count >= 0,
+  );
+}
+
+function noteFingerprint(notes: readonly NoteEvent[]): string {
+  return JSON.stringify(
+    [...notes].sort(compareNoteEvents).map((note) => [
+      note.kind,
+      note.voice,
+      note.startTick,
+      note.durationTicks,
+      note.pitch,
+      note.velocity,
+      note.role,
+      note.metricalHarmonyIntent,
+    ]),
+  );
 }
 
 function applyScoreLevelHarmonicContinuitySolver(input: {
@@ -1201,16 +1368,17 @@ export function buildFugueContinuationScore(
   }
   fillAllVoiceSilenceGaps(notes, keySignature, writingProfile);
   if (selectionModel === "section-local-planner") {
-    addFunctionalThinningSupport(notes, sectionPlans);
-    addPostEntryContinuationSupport(notes, subjectEntries, sectionPlans);
-    shapeLongRestPhraseClosures(notes, sectionPlans);
-    addBassAnswerTailTextureSupport(notes, subjectEntries, sectionPlans);
-    repairTextureVoiceCrossingsForNotes(notes, sectionPlans);
+    selectedConstraintCandidates.push(
+      ...applyScoreLevelSupportCleanupSolvers({
+        notes,
+        subjectEntries,
+        sectionPlans,
+        writingProfile,
+      }),
+    );
   }
   notes.sort(compareNoteEvents);
   if (selectionModel === "section-local-planner") {
-    repairTextureVoiceCrossingsForNotes(notes, sectionPlans);
-    notes.sort(compareNoteEvents);
     selectedConstraintCandidates.push(
       ...applyScoreLevelHarmonicContinuitySolver({
         notes,
