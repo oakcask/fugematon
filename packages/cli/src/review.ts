@@ -92,7 +92,7 @@ export async function writeReviewBundle(
   }
 
   const summary: ReviewSummary = {
-    schemaVersion: 19,
+    schemaVersion: 20,
     lengthTicks,
     selectionModel,
     performanceProfile,
@@ -153,7 +153,7 @@ export async function writeAbReviewBundle(
 }
 
 type ReviewSummary = {
-  schemaVersion: 19;
+  schemaVersion: 20;
   lengthTicks: number;
   selectionModel: SelectionModel;
   performanceProfile: PerformanceProfileMetadata;
@@ -650,7 +650,7 @@ function summarizeInitialSubjectProfile(output: GenerationOutput): InitialSubjec
   return {
     degreePattern: [...initialSubject.expectedDegreePattern],
     rhythmPattern: initialSubjectNotes(output, initialSubject).map((note) =>
-      Math.round(note.durationTicks / TICKS_PER_QUARTER),
+      roundRatio(note.durationTicks / TICKS_PER_QUARTER),
     ),
     contourClass: contourClass(initialSubject.expectedDegreePattern),
     localClimaxIndex: localClimaxIndex(initialSubject.expectedDegreePattern),

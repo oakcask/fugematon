@@ -40,6 +40,16 @@ Fugematon 固有の設計判断、review 判断、quality policy と文献根拠
 * Limits: This claim does not require every episode to be long, every note to literally match the subject, or historical WTC measure counts to become thresholds.
 * Used by: `docs/phases/episode-motivic-development.md`, `docs/reviews/episode-motivic-development-replan.md`, `docs/phases/phase-8.md`
 
+## initial-subject-rhetoric-diversity
+
+* Claim: Initial subject generation should assemble answer-compatible subjects from independently varied opening gesture, climax area, rhythm profile, meter stress, modal color, and tail motion decisions instead of choosing the adopted planner subject from a fixed full-profile list.
+* Applies to: generation | diagnostics | review | phase-scope
+* Evidence: `common-practice-fugue-subjects`; Initial subject rhetoric diversity repair seed sweep evidence.
+* Confidence: medium
+* Verification state: source-family
+* Limits: This claim does not require learned subject generation, historical subject templates, or maximum difference between all seeds. Motivic recurrence inside one score remains valid when it is function-bearing.
+* Used by: `docs/phases/initial-subject-rhetoric-diversity-repair.md`, `docs/reviews/initial-subject-rhetoric-diversity-completion.md`
+
 ## endless-program-coda-continuity
 
 * Claim: `endless-program` coda quality should not be accepted from stable terminal sonority alone; the terminal span should use a historically plausible ending process such as final subject return, stretto, pedal-supported final entry, thematic liquidation, or texture compaction that preserves recent musical material until the cadence.

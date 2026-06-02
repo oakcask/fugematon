@@ -51,13 +51,45 @@ test("subject family diversity flags top-n rhetoric concentration", () => {
   assert.equal(summary.topInitialSubjectFamilyShare, 0.25);
   assert.equal(summary.top3InitialSubjectFamilyShare, 0.667);
   assert.equal(summary.top5InitialSubjectFamilyShare, 0.833);
+  assert.equal(summary.topInitialSubjectRhetoricShare, 0.25);
+  assert.equal(summary.top3InitialSubjectRhetoricShare, 0.667);
+  assert.equal(summary.top5InitialSubjectRhetoricShare, 0.833);
+  assert.ok(summary.initialSubjectRhetoricFamilies.length > 0);
+  assert.ok(summary.openingGestureFamilies.length > 0);
+  assert.ok(summary.rhythmProfileFamilies.length > 0);
+  assert.ok(summary.climaxAreaFamilies.length > 0);
+  assert.ok(summary.tailMotionFamilies.length > 0);
   assert.equal(summary.topInitialSubjectFragmentFamilyShare, 0.333);
   assert.equal(summary.top3SubjectFragmentFamilyShare, 0.75);
   assert.equal(summary.top5SubjectFragmentFamilyShare, 0.917);
   assert.ok(summary.findings.some((finding) => finding.code === "initial-subject-top3-concentration"));
   assert.ok(summary.findings.some((finding) => finding.code === "initial-subject-top5-concentration"));
+  assert.ok(summary.findings.some((finding) => finding.code === "initial-subject-rhetoric-top3-concentration"));
+  assert.ok(summary.findings.some((finding) => finding.code === "initial-subject-rhetoric-top5-concentration"));
   assert.ok(summary.findings.some((finding) => finding.code === "subject-fragment-top3-concentration"));
   assert.ok(summary.findings.some((finding) => finding.code === "subject-fragment-top5-concentration"));
+});
+
+test("subject family diversity flags concentrated rhetoric dimensions", () => {
+  const summary = summarizeSubjectFamilyDiversity([
+    subjectSeed("alpha", [0, 1, 2, 3, 4, 3, 2, 1], [1, 1, 1, 1, 1, 1, 1, 1], 4),
+    subjectSeed("beta", [0, 1, 2, 1, 4, 2, 3, 1], [1, 1, 1, 1, 1, 1, 1, 1], 4),
+    subjectSeed("gamma", [0, 1, 2, 3, 4, 2, 1, 0], [1, 1, 1, 1, 1, 1, 1, 1], 4),
+    subjectSeed("delta", [0, 1, 2, 2, 4, 3, 1, 0], [1, 1, 1, 1, 1, 1, 1, 1], 4),
+    subjectSeed("epsilon", [0, 1, 2, 1, 4, 3, 2, 1], [1, 1, 1, 1, 1, 1, 1, 1], 4),
+    subjectSeed("zeta", [0, 1, 2, 3, 4, 1, 2, 1], [1, 1, 1, 1, 1, 1, 1, 1], 4),
+    subjectSeed("eta", [0, 2, 1, 3, 4, 3, 2, 3], [2, 1, 1, 1, 1, 1, 1, 1], 3, [0, 2, 1], "ascending"),
+    subjectSeed("theta", [0, 3, 2, 4, 1, 2, 3, 3], [1, 2, 1, 1, 1, 1, 1, 1], 3, [0, 3, 2], "repeated"),
+  ]);
+
+  assert.equal(summary.topOpeningGestureShare, 0.75);
+  assert.equal(summary.topRhythmProfileShare, 0.75);
+  assert.equal(summary.topClimaxAreaShare, 0.75);
+  assert.equal(summary.topTailMotionShare, 0.75);
+  assert.ok(summary.findings.some((finding) => finding.code === "initial-subject-opening-gesture-concentration"));
+  assert.ok(summary.findings.some((finding) => finding.code === "initial-subject-rhythm-profile-concentration"));
+  assert.ok(summary.findings.some((finding) => finding.code === "initial-subject-climax-area-concentration"));
+  assert.ok(summary.findings.some((finding) => finding.code === "initial-subject-tail-motion-concentration"));
 });
 
 test("subject family diversity comparison reports rhythm and climax movement", () => {
@@ -98,8 +130,10 @@ test("subject family diversity comparison reports top-n concentration movement",
   const comparison = compareSubjectFamilyDiversity(baseline, variant);
 
   assert.equal(comparison.deltas.top3InitialSubjectFamilyShare, -0.625);
+  assert.equal(comparison.deltas.top3InitialSubjectRhetoricShare, -0.5);
   assert.equal(comparison.deltas.top3SubjectFragmentFamilyShare, -0.375);
   assert.ok(comparison.improvements.includes("top 3 initial subject family share decreased"));
+  assert.ok(comparison.improvements.includes("top 3 initial subject rhetoric share decreased"));
   assert.ok(comparison.improvements.includes("top 3 subject-fragment family share decreased"));
 });
 
@@ -122,6 +156,7 @@ function subjectSeed(
   rhythmPattern: number[],
   localClimaxIndex: number,
   fragmentPattern: number[] = [0, 2, 1, 3],
+  tailMotion: InitialSubjectProfile["tailMotion"] = "descending",
 ): {
   seed: string;
   initialSubjectProfile: InitialSubjectProfile;
@@ -134,7 +169,7 @@ function subjectSeed(
       rhythmPattern,
       contourClass: "test-contour",
       localClimaxIndex,
-      tailMotion: "descending",
+      tailMotion,
       mode: "major",
       answerCompatibility: "tonal-answer",
     },
