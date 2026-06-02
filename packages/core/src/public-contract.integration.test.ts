@@ -189,9 +189,9 @@ test("public diagnostics expose finite candidate score dimensions", () => {
   assert.equal(typeof output.diagnostics.qualityVector.harmonicSonorities.generatorResponseWindowCount, "number");
   assert.ok(Array.isArray(output.diagnostics.qualityVector.harmonicSonorities.windows));
   assert.equal(output.diagnostics.generatorSearchTrace.schemaVersion, 1);
-  assert.equal(output.diagnostics.generatorSearchTrace.mode, "diagnostics-only");
-  assert.equal(output.diagnostics.generatorSearchTrace.evaluatedCandidateCount, 1);
-  assert.equal(output.diagnostics.generatorSearchTrace.selectedCandidateId, "legacy-generated-score");
+  assert.equal(output.diagnostics.generatorSearchTrace.mode, "solver");
+  assert.ok(output.diagnostics.generatorSearchTrace.evaluatedCandidateCount >= 2);
+  assert.notEqual(output.diagnostics.generatorSearchTrace.selectedCandidateId, "legacy-generated-score");
   assert.ok(Array.isArray(output.diagnostics.generatorSearchTrace.candidates));
   assert.ok(
     output.diagnostics.generatorSearchTrace.candidates.every(

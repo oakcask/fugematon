@@ -141,8 +141,19 @@ test("generateScore emits a tick-based exposition", () => {
   assert.equal(output.diagnostics.subjectIdentityViolations, 0);
   assert.equal(output.diagnostics.answerPlanViolations, 0);
   assert.equal(output.diagnostics.keyMetadataMismatches, 0);
+  assert.equal(output.diagnostics.generatorSearchTrace.mode, "solver");
+  assert.ok(output.diagnostics.generatorSearchTrace.evaluatedCandidateCount >= 2);
+  assert.notEqual(output.diagnostics.generatorSearchTrace.selectedCandidateId, "legacy-generated-score");
   assert.equal(output.diagnostics.generatorSearchTrace.rejectedCandidateCount, 0);
-  assert.deepEqual(output.diagnostics.generatorSearchTrace.candidates[0]?.hardFailures, []);
+  assert.ok(
+    output.diagnostics.generatorSearchTrace.candidates.every(
+      (candidate) =>
+        candidate.candidateId.startsWith("exposition-") &&
+        candidate.windowStartTick === 0 &&
+        candidate.windowEndTick > 0 &&
+        candidate.hardFailures.length === 0,
+    ),
+  );
   assert.equal(countIssues(output.diagnostics.issues, "range-violation"), output.diagnostics.rangeViolations);
   assert.equal(countIssues(output.diagnostics.issues, "voice-crossing"), output.diagnostics.voiceCrossings);
   assert.equal(countIssues(output.diagnostics.issues, "parallel-perfect"), output.diagnostics.parallelPerfects);
@@ -256,6 +267,11 @@ test("generateScore continues continuous-fugue segments from a carried snapshot"
 
   assert.equal(first.nextSegmentSnapshot.segmentIndex, 0);
   assert.equal(second.nextSegmentSnapshot.segmentIndex, 1);
+  assert.equal(first.diagnostics.generatorSearchTrace.mode, "solver");
+  assert.ok(first.diagnostics.generatorSearchTrace.evaluatedCandidateCount >= 2);
+  assert.equal(second.diagnostics.generatorSearchTrace.mode, "diagnostics-only");
+  assert.equal(second.diagnostics.generatorSearchTrace.evaluatedCandidateCount, 1);
+  assert.equal(second.diagnostics.generatorSearchTrace.selectedCandidateId, "legacy-generated-score");
   assert.notEqual(firstStateChange?.payload.state, "exposition");
   assert.notEqual(second.diagnostics.sectionPlans[0]?.state, "exposition");
   assert.ok(second.diagnostics.continuousSegmentContinuity.carriedSubjectFamily);

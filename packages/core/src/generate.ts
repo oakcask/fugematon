@@ -10,6 +10,7 @@ import type {
 import { normalizeSelectionModel } from "./events.js";
 import {
   buildGeneratorSearchTrace,
+  type ConstraintCandidate,
   evaluateScoreDraft,
   selectBestConstraintCandidate,
 } from "./generation/constraint-core.js";
@@ -23,9 +24,10 @@ import { createMeterContext } from "./generation/meter.js";
 import { buildPhraseConvergenceReviewSummary } from "./generation/phrase-convergence-review.js";
 import { buildPhraseDevelopmentReviewSummary } from "./generation/phrase-development-review.js";
 import { buildScoreWindowAcceptanceSummary } from "./generation/score-window-acceptance.js";
-import { buildFugueContinuationScore, buildFugueScore } from "./generation/sections.js";
+import { buildExposition, buildFugueContinuationScore, buildFugueScore } from "./generation/sections.js";
 import { buildSubject } from "./generation/subject.js";
 import { applyTerminalClosureIntent, buildTerminalClosureReviewSummary } from "./generation/terminal-closure-review.js";
+import type { Exposition } from "./generation/types.js";
 import { createSegmentEndSnapshot, normalizeInfinitePlaybackMode } from "./infinite-playback.js";
 import { Xoshiro128StarStar } from "./prng.js";
 import {
@@ -59,6 +61,15 @@ export function generateScore(input: GenerationInput): GenerationOutput {
     isContinuousContinuation && input.previousSegmentSnapshot?.tonalRegion.currentKey !== undefined
       ? input.previousSegmentSnapshot.tonalRegion.currentKey
       : initialKeySignature;
+  const expositionSearch = isContinuousContinuation
+    ? undefined
+    : buildExpositionSearchCandidates({
+        subject,
+        keySignature,
+        lengthTicks: input.lengthTicks,
+        meterContext,
+        writingProfile,
+      });
   const score = isContinuousContinuation
     ? buildFugueContinuationScore(subject, keySignature, input.lengthTicks, rng, {
         selectionModel,
@@ -79,6 +90,7 @@ export function generateScore(input: GenerationInput): GenerationOutput {
         meterContext,
         {
           terminalCodaIntent: mode === "endless-program" ? "self-contained-coda" : undefined,
+          initialExposition: expositionSearch?.selected.exposition,
         },
         writingProfile,
       );
@@ -112,27 +124,10 @@ export function generateScore(input: GenerationInput): GenerationOutput {
     phraseDevelopmentReview,
   );
   const generatedUntilTick = Math.max(input.lengthTicks, score.endTick);
-  const legacyConstraintCandidate = {
-    candidateId: "legacy-generated-score",
-    draft: {
-      notes: score.notes,
-      subjectEntries: score.subjectEntries,
-      sectionPlans: score.sectionPlans,
-      endTick: generatedUntilTick,
-      writingProfile,
-    },
-    result: evaluateScoreDraft({
-      notes: score.notes,
-      subjectEntries: score.subjectEntries,
-      sectionPlans: score.sectionPlans,
-      endTick: generatedUntilTick,
-      writingProfile,
-    }),
-  };
-  const generatorSearchTrace = buildGeneratorSearchTrace(
-    [legacyConstraintCandidate],
-    selectBestConstraintCandidate([legacyConstraintCandidate]),
-  );
+  const generatorSearchTrace =
+    expositionSearch === undefined
+      ? buildDiagnosticsOnlyGeneratorSearchTrace(score, generatedUntilTick, writingProfile)
+      : buildGeneratorSearchTrace(expositionSearch.candidates, expositionSearch.selected, "solver");
 
   const firstState = score.stateTransitions[0] ?? (isContinuousContinuation ? "episode" : "exposition");
   const events: ScoreEvent[] = [
@@ -359,6 +354,95 @@ function resolveGenerationWritingProfile(input: GenerationInput): WritingProfile
   }
 
   return resolveWritingProfile(requestedWritingProfileId);
+}
+
+type ExpositionSearchCandidate = ConstraintCandidate & {
+  exposition: Exposition;
+};
+
+function buildExpositionSearchCandidates(input: {
+  subject: Parameters<typeof buildExposition>[0];
+  keySignature: Parameters<typeof buildExposition>[1];
+  lengthTicks: number;
+  meterContext: Parameters<typeof buildExposition>[3];
+  writingProfile: WritingProfile;
+}): {
+  candidates: ExpositionSearchCandidate[];
+  selected: ExpositionSearchCandidate;
+} {
+  const currentCounterSubjectSupportRepair = input.lengthTicks >= TICKS_PER_QUARTER * 288;
+  const alternativeCounterSubjectSupportRepair = !currentCounterSubjectSupportRepair;
+  const candidates = [
+    buildExpositionSearchCandidate(
+      "exposition-a-current-contract",
+      buildExposition(
+        input.subject,
+        input.keySignature,
+        currentCounterSubjectSupportRepair,
+        input.meterContext,
+        input.writingProfile,
+      ),
+      input.writingProfile,
+    ),
+    buildExpositionSearchCandidate(
+      currentCounterSubjectSupportRepair ? "exposition-b-unrepaired-support" : "exposition-b-counter-subject-repair",
+      buildExposition(
+        input.subject,
+        input.keySignature,
+        alternativeCounterSubjectSupportRepair,
+        input.meterContext,
+        input.writingProfile,
+      ),
+      input.writingProfile,
+    ),
+  ];
+
+  return {
+    candidates,
+    selected: selectBestConstraintCandidate(candidates) as ExpositionSearchCandidate,
+  };
+}
+
+function buildExpositionSearchCandidate(
+  candidateId: string,
+  exposition: Exposition,
+  writingProfile: WritingProfile,
+): ExpositionSearchCandidate {
+  const draft = {
+    notes: exposition.notes,
+    subjectEntries: exposition.subjectEntries,
+    sectionPlans: exposition.sectionPlans,
+    endTick: exposition.endTick,
+    writingProfile,
+  };
+  return {
+    candidateId,
+    exposition,
+    draft,
+    result: evaluateScoreDraft(draft),
+  };
+}
+
+function buildDiagnosticsOnlyGeneratorSearchTrace(
+  score: Exposition,
+  generatedUntilTick: number,
+  writingProfile: WritingProfile,
+) {
+  const legacyConstraintCandidate = buildExpositionSearchCandidate(
+    "legacy-generated-score",
+    {
+      notes: score.notes,
+      subjectEntries: score.subjectEntries,
+      sectionPlans: score.sectionPlans,
+      endTick: generatedUntilTick,
+      durationTicks: generatedUntilTick,
+    },
+    writingProfile,
+  );
+  return buildGeneratorSearchTrace(
+    [legacyConstraintCandidate],
+    selectBestConstraintCandidate([legacyConstraintCandidate]),
+  );
 }
 
 function buildContinuousSegmentContinuitySummary(input: {

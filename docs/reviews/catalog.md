@@ -4,6 +4,8 @@
 
 ## Current Quality Lane
 
+* [Generator constraint rebuild exposition search review](generator-constraint-rebuild-exposition-search.md): current architecture evidence. Initial non-continuation generation selects between two evaluated exposition-local candidates, reports solver-mode `generatorSearchTrace`, and keeps the 22 seed target bundle at 0 review-policy hard constraint failures.
+* [Generator constraint rebuild slice review](generator-constraint-rebuild-slice.md): previous architecture evidence. The first constraint-core slice evaluated the legacy generated score as one diagnostics-only candidate before solver adoption.
 * [Constrained Keyboard Writing Profiles Completion Review](constrained-keyboard-writing-profiles-completion.md): 完了 evidence。TARGET baseline と現行 default の6 seed ScoreEvent JSON / MIDI が完全一致し、22 seed review summary は writing-profile metadata 追加以外安定した。Focused piano / harpsichord / music-box profile diagnostics で pitch set、hand span、repeat-rate evidence を記録する。
 * [Initial Subject Rhetoric Diversity Completion Review](initial-subject-rhetoric-diversity-completion.md): 完了 evidence。adopted planner の初期主題を固定 full-profile selection から constrained subject-rhetoric candidates へ置き換え、`subjectFamilyDiversity` schema v3 と 100 seed sweep で top-N rhetoric concentration 改善を記録する。
 * [Endless Program Coda Historical Ending Review](endless-program-coda-historical-ending-review.md): current historical-ending review. 22 current `endless-program` codas are accepted for terminal closure, while archetype distribution, final-subject rhetoric, pedal-supported closure, and sparse `cadential-echo` listening remain review-required evidence against fetched WTC, invention, Art of Fugue, and chorale cadence references.

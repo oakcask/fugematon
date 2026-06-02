@@ -85,6 +85,7 @@ type ContinuationPhraseUnit = {
 
 type TerminalCodaOptions = {
   terminalCodaIntent?: Extract<TerminalSectionIntent, "self-contained-coda">;
+  initialExposition?: Exposition;
 };
 
 type TerminalCodaReservation = {
@@ -103,7 +104,9 @@ export function buildFugueScore(
   writingProfile: WritingProfile = resolveWritingProfile(undefined),
 ): FugueScore {
   const counterSubjectSupportRepair = lengthTicks >= TICKS_PER_QUARTER * 288;
-  const exposition = buildExposition(subject, keySignature, counterSubjectSupportRepair, meterContext, writingProfile);
+  const exposition =
+    options.initialExposition ??
+    buildExposition(subject, keySignature, counterSubjectSupportRepair, meterContext, writingProfile);
   const notes = [...exposition.notes];
   const subjectEntries = [...exposition.subjectEntries];
   const sectionPlans = [...exposition.sectionPlans];
