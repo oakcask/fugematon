@@ -43,6 +43,8 @@ export type Exposition = {
   sectionPlans: HarmonicPlan[];
   endTick: number;
   durationTicks: number;
+  constraintCandidateTag?: "harmonic-stasis-solver-repaired";
+  constraintSourceCandidateIndex?: number;
 };
 
 export type FugueScore = Exposition & {

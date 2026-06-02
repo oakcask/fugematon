@@ -17,7 +17,6 @@ import {
 import { buildContinuousBoundaryCarrySummary } from "./generation/continuous-boundary-carry.js";
 import { analyzeScore } from "./generation/diagnostics.js";
 import { annotateEpisodeMotivicDerivations } from "./generation/episode-motivic-development.js";
-import { repairHarmonicStasisRearticulation } from "./generation/harmonic-stasis-rearticulation.js";
 import { chooseKeySignature, chooseTempo, chooseTimeSignature } from "./generation/key.js";
 import { buildLocalSentinelCandidateTraceSummary } from "./generation/local-sentinel-candidate-trace.js";
 import { createMeterContext } from "./generation/meter.js";
@@ -96,9 +95,6 @@ export function generateScore(input: GenerationInput): GenerationOutput {
       );
   applyTerminalClosureIntent(score, Math.max(input.lengthTicks, score.endTick), mode);
   annotateEpisodeMotivicDerivations(score.notes, score.sectionPlans);
-  if (selectionModel !== "baseline") {
-    repairHarmonicStasisRearticulation(score.notes, score.sectionPlans);
-  }
   constrainNotesToWritingProfile(score.notes, writingProfile);
   const diagnostics = analyzeScore(score.notes, score.subjectEntries, score.sectionPlans, writingProfile);
   const localSentinelCandidateTrace = buildLocalSentinelCandidateTraceSummary(

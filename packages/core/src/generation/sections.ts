@@ -35,6 +35,10 @@ import { type ConstraintCandidate, evaluateScoreDraft } from "./constraint-core.
 import { applyContinuousBoundaryCarryRepair } from "./continuous-boundary-carry.js";
 import { addSubjectEntry, chooseAnswerKind } from "./entries.js";
 import { evaluateCandidate } from "./evaluation.js";
+import {
+  analyzeHarmonicStasisRearticulation,
+  repairHarmonicStasisRearticulation,
+} from "./harmonic-stasis-rearticulation.js";
 import { buildHarmonicPlan, cadenceKindForSection } from "./harmony.js";
 import { characteristicScaleDegree, isModalMode, tonicPitchClass, transposeKey } from "./key.js";
 import { createLegacyMeterContext, previousMeasureDownbeat } from "./meter.js";
@@ -197,7 +201,7 @@ export function buildFugueScore(
     sectionPlans.push(...selection.section.sectionPlans);
     candidateEvaluations += selection.candidateCount;
     selectedCandidateEvaluations.push(selection.evaluation);
-    selectedConstraintCandidates.push(selection.constraintCandidate);
+    selectedConstraintCandidates.push(...selection.constraintCandidates);
     candidatePoolOracleSections.push(selection.oracleSection);
     sectionStartTick += selection.section.durationTicks;
     stateIndex += 1;
@@ -239,6 +243,14 @@ export function buildFugueScore(
   if (selectionModel === "section-local-planner") {
     repairTextureVoiceCrossingsForNotes(notes, sectionPlans);
     notes.sort(compareNoteEvents);
+    selectedConstraintCandidates.push(
+      ...applyScoreLevelHarmonicStasisSolver({
+        notes,
+        subjectEntries,
+        sectionPlans,
+        writingProfile,
+      }),
+    );
   }
   if (terminalCodaReservation !== undefined && terminalCoda !== undefined) {
     clipNotesAtTick(notes, terminalCodaReservation.startTick);
@@ -315,6 +327,76 @@ function cloneNotes(notes: readonly NoteEvent[]): NoteEvent[] {
             ...note.motivicDerivation,
           },
   }));
+}
+
+function cloneExposition(section: Exposition): Exposition {
+  return {
+    ...section,
+    notes: cloneNotes(section.notes),
+    subjectEntries: [...section.subjectEntries],
+    sectionPlans: [...section.sectionPlans],
+  };
+}
+
+function applyScoreLevelHarmonicStasisSolver(input: {
+  notes: NoteEvent[];
+  subjectEntries: readonly PlannedEntry[];
+  sectionPlans: readonly HarmonicPlan[];
+  writingProfile: WritingProfile;
+}): ConstraintCandidate[] {
+  const before = analyzeHarmonicStasisRearticulation(input.notes, input.sectionPlans);
+  if (before.generatorResponseWindowCount === 0) {
+    return [];
+  }
+
+  const repairedNotes = cloneNotes(input.notes);
+  repairHarmonicStasisRearticulation(repairedNotes, input.sectionPlans);
+  repairedNotes.sort(compareNoteEvents);
+  const after = analyzeHarmonicStasisRearticulation(repairedNotes, input.sectionPlans);
+  if (after.generatorResponseWindowCount >= before.generatorResponseWindowCount) {
+    return [];
+  }
+
+  const beforeNotes = cloneNotes(input.notes);
+  input.notes.splice(0, input.notes.length, ...repairedNotes);
+  return [
+    buildScoreLevelConstraintCandidate(
+      "score-harmonic-stasis-unrepaired-final-repair-evidence",
+      beforeNotes,
+      input.subjectEntries,
+      input.sectionPlans,
+      input.writingProfile,
+    ),
+    buildScoreLevelConstraintCandidate(
+      "score-harmonic-stasis-solver-repaired",
+      input.notes,
+      input.subjectEntries,
+      input.sectionPlans,
+      input.writingProfile,
+    ),
+  ];
+}
+
+function buildScoreLevelConstraintCandidate(
+  candidateId: string,
+  notes: readonly NoteEvent[],
+  subjectEntries: readonly PlannedEntry[],
+  sectionPlans: readonly HarmonicPlan[],
+  writingProfile: WritingProfile,
+): ConstraintCandidate {
+  const endTick = Math.max(...notes.map((note) => note.startTick + note.durationTicks));
+  const draft = {
+    notes,
+    subjectEntries,
+    sectionPlans,
+    endTick,
+    writingProfile,
+  };
+  return {
+    candidateId,
+    draft,
+    result: evaluateScoreDraft(draft),
+  };
 }
 
 function reinforceTerminalCodaDerivation(
@@ -1035,7 +1117,7 @@ export function buildFugueContinuationScore(
     sectionPlans.push(...selection.section.sectionPlans);
     candidateEvaluations += selection.candidateCount;
     selectedCandidateEvaluations.push(selection.evaluation);
-    selectedConstraintCandidates.push(selection.constraintCandidate);
+    selectedConstraintCandidates.push(...selection.constraintCandidates);
     candidatePoolOracleSections.push(selection.oracleSection);
     sectionStartTick += selection.section.durationTicks;
     stateIndex = (stateIndex + 1) % continuationPattern.length;
@@ -1063,6 +1145,14 @@ export function buildFugueContinuationScore(
   if (selectionModel === "section-local-planner") {
     repairTextureVoiceCrossingsForNotes(notes, sectionPlans);
     notes.sort(compareNoteEvents);
+    selectedConstraintCandidates.push(
+      ...applyScoreLevelHarmonicStasisSolver({
+        notes,
+        subjectEntries,
+        sectionPlans,
+        writingProfile,
+      }),
+    );
   }
 
   return {
@@ -1308,13 +1398,19 @@ type HistoryAwareSelectionContext = {
   keyDistance: number;
 };
 
-type ContinuationCandidateSelectionBand = "baseline" | "section-local" | "section-grammar" | "phrase-family";
+type ContinuationCandidateSelectionBand =
+  | "baseline"
+  | "section-local"
+  | "section-grammar"
+  | "phrase-family"
+  | "harmonic-stasis";
 
 type ContinuationCandidateSelectionWindow = {
   baselineCandidateCount: number;
   selectableCandidateCount: number;
   sectionGrammarCandidateStart: number;
   phraseFamilyCandidateStart: number;
+  harmonicStasisCandidateStart: number;
 };
 
 function buildHistoryAwareSelectionContext(
@@ -1654,6 +1750,7 @@ export function chooseContinuationSection(
   candidateCount: number;
   evaluation: CandidateEvaluation;
   constraintCandidate: ConstraintCandidate;
+  constraintCandidates: readonly ConstraintCandidate[];
   oracleSection: ReturnType<typeof classifyCandidatePoolOracleSection>;
 } {
   const candidates = buildContinuationCandidates(
@@ -1755,23 +1852,36 @@ export function chooseContinuationSection(
     selectionModel,
   });
 
-  const selectedState = candidates[bestIndex]!.sectionPlans[0]?.state ?? state;
+  const selectedCandidate = candidates[bestIndex]!;
+  const selectedState = selectedCandidate.sectionPlans[0]?.state ?? state;
   const selectedBand = continuationCandidateSelectionBand(bestIndex, selectionWindow, selectionModel);
+  const constraintCandidate = buildContinuationConstraintCandidate(
+    continuationConstraintCandidateId({
+      startTick,
+      state: selectedState,
+      candidateBand: selectedBand,
+      candidateIndex: bestIndex,
+    }),
+    selectedCandidate,
+    writingProfile,
+    terminalSupportCandidate,
+  );
   return {
-    section: candidates[bestIndex]!,
+    section: selectedCandidate,
     candidateCount: candidates.length,
     evaluation: evaluations[bestIndex]!,
-    constraintCandidate: buildContinuationConstraintCandidate(
-      continuationConstraintCandidateId({
-        startTick,
-        state: selectedState,
-        candidateBand: selectedBand,
-        candidateIndex: bestIndex,
+    constraintCandidate,
+    constraintCandidates: [
+      ...harmonicStasisSourceConstraintCandidates({
+        candidates,
+        selectedCandidate,
+        selectionWindow,
+        selectionModel,
+        writingProfile,
+        terminalSupportCandidate,
       }),
-      candidates[bestIndex]!,
-      writingProfile,
-      terminalSupportCandidate,
-    ),
+      constraintCandidate,
+    ],
     oracleSection: classifyCandidatePoolOracleSection({
       state: selectedState,
       startTick,
@@ -1780,7 +1890,9 @@ export function chooseContinuationSection(
       selectedCandidateIndex: bestIndex,
       candidateDiversityDescriptors: candidates.map(describeCandidateDiversity),
       phraseFamilyCandidateCount:
-        selectionModel === "section-local-planner" ? candidates.length - selectionWindow.phraseFamilyCandidateStart : 0,
+        selectionModel === "section-local-planner"
+          ? selectionWindow.harmonicStasisCandidateStart - selectionWindow.phraseFamilyCandidateStart
+          : 0,
       stateHistory: [...stateHistory.slice(0, -1), selectedState],
     }),
   };
@@ -1814,6 +1926,40 @@ function buildContinuationConstraintCandidate(
       terminalSupport: terminalSupportCandidate,
     }),
   };
+}
+
+function harmonicStasisSourceConstraintCandidates(input: {
+  candidates: readonly Exposition[];
+  selectedCandidate: Exposition;
+  selectionWindow: ContinuationCandidateSelectionWindow;
+  selectionModel: SelectionModel;
+  writingProfile: WritingProfile;
+  terminalSupportCandidate: boolean;
+}): ConstraintCandidate[] {
+  if (input.selectedCandidate.constraintCandidateTag !== "harmonic-stasis-solver-repaired") {
+    return [];
+  }
+  const sourceIndex = input.selectedCandidate.constraintSourceCandidateIndex;
+  const sourceCandidate = sourceIndex === undefined ? undefined : input.candidates[sourceIndex];
+  if (sourceIndex === undefined || sourceCandidate === undefined) {
+    return [];
+  }
+
+  const sourceState = sourceCandidate.sectionPlans[0]?.state ?? "episode";
+  const sourceBand = continuationCandidateSelectionBand(sourceIndex, input.selectionWindow, input.selectionModel);
+  return [
+    buildContinuationConstraintCandidate(
+      `${continuationConstraintCandidateId({
+        startTick: sourceCandidate.sectionPlans[0]?.startTick ?? 0,
+        state: sourceState,
+        candidateBand: sourceBand,
+        candidateIndex: sourceIndex,
+      })}-unrepaired-final-repair-evidence`,
+      sourceCandidate,
+      input.writingProfile,
+      input.terminalSupportCandidate,
+    ),
+  ];
 }
 
 function continuationConstraintCandidateId(input: {
@@ -1959,14 +2105,17 @@ function continuationCandidateSelectionWindow(
       selectableCandidateCount: candidateCount,
       sectionGrammarCandidateStart: candidateCount,
       phraseFamilyCandidateStart: candidateCount,
+      harmonicStasisCandidateStart: candidateCount,
     };
   }
 
+  const harmonicStasisCandidateStart = harmonicStasisCandidateStartIndex(state);
   return {
     baselineCandidateCount: baselineContinuationCandidateCount(state),
     selectableCandidateCount: selectableContinuationCandidateCount(state),
     sectionGrammarCandidateStart: sectionGrammarCandidateStartIndex(state),
     phraseFamilyCandidateStart: phraseFamilyCandidateStartIndex(state),
+    harmonicStasisCandidateStart,
   };
 }
 
@@ -1984,7 +2133,10 @@ function continuationCandidateSelectionBand(
   if (index < window.phraseFamilyCandidateStart) {
     return "section-grammar";
   }
-  return "phrase-family";
+  if (index < window.harmonicStasisCandidateStart) {
+    return "phrase-family";
+  }
+  return "harmonic-stasis";
 }
 
 function candidateBandCanBeSelected(
@@ -1999,7 +2151,12 @@ function candidateBandCanBeSelected(
   if (band === "baseline") {
     return false;
   }
-  return index < window.selectableCandidateCount || band === "section-grammar" || band === "phrase-family";
+  return (
+    index < window.selectableCandidateCount ||
+    band === "section-grammar" ||
+    band === "phrase-family" ||
+    band === "harmonic-stasis"
+  );
 }
 
 function candidateBandCanBeFallback(
@@ -2042,6 +2199,10 @@ function sectionGrammarCandidateStartIndex(state: FugueState): number {
 
 function phraseFamilyCandidateStartIndex(state: FugueState): number {
   return sectionGrammarCandidateStartIndex(state) + 4;
+}
+
+function harmonicStasisCandidateStartIndex(state: FugueState): number {
+  return phraseFamilyCandidateStartIndex(state) + 2;
 }
 
 function sectionGrammarPlannerSelectionRiskAdjustment(
@@ -2194,6 +2355,31 @@ function selectedSectionSoloTextureRisk(evaluation: CandidateEvaluation): number
   return evaluation.explanations.sections.reduce((sum, section) => sum + section.soloTextureRisk, 0);
 }
 
+function buildHarmonicStasisSolverCandidates(sourceCandidates: readonly Exposition[]): Exposition[] {
+  return sourceCandidates.flatMap((sourceCandidate, sourceCandidateIndex) => {
+    const before = analyzeHarmonicStasisRearticulation(sourceCandidate.notes, sourceCandidate.sectionPlans);
+    if (before.generatorResponseWindowCount === 0) {
+      return [];
+    }
+
+    const repaired = cloneExposition(sourceCandidate);
+    repairHarmonicStasisRearticulation(repaired.notes, repaired.sectionPlans);
+    repaired.notes.sort(compareNoteEvents);
+    const after = analyzeHarmonicStasisRearticulation(repaired.notes, repaired.sectionPlans);
+    if (after.generatorResponseWindowCount >= before.generatorResponseWindowCount) {
+      return [];
+    }
+
+    return [
+      {
+        ...repaired,
+        constraintCandidateTag: "harmonic-stasis-solver-repaired" as const,
+        constraintSourceCandidateIndex: sourceCandidateIndex,
+      },
+    ];
+  });
+}
+
 export function buildContinuationCandidates(
   subject: readonly SubjectNote[],
   keySignature: KeySignature,
@@ -2214,6 +2400,7 @@ export function buildContinuationCandidates(
   const registerPlannerCandidates: Exposition[] = [];
   const sectionGrammarCandidates: Exposition[] = [];
   const phraseFamilyOracleCandidates: Exposition[] = [];
+  const harmonicStasisSolverCandidates: Exposition[] = [];
   const includeSectionLocalPlannerCandidates = selectionModel === "section-local-planner";
   const phraseSubject = phraseSubjectForIntent(subject, state, startTick, selectionModel, phraseIntent);
 
@@ -2421,11 +2608,25 @@ export function buildContinuationCandidates(
     );
   }
 
+  if (includeSectionLocalPlannerCandidates) {
+    harmonicStasisSolverCandidates.push(
+      ...buildHarmonicStasisSolverCandidates([
+        ...candidates,
+        ...sectionLocalPlannerCandidates,
+        ...voicePairSupportCandidates,
+        ...registerPlannerCandidates,
+        ...sectionGrammarCandidates,
+        ...phraseFamilyOracleCandidates,
+      ]),
+    );
+  }
+
   candidates.push(...sectionLocalPlannerCandidates);
   candidates.push(...voicePairSupportCandidates);
   candidates.push(...registerPlannerCandidates);
   candidates.push(...sectionGrammarCandidates);
   candidates.push(...phraseFamilyOracleCandidates);
+  candidates.push(...harmonicStasisSolverCandidates);
 
   return candidates.length === 0
     ? [
