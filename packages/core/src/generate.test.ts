@@ -244,6 +244,24 @@ test("generateScore extends long scores with fugue-form states", () => {
     output.diagnostics.stateTransitions,
   );
   assert.ok(output.diagnostics.candidateEvaluations > 0);
+  assert.ok(
+    output.diagnostics.generatorSearchTrace.candidates.some(
+      (candidate) => candidate.candidateId.startsWith("section-") && candidate.candidateId.includes("-episode-"),
+    ),
+  );
+  assert.ok(
+    output.diagnostics.generatorSearchTrace.candidates.some(
+      (candidate) =>
+        candidate.candidateId.startsWith("section-") &&
+        (candidate.reason.includes("episode-") || candidate.reason.includes("free-counterpoint-")),
+    ),
+  );
+  assert.ok(
+    output.diagnostics.generatorSearchTrace.candidates.some(
+      (candidate) => candidate.candidateId.startsWith("section-") && candidate.reason.includes("terminal-support-"),
+    ),
+  );
+  assert.equal(output.diagnostics.terminalClosureReview.classification, "not-required");
 });
 
 test("generateScore continues continuous-fugue segments from a carried snapshot", () => {

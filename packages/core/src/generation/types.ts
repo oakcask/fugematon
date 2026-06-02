@@ -25,6 +25,7 @@ import type {
   SurfaceBrillianceSummary,
   TexturePlanningReviewSummary,
 } from "../events.js";
+import type { ConstraintCandidate } from "./constraint-core.js";
 
 export type SubjectNote = {
   offsetTick: number;
@@ -47,6 +48,7 @@ export type Exposition = {
 export type FugueScore = Exposition & {
   candidateEvaluations: number;
   selectedCandidateEvaluations: CandidateEvaluation[];
+  selectedConstraintCandidates: ConstraintCandidate[];
   candidatePoolOracle: CandidatePoolOracleSummary;
   stateTransitions: FugueState[];
   stateChanges: {

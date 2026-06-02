@@ -31,6 +31,7 @@ import {
   resolveWritingProfile,
   type WritingProfile,
 } from "../writing-profile.js";
+import { type ConstraintCandidate, evaluateScoreDraft } from "./constraint-core.js";
 import { applyContinuousBoundaryCarryRepair } from "./continuous-boundary-carry.js";
 import { addSubjectEntry, chooseAnswerKind } from "./entries.js";
 import { evaluateCandidate } from "./evaluation.js";
@@ -113,6 +114,7 @@ export function buildFugueScore(
   const stateTransitions: FugueState[] = ["exposition"];
   const stateChanges: FugueScore["stateChanges"] = [];
   const selectedCandidateEvaluations: CandidateEvaluation[] = [];
+  const selectedConstraintCandidates: ConstraintCandidate[] = [];
   const candidatePoolOracleSections: ReturnType<typeof classifyCandidatePoolOracleSection>[] = [];
   let terminalCoda: Exposition | undefined;
   let protectedTerminalCodaNotes: NoteEvent[] = [];
@@ -180,6 +182,7 @@ export function buildFugueScore(
       counterSubjectSupportRepair,
       meterContext,
       writingProfile,
+      terminalCodaReservation === undefined && sectionStartTick + sectionDurationTicks >= ordinaryGenerationEndTick,
     );
     if (selectionModel === "section-local-planner") {
       softenBassEntryBoundaryResets(selection.section.notes, selection.section.subjectEntries, notes);
@@ -194,6 +197,7 @@ export function buildFugueScore(
     sectionPlans.push(...selection.section.sectionPlans);
     candidateEvaluations += selection.candidateCount;
     selectedCandidateEvaluations.push(selection.evaluation);
+    selectedConstraintCandidates.push(selection.constraintCandidate);
     candidatePoolOracleSections.push(selection.oracleSection);
     sectionStartTick += selection.section.durationTicks;
     stateIndex += 1;
@@ -254,6 +258,7 @@ export function buildFugueScore(
     sectionPlans,
     candidateEvaluations,
     selectedCandidateEvaluations,
+    selectedConstraintCandidates,
     candidatePoolOracle: summarizeCandidatePoolOracleSections(candidatePoolOracleSections),
     stateTransitions,
     stateChanges,
@@ -952,6 +957,7 @@ export function buildFugueContinuationScore(
   const stateTransitions: FugueState[] = [];
   const stateChanges: FugueScore["stateChanges"] = [];
   const selectedCandidateEvaluations: CandidateEvaluation[] = [];
+  const selectedConstraintCandidates: ConstraintCandidate[] = [];
   const candidatePoolOracleSections: ReturnType<typeof classifyCandidatePoolOracleSection>[] = [];
   const previousNotes = input.previousEvents.filter((event): event is NoteEvent => event.kind === "note");
   const previousSectionHistory = input.previousSectionFunctions.map((section) => section.state);
@@ -1005,6 +1011,7 @@ export function buildFugueContinuationScore(
       counterSubjectSupportRepair,
       meterContext,
       writingProfile,
+      sectionStartTick + sectionDurationTicks >= lengthTicks,
     );
     if (selectionModel === "section-local-planner") {
       softenBassEntryBoundaryResets(selection.section.notes, selection.section.subjectEntries, [
@@ -1028,6 +1035,7 @@ export function buildFugueContinuationScore(
     sectionPlans.push(...selection.section.sectionPlans);
     candidateEvaluations += selection.candidateCount;
     selectedCandidateEvaluations.push(selection.evaluation);
+    selectedConstraintCandidates.push(selection.constraintCandidate);
     candidatePoolOracleSections.push(selection.oracleSection);
     sectionStartTick += selection.section.durationTicks;
     stateIndex = (stateIndex + 1) % continuationPattern.length;
@@ -1063,6 +1071,7 @@ export function buildFugueContinuationScore(
     sectionPlans,
     candidateEvaluations,
     selectedCandidateEvaluations,
+    selectedConstraintCandidates,
     candidatePoolOracle: summarizeCandidatePoolOracleSections(candidatePoolOracleSections),
     stateTransitions,
     stateChanges,
@@ -1639,10 +1648,12 @@ export function chooseContinuationSection(
   counterSubjectSupportRepair = false,
   meterContext: MeterContext = createLegacyMeterContext(),
   writingProfile: WritingProfile = resolveWritingProfile(undefined),
+  terminalSupportCandidate = false,
 ): {
   section: Exposition;
   candidateCount: number;
   evaluation: CandidateEvaluation;
+  constraintCandidate: ConstraintCandidate;
   oracleSection: ReturnType<typeof classifyCandidatePoolOracleSection>;
 } {
   const candidates = buildContinuationCandidates(
@@ -1662,6 +1673,21 @@ export function chooseContinuationSection(
     evaluateCandidate(previousNotes, candidate, previousSubjectEntries, previousSectionPlans),
   );
   const selectionWindow = continuationCandidateSelectionWindow(state, selectionModel, candidates.length);
+  const constraintCandidates = terminalSupportCandidate
+    ? candidates.map((candidate, index) =>
+        buildContinuationConstraintCandidate(
+          continuationConstraintCandidateId({
+            startTick,
+            state: candidate.sectionPlans[0]?.state ?? state,
+            candidateBand: continuationCandidateSelectionBand(index, selectionWindow, selectionModel),
+            candidateIndex: index,
+          }),
+          candidate,
+          writingProfile,
+          terminalSupportCandidate,
+        ),
+      )
+    : undefined;
   let bestIndex = bestContinuationCandidateIndex(
     evaluations.slice(0, selectionWindow.baselineCandidateCount),
     selectionModel === "section-local-planner" ? "candidate-oracle-selection" : selectionModel,
@@ -1692,6 +1718,7 @@ export function chooseContinuationSection(
 
     const candidateScore =
       candidateSelectionScore(evaluation, selectionModel) +
+      terminalSupportSelectionCost(constraintCandidates?.[index]) +
       (selectionModel === "section-local-planner"
         ? sectionGrammarPlannerSelectionRiskAdjustment(
             evaluation,
@@ -1708,6 +1735,7 @@ export function chooseContinuationSection(
     const bestScore =
       selectionModel === "section-local-planner" && bestIndex < selectionWindow.baselineCandidateCount
         ? candidateSelectionScore(evaluations[bestIndex]!, "candidate-oracle-selection") +
+          terminalSupportSelectionCost(constraintCandidates?.[bestIndex]) +
           sectionGrammarPlannerSelectionRiskAdjustment(evaluations[bestIndex]!, historyContext, false) +
           phraseDevelopmentSelectionRiskAdjustment(
             candidates[bestIndex]!,
@@ -1716,6 +1744,7 @@ export function chooseContinuationSection(
             historyContext,
           )
         : candidateSelectionScore(evaluations[bestIndex]!, selectionModel) +
+          terminalSupportSelectionCost(constraintCandidates?.[bestIndex]) +
           (selectionModel === "section-local-planner"
             ? sectionGrammarPlannerSelectionRiskAdjustment(
                 evaluations[bestIndex]!,
@@ -1745,10 +1774,24 @@ export function chooseContinuationSection(
   });
 
   const selectedState = candidates[bestIndex]!.sectionPlans[0]?.state ?? state;
+  const selectedBand = continuationCandidateSelectionBand(bestIndex, selectionWindow, selectionModel);
   return {
     section: candidates[bestIndex]!,
     candidateCount: candidates.length,
     evaluation: evaluations[bestIndex]!,
+    constraintCandidate:
+      constraintCandidates?.[bestIndex] ??
+      buildContinuationConstraintCandidate(
+        continuationConstraintCandidateId({
+          startTick,
+          state: selectedState,
+          candidateBand: selectedBand,
+          candidateIndex: bestIndex,
+        }),
+        candidates[bestIndex]!,
+        writingProfile,
+        terminalSupportCandidate,
+      ),
     oracleSection: classifyCandidatePoolOracleSection({
       state: selectedState,
       startTick,
@@ -1761,6 +1804,54 @@ export function chooseContinuationSection(
       stateHistory: [...stateHistory.slice(0, -1), selectedState],
     }),
   };
+}
+
+function buildContinuationConstraintCandidate(
+  candidateId: string,
+  section: Exposition,
+  writingProfile: WritingProfile,
+  terminalSupportCandidate: boolean,
+): ConstraintCandidate {
+  const sectionStartTick = section.sectionPlans[0]?.startTick ?? 0;
+  const sectionEndTick = sectionStartTick + section.durationTicks;
+  const draft = {
+    notes: section.notes,
+    subjectEntries: section.subjectEntries,
+    sectionPlans: section.sectionPlans,
+    endTick: Math.max(section.endTick, sectionEndTick),
+    writingProfile,
+  };
+  return {
+    candidateId,
+    draft,
+    result: evaluateScoreDraft(draft, {
+      startTick: sectionStartTick,
+      endTick: sectionEndTick,
+      state: section.sectionPlans[0]?.state ?? "unplanned",
+      harmonicPlan: section.sectionPlans[0],
+      meterContext: section.sectionPlans[0]?.meterContext,
+      entry: section.subjectEntries[0],
+      terminalSupport: terminalSupportCandidate,
+    }),
+  };
+}
+
+function terminalSupportSelectionCost(candidate: ConstraintCandidate | undefined): number {
+  if (candidate === undefined) {
+    return 0;
+  }
+  return candidate.result.softCosts
+    .filter((cost) => cost.feature.startsWith("terminal-support-"))
+    .reduce((sum, cost) => sum + cost.cost, 0);
+}
+
+function continuationConstraintCandidateId(input: {
+  startTick: number;
+  state: FugueState;
+  candidateBand: ContinuationCandidateSelectionBand;
+  candidateIndex: number;
+}): string {
+  return `section-${input.startTick}-${input.state}-${input.candidateBand}-candidate-${input.candidateIndex}`;
 }
 
 function describeCandidateDiversity(candidate: Exposition): CandidateDiversityDescriptor {

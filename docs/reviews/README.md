@@ -4,6 +4,8 @@
 
 ## Read First
 
+* [Generator constraint rebuild terminal support review](generator-constraint-rebuild-terminal-support.md): current architecture-slice evidence. Terminal continuation candidates now include terminal-support soft-cost reasons, 22 seed hard failures remain at 0, and continuous-fugue terminal weaknesses stay review-visible while final repair-pass downgrade remains deferred.
+* [Generator constraint rebuild episode free-counterpoint review](generator-constraint-rebuild-episode-free-counterpoint.md): current architecture-slice evidence. Section-local continuation candidates now expose episode / free-counterpoint soft-cost reasons, subject-fragment entry support and exposed free-counterpoint thinning are structurally classified, and the 22 seed target bundle keeps hard failures at 0.
 * [Generator constraint rebuild entry support review](generator-constraint-rebuild-entry-support.md): current architecture-slice evidence. Entry-local support instability and prepared / passing severe intervals now affect candidate ranking and quality-vector classification while the 22 seed target bundle keeps hard failures at 0.
 * [Generator constraint rebuild exposition search review](generator-constraint-rebuild-exposition-search.md): current architecture-slice evidence. Non-continuation initial generation now reports solver-mode exposition candidates before continuation generation while keeping current-contract hard failures at 0 across the 22 seed target bundle.
 * [Generator constraint rebuild slice review](generator-constraint-rebuild-slice.md): previous architecture-slice review. Added diagnostics-only constraint evaluation and `generatorSearchTrace` without adopting new solver output; keep as baseline history for the first evaluator slice.

@@ -145,6 +145,139 @@ test("constraint evaluator ranks unresolved entry support without penalizing pre
   assert.equal(softCost(prepared, "unresolved-entry-support-instability"), 0);
 });
 
+test("constraint evaluator explains episode and free-counterpoint candidate costs", () => {
+  const result = evaluateScoreDraft(
+    draft(
+      [
+        note({
+          voice: "soprano",
+          startTick: 0,
+          durationTicks: TICKS_PER_QUARTER,
+          pitch: 72,
+          role: "subject-fragment",
+        }),
+        note({
+          voice: "alto",
+          startTick: 0,
+          durationTicks: TICKS_PER_QUARTER,
+          pitch: 64,
+          role: "free-counterpoint",
+          motivicDerivation: genericDerivation(),
+        }),
+        note({
+          voice: "tenor",
+          startTick: 0,
+          durationTicks: TICKS_PER_QUARTER,
+          pitch: 55,
+          role: "free-counterpoint",
+          motivicDerivation: genericDerivation(),
+        }),
+        note({
+          voice: "bass",
+          startTick: 0,
+          durationTicks: TICKS_PER_QUARTER,
+          pitch: 48,
+          role: "free-counterpoint",
+          motivicDerivation: genericDerivation(),
+        }),
+        note({
+          voice: "soprano",
+          startTick: TICKS_PER_QUARTER,
+          durationTicks: TICKS_PER_QUARTER,
+          pitch: 74,
+          role: "subject-fragment",
+        }),
+        note({
+          voice: "alto",
+          startTick: TICKS_PER_QUARTER,
+          durationTicks: TICKS_PER_QUARTER,
+          pitch: 64,
+          role: "free-counterpoint",
+          motivicDerivation: genericDerivation(),
+        }),
+        note({
+          voice: "tenor",
+          startTick: TICKS_PER_QUARTER,
+          durationTicks: TICKS_PER_QUARTER,
+          pitch: 55,
+          role: "free-counterpoint",
+          motivicDerivation: genericDerivation(),
+        }),
+        note({
+          voice: "bass",
+          startTick: TICKS_PER_QUARTER,
+          durationTicks: TICKS_PER_QUARTER,
+          pitch: 48,
+          role: "free-counterpoint",
+          motivicDerivation: genericDerivation(),
+        }),
+      ],
+      resolveWritingProfile("four-voice-default"),
+      [
+        plannedEntry({
+          voice: "soprano",
+          form: "subject-fragment",
+          state: "episode",
+          expectedDegreePattern: [0, 1],
+          actualPitchClassSequence: [0, 2],
+        }),
+      ],
+      [harmonicPlan("episode")],
+    ),
+  );
+  const trace = buildGeneratorSearchTrace(
+    [{ candidateId: "section-960-episode-section-local-candidate-0", draft: resultDraft(result), result }],
+    { candidateId: "section-960-episode-section-local-candidate-0", draft: resultDraft(result), result },
+    "solver",
+  );
+
+  assert.ok(softCost(result, "episode-motivic-derivation") > 0);
+  assert.ok(softCost(result, "free-counterpoint-independent-contour-rhythm") > 0);
+  assert.match(trace.candidates[0]!.reason, /episode-motivic-derivation|free-counterpoint-/);
+});
+
+test("constraint evaluator explains terminal-support candidate costs", () => {
+  const endTick = TICKS_PER_QUARTER * 4;
+  const result = evaluateScoreDraft(
+    {
+      ...draft(
+        [
+          note({ voice: "bass", startTick: 0, durationTicks: TICKS_PER_QUARTER * 2, pitch: 48 }),
+          note({ voice: "tenor", startTick: 0, durationTicks: TICKS_PER_QUARTER * 2, pitch: 55 }),
+          note({ voice: "alto", startTick: 0, durationTicks: TICKS_PER_QUARTER * 2, pitch: 64 }),
+          note({
+            voice: "soprano",
+            startTick: TICKS_PER_QUARTER * 3,
+            durationTicks: TICKS_PER_QUARTER,
+            pitch: 72,
+          }),
+        ],
+        resolveWritingProfile("four-voice-default"),
+        [],
+        [harmonicPlan("subject-return")],
+      ),
+      endTick,
+    },
+    {
+      startTick: 0,
+      endTick,
+      state: "subject-return",
+      harmonicPlan: harmonicPlan("subject-return"),
+      terminalSupport: true,
+    },
+  );
+  const trace = buildGeneratorSearchTrace(
+    [{ candidateId: "section-28800-subject-return-section-local-candidate-0", draft: resultDraft(result), result }],
+    { candidateId: "section-28800-subject-return-section-local-candidate-0", draft: resultDraft(result), result },
+    "solver",
+  );
+
+  assert.equal(softCost(result, "terminal-support-cadence-target"), 8);
+  assert.equal(softCost(result, "terminal-support-low-voice"), 8);
+  assert.equal(softCost(result, "terminal-support-unsupported-texture-collapse"), 8);
+  assert.match(trace.candidates[0]!.reason, /terminal-support-/);
+});
+
 function assertHardFailures(
   notes: readonly NoteEvent[],
   writingProfile: WritingProfile,
@@ -178,13 +311,31 @@ function draft(
   notes: readonly NoteEvent[],
   writingProfile: WritingProfile,
   subjectEntries: readonly PlannedEntry[] = [],
+  sectionPlans: readonly HarmonicPlan[] = [harmonicPlan()],
 ): ScoreDraft {
   return {
     notes,
     subjectEntries,
-    sectionPlans: [harmonicPlan()],
+    sectionPlans,
     endTick: TICKS_PER_QUARTER * 4,
     writingProfile,
+  };
+}
+
+function resultDraft(result: ReturnType<typeof evaluateScoreDraft>): ScoreDraft {
+  return {
+    notes: result.affectedNotes.map((affected) => ({
+      kind: "note",
+      voice: affected.voice as Voice,
+      startTick: affected.startTick,
+      durationTicks: affected.durationTicks,
+      pitch: affected.pitch,
+      velocity: 80,
+    })),
+    subjectEntries: [],
+    sectionPlans: [harmonicPlan("episode")],
+    endTick: TICKS_PER_QUARTER * 4,
+    writingProfile: resolveWritingProfile("four-voice-default"),
   };
 }
 
@@ -198,6 +349,18 @@ function note(input: Partial<NoteEvent> & { voice: Voice }): NoteEvent {
     velocity: input.velocity ?? 80,
     role: input.role,
     metricalHarmonyIntent: input.metricalHarmonyIntent,
+    motivicDerivation: input.motivicDerivation,
+  };
+}
+
+function genericDerivation(): NonNullable<NoteEvent["motivicDerivation"]> {
+  return {
+    sourceMotive: "prior-episode-figure",
+    transformationKind: "generic",
+    targetFunction: "relax-after-density",
+    sequenceDirection: "none",
+    preparesNextEntry: false,
+    preparesCadence: false,
   };
 }
 

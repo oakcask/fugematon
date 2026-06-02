@@ -116,6 +116,7 @@ export function generateScore(input: GenerationInput): GenerationOutput {
   );
   const scoreWindowAcceptance = buildScoreWindowAcceptanceSummary(
     diagnostics.entryBoundaryContinuity,
+    diagnostics.exposedFreeCounterpointSolo,
     diagnostics.harmonicContinuity,
     diagnostics.harmonicStasisRearticulation,
     diagnostics.transitionRhythmReview,
@@ -127,7 +128,11 @@ export function generateScore(input: GenerationInput): GenerationOutput {
   const generatorSearchTrace =
     expositionSearch === undefined
       ? buildDiagnosticsOnlyGeneratorSearchTrace(score, generatedUntilTick, writingProfile)
-      : buildGeneratorSearchTrace(expositionSearch.candidates, expositionSearch.selected, "solver");
+      : buildGeneratorSearchTrace(
+          [...expositionSearch.candidates, ...score.selectedConstraintCandidates],
+          expositionSearch.selected,
+          "solver",
+        );
 
   const firstState = score.stateTransitions[0] ?? (isContinuousContinuation ? "episode" : "exposition");
   const events: ScoreEvent[] = [

@@ -1465,6 +1465,8 @@ export type HarmonicStasisRearticulationSummary = {
 
 export type ScoreWindowAcceptanceKind =
   | "important-entry-continuity"
+  | "subject-fragment-entry-support"
+  | "free-counterpoint-solo"
   | "harmonic-continuity"
   | "harmonic-stasis-rearticulation"
   | "harmonic-sonority"

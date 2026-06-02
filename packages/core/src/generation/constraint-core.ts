@@ -1,5 +1,6 @@
-import { VOICES } from "../constants.js";
+import { TICKS_PER_QUARTER, VOICES } from "../constants.js";
 import type {
+  CadenceKind,
   ConstraintHardFailureCode,
   CurrentContractDiagnosticIssueCode,
   FugueState,
@@ -12,6 +13,7 @@ import type {
 } from "../events.js";
 import { analyzeWritingProfileConstraints, type WritingProfile } from "../writing-profile.js";
 import { analyzeScore } from "./diagnostics.js";
+import { chordTonePitchClasses } from "./harmony.js";
 import { scaleDegreePitchClass } from "./pitch.js";
 import { compareNoteEvents, positiveModulo, roundRatio } from "./shared.js";
 
@@ -34,6 +36,7 @@ export type ConstraintWindow = {
   entry?: PlannedEntry;
   harmonicPlan?: HarmonicPlan;
   meterContext?: MeterContext;
+  terminalSupport?: boolean;
 };
 
 export type ConstraintAffectedNote = {
@@ -135,7 +138,7 @@ export function evaluateScoreDraft(
     );
   }
 
-  const softCosts = softFeatureCosts(diagnostics, writingProfileDiagnostics);
+  const softCosts = softFeatureCosts(draft, window, diagnostics, writingProfileDiagnostics);
   const totalSoftCost = roundRatio(softCosts.reduce((sum, cost) => sum + cost.cost, 0));
   const sortedHardFailures = [...hardFailures.values()].sort((left, right) => left.code.localeCompare(right.code));
   const affectedNotes = uniqueAffectedNotes(sortedHardFailures.flatMap((failure) => failure.affectedNotes));
@@ -380,6 +383,8 @@ function addHardFailure(
 }
 
 function softFeatureCosts(
+  draft: ScoreDraft,
+  window: ConstraintWindow,
   diagnostics: ReturnType<typeof analyzeScore> | undefined,
   writingProfileDiagnostics: ReturnType<typeof analyzeWritingProfileConstraints>,
 ): ConstraintSoftFeatureCost[] {
@@ -397,6 +402,7 @@ function softFeatureCosts(
         cost: writingProfilePlayabilityCost,
         explanation: "WritingProfile playability evidence ranks viable candidates after pitch-contract checks",
       },
+      ...terminalSupportSoftFeatureCosts(draft, window),
     ].filter((cost) => cost.cost > 0);
   }
 
@@ -426,6 +432,63 @@ function softFeatureCosts(
       explanation: "unresolved and strong-beat dissonance are soft costs until source-backed solver gates are adopted",
     },
     {
+      feature: "episode-motivic-derivation",
+      cost:
+        diagnostics.episodeMotivicDevelopment.genericFreeCounterpointDurationTicks / TICKS_PER_QUARTER +
+        diagnostics.episodeMotivicDevelopment.repeatedStockFormulaCount * 4,
+      explanation:
+        "episode candidates are ranked by motivic derivation, sequence, imitation, inversion, and stock-formula avoidance",
+    },
+    {
+      feature: "episode-cadence-entry-preparation",
+      cost: diagnostics.episodeMotivicDevelopment.reviewRequired
+        ? Math.max(
+            0,
+            4 -
+              (diagnostics.episodeMotivicDevelopment.nextEntryPreparationTicks +
+                diagnostics.episodeMotivicDevelopment.cadencePreparationTicks) /
+                TICKS_PER_QUARTER,
+          )
+        : 0,
+      explanation:
+        "episode candidates should show entry handoff or cadence preparation instead of generic subject-free filler",
+    },
+    {
+      feature: "free-counterpoint-harmony-realization",
+      cost:
+        diagnostics.harmonicContinuity.reviewRequiredWindowCount * 4 +
+        diagnostics.qualityVector.harmonicSonorities.reviewRequiredWindowCount +
+        diagnostics.qualityVector.harmonicSonorities.generatorResponseWindowCount * 3 +
+        diagnostics.harmonicStasisRearticulation.reviewRequiredWindowCount +
+        diagnostics.harmonicStasisRearticulation.generatorResponseWindowCount * 3,
+      explanation:
+        "free-counterpoint candidates are ranked by audible harmonic realization, harmonic continuity, and justified rearticulation",
+    },
+    {
+      feature: "free-counterpoint-independent-contour-rhythm",
+      cost:
+        Math.max(0, 1 - diagnostics.freeCounterpointContourScore) * 8 +
+        Math.max(0, 0.75 - diagnostics.rhythmicIndependenceScore) * 8 +
+        diagnostics.sharedRhythmOverlapCount,
+      explanation: "free-counterpoint candidates are ranked by independent contour and rhythmic independence",
+    },
+    {
+      feature: "free-counterpoint-clash-resolution",
+      cost:
+        diagnostics.unresolvedSevereEntryIntervalCount * 2 +
+        diagnostics.dissonanceTriage.unresolvedAccentedEntryClashCount * 4,
+      explanation: "free-counterpoint candidates are ranked by severe entry interval and accented clash resolution",
+    },
+    {
+      feature: "free-counterpoint-entry-handoff-support",
+      cost:
+        diagnostics.exposedFreeCounterpointSolo.reviewRequiredWindowCount * 3 +
+        diagnostics.entryBoundaryContinuity.unsupportedEntryLocalThinningCount * 2,
+      explanation:
+        "free-counterpoint candidates are ranked by entry handoff support and explained solo or thinning context",
+    },
+    ...terminalSupportSoftFeatureCosts(draft, window),
+    {
       feature: "leap-recovery",
       cost: diagnostics.leapRecoveryMisses,
       explanation: "melodic leap recovery is a playability and line-agency cost",
@@ -438,18 +501,222 @@ function softFeatureCosts(
   ].filter((cost) => cost.cost > 0);
 }
 
+function terminalSupportSoftFeatureCosts(draft: ScoreDraft, window: ConstraintWindow): ConstraintSoftFeatureCost[] {
+  if (window.terminalSupport !== true) {
+    return [];
+  }
+
+  const meterContext =
+    window.meterContext ?? window.harmonicPlan?.meterContext ?? draft.sectionPlans.at(-1)?.meterContext;
+  const inspectionStartTick = Math.max(
+    window.startTick,
+    window.endTick - (meterContext?.measureTicks ?? TICKS_PER_QUARTER * 4),
+  );
+  const terminalTick = Math.max(window.startTick, window.endTick - 1);
+  const plan =
+    terminalPlanForWindow(draft.sectionPlans, terminalTick) ?? window.harmonicPlan ?? draft.sectionPlans.at(-1);
+  const targetKey = plan?.targetKey ?? plan?.localKey;
+  const chordPitchClasses = targetKey === undefined ? [] : chordTonePitchClasses(targetKey, "cadential-tonic");
+  const rootPitchClass = targetKey === undefined ? undefined : scaleDegreePitchClass(0, 0, targetKey);
+  const activeAtTerminal = draft.notes.filter(
+    (note) => note.startTick <= terminalTick && terminalTick < note.startTick + note.durationTicks,
+  );
+  const lowVoiceSupport = terminalLowVoiceSupport(activeAtTerminal, chordPitchClasses, rootPitchClass);
+  const outerVoiceLanding = terminalOuterVoiceLanding(activeAtTerminal, chordPitchClasses);
+  const thinning = terminalThinning(draft.notes, inspectionStartTick, terminalTick, activeAtTerminal);
+  const finalRest = terminalFinalRest(draft.notes, window.endTick, terminalTick, plan?.cadenceKind, lowVoiceSupport);
+  const hasCadenceTarget = terminalCadenceTargetPresent(plan, inspectionStartTick, window.endTick);
+
+  return [
+    {
+      feature: "terminal-support-cadence-target",
+      cost: hasCadenceTarget ? 0 : 8,
+      explanation: "terminal candidates are ranked by review-visible cadence target preparation in the final window",
+    },
+    {
+      feature: "terminal-support-low-voice",
+      cost:
+        lowVoiceSupport === "root-supported"
+          ? 0
+          : lowVoiceSupport === "stable-chord-tone"
+            ? 2
+            : lowVoiceSupport === "unsupported"
+              ? 6
+              : 8,
+      explanation: "terminal candidates are ranked by low-voice root or chord-tone support at the landing",
+    },
+    {
+      feature: "terminal-support-outer-voice-landing",
+      cost: outerVoiceLanding === "stable" ? 0 : outerVoiceLanding === "review-required" ? 2 : 5,
+      explanation: "terminal candidates are ranked by stable outer-voice landing on the planned final sonority",
+    },
+    {
+      feature: "terminal-support-final-rest",
+      cost: finalRest === "silence-failure" ? 7 : 0,
+      explanation: "terminal candidates keep final all-voice rest failures review-visible instead of hiding silence",
+    },
+    {
+      feature: "terminal-support-unsupported-texture-collapse",
+      cost: thinning === "unsupported-collapse" ? 8 : thinning === "prepared-reduction" ? 1 : 0,
+      explanation:
+        "terminal candidates are ranked by cadence-supported thinning rather than unsupported texture collapse",
+    },
+  ];
+}
+
+function terminalPlanForWindow(sectionPlans: readonly HarmonicPlan[], terminalTick: number): HarmonicPlan | undefined {
+  return sectionPlans.find(
+    (plan) => plan.startTick <= terminalTick && terminalTick < plan.startTick + plan.durationTicks,
+  );
+}
+
+function terminalCadenceTargetPresent(
+  plan: HarmonicPlan | undefined,
+  inspectionStartTick: number,
+  windowEndTick: number,
+): boolean {
+  if (plan === undefined) {
+    return false;
+  }
+  const cadenceKindAccepted = terminalCadenceKindAccepted(plan.cadenceKind);
+  return (
+    cadenceKindAccepted &&
+    (plan.anchors.some(
+      (anchor) => anchor.cadenceTarget && anchor.tick >= inspectionStartTick && anchor.tick < windowEndTick,
+    ) ||
+      plan.terminalIntent !== undefined)
+  );
+}
+
+function terminalCadenceKindAccepted(cadenceKind: CadenceKind | undefined): boolean {
+  return cadenceKind === "authentic" || cadenceKind === "modal";
+}
+
+function terminalLowVoiceSupport(
+  activeNotes: readonly NoteEvent[],
+  chordPitchClasses: readonly number[],
+  rootPitchClass: number | undefined,
+): "root-supported" | "stable-chord-tone" | "unsupported" | "missing" {
+  const lowNote =
+    activeNotes.find((note) => note.voice === "bass") ??
+    activeNotes.find((note) => note.voice === "tenor") ??
+    [...activeNotes].filter((note) => note.pitch < 60).sort((left, right) => left.pitch - right.pitch)[0];
+  if (lowNote === undefined || rootPitchClass === undefined) {
+    return "missing";
+  }
+
+  const pitchClass = positiveModulo(lowNote.pitch, 12);
+  if (pitchClass === rootPitchClass) {
+    return "root-supported";
+  }
+  return chordPitchClasses.includes(pitchClass) ? "stable-chord-tone" : "unsupported";
+}
+
+function terminalOuterVoiceLanding(
+  activeNotes: readonly NoteEvent[],
+  chordPitchClasses: readonly number[],
+): "stable" | "review-required" | "unstable" | "missing" {
+  const bass = activeNotes.find((note) => note.voice === "bass");
+  const soprano = activeNotes.find((note) => note.voice === "soprano");
+  if (bass === undefined || soprano === undefined) {
+    return "missing";
+  }
+
+  const bassStable = chordPitchClasses.includes(positiveModulo(bass.pitch, 12));
+  const sopranoStable = chordPitchClasses.includes(positiveModulo(soprano.pitch, 12));
+  if (bassStable && sopranoStable) {
+    return "stable";
+  }
+  return bassStable || sopranoStable ? "review-required" : "unstable";
+}
+
+function terminalThinning(
+  notes: readonly NoteEvent[],
+  inspectionStartTick: number,
+  terminalTick: number,
+  activeAtTerminal: readonly NoteEvent[],
+): "cadence-support" | "prepared-reduction" | "unsupported-collapse" | "not-thinned" {
+  const priorActiveVoiceCount = Math.max(
+    ...[
+      Math.max(inspectionStartTick, terminalTick - TICKS_PER_QUARTER * 2),
+      Math.max(inspectionStartTick, terminalTick - TICKS_PER_QUARTER),
+    ].map(
+      (tick) =>
+        new Set(
+          notes
+            .filter((note) => note.startTick <= tick && tick < note.startTick + note.durationTicks)
+            .map((note) => note.voice),
+        ).size,
+    ),
+    0,
+  );
+  const terminalVoiceCount = new Set(activeAtTerminal.map((note) => note.voice)).size;
+
+  if (terminalVoiceCount >= 3) {
+    return "cadence-support";
+  }
+  if (terminalVoiceCount === 2 && priorActiveVoiceCount >= 3) {
+    return "prepared-reduction";
+  }
+  if (terminalVoiceCount === priorActiveVoiceCount) {
+    return "not-thinned";
+  }
+  return "unsupported-collapse";
+}
+
+function terminalFinalRest(
+  notes: readonly NoteEvent[],
+  endTick: number,
+  terminalTick: number,
+  cadenceKind: CadenceKind | undefined,
+  lowVoiceSupport: "root-supported" | "stable-chord-tone" | "unsupported" | "missing",
+): "none" | "piece-boundary" | "silence-failure" {
+  const lastNoteEndTick = Math.max(0, ...notes.map((note) => note.startTick + note.durationTicks));
+  if (lastNoteEndTick >= endTick) {
+    return "none";
+  }
+
+  const stableTerminal =
+    terminalCadenceKindAccepted(cadenceKind) &&
+    lowVoiceSupport !== "missing" &&
+    lowVoiceSupport !== "unsupported" &&
+    terminalTick <= lastNoteEndTick;
+  return stableTerminal ? "piece-boundary" : "silence-failure";
+}
+
 function selectedReason(result: ConstraintResult): string {
   if (result.hardFailures.length === 0) {
-    return "selected by deterministic constraint ordering with no current-contract hard failures";
+    return appendSoftCostSummary(
+      "selected by deterministic constraint ordering with no current-contract hard failures",
+      result,
+    );
   }
   return "retained only as diagnostics-only legacy output; future solver path must reject this candidate";
 }
 
 function rejectedReason(result: ConstraintResult): string {
   if (result.hardFailures.length === 0) {
-    return "not selected after deterministic soft-cost and candidate-id tie-break";
+    return appendSoftCostSummary("not selected after deterministic soft-cost and candidate-id tie-break", result);
   }
   return `rejected for hard failures: ${result.hardFailures.map((failure) => failure.code).join(", ")}`;
+}
+
+function appendSoftCostSummary(reason: string, result: ConstraintResult): string {
+  const positiveFeatures = result.softCosts
+    .filter((cost) => cost.cost > 0)
+    .sort((left, right) => right.cost - left.cost || left.feature.localeCompare(right.feature))
+    .map((cost) => cost.feature);
+  const features = positiveFeatures.slice(0, 4);
+  if (result.window.terminalSupport === true && !features.some((feature) => feature.startsWith("terminal-support-"))) {
+    const terminalFeature =
+      positiveFeatures.find((feature) => feature.startsWith("terminal-support-")) ?? "terminal-support-stable-window";
+    if (features.length >= 4) {
+      features[features.length - 1] = terminalFeature;
+    } else {
+      features.push(terminalFeature);
+    }
+  }
+  return features.length === 0 ? reason : `${reason}; soft-costs=${features.join(",")}`;
 }
 
 function toAffectedNote(note: NoteEvent): ConstraintAffectedNote {
