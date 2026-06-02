@@ -20,6 +20,66 @@
 
 この台帳は以後、文献が実装方針、review 採否、quality policy、phase scope、または license 判断に影響した時点で更新します。既存 review docs の URL 付き参考文献は、次に該当文書へ触れる時に必要なものから昇格します。
 
+## parncutt-keyboard-fingering-1997
+
+* Citation: Parncutt, Richard, John A. Sloboda, Eric F. Clarke, Matti Raekallio, and Peter Desain. "An Ergonomic Model of Keyboard Fingering for Melodic Fragments." *Music Perception*, 1997.
+* Stable identifier: https://doi.org/10.2307/40285730
+* Source type: article
+* Accessed: 2026-06-02
+* Verification: medium - DOI and bibliographic metadata were checked through indexed source metadata.
+* Cache key: `references/doi/parncutt-1997-keyboard-fingering`
+* Notes: Ergonomic keyboard-fingering model for melodic fragments.
+
+## jacobs-keyboard-fingering-2001
+
+* Citation: Jacobs, J. Pieter. "Refinements to the Ergonomic Model for Keyboard Fingering of Parncutt, Sloboda, Clarke, Raekallio, and Desain." *Music Perception* 18, no. 4, 2001, pp. 505-511.
+* Stable identifier: https://doi.org/10.1525/mp.2001.18.4.505
+* Source type: article
+* Accessed: 2026-06-02
+* Verification: medium - DOI, publisher, abstract, and bibliographic fields were checked through indexed source metadata.
+* Cache key: `references/doi/jacobs-2001-keyboard-fingering`
+* Notes: Refines the prior ergonomic model and highlights physical key-distance considerations.
+
+## guan-playable-piano-fingering-2022
+
+* Citation: Guan, Xin, Haoyue Zhao, and Qiang Li. "Estimation of playable piano fingering by pitch-difference fingering match model." *EURASIP Journal on Audio, Speech, and Music Processing*, 2022.
+* Stable identifier: https://doi.org/10.1186/s13636-022-00237-8
+* Source type: article
+* Accessed: 2026-06-02
+* Verification: high - publisher page was checked for DOI, authors, abstract, and method summary.
+* Cache key: `references/doi/guan-2022-playable-piano-fingering`
+* Notes: Modern fingering-feasibility model useful as future evidence for sequence-level piano playability.
+
+## britannica-keyboard-compass
+
+* Citation: Encyclopaedia Britannica. "Keyboard instrument: Special Arrangements."
+* Stable identifier: https://www.britannica.com/art/keyboard-instrument/Special-key-arrangements
+* Source type: web-page
+* Accessed: 2026-06-02
+* Verification: medium - page text was checked for keyboard compass and octave-span context.
+* Cache key: `references/url/britannica-keyboard-size-range`
+* Notes: General reference for historical keyboard compass and physical octave-span context.
+
+## finale-piano-range
+
+* Citation: Finale. "Ranges." *Finale 2014 User Manual*.
+* Stable identifier: https://usermanuals.finalemusic.com/Finale2014Win/Content/Finale/Ranges.htm
+* Source type: documentation
+* Accessed: 2026-06-02
+* Verification: medium - manual page was checked for piano fixed range and MIDI pitch numbers.
+* Cache key: `references/url/finale-instrument-ranges`
+* Notes: Convenient fixed-range reference for piano compass in MIDI pitch terms.
+
+## murobox-faq-ranges
+
+* Citation: Muro Box. "Learn How to Use Muro Box."
+* Stable identifier: https://murobox.com/en/faq/
+* Source type: product-documentation
+* Accessed: 2026-06-02
+* Verification: high - official FAQ was checked for pitch-set, single-track MIDI, simultaneous-note, and repeated-note speed constraints.
+* Cache key: `references/url/murobox-faq-ranges`
+* Notes: Official programmable music-box constraints for supported pitch sets and mechanism limits.
+
 ## prout-wtc-48-fugues
 
 * Citation: Prout, Ebenezer. *Analysis of J. S. Bach's Forty-Eight Fugues*. London: Augener, 1891.

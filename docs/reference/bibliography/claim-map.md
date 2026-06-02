@@ -20,6 +20,16 @@ Fugematon 固有の設計判断、review 判断、quality policy と文献根拠
 
 既存 Phase/review docs の literature claims は、次に該当文書や関連実装へ触れる時に必要なものから claim entry へ昇格します。新しい文献根拠で実装方針、quality gate、phase scope、review 採否を変える場合は、その変更と同じ差分で entry を追加します。
 
+## keyboard-writing-profile-separates-compass-and-playability
+
+* Claim: Fugematon should model piano, harpsichord, and music-box target constraints as `WritingProfile` generation constraints, not as `PerformanceProfile` playback settings; absolute pitch compass is necessary but piano also needs hand-assignment and reach evidence, while music-box targets need supported pitch-set and mechanism-limit enforcement.
+* Applies to: design | generation | diagnostics | phase-scope
+* Evidence: `keyboard-playability-and-compass`; current `WritingProfile` / `PerformanceProfile` boundary in design docs.
+* Confidence: medium
+* Verification state: page-checked
+* Limits: This claim does not require a complete fingering solver in the first implementation, does not set universal hand-span thresholds, and does not require every four-voice texture to survive unchanged under a music-box profile.
+* Used by: `docs/phases/constrained-keyboard-writing-profiles.md`
+
 ## episode-motivic-development-before-phase-8
 
 * Claim: Fugematon should treat short subject-free spans as potentially valid, but Phase 8 should wait until free counterpoint and episode material have review-visible derivation from subject, answer, counter-subject, cadence figure, or prior episode material.
