@@ -1,4 +1,4 @@
-import { soundFontAssets, type SoundFontAssetDescriptor } from "./soundfont.js";
+import { type SoundFontAssetDescriptor, soundFontAssets } from "./soundfont.js";
 
 export type RuntimeSoftwareNotice = {
   name: string;
@@ -27,7 +27,9 @@ export const NOTICE_TEXT_ARTIFACT = "NOTICE.txt";
 
 export const noticesData = createNoticesData();
 
-export function createNoticesData(soundFontDescriptors: readonly SoundFontAssetDescriptor[] = soundFontAssets): NoticesData {
+export function createNoticesData(
+  soundFontDescriptors: readonly SoundFontAssetDescriptor[] = soundFontAssets,
+): NoticesData {
   return {
     software: [
       {

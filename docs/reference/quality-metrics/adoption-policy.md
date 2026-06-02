@@ -63,7 +63,7 @@ Model adoption では、A/B summary の次の項目を合わせて読む。
 * `candidatePoolOracle` が、selection-only で直せる問題か generator / planner が必要な問題かを示している。
 * `qualityVectorDistance` と axis-level contributors が改善または説明可能な tradeoff を示す。
 * `localSentinelCount` と sentinel kind が unexplained regression を起こしていない。
-* Phase 13R subject-diversity repair では `subjectFamilyDiversity` の unique family count、top initial subject family share、top subject-fragment family share が改善または説明可能な tradeoff を示す。
+* Phase 13R subject-diversity repair と Initial subject rhetoric diversity repair では `subjectFamilyDiversity` の unique family count、top initial subject family share、top-3 / top-5 initial subject family share、top subject-fragment family share が改善または説明可能な tradeoff を示す。
 * Phase 13S では subject rhythm / climax diversity、counter-subject family、entry-local dissonance role、voice-pair score windows、episode / stretto phrase function が、metric 改善の具体的な譜面症状を説明する。
 * Phase 13T では entry-window sonority、voice-pair independence、fragment function、modal counter-subject windows、focused listening notes が、metric 改善または metric reconstruction の具体的な譜面症状を説明する。
 * Phase 13U では reusable entry formula、voice-pair coupling span、fragment transformation、modal counter-subject preservation、metric truthfulness が、metric movement ではなく生成譜面の改善として説明される。

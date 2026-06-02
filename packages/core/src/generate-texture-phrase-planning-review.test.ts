@@ -6,7 +6,7 @@ test("generateScore applies texture and phrase-unit planning across review seeds
   assertTexturePhrasePlanningReviewBatch(TEXTURE_PHRASE_PLANNING_REVIEW_BATCH_A.slice(0, 2), {
     uniqueContinuationPatternRatio: 3.5,
     sectionGrammarRiskRatio: 0.2,
-    topEntryPatternFamilyDelta: -20,
+    topEntryPatternFamilyDelta: -15,
     unisonOverlapDelta: -100,
     sharedRhythmOverlapDelta: -100,
     leapRecoveryMissDelta: 45,

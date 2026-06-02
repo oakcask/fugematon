@@ -4,6 +4,7 @@
 
 ## Read First
 
+* [Initial Subject Rhetoric Diversity Completion Review](initial-subject-rhetoric-diversity-completion.md): completed quality follow-up evidence. The adopted planner now uses constrained subject-rhetoric candidates instead of fixed full-profile subject selection, `subjectFamilyDiversity` schema v3 exposes top-N rhetoric concentration, and 100 seed sweep evidence shows lower cross-seed rhetoric concentration.
 * [Endless Program Coda Historical Ending Review](endless-program-coda-historical-ending-review.md): current historical-ending review. It compares 22 current `endless-program` codas with fetched WTC, invention, Art of Fugue, and chorale cadence evidence; terminal closure is stable, but final-subject, pedal-supported, and sparse-echo rhetoric remain review-required / manual-listening concerns.
 * [Endless Program Coda Quality Gap Review](endless-program-coda-quality-gap-review.md): completed current target evidence plus remaining review-required gap. A 22 seed after-pass confirms stable generated codas, `final-fragment-entry` and `pedal-entry-cadence` coverage, and `codaContinuity` schema version 2 while leaving sparse echo listening as review-required.
 * [Endless Program Terminal Coda Review](endless-program-terminal-coda-review.md): completed target evidence. Focused `endless-program` seeds now expose generated coda source, context-aware coda archetypes, coda-continuity derivation evidence, prepared voice re-entry, root-supported terminal closure, and fallback/source separation in `TerminalClosureReviewSummary`.

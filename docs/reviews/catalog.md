@@ -4,6 +4,7 @@
 
 ## Current Quality Lane
 
+* [Initial Subject Rhetoric Diversity Completion Review](initial-subject-rhetoric-diversity-completion.md): 完了 evidence。adopted planner の初期主題を固定 full-profile selection から constrained subject-rhetoric candidates へ置き換え、`subjectFamilyDiversity` schema v3 と 100 seed sweep で top-N rhetoric concentration 改善を記録する。
 * [Endless Program Coda Historical Ending Review](endless-program-coda-historical-ending-review.md): current historical-ending review. 22 current `endless-program` codas are accepted for terminal closure, while archetype distribution, final-subject rhetoric, pedal-supported closure, and sparse `cadential-echo` listening remain review-required evidence against fetched WTC, invention, Art of Fugue, and chorale cadence references.
 * [Endless Program Coda Quality Gap Review](endless-program-coda-quality-gap-review.md): 完了 evidence と remaining gap。22 seed after-pass で `final-fragment-entry` と `pedal-entry-cadence` が review-visible になり、`codaContinuity` schema version 2 が subject-derived note count、pedal root coverage、historical function coverage を出すことを記録する。Sparse `cadential-echo` の聴取確認は review-required として残す。
 * [Endless Program Terminal Coda Review](endless-program-terminal-coda-review.md): 完了 evidence。focused `endless-program` seeds で generated coda source、context-aware coda archetype、coda-continuity derivation、prepared voice re-entry、root-supported terminal closure、fallback/source separation を `TerminalClosureReviewSummary` に記録する。

@@ -25,12 +25,13 @@ test("focused 3/4 metrical repair seeds establish triple-meter entry starts", ()
       expositionEntries.map((entry) => quarterOffsetInMeasure(entry.startTick, signature.payload.numerator)),
       [0, 0, 0, 0],
     );
-    assert.deepEqual(
+    const strongSubjectOffsets =
       expositionEntries[0]?.metricalIntentPattern
         .filter((intent) => intent.beatStrength === "strong")
-        .map((intent) => intent.offsetTick),
-      [0, 3].map((quarter) => quarter * TICKS_PER_QUARTER),
-    );
+        .map((intent) => intent.offsetTick) ?? [];
+    assert.ok(strongSubjectOffsets.includes(0));
+    assert.ok(strongSubjectOffsets.includes(TICKS_PER_QUARTER * 3));
+    assert.ok(strongSubjectOffsets.every((offsetTick) => offsetTick % (TICKS_PER_QUARTER * 3) === 0));
     assert.equal(meterReview.timeSignature.numerator, 3);
     assert.equal(meterReview.offMeasureEntryCount, 0);
     assert.equal(meterReview.strongIntentOnNonDownbeatCount, 0);

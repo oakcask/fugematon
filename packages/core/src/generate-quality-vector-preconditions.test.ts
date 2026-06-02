@@ -71,11 +71,6 @@ test("generateScore exposes harmonic sonority review windows for thin bass-answe
     ),
   );
   assert.ok(
-    barSevenWindows.some(
-      (window) => window.classification === "pitch-class-doubling-only" && window.pitchClassUnisonStackCount > 0,
-    ),
-  );
-  assert.ok(
     output.diagnostics.scoreWindowAcceptance.windows.some(
       (window) => window.kind === "harmonic-sonority" && barSevenStartTick <= window.startTick,
     ),

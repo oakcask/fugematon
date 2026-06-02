@@ -60,7 +60,7 @@
 | `phraseRepetitionReview.subjectStemFamilies` | 1つの generated score 内で subject stem / subject-fragment family がどれだけ集中しているか。 | Per-score phrase convergence の signal。function-bearing return と mechanical reuse を分けて読む。 |
 | `phraseConvergenceReview` | default path、4-section pattern、entry-pattern family、subject stem、subject-fragment concentration の review summary。 | 1曲内の convergence と legacy default path の検出には使えるが、seed 横断の初期主題類似は bundle-level summary と合わせて読む。 |
 | `phraseDevelopmentReview` | continuation window ごとに subject stem、phrase function、entry voice、cadence、local key、recent reuse、`new-material` / `function-bearing-recurrence` / `mechanical-reuse` judgement を出す。 | Long-run phrase development signal として、集計値だけで採否せず、譜面上で recurrence が役割を変えているかを読む。 |
-| `subjectFamilyDiversity` | Review bundle 全体で、initial subject degree/rhythm/contour/tail family が何種類に分散しているか。 | 複数 seed が同じ少数の主題形へ収束していないかを見る corpus-level review signal。A/B summary は unique family count、top-family share、fragment share の delta を出す。 |
+| `subjectFamilyDiversity` | Review bundle 全体で、initial subject degree/rhythm/contour/tail family が何種類に分散しているか。Schema v3 は top-3 / top-5 initial subject rhetoric share、opening gesture、rhythm profile、climax area、tail motion concentration、subject-fragment family share も出す。 | 複数 seed が同じ少数の主題形や同じ rhetoric へ収束していないかを見る corpus-level review-required signal。A/B summary は unique family/rhetoric count、top-family share、top-N share、fragment share の delta を出す。 |
 
 ## Review Summaries
 

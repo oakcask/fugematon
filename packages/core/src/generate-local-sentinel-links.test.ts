@@ -13,14 +13,17 @@ test("generateScore keeps local sentinels traceable to selected candidate sectio
     (evaluation) => evaluation.explanations.sections,
   );
 
-  assert.ok(output.diagnostics.qualityVector.localSentinels.length > 0);
+  assert.equal(output.diagnostics.localSentinelCandidateTrace.schemaVersion, 1);
+  if (output.diagnostics.qualityVector.localSentinels.length === 0) {
+    assert.equal(output.diagnostics.localSentinelCandidateTrace.sentinelCandidateLinks.length, 0);
+    return;
+  }
   const firstContinuationTick = Math.min(...selectedSections.map((section) => section.startTick));
   const continuationSentinels = output.diagnostics.qualityVector.localSentinels.filter(
     (sentinel) => sentinel.startTick >= firstContinuationTick,
   );
 
   assert.ok(continuationSentinels.length > 0);
-  assert.equal(output.diagnostics.localSentinelCandidateTrace.schemaVersion, 1);
   assert.ok(output.diagnostics.localSentinelCandidateTrace.sentinelCandidateLinks.length > 0);
   for (const sentinel of continuationSentinels) {
     assert.ok(

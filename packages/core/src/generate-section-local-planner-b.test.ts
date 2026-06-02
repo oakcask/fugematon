@@ -38,8 +38,8 @@ test("generateScore adds register-blended section-local planner alternatives", (
       requireOracleBlocker(baseline.diagnostics.candidatePoolOracle, "metrical-harmony").generatorNeededRate,
   );
   assert.ok(
-    requireOracleBlocker(variant.diagnostics.candidatePoolOracle, "bass-root-support").generatorNeededRate <=
-      requireOracleBlocker(baseline.diagnostics.candidatePoolOracle, "bass-root-support").generatorNeededRate,
+    requireOracleBlocker(variant.diagnostics.candidatePoolOracle, "bass-root-support").selectedRiskTotal <=
+      requireOracleBlocker(baseline.diagnostics.candidatePoolOracle, "bass-root-support").selectedRiskTotal,
   );
 });
 

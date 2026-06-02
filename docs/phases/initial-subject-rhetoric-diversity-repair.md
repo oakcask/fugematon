@@ -1,6 +1,6 @@
 # Initial Subject Rhetoric Diversity Repair
 
-Status: planned quality follow-up.
+Status: completed quality follow-up.
 
 This plan follows the subject-diversity work recorded in [Phase 13R](phase-13r.md) and the later score-led quality lane. It treats the current symptom as a generator-pattern issue, not only as a `subjectFamilyDiversity` threshold issue.
 
@@ -97,6 +97,10 @@ Extend review diagnostics so the symptom is visible even when no single family e
 
 Keep `subjectFamilyDiversity` as the bundle-level surface, or add a sibling summary if the rhetoric metrics would make that surface too broad.
 
+Implementation note: `subjectFamilyDiversity` schema v2 now exposes top-3 and top-5 initial subject family share plus top-3 and top-5 subject-fragment family share. These are review-required diagnostics, not CI-blocking gates. The full subject-rhetoric generator, opening-gesture concentration, rhythm concentration, climax-area concentration, tail-motion concentration, modal/meter sweep summaries, and ad hoc seed sweep remain open work.
+
+Completion note: the adopted planner path now uses a constrained subject-rhetoric candidate generator rather than a direct full-profile lookup. The legacy `baseline` comparison path still uses the old fixed profile choices. `subjectFamilyDiversity` schema v3 adds top-N subject-rhetoric share plus opening gesture, rhythm profile, climax area, and tail motion concentration. The subject-rhetoric model is grounded at source-family level by `common-practice-fugue-subjects` and the project claim `initial-subject-rhetoric-diversity`.
+
 ### ISRD-D: Regression and review evidence
 
 Use the existing 22 seed review bundle plus an ad hoc random seed sweep. The fixed 22 seed bundle is necessary but not sufficient, because the reported symptom is "every time" similarity rather than only representative-seed collapse.
@@ -118,6 +122,18 @@ At minimum, review:
 * Subject identity and answer-plan violations remain 0.
 * Entry-harmony, line-agency, counter-subject survivability, phrase-development, texture-continuity, and lower-voice vocality regressions are recorded as score-window tradeoffs before adoption.
 * Focused listening notes classify remaining similarity as function-bearing recurrence, acceptable subject memorability, false positive, or unresolved blocker.
+
+## Completion Evidence
+
+Recorded in [Initial subject rhetoric diversity completion review](../reviews/initial-subject-rhetoric-diversity-completion.md).
+
+* A deterministic 100 seed sweep showed top-3 subject-rhetoric share moving from 0.84 on `baseline` to 0.26 on `section-local-planner`, with rhetoric families increasing from 7 to 38.
+* The 22 representative + rotation seed review set kept hard constraint failures at 0, including subject identity and answer-plan violations at 0.
+* The same sweep evidence found modal subjects with 8 rhetoric families, 3/4 subjects with 15 rhetoric families, and 6/8 subjects with 5 rhetoric families.
+* Remaining similarity is classified as acceptable subject memorability or function-bearing recurrence when it occurs inside a score. Cross-seed concentration remains review-visible through `subjectFamilyDiversity` schema v3 rather than hidden by top-family-only diagnostics.
+* Manual focused listening remains a review gap; automatic diagnostics do not replace pairwise listening for final aesthetic adoption.
+
+Current revalidation confirms the completion evidence still holds. The regenerated 22 seed current bundle has 20 initial subject families, 13 initial subject-rhetoric families, top-3 initial subject family share 0.227, and top-3 initial subject-rhetoric share 0.455. The current A/B bundle shows the explicit fixed-profile `baseline` at top-3 subject-rhetoric share 0.909 and the adopted `section-local-planner` path at 0.455. The deterministic 100 seed sweep remains 0.84 on `baseline` and 0.26 on `section-local-planner`. The current bundle keeps hard constraint failures, subject identity violations, answer-plan violations, key metadata mismatches, unresolved dissonance, all-voice silence gaps, and review-policy hard failures at 0.
 
 ## Handoff
 

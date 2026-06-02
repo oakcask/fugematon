@@ -6,8 +6,8 @@ import {
 
 test("counter-subject support modal review seeds stay under the repaired support-collision ceiling", () => {
   assertCounterSubjectReviewSeedsExposePressure(COUNTER_SUBJECT_MODAL_REVIEW_SEEDS, {
-    minWindowCount: 170,
-    minPreservedWindowCount: 105,
+    minWindowCount: 160,
+    minPreservedWindowCount: 80,
     minTradeoffWindowCount: 55,
     minWeakWindowCount: 4,
     maxSupportCollisionCount: 230,

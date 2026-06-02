@@ -11,7 +11,7 @@
 ## Read First
 
 * [Constrained keyboard writing profiles](constrained-keyboard-writing-profiles.md): planned follow-up. Adds opt-in `WritingProfile` variants for piano, harpsichord, and programmable music boxes so pitch range, hand reach, and mechanism limits can constrain generation separately from playback `PerformanceProfile`.
-* [Initial subject rhetoric diversity repair](initial-subject-rhetoric-diversity-repair.md): planned quality follow-up. Treats "subjects sound similar every time" as a fixed-profile subject-generator problem and plans a constrained subject-rhetoric generator plus top-N diversity diagnostics.
+* [Initial subject rhetoric diversity repair](initial-subject-rhetoric-diversity-repair.md): completed quality follow-up. Replaces adopted-path fixed-profile subject selection with a constrained subject-rhetoric generator and extends top-N rhetoric diagnostics.
 * [Playback source realism feasibility](playback-source-realism-feasibility.md): investigation note. Compares a SpessaSynth + SoundFont pilot, a custom VSCO WAV sampler, and notices-page requirements before distributing third-party playback software or audio assets.
 * [Endless program terminal stretta planner](endless-program-terminal-stretta-planner.md): planned follow-up. Treats the current coda as cadence-safe but still potentially appended, and plans a coda-specific terminal process with stretta as the preferred fugal ending when constraints allow it.
 * [Endless program coda quality repair](endless-program-coda-quality-repair.md): completed current target. Makes `final-fragment-entry` and `pedal-entry-cadence` review-visible, extends coda-continuity diagnostics to schema version 2, and keeps archetype diversity review-required rather than a CI hard gate.
