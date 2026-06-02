@@ -4,6 +4,7 @@
 
 ## Current Quality Lane
 
+* [Generator constraint rebuild entry support review](generator-constraint-rebuild-entry-support.md): current architecture evidence. Entry-local support instability and prepared / passing severe intervals now affect candidate ranking and quality-vector classification while preserving 0 review-policy hard failures on the 22 seed target bundle.
 * [Generator constraint rebuild exposition search review](generator-constraint-rebuild-exposition-search.md): current architecture evidence. Initial non-continuation generation selects between two evaluated exposition-local candidates, reports solver-mode `generatorSearchTrace`, and keeps the 22 seed target bundle at 0 review-policy hard constraint failures.
 * [Generator constraint rebuild slice review](generator-constraint-rebuild-slice.md): previous architecture evidence. The first constraint-core slice evaluated the legacy generated score as one diagnostics-only candidate before solver adoption.
 * [Constrained Keyboard Writing Profiles Completion Review](constrained-keyboard-writing-profiles-completion.md): 完了 evidence。TARGET baseline と現行 default の6 seed ScoreEvent JSON / MIDI が完全一致し、22 seed review summary は writing-profile metadata 追加以外安定した。Focused piano / harpsichord / music-box profile diagnostics で pitch set、hand span、repeat-rate evidence を記録する。

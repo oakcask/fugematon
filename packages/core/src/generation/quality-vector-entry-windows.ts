@@ -252,21 +252,12 @@ function hasSevereEntryIntervalAt(notes: readonly NoteEvent[], entry: PlannedEnt
   }
 
   return entrySupportNotesAt(notes, entry, tick).some((supportNote) => {
-    if (isOffbeatPassingFreeCounterpoint(entry, supportNote, tick)) {
+    if (isPreparedOrPassingEntrySupport(notes, entry, entryNote, supportNote, tick)) {
       return false;
     }
     const intervalClass = entrySupportIntervalClass(entryNote, supportNote);
     return isAdjacentSecondFriction(intervalClass) || isExposedSeventh(intervalClass);
   });
-}
-
-function isOffbeatPassingFreeCounterpoint(entry: PlannedEntry, supportNote: NoteEvent, tick: number): boolean {
-  return (
-    supportNote.role === "free-counterpoint" &&
-    supportNote.startTick > entry.startTick &&
-    supportNote.startTick === tick &&
-    tick % TICKS_PER_QUARTER !== 0
-  );
 }
 
 function entrySupportIntervalClass(entryNote: NoteEvent, supportNote: NoteEvent): number {
@@ -326,6 +317,30 @@ function entrySupportPairResolvesByStep(
     entryLineResolvesByStep(notes, entry, tick) ||
     noteResolvesByStep(notes, entryNote, tick) ||
     noteResolvesByStep(notes, supportNote, tick)
+  );
+}
+
+function isPreparedOrPassingEntrySupport(
+  notes: readonly NoteEvent[],
+  entry: PlannedEntry,
+  entryNote: NoteEvent,
+  supportNote: NoteEvent,
+  tick: number,
+): boolean {
+  const carriedIntoEntry =
+    supportNote.startTick < entry.startTick && entry.startTick < supportNote.startTick + supportNote.durationTicks;
+  const weakPassingMotion =
+    supportNote.role === "free-counterpoint" &&
+    supportNote.startTick > entry.startTick &&
+    supportNote.startTick === tick &&
+    tick % TICKS_PER_QUARTER !== 0;
+  const suspendedSupportEndsOnTime =
+    carriedIntoEntry && supportNote.startTick + supportNote.durationTicks <= entry.startTick + TICKS_PER_QUARTER;
+
+  return (
+    suspendedSupportEndsOnTime ||
+    ((carriedIntoEntry || weakPassingMotion) &&
+      entrySupportPairResolvesByStep(notes, entry, entryNote, supportNote, tick))
   );
 }
 

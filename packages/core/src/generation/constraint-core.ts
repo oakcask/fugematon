@@ -412,6 +412,15 @@ function softFeatureCosts(
       explanation: "entry-local support instability ranks candidates after hard constraints pass",
     },
     {
+      feature: "unresolved-entry-support-instability",
+      cost: diagnostics.entrySupportInstabilityDetails.reduce(
+        (sum, detail) => sum + detail.unresolvedInstabilityCount,
+        0,
+      ),
+      explanation:
+        "entry-local support instability that misses its resolution deadline ranks candidates after hard constraints pass",
+    },
+    {
       feature: "unresolved-dissonance",
       cost: diagnostics.unresolvedDissonanceCount + diagnostics.strongBeatDissonanceCount,
       explanation: "unresolved and strong-beat dissonance are soft costs until source-backed solver gates are adopted",

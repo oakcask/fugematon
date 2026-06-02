@@ -80,6 +80,71 @@ test("constraint candidate selection uses stable hard failure, soft cost, and id
   assert.equal(selectBestConstraintCandidate([viableB, rejected, viableA]).candidateId, "a");
 });
 
+test("constraint evaluator ranks unresolved entry support without penalizing prepared support", () => {
+  const entryStartTick = TICKS_PER_QUARTER;
+  const unresolved = evaluateScoreDraft(
+    draft(
+      [
+        note({
+          voice: "soprano",
+          startTick: entryStartTick,
+          durationTicks: TICKS_PER_QUARTER * 2,
+          pitch: 72,
+          role: "subject",
+        }),
+        note({
+          voice: "alto",
+          startTick: entryStartTick,
+          durationTicks: TICKS_PER_QUARTER * 2,
+          pitch: 71,
+          role: "counter-subject",
+        }),
+      ],
+      resolveWritingProfile("four-voice-default"),
+      [
+        plannedEntry({
+          voice: "soprano",
+          startTick: entryStartTick,
+          expectedDegreePattern: [0],
+          actualPitchClassSequence: [0],
+        }),
+      ],
+    ),
+  );
+  const prepared = evaluateScoreDraft(
+    draft(
+      [
+        note({
+          voice: "soprano",
+          startTick: entryStartTick,
+          durationTicks: TICKS_PER_QUARTER,
+          pitch: 72,
+          role: "subject",
+        }),
+        note({
+          voice: "alto",
+          startTick: 0,
+          durationTicks: TICKS_PER_QUARTER + TICKS_PER_QUARTER / 2,
+          pitch: 71,
+          role: "counter-subject",
+        }),
+      ],
+      resolveWritingProfile("four-voice-default"),
+      [
+        plannedEntry({
+          voice: "soprano",
+          startTick: entryStartTick,
+          expectedDegreePattern: [0],
+          actualPitchClassSequence: [0],
+        }),
+      ],
+    ),
+  );
+
+  assert.equal(softCost(unresolved, "unresolved-entry-support-instability"), 1);
+  assert.equal(softCost(prepared, "unresolved-entry-support-instability"), 0);
+});
+
 function assertHardFailures(
   notes: readonly NoteEvent[],
   writingProfile: WritingProfile,
@@ -103,6 +168,10 @@ function constraintCandidate(candidateId: string, notes: readonly NoteEvent[]): 
     draft: candidateDraft,
     result: evaluateScoreDraft(candidateDraft),
   };
+}
+
+function softCost(result: ReturnType<typeof evaluateScoreDraft>, feature: string): number {
+  return result.softCosts.find((cost) => cost.feature === feature)?.cost ?? 0;
 }
 
 function draft(

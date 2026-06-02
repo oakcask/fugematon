@@ -145,6 +145,7 @@ function addEntryCounterSubject(
     velocity: 70,
     role: "counter-subject",
     harmonicPlan: entry.harmonicPlan,
+    counterSubjectSupportRepair: entry.counterSubjectSupportRepair,
     writingProfile: entry.writingProfile,
   });
 }
@@ -227,7 +228,7 @@ function softenEntryBoundaryResetAt(
   previousNotes: readonly NoteEvent[],
 ): void {
   const outsideStartingNotes = outsideVoiceOnsetsAtEntry(notes, entryVoice, entryStartTick);
-  if (!hasThreeOutsideVoiceOnsets(outsideStartingNotes)) {
+  if (!hasMultipleOutsideVoiceOnsets(outsideStartingNotes)) {
     return;
   }
 
@@ -254,8 +255,8 @@ function outsideVoiceOnsetsAtEntry(
   return notes.filter((note) => note.voice !== entryVoice && note.startTick === entryStartTick);
 }
 
-function hasThreeOutsideVoiceOnsets(notes: readonly NoteEvent[]): boolean {
-  return new Set(notes.map((note) => note.voice)).size >= 3;
+function hasMultipleOutsideVoiceOnsets(notes: readonly NoteEvent[]): boolean {
+  return new Set(notes.map((note) => note.voice)).size >= 2;
 }
 
 function boundaryResetDelayTicks(note: NoteEvent): number {
@@ -283,7 +284,8 @@ function chooseBoundaryResetNotesToDelay(
   previousNotes: readonly NoteEvent[],
   entryStartTick: number,
 ): NoteEvent[] {
-  return boundaryResetDelayCandidates(notes, previousNotes, entryStartTick).slice(0, 2);
+  const delayedVoiceCount = Math.max(1, Math.min(2, notes.length - 1));
+  return boundaryResetDelayCandidates(notes, previousNotes, entryStartTick).slice(0, delayedVoiceCount);
 }
 
 function boundaryResetDelayCandidates(
@@ -521,14 +523,22 @@ function entryHarmonySafePitch(
   durationTicks: number,
   pitch: number,
 ): number {
+  const entryLocalConstraintEnabled =
+    pattern.counterSubjectSupportRepair === true ||
+    (pattern.harmonicPlan?.state === "stretto-like" &&
+      pattern.harmonicPlan.startTick <= STRETTO_ENTRY_HARMONY_REPAIR_MAX_START_TICKS);
   if (
     (pattern.role !== "free-counterpoint" && pattern.role !== "counter-subject") ||
     pattern.harmonicPlan === undefined ||
-    pattern.harmonicPlan.state !== "stretto-like" ||
-    pattern.harmonicPlan.startTick > STRETTO_ENTRY_HARMONY_REPAIR_MAX_START_TICKS ||
-    beatStrengthAtTick(startTick, pattern.harmonicPlan.meterContext) !== "strong" ||
-    isFunctionBearingPassingIntent(pattern.metricalHarmonyIntent) ||
-    !createsUnresolvedEntrySupportClashAtTick(notes, pattern.voice, startTick, durationTicks, pitch)
+    !entryLocalConstraintEnabled ||
+    !createsUnpreparedEntrySupportInstabilityAtTick(
+      notes,
+      pattern.voice,
+      startTick,
+      durationTicks,
+      pitch,
+      pattern.metricalHarmonyIntent,
+    )
   ) {
     return pitch;
   }
@@ -552,7 +562,14 @@ function entryHarmonySafePitch(
     .filter((candidatePitch) => keepsAdjacentVoiceOrder(notes, noteShape, candidatePitch))
     .filter(
       (candidatePitch) =>
-        !createsUnresolvedEntrySupportClashAtTick(notes, pattern.voice, startTick, durationTicks, candidatePitch),
+        !createsUnpreparedEntrySupportInstabilityAtTick(
+          notes,
+          pattern.voice,
+          startTick,
+          durationTicks,
+          candidatePitch,
+          pattern.metricalHarmonyIntent,
+        ),
     )
     .filter((candidatePitch) => !createsPitchClassUnisonAtTick(notes, pattern.voice, startTick, candidatePitch));
 
@@ -710,12 +727,13 @@ function createsCounterSubjectSupportCollision(
   );
 }
 
-function createsUnresolvedEntrySupportClashAtTick(
+function createsUnpreparedEntrySupportInstabilityAtTick(
   notes: readonly NoteEvent[],
   voice: Voice,
   startTick: number,
   durationTicks: number,
   pitch: number,
+  supportIntent?: MetricalHarmonyIntent,
 ): boolean {
   return notes.some(
     (note) =>
@@ -723,7 +741,21 @@ function createsUnresolvedEntrySupportClashAtTick(
       note.voice !== voice &&
       note.startTick < startTick + durationTicks &&
       startTick < note.startTick + note.durationTicks &&
-      isEntryAccentedSupportFriction(pitch, note.pitch),
+      !isPreparedEntrySupportResolution(supportIntent, note, startTick, durationTicks) &&
+      isEntrySupportInstability(pitch, note.pitch),
+  );
+}
+
+function isPreparedEntrySupportResolution(
+  supportIntent: MetricalHarmonyIntent | undefined,
+  entryNote: NoteEvent,
+  supportStartTick: number,
+  supportDurationTicks: number,
+): boolean {
+  return (
+    isFunctionBearingPassingIntent(supportIntent) &&
+    supportStartTick < entryNote.startTick &&
+    entryNote.startTick < supportStartTick + supportDurationTicks
   );
 }
 
@@ -731,9 +763,16 @@ function isEntryRole(role: NoteEvent["role"] | undefined): boolean {
   return role === "subject" || role === "answer" || role === "subject-fragment";
 }
 
-function isEntryAccentedSupportFriction(supportPitch: number, entryPitch: number): boolean {
+function isEntrySupportInstability(supportPitch: number, entryPitch: number): boolean {
   const intervalClass = Math.abs(supportPitch - entryPitch) % 12;
-  return intervalClass === 1 || intervalClass === 2 || intervalClass === 10 || intervalClass === 11;
+  return (
+    intervalClass === 1 ||
+    intervalClass === 2 ||
+    intervalClass === 5 ||
+    intervalClass === 6 ||
+    intervalClass === 10 ||
+    intervalClass === 11
+  );
 }
 
 function createsSemitoneAtTick(notes: readonly NoteEvent[], voice: Voice, tick: number, pitch: number): boolean {

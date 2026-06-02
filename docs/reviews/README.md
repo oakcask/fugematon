@@ -4,6 +4,7 @@
 
 ## Read First
 
+* [Generator constraint rebuild entry support review](generator-constraint-rebuild-entry-support.md): current architecture-slice evidence. Entry-local support instability and prepared / passing severe intervals now affect candidate ranking and quality-vector classification while the 22 seed target bundle keeps hard failures at 0.
 * [Generator constraint rebuild exposition search review](generator-constraint-rebuild-exposition-search.md): current architecture-slice evidence. Non-continuation initial generation now reports solver-mode exposition candidates before continuation generation while keeping current-contract hard failures at 0 across the 22 seed target bundle.
 * [Generator constraint rebuild slice review](generator-constraint-rebuild-slice.md): previous architecture-slice review. Added diagnostics-only constraint evaluation and `generatorSearchTrace` without adopting new solver output; keep as baseline history for the first evaluator slice.
 * [Constrained Keyboard Writing Profiles Completion Review](constrained-keyboard-writing-profiles-completion.md): completed follow-up evidence. Current default ScoreEvent JSON and MIDI match the target baseline for six listed seeds, the 22 seed review summary remains stable except for writing-profile metadata, and focused piano, harpsichord, and music-box profile diagnostics expose pitch/playability evidence.
