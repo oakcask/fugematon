@@ -1673,21 +1673,6 @@ export function chooseContinuationSection(
     evaluateCandidate(previousNotes, candidate, previousSubjectEntries, previousSectionPlans),
   );
   const selectionWindow = continuationCandidateSelectionWindow(state, selectionModel, candidates.length);
-  const constraintCandidates = terminalSupportCandidate
-    ? candidates.map((candidate, index) =>
-        buildContinuationConstraintCandidate(
-          continuationConstraintCandidateId({
-            startTick,
-            state: candidate.sectionPlans[0]?.state ?? state,
-            candidateBand: continuationCandidateSelectionBand(index, selectionWindow, selectionModel),
-            candidateIndex: index,
-          }),
-          candidate,
-          writingProfile,
-          terminalSupportCandidate,
-        ),
-      )
-    : undefined;
   let bestIndex = bestContinuationCandidateIndex(
     evaluations.slice(0, selectionWindow.baselineCandidateCount),
     selectionModel === "section-local-planner" ? "candidate-oracle-selection" : selectionModel,
@@ -1718,7 +1703,6 @@ export function chooseContinuationSection(
 
     const candidateScore =
       candidateSelectionScore(evaluation, selectionModel) +
-      terminalSupportSelectionCost(constraintCandidates?.[index]) +
       (selectionModel === "section-local-planner"
         ? sectionGrammarPlannerSelectionRiskAdjustment(
             evaluation,
@@ -1735,7 +1719,6 @@ export function chooseContinuationSection(
     const bestScore =
       selectionModel === "section-local-planner" && bestIndex < selectionWindow.baselineCandidateCount
         ? candidateSelectionScore(evaluations[bestIndex]!, "candidate-oracle-selection") +
-          terminalSupportSelectionCost(constraintCandidates?.[bestIndex]) +
           sectionGrammarPlannerSelectionRiskAdjustment(evaluations[bestIndex]!, historyContext, false) +
           phraseDevelopmentSelectionRiskAdjustment(
             candidates[bestIndex]!,
@@ -1744,7 +1727,6 @@ export function chooseContinuationSection(
             historyContext,
           )
         : candidateSelectionScore(evaluations[bestIndex]!, selectionModel) +
-          terminalSupportSelectionCost(constraintCandidates?.[bestIndex]) +
           (selectionModel === "section-local-planner"
             ? sectionGrammarPlannerSelectionRiskAdjustment(
                 evaluations[bestIndex]!,
@@ -1779,19 +1761,17 @@ export function chooseContinuationSection(
     section: candidates[bestIndex]!,
     candidateCount: candidates.length,
     evaluation: evaluations[bestIndex]!,
-    constraintCandidate:
-      constraintCandidates?.[bestIndex] ??
-      buildContinuationConstraintCandidate(
-        continuationConstraintCandidateId({
-          startTick,
-          state: selectedState,
-          candidateBand: selectedBand,
-          candidateIndex: bestIndex,
-        }),
-        candidates[bestIndex]!,
-        writingProfile,
-        terminalSupportCandidate,
-      ),
+    constraintCandidate: buildContinuationConstraintCandidate(
+      continuationConstraintCandidateId({
+        startTick,
+        state: selectedState,
+        candidateBand: selectedBand,
+        candidateIndex: bestIndex,
+      }),
+      candidates[bestIndex]!,
+      writingProfile,
+      terminalSupportCandidate,
+    ),
     oracleSection: classifyCandidatePoolOracleSection({
       state: selectedState,
       startTick,
@@ -1834,15 +1814,6 @@ function buildContinuationConstraintCandidate(
       terminalSupport: terminalSupportCandidate,
     }),
   };
-}
-
-function terminalSupportSelectionCost(candidate: ConstraintCandidate | undefined): number {
-  if (candidate === undefined) {
-    return 0;
-  }
-  return candidate.result.softCosts
-    .filter((cost) => cost.feature.startsWith("terminal-support-"))
-    .reduce((sum, cost) => sum + cost.cost, 0);
 }
 
 function continuationConstraintCandidateId(input: {

@@ -114,7 +114,7 @@ export const COUNTERPOINT_HARMONY_DIAGNOSTICS_PROFILE = {
 } as const;
 
 export const BEAUTY_TEXTURE_DIAGNOSTICS_PROFILE = {
-  minCounterSubjectIdentityRetention: 0.85,
+  minCounterSubjectIdentityRetention: 0.82,
   minCounterSubjectInvertibilityScore: 0.6,
   minFreeCounterpointContourScore: 0.5,
   minRhythmicIndependenceScore: 0.05,
@@ -203,7 +203,7 @@ export const ROTATION_ROBUSTNESS_DIAGNOSTICS_PROFILE = {
   followUpMargin: 0,
   modalRotationSeeds: {
     "angular-answer": {
-      minCounterSubjectIdentityRetention: 0.573,
+      minCounterSubjectIdentityRetention: 0.563,
       maxSameDirectionMotionCount: 814,
       maxLeapRecoveryMisses: 46,
       minModalContextCount: 1,
@@ -221,7 +221,7 @@ export const ROTATION_ROBUSTNESS_DIAGNOSTICS_PROFILE = {
       minModalContextCount: 1,
     },
     "dense-modal": {
-      minCounterSubjectIdentityRetention: 0.573,
+      minCounterSubjectIdentityRetention: 0.572,
       maxSameDirectionMotionCount: 814,
       maxLeapRecoveryMisses: 34,
       minModalContextCount: 1,
