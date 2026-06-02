@@ -44,8 +44,8 @@ import {
 import { buildHarmonicPlan, cadenceKindForSection } from "./harmony.js";
 import { characteristicScaleDegree, isModalMode, tonicPitchClass, transposeKey } from "./key.js";
 import { createLegacyMeterContext, previousMeasureDownbeat } from "./meter.js";
-import { melodicRoleForScaleDegree, scaleDegreePitchClass } from "./pitch.js";
 import { buildPhraseDevelopmentReviewSummary } from "./phrase-development-review.js";
+import { melodicRoleForScaleDegree, scaleDegreePitchClass } from "./pitch.js";
 import { buildScoreWindowAcceptanceSummary } from "./score-window-acceptance.js";
 import { candidateSelectionScore } from "./selection-risk-adjustments.js";
 import {
@@ -414,7 +414,9 @@ function buildScoreLevelSupportCleanupCandidateAdoption(
     writingProfile: WritingProfile;
   },
   surface: ScoreLevelSupportCleanupSurface,
-): { adoptedNotes: NoteEvent[]; beforeCandidate: ConstraintCandidate; afterCandidate: ConstraintCandidate } | undefined {
+):
+  | { adoptedNotes: NoteEvent[]; beforeCandidate: ConstraintCandidate; afterCandidate: ConstraintCandidate }
+  | undefined {
   const beforeNotes = cloneNotes(input.notes);
   const repairedNotes = cloneNotes(input.notes);
   surface.apply(repairedNotes);
@@ -510,23 +512,23 @@ function hasScoreWindowReviewEvidence(review: ScoreLevelSupportCleanupReview): b
     review.scoreWindowGeneratorResponseCount,
     review.scoreWindowAcceptedContextCount,
     review.harmonicContinuityReviewRequiredCount,
-  ].every(
-    (count) => Number.isSafeInteger(count) && count >= 0,
-  );
+  ].every((count) => Number.isSafeInteger(count) && count >= 0);
 }
 
 function noteFingerprint(notes: readonly NoteEvent[]): string {
   return JSON.stringify(
-    [...notes].sort(compareNoteEvents).map((note) => [
-      note.kind,
-      note.voice,
-      note.startTick,
-      note.durationTicks,
-      note.pitch,
-      note.velocity,
-      note.role,
-      note.metricalHarmonyIntent,
-    ]),
+    [...notes]
+      .sort(compareNoteEvents)
+      .map((note) => [
+        note.kind,
+        note.voice,
+        note.startTick,
+        note.durationTicks,
+        note.pitch,
+        note.velocity,
+        note.role,
+        note.metricalHarmonyIntent,
+      ]),
   );
 }
 
