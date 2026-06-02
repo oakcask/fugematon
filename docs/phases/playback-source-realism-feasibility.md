@@ -149,7 +149,8 @@ The second prototype pass adds the pinned SpessaSynth adapter without distributi
 
 The third prototype pass adds the deployment guardrails needed before that asset decision:
 
-* `packages/web/public/NOTICE.txt` is generated from the web notices data and linked from the in-app notices section as a route-addressable plain text artifact.
+* `packages/web/public/NOTICE.txt` is generated from the web notices data and linked from the in-app notices section as a route-addressable plain text artifact. It is not checked in; builds regenerate it and verification rejects stale generated content.
+* `pnpm web:dev` also regenerates the notice artifact before starting Vite so a fresh checkout can serve the notices link without requiring a production build first.
 * `workflow-scripts/web-playback-assets.mjs` verifies that the checked notice artifact matches the notices data and that any distributed SoundFont descriptor has matching audio asset notice metadata.
 * The same check keeps the configured SoundFont URL tied to delivery: local web-public SoundFont URLs must exist in the public assets and built deploy artifact, while external SoundFont URLs must carry an integrity record.
 * `pnpm build` and `pnpm --filter @fugematon/web build` now run the notice generation and playback asset verification around the Vite bundle step.
