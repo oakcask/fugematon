@@ -14,7 +14,13 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
   }
 
   if (command.name === "review") {
-    await writeReviewBundle(command.out, command.lengthTicks, DEFAULT_SELECTION_MODEL, command.performanceProfileId);
+    await writeReviewBundle(
+      command.out,
+      command.lengthTicks,
+      DEFAULT_SELECTION_MODEL,
+      command.performanceProfileId,
+      command.writingProfileId,
+    );
     return;
   }
 
@@ -27,6 +33,7 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
       command.baselineModel,
       command.variantModel,
       command.performanceProfileId,
+      command.writingProfileId,
     );
     return;
   }
@@ -35,6 +42,7 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
     seed: command.seed,
     lengthTicks: command.lengthTicks,
     selectionModel: DEFAULT_SELECTION_MODEL,
+    writingProfileId: command.writingProfileId,
   });
 
   if (command.name === "diagnose") {

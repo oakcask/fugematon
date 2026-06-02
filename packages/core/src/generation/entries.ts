@@ -8,6 +8,7 @@ import type {
   PlannedEntry,
   Voice,
 } from "../events.js";
+import { placePitchInWritingProfile, registerTargetForVoice, type WritingProfile } from "../writing-profile.js";
 import {
   beatStrengthAtTick,
   chordTonePitchClasses,
@@ -15,7 +16,6 @@ import {
   nearestHarmonicAnchor,
 } from "./harmony.js";
 import { pitchClassForSubjectNote } from "./pitch.js";
-import { placePitchInRegister, VOICE_REGISTER_TARGETS } from "./shared.js";
 import type { Exposition, SubjectNote } from "./types.js";
 
 export function addSubjectEntry(
@@ -31,6 +31,7 @@ export function addSubjectEntry(
     localKey: KeySignature;
     answerKind?: AnswerKind;
     harmonicPlan?: HarmonicPlan;
+    writingProfile: WritingProfile;
   },
 ): void {
   const plannedSubject = applyEntryPlanToSubject(subject, entry.form, entry.answerKind);
@@ -43,7 +44,7 @@ export function addSubjectEntry(
     globalKey: entry.globalKey,
     localKey: entry.localKey,
     answerKind: entry.answerKind,
-    registerTarget: VOICE_REGISTER_TARGETS[entry.voice],
+    registerTarget: registerTargetForVoice(entry.writingProfile, entry.voice),
     expectedDegreePattern: plannedSubject.map((note) => note.scaleDegree),
     actualPitchClassSequence: plannedSubject.map((note) => pitchClassForSubjectNote(note, entry.localKey)),
     metricalIntentPattern: plannedSubject.map((note) => {
@@ -76,7 +77,7 @@ export function addSubjectEntry(
       voice: entry.voice,
       startTick: entry.startTick + note.offsetTick,
       durationTicks: note.durationTicks,
-      pitch: placePitchInRegister(pitchClass, entry.voice, plannedEntry.registerTarget),
+      pitch: placePitchInWritingProfile(pitchClass, entry.voice, plannedEntry.registerTarget, entry.writingProfile),
       velocity: entry.form === "answer" ? 86 : 92,
       role: entry.form,
       metricalHarmonyIntent: metricalHarmonyIntentForDegree({

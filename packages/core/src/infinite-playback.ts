@@ -14,8 +14,14 @@ import type {
 } from "./events.js";
 import { normalizeSelectionModel } from "./events.js";
 import { seedToUint32State } from "./prng.js";
+import {
+  DEFAULT_WRITING_PROFILE_ID,
+  resolveWritingProfileMetadata,
+  type WritingProfileId,
+  type WritingProfileMetadata,
+} from "./writing-profile.js";
 
-export const INFINITE_PLAYBACK_SNAPSHOT_SCHEMA_VERSION = 1;
+export const INFINITE_PLAYBACK_SNAPSHOT_SCHEMA_VERSION = 2;
 export const DEFAULT_BOUNDED_PAST_EVENT_CONTEXT_TICKS = TICKS_PER_QUARTER * 16;
 
 export type InfinitePlaybackMode = "continuous-fugue" | "endless-program" | "regenerative-cycle";
@@ -205,6 +211,7 @@ export type SegmentSnapshot = {
   schemaVersion: typeof INFINITE_PLAYBACK_SNAPSHOT_SCHEMA_VERSION;
   generatorVersion: number;
   selectionModel: SelectionModel;
+  writingProfile: WritingProfileMetadata;
   segmentIndex: number;
   tick: number;
   mode: InfinitePlaybackMode;
@@ -227,6 +234,7 @@ export type InitialSegmentSnapshotInput = {
   mode?: InfinitePlaybackMode | "continuous fugue" | "endless program" | "regenerative cycle";
   generatorVersion?: number;
   selectionModel?: SelectionModel;
+  writingProfileId?: WritingProfileId;
   ticksPerQuarter?: number;
   boundedPastEventContextTicks?: number;
 };
@@ -241,6 +249,7 @@ export type CreateSegmentEndSnapshotInput = {
   subjectEntries: readonly PlannedEntry[];
   sectionPlans: readonly HarmonicPlan[];
   selectionModel?: SelectionModel;
+  writingProfileId?: WritingProfileId;
   generatorVersion?: number;
   ticksPerQuarter?: number;
   timeSignature?: TimeSignature;
@@ -320,6 +329,7 @@ export function createInitialSegmentSnapshot(input: InitialSegmentSnapshotInput)
     schemaVersion: INFINITE_PLAYBACK_SNAPSHOT_SCHEMA_VERSION,
     generatorVersion: input.generatorVersion ?? GENERATOR_VERSION,
     selectionModel: normalizeSelectionModel(input.selectionModel ?? DEFAULT_SELECTION_MODEL),
+    writingProfile: resolveWritingProfileMetadata(input.writingProfileId),
     segmentIndex: 0,
     tick: 0,
     mode: normalizeInfinitePlaybackMode(input.mode),
@@ -413,6 +423,9 @@ export function createSegmentEndSnapshot(input: CreateSegmentEndSnapshotInput): 
     generatorVersion: input.generatorVersion ?? GENERATOR_VERSION,
     selectionModel: normalizeSelectionModel(
       input.selectionModel ?? previous?.selectionModel ?? DEFAULT_SELECTION_MODEL,
+    ),
+    writingProfile: resolveWritingProfileMetadata(
+      input.writingProfileId ?? previous?.writingProfile?.id ?? DEFAULT_WRITING_PROFILE_ID,
     ),
     segmentIndex: input.segmentIndex,
     tick: input.tick,

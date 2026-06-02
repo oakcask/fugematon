@@ -1,4 +1,5 @@
 import type { TICKS_PER_QUARTER, VOICES } from "./constants.js";
+import type { WritingProfileDiagnostics, WritingProfileId, WritingProfileMetadata } from "./writing-profile.js";
 
 export type Voice = (typeof VOICES)[number];
 
@@ -252,6 +253,7 @@ export function normalizeSelectionModel(selectionModel: SelectionModel): Current
 export type GenerationInput = {
   seed: string;
   lengthTicks: number;
+  writingProfileId?: WritingProfileId;
   segmentIndex?: number;
   selectionModel?: SelectionModel;
   previousSegmentSnapshot?: import("./infinite-playback.js").SegmentSnapshot;
@@ -1565,6 +1567,7 @@ export type TerminalClosureReviewSummary = {
 export type GenerationDiagnostics = {
   generatorVersion: number;
   selectionModel: SelectionModel;
+  writingProfile: WritingProfileMetadata;
   seed: string;
   lengthTicks: number;
   generatedUntilTick: number;
@@ -1627,6 +1630,14 @@ export type GenerationDiagnostics = {
   terminalClosureReview: TerminalClosureReviewSummary;
   continuousSegmentContinuity: ContinuousSegmentContinuitySummary;
   continuousBoundaryCarry: ContinuousBoundaryCarrySummary;
+  writingProfileConstraints: WritingProfileDiagnostics;
+  writingProfilePitchViolations: number;
+  unavailablePitchClassCount: number;
+  handSpanViolations: number;
+  handAssignmentAmbiguityCount: number;
+  sameHandLeapCost: number;
+  musicBoxRepeatRateViolations: number;
+  musicBoxSimultaneityViolations: number;
   ornamentCandidateCount: number;
   ornamentDensity: number;
   ornamentPlacementReasons: OrnamentPlacementReasons;

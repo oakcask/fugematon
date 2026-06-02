@@ -14,6 +14,7 @@ import {
   planSegmentGenerationDeadlineResult,
   seedToUint32State,
   TICKS_PER_QUARTER,
+  WRITING_PROFILE_VERSION,
 } from "./index.js";
 
 const PHASE_8_REVIEW_SIGNALS = [
@@ -80,6 +81,10 @@ test("creates an initial segment snapshot from seed and empty bounded context", 
   assert.equal(snapshot.schemaVersion, INFINITE_PLAYBACK_SNAPSHOT_SCHEMA_VERSION);
   assert.equal(snapshot.generatorVersion, GENERATOR_VERSION);
   assert.equal(snapshot.selectionModel, DEFAULT_SELECTION_MODEL);
+  assert.deepEqual(snapshot.writingProfile, {
+    id: "four-voice-default",
+    version: WRITING_PROFILE_VERSION,
+  });
   assert.equal(snapshot.segmentIndex, 0);
   assert.equal(snapshot.tick, 0);
   assert.equal(snapshot.mode, "regenerative-cycle");
@@ -131,12 +136,17 @@ test("supports explicit resume-compatibility metadata in initial snapshots", () 
     mode: "endless-program",
     generatorVersion: 99,
     selectionModel: "baseline",
+    writingProfileId: "piano-two-hand",
     ticksPerQuarter: 960,
     boundedPastEventContextTicks: 1920,
   });
 
   assert.equal(snapshot.generatorVersion, 99);
   assert.equal(snapshot.selectionModel, "baseline");
+  assert.deepEqual(snapshot.writingProfile, {
+    id: "piano-two-hand",
+    version: WRITING_PROFILE_VERSION,
+  });
   assert.equal(snapshot.mode, "endless-program");
   assert.equal(snapshot.timebase.ticksPerQuarter, 960);
   assert.equal(snapshot.boundedPastEventContext.maxLookbackTicks, 1920);
@@ -246,11 +256,16 @@ test("creates a segment-end snapshot with bounded tail context for continuation"
     timeSignature: meterContext.timeSignature,
     bpm: 72,
     prngState: [1, 2, 3, 4],
+    writingProfileId: "harpsichord-manual",
     boundedPastEventContextTicks: TICKS_PER_QUARTER * 4,
   });
 
   assert.equal(snapshot.segmentIndex, 2);
   assert.equal(snapshot.mode, "continuous-fugue");
+  assert.deepEqual(snapshot.writingProfile, {
+    id: "harpsichord-manual",
+    version: WRITING_PROFILE_VERSION,
+  });
   assert.deepEqual(snapshot.timebase, {
     ticksPerQuarter: TICKS_PER_QUARTER,
     timeSignature: meterContext.timeSignature,

@@ -8,6 +8,13 @@ import type {
   PlannedEntry,
   Voice,
 } from "../events.js";
+import {
+  isPitchAllowedByWritingProfile,
+  placePitchInWritingProfile,
+  registerTargetForVoice,
+  voiceRangeForProfile,
+  type WritingProfile,
+} from "../writing-profile.js";
 import { isFocusedHarmonicContinuityPlan } from "./harmonic-continuity-review.js";
 import {
   beatStrengthAtTick,
@@ -44,6 +51,7 @@ export type ContinuityCounterpointInput = {
   voiceOrder?: readonly Voice[];
   lineKind?: ContinuityLineKind;
   freeCounterpointPhraseVariation?: boolean;
+  writingProfile?: WritingProfile;
 };
 
 export type ContinuityTexturePlan = ContinuityCounterpointInput & {
@@ -71,6 +79,7 @@ type EntryCounterpointTextureInput = {
   harmonicPlan?: HarmonicPlan;
   counterSubjectSupportRepair?: boolean;
   freeCounterpointPhraseVariation?: boolean;
+  writingProfile?: WritingProfile;
 };
 
 type TextureNotePattern = {
@@ -84,6 +93,7 @@ type TextureNotePattern = {
   freeCounterpointPhraseVariation?: boolean;
   strictSemitoneAvoidance?: boolean;
   preserveDurations?: boolean;
+  writingProfile?: WritingProfile;
 };
 
 const LONG_REST_PHRASE_CLOSURE_TICKS = TICKS_PER_QUARTER * 2;
@@ -135,6 +145,7 @@ function addEntryCounterSubject(
     velocity: 70,
     role: "counter-subject",
     harmonicPlan: entry.harmonicPlan,
+    writingProfile: entry.writingProfile,
   });
 }
 
@@ -161,6 +172,7 @@ function addEntryFreeCounterpoint(
       harmonicPlan: entry.harmonicPlan,
       counterSubjectSupportRepair: entry.counterSubjectSupportRepair,
       freeCounterpointPhraseVariation: entry.counterSubjectSupportRepair || entry.freeCounterpointPhraseVariation,
+      writingProfile: entry.writingProfile,
     });
   }
 }
@@ -352,6 +364,7 @@ export function addPatternCounterpoint(
     freeCounterpointPhraseVariation?: boolean;
     strictSemitoneAvoidance?: boolean;
     preserveDurations?: boolean;
+    writingProfile?: WritingProfile;
   },
 ): void {
   let elapsedTicks = 0;
@@ -465,17 +478,30 @@ export function addTextureNote(
       harmonicPlan: pattern.harmonicPlan,
     });
   let pitchClass = scaleDegreePitchClass(degree, 0, pattern.localKey);
-  let pitch = placePitchInRegister(pitchClass, pattern.voice, VOICE_REGISTER_TARGETS[pattern.voice]);
+  const registerTarget =
+    pattern.writingProfile === undefined
+      ? VOICE_REGISTER_TARGETS[pattern.voice]
+      : registerTargetForVoice(pattern.writingProfile, pattern.voice);
+  let pitch =
+    pattern.writingProfile === undefined
+      ? placePitchInRegister(pitchClass, pattern.voice, registerTarget)
+      : placePitchInWritingProfile(pitchClass, pattern.voice, registerTarget, pattern.writingProfile);
   if (previous?.pitch === pitch && pattern.role === "free-counterpoint") {
     pitchClass = scaleDegreePitchClass(degree + 1, 0, pattern.localKey);
-    pitch = placePitchInRegister(pitchClass, pattern.voice, VOICE_REGISTER_TARGETS[pattern.voice]);
+    pitch =
+      pattern.writingProfile === undefined
+        ? placePitchInRegister(pitchClass, pattern.voice, registerTarget)
+        : placePitchInWritingProfile(pitchClass, pattern.voice, registerTarget, pattern.writingProfile);
   }
   if (previous !== undefined && (pattern.role === "free-counterpoint" || pattern.role === "counter-subject")) {
-    pitch = fitPitchNearPrevious(pitchClass, pattern.voice, previous.pitch);
+    pitch = fitPitchNearPrevious(pitchClass, pattern.voice, previous.pitch, pattern.writingProfile);
   }
   pitch = weakDissonanceSafePitch(notes, pattern, startTick, durationTicks, pitch);
   pitch = counterSubjectSafePitch(notes, pattern, startTick, durationTicks, pitch);
   pitch = entryHarmonySafePitch(notes, { ...pattern, metricalHarmonyIntent }, startTick, durationTicks, pitch);
+  if (pattern.writingProfile !== undefined && !isPitchAllowedByWritingProfile(pattern.writingProfile, pitch)) {
+    pitch = placePitchInWritingProfile(pitchClass, pattern.voice, registerTarget, pattern.writingProfile);
+  }
   notes.push({
     kind: "note",
     voice: pattern.voice,
@@ -520,6 +546,7 @@ function entryHarmonySafePitch(
     voice: pattern.voice,
     steps: [-5, -4, -3, -2, -1, 1, 2, 3, 4, 5],
     chordTonePitchClasses: chordTonePitchClassesAtTick,
+    writingProfile: pattern.writingProfile,
   })
     .filter((candidatePitch) => previous === undefined || Math.abs(candidatePitch - previous.pitch) <= 5)
     .filter((candidatePitch) => keepsAdjacentVoiceOrder(notes, noteShape, candidatePitch))
@@ -565,6 +592,7 @@ function weakDissonanceSafePitch(
     voice: pattern.voice,
     steps: [-4, -3, -2, -1, 1, 2, 3, 4],
     chordTonePitchClasses: chordTonePitchClassesAtTick,
+    writingProfile: pattern.writingProfile,
   })
     .filter((candidatePitch) => keepsAdjacentVoiceOrder(notes, noteShape, candidatePitch))
     .filter((candidatePitch) => !createsSemitoneAtTick(notes, pattern.voice, startTick, candidatePitch))
@@ -601,6 +629,7 @@ function counterSubjectSafePitch(
     voice: pattern.voice,
     steps: [-5, -4, -3, -2, -1, 1, 2, 3, 4, 5],
     chordTonePitchClasses: chordTonePitchClassesAtTick,
+    writingProfile: pattern.writingProfile,
   })
     .filter((candidatePitch) => previous === undefined || Math.abs(candidatePitch - previous.pitch) <= 4)
     .filter((candidatePitch) => keepsAdjacentVoiceOrder(notes, noteShape, candidatePitch))
@@ -643,13 +672,21 @@ function nearbyChordTonePitches(input: {
   voice: Voice;
   steps: readonly number[];
   chordTonePitchClasses: readonly number[];
+  writingProfile?: WritingProfile;
 }): number[] {
-  const range = VOICE_RANGES[input.voice];
+  const range =
+    input.writingProfile === undefined
+      ? VOICE_RANGES[input.voice]
+      : voiceRangeForProfile(input.writingProfile, input.voice);
   return input.steps
     .map((step) => input.pitch + step)
     .filter((candidatePitch) => input.chordTonePitchClasses.includes(positiveModulo(candidatePitch, 12)))
     .filter((candidatePitch) => candidatePitch >= range.min)
-    .filter((candidatePitch) => candidatePitch <= range.max);
+    .filter((candidatePitch) => candidatePitch <= range.max)
+    .filter(
+      (candidatePitch) =>
+        input.writingProfile === undefined || isPitchAllowedByWritingProfile(input.writingProfile, candidatePitch),
+    );
 }
 
 function nearestPitch(candidates: readonly number[], targetPitch: number): number | undefined {
@@ -729,15 +766,28 @@ function createsPitchClassUnisonAtTick(
   });
 }
 
-export function fitPitchNearPrevious(pitchClass: number, voice: Voice, previousPitch: number): number {
-  const range = VOICE_RANGES[voice];
-  const preferredMin = Math.max(range.min, VOICE_REGISTER_TARGETS[voice] - 6);
-  let pitch = placePitchInRegister(pitchClass, voice, VOICE_REGISTER_TARGETS[voice]);
+export function fitPitchNearPrevious(
+  pitchClass: number,
+  voice: Voice,
+  previousPitch: number,
+  writingProfile?: WritingProfile,
+): number {
+  const range = writingProfile === undefined ? VOICE_RANGES[voice] : voiceRangeForProfile(writingProfile, voice);
+  const registerTarget =
+    writingProfile === undefined ? VOICE_REGISTER_TARGETS[voice] : registerTargetForVoice(writingProfile, voice);
+  const preferredMin = Math.max(range.min, registerTarget - 6);
+  let pitch =
+    writingProfile === undefined
+      ? placePitchInRegister(pitchClass, voice, registerTarget)
+      : placePitchInWritingProfile(pitchClass, voice, registerTarget, writingProfile);
   while (pitch - previousPitch > 5 && pitch - 12 >= preferredMin) {
     pitch -= 12;
   }
   while (previousPitch - pitch > 5 && pitch + 12 <= range.max) {
     pitch += 12;
+  }
+  if (writingProfile !== undefined && !isPitchAllowedByWritingProfile(writingProfile, pitch)) {
+    return placePitchInWritingProfile(pitchClass, voice, registerTarget, writingProfile);
   }
   return pitch;
 }
@@ -937,6 +987,7 @@ function addContinuityLine(
     velocity: lineIndex === 0 ? 58 : 52,
     role: "free-counterpoint",
     harmonicPlan: plan.harmonicPlan,
+    writingProfile: plan.writingProfile,
     preserveDurations:
       (plan.freeCounterpointPhraseVariation === true && plan.harmonicPlan?.state === "episode") ||
       plan.harmonicPlan?.meterContext.timeSignature.numerator === 3,
@@ -1060,6 +1111,7 @@ function addObliqueContinuitySupport(
         role: "free-counterpoint",
         harmonicPlan: plan.harmonicPlan,
         metricalHarmonyIntent: voice === "bass" ? "structural-root-support" : "structural-chord-tone",
+        writingProfile: plan.writingProfile,
       },
       degree,
       startTick + elapsedTicks,
@@ -1120,6 +1172,7 @@ function addStaggeredContinuitySupport(
         velocity: 50,
         role: "free-counterpoint",
         harmonicPlan: plan.harmonicPlan,
+        writingProfile: plan.writingProfile,
       },
       degrees[index % degrees.length]!,
       startTick + elapsedTicks,
@@ -1130,7 +1183,11 @@ function addStaggeredContinuitySupport(
   }
 }
 
-export function fillAllVoiceSilenceGaps(notes: Exposition["notes"], keySignature: KeySignature): void {
+export function fillAllVoiceSilenceGaps(
+  notes: Exposition["notes"],
+  keySignature: KeySignature,
+  writingProfile?: WritingProfile,
+): void {
   const checkpoints = [...new Set(notes.flatMap((note) => [note.startTick, note.startTick + note.durationTicks]))].sort(
     (left, right) => left - right,
   );
@@ -1152,6 +1209,7 @@ export function fillAllVoiceSilenceGaps(notes: Exposition["notes"], keySignature
       startTick,
       durationTicks: endTick - startTick,
       degreeOffset: index,
+      writingProfile,
     });
   }
 }
@@ -1164,6 +1222,7 @@ function addGapFillerLine(
     startTick: number;
     durationTicks: number;
     degreeOffset: number;
+    writingProfile?: WritingProfile;
   },
 ): void {
   const degrees = rotateContinuityDegrees(freeCounterpointDegreesForMode(input.localKey.mode), input.degreeOffset);
@@ -1179,6 +1238,7 @@ function addGapFillerLine(
         localKey: input.localKey,
         velocity: 54,
         role: "free-counterpoint",
+        writingProfile: input.writingProfile,
       },
       degrees[index % degrees.length]!,
       input.startTick + elapsedTicks,

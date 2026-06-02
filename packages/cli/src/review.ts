@@ -8,6 +8,8 @@ import type {
   NoteEvent,
   PlannedEntry,
   SelectionModel,
+  WritingProfileId,
+  WritingProfileMetadata,
 } from "@fugematon/core";
 import {
   type BaselineBeautyGateResult,
@@ -29,6 +31,7 @@ import {
   type ReviewGatePolicyResult,
   ROTATION_REVIEW_SEEDS,
   type RotationRobustnessGateResult,
+  resolveWritingProfileMetadata,
   summarizeHistoricalReferenceCalibration,
   summarizeReferenceDiagnosticsComparisons,
   TICKS_PER_QUARTER,
@@ -59,16 +62,18 @@ export async function writeReviewBundle(
   lengthTicks: number,
   selectionModel: SelectionModel = "baseline",
   performanceProfileId: PerformanceProfileId = DEFAULT_PERFORMANCE_PROFILE_ID,
+  writingProfileId?: WritingProfileId,
 ): Promise<ReviewSummary> {
   await mkdir(outDirectory, { recursive: true });
   const performanceProfile = performanceProfileMetadata(getPerformanceProfile(performanceProfileId));
+  const writingProfile = resolveWritingProfileMetadata(writingProfileId);
   const summarySeeds: ReviewSummarySeed[] = [];
   const referenceComparisons: ReferenceDiagnosticsComparison[] = [];
   const listeningReview = createListeningReview(lengthTicks, performanceProfile);
   const pairwisePreferences = createPairwisePreferences(lengthTicks, performanceProfile);
 
   for (const { seed, category } of [...REPRESENTATIVE_REVIEW_SEEDS, ...ROTATION_REVIEW_SEEDS]) {
-    const output = generateScore({ seed, lengthTicks, selectionModel });
+    const output = generateScore({ seed, lengthTicks, selectionModel, writingProfileId: writingProfile.id });
     const safeSeed = seed.replaceAll(/[^a-z0-9-]/gi, "-");
     const diagnosticsFile = `${safeSeed}.diagnostics.json`;
     const midiFile = `${safeSeed}.mid`;
@@ -96,6 +101,7 @@ export async function writeReviewBundle(
     lengthTicks,
     selectionModel,
     performanceProfile,
+    writingProfile,
     referenceDiagnostics: summarizeReferenceDiagnosticsComparisons(referenceComparisons),
     historicalReferenceCalibration: summarizeHistoricalReferenceCalibration(),
     qualityProfileComparison: summarizeQualityProfileComparison(summarySeeds),
@@ -122,13 +128,26 @@ export async function writeAbReviewBundle(
   baselineModel: SelectionModel,
   variantModel: SelectionModel,
   performanceProfileId: PerformanceProfileId = DEFAULT_PERFORMANCE_PROFILE_ID,
+  writingProfileId?: WritingProfileId,
 ): Promise<void> {
   const baselineDirectory = join(outDirectory, "baseline");
   const variantDirectory = join(outDirectory, "variant");
   await mkdir(outDirectory, { recursive: true });
 
-  const baselineSummary = await writeReviewBundle(baselineDirectory, lengthTicks, baselineModel, performanceProfileId);
-  const variantSummary = await writeReviewBundle(variantDirectory, lengthTicks, variantModel, performanceProfileId);
+  const baselineSummary = await writeReviewBundle(
+    baselineDirectory,
+    lengthTicks,
+    baselineModel,
+    performanceProfileId,
+    writingProfileId,
+  );
+  const variantSummary = await writeReviewBundle(
+    variantDirectory,
+    lengthTicks,
+    variantModel,
+    performanceProfileId,
+    writingProfileId,
+  );
   const comparison = compareReviewSummaries({
     lengthTicks,
     baselineLabel,
@@ -157,6 +176,7 @@ type ReviewSummary = {
   lengthTicks: number;
   selectionModel: SelectionModel;
   performanceProfile: PerformanceProfileMetadata;
+  writingProfile: WritingProfileMetadata;
   referenceDiagnostics: ReferenceDiagnosticsAggregate;
   historicalReferenceCalibration: HistoricalReferenceCalibrationSummary;
   qualityProfileComparison: QualityProfileComparison;

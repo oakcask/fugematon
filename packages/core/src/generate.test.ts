@@ -11,6 +11,7 @@ import {
 import type { KeySignature, MetaEvent, NoteEvent } from "./events.js";
 import { generateScore } from "./generate.js";
 import { asMetaEvent, countIssues } from "./generate-test-helpers.js";
+import { analyzeWritingProfileConstraints, resolveWritingProfile } from "./writing-profile.js";
 
 test("generateScore is deterministic for identical input", () => {
   const input = {
@@ -19,6 +20,101 @@ test("generateScore is deterministic for identical input", () => {
   };
 
   assert.deepEqual(generateScore(input), generateScore(input));
+});
+
+test("generateScore defaults to the four-voice writing profile without changing explicit default output", () => {
+  const implicit = generateScore({ seed: "bach-001", lengthTicks: 7680 });
+  const explicit = generateScore({
+    seed: "bach-001",
+    lengthTicks: 7680,
+    writingProfileId: "four-voice-default",
+  });
+
+  assert.deepEqual(explicit, implicit);
+  assert.deepEqual(implicit.diagnostics.writingProfile, { id: "four-voice-default", version: 1 });
+  assert.deepEqual(implicit.nextSegmentSnapshot.writingProfile, { id: "four-voice-default", version: 1 });
+});
+
+test("generateScore preserves the selected writing profile across continuous-fugue segments", () => {
+  const first = generateScore({
+    seed: "fugue-smoke",
+    lengthTicks: FUGUE_FORM_REVIEW_LENGTH_TICKS,
+    mode: "continuous-fugue",
+    segmentIndex: 0,
+    writingProfileId: "music-box-n20",
+  });
+  const second = generateScore({
+    seed: "fugue-smoke",
+    lengthTicks: FUGUE_FORM_REVIEW_LENGTH_TICKS,
+    mode: "continuous-fugue",
+    segmentIndex: 1,
+    previousSegmentSnapshot: first.nextSegmentSnapshot,
+  });
+
+  assert.deepEqual(first.diagnostics.writingProfile, { id: "music-box-n20", version: 1 });
+  assert.deepEqual(first.nextSegmentSnapshot.writingProfile, { id: "music-box-n20", version: 1 });
+  assert.deepEqual(second.diagnostics.writingProfile, { id: "music-box-n20", version: 1 });
+  assert.deepEqual(second.nextSegmentSnapshot.writingProfile, { id: "music-box-n20", version: 1 });
+  assert.throws(
+    () =>
+      generateScore({
+        seed: "fugue-smoke",
+        lengthTicks: FUGUE_FORM_REVIEW_LENGTH_TICKS,
+        mode: "continuous-fugue",
+        segmentIndex: 1,
+        previousSegmentSnapshot: first.nextSegmentSnapshot,
+        writingProfileId: "piano-two-hand",
+      }),
+    /core\.writing-profile\.snapshot-mismatch/,
+  );
+});
+
+test("music-box writing profiles generate only supported pitches", () => {
+  for (const writingProfileId of ["music-box-n20", "music-box-n40"] as const) {
+    const output = generateScore({
+      seed: "music-box-profile",
+      lengthTicks: 7680,
+      writingProfileId,
+    });
+    const profile = resolveWritingProfile(writingProfileId);
+    const allowedPitches = new Set(profile.absolutePitchSet);
+    const notes = output.events.filter((event): event is NoteEvent => event.kind === "note");
+
+    assert.equal(output.diagnostics.writingProfilePitchViolations, 0);
+    assert.equal(output.diagnostics.writingProfileConstraints.profileId, writingProfileId);
+    assert.ok(notes.every((note) => allowedPitches.has(note.pitch)));
+  }
+});
+
+test("writing profile diagnostics catch synthetic music-box and piano playability violations", () => {
+  const musicBoxProfile = resolveWritingProfile("music-box-n20");
+  const musicBoxDiagnostics = analyzeWritingProfileConstraints(
+    [
+      syntheticNote({ voice: "soprano", pitch: 61, startTick: 0 }),
+      syntheticNote({ voice: "alto", pitch: 60, startTick: 0 }),
+      syntheticNote({ voice: "tenor", pitch: 62, startTick: 0 }),
+      syntheticNote({ voice: "bass", pitch: 64, startTick: 0 }),
+      syntheticNote({ voice: "soprano", pitch: 65, startTick: 0 }),
+      syntheticNote({ voice: "alto", pitch: 60, startTick: TICKS_PER_QUARTER / 4 }),
+    ],
+    musicBoxProfile,
+  );
+
+  assert.ok(musicBoxDiagnostics.writingProfilePitchViolations > 0);
+  assert.equal(musicBoxDiagnostics.unavailablePitchClassCount, 1);
+  assert.ok(musicBoxDiagnostics.musicBoxSimultaneityViolations > 0);
+  assert.ok(musicBoxDiagnostics.musicBoxRepeatRateViolations > 0);
+
+  const pianoDiagnostics = analyzeWritingProfileConstraints(
+    [
+      syntheticNote({ voice: "bass", pitch: 36, startTick: 0 }),
+      syntheticNote({ voice: "tenor", pitch: 60, startTick: 0 }),
+    ],
+    resolveWritingProfile("piano-two-hand"),
+  );
+
+  assert.ok(pianoDiagnostics.handSpanViolations > 0);
+  assert.ok(pianoDiagnostics.windows.some((window) => window.reason.includes("hand-span")));
 });
 
 test("generateScore changes seed-derived metadata for different seeds", () => {
@@ -53,6 +149,10 @@ test("generateScore emits a tick-based exposition", () => {
 test("generateScore validates reproducibility inputs", () => {
   assert.throws(() => generateScore({ seed: "", lengthTicks: 960 }), /seed/);
   assert.throws(() => generateScore({ seed: "x", lengthTicks: 0 }), /lengthTicks/);
+  assert.throws(
+    () => generateScore({ seed: "x", lengthTicks: 960, writingProfileId: "unknown-profile" as never }),
+    /core\.writing-profile\.invalid-id/,
+  );
 });
 
 test("generateScore keeps public event and diagnostics counts aligned", () => {
@@ -463,3 +563,15 @@ test("generateScore validates representative exposition seeds", () => {
     }
   }
 });
+
+function syntheticNote(input: { voice: NoteEvent["voice"]; pitch: number; startTick: number }): NoteEvent {
+  return {
+    kind: "note",
+    voice: input.voice,
+    startTick: input.startTick,
+    durationTicks: TICKS_PER_QUARTER,
+    pitch: input.pitch,
+    velocity: 64,
+    role: "free-counterpoint",
+  };
+}

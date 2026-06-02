@@ -265,3 +265,24 @@ export {
   evaluateVoiceIndependenceGate,
   manualListeningBlockers,
 } from "./review-gate.js";
+export type {
+  MusicBoxMechanismPlayability,
+  PianoTwoHandPlayability,
+  PitchRange,
+  WritingProfile,
+  WritingProfileDiagnostics,
+  WritingProfileId,
+  WritingProfileMetadata,
+} from "./writing-profile.js";
+export {
+  analyzeWritingProfileConstraints,
+  constrainNotePitchToWritingProfile,
+  constrainNotesToWritingProfile,
+  DEFAULT_WRITING_PROFILE_ID,
+  isWritingProfileId,
+  normalizeWritingProfileId,
+  resolveWritingProfile,
+  resolveWritingProfileMetadata,
+  WRITING_PROFILE_IDS,
+  WRITING_PROFILE_VERSION,
+} from "./writing-profile.js";
