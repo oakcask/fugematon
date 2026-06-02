@@ -145,19 +145,24 @@ The second prototype pass adds the pinned SpessaSynth adapter without distributi
 * Runtime software notices now include `spessasynth_lib@4.3.6` and `spessasynth_core@4.3.7`; audio asset notices remain empty because `MuseScore_General.sf3` is not distributed yet.
 * `pnpm build`, `pnpm --filter @fugematon/web test`, `pnpm audit --prod`, and the web production dependency tree check passed for this prototype.
 
-Still pending:
-
-* Add or document the actual `.sf3` asset delivery path without eager initial-bundle inclusion.
-* Choose whether `/soundfonts/MuseScore_General.sf3` is served from the web deploy artifact or replaced with a documented external asset URL before treating the SoundFont pilot as deploy-ready.
-* Add concrete audio asset notices before distributing MuseScore_General.sf3.
-* Complete manual listening comparison between oscillator and SoundFont playback.
-
 The third prototype pass adds the deployment guardrails needed before that asset decision:
 
 * `packages/web/public/NOTICE.txt` is generated from the web notices data and linked from the in-app notices section as a route-addressable plain text artifact.
 * `workflow-scripts/web-playback-assets.mjs` verifies that the checked notice artifact matches the notices data and that any distributed SoundFont descriptor has matching audio asset notice metadata.
 * The same check keeps the configured SoundFont URL tied to delivery: local web-public SoundFont URLs must exist in the public assets and built deploy artifact, while external SoundFont URLs must carry an integrity record.
 * `pnpm build` and `pnpm --filter @fugematon/web build` now run the notice generation and playback asset verification around the Vite bundle step.
+
+The fourth prototype pass chooses the deployable pilot configuration path without checking in the `.sf3` file:
+
+* `packages/web/src/soundfont.ts` keeps the default local prototype descriptor non-distributed, but `VITE_FUGEMATON_SOUNDFONT_URL` now switches the descriptor to a distributed external asset.
+* `VITE_FUGEMATON_SOUNDFONT_INTEGRITY` carries the required checksum or equivalent integrity record for that external asset; the existing playback asset verifier fails the build if an external distributed SoundFont lacks it, and the SpessaSynth adapter passes it into the browser fetch.
+* `packages/web/src/notices.ts` derives the matching audio asset notice from distributed SoundFont descriptors, so enabling the external `.sf3` URL also exposes the MIT SoundFont notice in the in-app notices view and generated `NOTICE.txt`.
+* This keeps `MuseScore_General.sf3` out of the initial JavaScript bundle and out of the repository while making the deploy-ready configuration explicit and CI-verifiable.
+
+Still pending:
+
+* Choose the actual hosted `MuseScore_General.sf3` URL and integrity value for any deployment that enables the SoundFont pilot.
+* Complete manual listening comparison between oscillator and SoundFont playback.
 
 ## Sources
 

@@ -2,7 +2,12 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { generateScore } from "@fugematon/core";
 import { createPlaybackModel } from "./score.js";
-import { createSoundFontEvents, MUSESCORE_GENERAL_SF3_PROTOTYPE, soundFontAssets } from "./soundfont.js";
+import {
+  createMuseScoreGeneralSoundFontDescriptor,
+  createSoundFontEvents,
+  MUSESCORE_GENERAL_SF3_PROTOTYPE,
+  soundFontAssets,
+} from "./soundfont.js";
 
 test("createSoundFontEvents maps playback notes to MIDI-style soundfont events", () => {
   const model = createPlaybackModel(generateScore({ seed: "fugue-smoke", lengthTicks: 7680 }), "organ-default");
@@ -27,4 +32,15 @@ test("MuseScore General prototype descriptor points at a lazy static asset", () 
   assert.equal(MUSESCORE_GENERAL_SF3_PROTOTYPE.distributed, false);
   assert.equal(MUSESCORE_GENERAL_SF3_PROTOTYPE.url, "/soundfonts/MuseScore_General.sf3");
   assert.ok(soundFontAssets.includes(MUSESCORE_GENERAL_SF3_PROTOTYPE));
+});
+
+test("MuseScore General descriptor can be configured as an external distributed asset", () => {
+  const descriptor = createMuseScoreGeneralSoundFontDescriptor({
+    VITE_FUGEMATON_SOUNDFONT_URL: " https://assets.example.invalid/MuseScore_General.sf3 ",
+    VITE_FUGEMATON_SOUNDFONT_INTEGRITY: " sha256-test ",
+  });
+
+  assert.equal(descriptor.distributed, true);
+  assert.equal(descriptor.url, "https://assets.example.invalid/MuseScore_General.sf3");
+  assert.equal(descriptor.integrity, "sha256-test");
 });

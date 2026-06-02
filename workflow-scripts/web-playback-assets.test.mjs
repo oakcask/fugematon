@@ -45,6 +45,46 @@ test("verifyPlaybackAssets requires notice metadata for distributed SoundFont as
   assert.match(errors.join("\n"), /web\.soundfont\.asset-notice-mismatch:/);
 });
 
+test("verifyPlaybackAssets accepts external SoundFont assets with notice metadata and integrity", () => {
+  const errors = verifyPlaybackAssets({
+    noticesData: {
+      software: [],
+      audioAssets: [
+        {
+          assetId: "musescore-general-sf3-prototype",
+          sourceTitle: "MuseScore General SF3 prototype",
+          sourceUrl: "https://musescore.org/en/handbook/soundfonts",
+          license: "MIT",
+          attribution: "S. Christian Collins, MuseScore General SoundFont",
+          attributionRequired: true,
+          distributed: true,
+        },
+      ],
+    },
+    noticeText: "",
+    soundFontAssets: [
+      {
+        assetId: "musescore-general-sf3-prototype",
+        displayName: "MuseScore General SF3 prototype",
+        fileName: "MuseScore_General.sf3",
+        url: "https://assets.example.invalid/MuseScore_General.sf3",
+        integrity: "sha256-test",
+        license: "MIT",
+        sourceUrl: "https://musescore.org/en/handbook/soundfonts",
+        distributed: true,
+      },
+    ],
+    publicDir: "missing-public-dir",
+    appDistDir: "missing-app-dist-dir",
+    appDistExists: false,
+  });
+
+  assert.deepEqual(
+    errors.filter((error) => !error.startsWith("web.notices.artifact-missing:")),
+    [],
+  );
+});
+
 test("verifyDistributedSoundFontAsset requires integrity for external distributed assets", () => {
   const errors = verifyDistributedSoundFontAsset(
     {

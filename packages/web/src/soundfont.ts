@@ -41,17 +41,35 @@ export type SoundFontPlaybackAdapter = {
   stop(): void;
 };
 
-export const MUSESCORE_GENERAL_SF3_PROTOTYPE: SoundFontAssetDescriptor = {
-  assetId: "musescore-general-sf3-prototype",
-  displayName: "MuseScore General SF3 prototype",
-  fileName: "MuseScore_General.sf3",
-  url: "/soundfonts/MuseScore_General.sf3",
-  license: "MIT",
-  sourceUrl: "https://musescore.org/en/handbook/soundfonts",
-  distributed: false,
+export type SoundFontAssetEnvironment = {
+  VITE_FUGEMATON_SOUNDFONT_URL?: string;
+  VITE_FUGEMATON_SOUNDFONT_INTEGRITY?: string;
 };
 
+const MUSESCORE_GENERAL_SF3_FILE_NAME = "MuseScore_General.sf3";
+const MUSESCORE_GENERAL_SF3_LOCAL_URL = `/soundfonts/${MUSESCORE_GENERAL_SF3_FILE_NAME}`;
+
+export const MUSESCORE_GENERAL_SF3_PROTOTYPE = createMuseScoreGeneralSoundFontDescriptor();
+
 export const soundFontAssets: readonly SoundFontAssetDescriptor[] = [MUSESCORE_GENERAL_SF3_PROTOTYPE];
+
+export function createMuseScoreGeneralSoundFontDescriptor(
+  environment: SoundFontAssetEnvironment = readSoundFontAssetEnvironment(),
+): SoundFontAssetDescriptor {
+  const externalUrl = normalizeOptionalValue(environment.VITE_FUGEMATON_SOUNDFONT_URL);
+  const integrity = normalizeOptionalValue(environment.VITE_FUGEMATON_SOUNDFONT_INTEGRITY);
+
+  return {
+    assetId: "musescore-general-sf3-prototype",
+    displayName: "MuseScore General SF3 prototype",
+    fileName: MUSESCORE_GENERAL_SF3_FILE_NAME,
+    url: externalUrl ?? MUSESCORE_GENERAL_SF3_LOCAL_URL,
+    ...(integrity === undefined ? {} : { integrity }),
+    license: "MIT",
+    sourceUrl: "https://musescore.org/en/handbook/soundfonts",
+    distributed: externalUrl !== undefined,
+  };
+}
 
 export function createSoundFontEvents(
   model: PlaybackModel,
@@ -112,4 +130,24 @@ function eventRank(event: SoundFontRendererEvent): number {
   }
 
   return event.kind === "note-off" ? 1 : 2;
+}
+
+function readSoundFontAssetEnvironment(): SoundFontAssetEnvironment {
+  return {
+    ...readProcessEnvironment(),
+    ...((import.meta.env ?? {}) as SoundFontAssetEnvironment),
+  };
+}
+
+function normalizeOptionalValue(value: string | undefined): string | undefined {
+  const normalized = value?.trim();
+  return normalized === undefined || normalized.length === 0 ? undefined : normalized;
+}
+
+function readProcessEnvironment(): SoundFontAssetEnvironment {
+  if (typeof process === "undefined") {
+    return {};
+  }
+
+  return process.env;
 }
