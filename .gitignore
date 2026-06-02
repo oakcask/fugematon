@@ -3,6 +3,7 @@ node_modules/
 dist/
 app-dist/
 packages/web/public/og-image.png
+packages/web/public/NOTICE.txt
 packages/web/public/soundfonts/*.sf3
 *.tsbuildinfo
 samples/

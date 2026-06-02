@@ -13,7 +13,7 @@
     "vite": "^8.0.13"
   },
   "scripts": {
-    "dev": "vite --host 127.0.0.1",
+    "dev": "tsc -b && node ../../workflow-scripts/web-playback-assets.mjs write-notice && vite --host 127.0.0.1",
     "og:image": "node scripts/render-og-image.mjs",
     "og:image:app-dist": "node scripts/render-og-image.mjs --app-dist",
     "build": "tsc -b && node ../../workflow-scripts/web-playback-assets.mjs write-notice && vite build && node ../../workflow-scripts/web-playback-assets.mjs verify",
