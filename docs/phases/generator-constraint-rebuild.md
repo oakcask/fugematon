@@ -24,6 +24,8 @@ The first final-repair downgrade ports harmonic-stasis rearticulation cleanup ou
 
 The harmonic-continuity support slice ports short pivot-episode support cleanup into score-level deterministic local search. Score-level rows now preserve unrepaired and repaired harmonic-continuity evidence before adoption, reject repairs that increase hard failures, and keep remaining review-required continuity windows visible rather than accepting them without audible score support.
 
+The score-level support cleanup trace slice completes the remaining focused support cleanup downgrade for functional thinning, post-entry continuation support, long-rest phrase closure, and bass-answer tail texture support. The score-level adoption loop keeps unrepaired / repaired trace evidence, rejects hard-failure regressions, and leaves texture voice-crossing repair review-visible because the target bundle has no score delta for that surface.
+
 ## Implementation Order
 
 1. Keep the existing subject, answer, section, harmony, and `WritingProfile` builders as solver input.
@@ -31,7 +33,7 @@ The harmonic-continuity support slice ports short pivot-episode support cleanup 
 3. Port exposition generation first so subject identity, answer identity, entry order, key metadata, and profile pitch contracts are produced by search rather than repair. Complete for the non-continuation exposition slice: initial generation now selects between two local candidates before continuation generation.
 4. Add entry-local support constraints for prepared consonance/dissonance handling, carried outside voices, staggered attacks, and post-entry continuity. Complete for important subject / answer entry windows; remaining subject-fragment episode entry support belongs to the later episode / free-counterpoint slice.
 5. Add episode and free-counterpoint constraints for motivic derivation, harmony realization, independent contour/rhythm, and clash resolution. Complete: section-local continuation candidates now enter `generatorSearchTrace` with stable candidate ids and soft-cost explanations for episode / free-counterpoint behavior; score-window acceptance structurally classifies subject-fragment entry support and exposed free-counterpoint solo / thinning.
-6. Downgrade or remove repair passes only after the corresponding solver constraint directly guarantees the behavior. Terminal-support candidate costs are now in place for terminal continuation windows. Harmonic-stasis rearticulation final repair is downgraded with section-local and score-level before / after trace evidence; remaining repair surfaces stay pending focused replacement evidence.
+6. Downgrade or remove repair passes only after the corresponding solver constraint directly guarantees the behavior. Terminal-support candidate costs are now in place for terminal continuation windows. Harmonic-stasis rearticulation, harmonic-continuity support, and the focused score-level support cleanup group are downgraded with before / after trace evidence. Texture voice-crossing repair remains review-visible until a bundle shows a real score delta.
 
 ## Theory Inputs
 

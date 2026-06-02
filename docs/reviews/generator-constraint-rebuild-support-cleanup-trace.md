@@ -54,5 +54,6 @@ The regenerated review bundle preserves the target score and metric surface whil
 * `node --test packages/core/dist/generate-harmonic-continuity-review.test.js packages/core/dist/generate-harmonic-stasis-rearticulation.test.js packages/core/dist/generate-post-entry-thin-support-review.test.js`
 * Focused 22 seed comparison against the target bundle
 * Refreshed implementation check: the regenerated 22 seed metrics and trace coverage still match this table, and all 22 ScoreEvent JSON files exactly match `samples/generator-constraint-rebuild-next-target/scores`
+* Target completion check: regenerated `samples/generator-constraint-rebuild-target-completion/review` and `samples/generator-constraint-rebuild-target-completion/scores` at 129600 ticks; both directories match the target baseline, with no ScoreEvent structural diffs.
 
 Manual listening was not performed.
