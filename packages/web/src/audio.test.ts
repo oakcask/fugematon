@@ -185,9 +185,60 @@ test("ScorePlayer schedules soundfont prototype events when an adapter is provid
   assert.equal(adapter.loadCount, 1);
   assert.equal(context.oscillatorStarts.length, 0);
   assert.equal(player.rendererStatus.active, "soundfont-prototype");
-  assert.ok(adapter.scheduledEvents.some((event) => event.kind === "program-change" && event.program === 73));
+  assert.ok(adapter.scheduledEvents.some((event) => event.kind === "program-change" && event.program === 46));
   assert.ok(adapter.scheduledEvents.some((event) => event.kind === "note-on" && event.pitch === 60));
   assert.ok(adapter.scheduledEvents.some((event) => event.kind === "note-off" && event.pitch === 60));
+});
+
+test("ScorePlayer stop stops the soundfont adapter", async () => {
+  const context = new FakeAudioContext();
+  const adapter = new FakeSoundFontAdapter();
+  const player = new ScorePlayer(context as unknown as AudioContext, {
+    rendererId: "soundfont-prototype",
+    soundFontAdapter: adapter,
+  });
+  const model = createTinyPlaybackModel({
+    totalSeconds: 4,
+    notes: [{ startSecond: 0, durationSecond: 1 }],
+  });
+
+  assert.equal(await player.play(model), true);
+  adapter.stopCount = 0;
+  player.stop();
+
+  assert.equal(adapter.stopCount, 1);
+  assert.equal(player.isPlaying, false);
+});
+
+test("ScorePlayer resumes soundfont playback from a paused offset", async () => {
+  const context = new FakeAudioContext();
+  const adapter = new FakeSoundFontAdapter();
+  const player = new ScorePlayer(context as unknown as AudioContext, {
+    rendererId: "soundfont-prototype",
+    soundFontAdapter: adapter,
+  });
+  const model = createTinyPlaybackModel({
+    totalSeconds: 4,
+    notes: [
+      { startSecond: 0, durationSecond: 1 },
+      { startSecond: 2, durationSecond: 1 },
+    ],
+  });
+
+  assert.equal(await player.play(model), true);
+  context.currentTime = 1.12;
+  assert.equal(round(player.pause()), 1);
+  adapter.scheduledEvents.length = 0;
+
+  assert.equal(await player.play(model, { offsetSecond: 1 }), true);
+
+  assert.equal(adapter.loadCount, 2);
+  assert.ok(adapter.scheduledEvents.every((event) => event.timeSecond >= context.currentTime));
+  assert.ok(adapter.scheduledEvents.some((event) => event.kind === "note-on" && event.pitch === 61));
+  assert.equal(
+    adapter.scheduledEvents.some((event) => event.kind === "note-on" && event.pitch === 60),
+    false,
+  );
 });
 
 test("ScorePlayer falls back to oscillator when soundfont prototype adapter is missing", async () => {
@@ -347,6 +398,7 @@ class FakeAudioContext {
 
 class FakeSoundFontAdapter implements SoundFontPlaybackAdapter {
   loadCount = 0;
+  stopCount = 0;
   readonly scheduledEvents: SoundFontRendererEvent[] = [];
 
   load(): Promise<void> {
@@ -358,5 +410,7 @@ class FakeSoundFontAdapter implements SoundFontPlaybackAdapter {
     this.scheduledEvents.push(...events);
   }
 
-  stop(): void {}
+  stop(): void {
+    this.stopCount += 1;
+  }
 }

@@ -46,6 +46,8 @@ Risks and mitigations:
 * Package volatility: the library has active releases and a recent major-version transition. Pin exact versions and avoid `latest`.
 * Worklet packaging: the processor is a separate runtime file. Add a test or build check that fails if the deployed asset is missing.
 * Browser behavior: the README notes Chromium-based distortion risk. Keep the renderer switch and fallback visible for manual listening review.
+* Timbre masking: early manual trials with multiple General MIDI programs, including string, organ, piano / music-box, and harp-like presets, suggest the SoundFont path can sound muddier than the current oscillator renderer because richer sample harmonics stack across four contrapuntal voices. Treat instrument choice as a listening-review risk, not only a program-number tuning problem; evaluate whether voice-specific programs, lower gain / velocity, narrower registrations, or a simpler sampler are needed before making SoundFont playback the default.
+* Continuous-fugue latency: early manual trials suggest the SoundFont path can introduce audible delay or disruption while the next continuous-fugue segment is being generated. Treat this as a renderer / scheduling risk before defaulting to SoundFont playback; verify whether SpessaSynth event scheduling, synth recreation after stop / pause, SoundFont memory pressure, or main-thread generation and UI work compete with segment prefetch near boundaries.
 * Bundle size: do not eagerly include a 35.9 MB soundfont in the initial application bundle. Prefer lazy download with cache headers or a separate optional asset package.
 * License notices: Apache-2.0 and MIT notices are required in the app and release artifact.
 
@@ -159,10 +161,25 @@ The fourth prototype pass chooses the deployable pilot configuration path withou
 * `packages/web/src/notices.ts` derives the matching audio asset notice from distributed SoundFont descriptors, so enabling the external `.sf3` URL also exposes the MIT SoundFont notice in the in-app notices view and generated `NOTICE.txt`.
 * This keeps `MuseScore_General.sf3` out of the initial JavaScript bundle and out of the repository while making the deploy-ready configuration explicit and CI-verifiable.
 
+The fifth prototype pass changes the preferred deployable asset path from a hosted external URL to a deploy-time Ubuntu package copy:
+
+* GitHub Pages deployment should install `musescore-general-soundfont-small` from Ubuntu `universe`, copy the package-provided `MuseScore_General_Lite.sf3` into `packages/web/public/soundfonts/` under the configured deploy filename, then run the existing web build so Vite copies the `.sf3` into the deploy artifact.
+* Prefer a pinned runner such as `ubuntu-24.04` over `ubuntu-latest` so the package source and version do not drift silently when GitHub changes the runner image.
+* Ubuntu Noble package metadata checked on 2026-06-02 shows `musescore-general-soundfont-small` version `0.2.1-1`; the local `apt-cache` candidate matches that version and describes the package as the lossy MuseScore General SoundFont.
+* The package description states that `musescore-general-soundfont-small` contains the normal SoundFont shipped with MuseScore 3.x, lossily SF3-compressed, installed under the standard Debian SF3 soundfont directory, and distributed under MIT.
+* The deploy workflow should find the installed `.sf3` with package metadata, copy it to the configured local public URL, and fail with a searchable error id if the package, copied file, expected file name, or checksum check is missing.
+* `pnpm web:soundfont:prepare` verifies the Ubuntu package license metadata, locates the installed `MuseScore_General*.sf3`, and copies it into `packages/web/public/soundfonts/MuseScore_General.sf3` for local Vite playback or Pages bundling.
+* `pnpm web:dev:soundfont` runs the prepare step, rebuilds with `VITE_FUGEMATON_SOUNDFONT_URL=/soundfonts/MuseScore_General.sf3` so the generated `NOTICE.txt` includes the SoundFont audio asset notice, then starts `pnpm web:dev` with the same environment for manual listening.
+* `.github/workflows/deploy--gh-pages.yaml` now installs `musescore-general-soundfont-small` on a pinned `ubuntu-24.04` runner and runs `pnpm web:soundfont:prepare` before building or uploading the Pages artifact.
+* The license verifier reads the installed package description and copyright file, then fails with searchable error ids if the package no longer advertises MIT licensing, the `MuseScore_General SoundFont (MIT, parts PD or CC0)` copyright header changes, or the MIT permission / warranty text is missing.
+* The SpessaSynth adapter now rejects likely HTML responses before handing data to the SF3 parser, so a missing Vite public asset reports `web.audio.soundfont-asset-html-response` instead of a low-level `Invalid chunk header` parser failure.
+* Keep `VITE_FUGEMATON_SOUNDFONT_URL=/soundfonts/MuseScore_General.sf3` for deployment rather than an external HTTPS URL. That lets the existing playback asset verifier check both the web public source and built deploy artifact.
+* `workflow-scripts/web-playback-assets.mjs` still rejects external distributed SoundFont descriptors when the URL basename does not match the declared file name or the integrity value is not a `sha256`, `sha384`, or `sha512` Subresource Integrity token. This remains a fallback guardrail, but it is no longer the preferred GitHub Pages delivery path.
+* A previously checked OSUOSL-hosted file had SHA-256 hex digest `5b85b6c2c61d10b2b91cddd41efcce7b25cd31c8271d511c73afafbef20b6fa3` and SRI value `sha256-W4W2wsYdELK5HN3UHvzOeyXNMcgnHVEcc6+vvvILb6M=`. Treat this only as comparison evidence unless the deploy process switches back to external hosting.
+
 Still pending:
 
-* Choose the actual hosted `MuseScore_General.sf3` URL and integrity value for any deployment that enables the SoundFont pilot.
-* Complete manual listening comparison between oscillator and SoundFont playback.
+* Complete manual listening comparison between oscillator and SoundFont playback, including whether SoundFont harmonic density masks contrapuntal line clarity and whether continuous-fugue segment generation causes SoundFont-only boundary latency.
 
 ## Sources
 
@@ -172,3 +189,5 @@ Still pending:
 * `spessasynth_core` npm registry metadata: https://registry.npmjs.org/spessasynth_core
 * VSCO 2 Community Edition official page: https://versilian-studios.com/vsco-community/
 * MuseScore SoundFonts handbook: https://musescore.org/en/handbook/soundfonts
+* Ubuntu Noble sound packages: https://packages.ubuntu.com/en/noble/sound/
+* Ubuntu `musescore-general-soundfont-small` package metadata: https://launchpad.net/ubuntu/noble/+package/musescore-general-soundfont-small

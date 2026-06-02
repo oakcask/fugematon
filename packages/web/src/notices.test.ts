@@ -46,7 +46,7 @@ test("createNoticesData emits audio asset notices for configured distributed Sou
   const data = createNoticesData([
     createMuseScoreGeneralSoundFontDescriptor({
       VITE_FUGEMATON_SOUNDFONT_URL: "https://assets.example.invalid/MuseScore_General.sf3",
-      VITE_FUGEMATON_SOUNDFONT_INTEGRITY: "sha256-test",
+      VITE_FUGEMATON_SOUNDFONT_INTEGRITY: "sha256-dGVzdA==",
     }),
   ]);
 
