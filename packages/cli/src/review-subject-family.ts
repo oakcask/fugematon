@@ -11,13 +11,17 @@ export type InitialSubjectProfile = {
 };
 
 export type SubjectFamilyDiversitySummary = {
-  schemaVersion: 1;
+  schemaVersion: 2;
   seedCount: number;
   uniqueInitialSubjectFamilyCount: number;
   uniqueInitialSubjectRhythmPatternCount: number;
   uniqueInitialSubjectClimaxIndexCount: number;
   topInitialSubjectFamilyShare: number;
+  top3InitialSubjectFamilyShare: number;
+  top5InitialSubjectFamilyShare: number;
   topInitialSubjectFragmentFamilyShare: number;
+  top3SubjectFragmentFamilyShare: number;
+  top5SubjectFragmentFamilyShare: number;
   initialSubjectFamilyEntropy: number;
   findings: SubjectFamilyDiversityFinding[];
   initialSubjectFamilies: SubjectFamilySummary[];
@@ -27,9 +31,13 @@ export type SubjectFamilyDiversitySummary = {
 export type SubjectFamilyDiversityFinding = {
   code:
     | "initial-subject-family-concentration"
+    | "initial-subject-top3-concentration"
+    | "initial-subject-top5-concentration"
     | "initial-subject-rhythm-collapse"
     | "initial-subject-climax-collapse"
-    | "subject-fragment-vocabulary-collapse";
+    | "subject-fragment-vocabulary-collapse"
+    | "subject-fragment-top3-concentration"
+    | "subject-fragment-top5-concentration";
   severity: "review-required";
   metric: string;
   actual: number;
@@ -75,23 +83,36 @@ export function summarizeSubjectFamilyDiversity(seeds: readonly SubjectFamilySee
   const subjectFragmentFamilies = summarizeSubjectFragmentFamilies(seeds);
   const initialSubjectRhetoric = summarizeInitialSubjectRhetoric(seeds);
   const topInitialSubjectFamilyShare = initialSubjectFamilies[0]?.share ?? 0;
+  const top3InitialSubjectFamilyShare = topNFamilyShare(initialSubjectFamilies, 3, seeds.length);
+  const top5InitialSubjectFamilyShare = topNFamilyShare(initialSubjectFamilies, 5, seeds.length);
   const topInitialSubjectFragmentFamilyShare = subjectFragmentFamilies[0]?.share ?? 0;
+  const top3SubjectFragmentFamilyShare = topNFamilyShare(subjectFragmentFamilies, 3, seeds.length);
+  const top5SubjectFragmentFamilyShare = topNFamilyShare(subjectFragmentFamilies, 5, seeds.length);
   const findings = summarizeFindings({
-    uniqueInitialSubjectFamilyCount: initialSubjectFamilies.length,
-    uniqueInitialSubjectRhythmPatternCount: initialSubjectRhetoric.uniqueRhythmPatternCount,
-    uniqueInitialSubjectClimaxIndexCount: initialSubjectRhetoric.uniqueClimaxIndexCount,
-    topInitialSubjectFamilyShare,
-    topInitialSubjectFragmentFamilyShare,
-  });
-
-  return {
-    schemaVersion: 1,
     seedCount: seeds.length,
     uniqueInitialSubjectFamilyCount: initialSubjectFamilies.length,
     uniqueInitialSubjectRhythmPatternCount: initialSubjectRhetoric.uniqueRhythmPatternCount,
     uniqueInitialSubjectClimaxIndexCount: initialSubjectRhetoric.uniqueClimaxIndexCount,
     topInitialSubjectFamilyShare,
+    top3InitialSubjectFamilyShare,
+    top5InitialSubjectFamilyShare,
     topInitialSubjectFragmentFamilyShare,
+    top3SubjectFragmentFamilyShare,
+    top5SubjectFragmentFamilyShare,
+  });
+
+  return {
+    schemaVersion: 2,
+    seedCount: seeds.length,
+    uniqueInitialSubjectFamilyCount: initialSubjectFamilies.length,
+    uniqueInitialSubjectRhythmPatternCount: initialSubjectRhetoric.uniqueRhythmPatternCount,
+    uniqueInitialSubjectClimaxIndexCount: initialSubjectRhetoric.uniqueClimaxIndexCount,
+    topInitialSubjectFamilyShare,
+    top3InitialSubjectFamilyShare,
+    top5InitialSubjectFamilyShare,
+    topInitialSubjectFragmentFamilyShare,
+    top3SubjectFragmentFamilyShare,
+    top5SubjectFragmentFamilyShare,
     initialSubjectFamilyEntropy: roundRatio(
       entropy(initialSubjectFamilies.map((family) => family.seedCount / Math.max(1, seeds.length))),
     ),
@@ -112,7 +133,11 @@ export function compareSubjectFamilyDiversity(
     uniqueInitialSubjectRhythmPatternCount: number;
     uniqueInitialSubjectClimaxIndexCount: number;
     topInitialSubjectFamilyShare: number;
+    top3InitialSubjectFamilyShare: number;
+    top5InitialSubjectFamilyShare: number;
     topInitialSubjectFragmentFamilyShare: number;
+    top3SubjectFragmentFamilyShare: number;
+    top5SubjectFragmentFamilyShare: number;
     findingCount: number;
   };
   improvements: string[];
@@ -127,8 +152,20 @@ export function compareSubjectFamilyDiversity(
     topInitialSubjectFamilyShare: roundRatio(
       variant.topInitialSubjectFamilyShare - baseline.topInitialSubjectFamilyShare,
     ),
+    top3InitialSubjectFamilyShare: roundRatio(
+      variant.top3InitialSubjectFamilyShare - baseline.top3InitialSubjectFamilyShare,
+    ),
+    top5InitialSubjectFamilyShare: roundRatio(
+      variant.top5InitialSubjectFamilyShare - baseline.top5InitialSubjectFamilyShare,
+    ),
     topInitialSubjectFragmentFamilyShare: roundRatio(
       variant.topInitialSubjectFragmentFamilyShare - baseline.topInitialSubjectFragmentFamilyShare,
+    ),
+    top3SubjectFragmentFamilyShare: roundRatio(
+      variant.top3SubjectFragmentFamilyShare - baseline.top3SubjectFragmentFamilyShare,
+    ),
+    top5SubjectFragmentFamilyShare: roundRatio(
+      variant.top5SubjectFragmentFamilyShare - baseline.top5SubjectFragmentFamilyShare,
     ),
     findingCount: variant.findings.length - baseline.findings.length,
   };
@@ -239,17 +276,27 @@ function summarizeSubjectFragmentFamilies(seeds: readonly SubjectFamilySeed[]): 
 }
 
 function summarizeFindings({
+  seedCount,
   uniqueInitialSubjectFamilyCount,
   uniqueInitialSubjectRhythmPatternCount,
   uniqueInitialSubjectClimaxIndexCount,
   topInitialSubjectFamilyShare,
+  top3InitialSubjectFamilyShare,
+  top5InitialSubjectFamilyShare,
   topInitialSubjectFragmentFamilyShare,
+  top3SubjectFragmentFamilyShare,
+  top5SubjectFragmentFamilyShare,
 }: {
+  seedCount: number;
   uniqueInitialSubjectFamilyCount: number;
   uniqueInitialSubjectRhythmPatternCount: number;
   uniqueInitialSubjectClimaxIndexCount: number;
   topInitialSubjectFamilyShare: number;
+  top3InitialSubjectFamilyShare: number;
+  top5InitialSubjectFamilyShare: number;
   topInitialSubjectFragmentFamilyShare: number;
+  top3SubjectFragmentFamilyShare: number;
+  top5SubjectFragmentFamilyShare: number;
 }): SubjectFamilyDiversityFinding[] {
   const findings: SubjectFamilyDiversityFinding[] = [];
 
@@ -261,6 +308,28 @@ function summarizeFindings({
       actual: topInitialSubjectFamilyShare,
       expected: "at least 4 initial subject families and no top family above 0.4 share",
       message: "Initial subjects are concentrated across the review seed bundle.",
+    });
+  }
+
+  if (seedCount >= 8 && top3InitialSubjectFamilyShare > 0.6) {
+    findings.push({
+      code: "initial-subject-top3-concentration",
+      severity: "review-required",
+      metric: "top3InitialSubjectFamilyShare",
+      actual: top3InitialSubjectFamilyShare,
+      expected: "top 3 initial subject families at or below 0.6 share",
+      message: "Initial subjects concentrate in the top three families across the review seed bundle.",
+    });
+  }
+
+  if (seedCount >= 12 && top5InitialSubjectFamilyShare > 0.8) {
+    findings.push({
+      code: "initial-subject-top5-concentration",
+      severity: "review-required",
+      metric: "top5InitialSubjectFamilyShare",
+      actual: top5InitialSubjectFamilyShare,
+      expected: "top 5 initial subject families at or below 0.8 share",
+      message: "Initial subjects concentrate in the top five families across the review seed bundle.",
     });
   }
 
@@ -297,6 +366,28 @@ function summarizeFindings({
     });
   }
 
+  if (seedCount >= 8 && top3SubjectFragmentFamilyShare > 0.65) {
+    findings.push({
+      code: "subject-fragment-top3-concentration",
+      severity: "review-required",
+      metric: "top3SubjectFragmentFamilyShare",
+      actual: top3SubjectFragmentFamilyShare,
+      expected: "top 3 subject-fragment families at or below 0.65 share",
+      message: "Subject fragments concentrate in the top three families across the review seed bundle.",
+    });
+  }
+
+  if (seedCount >= 12 && top5SubjectFragmentFamilyShare > 0.85) {
+    findings.push({
+      code: "subject-fragment-top5-concentration",
+      severity: "review-required",
+      metric: "top5SubjectFragmentFamilyShare",
+      actual: top5SubjectFragmentFamilyShare,
+      expected: "top 5 subject-fragment families at or below 0.85 share",
+      message: "Subject fragments concentrate in the top five families across the review seed bundle.",
+    });
+  }
+
   return findings;
 }
 
@@ -305,7 +396,11 @@ function describeImprovements(deltas: {
   uniqueInitialSubjectRhythmPatternCount: number;
   uniqueInitialSubjectClimaxIndexCount: number;
   topInitialSubjectFamilyShare: number;
+  top3InitialSubjectFamilyShare: number;
+  top5InitialSubjectFamilyShare: number;
   topInitialSubjectFragmentFamilyShare: number;
+  top3SubjectFragmentFamilyShare: number;
+  top5SubjectFragmentFamilyShare: number;
   findingCount: number;
 }): string[] {
   const improvements: string[] = [];
@@ -321,8 +416,20 @@ function describeImprovements(deltas: {
   if (deltas.topInitialSubjectFamilyShare < 0) {
     improvements.push("top initial subject family share decreased");
   }
+  if (deltas.top3InitialSubjectFamilyShare < 0) {
+    improvements.push("top 3 initial subject family share decreased");
+  }
+  if (deltas.top5InitialSubjectFamilyShare < 0) {
+    improvements.push("top 5 initial subject family share decreased");
+  }
   if (deltas.topInitialSubjectFragmentFamilyShare < 0) {
     improvements.push("top subject-fragment family share decreased");
+  }
+  if (deltas.top3SubjectFragmentFamilyShare < 0) {
+    improvements.push("top 3 subject-fragment family share decreased");
+  }
+  if (deltas.top5SubjectFragmentFamilyShare < 0) {
+    improvements.push("top 5 subject-fragment family share decreased");
   }
   if (deltas.findingCount < 0) {
     improvements.push("subject-family diversity finding count decreased");
@@ -336,7 +443,11 @@ function describeRegressions(deltas: {
   uniqueInitialSubjectRhythmPatternCount: number;
   uniqueInitialSubjectClimaxIndexCount: number;
   topInitialSubjectFamilyShare: number;
+  top3InitialSubjectFamilyShare: number;
+  top5InitialSubjectFamilyShare: number;
   topInitialSubjectFragmentFamilyShare: number;
+  top3SubjectFragmentFamilyShare: number;
+  top5SubjectFragmentFamilyShare: number;
   findingCount: number;
 }): string[] {
   const regressions: string[] = [];
@@ -352,8 +463,20 @@ function describeRegressions(deltas: {
   if (deltas.topInitialSubjectFamilyShare > 0) {
     regressions.push("top initial subject family share increased");
   }
+  if (deltas.top3InitialSubjectFamilyShare > 0) {
+    regressions.push("top 3 initial subject family share increased");
+  }
+  if (deltas.top5InitialSubjectFamilyShare > 0) {
+    regressions.push("top 5 initial subject family share increased");
+  }
   if (deltas.topInitialSubjectFragmentFamilyShare > 0) {
     regressions.push("top subject-fragment family share increased");
+  }
+  if (deltas.top3SubjectFragmentFamilyShare > 0) {
+    regressions.push("top 3 subject-fragment family share increased");
+  }
+  if (deltas.top5SubjectFragmentFamilyShare > 0) {
+    regressions.push("top 5 subject-fragment family share increased");
   }
   if (deltas.findingCount > 0) {
     regressions.push("subject-family diversity finding count increased");
@@ -364,6 +487,11 @@ function describeRegressions(deltas: {
 
 function entropy(shares: readonly number[]): number {
   return shares.reduce((sum, share) => (share > 0 ? sum - share * Math.log2(share) : sum), 0);
+}
+
+function topNFamilyShare(families: readonly { seedCount: number }[], topN: number, seedCount: number): number {
+  const topSeedCount = families.slice(0, topN).reduce((sum, family) => sum + family.seedCount, 0);
+  return roundRatio(topSeedCount / Math.max(1, seedCount));
 }
 
 function roundRatio(value: number): number {

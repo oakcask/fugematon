@@ -97,6 +97,8 @@ Extend review diagnostics so the symptom is visible even when no single family e
 
 Keep `subjectFamilyDiversity` as the bundle-level surface, or add a sibling summary if the rhetoric metrics would make that surface too broad.
 
+Implementation note: `subjectFamilyDiversity` schema v2 now exposes top-3 and top-5 initial subject family share plus top-3 and top-5 subject-fragment family share. These are review-required diagnostics, not CI-blocking gates. The full subject-rhetoric generator, opening-gesture concentration, rhythm concentration, climax-area concentration, tail-motion concentration, modal/meter sweep summaries, and ad hoc seed sweep remain open work.
+
 ### ISRD-D: Regression and review evidence
 
 Use the existing 22 seed review bundle plus an ad hoc random seed sweep. The fixed 22 seed bundle is necessary but not sufficient, because the reported symptom is "every time" similarity rather than only representative-seed collapse.

@@ -152,7 +152,11 @@ test("review command writes diagnostics and MIDI files for review seeds", async 
         uniqueInitialSubjectRhythmPatternCount: number;
         uniqueInitialSubjectClimaxIndexCount: number;
         topInitialSubjectFamilyShare: number;
+        top3InitialSubjectFamilyShare: number;
+        top5InitialSubjectFamilyShare: number;
         topInitialSubjectFragmentFamilyShare: number;
+        top3SubjectFragmentFamilyShare: number;
+        top5SubjectFragmentFamilyShare: number;
         initialSubjectFamilyEntropy: number;
         findings: { code: string; severity: string }[];
         initialSubjectFamilies: {
@@ -536,12 +540,28 @@ test("review command writes diagnostics and MIDI files for review seeds", async 
           axis.topContributingSeeds.length > 0,
       ),
     );
-    assert.equal(summary.subjectFamilyDiversity.schemaVersion, 1);
+    assert.equal(summary.subjectFamilyDiversity.schemaVersion, 2);
     assert.equal(summary.subjectFamilyDiversity.seedCount, summary.seeds.length);
     assert.ok(summary.subjectFamilyDiversity.uniqueInitialSubjectFamilyCount > 0);
     assert.ok(summary.subjectFamilyDiversity.uniqueInitialSubjectRhythmPatternCount > 0);
     assert.ok(summary.subjectFamilyDiversity.uniqueInitialSubjectClimaxIndexCount > 0);
     assert.ok(summary.subjectFamilyDiversity.topInitialSubjectFamilyShare > 0);
+    assert.ok(
+      summary.subjectFamilyDiversity.top3InitialSubjectFamilyShare >=
+        summary.subjectFamilyDiversity.topInitialSubjectFamilyShare,
+    );
+    assert.ok(
+      summary.subjectFamilyDiversity.top5InitialSubjectFamilyShare >=
+        summary.subjectFamilyDiversity.top3InitialSubjectFamilyShare,
+    );
+    assert.ok(
+      summary.subjectFamilyDiversity.top3SubjectFragmentFamilyShare >=
+        summary.subjectFamilyDiversity.topInitialSubjectFragmentFamilyShare,
+    );
+    assert.ok(
+      summary.subjectFamilyDiversity.top5SubjectFragmentFamilyShare >=
+        summary.subjectFamilyDiversity.top3SubjectFragmentFamilyShare,
+    );
     assert.ok(summary.subjectFamilyDiversity.initialSubjectFamilyEntropy >= 0);
     assert.ok(summary.subjectFamilyDiversity.initialSubjectFamilies.length > 0);
     assert.ok(summary.subjectFamilyDiversity.initialSubjectFamilies[0]!.degreePattern.length > 0);
@@ -875,6 +895,10 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
           uniqueInitialSubjectFamilyCount: number;
           uniqueInitialSubjectRhythmPatternCount: number;
           uniqueInitialSubjectClimaxIndexCount: number;
+          top3InitialSubjectFamilyShare: number;
+          top5InitialSubjectFamilyShare: number;
+          top3SubjectFragmentFamilyShare: number;
+          top5SubjectFragmentFamilyShare: number;
           findings: unknown[];
         };
         variant: {
@@ -882,6 +906,10 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
           uniqueInitialSubjectFamilyCount: number;
           uniqueInitialSubjectRhythmPatternCount: number;
           uniqueInitialSubjectClimaxIndexCount: number;
+          top3InitialSubjectFamilyShare: number;
+          top5InitialSubjectFamilyShare: number;
+          top3SubjectFragmentFamilyShare: number;
+          top5SubjectFragmentFamilyShare: number;
           findings: unknown[];
         };
         deltas: {
@@ -889,7 +917,11 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
           uniqueInitialSubjectRhythmPatternCount: number;
           uniqueInitialSubjectClimaxIndexCount: number;
           topInitialSubjectFamilyShare: number;
+          top3InitialSubjectFamilyShare: number;
+          top5InitialSubjectFamilyShare: number;
           topInitialSubjectFragmentFamilyShare: number;
+          top3SubjectFragmentFamilyShare: number;
+          top5SubjectFragmentFamilyShare: number;
           findingCount: number;
         };
         improvements: string[];
@@ -1037,6 +1069,34 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
       comparison.subjectFamilyDiversity.deltas.uniqueInitialSubjectClimaxIndexCount,
       comparison.subjectFamilyDiversity.variant.uniqueInitialSubjectClimaxIndexCount -
         comparison.subjectFamilyDiversity.baseline.uniqueInitialSubjectClimaxIndexCount,
+    );
+    assert.equal(
+      comparison.subjectFamilyDiversity.deltas.top3InitialSubjectFamilyShare,
+      roundedDelta(
+        comparison.subjectFamilyDiversity.variant.top3InitialSubjectFamilyShare,
+        comparison.subjectFamilyDiversity.baseline.top3InitialSubjectFamilyShare,
+      ),
+    );
+    assert.equal(
+      comparison.subjectFamilyDiversity.deltas.top5InitialSubjectFamilyShare,
+      roundedDelta(
+        comparison.subjectFamilyDiversity.variant.top5InitialSubjectFamilyShare,
+        comparison.subjectFamilyDiversity.baseline.top5InitialSubjectFamilyShare,
+      ),
+    );
+    assert.equal(
+      comparison.subjectFamilyDiversity.deltas.top3SubjectFragmentFamilyShare,
+      roundedDelta(
+        comparison.subjectFamilyDiversity.variant.top3SubjectFragmentFamilyShare,
+        comparison.subjectFamilyDiversity.baseline.top3SubjectFragmentFamilyShare,
+      ),
+    );
+    assert.equal(
+      comparison.subjectFamilyDiversity.deltas.top5SubjectFragmentFamilyShare,
+      roundedDelta(
+        comparison.subjectFamilyDiversity.variant.top5SubjectFragmentFamilyShare,
+        comparison.subjectFamilyDiversity.baseline.top5SubjectFragmentFamilyShare,
+      ),
     );
     assert.equal(
       comparison.subjectFamilyDiversity.deltas.findingCount,
@@ -1282,6 +1342,10 @@ function channelDataByteCount(status: number): 1 | 2 {
     return 1;
   }
   return 2;
+}
+
+function roundedDelta(variant: number, baseline: number): number {
+  return Math.round((variant - baseline) * 1000) / 1000;
 }
 
 class MidiCursor {
