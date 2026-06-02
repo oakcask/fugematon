@@ -31,6 +31,19 @@ type ContinuousBoundaryTestWindow = Window &
     };
   };
 
+type WritingProfileSelectionTestWindow = Window &
+  typeof globalThis & {
+    __writingProfileSelectionTest: {
+      requests: Array<{
+        seed: string;
+        writingProfileId: string;
+        performanceProfileId: string;
+        segmentIndex: number;
+        mode?: string;
+      }>;
+    };
+  };
+
 const VIEWPORTS = [
   { name: "desktop", size: { width: 1280, height: 900 } },
   { name: "mobile", size: { width: 390, height: 844 } },
@@ -91,6 +104,7 @@ for (const viewport of VIEWPORTS) {
     await expect(seedInput).toHaveValue(RANDOM_SEED_PATTERN);
     expect(new URL(page.url()).searchParams.get("seed")).toMatch(RANDOM_SEED_PATTERN);
     await expect(page.getByRole("button", { name: "Random seed" })).toBeVisible();
+    await expect(page.getByRole("combobox", { name: "Writing profile" })).toHaveValue("four-voice-default");
     await expect(page.getByText("Tempo")).toBeVisible();
     await expect(page.getByText("Key")).toBeVisible();
     await expect(page.getByRole("combobox", { name: "Playback source" })).toHaveValue("oscillator");
@@ -110,6 +124,9 @@ for (const viewport of VIEWPORTS) {
     await expect(page.getByRole("heading", { name: "Notices" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Software" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Audio assets" })).toBeVisible();
+    await expect
+      .poll(() => page.locator(".seed-row").evaluate((element) => element.scrollWidth <= element.clientWidth + 1))
+      .toBe(true);
 
     await page.getByRole("button", { name: "Random seed" }).click();
     await expect(seedInput).toHaveValue(RANDOM_SEED_PATTERN);
@@ -214,6 +231,163 @@ test("syncs the seed with the URL query string", async ({ page }) => {
   await page.goBack();
   await expect(seedInput).toHaveValue("url-smoke");
   expect(new URL(page.url()).searchParams.get("seed")).toBe("url-smoke");
+});
+
+test("sends the selected writing profile to browser generation", async ({ page }) => {
+  await page.addInitScript(() => {
+    type PendingRequest = {
+      requestId: number;
+      seed: string;
+      writingProfileId: string;
+      performanceProfileId: string;
+      segmentIndex: number;
+      mode?: string;
+    };
+
+    const requests: PendingRequest[] = [];
+    const listeners: Array<(event: MessageEvent) => void> = [];
+
+    function createResponse(request: PendingRequest): unknown {
+      return {
+        type: "generated",
+        requestId: request.requestId,
+        seed: request.seed,
+        writingProfileId: request.writingProfileId,
+        performanceProfileId: request.performanceProfileId,
+        model: {
+          bpm: 84,
+          ticksPerQuarter: 480,
+          timeSignature: { numerator: 4, denominator: 4 },
+          keySignature: { tonic: "C", mode: "major" },
+          totalTicks: 480,
+          totalSeconds: 0.5,
+          notes: [
+            {
+              voice: "soprano",
+              startTick: 0,
+              endTick: 480,
+              startSecond: 0,
+              durationSecond: 0.5,
+              pitch: 60,
+              velocity: 92,
+              volume: 96,
+              gain: 0.7,
+              pan: 64,
+              oscillatorType: "sine",
+              webAudioSynth: {
+                attackSeconds: 0.01,
+                decaySeconds: 0.05,
+                releaseSeconds: 0.08,
+                sustainLevel: 0.75,
+                velocityToSustainGain: 0.25,
+                velocityToAttackEmphasis: 0.2,
+              },
+            },
+          ],
+          stateTransitions: [],
+          subjectEntries: [],
+          sectionPlans: [],
+          performanceProfile: { id: request.performanceProfileId, version: 3 },
+          pitchRange: { min: 60, max: 60 },
+        },
+        deadlineResult: {
+          mode: request.mode ?? "continuous-fugue",
+          segmentIndex: request.segmentIndex,
+          elapsedMs: 1,
+          deadlineExceededByMs: 0,
+          timedOut: false,
+          hardConstraintSatisfied: true,
+          returnedCandidateKind: "generated",
+          hardConstraintSource: "generated",
+          referenceDiagnosticsPreserved: true,
+          qualityVectorPreserved: true,
+          reviewSignalsRemainVisible: [],
+        },
+        reviewSnapshot: {
+          hardConstraintsSatisfied: true,
+          fallbackPassageCount: 0,
+          issueCount: 0,
+          warningCount: 0,
+          qualityVectorStatus: "within-profile",
+          terminalClosureStatus: "not-required",
+          terminalClosureSource: "not-required",
+          continuousSegmentContinuityStatus: "not-required",
+        },
+        nextSegmentSnapshot: {
+          segmentIndex: request.segmentIndex,
+          writingProfile: { id: request.writingProfileId, version: 1 },
+        },
+      };
+    }
+
+    class CapturingGenerationWorker {
+      postMessage(message: PendingRequest): void {
+        requests.push(message);
+        window.setTimeout(() => {
+          const event = new MessageEvent("message", { data: createResponse(message) });
+          for (const listener of listeners) {
+            listener(event);
+          }
+        }, 0);
+      }
+
+      addEventListener(type: string, listener: EventListenerOrEventListenerObject): void {
+        if (type !== "message") {
+          return;
+        }
+        listeners.push(listener as (event: MessageEvent) => void);
+      }
+
+      terminate(): void {}
+    }
+
+    const target = window as WritingProfileSelectionTestWindow;
+    target.Worker = CapturingGenerationWorker as unknown as typeof Worker;
+    target.__writingProfileSelectionTest = { requests };
+  });
+
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto("/?seed=writing-profile-ui");
+
+  const writingProfile = page.getByRole("combobox", { name: "Writing profile" });
+  await expect(writingProfile).toHaveValue("four-voice-default");
+  await expect(page.getByRole("combobox", { name: "Performance profile" })).toHaveValue("strict-counterpoint");
+  await expect
+    .poll(() => page.locator(".seed-row").evaluate((element) => element.scrollWidth <= element.clientWidth + 1))
+    .toBe(true);
+  await expect
+    .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1))
+    .toBe(true);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect
+    .poll(() => page.locator(".seed-row").evaluate((element) => element.scrollWidth <= element.clientWidth + 1))
+    .toBe(true);
+  await expect
+    .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1))
+    .toBe(true);
+
+  await expect
+    .poll(() =>
+      page.evaluate(() => (window as WritingProfileSelectionTestWindow).__writingProfileSelectionTest.requests.length),
+    )
+    .toBeGreaterThanOrEqual(1);
+
+  const initialRequest = await page.evaluate(
+    () => (window as WritingProfileSelectionTestWindow).__writingProfileSelectionTest.requests[0],
+  );
+  expect(initialRequest?.writingProfileId).toBe("four-voice-default");
+
+  await writingProfile.selectOption("piano-two-hand");
+
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const requests = (window as WritingProfileSelectionTestWindow).__writingProfileSelectionTest.requests;
+        return requests.at(-1)?.writingProfileId;
+      }),
+    )
+    .toBe("piano-two-hand");
 });
 
 test("locks playback controls while primary generation is running", async ({ page }) => {

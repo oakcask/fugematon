@@ -27,6 +27,7 @@ workerScope.onmessage = (event) => {
     const output = generateScore({
       seed: request.seed,
       lengthTicks: request.lengthTicks,
+      writingProfileId: request.writingProfileId,
       selectionModel: DEFAULT_SELECTION_MODEL,
       mode: request.mode,
       segmentIndex: request.segmentIndex,
@@ -50,6 +51,7 @@ workerScope.onmessage = (event) => {
       type: "generated",
       requestId: request.requestId,
       seed: request.seed,
+      writingProfileId: request.writingProfileId,
       performanceProfileId: request.performanceProfileId,
       model: createPlaybackModel(playbackOutput, request.performanceProfileId),
       deadlineResult,

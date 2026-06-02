@@ -24,6 +24,7 @@ test("generation worker returns a playback model with deadline and review signal
   assert.equal(response.type, "generated");
   assert.equal(response.requestId, 41);
   assert.equal(response.seed, "fugue-smoke");
+  assert.equal(response.writingProfileId, "four-voice-default");
   assert.equal(response.performanceProfileId, "strict-counterpoint");
   assert.equal(response.model.performanceProfile.id, "strict-counterpoint");
   assert.ok(response.model.notes.length > 0);
@@ -54,6 +55,23 @@ test("generation worker returns a playback model with deadline and review signal
     response.reviewSnapshot.terminalClosureSource,
     /^(generated-coda|fallback-terminal-closure|bridge-compatible-closure|ordinary-terminal-cadence|not-required)$/,
   );
+});
+
+test("generation worker passes the selected writing profile into score generation", async () => {
+  const response = await dispatchWorkerRequest({
+    requestId: 48,
+    seed: "fugue-smoke",
+    writingProfileId: "piano-two-hand",
+    performanceProfileId: "strict-counterpoint",
+    lengthTicks: 1920,
+    deadlineMs: 60_000,
+    segmentIndex: 0,
+  });
+
+  assert.equal(response.type, "generated");
+  assert.equal(response.writingProfileId, "piano-two-hand");
+  assert.equal(response.nextSegmentSnapshot.writingProfile.id, "piano-two-hand");
+  assert.equal(response.nextSegmentSnapshot.writingProfile.version, 1);
 });
 
 test("generation worker passes continuous-fugue snapshots into continuation generation", async () => {
@@ -262,7 +280,10 @@ test("generation worker playback output uses conservative fallback for no-note d
   assert.equal(fallbackOutput.diagnostics.noteCount, 0);
 });
 
-async function dispatchWorkerRequest(request: GenerationWorkerRequest): Promise<GenerationWorkerResponse> {
+async function dispatchWorkerRequest(
+  request: Omit<GenerationWorkerRequest, "writingProfileId"> &
+    Partial<Pick<GenerationWorkerRequest, "writingProfileId">>,
+): Promise<GenerationWorkerResponse> {
   const messages: GenerationWorkerResponse[] = [];
   workerScope.postMessage = (message) => {
     messages.push(message);
@@ -273,7 +294,7 @@ async function dispatchWorkerRequest(request: GenerationWorkerRequest): Promise<
   if (handler === null) {
     assert.fail("worker message handler was not registered");
   }
-  handler({ data: request } as MessageEvent<GenerationWorkerRequest>);
+  handler({ data: { writingProfileId: "four-voice-default", ...request } } as MessageEvent<GenerationWorkerRequest>);
   assert.equal(messages.length, 1);
 
   return messages[0]!;
