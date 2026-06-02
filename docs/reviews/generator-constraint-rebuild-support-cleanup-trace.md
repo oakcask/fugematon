@@ -4,8 +4,8 @@ This review covers the score-level support cleanup trace slice in [Generator Con
 
 ## Findings
 
-1. Score-level support cleanup now leaves paired solver evidence before adoption.
-   The post-section cleanup sequence snapshots the unrepaired score, applies one focused surface, evaluates both drafts with the constraint core, rejects hard-failure regressions, and then adopts the repaired notes. The emitted ids are `score-<surface>-unrepaired-final-repair-evidence` and `score-<surface>-solver-repaired`, matching the existing harmonic-continuity and harmonic-stasis trace pattern.
+1. Score-level support cleanup now uses explicit candidate adoption.
+   The score-level adoption loop snapshots the unrepaired score, builds one focused repaired candidate, evaluates both drafts with the constraint core, rejects hard-failure regressions, and then adopts the repaired notes. The emitted ids are `score-<surface>-unrepaired-final-repair-evidence` and `score-<surface>-solver-repaired`, matching the existing harmonic-continuity and harmonic-stasis trace pattern.
 
 2. The focused 22 seed check exposes entry / texture support cleanup without claiming the support surface is solved.
    The 129600 tick review showed paired repaired rows for `functional-thinning-support`, `bass-answer-tail-texture-support`, and `long-rest-phrase-closure` in all 22 seeds, plus `post-entry-continuation-support` in 9 seeds. `texture-voice-crossing-repair` had no score delta in this bundle, so it emitted no row. The remaining review-required windows stay represented by diagnostics and the unrepaired trace rows.
@@ -53,5 +53,6 @@ The regenerated review bundle preserves the target score and metric surface whil
 * Generated matching score-event JSON for the 22 target seeds under `samples/generator-constraint-rebuild-current-review/scores`
 * `node --test packages/core/dist/generate-harmonic-continuity-review.test.js packages/core/dist/generate-harmonic-stasis-rearticulation.test.js packages/core/dist/generate-post-entry-thin-support-review.test.js`
 * Focused 22 seed comparison against the target bundle
+* Refreshed implementation check: the regenerated 22 seed metrics and trace coverage still match this table, and all 22 ScoreEvent JSON files exactly match `samples/generator-constraint-rebuild-next-target/scores`
 
 Manual listening was not performed.

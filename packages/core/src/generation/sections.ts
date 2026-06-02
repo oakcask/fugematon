@@ -250,7 +250,7 @@ export function buildFugueScore(
   fillAllVoiceSilenceGaps(notes, keySignature, writingProfile);
   if (selectionModel === "section-local-planner") {
     selectedConstraintCandidates.push(
-      ...applyScoreLevelSupportCleanupSolvers({
+      ...applyScoreLevelSupportCleanupCandidateAdoptions({
         notes,
         subjectEntries,
         sectionPlans,
@@ -363,7 +363,7 @@ function cloneExposition(section: Exposition): Exposition {
   };
 }
 
-function applyScoreLevelSupportCleanupSolvers(input: {
+function applyScoreLevelSupportCleanupCandidateAdoptions(input: {
   notes: NoteEvent[];
   subjectEntries: readonly PlannedEntry[];
   sectionPlans: readonly HarmonicPlan[];
@@ -394,53 +394,70 @@ function applyScoreLevelSupportCleanupSolvers(input: {
   ];
 
   for (const surface of surfaces) {
-    const beforeNotes = cloneNotes(input.notes);
-    const repairedNotes = cloneNotes(input.notes);
-    surface.apply(repairedNotes);
-    repairedNotes.sort(compareNoteEvents);
-
-    if (noteFingerprint(beforeNotes) === noteFingerprint(repairedNotes)) {
+    const adoption = buildScoreLevelSupportCleanupCandidateAdoption(input, surface);
+    if (adoption === undefined) {
       continue;
     }
 
-    const beforeCandidate = buildScoreLevelConstraintCandidate(
-      `score-${surface.id}-unrepaired-final-repair-evidence`,
-      beforeNotes,
-      input.subjectEntries,
-      input.sectionPlans,
-      input.writingProfile,
-    );
-    const afterCandidate = buildScoreLevelConstraintCandidate(
-      `score-${surface.id}-solver-repaired`,
-      repairedNotes,
-      input.subjectEntries,
-      input.sectionPlans,
-      input.writingProfile,
-    );
-    const beforeReview = evaluateScoreLevelSupportCleanupReview(
-      beforeNotes,
-      input.subjectEntries,
-      input.sectionPlans,
-      input.writingProfile,
-      beforeCandidate,
-    );
-    const afterReview = evaluateScoreLevelSupportCleanupReview(
-      repairedNotes,
-      input.subjectEntries,
-      input.sectionPlans,
-      input.writingProfile,
-      afterCandidate,
-    );
-
-    if (!shouldAdoptScoreLevelSupportCleanup(beforeReview, afterReview)) {
-      continue;
-    }
-
-    input.notes.splice(0, input.notes.length, ...repairedNotes);
-    candidates.push(beforeCandidate, afterCandidate);
+    input.notes.splice(0, input.notes.length, ...adoption.adoptedNotes);
+    candidates.push(adoption.beforeCandidate, adoption.afterCandidate);
   }
 
   return candidates;
+}
+
+function buildScoreLevelSupportCleanupCandidateAdoption(
+  input: {
+    notes: readonly NoteEvent[];
+    subjectEntries: readonly PlannedEntry[];
+    sectionPlans: readonly HarmonicPlan[];
+    writingProfile: WritingProfile;
+  },
+  surface: ScoreLevelSupportCleanupSurface,
+): { adoptedNotes: NoteEvent[]; beforeCandidate: ConstraintCandidate; afterCandidate: ConstraintCandidate } | undefined {
+  const beforeNotes = cloneNotes(input.notes);
+  const repairedNotes = cloneNotes(input.notes);
+  surface.apply(repairedNotes);
+  repairedNotes.sort(compareNoteEvents);
+
+  if (noteFingerprint(beforeNotes) === noteFingerprint(repairedNotes)) {
+    return undefined;
+  }
+
+  const beforeCandidate = buildScoreLevelConstraintCandidate(
+    `score-${surface.id}-unrepaired-final-repair-evidence`,
+    beforeNotes,
+    input.subjectEntries,
+    input.sectionPlans,
+    input.writingProfile,
+  );
+  const afterCandidate = buildScoreLevelConstraintCandidate(
+    `score-${surface.id}-solver-repaired`,
+    repairedNotes,
+    input.subjectEntries,
+    input.sectionPlans,
+    input.writingProfile,
+  );
+  const beforeReview = evaluateScoreLevelSupportCleanupReview(
+    beforeNotes,
+    input.subjectEntries,
+    input.sectionPlans,
+    input.writingProfile,
+    beforeCandidate,
+  );
+  const afterReview = evaluateScoreLevelSupportCleanupReview(
+    repairedNotes,
+    input.subjectEntries,
+    input.sectionPlans,
+    input.writingProfile,
+    afterCandidate,
+  );
+
+  if (!shouldAdoptScoreLevelSupportCleanup(beforeReview, afterReview)) {
+    return undefined;
+  }
+
+  return { adoptedNotes: repairedNotes, beforeCandidate, afterCandidate };
 }
 
 function evaluateScoreLevelSupportCleanupReview(
@@ -1369,7 +1386,7 @@ export function buildFugueContinuationScore(
   fillAllVoiceSilenceGaps(notes, keySignature, writingProfile);
   if (selectionModel === "section-local-planner") {
     selectedConstraintCandidates.push(
-      ...applyScoreLevelSupportCleanupSolvers({
+      ...applyScoreLevelSupportCleanupCandidateAdoptions({
         notes,
         subjectEntries,
         sectionPlans,
