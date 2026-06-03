@@ -498,11 +498,54 @@ function softFeatureCosts(
       explanation: "melodic leap recovery is a playability and line-agency cost",
     },
     {
+      feature: "soprano-high-register-leap",
+      cost: highRegisterSopranoLeapCost(draft.notes, window, draft.writingProfile),
+      explanation:
+        "candidate selection prefers available upper-line alternatives that avoid exposed high-register soprano leaps",
+    },
+    {
       feature: "writing-profile-playability",
       cost: writingProfilePlayabilityCost,
       explanation: "WritingProfile playability evidence ranks viable candidates after pitch-contract checks",
     },
   ].filter((cost) => cost.cost > 0);
+}
+
+function highRegisterSopranoLeapCost(
+  notes: readonly NoteEvent[],
+  window: ConstraintWindow,
+  writingProfile: WritingProfile,
+): number {
+  if (!usesConstrainedSopranoContourProfile(writingProfile)) {
+    return 0;
+  }
+
+  const sopranoNotes = notes
+    .filter((note) => note.voice === "soprano" && overlapsWindow(note, window))
+    .sort(compareNoteEvents);
+  const highRegisterThreshold = Math.min(
+    writingProfile.voiceRanges.soprano.max,
+    writingProfile.registerTargets.soprano + 9,
+  );
+  let cost = 0;
+
+  for (let index = 1; index < sopranoNotes.length; index += 1) {
+    const previous = sopranoNotes[index - 1];
+    const current = sopranoNotes[index];
+    if (previous === undefined || current === undefined) {
+      continue;
+    }
+    const leap = Math.abs(current.pitch - previous.pitch);
+    if (leap >= 7 && Math.max(previous.pitch, current.pitch) >= highRegisterThreshold) {
+      cost += 12;
+    }
+  }
+
+  return cost;
+}
+
+function usesConstrainedSopranoContourProfile(writingProfile: WritingProfile): boolean {
+  return writingProfile.playability?.kind === "music-box";
 }
 
 function continuousBoundarySoftFeatureCosts(window: ConstraintWindow): ConstraintSoftFeatureCost[] {

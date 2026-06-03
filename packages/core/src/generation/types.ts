@@ -43,7 +43,7 @@ export type Exposition = {
   sectionPlans: HarmonicPlan[];
   endTick: number;
   durationTicks: number;
-  constraintCandidateTag?: "harmonic-stasis-solver-repaired";
+  constraintCandidateFamily?: "harmonic-stasis-variant";
   constraintSourceCandidateIndex?: number;
 };
 

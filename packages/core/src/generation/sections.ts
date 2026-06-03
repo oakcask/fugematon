@@ -1440,8 +1440,8 @@ export function buildFugueContinuationScore(
       }),
     );
   }
-  fillAllVoiceSilenceGaps(notes, keySignature, writingProfile);
   if (selectionModel === "section-local-planner") {
+    fillAllVoiceSilenceGaps(notes, keySignature, writingProfile);
     selectedConstraintCandidates.push(
       ...applyScoreLevelSupportCleanupCandidateAdoptions({
         notes,
@@ -2026,6 +2026,7 @@ export function buildExposition(
   }
 
   softenFirstBassEntryBoundaryReset(notes, subjectEntries);
+  repairTextureVoiceCrossingsForNotes(notes, sectionPlans, writingProfile);
   notes.sort(compareNoteEvents);
 
   return {
@@ -2252,7 +2253,7 @@ function harmonicStasisSourceConstraintCandidates(input: {
   writingProfile: WritingProfile;
   terminalSupportCandidate: boolean;
 }): ConstraintCandidate[] {
-  if (input.selectedCandidate.constraintCandidateTag !== "harmonic-stasis-solver-repaired") {
+  if (input.selectedCandidate.constraintCandidateFamily !== "harmonic-stasis-variant") {
     return [];
   }
   const sourceIndex = input.selectedCandidate.constraintSourceCandidateIndex;
@@ -2689,7 +2690,7 @@ function buildHarmonicStasisSolverCandidates(sourceCandidates: readonly Expositi
     return [
       {
         ...repaired,
-        constraintCandidateTag: "harmonic-stasis-solver-repaired" as const,
+        constraintCandidateFamily: "harmonic-stasis-variant" as const,
         constraintSourceCandidateIndex: sourceCandidateIndex,
       },
     ];

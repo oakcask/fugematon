@@ -118,6 +118,20 @@ test("constrained writing profiles preserve hard profile and entry contracts for
       notes.every((note) => constrainNotePitchToWritingProfile(note, profile) === note.pitch),
       `${writingProfileId} should make final profile projection a no-op`,
     );
+    if (writingProfileId === "music-box-n20") {
+      const q9ToQ12SopranoPitches = notes
+        .filter(
+          (note) =>
+            note.voice === "soprano" &&
+            note.startTick >= TICKS_PER_QUARTER * 9 &&
+            note.startTick < TICKS_PER_QUARTER * 12,
+        )
+        .map((note) => note.pitch);
+      assert.ok(
+        q9ToQ12SopranoPitches.every((pitch) => pitch < 93),
+        "music-box-n20 should not choose A6",
+      );
+    }
     assert.ok(
       output.diagnostics.generatorSearchTrace.candidates.some(
         (candidate) => candidate.candidateId === "score-writing-profile-final-projection-noop",
