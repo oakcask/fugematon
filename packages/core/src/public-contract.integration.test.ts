@@ -192,7 +192,7 @@ test("public diagnostics expose finite candidate score dimensions", () => {
   assert.equal(typeof output.diagnostics.qualityVector.harmonicSonorities.focusedWindowCount, "number");
   assert.equal(typeof output.diagnostics.qualityVector.harmonicSonorities.generatorResponseWindowCount, "number");
   assert.ok(Array.isArray(output.diagnostics.qualityVector.harmonicSonorities.windows));
-  assert.equal(output.diagnostics.constraintSatisfactionReview.schemaVersion, 2);
+  assert.equal(output.diagnostics.constraintSatisfactionReview.schemaVersion, 3);
   assert.equal(typeof output.diagnostics.constraintSatisfactionReview.windowCount, "number");
   assert.equal(typeof output.diagnostics.constraintSatisfactionReview.intentionalRestSpanCount, "number");
   assert.equal(typeof output.diagnostics.constraintSatisfactionReview.unplannedSilentRunCount, "number");
@@ -216,6 +216,10 @@ test("public diagnostics expose finite candidate score dimensions", () => {
         typeof window.offMeasureEntryStartCount === "number" &&
         typeof window.unpreparedTransitionCount === "number" &&
         typeof window.preparedPickupCount === "number" &&
+        typeof window.infeasibleConstraintCounts.nonChordStructuralSupportCount === "number" &&
+        typeof window.infeasibleConstraintCounts.thinUnrootedStructuralSupportCount === "number" &&
+        typeof window.infeasibleConstraintCounts.pitchClassDoublingOnlyCount === "number" &&
+        typeof window.infeasibleConstraintCounts.mixedEntryHarmonicRiskCount === "number" &&
         Array.isArray(window.intentionalRestSpans) &&
         Array.isArray(window.unplannedSilentRuns) &&
         window.unplannedSilentRuns.every((run) => run.state === window.state && typeof run.reason === "string") &&
@@ -336,7 +340,7 @@ test("public subject entry diagnostics correspond to emitted entry notes", () =>
 
 function assertCandidateEvaluation(evaluation: CandidateEvaluation): void {
   assert.equal(evaluation.featureVersion, 9);
-  assert.equal(evaluation.evaluationModelVersion, 17);
+  assert.equal(evaluation.evaluationModelVersion, 18);
   assert.ok(Number.isFinite(evaluation.totalCost));
   assert.ok(evaluation.explanations.entries.length > 0);
   assert.ok(evaluation.explanations.voicePairs.length > 0);

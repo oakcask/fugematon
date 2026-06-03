@@ -429,6 +429,10 @@ export type SectionConstraintInfeasibleCounts = {
   longUnplannedSilentRun: number;
   structuralChordSupportMiss: number;
   structuralRootSupportMiss: number;
+  nonChordStructuralSupportCount: number;
+  thinUnrootedStructuralSupportCount: number;
+  pitchClassDoublingOnlyCount: number;
+  mixedEntryHarmonicRiskCount: number;
 };
 
 export type SectionConstraintRelaxationLevel =
@@ -457,7 +461,7 @@ export type SectionConstraintSatisfactionWindow = {
 };
 
 export type ConstraintSatisfactionReviewSummary = {
-  schemaVersion: 2;
+  schemaVersion: 3;
   windowCount: number;
   intentionalRestSpanCount: number;
   unplannedSilentRunCount: number;
@@ -525,7 +529,7 @@ export type CandidateEvaluationExplanations = {
 
 export type CandidateEvaluation = {
   featureVersion: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
-  evaluationModelVersion: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17;
+  evaluationModelVersion: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18;
   totalCost: number;
   hardFailures: DiagnosticIssueCode[];
   explanations: CandidateEvaluationExplanations;

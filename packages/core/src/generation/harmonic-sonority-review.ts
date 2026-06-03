@@ -1,4 +1,10 @@
-import type { HarmonicPlan, HarmonicSonorityReviewSummary, HarmonicSonorityWindow, NoteEvent } from "../events.js";
+import type {
+  HarmonicAnchor,
+  HarmonicPlan,
+  HarmonicSonorityReviewSummary,
+  HarmonicSonorityWindow,
+  NoteEvent,
+} from "../events.js";
 import { chordTonePitchClasses, nearestHarmonicAnchor, rootDegreeForFunction } from "./harmony.js";
 import { scaleDegreePitchClass } from "./pitch.js";
 import { positiveModulo } from "./shared.js";
@@ -23,13 +29,19 @@ export function analyzeHarmonicSonorities(
       continue;
     }
 
+    const plan = sectionPlanForSonority(sectionPlans, startTick);
+    const anchor = plan === undefined ? undefined : nearestHarmonicAnchor(startTick, [plan]);
     const activeNotes = activeNotesDuring(notes, startTick, endTick);
-    if (!isSupportTextureWindow(activeNotes)) {
+    if (
+      plan === undefined ||
+      anchor === undefined ||
+      !isHarmonicSonorityFocus(activeNotes, anchor, startTick, endTick)
+    ) {
       continue;
     }
     focusedWindowCount += 1;
 
-    const window = harmonicSonorityWindow(activeNotes, sectionPlans, startTick, durationTicks);
+    const window = assessHarmonicSonority(activeNotes, plan, anchor, startTick, durationTicks);
     if (window !== undefined) {
       windows.push(window);
     }
@@ -49,18 +61,13 @@ export function analyzeHarmonicSonorities(
   };
 }
 
-function harmonicSonorityWindow(
+export function assessHarmonicSonority(
   activeNotes: readonly NoteEvent[],
-  sectionPlans: readonly HarmonicPlan[],
+  plan: HarmonicPlan,
+  anchor: HarmonicAnchor,
   startTick: number,
   durationTicks: number,
 ): HarmonicSonorityWindow | undefined {
-  const plan = sectionPlanForSonority(sectionPlans, startTick);
-  const anchor = plan === undefined ? undefined : nearestHarmonicAnchor(startTick, [plan]);
-  if (plan === undefined || anchor === undefined) {
-    return undefined;
-  }
-
   const chordTonePitchClassesAtTick = chordTonePitchClasses(anchor.localKey, anchor.function).sort(
     (left, right) => left - right,
   );
@@ -92,7 +99,7 @@ function harmonicSonorityWindow(
   return {
     startTick,
     durationTicks,
-    state: plan.state,
+    state: isMixedEntryTexture(activeNotes) ? "mixed" : plan.state,
     localKey: anchor.localKey,
     harmonicFunction: anchor.function,
     voices: sortedVoices(activeNotes),
@@ -125,12 +132,37 @@ function activeNotesDuring(notes: readonly NoteEvent[], startTick: number, endTi
   return notes.filter((note) => note.startTick < endTick && startTick < note.startTick + note.durationTicks);
 }
 
-function isSupportTextureWindow(activeNotes: readonly NoteEvent[]): boolean {
+export function isMixedEntryTexture(activeNotes: readonly NoteEvent[]): boolean {
+  return hasEntryRole(activeNotes) && hasSupportRole(activeNotes);
+}
+
+export function hasSupportRole(activeNotes: readonly NoteEvent[]): boolean {
+  return activeNotes.some((note) => note.role === "counter-subject" || note.role === "free-counterpoint");
+}
+
+function hasEntryRole(activeNotes: readonly NoteEvent[]): boolean {
+  return activeNotes.some(
+    (note) => note.role === "subject" || note.role === "answer" || note.role === "subject-fragment",
+  );
+}
+
+function isHarmonicSonorityFocus(
+  activeNotes: readonly NoteEvent[],
+  anchor: HarmonicAnchor,
+  startTick: number,
+  endTick: number,
+): boolean {
   const activeVoices = new Set(activeNotes.map((note) => note.voice));
   return (
     activeVoices.size >= 2 &&
-    activeNotes.some((note) => note.role === "counter-subject" || note.role === "free-counterpoint") &&
-    activeNotes.every((note) => note.role !== "subject" && note.role !== "answer" && note.role !== "subject-fragment")
+    ((startTick <= anchor.tick && anchor.tick < endTick) ||
+      hasSupportRole(activeNotes) ||
+      hasEntryRole(activeNotes) ||
+      activeNotes.some(
+        (note) =>
+          note.metricalHarmonyIntent === "structural-chord-tone" ||
+          note.metricalHarmonyIntent === "structural-root-support",
+      ))
   );
 }
 

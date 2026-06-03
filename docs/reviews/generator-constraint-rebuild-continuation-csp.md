@@ -6,6 +6,8 @@ Status: implementation slice accepted for focused tests and standard review evid
 
 This update covers the CSP metrical-rhythm repair slice. It adds measure-aligned duration candidates, a `section-csp-metrical-boundary` soft cost, schema 2 metrical fields in `constraintSatisfactionReview`, section-CSP support alternatives for exposed solo / thinning cases, and final hard-contract entry identity cleanup for impossible same-voice entry overlaps. Public `ScoreEvent` remains note/meta only.
 
+Follow-up implementation update: `constraintSatisfactionReview` schema 3 now adds section-anchor harmonic-quality evidence. The local solver uses the active `WritingProfile` while ranking continuation candidates and classifies actual sonorities through the shared `harmonicSonorities` helper, including mixed entry windows. `non-chord structural support` is the focused `structural-harmonic-support` rejection; `thin-unrooted`, `pitch-class-doubling-only`, and `mixedEntryHarmonicRiskCount` stay review-required as `section-csp-harmonic-quality` soft cost. Candidate scoring and candidate-selection risk weights now give low cost to review windows and stronger cost to generator-response windows, so the evidence affects deterministic ranking without making all thin sonorities hard failures.
+
 Verification bundle: `samples/csp-metrical-boundary-review`, 22 standard review seeds, 129600 ticks, `section-local-planner`.
 
 Findings:

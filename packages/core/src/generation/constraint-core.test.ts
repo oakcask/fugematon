@@ -10,7 +10,9 @@ import {
   type ScoreDraft,
   selectBestConstraintCandidate,
 } from "./constraint-core.js";
+import { evaluateCandidate } from "./evaluation.js";
 import { createMeterContext } from "./meter.js";
+import type { Exposition } from "./types.js";
 
 test("constraint evaluator rejects current-contract hard failures", () => {
   const profile = resolveWritingProfile("four-voice-default");
@@ -57,6 +59,95 @@ test("constraint evaluator rejects WritingProfile pitch contract failures", () =
     "range-violation",
     "writing-profile-pitch",
   ]);
+});
+
+test("constraint evaluator separates hard non-chord support from soft sonority quality costs", () => {
+  const profile = resolveWritingProfile("four-voice-default");
+  const plan = harmonicPlan("episode", true);
+  const hard = evaluateScoreDraft(
+    draft(
+      [
+        note({
+          voice: "soprano",
+          pitch: 61,
+          role: "free-counterpoint",
+          metricalHarmonyIntent: "structural-chord-tone",
+        }),
+        note({ voice: "alto", pitch: 64, role: "counter-subject" }),
+      ],
+      profile,
+      [],
+      [plan],
+    ),
+    sectionCspWindow(plan),
+  );
+  const thin = evaluateScoreDraft(
+    draft(
+      [
+        note({ voice: "soprano", pitch: 64, role: "free-counterpoint" }),
+        note({ voice: "alto", pitch: 67, role: "counter-subject" }),
+      ],
+      profile,
+      [],
+      [plan],
+    ),
+    sectionCspWindow(plan),
+  );
+  const doubled = evaluateScoreDraft(
+    draft(
+      [
+        note({ voice: "soprano", pitch: 72, role: "free-counterpoint" }),
+        note({ voice: "alto", pitch: 60, role: "counter-subject" }),
+      ],
+      profile,
+      [],
+      [plan],
+    ),
+    sectionCspWindow(plan),
+  );
+  const mixed = evaluateScoreDraft(
+    draft(
+      [
+        note({ voice: "soprano", pitch: 72, role: "subject" }),
+        note({ voice: "alto", pitch: 65, role: "free-counterpoint" }),
+      ],
+      profile,
+      [],
+      [plan],
+    ),
+    sectionCspWindow(plan),
+  );
+
+  assert.ok(hard.hardFailures.some((failure) => failure.code === "structural-harmonic-support"));
+  assert.equal(
+    thin.hardFailures.some((failure) => failure.code === "structural-harmonic-support"),
+    false,
+  );
+  assert.equal(
+    doubled.hardFailures.some((failure) => failure.code === "structural-harmonic-support"),
+    false,
+  );
+  assert.equal(
+    mixed.hardFailures.some((failure) => failure.code === "structural-harmonic-support"),
+    false,
+  );
+  assert.ok(softCost(thin, "section-csp-harmonic-quality") > 0);
+  assert.ok(softCost(doubled, "section-csp-harmonic-quality") > 0);
+  assert.ok(softCost(mixed, "section-csp-harmonic-quality") > 0);
+});
+
+test("candidate evaluation uses active WritingProfile diagnostics", () => {
+  const candidate = exposition([
+    note({ voice: "soprano", pitch: 61, role: "subject" }),
+    note({ voice: "alto", pitch: 64, role: "counter-subject" }),
+    note({ voice: "tenor", pitch: 55, role: "free-counterpoint" }),
+    note({ voice: "bass", pitch: 48, role: "free-counterpoint" }),
+  ]);
+  const defaultEvaluation = evaluateCandidate([], candidate, [], [], resolveWritingProfile("four-voice-default"));
+  const musicBoxEvaluation = evaluateCandidate([], candidate, [], [], resolveWritingProfile("music-box-n20"));
+
+  assert.equal(defaultEvaluation.hardFailures.includes("range-violation"), false);
+  assert.equal(musicBoxEvaluation.hardFailures.includes("range-violation"), true);
 });
 
 test("constraint evaluator and trace are deterministic for identical input", () => {
@@ -339,6 +430,23 @@ function resultDraft(result: ReturnType<typeof evaluateScoreDraft>): ScoreDraft 
   };
 }
 
+function exposition(notes: NoteEvent[]): Exposition {
+  return {
+    notes,
+    subjectEntries: [
+      plannedEntry({
+        voice: "soprano",
+        startTick: 0,
+        expectedDegreePattern: [0],
+        actualPitchClassSequence: [1],
+      }),
+    ],
+    sectionPlans: [harmonicPlan("episode", true)],
+    endTick: TICKS_PER_QUARTER,
+    durationTicks: TICKS_PER_QUARTER,
+  };
+}
+
 function note(input: Partial<NoteEvent> & { voice: Voice }): NoteEvent {
   return {
     kind: "note",
@@ -380,7 +488,18 @@ function plannedEntry(input: Partial<PlannedEntry> & { voice: Voice }): PlannedE
   };
 }
 
-function harmonicPlan(state: FugueState = "exposition"): HarmonicPlan {
+function sectionCspWindow(plan: HarmonicPlan): Parameters<typeof evaluateScoreDraft>[1] {
+  return {
+    startTick: plan.startTick,
+    endTick: plan.startTick + plan.durationTicks,
+    state: plan.state,
+    harmonicPlan: plan,
+    meterContext: plan.meterContext,
+    sectionConstraintProblem: true,
+  };
+}
+
+function harmonicPlan(state: FugueState = "exposition", withAnchor = false): HarmonicPlan {
   const meterContext = createMeterContext({ numerator: 4, denominator: 4 });
   return {
     state,
@@ -394,7 +513,7 @@ function harmonicPlan(state: FugueState = "exposition"): HarmonicPlan {
     cadenceKind: "authentic",
     ambiguityIntent: "none",
     parallelKeyShift: false,
-    anchors: [],
+    anchors: withAnchor ? [{ tick: 0, localKey: cMajor(), function: "tonic", cadenceTarget: false }] : [],
   };
 }
 

@@ -174,7 +174,7 @@ export function evaluateScoreDraft(
     if (voiceCoverageFailures > 0) {
       addHardFailure(hardFailures, "section-voice-coverage", [], voiceCoverageFailures);
     }
-    const structuralSupportFailures = counts.structuralChordSupportMiss + counts.structuralRootSupportMiss;
+    const structuralSupportFailures = counts.nonChordStructuralSupportCount;
     if (structuralSupportFailures > 0) {
       addHardFailure(hardFailures, "structural-harmonic-support", [], structuralSupportFailures);
     }
@@ -614,6 +614,15 @@ function sectionConstraintSoftFeatureCosts(
         review.infeasibleConstraintCounts.structuralChordSupportMiss * 4 +
         review.infeasibleConstraintCounts.structuralRootSupportMiss * 6,
       explanation: "section-local CSP ranks structural beats by root and chord-tone support",
+    },
+    {
+      feature: "section-csp-harmonic-quality",
+      cost:
+        review.infeasibleConstraintCounts.thinUnrootedStructuralSupportCount +
+        review.infeasibleConstraintCounts.pitchClassDoublingOnlyCount * 1.5 +
+        review.infeasibleConstraintCounts.mixedEntryHarmonicRiskCount * 2,
+      explanation:
+        "section-local CSP ranks audible sonority quality while keeping thin and mixed-entry evidence review-required",
     },
     {
       feature: "section-csp-rest-reason",

@@ -7,6 +7,7 @@ import type {
   PlannedEntry,
   StepwisePatternSummary,
 } from "../events.js";
+import { resolveWritingProfile, type WritingProfile } from "../writing-profile.js";
 import {
   buildCandidateRiskContexts,
   type CandidateRiskContexts,
@@ -28,10 +29,11 @@ export function evaluateCandidate(
   candidate: Exposition,
   previousSubjectEntries: readonly PlannedEntry[] = [],
   previousSectionPlans: readonly HarmonicPlan[] = [],
+  writingProfile: WritingProfile = resolveWritingProfile(undefined),
 ): CandidateEvaluation {
   const recentNotes = previousNotes.slice(-64);
   const candidateNotes = [...recentNotes, ...candidate.notes];
-  const diagnostics = analyzeScore(candidateNotes, candidate.subjectEntries, candidate.sectionPlans);
+  const diagnostics = analyzeScore(candidateNotes, candidate.subjectEntries, candidate.sectionPlans, writingProfile);
   const phraseDevelopmentReview = buildPhraseDevelopmentReviewSummary(
     [...previousSubjectEntries, ...candidate.subjectEntries],
     [...previousSectionPlans, ...candidate.sectionPlans],
