@@ -179,6 +179,7 @@ h1 {
   max-width: 64rem;
   margin-top: 1rem;
   padding: 1rem;
+  overflow-wrap: anywhere;
   animation: rise 580ms ease-out 360ms both;
 }
 
