@@ -4,6 +4,7 @@
 
 ## Read First
 
+* [Current target status review 2026-06-03](current-target-status-2026-06-03.md): latest target handoff check. `prompts/TARGET.md` is absent, `prompts/NOTARGET` states that no concrete implementation target remains, and a regenerated 22 seed bundle matches the latest Generator constraint rebuild target baseline.
 * [Generator constraint rebuild final repair downgrade review](generator-constraint-rebuild-final-repair-downgrade.md): current architecture-slice evidence. Harmonic-stasis final repair is now replaced by section-local / score-level solver evidence rows with before / after trace candidates, while other final repair surfaces remain deferred.
 * [Generator constraint rebuild harmonic continuity support review](generator-constraint-rebuild-harmonic-continuity-support.md): current architecture-slice evidence. Harmonic-continuity support cleanup now emits score-level before / after trace rows for 13 of the 22 target seeds, keeps hard failures at 0, and leaves remaining review-required continuity windows visible.
 * [Generator constraint rebuild support cleanup trace review](generator-constraint-rebuild-support-cleanup-trace.md): current architecture-slice evidence. Remaining post-section support cleanup now emits paired score-level before / after trace rows for adopted functional thinning, post-entry continuation, long-rest phrase closure, and bass-answer tail support, while texture voice-crossing repair is covered by a focused synthetic repair fixture and closed as generated no-op evidence for the standard bundle.
