@@ -152,6 +152,8 @@ Implemented in the core, CLI, Web UI, and review bundle surfaces.
 
 Completion review: [Constrained Keyboard Writing Profiles Completion Review](../reviews/constrained-keyboard-writing-profiles-completion.md).
 
+Follow-up blocker: [Music-box n20 voice-crossing structural review](../reviews/music-box-n20-voice-crossing-structural-review.md) reopens the music-box generation model boundary. The reported `music-box-n20` crossing generalizes across seeds: key / subject / answer feasibility and adjacent tenor / bass register order must become active writing-profile constraints before final pitch projection.
+
 * `GenerationInput` accepts `writingProfileId?: WritingProfileId`; diagnostics and segment snapshots record resolved writing-profile metadata and reject continuation under a mismatched writing profile.
 * `WritingProfile` now owns absolute pitch sets, voice ranges, register targets, preferred maxima, and initial playability metadata for `four-voice-default`, `piano-two-hand`, `harpsichord-manual`, `music-box-n20`, and `music-box-n40`.
 * Entry, texture, continuation, coda, gap-filler, range diagnostics, and final score normalization use profile-aware pitch helpers. Explicit `four-voice-default` remains identical to the implicit default output.

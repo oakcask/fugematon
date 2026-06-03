@@ -15,6 +15,7 @@ import {
   voiceRangeForProfile,
   type WritingProfile,
 } from "../writing-profile.js";
+import { voicePitchDomain } from "./constraint-domain.js";
 import { isFocusedHarmonicContinuityPlan } from "./harmonic-continuity-review.js";
 import {
   beatStrengthAtTick,
@@ -126,6 +127,7 @@ export function addCounterpointTexture(
       entry.durationTicks,
       [entry.harmonicPlan],
       entry.writingProfile,
+      entry.writingProfile === undefined ? "legacy" : "solver",
     );
   }
 }
@@ -907,39 +909,223 @@ function repairResidualAdjacentVoiceCrossings(
     ["alto", "tenor"],
     ["tenor", "bass"],
   ];
-  for (const tick of checkpoints) {
-    for (const [higher, lower] of adjacentPairs) {
-      const higherNote = activeNoteAt(notes, higher, tick);
-      const lowerNote = activeNoteAt(notes, lower, tick);
-      if (higherNote === undefined || lowerNote === undefined || higherNote.pitch >= lowerNote.pitch) {
-        continue;
-      }
-      if (repairMode === "solver") {
-        const repair = chooseResidualVoiceCrossingRepair(
-          notes,
-          higherNote,
-          lowerNote,
-          tick,
-          sectionPlans,
-          writingProfile,
-        );
-        if (repair !== undefined) {
-          repair.note.pitch = repair.pitch;
+  const maxPasses = repairMode === "solver" ? 4 : 1;
+  for (let pass = 0; pass < maxPasses; pass += 1) {
+    let changed = false;
+    for (const tick of checkpoints) {
+      if (repairMode === "solver" && writingProfile !== undefined && hasAdjacentVoiceCrossingAtTick(notes, tick)) {
+        const stackRepair = chooseProfileVoiceOrderRepairAtTick(notes, tick, writingProfile);
+        if (stackRepair !== undefined) {
+          for (const repair of stackRepair) {
+            if (repair.note.pitch !== repair.pitch) {
+              repair.note.pitch = repair.pitch;
+              changed = true;
+            }
+          }
         }
-        continue;
       }
+      for (const [higher, lower] of adjacentPairs) {
+        const higherNote = activeNoteAt(notes, higher, tick);
+        const lowerNote = activeNoteAt(notes, lower, tick);
+        if (higherNote === undefined || lowerNote === undefined || higherNote.pitch >= lowerNote.pitch) {
+          continue;
+        }
+        if (repairMode === "solver") {
+          const repair = chooseResidualVoiceCrossingRepair(
+            notes,
+            higherNote,
+            lowerNote,
+            tick,
+            sectionPlans,
+            writingProfile,
+          );
+          if (repair !== undefined && repair.note.pitch !== repair.pitch) {
+            repair.note.pitch = repair.pitch;
+            changed = true;
+          }
+          continue;
+        }
 
-      const loweredPitch = lowerNote.pitch - 12;
-      if (canMoveDownBelowHigherAtTick(notes, lowerNote, higherNote, tick)) {
-        lowerNote.pitch = loweredPitch;
-        continue;
-      }
-      const raisedPitch = higherNote.pitch + 12;
-      if (raisedPitch <= VOICE_RANGES[higherNote.voice].max) {
-        higherNote.pitch = raisedPitch;
+        const loweredPitch = lowerNote.pitch - 12;
+        if (canMoveDownBelowHigherAtTick(notes, lowerNote, higherNote, tick)) {
+          lowerNote.pitch = loweredPitch;
+          changed = true;
+          continue;
+        }
+        const raisedPitch = higherNote.pitch + 12;
+        if (raisedPitch <= VOICE_RANGES[higherNote.voice].max) {
+          higherNote.pitch = raisedPitch;
+          changed = true;
+        }
       }
     }
+    if (!changed) {
+      break;
+    }
   }
+}
+
+function hasAdjacentVoiceCrossingAtTick(notes: readonly NoteEvent[], tick: number): boolean {
+  const soprano = activeNoteAt(notes, "soprano", tick)?.pitch;
+  const alto = activeNoteAt(notes, "alto", tick)?.pitch;
+  const tenor = activeNoteAt(notes, "tenor", tick)?.pitch;
+  const bass = activeNoteAt(notes, "bass", tick)?.pitch;
+  return (
+    (soprano !== undefined && alto !== undefined && soprano < alto) ||
+    (alto !== undefined && tenor !== undefined && alto < tenor) ||
+    (tenor !== undefined && bass !== undefined && tenor < bass)
+  );
+}
+
+function chooseProfileVoiceOrderRepairAtTick(
+  notes: readonly NoteEvent[],
+  tick: number,
+  writingProfile: WritingProfile,
+): Array<{ note: NoteEvent; pitch: number }> | undefined {
+  const active = VOICE_ENTRY_ORDER.map((voice) => activeNoteAt(notes, voice, tick)).filter(
+    (note): note is NoteEvent => note !== undefined,
+  );
+  if (active.length < 2) {
+    return undefined;
+  }
+
+  const domains = active.map((note) => {
+    const pitches = voicePitchDomain(writingProfile, note.voice, positiveModulo(note.pitch, 12))
+      .filter((pitch) => pitch >= 0 && pitch <= 127)
+      .sort((left, right) => Math.abs(left - note.pitch) - Math.abs(right - note.pitch) || left - right)
+      .slice(0, 4);
+    return { note, pitches };
+  });
+  if (domains.some((domain) => domain.pitches.length === 0)) {
+    return undefined;
+  }
+
+  let best: { repairs: Array<{ note: NoteEvent; pitch: number }>; cost: number } | undefined;
+  const search = (index: number, selected: Array<{ note: NoteEvent; pitch: number }>): void => {
+    if (index >= domains.length) {
+      if (!selectedKeepsVoiceOrder(selected)) {
+        return;
+      }
+      if (!selectedKeepsVoiceOrderAcrossDurations(notes, selected)) {
+        return;
+      }
+      const repairs = selected.filter(({ note, pitch }) => note.pitch !== pitch);
+      if (repairs.length === 0) {
+        return;
+      }
+      const cost = selected.reduce(
+        (sum, { note, pitch }) => sum + Math.abs(note.pitch - pitch) + voiceOrderRepairRoleCost(note.role),
+        0,
+      );
+      if (best === undefined || cost < best.cost) {
+        best = { repairs, cost };
+      }
+      return;
+    }
+
+    const domain = domains[index]!;
+    for (const pitch of domain.pitches) {
+      search(index + 1, [...selected, { note: domain.note, pitch }]);
+    }
+  };
+
+  search(0, []);
+  return best?.repairs;
+}
+
+function selectedKeepsVoiceOrderAcrossDurations(
+  notes: readonly NoteEvent[],
+  selected: readonly { note: NoteEvent; pitch: number }[],
+): boolean {
+  const changed = selected.filter(({ note, pitch }) => note.pitch !== pitch);
+  if (changed.length === 0) {
+    return true;
+  }
+
+  const checkpoints = [
+    ...new Set(
+      changed.flatMap(({ note }) =>
+        notes
+          .flatMap((candidate) => [candidate.startTick, candidate.startTick + candidate.durationTicks])
+          .filter((tick) => note.startTick <= tick && tick < note.startTick + note.durationTicks),
+      ),
+    ),
+  ];
+  return checkpoints.every((tick) => {
+    const activePitchForVoice = (voice: Voice): number | undefined => {
+      const active = activeNoteAt(notes, voice, tick);
+      if (active === undefined) {
+        return undefined;
+      }
+      return selected.find(({ note }) => note === active)?.pitch ?? active.pitch;
+    };
+    return changed.every(({ note }) => {
+      const pitch = activePitchForVoice(note.voice);
+      if (pitch === undefined) {
+        return true;
+      }
+      const higher = adjacentHigherVoice(note.voice);
+      const lower = adjacentLowerVoice(note.voice);
+      const higherPitch = higher === undefined ? undefined : activePitchForVoice(higher);
+      const lowerPitch = lower === undefined ? undefined : activePitchForVoice(lower);
+      return (higherPitch === undefined || higherPitch >= pitch) && (lowerPitch === undefined || pitch >= lowerPitch);
+    });
+  });
+}
+
+function adjacentHigherVoice(voice: Voice): Voice | undefined {
+  if (voice === "bass") {
+    return "tenor";
+  }
+  if (voice === "tenor") {
+    return "alto";
+  }
+  if (voice === "alto") {
+    return "soprano";
+  }
+  return undefined;
+}
+
+function adjacentLowerVoice(voice: Voice): Voice | undefined {
+  if (voice === "soprano") {
+    return "alto";
+  }
+  if (voice === "alto") {
+    return "tenor";
+  }
+  if (voice === "tenor") {
+    return "bass";
+  }
+  return undefined;
+}
+
+function selectedKeepsVoiceOrder(selected: readonly { note: NoteEvent; pitch: number }[]): boolean {
+  const pitchByVoice = new Map(selected.map(({ note, pitch }) => [note.voice, pitch]));
+  const soprano = pitchByVoice.get("soprano");
+  const alto = pitchByVoice.get("alto");
+  const tenor = pitchByVoice.get("tenor");
+  const bass = pitchByVoice.get("bass");
+  return (
+    (soprano === undefined || alto === undefined || soprano >= alto) &&
+    (alto === undefined || tenor === undefined || alto >= tenor) &&
+    (tenor === undefined || bass === undefined || tenor >= bass)
+  );
+}
+
+function voiceOrderRepairRoleCost(role: NoteEvent["role"] | undefined): number {
+  if (isTextureRole(role)) {
+    return 0;
+  }
+  if (role === "counter-subject" || role === "free-counterpoint") {
+    return 2;
+  }
+  if (role === "subject-fragment") {
+    return 6;
+  }
+  if (role === "subject" || role === "answer") {
+    return 10;
+  }
+  return 4;
 }
 
 function chooseResidualVoiceCrossingRepair(
@@ -1081,6 +1267,7 @@ export function addContinuityCounterpoint(notes: Exposition["notes"], input: Con
       input.durationTicks,
       [input.harmonicPlan],
       input.writingProfile,
+      input.writingProfile === undefined ? "legacy" : "solver",
     );
   }
 }
@@ -2213,6 +2400,7 @@ function repairTextureVoiceCrossingsForPlans(
     Math.max(...sectionPlans.map((plan) => plan.startTick + plan.durationTicks)),
     sectionPlans,
     writingProfile,
+    writingProfile === undefined ? "legacy" : "solver",
   );
 }
 
@@ -2227,6 +2415,156 @@ export function repairTextureVoiceCrossingsForNotes(
     ...notes.map((note) => note.startTick + note.durationTicks),
   );
   repairTextureVoiceCrossings(notes, startTick, endTick - startTick, sectionPlans, writingProfile, "solver");
+  if (writingProfile !== undefined) {
+    repairProfileVoiceOrderBySearch(notes, startTick, endTick, writingProfile);
+  }
+}
+
+function repairProfileVoiceOrderBySearch(
+  notes: Exposition["notes"],
+  startTick: number,
+  endTick: number,
+  writingProfile: WritingProfile,
+): void {
+  const checkpoints = [
+    ...new Set(notes.flatMap((note) => [note.startTick, note.startTick + note.durationTicks])),
+  ].filter((tick) => startTick <= tick && tick < endTick);
+
+  for (let pass = 0; pass < 6; pass += 1) {
+    let improved = false;
+    for (const tick of checkpoints) {
+      if (!hasAdjacentVoiceCrossingAtTick(notes, tick)) {
+        continue;
+      }
+      const beforeCrossings = countAdjacentVoiceCrossings(notes, startTick, endTick);
+      const repair = chooseGlobalVoiceOrderStackRepair(
+        notes,
+        tick,
+        writingProfile,
+        beforeCrossings,
+        startTick,
+        endTick,
+      );
+      if (repair === undefined) {
+        continue;
+      }
+      for (const { note, pitch } of repair) {
+        note.pitch = pitch;
+      }
+      improved = true;
+    }
+    if (!improved) {
+      break;
+    }
+  }
+}
+
+function chooseGlobalVoiceOrderStackRepair(
+  notes: Exposition["notes"],
+  tick: number,
+  writingProfile: WritingProfile,
+  currentCrossings: number,
+  startTick: number,
+  endTick: number,
+): Array<{ note: NoteEvent; pitch: number }> | undefined {
+  const activeAtTick = (["soprano", "alto", "tenor", "bass"] as const)
+    .map((voice) => activeNoteAt(notes, voice, tick))
+    .filter((note): note is NoteEvent => note !== undefined);
+  const active = relatedVoiceOrderNotes(notes, activeAtTick);
+  const domains = active.map((note) => ({
+    note,
+    pitches: [...voicePitchDomain(writingProfile, note.voice, positiveModulo(note.pitch, 12))]
+      .sort((left, right) => Math.abs(left - note.pitch) - Math.abs(right - note.pitch) || left - right)
+      .slice(0, 3),
+  }));
+  if (domains.some((domain) => domain.pitches.length === 0) || domains.length > 8) {
+    return undefined;
+  }
+
+  let best:
+    | {
+        repairs: Array<{ note: NoteEvent; pitch: number }>;
+        crossingCount: number;
+        cost: number;
+      }
+    | undefined;
+  const search = (index: number, selected: Array<{ note: NoteEvent; pitch: number }>): void => {
+    if (index >= domains.length) {
+      const repairs = selected.filter(({ note, pitch }) => note.pitch !== pitch);
+      if (repairs.length === 0) {
+        return;
+      }
+      const oldPitches = repairs.map(({ note }) => note.pitch);
+      for (const { note, pitch } of repairs) {
+        note.pitch = pitch;
+      }
+      const crossingCount = countAdjacentVoiceCrossings(notes, startTick, endTick);
+      repairs.forEach(({ note }, repairIndex) => {
+        note.pitch = oldPitches[repairIndex]!;
+      });
+      if (crossingCount >= currentCrossings) {
+        return;
+      }
+      const cost = selected.reduce(
+        (sum, { note, pitch }) => sum + Math.abs(note.pitch - pitch) + voiceOrderRepairRoleCost(note.role),
+        0,
+      );
+      if (
+        best === undefined ||
+        crossingCount < best.crossingCount ||
+        (crossingCount === best.crossingCount && cost < best.cost)
+      ) {
+        best = { repairs, crossingCount, cost };
+      }
+      return;
+    }
+
+    const domain = domains[index]!;
+    for (const pitch of domain.pitches) {
+      search(index + 1, [...selected, { note: domain.note, pitch }]);
+    }
+  };
+
+  search(0, []);
+  return best?.repairs;
+}
+
+function relatedVoiceOrderNotes(notes: readonly NoteEvent[], activeAtTick: readonly NoteEvent[]): NoteEvent[] {
+  const related = new Set<NoteEvent>(activeAtTick);
+  const checkpoints = [...new Set(notes.flatMap((note) => [note.startTick, note.startTick + note.durationTicks]))];
+  for (const note of activeAtTick) {
+    for (const checkpoint of checkpoints) {
+      if (checkpoint < note.startTick || checkpoint >= note.startTick + note.durationTicks) {
+        continue;
+      }
+      for (const voice of ["soprano", "alto", "tenor", "bass"] as const) {
+        const active = activeNoteAt(notes, voice, checkpoint);
+        if (active !== undefined) {
+          related.add(active);
+        }
+      }
+    }
+  }
+  return [...related].sort(compareNoteEvents);
+}
+
+function countAdjacentVoiceCrossings(notes: readonly NoteEvent[], startTick: number, endTick: number): number {
+  const checkpoints = [
+    ...new Set(notes.flatMap((note) => [note.startTick, note.startTick + note.durationTicks])),
+  ].filter((tick) => startTick <= tick && tick < endTick);
+  let crossings = 0;
+  for (const tick of checkpoints) {
+    crossings += Number(isCrossedAtTick(notes, "soprano", "alto", tick));
+    crossings += Number(isCrossedAtTick(notes, "alto", "tenor", tick));
+    crossings += Number(isCrossedAtTick(notes, "tenor", "bass", tick));
+  }
+  return crossings;
+}
+
+function isCrossedAtTick(notes: readonly NoteEvent[], higher: Voice, lower: Voice, tick: number): boolean {
+  const higherNote = activeNoteAt(notes, higher, tick);
+  const lowerNote = activeNoteAt(notes, lower, tick);
+  return higherNote !== undefined && lowerNote !== undefined && higherNote.pitch < lowerNote.pitch;
 }
 
 function functionalSupportProfile(

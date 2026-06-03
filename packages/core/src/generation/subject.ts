@@ -1,6 +1,8 @@
 import { TICKS_PER_QUARTER } from "../constants.js";
 import type { KeyMode, KeySignature, MeterContext, SelectionModel } from "../events.js";
 import type { Xoshiro128StarStar } from "../prng.js";
+import type { WritingProfile } from "../writing-profile.js";
+import { isSubjectDegreePlanFeasibleForProfile } from "./constraint-domain.js";
 import { characteristicScaleDegree, isModalMode } from "./key.js";
 import { beatStrengthAtTick, createLegacyMeterContext } from "./meter.js";
 import { melodicRoleForScaleDegree } from "./pitch.js";
@@ -119,11 +121,12 @@ export function buildSubject(
   keySignature: KeySignature,
   selectionModel: SelectionModel = "baseline",
   meterContext: MeterContext = createLegacyMeterContext(),
+  writingProfile?: WritingProfile,
 ): SubjectNote[] {
   const profile =
     selectionModel === "baseline"
-      ? rng.chooseWeighted(subjectProfileChoices(keySignature, selectionModel, meterContext))
-      : chooseSubjectRhetoricPlan(rng, keySignature, meterContext);
+      ? rng.chooseWeighted(subjectProfileChoicesForProfile(keySignature, selectionModel, meterContext, writingProfile))
+      : chooseSubjectRhetoricPlan(rng, keySignature, meterContext, writingProfile);
 
   let offsetTick = 0;
   return profile.degrees.map((scaleDegree, index) => {
@@ -151,6 +154,7 @@ function chooseSubjectRhetoricPlan(
   rng: Xoshiro128StarStar,
   keySignature: KeySignature,
   meterContext: MeterContext,
+  writingProfile?: WritingProfile,
 ): SubjectRhetoricPlan {
   const candidates = Array.from({ length: 36 }, () =>
     buildSubjectRhetoricCandidate({
@@ -163,8 +167,14 @@ function chooseSubjectRhetoricPlan(
       preference: rng.nextFloat(),
     }),
   );
-  const viable = candidates.filter((candidate) => candidate.rejectionReasons.length === 0);
-  const pool = viable.length > 0 ? viable : candidates;
+  const feasibleCandidates =
+    writingProfile === undefined
+      ? candidates
+      : candidates.filter((candidate) =>
+          isSubjectDegreePlanFeasibleForProfile(candidate.degrees, keySignature, writingProfile),
+        );
+  const viable = feasibleCandidates.filter((candidate) => candidate.rejectionReasons.length === 0);
+  const pool = viable.length > 0 ? viable : feasibleCandidates.length > 0 ? feasibleCandidates : candidates;
   const scored = pool.map((candidate) => ({
     candidate,
     score: scoreSubjectRhetoricPlan(candidate, keySignature, meterContext),
@@ -541,6 +551,23 @@ function subjectProfileChoices(
     { value: subjectProfile(SUBJECT_LATE_CLIMAX_DEGREES, SUBJECT_MID_HELD_DURATIONS), weight: 2.5 },
     { value: subjectProfile(SUBJECT_ANSWERED_TAIL_DEGREES, SUBJECT_TAIL_HELD_DURATIONS), weight: 1.75 },
   ];
+}
+
+function subjectProfileChoicesForProfile(
+  keySignature: KeySignature,
+  selectionModel: SelectionModel,
+  meterContext: MeterContext,
+  writingProfile: WritingProfile | undefined,
+): { value: SubjectProfile; weight: number }[] {
+  const choices = subjectProfileChoices(keySignature, selectionModel, meterContext);
+  if (writingProfile === undefined) {
+    return choices;
+  }
+
+  const feasible = choices.filter(({ value }) =>
+    isSubjectDegreePlanFeasibleForProfile(value.degrees, keySignature, writingProfile),
+  );
+  return feasible.length > 0 ? feasible : choices;
 }
 
 function subjectProfile(degrees: readonly number[], durations: readonly number[]): SubjectProfile {
