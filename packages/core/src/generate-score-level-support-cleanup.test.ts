@@ -25,6 +25,8 @@ test("score-level support cleanup emits paired before and after trace evidence",
     assert.ok(candidateIds.has(`score-${surface}-unrepaired-final-repair-evidence`));
     assert.ok(candidateIds.has(`score-${surface}-solver-repaired`));
   }
+  assert.ok(!candidateIds.has("score-texture-voice-crossing-repair-unrepaired-final-repair-evidence"));
+  assert.ok(!candidateIds.has("score-texture-voice-crossing-repair-solver-repaired"));
   assert.equal(hardConstraintFailures(diagnostics), 0);
 });
 
