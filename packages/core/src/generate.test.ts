@@ -292,9 +292,20 @@ test("generateScore continues continuous-fugue segments from a carried snapshot"
   assert.equal(second.nextSegmentSnapshot.segmentIndex, 1);
   assert.equal(first.diagnostics.generatorSearchTrace.mode, "solver");
   assert.ok(first.diagnostics.generatorSearchTrace.evaluatedCandidateCount >= 2);
-  assert.equal(second.diagnostics.generatorSearchTrace.mode, "diagnostics-only");
-  assert.equal(second.diagnostics.generatorSearchTrace.evaluatedCandidateCount, 1);
-  assert.equal(second.diagnostics.generatorSearchTrace.selectedCandidateId, "legacy-generated-score");
+  assert.equal(second.diagnostics.generatorSearchTrace.mode, "solver");
+  assert.ok(second.diagnostics.generatorSearchTrace.evaluatedCandidateCount >= 2);
+  assert.notEqual(second.diagnostics.generatorSearchTrace.selectedCandidateId, "legacy-generated-score");
+  assert.ok(
+    second.diagnostics.generatorSearchTrace.candidates.some(
+      (candidate) =>
+        candidate.candidateId.startsWith("segment-1-boundary-continuation-") &&
+        candidate.windowStartTick === 0 &&
+        candidate.windowEndTick > candidate.windowStartTick &&
+        Array.isArray(candidate.hardFailures) &&
+        typeof candidate.softCost === "number" &&
+        candidate.reason.includes("segment-boundary-"),
+    ),
+  );
   assert.notEqual(firstStateChange?.payload.state, "exposition");
   assert.notEqual(second.diagnostics.sectionPlans[0]?.state, "exposition");
   assert.ok(second.diagnostics.continuousSegmentContinuity.carriedSubjectFamily);
@@ -472,6 +483,26 @@ test("generateScore repairs synthetic thin-tail continuous-fugue hard restarts",
   assert.notEqual(
     second.diagnostics.continuousBoundaryCarry.classification,
     "generator-response-required-hard-restart",
+  );
+  const traceCandidateIds = new Set(
+    second.diagnostics.generatorSearchTrace.candidates.map((candidate) => candidate.candidateId),
+  );
+  assert.ok(traceCandidateIds.has("segment-1-boundary-continuation-unrepaired-evidence"));
+  assert.ok(traceCandidateIds.has("segment-1-boundary-continuation-solver-repaired"));
+  assert.ok(
+    second.diagnostics.generatorSearchTrace.candidates.some(
+      (candidate) =>
+        candidate.candidateId === "segment-1-boundary-continuation-unrepaired-evidence" &&
+        candidate.reason.includes("segment-boundary-hard-restart-risk"),
+    ),
+  );
+  assert.ok(
+    second.diagnostics.generatorSearchTrace.candidates.some(
+      (candidate) =>
+        candidate.candidateId === "segment-1-boundary-continuation-solver-repaired" &&
+        candidate.hardFailureCount === 0 &&
+        candidate.reason.includes("segment-boundary-"),
+    ),
   );
 });
 

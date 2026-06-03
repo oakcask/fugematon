@@ -32,7 +32,7 @@ import {
   type WritingProfile,
 } from "../writing-profile.js";
 import { type ConstraintCandidate, evaluateScoreDraft } from "./constraint-core.js";
-import { applyContinuousBoundaryCarryRepair } from "./continuous-boundary-carry.js";
+import { applyContinuousBoundaryCarrySolver } from "./continuous-boundary-carry.js";
 import { analyzeScore } from "./diagnostics.js";
 import { addSubjectEntry, chooseAnswerKind } from "./entries.js";
 import { evaluateCandidate } from "./evaluation.js";
@@ -1378,12 +1378,15 @@ export function buildFugueContinuationScore(
   }
 
   if (selectionModel === "section-local-planner") {
-    applyContinuousBoundaryCarryRepair({
-      notes,
-      subjectEntries,
-      sectionPlans,
-      previousSnapshot: input.previousSnapshot,
-    });
+    selectedConstraintCandidates.push(
+      ...applyContinuousBoundaryCarrySolver({
+        notes,
+        subjectEntries,
+        sectionPlans,
+        previousSnapshot: input.previousSnapshot,
+        writingProfile,
+      }),
+    );
   }
   fillAllVoiceSilenceGaps(notes, keySignature, writingProfile);
   if (selectionModel === "section-local-planner") {

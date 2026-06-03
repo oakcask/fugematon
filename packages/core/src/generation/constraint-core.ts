@@ -2,6 +2,7 @@ import { TICKS_PER_QUARTER, VOICES } from "../constants.js";
 import type {
   CadenceKind,
   ConstraintHardFailureCode,
+  ContinuousBoundaryCarrySummary,
   CurrentContractDiagnosticIssueCode,
   FugueState,
   GeneratorSearchTrace,
@@ -37,6 +38,7 @@ export type ConstraintWindow = {
   harmonicPlan?: HarmonicPlan;
   meterContext?: MeterContext;
   terminalSupport?: boolean;
+  continuousBoundaryCarry?: ContinuousBoundaryCarrySummary;
 };
 
 export type ConstraintAffectedNote = {
@@ -402,6 +404,7 @@ function softFeatureCosts(
         cost: writingProfilePlayabilityCost,
         explanation: "WritingProfile playability evidence ranks viable candidates after pitch-contract checks",
       },
+      ...continuousBoundarySoftFeatureCosts(window),
       ...terminalSupportSoftFeatureCosts(draft, window),
     ].filter((cost) => cost.cost > 0);
   }
@@ -487,6 +490,7 @@ function softFeatureCosts(
       explanation:
         "free-counterpoint candidates are ranked by entry handoff support and explained solo or thinning context",
     },
+    ...continuousBoundarySoftFeatureCosts(window),
     ...terminalSupportSoftFeatureCosts(draft, window),
     {
       feature: "leap-recovery",
@@ -499,6 +503,95 @@ function softFeatureCosts(
       explanation: "WritingProfile playability evidence ranks viable candidates after pitch-contract checks",
     },
   ].filter((cost) => cost.cost > 0);
+}
+
+function continuousBoundarySoftFeatureCosts(window: ConstraintWindow): ConstraintSoftFeatureCost[] {
+  const summary = window.continuousBoundaryCarry;
+  if (summary === undefined) {
+    return [];
+  }
+
+  const audibleCarryCount =
+    summary.carriedVoices.length +
+    summary.suspendedOrResolvingVoices.length +
+    summary.pedalVoices.length +
+    summary.staggeredVoices.length;
+  const hasEntryRole = summary.nextFirstAttackRoleMix.some(
+    (role) => role === "subject" || role === "answer" || role === "subject-fragment",
+  );
+  const hasSupportRole = summary.nextFirstAttackRoleMix.some(
+    (role) => role === "counter-subject" || role === "free-counterpoint",
+  );
+
+  return [
+    {
+      feature: "segment-boundary-carry",
+      cost: summary.carriedVoices.length > 0 ? 0 : audibleCarryCount > 0 ? 2 : 8,
+      explanation: "segment-continuation candidates are ranked by audible line carry across the hidden boundary",
+    },
+    {
+      feature: "segment-boundary-pedal-support",
+      cost:
+        summary.pedalVoices.length > 0 || summary.priorTailHarmonicContinuity === "not-required"
+          ? 0
+          : summary.priorTailHarmonicContinuity === "harmonic-continuity-tail"
+            ? 1
+            : 3,
+      explanation: "segment-continuation candidates keep pedal or low support visible at the boundary",
+    },
+    {
+      feature: "segment-boundary-staggered-reentry",
+      cost:
+        summary.staggeredVoices.length > 0 || summary.nextFirstAttackDensity <= 2
+          ? 0
+          : summary.nextFirstAttackDensity >= 3
+            ? 3
+            : 1,
+      explanation: "segment-continuation candidates prefer staggered re-entry over a dense same-tick restart",
+    },
+    {
+      feature: "segment-boundary-prior-tail-harmonic-support",
+      cost:
+        summary.priorTailHarmonicContinuity === "unresolved-cadence-preparation"
+          ? 7
+          : summary.priorTailHarmonicContinuity === "clear-break"
+            ? 2
+            : 0,
+      explanation:
+        "segment-continuation candidates classify prior-tail harmonic support before accepting a hidden boundary",
+    },
+    {
+      feature: "segment-boundary-first-attack-density",
+      cost:
+        summary.nextFirstAttackDensity === 0
+          ? 5
+          : summary.nextFirstAttackDensity >= 3 && audibleCarryCount === 0
+            ? 6
+            : Math.max(0, summary.nextFirstAttackDensity - 3),
+      explanation: "segment-continuation candidates rank first-attack density separately from hard-contract failures",
+    },
+    {
+      feature: "segment-boundary-role-mix",
+      cost:
+        summary.nextFirstAttackDensity >= 3 && (!hasEntryRole || !hasSupportRole)
+          ? 3
+          : summary.nextFirstAttackRoleMix.length <= 1 && summary.nextFirstAttackDensity >= 2
+            ? 1
+            : 0,
+      explanation:
+        "segment-continuation candidates prefer a boundary role mix that exposes entry and support functions",
+    },
+    {
+      feature: "segment-boundary-hard-restart-risk",
+      cost:
+        summary.classification === "generator-response-required-hard-restart"
+          ? 12
+          : summary.classification === "review-required-thin-boundary"
+            ? 6
+            : 0,
+      explanation: "segment-continuation candidates keep hard-restart risk review-visible instead of hiding it",
+    },
+  ];
 }
 
 function terminalSupportSoftFeatureCosts(draft: ScoreDraft, window: ConstraintWindow): ConstraintSoftFeatureCost[] {
@@ -698,7 +791,10 @@ function rejectedReason(result: ConstraintResult): string {
   if (result.hardFailures.length === 0) {
     return appendSoftCostSummary("not selected after deterministic soft-cost and candidate-id tie-break", result);
   }
-  return `rejected for hard failures: ${result.hardFailures.map((failure) => failure.code).join(", ")}`;
+  return appendSoftCostSummary(
+    `rejected for hard failures: ${result.hardFailures.map((failure) => failure.code).join(", ")}`,
+    result,
+  );
 }
 
 function appendSoftCostSummary(reason: string, result: ConstraintResult): string {
@@ -714,6 +810,19 @@ function appendSoftCostSummary(reason: string, result: ConstraintResult): string
       features[features.length - 1] = terminalFeature;
     } else {
       features.push(terminalFeature);
+    }
+  }
+  if (
+    result.window.continuousBoundaryCarry !== undefined &&
+    !features.some((feature) => feature.startsWith("segment-boundary-"))
+  ) {
+    const boundaryFeature =
+      positiveFeatures.find((feature) => feature.startsWith("segment-boundary-")) ??
+      `segment-boundary-${result.window.continuousBoundaryCarry.classification}`;
+    if (features.length >= 4) {
+      features[features.length - 1] = boundaryFeature;
+    } else {
+      features.push(boundaryFeature);
     }
   }
   return features.length === 0 ? reason : `${reason}; soft-costs=${features.join(",")}`;

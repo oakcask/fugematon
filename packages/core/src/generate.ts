@@ -123,7 +123,7 @@ export function generateScore(input: GenerationInput): GenerationOutput {
   const generatedUntilTick = Math.max(input.lengthTicks, score.endTick);
   const generatorSearchTrace =
     expositionSearch === undefined
-      ? buildDiagnosticsOnlyGeneratorSearchTrace(score, generatedUntilTick, writingProfile)
+      ? buildContinuationGeneratorSearchTrace(score, generatedUntilTick, writingProfile)
       : buildGeneratorSearchTrace(
           [...expositionSearch.candidates, ...score.selectedConstraintCandidates],
           expositionSearch.selected,
@@ -444,6 +444,24 @@ function buildDiagnosticsOnlyGeneratorSearchTrace(
     [legacyConstraintCandidate],
     selectBestConstraintCandidate([legacyConstraintCandidate]),
   );
+}
+
+function buildContinuationGeneratorSearchTrace(
+  score: Exposition & { selectedConstraintCandidates?: readonly ConstraintCandidate[] },
+  generatedUntilTick: number,
+  writingProfile: WritingProfile,
+) {
+  const candidates = score.selectedConstraintCandidates ?? [];
+  if (candidates.length === 0) {
+    return buildDiagnosticsOnlyGeneratorSearchTrace(score, generatedUntilTick, writingProfile);
+  }
+
+  const selectedBoundaryCandidate =
+    candidates.find((candidate) => candidate.candidateId.includes("boundary-continuation-solver-repaired")) ??
+    candidates.find((candidate) => candidate.candidateId.includes("boundary-continuation-candidate-0")) ??
+    selectBestConstraintCandidate(candidates);
+
+  return buildGeneratorSearchTrace(candidates, selectedBoundaryCandidate, "solver");
 }
 
 function buildContinuousSegmentContinuitySummary(input: {
