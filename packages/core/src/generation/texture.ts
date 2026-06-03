@@ -70,6 +70,8 @@ type FunctionalSupportProfile = {
   durationTicks: readonly number[];
 };
 
+type TextureVoiceCrossingRepairMode = "legacy" | "solver";
+
 type EntryCounterpointTextureInput = {
   enteringVoice: Voice;
   startTick: number;
@@ -118,7 +120,13 @@ export function addCounterpointTexture(
   addEntryFreeCounterpoint(notes, subject, entry, eligibleVoices, counterSubjectVoice);
 
   if (entry.eligibleVoices !== undefined || entry.freeCounterpointPhraseVariation === true) {
-    repairTextureVoiceCrossings(notes, entry.startTick, entry.durationTicks);
+    repairTextureVoiceCrossings(
+      notes,
+      entry.startTick,
+      entry.durationTicks,
+      [entry.harmonicPlan],
+      entry.writingProfile,
+    );
   }
 }
 
@@ -831,7 +839,14 @@ export function fitPitchNearPrevious(
   return pitch;
 }
 
-function repairTextureVoiceCrossings(notes: Exposition["notes"], startTick: number, durationTicks: number): void {
+function repairTextureVoiceCrossings(
+  notes: Exposition["notes"],
+  startTick: number,
+  durationTicks: number,
+  sectionPlans: readonly (HarmonicPlan | undefined)[] = [],
+  writingProfile?: WritingProfile,
+  repairMode: TextureVoiceCrossingRepairMode = "legacy",
+): void {
   const endTick = startTick + durationTicks;
   const checkpoints = [
     ...new Set(notes.flatMap((note) => [note.startTick, note.startTick + note.durationTicks])),
@@ -856,7 +871,19 @@ function repairTextureVoiceCrossings(notes: Exposition["notes"], startTick: numb
         continue;
       }
 
-      if (canMoveDownWithoutCrossing(notes, lowerNote, lowerNote.pitch - 12)) {
+      if (repairMode === "solver") {
+        const repair = chooseResidualVoiceCrossingRepair(
+          notes,
+          higherNote,
+          lowerNote,
+          tick,
+          sectionPlans,
+          writingProfile,
+        );
+        if (repair !== undefined) {
+          repair.note.pitch = repair.pitch;
+        }
+      } else if (canMoveDownWithoutCrossing(notes, lowerNote, lowerNote.pitch - 12)) {
         lowerNote.pitch -= 12;
       } else if (canMoveUpWithoutCrossing(notes, higherNote, higherNote.pitch + 12)) {
         higherNote.pitch += 12;
@@ -865,10 +892,16 @@ function repairTextureVoiceCrossings(notes: Exposition["notes"], startTick: numb
       }
     }
   }
-  repairResidualAdjacentVoiceCrossings(notes, checkpoints);
+  repairResidualAdjacentVoiceCrossings(notes, checkpoints, sectionPlans, writingProfile, repairMode);
 }
 
-function repairResidualAdjacentVoiceCrossings(notes: Exposition["notes"], checkpoints: readonly number[]): void {
+function repairResidualAdjacentVoiceCrossings(
+  notes: Exposition["notes"],
+  checkpoints: readonly number[],
+  sectionPlans: readonly (HarmonicPlan | undefined)[],
+  writingProfile?: WritingProfile,
+  repairMode: TextureVoiceCrossingRepairMode = "legacy",
+): void {
   const adjacentPairs: readonly (readonly [higher: Voice, lower: Voice])[] = [
     ["soprano", "alto"],
     ["alto", "tenor"],
@@ -881,6 +914,21 @@ function repairResidualAdjacentVoiceCrossings(notes: Exposition["notes"], checkp
       if (higherNote === undefined || lowerNote === undefined || higherNote.pitch >= lowerNote.pitch) {
         continue;
       }
+      if (repairMode === "solver") {
+        const repair = chooseResidualVoiceCrossingRepair(
+          notes,
+          higherNote,
+          lowerNote,
+          tick,
+          sectionPlans,
+          writingProfile,
+        );
+        if (repair !== undefined) {
+          repair.note.pitch = repair.pitch;
+        }
+        continue;
+      }
+
       const loweredPitch = lowerNote.pitch - 12;
       if (canMoveDownBelowHigherAtTick(notes, lowerNote, higherNote, tick)) {
         lowerNote.pitch = loweredPitch;
@@ -892,6 +940,63 @@ function repairResidualAdjacentVoiceCrossings(notes: Exposition["notes"], checkp
       }
     }
   }
+}
+
+function chooseResidualVoiceCrossingRepair(
+  notes: readonly NoteEvent[],
+  higherNote: NoteEvent,
+  lowerNote: NoteEvent,
+  tick: number,
+  sectionPlans: readonly (HarmonicPlan | undefined)[],
+  writingProfile?: WritingProfile,
+): { note: NoteEvent; pitch: number } | undefined {
+  const sectionPlan = sectionPlans.find(
+    (plan) => plan !== undefined && plan.startTick <= tick && tick < plan.startTick + plan.durationTicks,
+  );
+  const anchor = sectionPlan === undefined ? undefined : nearestHarmonicAnchor(tick, [sectionPlan]);
+
+  return [
+    { note: lowerNote, pitch: lowerNote.pitch - 12 },
+    { note: higherNote, pitch: higherNote.pitch + 12 },
+  ]
+    .filter((candidate) => keepsAdjacentVoiceOrder(notes, candidate.note, candidate.pitch))
+    .filter((candidate) => isTextureRepairPitchAllowed(candidate.note, candidate.pitch, writingProfile))
+    .sort(
+      (left, right) =>
+        textureVoiceCrossingRepairCost(left.note, left.pitch, anchor) -
+        textureVoiceCrossingRepairCost(right.note, right.pitch, anchor),
+    )[0];
+}
+
+function textureVoiceCrossingRepairCost(
+  note: NoteEvent,
+  pitch: number,
+  anchor: ReturnType<typeof nearestHarmonicAnchor>,
+): number {
+  const textureRoleCost = isTextureRole(note.role) ? 0 : 100;
+  const harmonicCost = isHarmonicSupportPitch(pitch, anchor) ? 0 : 12;
+  const rootSupportCost =
+    note.metricalHarmonyIntent === "structural-root-support" && !isHarmonicRootSupportPitch(pitch, anchor) ? 24 : 0;
+  return textureRoleCost + harmonicCost + rootSupportCost + Math.abs(pitch - note.pitch);
+}
+
+function isHarmonicSupportPitch(pitch: number, anchor: ReturnType<typeof nearestHarmonicAnchor>): boolean {
+  return (
+    anchor === undefined || chordTonePitchClasses(anchor.localKey, anchor.function).includes(positiveModulo(pitch, 12))
+  );
+}
+
+function isHarmonicRootSupportPitch(pitch: number, anchor: ReturnType<typeof nearestHarmonicAnchor>): boolean {
+  return (
+    anchor === undefined ||
+    positiveModulo(pitch, 12) === scaleDegreePitchClass(rootDegreeForFunction(anchor.function), 0, anchor.localKey)
+  );
+}
+
+function activeNoteAt(notes: readonly NoteEvent[], voice: Voice, tick: number): NoteEvent | undefined {
+  return notes.find(
+    (note) => note.voice === voice && note.startTick <= tick && tick < note.startTick + note.durationTicks,
+  );
 }
 
 function canMoveDownBelowHigherAtTick(
@@ -911,9 +1016,17 @@ function canMoveDownBelowHigherAtTick(
   return nextLowerNote === undefined || movedPitch >= nextLowerNote.pitch;
 }
 
-function activeNoteAt(notes: readonly NoteEvent[], voice: Voice, tick: number): NoteEvent | undefined {
-  return notes.find(
-    (note) => note.voice === voice && note.startTick <= tick && tick < note.startTick + note.durationTicks,
+function isTextureRepairPitchAllowed(
+  note: NoteEvent,
+  pitch: number,
+  writingProfile: WritingProfile | undefined,
+): boolean {
+  const range =
+    writingProfile === undefined ? VOICE_RANGES[note.voice] : voiceRangeForProfile(writingProfile, note.voice);
+  return (
+    pitch >= range.min &&
+    pitch <= range.max &&
+    (writingProfile === undefined || isPitchAllowedByWritingProfile(writingProfile, pitch))
   );
 }
 
@@ -962,7 +1075,13 @@ export function addContinuityCounterpoint(notes: Exposition["notes"], input: Con
     addContinuityLine(notes, voice, plan, index);
   }
   if (input.freeCounterpointPhraseVariation === true) {
-    repairTextureVoiceCrossings(notes, input.startTick, input.durationTicks);
+    repairTextureVoiceCrossings(
+      notes,
+      input.startTick,
+      input.durationTicks,
+      [input.harmonicPlan],
+      input.writingProfile,
+    );
   }
 }
 
@@ -1578,7 +1697,7 @@ export function shapeLongRestPhraseClosures(notes: Exposition["notes"], sectionP
 
   const startTick = Math.min(...sectionPlans.map((plan) => plan.startTick));
   const endTick = Math.max(...sectionPlans.map((plan) => plan.startTick + plan.durationTicks));
-  repairTextureVoiceCrossings(notes, startTick, endTick - startTick);
+  repairTextureVoiceCrossings(notes, startTick, endTick - startTick, sectionPlans);
 }
 
 function phraseClosureAnchor(
@@ -2083,24 +2202,31 @@ function bassSupportsAnchorRoot(
   return activeBass !== undefined && positiveModulo(activeBass.pitch, 12) === rootPitchClass;
 }
 
-function repairTextureVoiceCrossingsForPlans(notes: Exposition["notes"], sectionPlans: readonly HarmonicPlan[]): void {
+function repairTextureVoiceCrossingsForPlans(
+  notes: Exposition["notes"],
+  sectionPlans: readonly HarmonicPlan[],
+  writingProfile?: WritingProfile,
+): void {
   repairTextureVoiceCrossings(
     notes,
     Math.min(...sectionPlans.map((plan) => plan.startTick)),
     Math.max(...sectionPlans.map((plan) => plan.startTick + plan.durationTicks)),
+    sectionPlans,
+    writingProfile,
   );
 }
 
 export function repairTextureVoiceCrossingsForNotes(
   notes: Exposition["notes"],
   sectionPlans: readonly HarmonicPlan[],
+  writingProfile?: WritingProfile,
 ): void {
   const startTick = Math.min(...sectionPlans.map((plan) => plan.startTick), ...notes.map((note) => note.startTick));
   const endTick = Math.max(
     ...sectionPlans.map((plan) => plan.startTick + plan.durationTicks),
     ...notes.map((note) => note.startTick + note.durationTicks),
   );
-  repairTextureVoiceCrossings(notes, startTick, endTick - startTick);
+  repairTextureVoiceCrossings(notes, startTick, endTick - startTick, sectionPlans, writingProfile, "solver");
 }
 
 function functionalSupportProfile(

@@ -372,6 +372,10 @@ function applyScoreLevelSupportCleanupCandidateAdoptions(input: {
   const candidates: ConstraintCandidate[] = [];
   const surfaces: readonly ScoreLevelSupportCleanupSurface[] = [
     {
+      id: "texture-voice-crossing-repair",
+      apply: (notes) => repairTextureVoiceCrossingsForNotes(notes, input.sectionPlans, input.writingProfile),
+    },
+    {
       id: "functional-thinning-support",
       apply: (notes) => addFunctionalThinningSupport(notes, input.sectionPlans),
     },
@@ -386,10 +390,6 @@ function applyScoreLevelSupportCleanupCandidateAdoptions(input: {
     {
       id: "bass-answer-tail-texture-support",
       apply: (notes) => addBassAnswerTailTextureSupport(notes, input.subjectEntries, input.sectionPlans),
-    },
-    {
-      id: "texture-voice-crossing-repair",
-      apply: (notes) => repairTextureVoiceCrossingsForNotes(notes, input.sectionPlans),
     },
   ];
 
