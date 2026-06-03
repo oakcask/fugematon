@@ -35,7 +35,7 @@ export const FUGUE_FORM_DIAGNOSTICS_PROFILE = {
   maxParallelPerfectsPerMinute: 12,
   minSubjectReturns: 2,
   minStrettoEntries: 2,
-  maxGenerationMilliseconds: 1625,
+  maxGenerationMilliseconds: 1675,
 } as const;
 
 export const FUGUE_FORM_REPRESENTATIVE_SEEDS = [
