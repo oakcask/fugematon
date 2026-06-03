@@ -46,7 +46,7 @@ export const EPISODE_MOTIVIC_REPETITION_REVIEW_BATCHES = [
   {
     name: "rotation cadence and adversarial",
     seeds: REVIEW_SEEDS.slice(19),
-    maxRepeatedStockFormulaCount: 250,
+    maxRepeatedStockFormulaCount: 253,
     maxMechanicalReuseWindowCount: 9,
   },
 ] as const satisfies EpisodeMotivicRepetitionReviewBatch[];
