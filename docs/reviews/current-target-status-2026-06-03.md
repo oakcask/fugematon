@@ -4,7 +4,7 @@ Status: accepted. No current implementation target is defined.
 
 ## Scope
 
-This review checks the current target handoff state after the latest Generator constraint rebuild slices. `prompts/TARGET.md` is not present in the working prompts directory; `prompts/NOTARGET` states that `generator-constraint-rebuild.md` has no suitable next implementation target because the remaining gaps are review/listening gaps rather than concrete implementation slices.
+This review checks the current target handoff state after the latest Generator constraint rebuild slices. No concrete implementation target remains in the current handoff state because the remaining gaps are review/listening gaps rather than concrete implementation slices.
 
 The review therefore treats the latest Generator constraint rebuild target baseline as the comparison point and verifies that the current generated output still satisfies that baseline.
 
@@ -51,14 +51,14 @@ Key aggregate metrics also match the target baseline:
 
 No new musical target behavior is being adopted in this review. The regenerated scores preserve the current Generator constraint rebuild baseline, including 0 hard contract failures and unchanged review-required beauty signals. The remaining local sentinels, pitch-class coupling, lockstep, entry severe-interval duration, and manual-listening gaps remain review surfaces rather than a defined implementation target.
 
-The result supports the current handoff state: the documented Generator constraint rebuild slices are complete through exposition search, entry support, episode/free-counterpoint support, terminal support, harmonic-stasis downgrade, harmonic-continuity support, score-level support cleanup, texture voice-crossing generated no-op closure, and continuous-fugue segment-boundary trace evidence. No additional concrete target can be derived from the current target prompt state.
+The result supports the current handoff state: the documented Generator constraint rebuild slices are complete through exposition search, entry support, episode/free-counterpoint support, terminal support, harmonic-stasis downgrade, harmonic-continuity support, score-level support cleanup, texture voice-crossing generated no-op closure, and continuous-fugue segment-boundary trace evidence. No additional concrete target is defined in the current handoff state.
 
 ## CI / Review Scope
 
 | Touched seed or metric | Classification | Reason | Action |
 | --- | --- | --- | --- |
 | standard 22 seed target comparison | `review-required` | Confirms current output still matches the latest target baseline; it does not create a new quality gate. | Keep as handoff evidence. |
-| remaining quality-profile local sentinels | `review-required` | These are unchanged beauty/listening signals, not a concrete implementation target in the current prompt state. | Leave visible for future target definition. |
+| remaining quality-profile local sentinels | `review-required` | These are unchanged beauty/listening signals, not a concrete implementation target in the current handoff state. | Leave visible for future target definition. |
 | hard contract failures | `ci-blocking` | Range, voice crossing, subject/answer identity, key metadata, silence gaps, and fallback failures remain hard generated-output failures. | Keep existing zero-failure policy. |
 
 ## Remaining Gaps
