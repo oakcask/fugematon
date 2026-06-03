@@ -128,6 +128,7 @@ export function evaluateScoreDraft(
           }),
           notes: analyzableNotes,
           sectionPlan: window.harmonicPlan,
+          subjectEntries,
         })
       : window.sectionConstraintReview;
   const hardFailures = new Map<ConstraintHardFailureCode, ConstraintHardFailure>();
@@ -623,6 +624,12 @@ function sectionConstraintSoftFeatureCosts(
       feature: "section-csp-search-width",
       cost: Math.max(0, sectionConstraintSoftCost(review) / Math.max(1, review.solverCandidateCount)),
       explanation: "section-local CSP exposes bounded deterministic candidate width as trace evidence",
+    },
+    {
+      feature: "section-csp-metrical-boundary",
+      cost: review.metricalBoundaryCost,
+      explanation:
+        "section-local CSP ranks phrase, entry, and harmonic-anchor boundaries by metrical placement and preparation",
     },
   ].filter((cost) => cost.cost > 0);
 }

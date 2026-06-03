@@ -99,8 +99,40 @@ test("section CSP diagnostics are deterministic for the same seed and input", ()
   const second = generateScore({ seed: "fugue-smoke", lengthTicks: TICKS_PER_QUARTER * 32 });
 
   assert.deepEqual(first.diagnostics.constraintSatisfactionReview, second.diagnostics.constraintSatisfactionReview);
-  assert.equal(first.diagnostics.constraintSatisfactionReview.schemaVersion, 1);
+  assert.equal(first.diagnostics.constraintSatisfactionReview.schemaVersion, 2);
   assert.ok(first.diagnostics.constraintSatisfactionReview.solverCandidateCount > 0);
+  assert.equal(typeof first.diagnostics.constraintSatisfactionReview.metricalBoundaryCost, "number");
+  assert.equal(typeof first.diagnostics.constraintSatisfactionReview.unpreparedTransitionCount, "number");
+});
+
+test("section CSP metrical-boundary cost ranks downbeat, prepared pickup, and unprepared offbeat", () => {
+  const downbeatPlan = sectionPlan({ state: "episode", startTick: 0 });
+  const preparedPlan = sectionPlan({ state: "episode", startTick: TICKS_PER_QUARTER });
+  const offbeatPlan = sectionPlan({ state: "episode", startTick: TICKS_PER_QUARTER / 2 });
+  const downbeat = evaluateSectionConstraintProblem({
+    problem: buildSectionConstraintProblem({ notes: supportedNotes(0), sectionPlan: downbeatPlan }),
+    notes: supportedNotes(0),
+    sectionPlan: downbeatPlan,
+  });
+  const preparedNotes = [
+    note({ voice: "bass", startTick: 0, durationTicks: TICKS_PER_QUARTER * 2, pitch: 48 }),
+    ...supportedNotes(preparedPlan.startTick).filter((candidate) => candidate.voice !== "bass"),
+  ];
+  const prepared = evaluateSectionConstraintProblem({
+    problem: buildSectionConstraintProblem({ notes: preparedNotes, sectionPlan: preparedPlan }),
+    notes: preparedNotes,
+    sectionPlan: preparedPlan,
+  });
+  const offbeat = evaluateSectionConstraintProblem({
+    problem: buildSectionConstraintProblem({ notes: supportedNotes(offbeatPlan.startTick), sectionPlan: offbeatPlan }),
+    notes: supportedNotes(offbeatPlan.startTick),
+    sectionPlan: offbeatPlan,
+  });
+
+  assert.ok(downbeat.metricalBoundaryCost < prepared.metricalBoundaryCost);
+  assert.ok(prepared.metricalBoundaryCost < offbeat.metricalBoundaryCost);
+  assert.equal(prepared.preparedPickupCount > 0, true);
+  assert.equal(offbeat.unpreparedTransitionCount > 0, true);
 });
 
 function sectionPlan(input: { state: FugueState; startTick?: number; durationTicks?: number }): HarmonicPlan {

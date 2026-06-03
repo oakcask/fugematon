@@ -2,6 +2,23 @@
 
 Status: implementation slice accepted for focused tests and standard review evidence. Manual listening remains open, score-level support cleanup remains fallback evidence, and `constraintSatisfactionReview` remains `review-required`.
 
+## 2026-06-04 Metrical-Boundary Update
+
+This update covers the CSP metrical-rhythm repair slice. It adds measure-aligned duration candidates, a `section-csp-metrical-boundary` soft cost, schema 2 metrical fields in `constraintSatisfactionReview`, section-CSP support alternatives for exposed solo / thinning cases, and final hard-contract entry identity cleanup for impossible same-voice entry overlaps. Public `ScoreEvent` remains note/meta only.
+
+Verification bundle: `samples/csp-metrical-boundary-review`, 22 standard review seeds, 129600 ticks, `section-local-planner`.
+
+Findings:
+
+* Hard contract failures are 0 across the bundle: range, voice crossing, subject identity, answer plan, and key metadata all remain clean.
+* `section-csp-metrical-boundary` appears in generator search trace reason strings for 20 of 22 seeds.
+* Score-level support cleanup rows are still emitted for all 22 seeds, but no score-level cleanup row is selected as the adopted score path.
+* `constraintSatisfactionReview` remains `review-required`: all 22 seeds still select `infeasible`.
+* `transitionRhythmReview.reviewRequiredWindowCount` is still nonzero for seven seeds: `close-imitation` 2, `contrary-motion` 1, `long-arc` 1, `minor-entry` 1, `modal-dorian` 1, `restless-line` 1, and `tight-stretto` 3.
+* Aggregate metrical CSP evidence: `metricalBoundaryCost` 1542, off-measure phrase boundary count 276, off-measure harmonic-anchor count 147, off-measure entry-start count 146, unprepared transition count 45, and prepared pickup count 231.
+
+Music-theory reading: the repair now distinguishes bar-confirming phrase boundaries, prepared pickups / cross-metric rhetoric, and unprepared off-measure section starts in the CSP score rather than only in `transitionRhythmReview`. The remaining failures show that the duration and support domains are still not strong enough to eliminate unsupported section texture or all transition-rhythm review windows. Human listening remains incomplete; the current evidence is score-window and diagnostics based.
+
 ## Findings
 
 1. Continuation selection now uses section-CSP evidence before accepting a section.
