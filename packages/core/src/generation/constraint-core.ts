@@ -618,9 +618,9 @@ function sectionConstraintSoftFeatureCosts(
     {
       feature: "section-csp-harmonic-quality",
       cost:
-        review.infeasibleConstraintCounts.thinUnrootedStructuralSupportCount +
-        review.infeasibleConstraintCounts.pitchClassDoublingOnlyCount * 1.5 +
-        review.infeasibleConstraintCounts.mixedEntryHarmonicRiskCount * 2,
+        review.infeasibleConstraintCounts.thinUnrootedStructuralSupportCount * 3 +
+        review.infeasibleConstraintCounts.pitchClassDoublingOnlyCount * 4 +
+        review.infeasibleConstraintCounts.mixedEntryHarmonicRiskCount * 5,
       explanation:
         "section-local CSP ranks audible sonority quality while keeping thin and mixed-entry evidence review-required",
     },

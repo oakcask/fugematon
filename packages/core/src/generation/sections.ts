@@ -32,6 +32,7 @@ import {
   type WritingProfile,
 } from "../writing-profile.js";
 import { type ConstraintCandidate, evaluateScoreDraft } from "./constraint-core.js";
+import { isSubjectEntryPlanFeasibleForProfile } from "./constraint-domain.js";
 import { applyContinuousBoundaryCarrySolver } from "./continuous-boundary-carry.js";
 import { analyzeScore } from "./diagnostics.js";
 import { addSubjectEntry, chooseAnswerKind } from "./entries.js";
@@ -505,11 +506,12 @@ function applyScoreLevelSupportCleanupCandidateAdoptions(input: {
     },
     {
       id: "functional-thinning-support",
-      apply: (notes) => addFunctionalThinningSupport(notes, input.sectionPlans),
+      apply: (notes) => addFunctionalThinningSupport(notes, input.sectionPlans, input.writingProfile),
     },
     {
       id: "post-entry-continuation-support",
-      apply: (notes) => addPostEntryContinuationSupport(notes, input.subjectEntries, input.sectionPlans),
+      apply: (notes) =>
+        addPostEntryContinuationSupport(notes, input.subjectEntries, input.sectionPlans, input.writingProfile),
     },
     {
       id: "long-rest-phrase-closure",
@@ -517,7 +519,8 @@ function applyScoreLevelSupportCleanupCandidateAdoptions(input: {
     },
     {
       id: "bass-answer-tail-texture-support",
-      apply: (notes) => addBassAnswerTailTextureSupport(notes, input.subjectEntries, input.sectionPlans),
+      apply: (notes) =>
+        addBassAnswerTailTextureSupport(notes, input.subjectEntries, input.sectionPlans, input.writingProfile),
     },
   ];
 
@@ -715,7 +718,7 @@ function applyScoreLevelHarmonicContinuitySolver(input: {
   }
 
   const repairedNotes = cloneNotes(input.notes);
-  addShortEpisodeHarmonicContinuitySupport(repairedNotes, input.sectionPlans);
+  addShortEpisodeHarmonicContinuitySupport(repairedNotes, input.sectionPlans, input.writingProfile);
   repairTextureVoiceCrossingsForNotes(repairedNotes, input.sectionPlans);
   repairedNotes.sort(compareNoteEvents);
   const after = analyzeHarmonicContinuity(repairedNotes, input.sectionPlans);
@@ -2145,7 +2148,12 @@ export function buildExposition(
 ): Exposition {
   const notes: Exposition["notes"] = [];
   const subjectEntries: Exposition["subjectEntries"] = [];
-  const entrySpacingTicks = expositionEntrySpacingTicks(meterContext);
+  const entrySpacingTicks = profileAwareExpositionEntrySpacingTicks(
+    subject,
+    keySignature,
+    meterContext,
+    writingProfile,
+  );
   const sectionPlans: HarmonicPlan[] = [
     buildHarmonicPlan({
       state: "exposition",
@@ -2206,6 +2214,21 @@ function expositionEntrySpacingTicks(meterContext: MeterContext): number {
     return ENTRY_SPACING_TICKS;
   }
   return meterContext.measureTicks;
+}
+
+function profileAwareExpositionEntrySpacingTicks(
+  subject: readonly SubjectNote[],
+  keySignature: KeySignature,
+  meterContext: MeterContext,
+  writingProfile: WritingProfile,
+): number {
+  const baseSpacingTicks = expositionEntrySpacingTicks(meterContext);
+  const degrees = subject.map((note) => note.scaleDegree);
+  const durations = subject.map((note) => note.durationTicks);
+  if (isSubjectEntryPlanFeasibleForProfile(degrees, durations, keySignature, writingProfile, baseSpacingTicks)) {
+    return baseSpacingTicks;
+  }
+  return Math.max(baseSpacingTicks, subjectDuration(subject) + Math.floor(meterContext.beatTicks / 2));
 }
 
 export function chooseContinuationSection(
@@ -3184,12 +3207,12 @@ function buildSectionCspSolverCandidates(
 ): Exposition[] {
   return sourceCandidates.map((sourceCandidate, sourceCandidateIndex) => {
     const repaired = cloneExposition(sourceCandidate);
-    addFunctionalThinningSupport(repaired.notes, repaired.sectionPlans);
-    addExposedFreeCounterpointSoloSupport(repaired.notes, repaired.sectionPlans);
-    addPostEntryContinuationSupport(repaired.notes, repaired.subjectEntries, repaired.sectionPlans);
+    addFunctionalThinningSupport(repaired.notes, repaired.sectionPlans, writingProfile);
+    addExposedFreeCounterpointSoloSupport(repaired.notes, repaired.sectionPlans, writingProfile);
+    addPostEntryContinuationSupport(repaired.notes, repaired.subjectEntries, repaired.sectionPlans, writingProfile);
     shapeLongRestPhraseClosures(repaired.notes, repaired.sectionPlans);
-    addBassAnswerTailTextureSupport(repaired.notes, repaired.subjectEntries, repaired.sectionPlans);
-    addShortEpisodeHarmonicContinuitySupport(repaired.notes, repaired.sectionPlans);
+    addBassAnswerTailTextureSupport(repaired.notes, repaired.subjectEntries, repaired.sectionPlans, writingProfile);
+    addShortEpisodeHarmonicContinuitySupport(repaired.notes, repaired.sectionPlans, writingProfile);
     repairTextureVoiceCrossingsForNotes(repaired.notes, repaired.sectionPlans, writingProfile);
     repaired.notes.sort(compareNoteEvents);
 

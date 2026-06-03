@@ -776,8 +776,8 @@ export function sectionConstraintSoftCost(window: SectionConstraintSatisfactionW
       counts.longUnplannedSilentRun * 5 +
       counts.structuralChordSupportMiss * 4 +
       counts.structuralRootSupportMiss * 6 +
-      counts.thinUnrootedStructuralSupportCount +
-      counts.pitchClassDoublingOnlyCount * 1.5 +
-      counts.mixedEntryHarmonicRiskCount * 2,
+      counts.thinUnrootedStructuralSupportCount * 3 +
+      counts.pitchClassDoublingOnlyCount * 4 +
+      counts.mixedEntryHarmonicRiskCount * 5,
   );
 }

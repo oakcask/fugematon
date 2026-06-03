@@ -2,7 +2,7 @@ import { TICKS_PER_QUARTER } from "../constants.js";
 import type { KeyMode, KeySignature, MeterContext, SelectionModel } from "../events.js";
 import type { Xoshiro128StarStar } from "../prng.js";
 import type { WritingProfile } from "../writing-profile.js";
-import { isSubjectDegreePlanFeasibleForProfile } from "./constraint-domain.js";
+import { isSubjectEntryPlanFeasibleForProfile } from "./constraint-domain.js";
 import { characteristicScaleDegree, isModalMode } from "./key.js";
 import { beatStrengthAtTick, createLegacyMeterContext } from "./meter.js";
 import { melodicRoleForScaleDegree } from "./pitch.js";
@@ -155,7 +155,7 @@ function chooseSubjectRhetoricPlan(
   keySignature: KeySignature,
   meterContext: MeterContext,
   writingProfile?: WritingProfile,
-): SubjectRhetoricPlan {
+): SubjectProfile {
   const candidates = Array.from({ length: 36 }, () =>
     buildSubjectRhetoricCandidate({
       opening: rng.chooseWeighted(openingGestureChoices(keySignature.mode)),
@@ -171,8 +171,28 @@ function chooseSubjectRhetoricPlan(
     writingProfile === undefined
       ? candidates
       : candidates.filter((candidate) =>
-          isSubjectDegreePlanFeasibleForProfile(candidate.degrees, keySignature, writingProfile),
+          isSubjectEntryPlanFeasibleForProfile(
+            candidate.degrees,
+            candidate.durations,
+            keySignature,
+            writingProfile,
+            expositionEntrySpacingTicksForSubject(meterContext),
+          ),
         );
+  if (writingProfile !== undefined && feasibleCandidates.length === 0) {
+    const fallbackChoices = subjectProfileChoices(keySignature, "baseline", meterContext).filter(({ value }) =>
+      isSubjectEntryPlanFeasibleForProfile(
+        value.degrees,
+        value.durations,
+        keySignature,
+        writingProfile,
+        expositionEntrySpacingTicksForSubject(meterContext),
+      ),
+    );
+    if (fallbackChoices.length > 0) {
+      return rng.chooseWeighted(fallbackChoices);
+    }
+  }
   const viable = feasibleCandidates.filter((candidate) => candidate.rejectionReasons.length === 0);
   const pool = viable.length > 0 ? viable : feasibleCandidates.length > 0 ? feasibleCandidates : candidates;
   const scored = pool.map((candidate) => ({
@@ -565,9 +585,22 @@ function subjectProfileChoicesForProfile(
   }
 
   const feasible = choices.filter(({ value }) =>
-    isSubjectDegreePlanFeasibleForProfile(value.degrees, keySignature, writingProfile),
+    isSubjectEntryPlanFeasibleForProfile(
+      value.degrees,
+      value.durations,
+      keySignature,
+      writingProfile,
+      expositionEntrySpacingTicksForSubject(meterContext),
+    ),
   );
   return feasible.length > 0 ? feasible : choices;
+}
+
+function expositionEntrySpacingTicksForSubject(meterContext: MeterContext): number {
+  if (meterContext.timeSignature.numerator === 4) {
+    return TICKS_PER_QUARTER * 4;
+  }
+  return meterContext.measureTicks;
 }
 
 function subjectProfile(degrees: readonly number[], durations: readonly number[]): SubjectProfile {

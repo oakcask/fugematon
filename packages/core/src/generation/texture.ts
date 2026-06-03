@@ -1673,7 +1673,11 @@ function addGapFillerLine(
   }
 }
 
-export function addFunctionalThinningSupport(notes: Exposition["notes"], sectionPlans: readonly HarmonicPlan[]): void {
+export function addFunctionalThinningSupport(
+  notes: Exposition["notes"],
+  sectionPlans: readonly HarmonicPlan[],
+  writingProfile?: WritingProfile,
+): void {
   for (const run of findUnsupportedThinningRuns(notes, sectionPlans)) {
     const plan = sectionPlanForTick(sectionPlans, run.startTick);
     const supportVoice = functionalSupportVoice(notes, run);
@@ -1681,16 +1685,17 @@ export function addFunctionalThinningSupport(notes: Exposition["notes"], section
       continue;
     }
 
-    addFunctionalSupportForRun(notes, { run, plan, supportVoice });
+    addFunctionalSupportForRun(notes, { run, plan, supportVoice, writingProfile });
   }
 
-  repairTextureVoiceCrossingsForPlans(notes, sectionPlans);
+  repairTextureVoiceCrossingsForPlans(notes, sectionPlans, writingProfile);
 }
 
 export function addBassAnswerTailTextureSupport(
   notes: Exposition["notes"],
   subjectEntries: readonly PlannedEntry[],
   sectionPlans: readonly HarmonicPlan[],
+  writingProfile?: WritingProfile,
 ): void {
   const firstBassAnswer = subjectEntries.find(
     (entry) => entry.voice === "bass" && entry.state === "exposition" && entry.form === "answer",
@@ -1716,11 +1721,12 @@ export function addBassAnswerTailTextureSupport(
         maxNoteTicks: TICKS_PER_QUARTER * 3,
         meterAnchored: true,
         strictSemitoneAvoidance: true,
+        writingProfile,
       });
     }
   }
 
-  repairTextureVoiceCrossingsForNotes(notes, sectionPlans);
+  repairTextureVoiceCrossingsForNotes(notes, sectionPlans, writingProfile);
 }
 
 function bassAnswerTailSupportRunForVoice(
@@ -1755,6 +1761,7 @@ export function addPostEntryContinuationSupport(
   notes: Exposition["notes"],
   subjectEntries: readonly PlannedEntry[],
   sectionPlans: readonly HarmonicPlan[],
+  writingProfile?: WritingProfile,
 ): void {
   for (const run of findPostEntryThinSupportRuns(notes, subjectEntries)) {
     const plan = sectionPlanForTick(sectionPlans, run.startTick);
@@ -1763,15 +1770,16 @@ export function addPostEntryContinuationSupport(
       continue;
     }
 
-    addFunctionalSupportForRun(notes, { run, plan, supportVoice });
+    addFunctionalSupportForRun(notes, { run, plan, supportVoice, writingProfile });
   }
 
-  repairTextureVoiceCrossingsForPlans(notes, sectionPlans);
+  repairTextureVoiceCrossingsForPlans(notes, sectionPlans, writingProfile);
 }
 
 export function addExposedFreeCounterpointSoloSupport(
   notes: Exposition["notes"],
   sectionPlans: readonly HarmonicPlan[],
+  writingProfile?: WritingProfile,
 ): void {
   for (const run of collectUnsupportedExposedFreeCounterpointSoloRuns(notes, sectionPlans)) {
     const plan = sectionPlanForTick(sectionPlans, run.startTick);
@@ -1785,15 +1793,17 @@ export function addExposedFreeCounterpointSoloSupport(
       plan,
       supportVoice,
       strictSemitoneAvoidance: true,
+      writingProfile,
     });
   }
 
-  repairTextureVoiceCrossingsForPlans(notes, sectionPlans);
+  repairTextureVoiceCrossingsForPlans(notes, sectionPlans, writingProfile);
 }
 
 export function addShortEpisodeHarmonicContinuitySupport(
   notes: Exposition["notes"],
   sectionPlans: readonly HarmonicPlan[],
+  writingProfile?: WritingProfile,
 ): void {
   const scoreEndTick = Math.max(...notes.map((note) => note.startTick + note.durationTicks));
   const sortedPlans = [...sectionPlans].sort((left, right) => left.startTick - right.startTick);
@@ -1801,30 +1811,30 @@ export function addShortEpisodeHarmonicContinuitySupport(
     shouldRepairShortEpisodeHarmonicContinuity(candidate, sortedPlans),
   )) {
     for (const tick of harmonicContinuitySupportTicks(plan).filter((supportTick) => supportTick < scoreEndTick)) {
-      supportHarmonicContinuityAtTick(notes, plan, tick);
+      supportHarmonicContinuityAtTick(notes, plan, tick, writingProfile);
     }
     for (const tick of harmonicContinuityRepairTicks(notes, plan).filter((supportTick) => supportTick < scoreEndTick)) {
       const anchor = nearestHarmonicAnchor(tick, [plan]);
       if (anchor !== undefined) {
-        repairStructuralSupportAtTick(notes, tick, anchor);
+        repairStructuralSupportAtTick(notes, tick, anchor, writingProfile);
       }
     }
   }
 
-  repairTextureVoiceCrossingsForPlans(notes, sectionPlans);
+  repairTextureVoiceCrossingsForPlans(notes, sectionPlans, writingProfile);
   for (const plan of sortedPlans.filter((candidate) =>
     shouldRepairShortEpisodeHarmonicContinuity(candidate, sortedPlans),
   )) {
     for (const tick of harmonicContinuitySupportTicks(plan).filter((supportTick) => supportTick < scoreEndTick)) {
       const anchor = nearestHarmonicAnchor(tick, [plan]);
       if (anchor !== undefined) {
-        supportBassRootAtTick(notes, plan, tick, anchor);
+        supportBassRootAtTick(notes, plan, tick, anchor, writingProfile);
       }
     }
     for (const tick of harmonicContinuityRepairTicks(notes, plan).filter((supportTick) => supportTick < scoreEndTick)) {
       const anchor = nearestHarmonicAnchor(tick, [plan]);
       if (anchor !== undefined) {
-        repairStructuralSupportAtTick(notes, tick, anchor);
+        repairStructuralSupportAtTick(notes, tick, anchor, writingProfile);
       }
     }
   }
@@ -1839,12 +1849,12 @@ export function addShortEpisodeHarmonicContinuitySupport(
     )) {
       const anchor = nearestHarmonicAnchor(tick, [plan]);
       if (anchor !== undefined) {
-        supportHandoffBassRootAtTick(notes, plan, tick, anchor);
-        repairStructuralSupportAtTick(notes, tick, anchor);
+        supportHandoffBassRootAtTick(notes, plan, tick, anchor, writingProfile);
+        repairStructuralSupportAtTick(notes, tick, anchor, writingProfile);
       }
     }
   }
-  repairFocusedBassRootSupport(notes, sortedPlans);
+  repairFocusedBassRootSupport(notes, sortedPlans, writingProfile);
 }
 
 function isFinalHandoffTextureCheckpoint(plan: HarmonicPlan, tick: number): boolean {
@@ -1864,6 +1874,7 @@ function supportHandoffBassRootAtTick(
   plan: HarmonicPlan,
   tick: number,
   anchor: NonNullable<ReturnType<typeof nearestHarmonicAnchor>>,
+  writingProfile?: WritingProfile,
 ): void {
   if (bassSupportsAnchorRoot(notes, tick, anchor)) {
     return;
@@ -1873,7 +1884,11 @@ function supportHandoffBassRootAtTick(
     anchor.localKey,
     anchor.function,
     previousTextureNote(notes, "bass", tick)?.pitch,
+    writingProfile,
   );
+  if (rootPitch === undefined) {
+    return;
+  }
   const supportDuration = Math.min(TICKS_PER_QUARTER / 2, harmonicContinuitySupportDuration(notes, "bass", plan, tick));
   const activeBass = activeNoteAt(notes, "bass", tick);
   if (activeBass !== undefined && activeBass.role === "free-counterpoint") {
@@ -2034,6 +2049,7 @@ function addFunctionalSupportLine(
     maxNoteTicks?: number;
     meterAnchored?: boolean;
     strictSemitoneAvoidance?: boolean;
+    writingProfile?: WritingProfile;
   },
 ): void {
   const profile = functionalSupportProfile(notes, input);
@@ -2058,6 +2074,9 @@ function addFunctionalSupportLine(
       input.durationTicks - elapsedTicks,
     );
     const degree = profile.degrees[index % profile.degrees.length]!;
+    if (!isStructuralSupportDegreeAvailable(degree, input.localKey, input.voice, input.writingProfile)) {
+      return;
+    }
     addTextureNote(
       notes,
       {
@@ -2069,6 +2088,7 @@ function addFunctionalSupportLine(
         metricalHarmonyIntent:
           input.voice === "bass" && degree === input.rootDegree ? "structural-root-support" : "structural-chord-tone",
         strictSemitoneAvoidance: input.strictSemitoneAvoidance,
+        writingProfile: input.writingProfile,
       },
       degree,
       input.startTick + elapsedTicks,
@@ -2077,6 +2097,20 @@ function addFunctionalSupportLine(
     elapsedTicks += durationTicks;
     index += 1;
   }
+}
+
+function isStructuralSupportDegreeAvailable(
+  degree: number,
+  localKey: KeySignature,
+  voice: Voice,
+  writingProfile: WritingProfile | undefined,
+): boolean {
+  if (writingProfile === undefined) {
+    return true;
+  }
+
+  const pitchClass = scaleDegreePitchClass(degree, 0, localKey);
+  return voicePitchDomain(writingProfile, voice, pitchClass).length > 0;
 }
 
 function functionalSupportNoteDurationTicks(input: {
@@ -2147,6 +2181,7 @@ function addFunctionalSupportForRun(
     maxNoteTicks?: number;
     meterAnchored?: boolean;
     strictSemitoneAvoidance?: boolean;
+    writingProfile?: WritingProfile;
   },
 ): void {
   const anchor = nearestHarmonicAnchor(input.run.startTick, [input.plan]);
@@ -2160,6 +2195,7 @@ function addFunctionalSupportForRun(
     maxNoteTicks: input.maxNoteTicks,
     meterAnchored: input.meterAnchored,
     strictSemitoneAvoidance: input.strictSemitoneAvoidance,
+    writingProfile: input.writingProfile,
   });
 }
 
@@ -2185,16 +2221,21 @@ function harmonicContinuityRepairTicks(notes: readonly NoteEvent[], plan: Harmon
   );
 }
 
-function supportHarmonicContinuityAtTick(notes: Exposition["notes"], plan: HarmonicPlan, tick: number): void {
+function supportHarmonicContinuityAtTick(
+  notes: Exposition["notes"],
+  plan: HarmonicPlan,
+  tick: number,
+  writingProfile?: WritingProfile,
+): void {
   const anchor = nearestHarmonicAnchor(tick, [plan]);
   if (anchor === undefined) {
     return;
   }
 
-  supportBassRootAtTick(notes, plan, tick, anchor);
-  repairStructuralSupportAtTick(notes, tick, anchor);
+  supportBassRootAtTick(notes, plan, tick, anchor, writingProfile);
+  repairStructuralSupportAtTick(notes, tick, anchor, writingProfile);
   if (activeVoicesDuring(notes, tick, tick + plan.meterContext.beatTicks).length <= 2) {
-    supportUpperChordToneAtTick(notes, plan, tick, anchor);
+    supportUpperChordToneAtTick(notes, plan, tick, anchor, writingProfile);
   }
 }
 
@@ -2202,6 +2243,7 @@ function repairStructuralSupportAtTick(
   notes: Exposition["notes"],
   tick: number,
   anchor: NonNullable<ReturnType<typeof nearestHarmonicAnchor>>,
+  writingProfile?: WritingProfile,
 ): void {
   const chordTonePitchClassesAtTick = chordTonePitchClasses(anchor.localKey, anchor.function);
   const rootPitchClass = scaleDegreePitchClass(rootDegreeForFunction(anchor.function), 0, anchor.localKey);
@@ -2223,7 +2265,7 @@ function repairStructuralSupportAtTick(
       continue;
     }
 
-    const repairedPitch = nearestStructuralSupportPitch(notes, note, expectedPitchClasses, tick);
+    const repairedPitch = nearestStructuralSupportPitch(notes, note, expectedPitchClasses, tick, writingProfile);
     if (repairedPitch !== undefined) {
       note.pitch = repairedPitch;
     }
@@ -2250,11 +2292,11 @@ function nearestStructuralSupportPitch(
   note: NoteEvent,
   pitchClasses: readonly number[],
   tick: number,
+  writingProfile?: WritingProfile,
 ): number | undefined {
-  const range = VOICE_RANGES[note.voice];
-  const candidates = Array.from({ length: range.max - range.min + 1 }, (_, index) => range.min + index)
-    .filter((pitch) => pitchClasses.includes(positiveModulo(pitch, 12)))
-    .filter((pitch) => keepsAdjacentVoiceOrder(notes, note, pitch));
+  const candidates = structuralSupportPitchCandidates(note.voice, pitchClasses, writingProfile).filter((pitch) =>
+    keepsAdjacentVoiceOrder(notes, note, pitch),
+  );
   const noSemitoneCandidates = candidates.filter((pitch) => !createsSemitoneAtTick(notes, note.voice, tick, pitch));
   const noUnisonCandidates = noSemitoneCandidates.filter(
     (pitch) => !createsPitchClassUnisonAtTick(notes, note.voice, tick, pitch),
@@ -2267,11 +2309,29 @@ function nearestStructuralSupportPitch(
   );
 }
 
+function structuralSupportPitchCandidates(
+  voice: Voice,
+  pitchClasses: readonly number[],
+  writingProfile?: WritingProfile,
+): number[] {
+  if (writingProfile !== undefined) {
+    return [...new Set(pitchClasses.flatMap((pitchClass) => voicePitchDomain(writingProfile, voice, pitchClass)))].sort(
+      (left, right) => left - right,
+    );
+  }
+
+  const range = VOICE_RANGES[voice];
+  return Array.from({ length: range.max - range.min + 1 }, (_, index) => range.min + index).filter((pitch) =>
+    pitchClasses.includes(positiveModulo(pitch, 12)),
+  );
+}
+
 function supportBassRootAtTick(
   notes: Exposition["notes"],
   plan: HarmonicPlan,
   tick: number,
   anchor: NonNullable<ReturnType<typeof nearestHarmonicAnchor>>,
+  writingProfile?: WritingProfile,
 ): void {
   if (bassSupportsAnchorRoot(notes, tick, anchor)) {
     return;
@@ -2281,7 +2341,11 @@ function supportBassRootAtTick(
     anchor.localKey,
     anchor.function,
     previousTextureNote(notes, "bass", tick)?.pitch,
+    writingProfile,
   );
+  if (rootPitch === undefined) {
+    return;
+  }
   const activeBass = activeNoteAt(notes, "bass", tick);
   if (activeBass !== undefined && activeBass.role === "free-counterpoint") {
     const bassSupport = splitTextureNoteAtTick(notes, activeBass, tick);
@@ -2315,7 +2379,11 @@ function supportBassRootAtTick(
   });
 }
 
-function repairFocusedBassRootSupport(notes: Exposition["notes"], sectionPlans: readonly HarmonicPlan[]): void {
+function repairFocusedBassRootSupport(
+  notes: Exposition["notes"],
+  sectionPlans: readonly HarmonicPlan[],
+  writingProfile?: WritingProfile,
+): void {
   const focusedPlans = sectionPlans.filter((plan) => shouldRepairShortEpisodeHarmonicContinuity(plan, sectionPlans));
   for (const note of notes.filter(
     (candidate) =>
@@ -2332,11 +2400,13 @@ function repairFocusedBassRootSupport(notes: Exposition["notes"], sectionPlans: 
       continue;
     }
 
-    note.pitch = harmonicRootBassPitch(
-      anchor.localKey,
-      anchor.function,
-      previousTextureNote(notes, "bass", note.startTick)?.pitch,
-    );
+    note.pitch =
+      harmonicRootBassPitch(
+        anchor.localKey,
+        anchor.function,
+        previousTextureNote(notes, "bass", note.startTick)?.pitch,
+        writingProfile,
+      ) ?? note.pitch;
   }
 }
 
@@ -2345,6 +2415,7 @@ function supportUpperChordToneAtTick(
   plan: HarmonicPlan,
   tick: number,
   anchor: NonNullable<ReturnType<typeof nearestHarmonicAnchor>>,
+  writingProfile?: WritingProfile,
 ): void {
   const supportVoice = (["tenor", "alto", "soprano"] as const).find(
     (voice) => activeNoteAt(notes, voice, tick) === undefined,
@@ -2352,7 +2423,12 @@ function supportUpperChordToneAtTick(
   if (supportVoice === undefined) {
     return;
   }
-  const supportDegree = motivicChordSupportDegree(notes, plan, tick, supportVoice, anchor);
+  const supportDegree = supportedStructuralSupportDegree({
+    requestedDegree: motivicChordSupportDegree(notes, plan, tick, supportVoice, anchor),
+    supportVoice,
+    anchor,
+    writingProfile,
+  });
   const supportDuration = motivicChordSupportDuration(notes, tick, supportVoice, plan);
   if (supportDegree === undefined || supportDuration === undefined) {
     return;
@@ -2368,6 +2444,7 @@ function supportUpperChordToneAtTick(
       harmonicPlan: plan,
       metricalHarmonyIntent: "structural-chord-tone",
       strictSemitoneAvoidance: true,
+      writingProfile,
     },
     supportDegree,
     tick,
@@ -2399,6 +2476,32 @@ function motivicChordSupportDegree(
 
   const supportIndex = Math.max(0, Math.floor((tick - plan.startTick) / Math.max(1, plan.meterContext.beatTicks)));
   return profile[supportIndex % profile.length];
+}
+
+function supportedStructuralSupportDegree(input: {
+  requestedDegree: number | undefined;
+  supportVoice: Voice;
+  anchor: NonNullable<ReturnType<typeof nearestHarmonicAnchor>>;
+  writingProfile?: WritingProfile;
+}): number | undefined {
+  const chordDegrees = chordScaleDegreesForFunction(input.anchor.function);
+  const requestedDegree =
+    input.requestedDegree === undefined
+      ? undefined
+      : chordDegrees.find((degree) => positiveModulo(degree - input.requestedDegree!, 7) === 0);
+  const degrees = requestedDegree === undefined ? chordDegrees : [requestedDegree, ...chordDegrees];
+
+  for (const degree of degrees) {
+    const pitchClass = scaleDegreePitchClass(degree, 0, input.anchor.localKey);
+    if (
+      input.writingProfile === undefined ||
+      voicePitchDomain(input.writingProfile, input.supportVoice, pitchClass).length > 0
+    ) {
+      return degree;
+    }
+  }
+
+  return undefined;
 }
 
 function motivicChordSupportDuration(
@@ -2451,11 +2554,22 @@ function harmonicRootBassPitch(
   localKey: KeySignature,
   harmonicFunction: HarmonicPlan["anchors"][number]["function"],
   previousPitch: number | undefined,
-): number {
+  writingProfile?: WritingProfile,
+): number | undefined {
   const rootPitchClass = scaleDegreePitchClass(rootDegreeForFunction(harmonicFunction), 0, localKey);
+  if (writingProfile !== undefined && voicePitchDomain(writingProfile, "bass", rootPitchClass).length === 0) {
+    return undefined;
+  }
   return previousPitch === undefined
-    ? placePitchInRegister(rootPitchClass, "bass", VOICE_REGISTER_TARGETS.bass)
-    : fitPitchNearPrevious(rootPitchClass, "bass", previousPitch);
+    ? writingProfile === undefined
+      ? placePitchInRegister(rootPitchClass, "bass", VOICE_REGISTER_TARGETS.bass)
+      : placePitchInWritingProfile(
+          rootPitchClass,
+          "bass",
+          registerTargetForVoice(writingProfile, "bass"),
+          writingProfile,
+        )
+    : fitPitchNearPrevious(rootPitchClass, "bass", previousPitch, writingProfile);
 }
 
 function bassSupportsAnchorRoot(
@@ -2628,9 +2742,9 @@ function chooseGlobalVoiceOrderStackRepair(
   const active = relatedVoiceOrderNotes(notes, activeAtTick);
   const domains = active.map((note) => ({
     note,
-    pitches: [...voicePitchDomain(writingProfile, note.voice, positiveModulo(note.pitch, 12))]
+    pitches: [...voicePitchOrderRepairDomain(note, writingProfile)]
       .sort((left, right) => Math.abs(left - note.pitch) - Math.abs(right - note.pitch) || left - right)
-      .slice(0, 3),
+      .slice(0, note.role === "free-counterpoint" ? 6 : 3),
   }));
   if (domains.some((domain) => domain.pitches.length === 0) || domains.length > 8) {
     return undefined;
@@ -2686,6 +2800,13 @@ function chooseGlobalVoiceOrderStackRepair(
 
   search(0, []);
   return best?.repairs;
+}
+
+function voicePitchOrderRepairDomain(note: NoteEvent, writingProfile: WritingProfile): readonly number[] {
+  if (note.role === "free-counterpoint") {
+    return voicePitchDomain(writingProfile, note.voice);
+  }
+  return voicePitchDomain(writingProfile, note.voice, positiveModulo(note.pitch, 12));
 }
 
 function relatedVoiceOrderNotes(notes: readonly NoteEvent[], activeAtTick: readonly NoteEvent[]): NoteEvent[] {

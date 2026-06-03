@@ -4,7 +4,12 @@ import { TICKS_PER_QUARTER } from "./constants.js";
 import type { HarmonicPlan, KeySignature, NoteEvent } from "./events.js";
 import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
 import { createMeterContext } from "./generation/meter.js";
+import {
+  buildSectionConstraintProblem,
+  evaluateSectionConstraintProblem,
+} from "./generation/section-constraint-problem.js";
 import { addShortEpisodeHarmonicContinuitySupport } from "./generation/texture.js";
+import { resolveWritingProfile, type WritingProfile } from "./writing-profile.js";
 
 const HARMONIC_CONTINUITY_REVIEW_SEEDS = [
   "seed-1dxb2n8-1miapx7",
@@ -266,6 +271,67 @@ test("short pivot support decorates earlier motivic contour against the local ch
   assert.ok(tenorSupport.every((note) => note.metricalHarmonyIntent === "structural-chord-tone"));
 });
 
+test("short pivot structural support repair uses profile-domain chord tones before projection", () => {
+  const { pivotEpisode, followingStretto } = shortPivotPlans();
+  const profile = resolveWritingProfile("music-box-n20");
+  const notes: NoteEvent[] = [
+    {
+      kind: "note",
+      voice: "tenor",
+      startTick: 0,
+      durationTicks: TICKS_PER_QUARTER * 2,
+      pitch: 62,
+      velocity: 52,
+      role: "free-counterpoint",
+      metricalHarmonyIntent: "structural-chord-tone",
+    },
+  ];
+
+  addShortEpisodeHarmonicContinuitySupport(notes, [pivotEpisode, followingStretto], profile);
+
+  const repairedTenor = notes.find((note) => note.voice === "tenor" && note.startTick === 0);
+  assert.ok(repairedTenor !== undefined);
+  assert.ok([60, 64, 67, 72].includes(repairedTenor.pitch));
+  assert.ok(profile.absolutePitchSet.includes(repairedTenor.pitch));
+});
+
+test("short pivot structural support repair leaves non-chord evidence when no profile chord tone exists", () => {
+  const { pivotEpisode, followingStretto } = shortPivotPlans();
+  const profile = {
+    ...resolveWritingProfile("music-box-n20"),
+    absolutePitchSet: [60, 62, 67, 72],
+    voiceRanges: {
+      soprano: { min: 72, max: 72 },
+      alto: { min: 67, max: 67 },
+      tenor: { min: 62, max: 62 },
+      bass: { min: 60, max: 60 },
+    },
+  } satisfies WritingProfile;
+  const notes: NoteEvent[] = [
+    {
+      kind: "note",
+      voice: "tenor",
+      startTick: 0,
+      durationTicks: TICKS_PER_QUARTER * 2,
+      pitch: 62,
+      velocity: 52,
+      role: "free-counterpoint",
+      metricalHarmonyIntent: "structural-chord-tone",
+    },
+  ];
+
+  addShortEpisodeHarmonicContinuitySupport(notes, [pivotEpisode, followingStretto], profile);
+
+  const unrepairedTenor = notes.find((note) => note.voice === "tenor" && note.startTick === 0);
+  const window = evaluateSectionConstraintProblem({
+    problem: buildSectionConstraintProblem({ notes, sectionPlan: pivotEpisode }),
+    notes,
+    sectionPlan: pivotEpisode,
+  });
+  assert.equal(unrepairedTenor?.pitch, 62);
+  assert.ok(window.infeasibleConstraintCounts.nonChordStructuralSupportCount > 0);
+});
+
 function isModulatoryPivotEpisode(plan: HarmonicPlan): boolean {
   return (
     plan.state === "episode" &&
@@ -275,6 +341,41 @@ function isModulatoryPivotEpisode(plan: HarmonicPlan): boolean {
     plan.fragmentTransform !== undefined &&
     plan.targetKey !== undefined
   );
+}
+
+function shortPivotPlans(): { pivotEpisode: HarmonicPlan; followingStretto: HarmonicPlan } {
+  const meterContext = createMeterContext({ numerator: 4, denominator: 4 });
+  const localKey: KeySignature = { tonic: "C", mode: "major" };
+  const pivotEpisode: HarmonicPlan = {
+    state: "episode",
+    startTick: 0,
+    durationTicks: TICKS_PER_QUARTER * 8,
+    meterContext,
+    localKey,
+    departureKey: localKey,
+    targetKey: localKey,
+    styleProfile: "hybrid",
+    cadenceKind: "modulatory",
+    ambiguityIntent: "pivot-harmony",
+    ambiguityRecoveryTick: TICKS_PER_QUARTER * 8,
+    parallelKeyShift: false,
+    sequencePattern: "ascending-step",
+    fragmentTransform: "contrary-motion",
+    anchors: [
+      { tick: 0, localKey, function: "tonic", cadenceTarget: false },
+      { tick: TICKS_PER_QUARTER * 4, localKey, function: "dominant", cadenceTarget: false },
+    ],
+  };
+
+  return {
+    pivotEpisode,
+    followingStretto: {
+      ...pivotEpisode,
+      state: "stretto-like",
+      startTick: TICKS_PER_QUARTER * 8,
+      anchors: [{ tick: TICKS_PER_QUARTER * 8, localKey, function: "tonic", cadenceTarget: false }],
+    },
+  };
 }
 
 function hardConstraintFailures(diagnostics: ReturnType<typeof generateScore>["diagnostics"]): number {
