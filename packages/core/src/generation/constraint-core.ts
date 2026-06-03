@@ -10,12 +10,18 @@ import type {
   MeterContext,
   NoteEvent,
   PlannedEntry,
+  SectionConstraintSatisfactionWindow,
   Voice,
 } from "../events.js";
 import { analyzeWritingProfileConstraints, type WritingProfile } from "../writing-profile.js";
 import { analyzeScore } from "./diagnostics.js";
 import { chordTonePitchClasses } from "./harmony.js";
 import { scaleDegreePitchClass } from "./pitch.js";
+import {
+  buildSectionConstraintProblem,
+  evaluateSectionConstraintProblem,
+  sectionConstraintSoftCost,
+} from "./section-constraint-problem.js";
 import { compareNoteEvents, positiveModulo, roundRatio } from "./shared.js";
 
 export type ScoreDraft = {
@@ -38,6 +44,8 @@ export type ConstraintWindow = {
   harmonicPlan?: HarmonicPlan;
   meterContext?: MeterContext;
   terminalSupport?: boolean;
+  sectionConstraintProblem?: boolean;
+  sectionConstraintReview?: SectionConstraintSatisfactionWindow;
   continuousBoundaryCarry?: ContinuousBoundaryCarrySummary;
 };
 
@@ -88,6 +96,9 @@ const HARD_FAILURE_EXPLANATIONS: Record<ConstraintHardFailureCode, string> = {
   "subject-identity-violation": "subject and subject-fragment entries must match the planned pitch-class identity",
   "answer-plan-violation": "answer entries must match the planned answer pitch-class identity",
   "key-metadata-mismatch": "entry pitch classes must agree with the recorded local key metadata",
+  "intentional-rest-reason": "intentional section rests must use an allowed internal rest reason",
+  "section-voice-coverage": "continuation slots must preserve required active voice coverage",
+  "structural-harmonic-support": "structural harmonic anchors must keep root or chord-tone support",
 };
 
 export function evaluateScoreDraft(
@@ -107,6 +118,18 @@ export function evaluateScoreDraft(
   );
   const diagnostics = analyzeScoreSafely(analyzableNotes, subjectEntries, sectionPlans, draft.writingProfile);
   const writingProfileDiagnostics = analyzeWritingProfileConstraints(analyzableNotes, draft.writingProfile);
+  const sectionConstraintReview =
+    window.sectionConstraintProblem === true && window.harmonicPlan !== undefined
+      ? evaluateSectionConstraintProblem({
+          problem: buildSectionConstraintProblem({
+            notes: analyzableNotes,
+            sectionPlan: window.harmonicPlan,
+            subjectEntries,
+          }),
+          notes: analyzableNotes,
+          sectionPlan: window.harmonicPlan,
+        })
+      : window.sectionConstraintReview;
   const hardFailures = new Map<ConstraintHardFailureCode, ConstraintHardFailure>();
 
   for (const failure of directEventShapeFailures(shapeCheckNotes, draft.endTick)) {
@@ -140,14 +163,30 @@ export function evaluateScoreDraft(
     );
   }
 
-  const softCosts = softFeatureCosts(draft, window, diagnostics, writingProfileDiagnostics);
+  if (sectionConstraintReview !== undefined) {
+    const counts = sectionConstraintReview.infeasibleConstraintCounts;
+    if (counts.invalidIntentionalRestReason > 0) {
+      addHardFailure(hardFailures, "intentional-rest-reason", [], counts.invalidIntentionalRestReason);
+    }
+    const voiceCoverageFailures =
+      counts.minActiveVoiceViolation + counts.unsupportedSolo + counts.allVoiceSilence + counts.longUnplannedSilentRun;
+    if (voiceCoverageFailures > 0) {
+      addHardFailure(hardFailures, "section-voice-coverage", [], voiceCoverageFailures);
+    }
+    const structuralSupportFailures = counts.structuralChordSupportMiss + counts.structuralRootSupportMiss;
+    if (structuralSupportFailures > 0) {
+      addHardFailure(hardFailures, "structural-harmonic-support", [], structuralSupportFailures);
+    }
+  }
+
+  const softCosts = softFeatureCosts(draft, window, diagnostics, writingProfileDiagnostics, sectionConstraintReview);
   const totalSoftCost = roundRatio(softCosts.reduce((sum, cost) => sum + cost.cost, 0));
   const sortedHardFailures = [...hardFailures.values()].sort((left, right) => left.code.localeCompare(right.code));
   const affectedNotes = uniqueAffectedNotes(sortedHardFailures.flatMap((failure) => failure.affectedNotes));
 
   return {
     schemaVersion: 1,
-    window,
+    window: sectionConstraintReview === undefined ? window : { ...window, sectionConstraintReview },
     hardFailures: sortedHardFailures,
     softCosts,
     totalSoftCost,
@@ -389,6 +428,7 @@ function softFeatureCosts(
   window: ConstraintWindow,
   diagnostics: ReturnType<typeof analyzeScore> | undefined,
   writingProfileDiagnostics: ReturnType<typeof analyzeWritingProfileConstraints>,
+  sectionConstraintReview: SectionConstraintSatisfactionWindow | undefined,
 ): ConstraintSoftFeatureCost[] {
   const writingProfilePlayabilityCost =
     writingProfileDiagnostics.handSpanViolations +
@@ -404,6 +444,7 @@ function softFeatureCosts(
         cost: writingProfilePlayabilityCost,
         explanation: "WritingProfile playability evidence ranks viable candidates after pitch-contract checks",
       },
+      ...sectionConstraintSoftFeatureCosts(sectionConstraintReview),
       ...continuousBoundarySoftFeatureCosts(window),
       ...terminalSupportSoftFeatureCosts(draft, window),
     ].filter((cost) => cost.cost > 0);
@@ -490,6 +531,7 @@ function softFeatureCosts(
       explanation:
         "free-counterpoint candidates are ranked by entry handoff support and explained solo or thinning context",
     },
+    ...sectionConstraintSoftFeatureCosts(sectionConstraintReview),
     ...continuousBoundarySoftFeatureCosts(window),
     ...terminalSupportSoftFeatureCosts(draft, window),
     {
@@ -546,6 +588,43 @@ function highRegisterSopranoLeapCost(
 
 function usesConstrainedSopranoContourProfile(writingProfile: WritingProfile): boolean {
   return writingProfile.playability?.kind === "music-box";
+}
+
+function sectionConstraintSoftFeatureCosts(
+  review: SectionConstraintSatisfactionWindow | undefined,
+): ConstraintSoftFeatureCost[] {
+  if (review === undefined) {
+    return [];
+  }
+  return [
+    {
+      feature: "section-csp-voice-coverage",
+      cost:
+        review.infeasibleConstraintCounts.minActiveVoiceViolation * 2 +
+        review.infeasibleConstraintCounts.unsupportedSolo * 6 +
+        review.infeasibleConstraintCounts.allVoiceSilence * 8 +
+        review.infeasibleConstraintCounts.longUnplannedSilentRun * 5,
+      explanation:
+        "section-local CSP ranks candidates by required voice coverage, unsupported solo exposure, and unplanned silence",
+    },
+    {
+      feature: "section-csp-harmonic-support",
+      cost:
+        review.infeasibleConstraintCounts.structuralChordSupportMiss * 4 +
+        review.infeasibleConstraintCounts.structuralRootSupportMiss * 6,
+      explanation: "section-local CSP ranks structural beats by root and chord-tone support",
+    },
+    {
+      feature: "section-csp-rest-reason",
+      cost: review.infeasibleConstraintCounts.invalidIntentionalRestReason * 10,
+      explanation: "section-local CSP accepts only the allowed internal intentional-rest reasons",
+    },
+    {
+      feature: "section-csp-search-width",
+      cost: Math.max(0, sectionConstraintSoftCost(review) / Math.max(1, review.solverCandidateCount)),
+      explanation: "section-local CSP exposes bounded deterministic candidate width as trace evidence",
+    },
+  ].filter((cost) => cost.cost > 0);
 }
 
 function continuousBoundarySoftFeatureCosts(window: ConstraintWindow): ConstraintSoftFeatureCost[] {

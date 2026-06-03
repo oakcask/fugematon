@@ -1,0 +1,145 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { TICKS_PER_QUARTER } from "../constants.js";
+import type { FugueState, HarmonicPlan, NoteEvent } from "../events.js";
+import { generateScore } from "../generate.js";
+import { buildHarmonicPlan } from "./harmony.js";
+import { createMeterContext } from "./meter.js";
+import {
+  buildSectionConstraintProblem,
+  evaluateSectionConstraintProblem,
+  isAllowedIntentionalRestReason,
+  type SectionConstraintSlot,
+} from "./section-constraint-problem.js";
+
+test("section CSP accepts intentional rests only with allowed reasons", () => {
+  const plan = sectionPlan({ state: "episode" });
+  const problem = buildSectionConstraintProblem({
+    notes: supportedNotes(plan.startTick),
+    sectionPlan: plan,
+  });
+  const invalidRestSlot: SectionConstraintSlot = {
+    voice: "alto",
+    startTick: plan.startTick,
+    endTick: plan.startTick + TICKS_PER_QUARTER,
+    value: { kind: "intentional-rest", reason: "decorative-rest" },
+  };
+  const review = evaluateSectionConstraintProblem({
+    problem: {
+      ...problem,
+      slots: [
+        ...problem.slots.filter((slot) => slot.voice !== "alto" || slot.startTick !== plan.startTick),
+        invalidRestSlot,
+      ],
+    },
+    notes: supportedNotes(plan.startTick),
+    sectionPlan: plan,
+  });
+
+  assert.equal(isAllowedIntentionalRestReason("cadence-breath"), true);
+  assert.equal(isAllowedIntentionalRestReason("decorative-rest"), false);
+  assert.equal(review.infeasibleConstraintCounts.invalidIntentionalRestReason, 1);
+});
+
+test("section CSP rejects unsupported solo and long unplanned silent runs", () => {
+  const plan = sectionPlan({ state: "episode", durationTicks: TICKS_PER_QUARTER * 4 });
+  const notes = [
+    note({
+      voice: "soprano",
+      startTick: plan.startTick,
+      durationTicks: plan.durationTicks,
+      pitch: 72,
+    }),
+  ];
+  const review = evaluateSectionConstraintProblem({
+    problem: buildSectionConstraintProblem({ notes, sectionPlan: plan }),
+    notes,
+    sectionPlan: plan,
+  });
+
+  assert.equal(review.infeasibleConstraintCounts.unsupportedSolo, 4);
+  assert.equal(review.infeasibleConstraintCounts.minActiveVoiceViolation, 4);
+  assert.equal(review.infeasibleConstraintCounts.longUnplannedSilentRun, 3);
+  assert.equal(review.selectedRelaxationLevel, "infeasible");
+});
+
+test("section CSP requires structural root and chord support at harmonic anchors", () => {
+  const plan = sectionPlan({ state: "subject-return" });
+  const unsupported = evaluateSectionConstraintProblem({
+    problem: buildSectionConstraintProblem({
+      notes: [
+        note({ voice: "soprano", startTick: plan.startTick, pitch: 74 }),
+        note({ voice: "alto", startTick: plan.startTick, pitch: 65 }),
+        note({ voice: "tenor", startTick: plan.startTick, pitch: 57 }),
+      ],
+      sectionPlan: plan,
+    }),
+    notes: [
+      note({ voice: "soprano", startTick: plan.startTick, pitch: 74 }),
+      note({ voice: "alto", startTick: plan.startTick, pitch: 65 }),
+      note({ voice: "tenor", startTick: plan.startTick, pitch: 57 }),
+    ],
+    sectionPlan: plan,
+  });
+  const supportedNotesAtAnchor = supportedNotes(plan.startTick, plan.durationTicks);
+  const supported = evaluateSectionConstraintProblem({
+    problem: buildSectionConstraintProblem({ notes: supportedNotesAtAnchor, sectionPlan: plan }),
+    notes: supportedNotesAtAnchor,
+    sectionPlan: plan,
+  });
+
+  assert.ok(unsupported.infeasibleConstraintCounts.structuralChordSupportMiss > 0);
+  assert.ok(unsupported.infeasibleConstraintCounts.structuralRootSupportMiss > 0);
+  assert.equal(supported.infeasibleConstraintCounts.structuralChordSupportMiss, 0);
+  assert.equal(supported.infeasibleConstraintCounts.structuralRootSupportMiss, 0);
+});
+
+test("section CSP diagnostics are deterministic for the same seed and input", () => {
+  const first = generateScore({ seed: "fugue-smoke", lengthTicks: TICKS_PER_QUARTER * 32 });
+  const second = generateScore({ seed: "fugue-smoke", lengthTicks: TICKS_PER_QUARTER * 32 });
+
+  assert.deepEqual(first.diagnostics.constraintSatisfactionReview, second.diagnostics.constraintSatisfactionReview);
+  assert.equal(first.diagnostics.constraintSatisfactionReview.schemaVersion, 1);
+  assert.ok(first.diagnostics.constraintSatisfactionReview.solverCandidateCount > 0);
+});
+
+function sectionPlan(input: { state: FugueState; startTick?: number; durationTicks?: number }): HarmonicPlan {
+  return buildHarmonicPlan({
+    state: input.state,
+    startTick: input.startTick ?? 0,
+    durationTicks: input.durationTicks ?? TICKS_PER_QUARTER * 4,
+    globalKey: { tonic: "C", mode: "major" },
+    localKey: { tonic: "C", mode: "major" },
+    targetKey: { tonic: "C", mode: "major" },
+    styleProfile: "strict-classical",
+    cadenceKind: "authentic",
+    ambiguityIntent: "none",
+    meterContext: createMeterContext({ numerator: 4, denominator: 4 }),
+  });
+}
+
+function supportedNotes(startTick: number, durationTicks = TICKS_PER_QUARTER): NoteEvent[] {
+  return [
+    note({ voice: "bass", startTick, durationTicks, pitch: 48 }),
+    note({ voice: "tenor", startTick, durationTicks, pitch: 55 }),
+    note({ voice: "alto", startTick, durationTicks, pitch: 64 }),
+    note({ voice: "soprano", startTick, durationTicks, pitch: 72 }),
+  ];
+}
+
+function note(input: {
+  voice: NoteEvent["voice"];
+  startTick: number;
+  durationTicks?: number;
+  pitch: number;
+}): NoteEvent {
+  return {
+    kind: "note",
+    voice: input.voice,
+    startTick: input.startTick,
+    durationTicks: input.durationTicks ?? TICKS_PER_QUARTER,
+    pitch: input.pitch,
+    velocity: 72,
+    role: "free-counterpoint",
+  };
+}

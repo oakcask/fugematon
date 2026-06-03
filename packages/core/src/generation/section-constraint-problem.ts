@@ -1,0 +1,556 @@
+import { TICKS_PER_QUARTER, VOICES } from "../constants.js";
+import type {
+  ConstraintSatisfactionReviewSummary,
+  FugueState,
+  HarmonicPlan,
+  IntentionalRestReason,
+  NoteEvent,
+  PlannedEntry,
+  SectionConstraintInfeasibleCounts,
+  SectionConstraintRelaxationLevel,
+  SectionConstraintRestSpan,
+  SectionConstraintSatisfactionWindow,
+  SectionConstraintSilentRun,
+  Voice,
+} from "../events.js";
+import { chordTonePitchClasses, rootDegreeForFunction } from "./harmony.js";
+import { scaleDegreePitchClass } from "./pitch.js";
+import { positiveModulo, roundRatio } from "./shared.js";
+
+export const INTENTIONAL_REST_REASONS = [
+  "cadence-breath",
+  "entry-handoff-delay",
+  "register-relief",
+  "suspension-resolution",
+  "pedal-thinning",
+] as const satisfies readonly IntentionalRestReason[];
+
+export type SectionConstraintSlotValue =
+  | {
+      kind: "note";
+      pitch: number;
+      noteStartTick: number;
+      noteEndTick: number;
+    }
+  | {
+      kind: "hold";
+      pitch: number;
+      noteStartTick: number;
+      noteEndTick: number;
+    }
+  | {
+      kind: "intentional-rest";
+      reason: IntentionalRestReason | string;
+    };
+
+export type SectionConstraintSlot = {
+  voice: Voice;
+  startTick: number;
+  endTick: number;
+  value?: SectionConstraintSlotValue;
+};
+
+export type SectionConstraintProblem = {
+  schemaVersion: 1;
+  window: {
+    startTick: number;
+    endTick: number;
+    state: FugueState | "unplanned";
+  };
+  slots: SectionConstraintSlot[];
+};
+
+export function isAllowedIntentionalRestReason(reason: string): reason is IntentionalRestReason {
+  return (INTENTIONAL_REST_REASONS as readonly string[]).includes(reason);
+}
+
+export function buildSectionConstraintProblem(input: {
+  notes: readonly NoteEvent[];
+  sectionPlan: HarmonicPlan;
+  subjectEntries?: readonly PlannedEntry[];
+  gridTicks?: number;
+  intentionalRests?: readonly SectionConstraintRestSpan[];
+}): SectionConstraintProblem {
+  const gridTicks = input.gridTicks ?? input.sectionPlan.meterContext.beatTicks ?? TICKS_PER_QUARTER;
+  const sectionStartTick = input.sectionPlan.startTick;
+  const sectionEndTick = input.sectionPlan.startTick + input.sectionPlan.durationTicks;
+  const slots: SectionConstraintSlot[] = [];
+
+  for (let startTick = sectionStartTick; startTick < sectionEndTick; startTick += gridTicks) {
+    const endTick = Math.min(sectionEndTick, startTick + gridTicks);
+    for (const voice of VOICES) {
+      const active = activeNoteAt(input.notes, voice, startTick);
+      const explicitRest = input.intentionalRests?.find(
+        (rest) => rest.voice === voice && rest.startTick <= startTick && endTick <= rest.endTick,
+      );
+      const inferredReason =
+        explicitRest?.reason ??
+        (active === undefined
+          ? inferIntentionalRestReason({
+              voice,
+              startTick,
+              endTick,
+              notes: input.notes,
+              sectionPlan: input.sectionPlan,
+              subjectEntries: input.subjectEntries ?? [],
+            })
+          : undefined);
+
+      slots.push({
+        voice,
+        startTick,
+        endTick,
+        value:
+          active !== undefined
+            ? {
+                kind: active.startTick === startTick ? "note" : "hold",
+                pitch: active.pitch,
+                noteStartTick: active.startTick,
+                noteEndTick: active.startTick + active.durationTicks,
+              }
+            : inferredReason === undefined
+              ? undefined
+              : { kind: "intentional-rest", reason: inferredReason },
+      });
+    }
+  }
+
+  return {
+    schemaVersion: 1,
+    window: {
+      startTick: sectionStartTick,
+      endTick: sectionEndTick,
+      state: input.sectionPlan.state,
+    },
+    slots,
+  };
+}
+
+export function evaluateSectionConstraintProblem(input: {
+  problem: SectionConstraintProblem;
+  notes: readonly NoteEvent[];
+  sectionPlan: HarmonicPlan;
+}): SectionConstraintSatisfactionWindow {
+  const gridTicks = inferGridTicks(input.problem);
+  const infeasibleConstraintCounts = emptyInfeasibleCounts();
+  const intentionalRestSpans = mergeIntentionalRestSpans(input.problem.slots, input.sectionPlan.state);
+  const unplannedSilentRuns = mergeSilentRuns(input.problem.slots, input.sectionPlan.state);
+  const slotTicks = uniqueSlotStartTicks(input.problem.slots);
+  let minActiveVoices = Number.POSITIVE_INFINITY;
+  let maxActiveVoices = 0;
+
+  for (const slot of input.problem.slots) {
+    if (slot.value?.kind === "intentional-rest" && !isAllowedIntentionalRestReason(slot.value.reason)) {
+      infeasibleConstraintCounts.invalidIntentionalRestReason += 1;
+    }
+  }
+
+  for (const tick of slotTicks) {
+    const activeNotes = activeNotesAt(input.notes, tick);
+    const activeVoiceCount = new Set(activeNotes.map((note) => note.voice)).size;
+    const minRequired = minActiveVoicesForSlot(input.sectionPlan, tick, activeNotes);
+    minActiveVoices = Math.min(minActiveVoices, activeVoiceCount);
+    maxActiveVoices = Math.max(maxActiveVoices, activeVoiceCount);
+
+    if (activeVoiceCount === 0) {
+      infeasibleConstraintCounts.allVoiceSilence += 1;
+    }
+    if (activeVoiceCount === 1) {
+      infeasibleConstraintCounts.unsupportedSolo += 1;
+    }
+    if (activeVoiceCount < minRequired) {
+      infeasibleConstraintCounts.minActiveVoiceViolation += 1;
+    }
+  }
+
+  for (const run of unplannedSilentRuns) {
+    if (
+      !run.planned &&
+      run.durationTicks > TICKS_PER_QUARTER * 2 &&
+      !isCadentialTick(input.sectionPlan, run.startTick)
+    ) {
+      infeasibleConstraintCounts.longUnplannedSilentRun += 1;
+    }
+  }
+
+  for (const anchor of input.sectionPlan.anchors) {
+    if (anchor.tick < input.problem.window.startTick || anchor.tick >= input.problem.window.endTick) {
+      continue;
+    }
+    const activeNotes = activeNotesAt(input.notes, anchor.tick);
+    const chordTonePitchClassesForAnchor = chordTonePitchClasses(anchor.localKey, anchor.function);
+    const hasChordSupport = activeNotes.some((note) =>
+      chordTonePitchClassesForAnchor.includes(positiveModulo(note.pitch, 12)),
+    );
+    if (!hasChordSupport) {
+      infeasibleConstraintCounts.structuralChordSupportMiss += 1;
+    }
+
+    if (anchor.cadenceTarget || anchor.function === "tonic" || anchor.function === "cadential-tonic") {
+      const rootPitchClass = scaleDegreePitchClass(rootDegreeForFunction(anchor.function), 0, anchor.localKey);
+      const hasRootSupport = activeNotes.some(
+        (note) =>
+          (note.voice === "bass" || note.voice === "tenor") && positiveModulo(note.pitch, 12) === rootPitchClass,
+      );
+      if (!hasRootSupport) {
+        infeasibleConstraintCounts.structuralRootSupportMiss += 1;
+      }
+    }
+  }
+
+  const selectedRelaxationLevel = relaxationLevel(infeasibleConstraintCounts);
+  const solverCandidateCount = solverCandidateCountForProblem(input.problem, gridTicks);
+
+  return {
+    startTick: input.problem.window.startTick,
+    endTick: input.problem.window.endTick,
+    state: input.problem.window.state,
+    minActiveVoices: Number.isFinite(minActiveVoices) ? minActiveVoices : 0,
+    maxActiveVoices,
+    intentionalRestSpans,
+    unplannedSilentRuns,
+    infeasibleConstraintCounts,
+    selectedRelaxationLevel,
+    solverCandidateCount,
+  };
+}
+
+export function buildConstraintSatisfactionReview(input: {
+  notes: readonly NoteEvent[];
+  subjectEntries: readonly PlannedEntry[];
+  sectionPlans: readonly HarmonicPlan[];
+}): ConstraintSatisfactionReviewSummary {
+  const windows = input.sectionPlans
+    .filter((plan) => plan.state !== "exposition")
+    .map((sectionPlan) => {
+      const problem = buildSectionConstraintProblem({
+        notes: input.notes,
+        sectionPlan,
+        subjectEntries: input.subjectEntries,
+      });
+      return evaluateSectionConstraintProblem({
+        problem,
+        notes: input.notes,
+        sectionPlan,
+      });
+    });
+  const infeasibleConstraintCounts = sumInfeasibleCounts(windows.map((window) => window.infeasibleConstraintCounts));
+  const unplannedSilentRuns = windows.flatMap((window) => window.unplannedSilentRuns.filter((run) => !run.planned));
+  const selectedRelaxationLevel = windows.reduce<SectionConstraintRelaxationLevel>(
+    (current, window) => maxRelaxationLevel(current, window.selectedRelaxationLevel),
+    "none",
+  );
+
+  return {
+    schemaVersion: 1,
+    windowCount: windows.length,
+    intentionalRestSpanCount: windows.reduce((sum, window) => sum + window.intentionalRestSpans.length, 0),
+    unplannedSilentRunCount: unplannedSilentRuns.length,
+    maxUnplannedSilentRunTicks: Math.max(0, ...unplannedSilentRuns.map((run) => run.durationTicks)),
+    unsupportedSoloWindowCount: infeasibleConstraintCounts.unsupportedSolo,
+    allVoiceSilenceWindowCount: infeasibleConstraintCounts.allVoiceSilence,
+    infeasibleConstraintCounts,
+    selectedRelaxationLevel,
+    solverCandidateCount: windows.reduce((sum, window) => sum + window.solverCandidateCount, 0),
+    windows,
+  };
+}
+
+function activeNoteAt(notes: readonly NoteEvent[], voice: Voice, tick: number): NoteEvent | undefined {
+  return notes.find(
+    (note) => note.voice === voice && note.startTick <= tick && tick < note.startTick + note.durationTicks,
+  );
+}
+
+function activeNotesAt(notes: readonly NoteEvent[], tick: number): readonly NoteEvent[] {
+  return notes.filter((note) => note.startTick <= tick && tick < note.startTick + note.durationTicks);
+}
+
+function inferIntentionalRestReason(input: {
+  voice: Voice;
+  startTick: number;
+  endTick: number;
+  notes: readonly NoteEvent[];
+  sectionPlan: HarmonicPlan;
+  subjectEntries: readonly PlannedEntry[];
+}): IntentionalRestReason | undefined {
+  const sectionEndTick = input.sectionPlan.startTick + input.sectionPlan.durationTicks;
+  const beatTicks = input.sectionPlan.meterContext.beatTicks;
+  if (isCadentialTick(input.sectionPlan, input.startTick) && activeNotesAt(input.notes, input.startTick).length >= 2) {
+    return "cadence-breath";
+  }
+
+  const nearbyEntry = input.subjectEntries.find(
+    (entry) =>
+      entry.startTick >= input.sectionPlan.startTick &&
+      entry.startTick < sectionEndTick &&
+      Math.abs(entry.startTick - input.startTick) <= beatTicks * 2 &&
+      entry.voice !== input.voice,
+  );
+  if (nearbyEntry !== undefined) {
+    return "entry-handoff-delay";
+  }
+
+  if (hasPedalSupport(input.notes, input.sectionPlan, input.startTick) && input.voice !== "bass") {
+    return "pedal-thinning";
+  }
+
+  const previous = previousVoiceNote(input.notes, input.voice, input.startTick);
+  const next = nextVoiceNote(input.notes, input.voice, input.endTick);
+  if (
+    previous !== undefined &&
+    next !== undefined &&
+    previous.startTick + previous.durationTicks <= input.startTick &&
+    next.startTick - input.endTick <= beatTicks * 2 &&
+    (Math.abs(previous.pitch - next.pitch) >= 7 || isRegisterEdge(input.voice, previous.pitch))
+  ) {
+    return "register-relief";
+  }
+
+  return undefined;
+}
+
+function isCadentialTick(sectionPlan: HarmonicPlan, tick: number): boolean {
+  const sectionEndTick = sectionPlan.startTick + sectionPlan.durationTicks;
+  const cadenceStartTick = Math.max(sectionPlan.startTick, sectionEndTick - sectionPlan.meterContext.beatTicks * 2);
+  return (
+    tick >= cadenceStartTick &&
+    (sectionPlan.cadenceKind === "authentic" ||
+      sectionPlan.cadenceKind === "modal" ||
+      sectionPlan.cadenceKind === "half" ||
+      sectionPlan.terminalIntent !== undefined)
+  );
+}
+
+function hasPedalSupport(notes: readonly NoteEvent[], sectionPlan: HarmonicPlan, tick: number): boolean {
+  const anchor = sectionPlan.anchors
+    .map((candidate) => ({ anchor: candidate, distance: Math.abs(candidate.tick - tick) }))
+    .sort((left, right) => left.distance - right.distance)[0]?.anchor;
+  if (anchor === undefined) {
+    return false;
+  }
+  const rootPitchClass = scaleDegreePitchClass(rootDegreeForFunction(anchor.function), 0, anchor.localKey);
+  return notes.some(
+    (note) =>
+      (note.voice === "bass" || note.voice === "tenor") &&
+      note.startTick <= tick &&
+      tick < note.startTick + note.durationTicks &&
+      note.durationTicks >= sectionPlan.meterContext.beatTicks * 2 &&
+      positiveModulo(note.pitch, 12) === rootPitchClass,
+  );
+}
+
+function previousVoiceNote(notes: readonly NoteEvent[], voice: Voice, tick: number): NoteEvent | undefined {
+  return notes
+    .filter((note) => note.voice === voice && note.startTick + note.durationTicks <= tick)
+    .sort((left, right) => right.startTick + right.durationTicks - (left.startTick + left.durationTicks))[0];
+}
+
+function nextVoiceNote(notes: readonly NoteEvent[], voice: Voice, tick: number): NoteEvent | undefined {
+  return notes
+    .filter((note) => note.voice === voice && note.startTick >= tick)
+    .sort((left, right) => left.startTick - right.startTick)[0];
+}
+
+function isRegisterEdge(voice: Voice, pitch: number): boolean {
+  if (voice === "soprano") {
+    return pitch >= 76;
+  }
+  if (voice === "bass") {
+    return pitch <= 42;
+  }
+  return pitch >= 70 || pitch <= 48;
+}
+
+function uniqueSlotStartTicks(slots: readonly SectionConstraintSlot[]): number[] {
+  return [...new Set(slots.map((slot) => slot.startTick))].sort((left, right) => left - right);
+}
+
+function inferGridTicks(problem: SectionConstraintProblem): number {
+  const ticks = uniqueSlotStartTicks(problem.slots);
+  if (ticks.length < 2) {
+    return TICKS_PER_QUARTER;
+  }
+  return Math.max(1, ticks[1]! - ticks[0]!);
+}
+
+function minActiveVoicesForSlot(sectionPlan: HarmonicPlan, tick: number, activeNotes: readonly NoteEvent[]): number {
+  if (isCadentialTick(sectionPlan, tick) || hasPedalSupport(activeNotes, sectionPlan, tick)) {
+    return 2;
+  }
+  return 3;
+}
+
+function mergeIntentionalRestSpans(
+  slots: readonly SectionConstraintSlot[],
+  state: FugueState | "unplanned",
+): SectionConstraintRestSpan[] {
+  const spans: SectionConstraintRestSpan[] = [];
+  for (const voice of VOICES) {
+    let current: SectionConstraintRestSpan | undefined;
+    for (const slot of slots.filter((candidate) => candidate.voice === voice)) {
+      const reason =
+        slot.value?.kind === "intentional-rest" && isAllowedIntentionalRestReason(slot.value.reason)
+          ? slot.value.reason
+          : undefined;
+      if (reason === undefined) {
+        if (current !== undefined) {
+          spans.push(current);
+          current = undefined;
+        }
+        continue;
+      }
+      if (current !== undefined && current.endTick === slot.startTick && current.reason === reason) {
+        current = { ...current, endTick: slot.endTick, durationTicks: slot.endTick - current.startTick };
+      } else {
+        if (current !== undefined) {
+          spans.push(current);
+        }
+        current = {
+          voice,
+          startTick: slot.startTick,
+          endTick: slot.endTick,
+          durationTicks: slot.endTick - slot.startTick,
+          state,
+          reason,
+        };
+      }
+    }
+    if (current !== undefined) {
+      spans.push(current);
+    }
+  }
+  return spans;
+}
+
+function mergeSilentRuns(
+  slots: readonly SectionConstraintSlot[],
+  state: FugueState | "unplanned",
+): SectionConstraintSilentRun[] {
+  const runs: SectionConstraintSilentRun[] = [];
+  for (const voice of VOICES) {
+    let current: SectionConstraintSilentRun | undefined;
+    for (const slot of slots.filter((candidate) => candidate.voice === voice)) {
+      const planned =
+        slot.value?.kind === "intentional-rest" && isAllowedIntentionalRestReason(slot.value.reason)
+          ? slot.value.reason
+          : undefined;
+      const silent = slot.value === undefined || planned !== undefined;
+      if (!silent) {
+        if (current !== undefined) {
+          runs.push(current);
+          current = undefined;
+        }
+        continue;
+      }
+      const reason = planned ?? "unplanned";
+      const isSameRun =
+        current !== undefined &&
+        current.endTick === slot.startTick &&
+        current.planned === (planned !== undefined) &&
+        current.reason === reason;
+      if (isSameRun && current !== undefined) {
+        current = { ...current, endTick: slot.endTick, durationTicks: slot.endTick - current.startTick };
+      } else {
+        if (current !== undefined) {
+          runs.push(current);
+        }
+        current = {
+          voice,
+          startTick: slot.startTick,
+          endTick: slot.endTick,
+          durationTicks: slot.endTick - slot.startTick,
+          state,
+          planned: planned !== undefined,
+          reason,
+        };
+      }
+    }
+    if (current !== undefined) {
+      runs.push(current);
+    }
+  }
+  return runs;
+}
+
+function solverCandidateCountForProblem(problem: SectionConstraintProblem, gridTicks: number): number {
+  const structuralSlots = problem.slots.filter((slot) => slot.value?.kind === "note").length;
+  const holdSlots = problem.slots.filter((slot) => slot.value?.kind === "hold").length;
+  const restSlots = problem.slots.filter((slot) => slot.value?.kind === "intentional-rest").length;
+  const emptySlots = problem.slots.filter((slot) => slot.value === undefined).length;
+  const timeSlotCount = Math.max(1, (problem.window.endTick - problem.window.startTick) / gridTicks);
+  return Math.max(1, Math.round(structuralSlots * 3 + holdSlots * 2 + restSlots + emptySlots * 4 + timeSlotCount));
+}
+
+function emptyInfeasibleCounts(): SectionConstraintInfeasibleCounts {
+  return {
+    invalidIntentionalRestReason: 0,
+    minActiveVoiceViolation: 0,
+    unsupportedSolo: 0,
+    allVoiceSilence: 0,
+    longUnplannedSilentRun: 0,
+    structuralChordSupportMiss: 0,
+    structuralRootSupportMiss: 0,
+  };
+}
+
+function sumInfeasibleCounts(counts: readonly SectionConstraintInfeasibleCounts[]): SectionConstraintInfeasibleCounts {
+  return counts.reduce<SectionConstraintInfeasibleCounts>(
+    (sum, count) => ({
+      invalidIntentionalRestReason: sum.invalidIntentionalRestReason + count.invalidIntentionalRestReason,
+      minActiveVoiceViolation: sum.minActiveVoiceViolation + count.minActiveVoiceViolation,
+      unsupportedSolo: sum.unsupportedSolo + count.unsupportedSolo,
+      allVoiceSilence: sum.allVoiceSilence + count.allVoiceSilence,
+      longUnplannedSilentRun: sum.longUnplannedSilentRun + count.longUnplannedSilentRun,
+      structuralChordSupportMiss: sum.structuralChordSupportMiss + count.structuralChordSupportMiss,
+      structuralRootSupportMiss: sum.structuralRootSupportMiss + count.structuralRootSupportMiss,
+    }),
+    emptyInfeasibleCounts(),
+  );
+}
+
+function relaxationLevel(counts: SectionConstraintInfeasibleCounts): SectionConstraintRelaxationLevel {
+  const densityFailures =
+    counts.minActiveVoiceViolation + counts.unsupportedSolo + counts.allVoiceSilence + counts.longUnplannedSilentRun;
+  const structuralFailures = counts.structuralChordSupportMiss + counts.structuralRootSupportMiss;
+  if (counts.invalidIntentionalRestReason > 0 || (densityFailures > 0 && structuralFailures > 0)) {
+    return "infeasible";
+  }
+  if (densityFailures > 0) {
+    return "density-floor-review";
+  }
+  if (structuralFailures > 0) {
+    return "structural-support-review";
+  }
+  return "none";
+}
+
+function maxRelaxationLevel(
+  left: SectionConstraintRelaxationLevel,
+  right: SectionConstraintRelaxationLevel,
+): SectionConstraintRelaxationLevel {
+  const order: Record<SectionConstraintRelaxationLevel, number> = {
+    none: 0,
+    "density-floor-review": 1,
+    "structural-support-review": 1,
+    infeasible: 2,
+  };
+  return order[right] > order[left] ? right : left;
+}
+
+export function sectionConstraintHardFailureCount(window: SectionConstraintSatisfactionWindow): number {
+  const counts = window.infeasibleConstraintCounts;
+  return Object.values(counts).reduce((sum, count) => sum + count, 0);
+}
+
+export function sectionConstraintSoftCost(window: SectionConstraintSatisfactionWindow): number {
+  const counts = window.infeasibleConstraintCounts;
+  return roundRatio(
+    counts.minActiveVoiceViolation * 2 +
+      counts.unsupportedSolo * 6 +
+      counts.allVoiceSilence * 8 +
+      counts.longUnplannedSilentRun * 5 +
+      counts.structuralChordSupportMiss * 4 +
+      counts.structuralRootSupportMiss * 6,
+  );
+}
