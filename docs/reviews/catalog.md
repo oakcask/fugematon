@@ -4,6 +4,7 @@
 
 ## Current Quality Lane
 
+* [Generator constraint rebuild continuation CSP review](generator-constraint-rebuild-continuation-csp.md): current architecture evidence. Continuation candidates now include section-CSP variants and selection uses CSP hard failures before relaxation; score-level support cleanup remains visible fallback evidence while all 22 standard seeds still require review.
 * [Generator constraint rebuild final repair downgrade review](generator-constraint-rebuild-final-repair-downgrade.md): current architecture evidence. Harmonic-stasis final repair is now downgraded only where section-local or score-level solver evidence keeps unrepaired and repaired candidates visible in `generatorSearchTrace`.
 * [Music-box n20 voice-crossing structural review](music-box-n20-voice-crossing-structural-review.md): current constrained-profile blocker. User-reported `seed-04fup6t-1rmrxhp` is representative of a broader writing-profile model-boundary failure: key / subject / answer feasibility and adjacent tenor / bass register order are not fully profile-constrained before final pitch projection.
 * [Generator constraint rebuild harmonic continuity support review](generator-constraint-rebuild-harmonic-continuity-support.md): current architecture evidence. Harmonic-continuity support cleanup now has score-level before / after trace rows while preserving 0 hard failures and keeping unresolved review windows visible.

@@ -1719,6 +1719,7 @@ type ContinuationCandidateSelectionBand =
   | "section-local"
   | "section-grammar"
   | "phrase-family"
+  | "section-csp"
   | "harmonic-stasis";
 
 type ContinuationCandidateSelectionWindow = {
@@ -2087,6 +2088,19 @@ export function chooseContinuationSection(
     evaluateCandidate(previousNotes, candidate, previousSubjectEntries, previousSectionPlans),
   );
   const selectionWindow = continuationCandidateSelectionWindow(state, selectionModel, candidates.length);
+  const constraintCandidates = candidates.map((candidate, index) =>
+    buildContinuationConstraintCandidate(
+      continuationConstraintCandidateId({
+        startTick,
+        state: candidate.sectionPlans[0]?.state ?? state,
+        candidateBand: continuationCandidateSelectionBand(index, selectionWindow, selectionModel, candidate),
+        candidateIndex: index,
+      }),
+      candidate,
+      writingProfile,
+      terminalSupportCandidate,
+    ),
+  );
   let bestIndex = bestContinuationCandidateIndex(
     evaluations.slice(0, selectionWindow.baselineCandidateCount),
     selectionModel === "section-local-planner" ? "candidate-oracle-selection" : selectionModel,
@@ -2100,7 +2114,7 @@ export function chooseContinuationSection(
   );
 
   for (const [index, evaluation] of evaluations.entries()) {
-    const candidateBand = continuationCandidateSelectionBand(index, selectionWindow, selectionModel);
+    const candidateBand = continuationCandidateSelectionBand(index, selectionWindow, selectionModel, candidates[index]);
     if (!candidateBandCanBeSelected(candidateBand, index, selectionWindow, selectionModel)) {
       continue;
     }
@@ -2109,7 +2123,7 @@ export function chooseContinuationSection(
       !preservesSectionLocalGuardrails(
         evaluation,
         baselineEvaluation,
-        candidateBand === "section-grammar" || candidateBand === "phrase-family",
+        candidateBand === "section-grammar" || candidateBand === "phrase-family" || candidateBand === "section-csp",
       )
     ) {
       continue;
@@ -2145,7 +2159,12 @@ export function chooseContinuationSection(
             ? sectionGrammarPlannerSelectionRiskAdjustment(
                 evaluations[bestIndex]!,
                 historyContext,
-                continuationCandidateSelectionBand(bestIndex, selectionWindow, selectionModel) === "section-grammar",
+                continuationCandidateSelectionBand(
+                  bestIndex,
+                  selectionWindow,
+                  selectionModel,
+                  candidates[bestIndex],
+                ) === "section-grammar",
               ) +
               phraseDevelopmentSelectionRiskAdjustment(
                 candidates[bestIndex]!,
@@ -2168,21 +2187,30 @@ export function chooseContinuationSection(
     historyContext,
     selectionModel,
   });
+  bestIndex = chooseSectionCspBacktrackingCandidateIndex({
+    currentBestIndex: bestIndex,
+    candidateIndexes: selectableContinuationCandidateIndexes({
+      candidates,
+      evaluations,
+      selectionWindow,
+      selectionModel,
+      baselineEvaluation,
+    }),
+    constraintCandidates,
+    candidateScores: continuationCandidateBacktrackingScores({
+      candidates,
+      evaluations,
+      selectionWindow,
+      selectionModel,
+      historyContext,
+      previousSubjectEntries,
+      previousSectionPlans,
+    }),
+  });
 
   const selectedCandidate = candidates[bestIndex]!;
   const selectedState = selectedCandidate.sectionPlans[0]?.state ?? state;
-  const selectedBand = continuationCandidateSelectionBand(bestIndex, selectionWindow, selectionModel);
-  const constraintCandidate = buildContinuationConstraintCandidate(
-    continuationConstraintCandidateId({
-      startTick,
-      state: selectedState,
-      candidateBand: selectedBand,
-      candidateIndex: bestIndex,
-    }),
-    selectedCandidate,
-    writingProfile,
-    terminalSupportCandidate,
-  );
+  const constraintCandidate = constraintCandidates[bestIndex]!;
   return {
     section: selectedCandidate,
     candidateCount: candidates.length,
@@ -2197,7 +2225,7 @@ export function chooseContinuationSection(
         writingProfile,
         terminalSupportCandidate,
       }),
-      constraintCandidate,
+      ...constraintCandidates,
     ],
     oracleSection: classifyCandidatePoolOracleSection({
       state: selectedState,
@@ -2213,6 +2241,135 @@ export function chooseContinuationSection(
       stateHistory: [...stateHistory.slice(0, -1), selectedState],
     }),
   };
+}
+
+function selectableContinuationCandidateIndexes(input: {
+  candidates: readonly Exposition[];
+  evaluations: readonly CandidateEvaluation[];
+  selectionWindow: ContinuationCandidateSelectionWindow;
+  selectionModel: SelectionModel;
+  baselineEvaluation: CandidateEvaluation;
+}): number[] {
+  const indexes: number[] = [];
+
+  for (const [index, evaluation] of input.evaluations.entries()) {
+    const candidateBand = continuationCandidateSelectionBand(
+      index,
+      input.selectionWindow,
+      input.selectionModel,
+      input.candidates[index],
+    );
+    if (!candidateBandCanBeFallback(candidateBand, index, input.selectionWindow, input.selectionModel)) {
+      continue;
+    }
+    if (
+      candidateBand !== "baseline" &&
+      !preservesSectionLocalGuardrails(
+        evaluation,
+        input.baselineEvaluation,
+        candidateBand === "section-grammar" || candidateBand === "phrase-family" || candidateBand === "section-csp",
+      )
+    ) {
+      continue;
+    }
+    indexes.push(index);
+  }
+
+  return indexes.length === 0 ? input.evaluations.map((_, index) => index) : indexes;
+}
+
+function continuationCandidateBacktrackingScores(input: {
+  candidates: readonly Exposition[];
+  evaluations: readonly CandidateEvaluation[];
+  selectionWindow: ContinuationCandidateSelectionWindow;
+  selectionModel: SelectionModel;
+  historyContext: HistoryAwareSelectionContext;
+  previousSubjectEntries: readonly PlannedEntry[];
+  previousSectionPlans: readonly HarmonicPlan[];
+}): number[] {
+  return input.evaluations.map((evaluation, index) => {
+    const candidateBand = continuationCandidateSelectionBand(
+      index,
+      input.selectionWindow,
+      input.selectionModel,
+      input.candidates[index],
+    );
+    const selectionModel =
+      input.selectionModel === "section-local-planner" && candidateBand === "baseline"
+        ? "candidate-oracle-selection"
+        : input.selectionModel;
+
+    return (
+      candidateSelectionScore(evaluation, selectionModel) +
+      (input.selectionModel === "section-local-planner"
+        ? sectionGrammarPlannerSelectionRiskAdjustment(
+            evaluation,
+            input.historyContext,
+            candidateBand === "section-grammar",
+          ) +
+          phraseDevelopmentSelectionRiskAdjustment(
+            input.candidates[index]!,
+            input.previousSubjectEntries,
+            input.previousSectionPlans,
+            input.historyContext,
+          )
+        : 0)
+    );
+  });
+}
+
+export function chooseSectionCspBacktrackingCandidateIndex(input: {
+  currentBestIndex: number;
+  candidateIndexes: readonly number[];
+  constraintCandidates: readonly ConstraintCandidate[];
+  candidateScores?: readonly number[];
+}): number {
+  const candidateIndexes =
+    input.candidateIndexes.length > 0 ? input.candidateIndexes : input.constraintCandidates.map((_, index) => index);
+  const currentCandidate = input.constraintCandidates[input.currentBestIndex];
+  if (currentCandidate !== undefined && candidateHasNoHardFailures(currentCandidate)) {
+    return input.currentBestIndex;
+  }
+
+  const feasibleIndexes = candidateIndexes.filter((index) => {
+    const candidate = input.constraintCandidates[index];
+    return candidate !== undefined && candidate.result.hardFailures.length === 0;
+  });
+
+  if (feasibleIndexes.length > 0) {
+    return [...feasibleIndexes].sort((left, right) => {
+      const leftScore = input.candidateScores?.[left] ?? 0;
+      const rightScore = input.candidateScores?.[right] ?? 0;
+      if (leftScore !== rightScore) {
+        return leftScore - rightScore;
+      }
+      return input.constraintCandidates[left]!.candidateId.localeCompare(
+        input.constraintCandidates[right]!.candidateId,
+      );
+    })[0]!;
+  }
+
+  return [...candidateIndexes].sort((left, right) => {
+    const leftCandidate = input.constraintCandidates[left]!;
+    const rightCandidate = input.constraintCandidates[right]!;
+    const leftHardFailureCount = constraintCandidateHardFailureCount(leftCandidate);
+    const rightHardFailureCount = constraintCandidateHardFailureCount(rightCandidate);
+    if (leftHardFailureCount !== rightHardFailureCount) {
+      return leftHardFailureCount - rightHardFailureCount;
+    }
+    if (leftCandidate.result.totalSoftCost !== rightCandidate.result.totalSoftCost) {
+      return leftCandidate.result.totalSoftCost - rightCandidate.result.totalSoftCost;
+    }
+    return leftCandidate.candidateId.localeCompare(rightCandidate.candidateId);
+  })[0]!;
+}
+
+function candidateHasNoHardFailures(candidate: ConstraintCandidate): boolean {
+  return candidate.result.hardFailures.length === 0;
+}
+
+function constraintCandidateHardFailureCount(candidate: ConstraintCandidate): number {
+  return candidate.result.hardFailures.reduce((sum, failure) => sum + failure.count, 0);
 }
 
 function buildContinuationConstraintCandidate(
@@ -2264,7 +2421,12 @@ function harmonicStasisSourceConstraintCandidates(input: {
   }
 
   const sourceState = sourceCandidate.sectionPlans[0]?.state ?? "episode";
-  const sourceBand = continuationCandidateSelectionBand(sourceIndex, input.selectionWindow, input.selectionModel);
+  const sourceBand = continuationCandidateSelectionBand(
+    sourceIndex,
+    input.selectionWindow,
+    input.selectionModel,
+    sourceCandidate,
+  );
   return [
     buildContinuationConstraintCandidate(
       `${continuationConstraintCandidateId({
@@ -2376,7 +2538,12 @@ function avoidShortAlternatingPhraseSelection(input: {
   let fallbackScore = Number.POSITIVE_INFINITY;
 
   for (const [index, evaluation] of input.evaluations.entries()) {
-    const candidateBand = continuationCandidateSelectionBand(index, input.selectionWindow, input.selectionModel);
+    const candidateBand = continuationCandidateSelectionBand(
+      index,
+      input.selectionWindow,
+      input.selectionModel,
+      input.candidates[index],
+    );
     if (!candidateBandCanBeFallback(candidateBand, index, input.selectionWindow, input.selectionModel)) {
       continue;
     }
@@ -2388,7 +2555,7 @@ function avoidShortAlternatingPhraseSelection(input: {
       !preservesSectionLocalGuardrails(
         evaluation,
         input.baselineEvaluation,
-        candidateBand === "section-grammar" || candidateBand === "phrase-family",
+        candidateBand === "section-grammar" || candidateBand === "phrase-family" || candidateBand === "section-csp",
       )
     ) {
       continue;
@@ -2441,7 +2608,14 @@ function continuationCandidateSelectionBand(
   index: number,
   window: ContinuationCandidateSelectionWindow,
   selectionModel: SelectionModel,
+  candidate?: Exposition,
 ): ContinuationCandidateSelectionBand {
+  if (candidate?.constraintCandidateFamily === "section-csp-variant") {
+    return "section-csp";
+  }
+  if (candidate?.constraintCandidateFamily === "harmonic-stasis-variant") {
+    return "harmonic-stasis";
+  }
   if (selectionModel !== "section-local-planner" || index < window.baselineCandidateCount) {
     return "baseline";
   }
@@ -2473,6 +2647,7 @@ function candidateBandCanBeSelected(
     index < window.selectableCandidateCount ||
     band === "section-grammar" ||
     band === "phrase-family" ||
+    band === "section-csp" ||
     band === "harmonic-stasis"
   );
 }
@@ -2698,6 +2873,28 @@ function buildHarmonicStasisSolverCandidates(sourceCandidates: readonly Expositi
   });
 }
 
+function buildSectionCspSolverCandidates(
+  sourceCandidates: readonly Exposition[],
+  writingProfile: WritingProfile,
+): Exposition[] {
+  return sourceCandidates.map((sourceCandidate, sourceCandidateIndex) => {
+    const repaired = cloneExposition(sourceCandidate);
+    addFunctionalThinningSupport(repaired.notes, repaired.sectionPlans);
+    addPostEntryContinuationSupport(repaired.notes, repaired.subjectEntries, repaired.sectionPlans);
+    shapeLongRestPhraseClosures(repaired.notes, repaired.sectionPlans);
+    addBassAnswerTailTextureSupport(repaired.notes, repaired.subjectEntries, repaired.sectionPlans);
+    addShortEpisodeHarmonicContinuitySupport(repaired.notes, repaired.sectionPlans);
+    repairTextureVoiceCrossingsForNotes(repaired.notes, repaired.sectionPlans, writingProfile);
+    repaired.notes.sort(compareNoteEvents);
+
+    return {
+      ...repaired,
+      constraintCandidateFamily: "section-csp-variant" as const,
+      constraintSourceCandidateIndex: sourceCandidateIndex,
+    };
+  });
+}
+
 export function buildContinuationCandidates(
   subject: readonly SubjectNote[],
   keySignature: KeySignature,
@@ -2718,6 +2915,7 @@ export function buildContinuationCandidates(
   const registerPlannerCandidates: Exposition[] = [];
   const sectionGrammarCandidates: Exposition[] = [];
   const phraseFamilyOracleCandidates: Exposition[] = [];
+  const sectionCspSolverCandidates: Exposition[] = [];
   const harmonicStasisSolverCandidates: Exposition[] = [];
   const includeSectionLocalPlannerCandidates = selectionModel === "section-local-planner";
   const phraseSubject = phraseSubjectForIntent(subject, state, startTick, selectionModel, phraseIntent);
@@ -2927,6 +3125,19 @@ export function buildContinuationCandidates(
   }
 
   if (includeSectionLocalPlannerCandidates) {
+    sectionCspSolverCandidates.push(
+      ...buildSectionCspSolverCandidates(
+        [
+          ...candidates,
+          ...sectionLocalPlannerCandidates,
+          ...voicePairSupportCandidates,
+          ...registerPlannerCandidates,
+          ...sectionGrammarCandidates,
+          ...phraseFamilyOracleCandidates,
+        ],
+        writingProfile,
+      ),
+    );
     harmonicStasisSolverCandidates.push(
       ...buildHarmonicStasisSolverCandidates([
         ...candidates,
@@ -2935,6 +3146,7 @@ export function buildContinuationCandidates(
         ...registerPlannerCandidates,
         ...sectionGrammarCandidates,
         ...phraseFamilyOracleCandidates,
+        ...sectionCspSolverCandidates,
       ]),
     );
   }
@@ -2944,6 +3156,7 @@ export function buildContinuationCandidates(
   candidates.push(...registerPlannerCandidates);
   candidates.push(...sectionGrammarCandidates);
   candidates.push(...phraseFamilyOracleCandidates);
+  candidates.push(...sectionCspSolverCandidates);
   candidates.push(...harmonicStasisSolverCandidates);
 
   return candidates.length === 0

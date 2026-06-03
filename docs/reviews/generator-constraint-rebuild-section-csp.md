@@ -1,6 +1,6 @@
 # Generator Constraint Rebuild Section CSP Review
 
-Status: implementation slice accepted for focused tests. Full 22 seed review and manual listening remain open.
+Status: implementation slice accepted for focused tests and 22 seed standard diagnostics review. Manual listening remains open, and CSP counters remain review-required.
 
 ## Findings
 
@@ -36,10 +36,23 @@ Focused generated seed:
 
 * `fugue-smoke`, 32 quarter-note ticks, used for deterministic diagnostics equality.
 
+Standard generated bundle:
+
+* Bundle: `samples/generator-constraint-rebuild-section-csp-standard-review`.
+* Scope: 22 standard review seeds, `organ-default` performance profile version 3, `four-voice-default` writing profile version 1, 129600 ticks.
+* CSP aggregate: 670 section windows, 1166 intentional rest spans, 1356 unplanned silent runs, 1557 unsupported-solo tick windows, 97 all-voice-silence tick windows, 2086 min-active-voice violations, 656 long-unplanned-silence violations, 776 structural chord-support misses, 630 structural root-support misses, and 70195 deterministic local candidate-count units.
+* Every seed selected `infeasible` as the CSP relaxation level. The longest unplanned silent run was 4320 ticks in `angular-answer`, `close-imitation`, `lyrical-line`, and `tight-stretto`.
+
+Musical classification:
+
+* The 22 seed bundle confirms the CSP surface is useful as a planner-pressure diagnostic, not as an adoption gate. The counts repeat across representative, boundary, modal, and rotation seeds, so they do not identify a single bad seed or a narrow literal case.
+* Source-family basis: counterpoint and four-voice harmony sources justify requiring line coverage and structural support, while music-constraint-programming sources justify separating hard failures from soft relaxation. The current generated evidence shows the diagnostic is broader than the current continuation planner can satisfy.
+* Structural hypothesis: the section planner still uses many section templates where non-entry voices leave long gaps and low voices do not always provide root or chord-tone support at anchors. The CSP evaluator exposes that texture-harmony pressure, but it also counts some musically tolerated thinning as infeasible because the local finite-domain model does not yet encode enough section-function exceptions.
+
 ## CI / Review Scope
 
-`constraintSatisfactionReview` is `review-required` for this slice. It should become `ci-observed` or `ci-blocking` only after a 22 seed bundle records affected windows, musical symptoms, tradeoffs, and false-positive risk.
+`constraintSatisfactionReview` remains `review-required` for this slice. The 22 seed bundle records affected windows and false-positive risk, but it does not support promotion to `ci-observed` or `ci-blocking` because every seed currently reaches infeasible relaxation. Promotion requires either a planner change that directly reduces unplanned silence and structural-support misses, or a calibrated CSP exception model that distinguishes accepted cadential / entry-handoff thinning from unsupported texture collapse.
 
 ## Remaining Gaps
 
-No 22 seed review bundle or manual listening pass was run for this slice. Current evidence is source-backed design plus focused ScoreEvent diagnostics tests. The next review should include `fugue-smoke`, `angular-answer`, `seed-0zereox-1v729ih`, `lyrical-line`, `contrary-answer`, `modal-dorian`, and `seed-0i335vx-1n54a1x`, then classify any unplanned silence or unsupported solo findings by score-window function.
+No manual listening pass was run for this slice. The next implementation step should repair or calibrate the continuation planner against the CSP surface, then rerun the standard bundle and classify unplanned silence / unsupported solo findings by score-window function. The next focused review should include `fugue-smoke`, `angular-answer`, `seed-0zereox-1v729ih`, `lyrical-line`, `contrary-answer`, `modal-dorian`, and `seed-0i335vx-1n54a1x`.

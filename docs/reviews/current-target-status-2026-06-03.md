@@ -1,5 +1,7 @@
 # Current Target Status Review 2026-06-03
 
+Superseded planning note: this review remains valid as a baseline-stability check for its date, but it no longer means there is no current Generator constraint rebuild target. The later section-CSP replan in [Generator Constraint Rebuild](../phases/generator-constraint-rebuild.md) defines the current continuation-solver target.
+
 Status: accepted. No current implementation target is defined.
 
 ## Scope
