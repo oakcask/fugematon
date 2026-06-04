@@ -17,6 +17,7 @@ export function assertScoreWindowAcceptanceHarnessInputs(seeds: readonly string[
     const diagnostics = generateScore({ seed, lengthTicks: TICKS_PER_QUARTER * 288 }).diagnostics;
     const scoreWindowInputs = {
       importantEntryWindowCount: diagnostics.entryBoundaryContinuity.importantEntryWindowCount,
+      freeCounterpointSoloWindowCount: diagnostics.exposedFreeCounterpointSolo.windows.length,
       harmonicContinuityWindowCount: diagnostics.harmonicContinuity.windows.length,
       harmonicStasisRearticulationWindowCount: diagnostics.harmonicStasisRearticulation.windows.length,
       harmonicSonorityWindowCount: diagnostics.qualityVector.harmonicSonorities.windows.length,
@@ -34,6 +35,18 @@ export function assertScoreWindowAcceptanceHarnessInputs(seeds: readonly string[
       `${seed} phrase-development window count should match exposed windows`,
     );
     assert.equal(acceptance.importantEntryWindowCount, scoreWindowInputs.importantEntryWindowCount);
+    if (scoreWindowInputs.freeCounterpointSoloWindowCount > 0) {
+      assert.ok(
+        acceptance.windows.some((window) => window.kind === "free-counterpoint-solo"),
+        `${seed} exposed free-counterpoint solo windows should be structurally classified`,
+      );
+    }
+    if (diagnostics.entryBoundaryContinuity.windows.some((window) => window.form === "subject-fragment")) {
+      assert.ok(
+        acceptance.windows.some((window) => window.kind === "subject-fragment-entry-support"),
+        `${seed} subject-fragment episode entries should be structurally classified`,
+      );
+    }
     assert.equal(acceptance.harmonicContinuityWindowCount, scoreWindowInputs.harmonicContinuityWindowCount);
     assert.equal(
       acceptance.harmonicStasisRearticulationWindowCount,

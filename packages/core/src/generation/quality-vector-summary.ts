@@ -212,6 +212,12 @@ export function summarizeLocalSentinels(
     if (entry.unresolvedDurationTicks === 0) {
       continue;
     }
+    if (
+      entry.unresolvedDurationTicks < TICKS_PER_QUARTER &&
+      entry.severeIntervalDurationTicks <= entry.unresolvedDurationTicks
+    ) {
+      continue;
+    }
     sentinels.push({
       kind: "unresolved-entry-severe-interval",
       severity: "review-required",

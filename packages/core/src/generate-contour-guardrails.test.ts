@@ -7,12 +7,12 @@ import { evaluateContourMotionGate, evaluateMelodyTextureGate } from "./review-g
 
 test("generateScore balances entry harmony scoring with preservation guardrails", () => {
   const blockerSeeds = [
-    ["fugue-smoke", 140, 98, 72, 4, 3, 3],
-    ["modal-cadence", 149, 101, 70, 4, 3, 3],
-    ["lyrical-line", 136, 98, 72, 3, 3, 3],
-    ["tight-stretto", 144, 96, 72, 4, 3, 3],
-    ["wide-key", 130, 96, 72, 3, 3, 3],
-    ["contrary-answer", 137, 96, 72, 4, 3, 3],
+    ["fugue-smoke", 140, 98, 72, 4, 2, 2],
+    ["modal-cadence", 149, 101, 70, 4, 1, 0],
+    ["lyrical-line", 136, 98, 72, 1, 1, 0],
+    ["tight-stretto", 144, 96, 72, 4, 2, 2],
+    ["wide-key", 130, 96, 72, 2, 2, 2],
+    ["contrary-answer", 137, 96, 72, 4, 2, 2],
   ] as const;
 
   for (const [
@@ -45,7 +45,7 @@ test("generateScore balances entry harmony scoring with preservation guardrails"
     assert.ok(selectedEvaluation.dimensions.harmony.features.selectedEntryHarmonyRiskCost > 0);
     assert.equal(
       selectedEvaluation.dimensions.harmony.features.selectedModalCadenceEntrySupportRiskCost,
-      seed === "modal-cadence" ? 19 : 0,
+      seed === "modal-cadence" ? 6 : 0,
     );
     assert.equal(selectedEvaluation.dimensions.harmony.features.entrySupportInstabilityCount, selectedInstabilityCount);
     assert.equal(selectedEvaluation.dimensions.harmony.features.severeEntryIntervalCount, selectedSevereIntervalCount);
@@ -66,10 +66,10 @@ test("generateScore balances entry harmony scoring with preservation guardrails"
 
 test("generateScore preserves voice-pair independence blocker evidence under scoring changes", () => {
   const blockerSeeds = [
-    ["contrary-motion", 23, 536, 786, 2, 2, 21, 7, 50, 12],
-    ["fugue-smoke", 18, 574, 830, 0, 0, 22, 7, 50, 12],
-    ["minor-entry", 26, 731, 902, 0, 0, 45, 15, 66, 20],
-    ["modal-answer", 12, 752, 902, 0, 0, 47, 14, 66, 21],
+    ["contrary-motion", 23, 535, 786, 2, 2, 21, 7, 50, 12],
+    ["fugue-smoke", 21, 569, 830, 0, 0, 22, 7, 50, 12],
+    ["minor-entry", 26, 730, 902, 0, 0, 45, 15, 66, 20],
+    ["modal-answer", 10, 743, 905, 0, 0, 42, 15, 69, 19],
   ] as const;
 
   for (const [
@@ -113,7 +113,7 @@ test("generateScore preserves voice-pair independence blocker evidence under sco
 
 test("generateScore guards exact pitch lockstep without gate regressions", () => {
   const blockerSeeds = [
-    ["bright-answer", 8, 737, 630, 32, 0.9],
+    ["bright-answer", 8, 737, 630, 34, 0.9],
     ["quiet-cadence", 8, 729, 656, 17, 0.87],
     ["modal-answer", 13, 752, 814, 33, 0.573],
   ] as const;

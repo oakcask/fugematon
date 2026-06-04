@@ -355,6 +355,41 @@ export type DiagnosticIssue = {
   message: string;
 };
 
+export type CurrentContractDiagnosticIssueCode =
+  | "range-violation"
+  | "voice-crossing"
+  | "subject-identity-violation"
+  | "answer-plan-violation"
+  | "key-metadata-mismatch";
+
+export type ConstraintHardFailureCode =
+  | CurrentContractDiagnosticIssueCode
+  | "safe-event-shape"
+  | "known-voice"
+  | "pitch-bounds"
+  | "velocity-bounds"
+  | "writing-profile-pitch";
+
+export type GeneratorSearchTraceCandidate = {
+  candidateId: string;
+  windowStartTick: number;
+  windowEndTick: number;
+  hardFailureCount: number;
+  hardFailures: ConstraintHardFailureCode[];
+  softCost: number;
+  selected: boolean;
+  reason: string;
+};
+
+export type GeneratorSearchTrace = {
+  schemaVersion: 1;
+  mode: "diagnostics-only" | "solver";
+  evaluatedCandidateCount: number;
+  rejectedCandidateCount: number;
+  selectedCandidateId: string;
+  candidates: GeneratorSearchTraceCandidate[];
+};
+
 export type ScoreDimension = {
   cost: number;
   reward: number;
@@ -1430,6 +1465,8 @@ export type HarmonicStasisRearticulationSummary = {
 
 export type ScoreWindowAcceptanceKind =
   | "important-entry-continuity"
+  | "subject-fragment-entry-support"
+  | "free-counterpoint-solo"
   | "harmonic-continuity"
   | "harmonic-stasis-rearticulation"
   | "harmonic-sonority"
@@ -1619,6 +1656,7 @@ export type GenerationDiagnostics = {
   entryBoundaryContinuity: EntryBoundaryContinuitySummary;
   bassAnswerTailTexture: BassAnswerTailTextureSummary;
   qualityVector: QualityVector;
+  generatorSearchTrace: GeneratorSearchTrace;
   localSentinelCandidateTrace: LocalSentinelCandidateTraceSummary;
   phraseConvergenceReview: PhraseConvergenceReviewSummary;
   phraseDevelopmentReview: PhraseDevelopmentReviewSummary;

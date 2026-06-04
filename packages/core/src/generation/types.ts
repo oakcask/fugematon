@@ -25,6 +25,7 @@ import type {
   SurfaceBrillianceSummary,
   TexturePlanningReviewSummary,
 } from "../events.js";
+import type { ConstraintCandidate } from "./constraint-core.js";
 
 export type SubjectNote = {
   offsetTick: number;
@@ -42,11 +43,14 @@ export type Exposition = {
   sectionPlans: HarmonicPlan[];
   endTick: number;
   durationTicks: number;
+  constraintCandidateTag?: "harmonic-stasis-solver-repaired";
+  constraintSourceCandidateIndex?: number;
 };
 
 export type FugueScore = Exposition & {
   candidateEvaluations: number;
   selectedCandidateEvaluations: CandidateEvaluation[];
+  selectedConstraintCandidates: ConstraintCandidate[];
   candidatePoolOracle: CandidatePoolOracleSummary;
   stateTransitions: FugueState[];
   stateChanges: {

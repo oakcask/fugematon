@@ -188,6 +188,24 @@ test("public diagnostics expose finite candidate score dimensions", () => {
   assert.equal(typeof output.diagnostics.qualityVector.harmonicSonorities.focusedWindowCount, "number");
   assert.equal(typeof output.diagnostics.qualityVector.harmonicSonorities.generatorResponseWindowCount, "number");
   assert.ok(Array.isArray(output.diagnostics.qualityVector.harmonicSonorities.windows));
+  assert.equal(output.diagnostics.generatorSearchTrace.schemaVersion, 1);
+  assert.equal(output.diagnostics.generatorSearchTrace.mode, "solver");
+  assert.ok(output.diagnostics.generatorSearchTrace.evaluatedCandidateCount >= 2);
+  assert.notEqual(output.diagnostics.generatorSearchTrace.selectedCandidateId, "legacy-generated-score");
+  assert.ok(Array.isArray(output.diagnostics.generatorSearchTrace.candidates));
+  assert.ok(
+    output.diagnostics.generatorSearchTrace.candidates.every(
+      (candidate) =>
+        typeof candidate.candidateId === "string" &&
+        typeof candidate.windowStartTick === "number" &&
+        typeof candidate.windowEndTick === "number" &&
+        typeof candidate.hardFailureCount === "number" &&
+        Array.isArray(candidate.hardFailures) &&
+        typeof candidate.softCost === "number" &&
+        typeof candidate.selected === "boolean" &&
+        typeof candidate.reason === "string",
+    ),
+  );
   assert.equal(output.diagnostics.scoreWindowAcceptance.schemaVersion, 1);
   assert.equal(typeof output.diagnostics.scoreWindowAcceptance.importantEntryWindowCount, "number");
   assert.equal(typeof output.diagnostics.scoreWindowAcceptance.harmonicContinuityWindowCount, "number");

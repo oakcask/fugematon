@@ -1188,14 +1188,26 @@ function entrySupportCheckpoints(notes: readonly NoteEvent[], entry: PlannedEntr
 }
 
 function hasEntrySupportInstabilityAt(notes: readonly NoteEvent[], entry: PlannedEntry, tick: number): boolean {
-  return entrySupportIntervalsAt(notes, entry, tick).some((intervalClass) => isEntrySupportInstability(intervalClass));
+  return entrySupportPairsAt(notes, entry, tick).some(
+    ({ entryNote, supportNote }) =>
+      isEntrySupportInstability(entrySupportIntervalClass(entryNote, supportNote)) &&
+      !isPreparedOrResolvingEntrySupport(notes, entry, entryNote, supportNote, tick),
+  );
 }
 
 function hasSevereEntryIntervalAt(notes: readonly NoteEvent[], entry: PlannedEntry, tick: number): boolean {
-  return entrySupportIntervalsAt(notes, entry, tick).some((intervalClass) => isSevereEntryInterval(intervalClass));
+  return entrySupportPairsAt(notes, entry, tick).some(
+    ({ entryNote, supportNote }) =>
+      isSevereEntryInterval(entrySupportIntervalClass(entryNote, supportNote)) &&
+      !isPreparedOrResolvingEntrySupport(notes, entry, entryNote, supportNote, tick),
+  );
 }
 
-function entrySupportIntervalsAt(notes: readonly NoteEvent[], entry: PlannedEntry, tick: number): number[] {
+function entrySupportPairsAt(
+  notes: readonly NoteEvent[],
+  entry: PlannedEntry,
+  tick: number,
+): Array<{ entryNote: NoteEvent; supportNote: NoteEvent }> {
   const entryNote = notes.find(
     (note) =>
       note.voice === entry.voice &&
@@ -1207,14 +1219,55 @@ function entrySupportIntervalsAt(notes: readonly NoteEvent[], entry: PlannedEntr
     return [];
   }
 
-  const supportNotes = notes.filter(
-    (note) =>
-      note.voice !== entry.voice &&
-      note.startTick <= tick &&
-      tick < note.startTick + note.durationTicks &&
-      (note.role === "counter-subject" || note.role === "free-counterpoint"),
+  return notes
+    .filter(
+      (note) =>
+        note.voice !== entry.voice &&
+        note.startTick <= tick &&
+        tick < note.startTick + note.durationTicks &&
+        (note.role === "counter-subject" || note.role === "free-counterpoint"),
+    )
+    .map((supportNote) => ({ entryNote, supportNote }));
+}
+
+function entrySupportIntervalClass(entryNote: NoteEvent, supportNote: NoteEvent): number {
+  return Math.abs(entryNote.pitch - supportNote.pitch) % 12;
+}
+
+function isPreparedOrResolvingEntrySupport(
+  notes: readonly NoteEvent[],
+  entry: PlannedEntry,
+  entryNote: NoteEvent,
+  supportNote: NoteEvent,
+  tick: number,
+): boolean {
+  const carriedIntoEntry =
+    supportNote.startTick < entry.startTick && entry.startTick < supportNote.startTick + supportNote.durationTicks;
+  const weakPassingMotion =
+    supportNote.role === "free-counterpoint" &&
+    supportNote.startTick > entry.startTick &&
+    supportNote.startTick === tick &&
+    tick % TICKS_PER_QUARTER !== 0;
+  const suspensionDeadline = entry.startTick + TICKS_PER_QUARTER;
+  const suspendedSupportEndsOnTime =
+    carriedIntoEntry && supportNote.startTick + supportNote.durationTicks <= suspensionDeadline;
+  return (
+    suspendedSupportEndsOnTime ||
+    ((carriedIntoEntry || weakPassingMotion) &&
+      (entryLineResolvesByStep(notes, entry, tick) ||
+        noteResolvesByStep(notes, entryNote, tick) ||
+        noteResolvesByStep(notes, supportNote, tick)))
   );
-  return supportNotes.map((supportNote) => Math.abs(entryNote.pitch - supportNote.pitch) % 12);
+}
+
+function entryLineResolvesByStep(notes: readonly NoteEvent[], entry: PlannedEntry, tick: number): boolean {
+  const current = entrySupportPairsAt(notes, entry, tick)[0]?.entryNote;
+  return current !== undefined && noteResolvesByStep(notes, current, tick);
+}
+
+function noteResolvesByStep(notes: readonly NoteEvent[], current: NoteEvent, tick: number): boolean {
+  const next = notes.filter((note) => note.voice === current.voice && note.startTick > tick).sort(compareNoteEvents)[0];
+  return next !== undefined && next.startTick <= tick + TICKS_PER_QUARTER && Math.abs(next.pitch - current.pitch) <= 2;
 }
 
 function isEntrySupportInstability(intervalClass: number): boolean {

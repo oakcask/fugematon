@@ -216,6 +216,9 @@ export function evaluateCandidate(
     },
   };
   const modalCadenceEntrySupportRiskCost = scoreModalCadenceEntrySupportRisk(candidate, riskContexts);
+  const unresolvedEntrySupportInstabilityCost =
+    diagnostics.entrySupportInstabilityDetails.reduce((sum, entry) => sum + entry.unresolvedInstabilityCount, 0) *
+    EVALUATION_WEIGHTS.harmony.entryInstability;
   const unresolvedAccentedEntryClashCost =
     diagnostics.dissonanceTriage.unresolvedAccentedEntryClashCount *
     EVALUATION_WEIGHTS.harmony.unresolvedAccentedEntryClash;
@@ -232,6 +235,7 @@ export function evaluateCandidate(
   const entryHarmonyRiskCost =
     scoreBalancedEntryHarmonyRisk(riskContexts) +
     modalCadenceEntrySupportRiskCost +
+    unresolvedEntrySupportInstabilityCost +
     unresolvedAccentedEntryClashCost +
     harmonicSonorityCost +
     harmonicStasisRearticulationCost;

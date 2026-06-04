@@ -8,6 +8,8 @@ import type {
   Voice,
 } from "../events.js";
 import type { SegmentSnapshot } from "../infinite-playback.js";
+import type { WritingProfile } from "../writing-profile.js";
+import { type ConstraintCandidate, evaluateScoreDraft } from "./constraint-core.js";
 import { compareNoteEvents, VOICE_ENTRY_ORDER } from "./shared.js";
 
 const BOUNDARY_PREPARATION_WINDOW_TICKS = TICKS_PER_QUARTER * 2;
@@ -61,6 +63,48 @@ export function applyContinuousBoundaryCarryRepair(input: {
   });
   staggerBoundarySupportOnsets(input.notes, input.subjectEntries, carrySource.voice, carryDurationTicks);
   input.notes.sort(compareNoteEvents);
+}
+
+export function applyContinuousBoundaryCarrySolver(input: {
+  notes: NoteEvent[];
+  subjectEntries: readonly PlannedEntry[];
+  sectionPlans: readonly HarmonicPlan[];
+  previousSnapshot?: SegmentSnapshot;
+  writingProfile: WritingProfile;
+}): ConstraintCandidate[] {
+  if (input.previousSnapshot === undefined) {
+    return [];
+  }
+
+  const segmentIndex = input.previousSnapshot.segmentIndex + 1;
+  const beforeNotes = cloneNotes(input.notes);
+  const beforeCandidate = buildContinuousBoundaryCarryConstraintCandidate({
+    candidateId: `segment-${segmentIndex}-boundary-continuation-unrepaired-evidence`,
+    segmentIndex,
+    previousSnapshot: input.previousSnapshot,
+    notes: beforeNotes,
+    subjectEntries: input.subjectEntries,
+    sectionPlans: input.sectionPlans,
+    writingProfile: input.writingProfile,
+  });
+
+  applyContinuousBoundaryCarryRepair(input);
+  const afterNotes = cloneNotes(input.notes);
+  const afterCandidateId =
+    noteFingerprint(beforeNotes) === noteFingerprint(afterNotes)
+      ? `segment-${segmentIndex}-boundary-continuation-candidate-0`
+      : `segment-${segmentIndex}-boundary-continuation-solver-repaired`;
+  const afterCandidate = buildContinuousBoundaryCarryConstraintCandidate({
+    candidateId: afterCandidateId,
+    segmentIndex,
+    previousSnapshot: input.previousSnapshot,
+    notes: afterNotes,
+    subjectEntries: input.subjectEntries,
+    sectionPlans: input.sectionPlans,
+    writingProfile: input.writingProfile,
+  });
+
+  return afterCandidateId.endsWith("candidate-0") ? [afterCandidate] : [beforeCandidate, afterCandidate];
 }
 
 export function buildContinuousBoundaryCarrySummary(input: {
@@ -162,6 +206,53 @@ export function buildContinuousBoundaryCarrySummary(input: {
       nextFirstAttackDensity,
       priorTailHarmonicContinuity,
       hasAudibleCarry,
+    }),
+  };
+}
+
+function buildContinuousBoundaryCarryConstraintCandidate(input: {
+  candidateId: string;
+  segmentIndex: number;
+  previousSnapshot: SegmentSnapshot;
+  notes: readonly NoteEvent[];
+  subjectEntries: readonly PlannedEntry[];
+  sectionPlans: readonly HarmonicPlan[];
+  writingProfile: WritingProfile;
+}): ConstraintCandidate {
+  const firstPlan = input.sectionPlans[0];
+  const endTick = Math.max(0, ...input.notes.map((note) => note.startTick + note.durationTicks));
+  const windowEndTick = Math.max(
+    TICKS_PER_QUARTER,
+    Math.min(
+      endTick,
+      firstPlan === undefined ? BOUNDARY_PREPARATION_WINDOW_TICKS : firstPlan.startTick + firstPlan.durationTicks,
+    ),
+  );
+  const summary = buildContinuousBoundaryCarrySummary({
+    segmentIndex: input.segmentIndex,
+    previousSnapshot: input.previousSnapshot,
+    notes: input.notes,
+    sectionPlans: input.sectionPlans,
+  });
+  const draft = {
+    notes: input.notes,
+    subjectEntries: input.subjectEntries,
+    sectionPlans: input.sectionPlans,
+    endTick: Math.max(endTick, windowEndTick),
+    writingProfile: input.writingProfile,
+  };
+
+  return {
+    candidateId: input.candidateId,
+    draft,
+    result: evaluateScoreDraft(draft, {
+      startTick: 0,
+      endTick: windowEndTick,
+      state: firstPlan?.state ?? "unplanned",
+      harmonicPlan: firstPlan,
+      meterContext: firstPlan?.meterContext,
+      entry: input.subjectEntries.find((entry) => entry.startTick < windowEndTick),
+      continuousBoundaryCarry: summary,
     }),
   };
 }
@@ -313,6 +404,35 @@ function uniqueRoles(roles: readonly NoteRole[]): NoteRole[] {
 
 function isNoteRole(role: NoteEvent["role"]): role is NoteRole {
   return role !== undefined;
+}
+
+function cloneNotes(notes: readonly NoteEvent[]): NoteEvent[] {
+  return notes.map((note) => ({
+    ...note,
+    motivicDerivation:
+      note.motivicDerivation === undefined
+        ? undefined
+        : {
+            ...note.motivicDerivation,
+          },
+  }));
+}
+
+function noteFingerprint(notes: readonly NoteEvent[]): string {
+  return JSON.stringify(
+    [...notes]
+      .sort(compareNoteEvents)
+      .map((note) => [
+        note.kind,
+        note.voice,
+        note.startTick,
+        note.durationTicks,
+        note.pitch,
+        note.velocity,
+        note.role,
+        note.metricalHarmonyIntent,
+      ]),
+  );
 }
 
 function boundaryCarryReasons(input: {

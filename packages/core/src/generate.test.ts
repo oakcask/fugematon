@@ -141,6 +141,24 @@ test("generateScore emits a tick-based exposition", () => {
   assert.equal(output.diagnostics.subjectIdentityViolations, 0);
   assert.equal(output.diagnostics.answerPlanViolations, 0);
   assert.equal(output.diagnostics.keyMetadataMismatches, 0);
+  assert.equal(output.diagnostics.generatorSearchTrace.mode, "solver");
+  assert.ok(output.diagnostics.generatorSearchTrace.evaluatedCandidateCount >= 2);
+  assert.notEqual(output.diagnostics.generatorSearchTrace.selectedCandidateId, "legacy-generated-score");
+  assert.equal(output.diagnostics.generatorSearchTrace.rejectedCandidateCount, 0);
+  assert.ok(
+    output.diagnostics.generatorSearchTrace.candidates.some((candidate) =>
+      candidate.candidateId.startsWith("exposition-"),
+    ),
+  );
+  assert.ok(
+    output.diagnostics.generatorSearchTrace.candidates.every(
+      (candidate) =>
+        (candidate.candidateId.startsWith("exposition-") || candidate.candidateId.startsWith("score-")) &&
+        candidate.windowStartTick >= 0 &&
+        candidate.windowEndTick > candidate.windowStartTick &&
+        candidate.hardFailures.length === 0,
+    ),
+  );
   assert.equal(countIssues(output.diagnostics.issues, "range-violation"), output.diagnostics.rangeViolations);
   assert.equal(countIssues(output.diagnostics.issues, "voice-crossing"), output.diagnostics.voiceCrossings);
   assert.equal(countIssues(output.diagnostics.issues, "parallel-perfect"), output.diagnostics.parallelPerfects);
@@ -231,6 +249,24 @@ test("generateScore extends long scores with fugue-form states", () => {
     output.diagnostics.stateTransitions,
   );
   assert.ok(output.diagnostics.candidateEvaluations > 0);
+  assert.ok(
+    output.diagnostics.generatorSearchTrace.candidates.some(
+      (candidate) => candidate.candidateId.startsWith("section-") && candidate.candidateId.includes("-episode-"),
+    ),
+  );
+  assert.ok(
+    output.diagnostics.generatorSearchTrace.candidates.some(
+      (candidate) =>
+        candidate.candidateId.startsWith("section-") &&
+        (candidate.reason.includes("episode-") || candidate.reason.includes("free-counterpoint-")),
+    ),
+  );
+  assert.ok(
+    output.diagnostics.generatorSearchTrace.candidates.some(
+      (candidate) => candidate.candidateId.startsWith("section-") && candidate.reason.includes("terminal-support-"),
+    ),
+  );
+  assert.equal(output.diagnostics.terminalClosureReview.classification, "not-required");
 });
 
 test("generateScore continues continuous-fugue segments from a carried snapshot", () => {
@@ -254,6 +290,22 @@ test("generateScore continues continuous-fugue segments from a carried snapshot"
 
   assert.equal(first.nextSegmentSnapshot.segmentIndex, 0);
   assert.equal(second.nextSegmentSnapshot.segmentIndex, 1);
+  assert.equal(first.diagnostics.generatorSearchTrace.mode, "solver");
+  assert.ok(first.diagnostics.generatorSearchTrace.evaluatedCandidateCount >= 2);
+  assert.equal(second.diagnostics.generatorSearchTrace.mode, "solver");
+  assert.ok(second.diagnostics.generatorSearchTrace.evaluatedCandidateCount >= 2);
+  assert.notEqual(second.diagnostics.generatorSearchTrace.selectedCandidateId, "legacy-generated-score");
+  assert.ok(
+    second.diagnostics.generatorSearchTrace.candidates.some(
+      (candidate) =>
+        candidate.candidateId.startsWith("segment-1-boundary-continuation-") &&
+        candidate.windowStartTick === 0 &&
+        candidate.windowEndTick > candidate.windowStartTick &&
+        Array.isArray(candidate.hardFailures) &&
+        typeof candidate.softCost === "number" &&
+        candidate.reason.includes("segment-boundary-"),
+    ),
+  );
   assert.notEqual(firstStateChange?.payload.state, "exposition");
   assert.notEqual(second.diagnostics.sectionPlans[0]?.state, "exposition");
   assert.ok(second.diagnostics.continuousSegmentContinuity.carriedSubjectFamily);
@@ -431,6 +483,26 @@ test("generateScore repairs synthetic thin-tail continuous-fugue hard restarts",
   assert.notEqual(
     second.diagnostics.continuousBoundaryCarry.classification,
     "generator-response-required-hard-restart",
+  );
+  const traceCandidateIds = new Set(
+    second.diagnostics.generatorSearchTrace.candidates.map((candidate) => candidate.candidateId),
+  );
+  assert.ok(traceCandidateIds.has("segment-1-boundary-continuation-unrepaired-evidence"));
+  assert.ok(traceCandidateIds.has("segment-1-boundary-continuation-solver-repaired"));
+  assert.ok(
+    second.diagnostics.generatorSearchTrace.candidates.some(
+      (candidate) =>
+        candidate.candidateId === "segment-1-boundary-continuation-unrepaired-evidence" &&
+        candidate.reason.includes("segment-boundary-hard-restart-risk"),
+    ),
+  );
+  assert.ok(
+    second.diagnostics.generatorSearchTrace.candidates.some(
+      (candidate) =>
+        candidate.candidateId === "segment-1-boundary-continuation-solver-repaired" &&
+        candidate.hardFailureCount === 0 &&
+        candidate.reason.includes("segment-boundary-"),
+    ),
   );
 });
 

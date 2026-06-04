@@ -50,7 +50,10 @@ function isFirstBassExpositionEntry(entry: PlannedEntry): boolean {
 }
 
 function isReviewedImportantEntryContext(context: EntryContinuityContext): boolean {
-  return context.entry.form !== "subject-fragment" && context.alreadyEnteredVoices.length > 0;
+  return (
+    context.alreadyEnteredVoices.length > 0 &&
+    (context.entry.form !== "subject-fragment" || context.entry.state === "episode")
+  );
 }
 
 function isPostExpositionBassWindow(window: EntryBoundaryContinuityWindow): boolean {
@@ -199,9 +202,7 @@ function buildEntryContinuityContexts(
   notes: readonly NoteEvent[],
   subjectEntries: readonly PlannedEntry[],
 ): EntryContinuityContext[] {
-  const importantEntries = [...subjectEntries]
-    .filter((entry) => entry.form !== "subject-fragment")
-    .sort((left, right) => left.startTick - right.startTick);
+  const importantEntries = [...subjectEntries].sort((left, right) => left.startTick - right.startTick);
 
   return importantEntries.map((entry, entryOrderIndex) => {
     const previousEntryVoices = importantEntries

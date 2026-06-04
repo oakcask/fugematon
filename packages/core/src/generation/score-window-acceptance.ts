@@ -4,6 +4,8 @@ import type {
   DissonanceTriageWindow,
   EntryBoundaryContinuitySummary,
   EntryBoundaryContinuityWindow,
+  ExposedFreeCounterpointSoloSummary,
+  ExposedFreeCounterpointSoloWindow,
   HarmonicContinuitySummary,
   HarmonicContinuityWindow,
   HarmonicSonorityWindow,
@@ -29,6 +31,7 @@ const VOICE_NAMES = new Set<Voice>(["soprano", "alto", "tenor", "bass"]);
 
 export function buildScoreWindowAcceptanceSummary(
   entryBoundaryContinuity: EntryBoundaryContinuitySummary,
+  exposedFreeCounterpointSolo: ExposedFreeCounterpointSoloSummary,
   harmonicContinuity: HarmonicContinuitySummary,
   harmonicStasisRearticulation: HarmonicStasisRearticulationSummary,
   transitionRhythmReview: TransitionRhythmReviewSummary,
@@ -41,6 +44,7 @@ export function buildScoreWindowAcceptanceSummary(
   );
   const windows = collectScoreWindowAcceptanceWindows(
     importantEntryWindows,
+    exposedFreeCounterpointSolo,
     harmonicContinuity,
     harmonicStasisRearticulation,
     transitionRhythmReview,
@@ -72,6 +76,7 @@ export function buildScoreWindowAcceptanceSummary(
 
 function collectScoreWindowAcceptanceWindows(
   importantEntryWindows: readonly EntryBoundaryContinuityWindow[],
+  exposedFreeCounterpointSolo: ExposedFreeCounterpointSoloSummary,
   harmonicContinuity: HarmonicContinuitySummary,
   harmonicStasisRearticulation: HarmonicStasisRearticulationSummary,
   transitionRhythmReview: TransitionRhythmReviewSummary,
@@ -81,6 +86,7 @@ function collectScoreWindowAcceptanceWindows(
 ): ScoreWindowAcceptanceWindow[] {
   return [
     ...importantEntryWindows.map(scoreWindowFromEntryContinuity),
+    ...exposedFreeCounterpointSolo.windows.map(scoreWindowFromExposedFreeCounterpointSolo),
     ...harmonicContinuity.windows.map(scoreWindowFromHarmonicContinuity),
     ...transitionRhythmReview.windows.map(scoreWindowFromTransitionRhythm),
     ...harmonicStasisRearticulation.windows.map(scoreWindowFromHarmonicStasisRearticulation),
@@ -106,17 +112,43 @@ function scoreWindowFromEntryContinuity(window: EntryBoundaryContinuityWindow): 
   const accepted =
     window.classification === "continuity-supported" || window.classification === "prepared-collective-articulation";
   return {
-    kind: "important-entry-continuity",
+    kind: window.form === "subject-fragment" ? "subject-fragment-entry-support" : "important-entry-continuity",
     startTick: window.startTick,
     state: window.state,
     voices: [window.entryVoice, ...window.alreadyEnteredVoices],
     roles: [window.form],
     classification: window.classification,
-    symptom: accepted
-      ? "entry support carries or prepares audible continuity"
-      : "entry support does not yet prove collective contrapuntal continuity",
+    symptom:
+      window.form === "subject-fragment"
+        ? accepted
+          ? "subject-fragment episode entry has prepared or continuity-supported local support"
+          : "subject-fragment episode entry support remains unresolved or locally thinned"
+        : accepted
+          ? "entry support carries or prepares audible continuity"
+          : "entry support does not yet prove collective contrapuntal continuity",
     theoryBasis: "counterpoint",
     response: accepted ? "accepted-context" : "generator-response-required",
+  };
+}
+
+function scoreWindowFromExposedFreeCounterpointSolo(
+  window: ExposedFreeCounterpointSoloWindow,
+): ScoreWindowAcceptanceWindow {
+  const response = window.classification === "function-explained" ? "accepted-context" : "review-required";
+  return {
+    kind: "free-counterpoint-solo",
+    startTick: window.startTick,
+    durationTicks: window.durationTicks,
+    state: window.state === "unplanned" ? "mixed" : window.state,
+    voices: [window.voice],
+    roles: ["free-counterpoint"],
+    classification: window.function,
+    symptom:
+      window.classification === "function-explained"
+        ? "free-counterpoint solo or thinning has cadence, entry-preparation, pedal, or solo-rhetoric context"
+        : "free-counterpoint solo or thinning needs a clearer local function",
+    theoryBasis: "counterpoint",
+    response,
   };
 }
 

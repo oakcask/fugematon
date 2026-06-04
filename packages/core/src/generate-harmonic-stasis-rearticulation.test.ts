@@ -34,6 +34,18 @@ test("harmonic stasis rearticulation repairs the reported first-episode handoff 
   assert.ok(windows.some((window) => window.allActiveVoicesFreeCounterpoint));
   assert.ok(windows.some((window) => window.sourceMotive === "answer-form" || window.preparesNextEntry));
   assert.equal(diagnostics.harmonicStasisRearticulation.generatorResponseWindowCount, 0);
+  assert.ok(
+    diagnostics.generatorSearchTrace.candidates.some(
+      (candidate) =>
+        candidate.candidateId === "score-harmonic-stasis-unrepaired-final-repair-evidence" &&
+        candidate.reason.includes("free-counterpoint-harmony-realization"),
+    ),
+  );
+  assert.ok(
+    diagnostics.generatorSearchTrace.candidates.some(
+      (candidate) => candidate.candidateId === "score-harmonic-stasis-solver-repaired",
+    ),
+  );
   assert.equal(hardConstraintFailures(diagnostics), 0);
 });
 

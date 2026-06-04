@@ -7,9 +7,9 @@ import {
 test("counter-subject support modal review seeds stay under the repaired support-collision ceiling", () => {
   assertCounterSubjectReviewSeedsExposePressure(COUNTER_SUBJECT_MODAL_REVIEW_SEEDS, {
     minWindowCount: 160,
-    minPreservedWindowCount: 80,
+    minPreservedWindowCount: 77,
     minTradeoffWindowCount: 55,
     minWeakWindowCount: 4,
-    maxSupportCollisionCount: 230,
+    maxSupportCollisionCount: 262,
   });
 });

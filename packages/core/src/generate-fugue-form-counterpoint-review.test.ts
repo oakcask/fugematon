@@ -43,9 +43,11 @@ test("generateScore validates representative fugue-form seeds", () => {
     FUGUE_FORM_DIAGNOSTICS_PROFILE.maxGenerationMilliseconds * FUGUE_FORM_REPRESENTATIVE_SEEDS.length * 1.8;
   assert.ok(
     elapsedCpuMilliseconds < maxGenerationCpuMilliseconds,
-    `fugue-form representative generation used ${elapsedCpuMilliseconds.toFixed(
+    `ci.fugue-form-generation-budget: representative generation used ${elapsedCpuMilliseconds.toFixed(
       1,
-    )}ms CPU, exceeding ${maxGenerationCpuMilliseconds.toFixed(1)}ms`,
+    )}ms CPU, exceeding ${maxGenerationCpuMilliseconds.toFixed(
+      1,
+    )}ms; why=the fugue-form review gate protects baseline generation throughput; action=rerun this test and either reduce representative generation cost or resynchronize FUGUE_FORM_DIAGNOSTICS_PROFILE.maxGenerationMilliseconds with current CI evidence`,
   );
 });
 
