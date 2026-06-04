@@ -30,7 +30,7 @@ import type { Exposition } from "./generation/types.js";
 import { createSegmentEndSnapshot, normalizeInfinitePlaybackMode } from "./infinite-playback.js";
 import { Xoshiro128StarStar } from "./prng.js";
 import {
-  constrainNotesToWritingProfile,
+  constrainNotePitchToWritingProfile,
   DEFAULT_WRITING_PROFILE_ID,
   resolveWritingProfile,
   type WritingProfile,
@@ -41,14 +41,14 @@ export function generateScore(input: GenerationInput): GenerationOutput {
 
   const mode = normalizeInfinitePlaybackMode(input.mode);
   const initialRng = Xoshiro128StarStar.fromSeed(input.seed);
-  const initialKeySignature = chooseKeySignature(initialRng, input.seed);
+  const writingProfile = resolveGenerationWritingProfile(input);
+  const initialKeySignature = chooseKeySignature(initialRng, input.seed, writingProfile);
   const initialTimeSignature = chooseTimeSignature(initialRng);
   const initialMeterContext = createMeterContext(initialTimeSignature);
   const initialBpm = chooseTempo(initialRng);
   const bpm = input.previousSegmentSnapshot?.timebase.bpm ?? initialBpm;
   const selectionModel = normalizeSelectionModel(input.selectionModel ?? DEFAULT_SELECTION_MODEL);
-  const writingProfile = resolveGenerationWritingProfile(input);
-  const subject = buildSubject(initialRng, initialKeySignature, selectionModel, initialMeterContext);
+  const subject = buildSubject(initialRng, initialKeySignature, selectionModel, initialMeterContext, writingProfile);
   const isContinuousContinuation =
     mode === "continuous-fugue" && input.previousSegmentSnapshot !== undefined && (input.segmentIndex ?? 0) > 0;
   const rng = isContinuousContinuation
@@ -95,7 +95,11 @@ export function generateScore(input: GenerationInput): GenerationOutput {
       );
   applyTerminalClosureIntent(score, Math.max(input.lengthTicks, score.endTick), mode);
   annotateEpisodeMotivicDerivations(score.notes, score.sectionPlans);
-  constrainNotesToWritingProfile(score.notes, writingProfile);
+  const finalProfileInvariantCandidate = buildFinalWritingProfileInvariantCandidate(
+    score,
+    Math.max(input.lengthTicks, score.endTick),
+    writingProfile,
+  );
   const diagnostics = analyzeScore(score.notes, score.subjectEntries, score.sectionPlans, writingProfile);
   const localSentinelCandidateTrace = buildLocalSentinelCandidateTraceSummary(
     score.selectedCandidateEvaluations,
@@ -125,7 +129,7 @@ export function generateScore(input: GenerationInput): GenerationOutput {
     expositionSearch === undefined
       ? buildContinuationGeneratorSearchTrace(score, generatedUntilTick, writingProfile)
       : buildGeneratorSearchTrace(
-          [...expositionSearch.candidates, ...score.selectedConstraintCandidates],
+          [...expositionSearch.candidates, ...score.selectedConstraintCandidates, finalProfileInvariantCandidate],
           expositionSearch.selected,
           "solver",
         );
@@ -451,7 +455,10 @@ function buildContinuationGeneratorSearchTrace(
   generatedUntilTick: number,
   writingProfile: WritingProfile,
 ) {
-  const candidates = score.selectedConstraintCandidates ?? [];
+  const candidates = [
+    ...(score.selectedConstraintCandidates ?? []),
+    buildFinalWritingProfileInvariantCandidate(score, generatedUntilTick, writingProfile),
+  ];
   if (candidates.length === 0) {
     return buildDiagnosticsOnlyGeneratorSearchTrace(score, generatedUntilTick, writingProfile);
   }
@@ -462,6 +469,39 @@ function buildContinuationGeneratorSearchTrace(
     selectBestConstraintCandidate(candidates);
 
   return buildGeneratorSearchTrace(candidates, selectedBoundaryCandidate, "solver");
+}
+
+function buildFinalWritingProfileInvariantCandidate(
+  score: Pick<Exposition, "notes" | "subjectEntries" | "sectionPlans">,
+  generatedUntilTick: number,
+  writingProfile: WritingProfile,
+): ConstraintCandidate {
+  const projectedChangeCount = score.notes.filter(
+    (note) => constrainNotePitchToWritingProfile(note, writingProfile) !== note.pitch,
+  ).length;
+  const draft = {
+    notes: score.notes,
+    subjectEntries: score.subjectEntries,
+    sectionPlans: score.sectionPlans,
+    endTick: generatedUntilTick,
+    writingProfile,
+  };
+  const result = evaluateScoreDraft(draft);
+  return {
+    candidateId:
+      projectedChangeCount === 0
+        ? "score-writing-profile-final-projection-noop"
+        : "score-writing-profile-final-projection-hard-failure",
+    draft,
+    result:
+      projectedChangeCount === 0
+        ? result
+        : {
+            ...result,
+            explanation:
+              "candidate would require post-solve WritingProfile projection and must remain a hard contract failure",
+          },
+  };
 }
 
 function buildContinuousSegmentContinuitySummary(input: {

@@ -3,7 +3,6 @@ import test from "node:test";
 import { TICKS_PER_QUARTER } from "./constants.js";
 import type { HarmonicPlan, KeySignature, NoteEvent, PlannedEntry } from "./events.js";
 import { generateScore } from "./generate.js";
-import { buildGeneratorSearchTrace } from "./generation/constraint-core.js";
 import { createMeterContext } from "./generation/meter.js";
 import { buildFugueScore } from "./generation/sections.js";
 import { Xoshiro128StarStar } from "./prng.js";
@@ -30,7 +29,7 @@ test("score-level support cleanup emits paired before and after trace evidence",
   assert.equal(hardConstraintFailures(diagnostics), 0);
 });
 
-test("texture voice-crossing repair emits paired before and after trace evidence for a focused score delta", () => {
+test("texture voice-order repair emits paired before and after trace evidence for a focused score delta", () => {
   const meterContext = createMeterContext({ numerator: 4, denominator: 4 });
   const localKey: KeySignature = { tonic: "C", mode: "major" };
   const sectionPlan: HarmonicPlan = {
@@ -98,10 +97,10 @@ test("texture voice-crossing repair emits paired before and after trace evidence
     resolveWritingProfile("four-voice-default"),
   );
   const beforeCandidate = score.selectedConstraintCandidates.find(
-    (candidate) => candidate.candidateId === "score-texture-voice-crossing-repair-unrepaired-final-repair-evidence",
+    (candidate) => candidate.candidateId === "score-texture-voice-order-unrepaired-final-repair-evidence",
   );
   const afterCandidate = score.selectedConstraintCandidates.find(
-    (candidate) => candidate.candidateId === "score-texture-voice-crossing-repair-solver-repaired",
+    (candidate) => candidate.candidateId === "score-texture-voice-order-solver-repaired",
   );
 
   assert.ok(beforeCandidate);
@@ -112,11 +111,11 @@ test("texture voice-crossing repair emits paired before and after trace evidence
   );
   assert.equal(afterCandidate.result.hardFailures.length, 0);
   assert.equal(score.notes.find((note) => note.voice === "tenor")?.pitch, 48);
-
-  const trace = buildGeneratorSearchTrace(score.selectedConstraintCandidates, afterCandidate, "solver");
-  const traceIds = new Set(trace.candidates.map((candidate) => candidate.candidateId));
-  assert.ok(traceIds.has("score-texture-voice-crossing-repair-unrepaired-final-repair-evidence"));
-  assert.ok(traceIds.has("score-texture-voice-crossing-repair-solver-repaired"));
+  assert.ok(
+    score.selectedConstraintCandidates.every(
+      (candidate) => !candidate.candidateId.startsWith("score-texture-voice-crossing-repair-"),
+    ),
+  );
 });
 
 function textureNote(

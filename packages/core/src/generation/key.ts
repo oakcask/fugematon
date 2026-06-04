@@ -1,5 +1,7 @@
 import type { KeyMode, KeySignature, TimeSignature } from "../events.js";
 import type { Xoshiro128StarStar } from "../prng.js";
+import { DEFAULT_WRITING_PROFILE_ID, type WritingProfile } from "../writing-profile.js";
+import { isKeyFeasibleForProfile } from "./constraint-domain.js";
 import { positiveModulo } from "./shared.js";
 
 const TONICS = ["C", "D", "E", "F", "G", "A", "B", "Bb", "Eb", "Ab", "Db", "F#"] as const;
@@ -22,7 +24,11 @@ const PITCH_CLASS_TONICS = new Map<number, KeySignature["tonic"]>(
 );
 const MODAL_MODES = new Set<KeyMode>(["dorian", "mixolydian", "aeolian"]);
 
-export function chooseKeySignature(rng: Xoshiro128StarStar, seed: string): KeySignature {
+export function chooseKeySignature(
+  rng: Xoshiro128StarStar,
+  seed: string,
+  writingProfile?: WritingProfile,
+): KeySignature {
   const requestedMode = modalModeFromSeed(seed);
   const mode: KeyMode =
     requestedMode ??
@@ -34,10 +40,42 @@ export function chooseKeySignature(rng: Xoshiro128StarStar, seed: string): KeySi
       { value: "aeolian", weight: 3 },
     ]);
 
+  if (writingProfile === undefined || writingProfile.id === DEFAULT_WRITING_PROFILE_ID) {
+    return {
+      tonic: TONICS[rng.nextInt(TONICS.length)]!,
+      mode,
+    };
+  }
+
+  const profileFeasibleMode = firstProfileFeasibleMode(mode, requestedMode, writingProfile);
+  const feasibleTonics = TONICS.filter((tonic) =>
+    isKeyFeasibleForProfile({ tonic, mode: profileFeasibleMode }, writingProfile),
+  );
+
   return {
-    tonic: TONICS[rng.nextInt(TONICS.length)]!,
-    mode,
+    tonic:
+      feasibleTonics.length > 0
+        ? feasibleTonics[rng.nextInt(feasibleTonics.length)]!
+        : TONICS[rng.nextInt(TONICS.length)]!,
+    mode: profileFeasibleMode,
   };
+}
+
+function firstProfileFeasibleMode(
+  selectedMode: KeyMode,
+  requestedMode: KeyMode | undefined,
+  writingProfile: WritingProfile,
+): KeyMode {
+  const fallbackModes: readonly KeyMode[] =
+    requestedMode === undefined
+      ? [selectedMode, "major", "minor", "dorian", "mixolydian", "aeolian"]
+      : [requestedMode, "major", "minor", "dorian", "mixolydian", "aeolian"];
+  for (const mode of fallbackModes) {
+    if (TONICS.some((tonic) => isKeyFeasibleForProfile({ tonic, mode }, writingProfile))) {
+      return mode;
+    }
+  }
+  return selectedMode;
 }
 
 function modalModeFromSeed(seed: string): KeyMode | undefined {

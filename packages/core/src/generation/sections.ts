@@ -248,6 +248,14 @@ export function buildFugueScore(
   }
 
   fillAllVoiceSilenceGaps(notes, keySignature, writingProfile);
+  selectedConstraintCandidates.push(
+    ...applyScoreLevelTextureVoiceOrderCandidateAdoptions({
+      notes,
+      subjectEntries,
+      sectionPlans,
+      writingProfile,
+    }),
+  );
   if (selectionModel === "section-local-planner") {
     selectedConstraintCandidates.push(
       ...applyScoreLevelSupportCleanupCandidateAdoptions({
@@ -404,6 +412,50 @@ function applyScoreLevelSupportCleanupCandidateAdoptions(input: {
   }
 
   return candidates;
+}
+
+function applyScoreLevelTextureVoiceOrderCandidateAdoptions(input: {
+  notes: NoteEvent[];
+  subjectEntries: readonly PlannedEntry[];
+  sectionPlans: readonly HarmonicPlan[];
+  writingProfile: WritingProfile;
+}): ConstraintCandidate[] {
+  const beforeNotes = cloneNotes(input.notes);
+  const repairedNotes = cloneNotes(input.notes);
+  repairTextureVoiceCrossingsForNotes(repairedNotes, input.sectionPlans, input.writingProfile);
+  repairedNotes.sort(compareNoteEvents);
+
+  if (noteFingerprint(beforeNotes) === noteFingerprint(repairedNotes)) {
+    return [];
+  }
+
+  const beforeCandidate = buildScoreLevelConstraintCandidate(
+    "score-texture-voice-order-unrepaired-final-repair-evidence",
+    beforeNotes,
+    input.subjectEntries,
+    input.sectionPlans,
+    input.writingProfile,
+  );
+  const afterCandidate = buildScoreLevelConstraintCandidate(
+    "score-texture-voice-order-solver-repaired",
+    repairedNotes,
+    input.subjectEntries,
+    input.sectionPlans,
+    input.writingProfile,
+  );
+  const beforeDiagnostics = analyzeScore(beforeNotes, input.subjectEntries, input.sectionPlans, input.writingProfile);
+  const afterDiagnostics = analyzeScore(repairedNotes, input.subjectEntries, input.sectionPlans, input.writingProfile);
+  const beforeHardFailureCount = beforeCandidate.result.hardFailures.reduce((sum, failure) => sum + failure.count, 0);
+  const afterHardFailureCount = afterCandidate.result.hardFailures.reduce((sum, failure) => sum + failure.count, 0);
+  if (
+    afterHardFailureCount > beforeHardFailureCount ||
+    afterDiagnostics.voiceCrossings >= beforeDiagnostics.voiceCrossings
+  ) {
+    return [];
+  }
+
+  input.notes.splice(0, input.notes.length, ...repairedNotes);
+  return [beforeCandidate, afterCandidate];
 }
 
 function buildScoreLevelSupportCleanupCandidateAdoption(

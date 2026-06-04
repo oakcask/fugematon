@@ -11,7 +11,11 @@ import {
 import type { KeySignature, MetaEvent, NoteEvent } from "./events.js";
 import { generateScore } from "./generate.js";
 import { asMetaEvent, countIssues } from "./generate-test-helpers.js";
-import { analyzeWritingProfileConstraints, resolveWritingProfile } from "./writing-profile.js";
+import {
+  analyzeWritingProfileConstraints,
+  constrainNotePitchToWritingProfile,
+  resolveWritingProfile,
+} from "./writing-profile.js";
 
 test("generateScore is deterministic for identical input", () => {
   const input = {
@@ -83,6 +87,42 @@ test("music-box writing profiles generate only supported pitches", () => {
     assert.equal(output.diagnostics.writingProfilePitchViolations, 0);
     assert.equal(output.diagnostics.writingProfileConstraints.profileId, writingProfileId);
     assert.ok(notes.every((note) => allowedPitches.has(note.pitch)));
+  }
+});
+
+test("constrained writing profiles preserve hard profile and entry contracts for the reported crossing seed", () => {
+  for (const writingProfileId of ["music-box-n20", "music-box-n40", "four-voice-default"] as const) {
+    const output = generateScore({
+      seed: "seed-04fup6t-1rmrxhp",
+      lengthTicks: 7680,
+      writingProfileId,
+    });
+    const profile = resolveWritingProfile(writingProfileId);
+    const notes = output.events.filter((event): event is NoteEvent => event.kind === "note");
+
+    assert.equal(output.diagnostics.voiceCrossings, 0, `${writingProfileId} should avoid voice crossings`);
+    assert.equal(output.diagnostics.rangeViolations, 0, `${writingProfileId} should avoid range violations`);
+    assert.equal(
+      output.diagnostics.writingProfilePitchViolations,
+      0,
+      `${writingProfileId} should avoid profile pitch violations`,
+    );
+    assert.equal(
+      output.diagnostics.subjectIdentityViolations,
+      0,
+      `${writingProfileId} should preserve subject identity`,
+    );
+    assert.equal(output.diagnostics.answerPlanViolations, 0, `${writingProfileId} should preserve answer identity`);
+    assert.equal(output.diagnostics.keyMetadataMismatches, 0, `${writingProfileId} should keep key metadata aligned`);
+    assert.ok(
+      notes.every((note) => constrainNotePitchToWritingProfile(note, profile) === note.pitch),
+      `${writingProfileId} should make final profile projection a no-op`,
+    );
+    assert.ok(
+      output.diagnostics.generatorSearchTrace.candidates.some(
+        (candidate) => candidate.candidateId === "score-writing-profile-final-projection-noop",
+      ),
+    );
   }
 });
 
