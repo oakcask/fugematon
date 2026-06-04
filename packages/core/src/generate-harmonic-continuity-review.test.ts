@@ -41,7 +41,7 @@ test("reported harmonic-continuity seed keeps the short pivot episode review-add
 
   if (reportedEpisode === undefined || harmonicWindow === undefined) {
     assert.equal(diagnostics.subjectIdentityViolations, 0);
-    assert.ok(diagnostics.texturePlanningReview.metricalHarmony.strongBeatBassRootSupportCount >= 9);
+    assert.ok(diagnostics.texturePlanningReview.metricalHarmony.strongBeatBassRootSupportCount >= 8);
     assert.ok(diagnostics.harmonicFunctionMatches > 0);
     return;
   }

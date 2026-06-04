@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { TICKS_PER_QUARTER } from "../constants.js";
-import type { FugueState, HarmonicPlan, NoteEvent } from "../events.js";
+import type { FugueState, HarmonicPlan, KeySignature, NoteEvent, PlannedEntry, Voice } from "../events.js";
 import { generateScore } from "../generate.js";
 import { buildHarmonicPlan } from "./harmony.js";
 import { createMeterContext } from "./meter.js";
@@ -99,7 +99,7 @@ test("section CSP diagnostics are deterministic for the same seed and input", ()
   const second = generateScore({ seed: "fugue-smoke", lengthTicks: TICKS_PER_QUARTER * 32 });
 
   assert.deepEqual(first.diagnostics.constraintSatisfactionReview, second.diagnostics.constraintSatisfactionReview);
-  assert.equal(first.diagnostics.constraintSatisfactionReview.schemaVersion, 3);
+  assert.equal(first.diagnostics.constraintSatisfactionReview.schemaVersion, 4);
   assert.ok(first.diagnostics.constraintSatisfactionReview.solverCandidateCount > 0);
   assert.equal(typeof first.diagnostics.constraintSatisfactionReview.metricalBoundaryCost, "number");
   assert.equal(typeof first.diagnostics.constraintSatisfactionReview.unpreparedTransitionCount, "number");
@@ -135,6 +135,41 @@ test("section CSP metrical-boundary cost ranks downbeat, prepared pickup, and un
   assert.equal(offbeat.unpreparedTransitionCount > 0, true);
 });
 
+test("section CSP detects planned entry identity, support, unison, and lockstep pressure", () => {
+  const plan = sectionPlan({ state: "subject-return", durationTicks: TICKS_PER_QUARTER * 4 });
+  const entry = plannedEntry({
+    voice: "soprano",
+    form: "answer",
+    state: "subject-return",
+    actualPitchClassSequence: [7, 9],
+  });
+  const notes = [
+    note({ voice: "soprano", startTick: 0, durationTicks: TICKS_PER_QUARTER, pitch: 60, role: "answer" }),
+    note({
+      voice: "soprano",
+      startTick: TICKS_PER_QUARTER,
+      durationTicks: TICKS_PER_QUARTER,
+      pitch: 62,
+      role: "answer",
+    }),
+    note({ voice: "alto", startTick: 0, durationTicks: TICKS_PER_QUARTER * 2, pitch: 61, role: "counter-subject" }),
+    note({ voice: "tenor", startTick: 0, durationTicks: TICKS_PER_QUARTER, pitch: 48, role: "free-counterpoint" }),
+    note({ voice: "bass", startTick: 0, durationTicks: TICKS_PER_QUARTER, pitch: 36, role: "free-counterpoint" }),
+  ];
+  const review = evaluateSectionConstraintProblem({
+    problem: buildSectionConstraintProblem({ notes, sectionPlan: plan, subjectEntries: [entry] }),
+    notes,
+    sectionPlan: plan,
+    subjectEntries: [entry],
+  });
+
+  assert.equal(review.infeasibleConstraintCounts.entryPlanViolationCount, 1);
+  assert.ok(review.infeasibleConstraintCounts.entrySupportInstabilityCount > 0);
+  assert.ok(review.infeasibleConstraintCounts.unresolvedSevereEntryIntervalCount > 0);
+  assert.ok(review.infeasibleConstraintCounts.voicePairUnisonPressureCount > 0);
+  assert.ok(review.infeasibleConstraintCounts.voicePairLockstepCount > 0);
+});
+
 function sectionPlan(input: { state: FugueState; startTick?: number; durationTicks?: number }): HarmonicPlan {
   return buildHarmonicPlan({
     state: input.state,
@@ -164,6 +199,7 @@ function note(input: {
   startTick: number;
   durationTicks?: number;
   pitch: number;
+  role?: NoteEvent["role"];
 }): NoteEvent {
   return {
     kind: "note",
@@ -172,6 +208,26 @@ function note(input: {
     durationTicks: input.durationTicks ?? TICKS_PER_QUARTER,
     pitch: input.pitch,
     velocity: 72,
-    role: "free-counterpoint",
+    role: input.role ?? "free-counterpoint",
   };
+}
+
+function plannedEntry(input: Partial<PlannedEntry> & { voice: Voice }): PlannedEntry {
+  return {
+    voice: input.voice,
+    form: input.form ?? "subject",
+    state: input.state ?? "subject-return",
+    startTick: input.startTick ?? 0,
+    globalKey: input.globalKey ?? cMajor(),
+    localKey: input.localKey ?? cMajor(),
+    answerKind: input.answerKind,
+    registerTarget: input.registerTarget ?? 60,
+    expectedDegreePattern: input.expectedDegreePattern ?? [0, 1],
+    actualPitchClassSequence: input.actualPitchClassSequence ?? [0, 2],
+    metricalIntentPattern: input.metricalIntentPattern ?? [],
+  };
+}
+
+function cMajor(): KeySignature {
+  return { tonic: "C", mode: "major" };
 }

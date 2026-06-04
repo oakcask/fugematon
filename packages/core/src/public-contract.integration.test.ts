@@ -192,7 +192,7 @@ test("public diagnostics expose finite candidate score dimensions", () => {
   assert.equal(typeof output.diagnostics.qualityVector.harmonicSonorities.focusedWindowCount, "number");
   assert.equal(typeof output.diagnostics.qualityVector.harmonicSonorities.generatorResponseWindowCount, "number");
   assert.ok(Array.isArray(output.diagnostics.qualityVector.harmonicSonorities.windows));
-  assert.equal(output.diagnostics.constraintSatisfactionReview.schemaVersion, 3);
+  assert.equal(output.diagnostics.constraintSatisfactionReview.schemaVersion, 4);
   assert.equal(typeof output.diagnostics.constraintSatisfactionReview.windowCount, "number");
   assert.equal(typeof output.diagnostics.constraintSatisfactionReview.intentionalRestSpanCount, "number");
   assert.equal(typeof output.diagnostics.constraintSatisfactionReview.unplannedSilentRunCount, "number");
@@ -216,6 +216,12 @@ test("public diagnostics expose finite candidate score dimensions", () => {
         typeof window.offMeasureEntryStartCount === "number" &&
         typeof window.unpreparedTransitionCount === "number" &&
         typeof window.preparedPickupCount === "number" &&
+        typeof window.infeasibleConstraintCounts.entryPlanViolationCount === "number" &&
+        typeof window.infeasibleConstraintCounts.entrySupportInstabilityCount === "number" &&
+        typeof window.infeasibleConstraintCounts.unresolvedEntrySupportInstabilityCount === "number" &&
+        typeof window.infeasibleConstraintCounts.unresolvedSevereEntryIntervalCount === "number" &&
+        typeof window.infeasibleConstraintCounts.voicePairUnisonPressureCount === "number" &&
+        typeof window.infeasibleConstraintCounts.voicePairLockstepCount === "number" &&
         typeof window.infeasibleConstraintCounts.nonChordStructuralSupportCount === "number" &&
         typeof window.infeasibleConstraintCounts.thinUnrootedStructuralSupportCount === "number" &&
         typeof window.infeasibleConstraintCounts.pitchClassDoublingOnlyCount === "number" &&

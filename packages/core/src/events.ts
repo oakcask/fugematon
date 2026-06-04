@@ -427,6 +427,12 @@ export type SectionConstraintInfeasibleCounts = {
   unsupportedSolo: number;
   allVoiceSilence: number;
   longUnplannedSilentRun: number;
+  entryPlanViolationCount: number;
+  entrySupportInstabilityCount: number;
+  unresolvedEntrySupportInstabilityCount: number;
+  unresolvedSevereEntryIntervalCount: number;
+  voicePairUnisonPressureCount: number;
+  voicePairLockstepCount: number;
   structuralChordSupportMiss: number;
   structuralRootSupportMiss: number;
   nonChordStructuralSupportCount: number;
@@ -461,7 +467,7 @@ export type SectionConstraintSatisfactionWindow = {
 };
 
 export type ConstraintSatisfactionReviewSummary = {
-  schemaVersion: 3;
+  schemaVersion: 4;
   windowCount: number;
   intentionalRestSpanCount: number;
   unplannedSilentRunCount: number;

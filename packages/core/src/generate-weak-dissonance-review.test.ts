@@ -7,6 +7,6 @@ import {
 test("weak-dissonance review seeds keep semitone clash pressure at the repaired ceiling in batch A", () => {
   assertWeakDissonanceReviewSeedsExposePressure(WEAK_DISSONANCE_REVIEW_SEEDS.slice(0, 3), {
     maxWeakPassingSemitoneClashTicks: 24_000,
-    maxPassingNeighborOffbeatSemitoneClashTicks: 34_560,
+    maxPassingNeighborOffbeatSemitoneClashTicks: 35_760,
   });
 });

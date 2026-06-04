@@ -201,6 +201,21 @@ test("profile-aware harmonic feasibility preserves music-box structural support 
   assert.ok(musicBox.diagnostics.qualityVector.harmonicSonorities.generatorResponseWindowCount <= 2);
 });
 
+test("music-box n20 preserves reported full-length entry and profile hard contracts", () => {
+  const output = generateScore({
+    seed: "seed-1wudr38-0fbqzth",
+    lengthTicks: 129600,
+    writingProfileId: "music-box-n20",
+  });
+
+  assert.equal(output.diagnostics.voiceCrossings, 0);
+  assert.equal(output.diagnostics.answerPlanViolations, 0);
+  assert.equal(output.diagnostics.rangeViolations, 0);
+  assert.equal(output.diagnostics.writingProfilePitchViolations, 0);
+  assert.equal(output.diagnostics.subjectIdentityViolations, 0);
+  assert.equal(output.diagnostics.keyMetadataMismatches, 0);
+});
+
 test("writing profile diagnostics catch synthetic music-box and piano playability violations", () => {
   const musicBoxProfile = resolveWritingProfile("music-box-n20");
   const musicBoxDiagnostics = analyzeWritingProfileConstraints(
