@@ -11,14 +11,20 @@ import type {
   SectionConstraintRelaxationLevel,
   SectionConstraintRestSpan,
   SectionConstraintSatisfactionWindow,
+  SectionConstraintScoringProfileId,
   SectionConstraintSilentRun,
   Voice,
 } from "../events.js";
+import { analyzeDissonanceTriage } from "./dissonance-triage.js";
 import { assessHarmonicSonority, hasSupportRole, isMixedEntryTexture } from "./harmonic-sonority-review.js";
 import { chordTonePitchClasses, rootDegreeForFunction } from "./harmony.js";
 import { beatStrengthAtTick, isCompoundMidpoint, isMeasureDownbeat, previousMeasureDownbeat } from "./meter.js";
 import { scaleDegreePitchClass } from "./pitch.js";
-import { compareNoteEvents, positiveModulo, roundRatio } from "./shared.js";
+import {
+  resolveSectionConstraintScoringProfile,
+  sectionConstraintSoftCostFromCounts,
+} from "./section-constraint-scoring.js";
+import { compareNoteEvents, positiveModulo, VOICE_ENTRY_ORDER } from "./shared.js";
 
 export const INTENTIONAL_REST_REASONS = [
   "cadence-breath",
@@ -147,6 +153,8 @@ export function evaluateSectionConstraintProblem(input: {
   });
   addEntryConstraintCounts(infeasibleConstraintCounts, input);
   addVoicePairPressureCounts(infeasibleConstraintCounts, input.notes, input.problem, gridTicks);
+  addLeapToSilenceCounts(infeasibleConstraintCounts, input.notes, input.problem);
+  addSustainedSevereVerticalDissonanceCounts(infeasibleConstraintCounts, input.notes, input.sectionPlan);
   let minActiveVoices = Number.POSITIVE_INFINITY;
   let maxActiveVoices = 0;
 
@@ -482,6 +490,8 @@ function addEntryConstraintCounts(
     counts.entrySupportInstabilityCount += support.instabilityCount;
     counts.unresolvedEntrySupportInstabilityCount += support.unresolvedInstabilityCount;
     counts.unresolvedSevereEntryIntervalCount += support.unresolvedSevereIntervalCount;
+    counts.entryAdjacentSecondFrictionCount += support.adjacentSecondFrictionCount;
+    counts.unresolvedAccentedEntryClashCount += support.unresolvedAccentedClashCount;
   }
 }
 
@@ -546,12 +556,16 @@ function entrySupportInstabilityCounts(
   instabilityCount: number;
   unresolvedInstabilityCount: number;
   unresolvedSevereIntervalCount: number;
+  adjacentSecondFrictionCount: number;
+  unresolvedAccentedClashCount: number;
 } {
   const ticks = entrySupportCheckpoints(notes, entry);
   const unstableTicks = ticks.filter((tick) => hasEntrySupportInstabilityAt(notes, entry, tick));
   const severeTicks = ticks.filter((tick) => hasSevereEntryIntervalAt(notes, entry, tick));
+  const adjacentSecondFrictionTicks = ticks.filter((tick) => hasAdjacentEntrySecondFrictionAt(notes, entry, tick));
   let unresolvedInstabilityCount = 0;
   let unresolvedSevereIntervalCount = 0;
+  let unresolvedAccentedClashCount = 0;
 
   for (const tick of unstableTicks) {
     if (!resolvesBeforeDeadline(ticks, unstableTicks, tick)) {
@@ -561,6 +575,9 @@ function entrySupportInstabilityCounts(
   for (const tick of severeTicks) {
     if (!resolvesBeforeDeadline(ticks, severeTicks, tick)) {
       unresolvedSevereIntervalCount += 1;
+      if (isAccentedTick(tick)) {
+        unresolvedAccentedClashCount += 1;
+      }
     }
   }
 
@@ -568,6 +585,8 @@ function entrySupportInstabilityCounts(
     instabilityCount: unstableTicks.length,
     unresolvedInstabilityCount,
     unresolvedSevereIntervalCount,
+    adjacentSecondFrictionCount: adjacentSecondFrictionTicks.length,
+    unresolvedAccentedClashCount,
   };
 }
 
@@ -606,6 +625,23 @@ function hasSevereEntryIntervalAt(notes: readonly NoteEvent[], entry: PlannedEnt
       isSevereEntryInterval(entrySupportIntervalClass(entryNote, supportNote)) &&
       !isPreparedOrResolvingEntrySupport(notes, entry, entryNote, supportNote, tick),
   );
+}
+
+function hasAdjacentEntrySecondFrictionAt(notes: readonly NoteEvent[], entry: PlannedEntry, tick: number): boolean {
+  return entrySupportPairsAt(notes, entry, tick).some(
+    ({ entryNote, supportNote }) =>
+      areAdjacentContrapuntalVoices(entryNote.voice, supportNote.voice) &&
+      isSemitoneEntryFriction(entrySupportIntervalClass(entryNote, supportNote)) &&
+      !isPreparedOrResolvingEntrySupport(notes, entry, entryNote, supportNote, tick),
+  );
+}
+
+function isAccentedTick(tick: number): boolean {
+  return tick % TICKS_PER_QUARTER === 0;
+}
+
+function areAdjacentContrapuntalVoices(left: Voice, right: Voice): boolean {
+  return Math.abs(VOICE_ENTRY_ORDER.indexOf(left) - VOICE_ENTRY_ORDER.indexOf(right)) === 1;
 }
 
 function entrySupportPairsAt(
@@ -694,6 +730,10 @@ function isSevereEntryInterval(intervalClass: number): boolean {
   return intervalClass === 1 || intervalClass === 2 || intervalClass === 10 || intervalClass === 11;
 }
 
+function isSemitoneEntryFriction(intervalClass: number): boolean {
+  return intervalClass === 1 || intervalClass === 11;
+}
+
 function addVoicePairPressureCounts(
   counts: SectionConstraintInfeasibleCounts,
   notes: readonly NoteEvent[],
@@ -718,6 +758,46 @@ function addVoicePairPressureCounts(
       }
     }
   }
+}
+
+function addLeapToSilenceCounts(
+  counts: SectionConstraintInfeasibleCounts,
+  notes: readonly NoteEvent[],
+  problem: SectionConstraintProblem,
+): void {
+  for (const voice of VOICE_ENTRY_ORDER) {
+    const voiceNotes = notes
+      .filter(
+        (note) =>
+          note.voice === voice && problem.window.startTick <= note.startTick && note.startTick < problem.window.endTick,
+      )
+      .sort(compareNoteEvents);
+    for (let index = 1; index < voiceNotes.length - 1; index += 1) {
+      const previous = voiceNotes[index - 1];
+      const current = voiceNotes[index];
+      const next = voiceNotes[index + 1];
+      if (previous === undefined || current === undefined || next === undefined) {
+        continue;
+      }
+      const leapInterval = Math.abs(current.pitch - previous.pitch);
+      const followingGapTicks = next.startTick - (current.startTick + current.durationTicks);
+      if (leapInterval >= 5 && followingGapTicks > TICKS_PER_QUARTER / 2) {
+        counts.leapToSilenceCount += 1;
+      }
+    }
+  }
+}
+
+function addSustainedSevereVerticalDissonanceCounts(
+  counts: SectionConstraintInfeasibleCounts,
+  notes: readonly NoteEvent[],
+  sectionPlan: HarmonicPlan,
+): void {
+  counts.sustainedSevereVerticalDissonanceCount += analyzeDissonanceTriage(
+    notes,
+    [sectionPlan],
+    [],
+  ).sustainedSevereVerticalDissonanceCount;
 }
 
 function pressureCheckpoints(
@@ -975,6 +1055,10 @@ function emptyInfeasibleCounts(): SectionConstraintInfeasibleCounts {
     entrySupportInstabilityCount: 0,
     unresolvedEntrySupportInstabilityCount: 0,
     unresolvedSevereEntryIntervalCount: 0,
+    entryAdjacentSecondFrictionCount: 0,
+    unresolvedAccentedEntryClashCount: 0,
+    leapToSilenceCount: 0,
+    sustainedSevereVerticalDissonanceCount: 0,
     voicePairUnisonPressureCount: 0,
     voicePairLockstepCount: 0,
     structuralChordSupportMiss: 0,
@@ -1000,6 +1084,12 @@ function sumInfeasibleCounts(counts: readonly SectionConstraintInfeasibleCounts[
         sum.unresolvedEntrySupportInstabilityCount + count.unresolvedEntrySupportInstabilityCount,
       unresolvedSevereEntryIntervalCount:
         sum.unresolvedSevereEntryIntervalCount + count.unresolvedSevereEntryIntervalCount,
+      entryAdjacentSecondFrictionCount: sum.entryAdjacentSecondFrictionCount + count.entryAdjacentSecondFrictionCount,
+      unresolvedAccentedEntryClashCount:
+        sum.unresolvedAccentedEntryClashCount + count.unresolvedAccentedEntryClashCount,
+      leapToSilenceCount: sum.leapToSilenceCount + count.leapToSilenceCount,
+      sustainedSevereVerticalDissonanceCount:
+        sum.sustainedSevereVerticalDissonanceCount + count.sustainedSevereVerticalDissonanceCount,
       voicePairUnisonPressureCount: sum.voicePairUnisonPressureCount + count.voicePairUnisonPressureCount,
       voicePairLockstepCount: sum.voicePairLockstepCount + count.voicePairLockstepCount,
       structuralChordSupportMiss: sum.structuralChordSupportMiss + count.structuralChordSupportMiss,
@@ -1056,22 +1146,12 @@ export function sectionConstraintHardFailureCount(window: SectionConstraintSatis
   );
 }
 
-export function sectionConstraintSoftCost(window: SectionConstraintSatisfactionWindow): number {
-  const counts = window.infeasibleConstraintCounts;
-  return roundRatio(
-    counts.minActiveVoiceViolation * 2 +
-      counts.unsupportedSolo * 6 +
-      counts.allVoiceSilence * 8 +
-      counts.longUnplannedSilentRun * 5 +
-      counts.structuralChordSupportMiss * 4 +
-      counts.structuralRootSupportMiss * 6 +
-      counts.entrySupportInstabilityCount +
-      counts.unresolvedEntrySupportInstabilityCount * 5 +
-      counts.unresolvedSevereEntryIntervalCount * 6 +
-      counts.voicePairUnisonPressureCount * 0.25 +
-      counts.voicePairLockstepCount * 0.125 +
-      counts.thinUnrootedStructuralSupportCount * 3 +
-      counts.pitchClassDoublingOnlyCount * 4 +
-      counts.mixedEntryHarmonicRiskCount * 5,
+export function sectionConstraintSoftCost(
+  window: SectionConstraintSatisfactionWindow,
+  profileId?: SectionConstraintScoringProfileId,
+): number {
+  return sectionConstraintSoftCostFromCounts(
+    window.infeasibleConstraintCounts,
+    resolveSectionConstraintScoringProfile(profileId),
   );
 }

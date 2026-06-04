@@ -35,6 +35,8 @@ function entryHarmonySelectionRiskAdjustment(evaluation: CandidateEvaluation): n
   const unresolvedDuration = evaluation.dimensions.harmony.features.qualityVectorUnresolvedEntrySevereIntervalDuration;
   const unresolvedAccentedEntryClashCount =
     evaluation.dimensions.harmony.features.unresolvedAccentedEntryClashCount ?? 0;
+  const sustainedSevereVerticalDissonanceCount =
+    evaluation.dimensions.harmony.features.sustainedSevereVerticalDissonanceCount ?? 0;
   const harmonicSonorityReviewRequiredWindowCount =
     evaluation.dimensions.harmony.features.harmonicSonorityReviewRequiredWindowCount ?? 0;
   const harmonicSonorityGeneratorResponseWindowCount =
@@ -46,6 +48,8 @@ function entryHarmonySelectionRiskAdjustment(evaluation: CandidateEvaluation): n
     unresolvedSevereEntryIntervalCount * CANDIDATE_SELECTION_RISK_WEIGHTS.entryHarmony.unresolvedSevereInterval +
     unresolvedDuration * CANDIDATE_SELECTION_RISK_WEIGHTS.entryHarmony.unresolvedDuration +
     unresolvedAccentedEntryClashCount * CANDIDATE_SELECTION_RISK_WEIGHTS.entryHarmony.unresolvedAccentedEntryClash +
+    sustainedSevereVerticalDissonanceCount *
+      CANDIDATE_SELECTION_RISK_WEIGHTS.entryHarmony.sustainedSevereVerticalDissonance +
     harmonicSonorityReviewRequiredWindowCount *
       CANDIDATE_SELECTION_RISK_WEIGHTS.entryHarmony.harmonicSonorityReviewWindow +
     harmonicSonorityGeneratorResponseWindowCount *

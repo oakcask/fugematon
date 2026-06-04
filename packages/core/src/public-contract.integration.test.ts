@@ -59,6 +59,7 @@ test("public API emits the stable score metadata envelope", () => {
   assert.ok(output.diagnostics.candidatePoolOracle.phraseFamilyCandidateCount >= 0);
   assert.equal(output.diagnostics.generatorVersion, GENERATOR_VERSION);
   assert.equal(output.diagnostics.selectionModel, DEFAULT_SELECTION_MODEL);
+  assert.deepEqual(output.diagnostics.constraintProfile, { id: "current", version: 1 });
   assert.deepEqual(output.diagnostics.writingProfile, {
     id: "four-voice-default",
     version: WRITING_PROFILE_VERSION,
@@ -169,9 +170,12 @@ test("public diagnostics expose finite candidate score dimensions", () => {
   assert.equal(typeof output.diagnostics.phraseDevelopmentReview.reviewRequired, "boolean");
   assert.equal(typeof output.diagnostics.phraseDevelopmentReview.mechanicalReuseWindowCount, "number");
   assert.ok(Array.isArray(output.diagnostics.phraseDevelopmentReview.windows));
-  assert.equal(output.diagnostics.dissonanceTriage.schemaVersion, 1);
+  assert.equal(output.diagnostics.dissonanceTriage.schemaVersion, 2);
   assert.equal(typeof output.diagnostics.dissonanceTriage.weakPassingSemitoneClashTicks, "number");
   assert.equal(typeof output.diagnostics.dissonanceTriage.entryAdjacentSecondFrictionCount, "number");
+  assert.equal(typeof output.diagnostics.dissonanceTriage.sustainedSevereVerticalDissonanceCount, "number");
+  assert.equal(typeof output.diagnostics.dissonanceTriage.sustainedSevereVerticalDissonanceTicks, "number");
+  assert.equal(typeof output.diagnostics.dissonanceTriage.maxSustainedSevereVerticalDissonanceTicks, "number");
   assert.ok(Array.isArray(output.diagnostics.dissonanceTriage.windows));
   assert.equal(output.diagnostics.harmonicContinuity.schemaVersion, 1);
   assert.equal(typeof output.diagnostics.harmonicContinuity.focusedWindowCount, "number");
@@ -220,12 +224,16 @@ test("public diagnostics expose finite candidate score dimensions", () => {
         typeof window.infeasibleConstraintCounts.entrySupportInstabilityCount === "number" &&
         typeof window.infeasibleConstraintCounts.unresolvedEntrySupportInstabilityCount === "number" &&
         typeof window.infeasibleConstraintCounts.unresolvedSevereEntryIntervalCount === "number" &&
+        typeof window.infeasibleConstraintCounts.entryAdjacentSecondFrictionCount === "number" &&
+        typeof window.infeasibleConstraintCounts.unresolvedAccentedEntryClashCount === "number" &&
+        typeof window.infeasibleConstraintCounts.leapToSilenceCount === "number" &&
         typeof window.infeasibleConstraintCounts.voicePairUnisonPressureCount === "number" &&
         typeof window.infeasibleConstraintCounts.voicePairLockstepCount === "number" &&
         typeof window.infeasibleConstraintCounts.nonChordStructuralSupportCount === "number" &&
         typeof window.infeasibleConstraintCounts.thinUnrootedStructuralSupportCount === "number" &&
         typeof window.infeasibleConstraintCounts.pitchClassDoublingOnlyCount === "number" &&
         typeof window.infeasibleConstraintCounts.mixedEntryHarmonicRiskCount === "number" &&
+        typeof window.infeasibleConstraintCounts.sustainedSevereVerticalDissonanceCount === "number" &&
         Array.isArray(window.intentionalRestSpans) &&
         Array.isArray(window.unplannedSilentRuns) &&
         window.unplannedSilentRuns.every((run) => run.state === window.state && typeof run.reason === "string") &&
@@ -345,8 +353,8 @@ test("public subject entry diagnostics correspond to emitted entry notes", () =>
 });
 
 function assertCandidateEvaluation(evaluation: CandidateEvaluation): void {
-  assert.equal(evaluation.featureVersion, 9);
-  assert.equal(evaluation.evaluationModelVersion, 18);
+  assert.equal(evaluation.featureVersion, 10);
+  assert.equal(evaluation.evaluationModelVersion, 19);
   assert.ok(Number.isFinite(evaluation.totalCost));
   assert.ok(evaluation.explanations.entries.length > 0);
   assert.ok(evaluation.explanations.voicePairs.length > 0);

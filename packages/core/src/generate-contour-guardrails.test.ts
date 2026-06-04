@@ -10,10 +10,10 @@ import { evaluateContourMotionGate, evaluateMelodyTextureGate } from "./review-g
 
 test("generateScore balances entry harmony scoring with preservation guardrails", () => {
   const blockerSeeds = [
-    ["fugue-smoke", 76, 64, 46, 2, 2, 2],
+    ["fugue-smoke", 76, 64, 48, 2, 2, 2],
     ["modal-cadence", 96, 48, 0, 2, 1, 0],
     ["lyrical-line", 136, 98, 72, 1, 1, 0],
-    ["tight-stretto", 80, 53, 40, 2, 2, 2],
+    ["tight-stretto", 82, 56, 42, 2, 2, 2],
     ["wide-key", 130, 96, 72, 2, 2, 2],
     ["contrary-answer", 137, 96, 72, 2, 2, 2],
   ] as const;
@@ -69,10 +69,10 @@ test("generateScore balances entry harmony scoring with preservation guardrails"
 
 test("generateScore preserves voice-pair independence blocker evidence under scoring changes", () => {
   const blockerSeeds = [
-    ["contrary-motion", 40, 532, 830, 0, 0, 22, 6, 50, 13],
-    ["fugue-smoke", 58, 547, 830, 0, 0, 22, 7, 50, 12],
-    ["minor-entry", 87, 682, 882, 3, 3, 43, 14, 66, 21],
-    ["modal-answer", 61, 746, 905, 0, 0, 42, 14, 69, 23],
+    ["contrary-motion", 42, 534, 830, 0, 0, 22, 6, 50, 13],
+    ["fugue-smoke", 58, 550, 830, 0, 0, 22, 7, 50, 12],
+    ["minor-entry", 87, 686, 882, 3, 3, 43, 14, 66, 21],
+    ["modal-answer", 61, 752, 902, 0, 0, 47, 14, 66, 21],
   ] as const;
 
   for (const [
@@ -118,7 +118,7 @@ test("generateScore guards exact pitch lockstep without gate regressions", () =>
   const blockerSeeds = [
     ["bright-answer", 53, 737, 664, 138, 0.827],
     ["quiet-cadence", 55, 729, 667, 67, 0.858],
-    ["modal-answer", 61, 752, 814, 71, 0.557],
+    ["modal-answer", 61, 752, 814, 72, 0.557],
   ] as const;
 
   for (const [

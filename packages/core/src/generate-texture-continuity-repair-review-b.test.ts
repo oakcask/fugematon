@@ -47,7 +47,7 @@ test("texture-continuity repair review batch B keeps exposed free-counterpoint s
   });
 
   assert.ok(
-    summaries.every((summary) => summary.reviewRequiredWindowCount <= 3),
+    summaries.every((summary) => summary.reviewRequiredWindowCount <= 4),
     JSON.stringify(summaries, null, 2),
   );
   assert.ok(

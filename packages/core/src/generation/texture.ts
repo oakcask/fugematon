@@ -510,7 +510,6 @@ export function addTextureNote(
   }
   pitch = weakDissonanceSafePitch(notes, pattern, startTick, durationTicks, pitch);
   pitch = counterSubjectSafePitch(notes, pattern, startTick, durationTicks, pitch);
-  pitch = entryHarmonySafePitch(notes, { ...pattern, metricalHarmonyIntent }, startTick, durationTicks, pitch);
   pitch = highRegisterSopranoSupportPitch(
     notes,
     { ...pattern, metricalHarmonyIntent },
@@ -531,66 +530,6 @@ export function addTextureNote(
     role: pattern.role,
     metricalHarmonyIntent,
   });
-}
-
-function entryHarmonySafePitch(
-  notes: readonly NoteEvent[],
-  pattern: TextureNotePattern,
-  startTick: number,
-  durationTicks: number,
-  pitch: number,
-): number {
-  const entryLocalConstraintEnabled =
-    pattern.counterSubjectSupportRepair === true ||
-    (pattern.harmonicPlan?.state === "stretto-like" &&
-      pattern.harmonicPlan.startTick <= STRETTO_ENTRY_HARMONY_REPAIR_MAX_START_TICKS);
-  if (
-    (pattern.role !== "free-counterpoint" && pattern.role !== "counter-subject") ||
-    pattern.harmonicPlan === undefined ||
-    !entryLocalConstraintEnabled ||
-    !createsUnpreparedEntrySupportInstabilityAtTick(
-      notes,
-      pattern.voice,
-      startTick,
-      durationTicks,
-      pitch,
-      pattern.metricalHarmonyIntent,
-    )
-  ) {
-    return pitch;
-  }
-
-  const anchor = nearestHarmonicAnchor(startTick, [pattern.harmonicPlan]);
-  if (anchor === undefined) {
-    return pitch;
-  }
-
-  const previous = previousTextureNote(notes, pattern.voice, startTick);
-  const noteShape = textureNoteShape(pattern, startTick, durationTicks, pitch);
-  const chordTonePitchClassesAtTick = chordTonePitchClasses(anchor.localKey, anchor.function);
-  const candidates = nearbyChordTonePitches({
-    pitch,
-    voice: pattern.voice,
-    steps: [-5, -4, -3, -2, -1, 1, 2, 3, 4, 5],
-    chordTonePitchClasses: chordTonePitchClassesAtTick,
-    writingProfile: pattern.writingProfile,
-  })
-    .filter((candidatePitch) => previous === undefined || Math.abs(candidatePitch - previous.pitch) <= 5)
-    .filter((candidatePitch) => keepsAdjacentVoiceOrder(notes, noteShape, candidatePitch))
-    .filter(
-      (candidatePitch) =>
-        !createsUnpreparedEntrySupportInstabilityAtTick(
-          notes,
-          pattern.voice,
-          startTick,
-          durationTicks,
-          candidatePitch,
-          pattern.metricalHarmonyIntent,
-        ),
-    )
-    .filter((candidatePitch) => !createsPitchClassUnisonAtTick(notes, pattern.voice, startTick, candidatePitch));
-
-  return nearestPitch(candidates, pitch) ?? pitch;
 }
 
 function highRegisterSopranoSupportPitch(
@@ -643,10 +582,6 @@ function highRegisterSopranoSupportPitch(
         left - right,
     )[0] ?? pitch
   );
-}
-
-function isFunctionBearingPassingIntent(intent: MetricalHarmonyIntent | undefined): boolean {
-  return intent === "weak-passing-tone" || intent === "weak-neighbor-tone" || intent === "offbeat-motion";
 }
 
 function weakDissonanceSafePitch(
@@ -793,54 +728,6 @@ function createsCounterSubjectSupportCollision(
       note.startTick < startTick + durationTicks &&
       startTick < note.startTick + note.durationTicks &&
       pitchClassDistance(pitch, note.pitch) <= 2,
-  );
-}
-
-function createsUnpreparedEntrySupportInstabilityAtTick(
-  notes: readonly NoteEvent[],
-  voice: Voice,
-  startTick: number,
-  durationTicks: number,
-  pitch: number,
-  supportIntent?: MetricalHarmonyIntent,
-): boolean {
-  return notes.some(
-    (note) =>
-      isEntryRole(note.role) &&
-      note.voice !== voice &&
-      note.startTick < startTick + durationTicks &&
-      startTick < note.startTick + note.durationTicks &&
-      !isPreparedEntrySupportResolution(supportIntent, note, startTick, durationTicks) &&
-      isEntrySupportInstability(pitch, note.pitch),
-  );
-}
-
-function isPreparedEntrySupportResolution(
-  supportIntent: MetricalHarmonyIntent | undefined,
-  entryNote: NoteEvent,
-  supportStartTick: number,
-  supportDurationTicks: number,
-): boolean {
-  return (
-    isFunctionBearingPassingIntent(supportIntent) &&
-    supportStartTick < entryNote.startTick &&
-    entryNote.startTick < supportStartTick + supportDurationTicks
-  );
-}
-
-function isEntryRole(role: NoteEvent["role"] | undefined): boolean {
-  return role === "subject" || role === "answer" || role === "subject-fragment";
-}
-
-function isEntrySupportInstability(supportPitch: number, entryPitch: number): boolean {
-  const intervalClass = Math.abs(supportPitch - entryPitch) % 12;
-  return (
-    intervalClass === 1 ||
-    intervalClass === 2 ||
-    intervalClass === 5 ||
-    intervalClass === 6 ||
-    intervalClass === 10 ||
-    intervalClass === 11
   );
 }
 

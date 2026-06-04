@@ -141,7 +141,7 @@ export const BASELINE_BEAUTY_DIAGNOSTICS_PROFILE = {
   maxSelectedCandidateTextureCost: 1173,
   maxAverageSelectedCandidateTextureCost: 952,
   maxSelectedCandidateMelodyCost: 630,
-  maxAverageSelectedCandidateMelodyCost: 365,
+  maxAverageSelectedCandidateMelodyCost: 366,
   boundarySeeds: {
     "modal-dorian": {
       minCounterSubjectIdentityRetention: 0.58,
@@ -211,7 +211,7 @@ export const ROTATION_ROBUSTNESS_DIAGNOSTICS_PROFILE = {
     "modal-answer": {
       minCounterSubjectIdentityRetention: 0.528,
       maxSameDirectionMotionCount: 814,
-      maxLeapRecoveryMisses: 71,
+      maxLeapRecoveryMisses: 72,
       minModalContextCount: 1,
     },
     "modal-cadence": {

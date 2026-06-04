@@ -1,7 +1,11 @@
 import {
+  DEFAULT_SECTION_CONSTRAINT_SCORING_PROFILE_ID,
   DEFAULT_WRITING_PROFILE_ID,
+  normalizeSectionConstraintScoringProfileId,
   normalizeSelectionModel,
   normalizeWritingProfileId,
+  SECTION_CONSTRAINT_SCORING_PROFILE_IDS,
+  type SectionConstraintScoringProfileId,
   type SelectionModel,
   WRITING_PROFILE_IDS,
   type WritingProfileId,
@@ -40,6 +44,7 @@ export type CliCommand =
       out: string;
       performanceProfileId: PerformanceProfileId;
       writingProfileId: WritingProfileId;
+      constraintProfileId: SectionConstraintScoringProfileId;
     }
   | {
       name: "review-ab";
@@ -51,6 +56,7 @@ export type CliCommand =
       variantModel: SelectionModel;
       performanceProfileId: PerformanceProfileId;
       writingProfileId: WritingProfileId;
+      constraintProfileId: SectionConstraintScoringProfileId;
     }
   | {
       name: "help";
@@ -95,6 +101,7 @@ export function parseArgs(argv: readonly string[]): CliCommand {
         ),
         performanceProfileId: parsePerformanceProfileId(options.get("performance-profile")),
         writingProfileId: parseWritingProfileId(options.get("writing-profile")),
+        constraintProfileId: parseConstraintProfileId(options.get("constraint-profile")),
       };
     }
     return {
@@ -103,6 +110,7 @@ export function parseArgs(argv: readonly string[]): CliCommand {
       out: requiredOption(options, "out"),
       performanceProfileId: parsePerformanceProfileId(options.get("performance-profile")),
       writingProfileId: parseWritingProfileId(options.get("writing-profile")),
+      constraintProfileId: parseConstraintProfileId(options.get("constraint-profile")),
     };
   }
 
@@ -148,8 +156,8 @@ export function helpText(): string {
     "  fugematon generate --seed <seed> --ticks <lengthTicks> [--out <file>] [--writing-profile four-voice-default|piano-two-hand|harpsichord-manual|music-box-n20|music-box-n40]",
     "  fugematon diagnose --seed <seed> --ticks <lengthTicks> [--writing-profile four-voice-default|piano-two-hand|harpsichord-manual|music-box-n20|music-box-n40]",
     "  fugematon midi --seed <seed> --ticks <lengthTicks> --out <file> [--performance-profile organ-default|strict-counterpoint] [--writing-profile four-voice-default|piano-two-hand|harpsichord-manual|music-box-n20|music-box-n40]",
-    "  fugematon review --out <directory> [--ticks <lengthTicks>] [--performance-profile organ-default|strict-counterpoint] [--writing-profile four-voice-default|piano-two-hand|harpsichord-manual|music-box-n20|music-box-n40]",
-    "  fugematon review-ab --out <directory> [--ticks <lengthTicks>] [--baseline-label <label>] [--variant-label <label>] [--baseline-model baseline|candidate-oracle-selection|section-local-planner] [--variant-model baseline|candidate-oracle-selection|section-local-planner] [--performance-profile organ-default|strict-counterpoint] [--writing-profile four-voice-default|piano-two-hand|harpsichord-manual|music-box-n20|music-box-n40]",
+    "  fugematon review --out <directory> [--ticks <lengthTicks>] [--performance-profile organ-default|strict-counterpoint] [--writing-profile four-voice-default|piano-two-hand|harpsichord-manual|music-box-n20|music-box-n40] [--constraint-profile current|entry-soft|entry-balanced|entry-strict|entry-strict-leap]",
+    "  fugematon review-ab --out <directory> [--ticks <lengthTicks>] [--baseline-label <label>] [--variant-label <label>] [--baseline-model baseline|candidate-oracle-selection|section-local-planner] [--variant-model baseline|candidate-oracle-selection|section-local-planner] [--performance-profile organ-default|strict-counterpoint] [--writing-profile four-voice-default|piano-two-hand|harpsichord-manual|music-box-n20|music-box-n40] [--constraint-profile current|entry-soft|entry-balanced|entry-strict|entry-strict-leap]",
   ].join("\n");
 }
 
@@ -182,6 +190,18 @@ function parseWritingProfileId(value: string | undefined): WritingProfileId {
     return normalizeWritingProfileId(value);
   } catch {
     throw new Error(`--writing-profile must be ${WRITING_PROFILE_IDS.join(", ")}`);
+  }
+}
+
+function parseConstraintProfileId(value: string | undefined): SectionConstraintScoringProfileId {
+  if (value === undefined) {
+    return DEFAULT_SECTION_CONSTRAINT_SCORING_PROFILE_ID;
+  }
+
+  try {
+    return normalizeSectionConstraintScoringProfileId(value);
+  } catch {
+    throw new Error(`--constraint-profile must be ${SECTION_CONSTRAINT_SCORING_PROFILE_IDS.join(", ")}`);
   }
 }
 

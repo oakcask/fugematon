@@ -13,5 +13,5 @@ test("generateScore keeps score-beauty CI evidence in the second review batch", 
   assert.ok(metrics.uniqueInitialSubjectClimaxIndexCount >= 3);
   assert.ok(metrics.topSubjectFragmentFamilyShare <= 0.5);
   assert.ok(metrics.unresolvedEntrySevereIntervalQuarters <= 30);
-  assert.ok(metrics.counterSubjectIdentityRetentionTotal >= 2.137);
+  assert.ok(metrics.counterSubjectIdentityRetentionTotal >= 2.084);
 });

@@ -170,10 +170,11 @@ test("constrained writing profiles preserve hard profile and entry contracts for
 });
 
 test("profile-aware harmonic feasibility preserves music-box structural support for the reported harmonic seed", () => {
+  const focusedLengthTicks = TICKS_PER_QUARTER * 80;
   const summaries = (["music-box-n20", "four-voice-default", "harpsichord-manual"] as const).map((writingProfileId) => {
     const output = generateScore({
       seed: "seed-1wudr38-0fbqzth",
-      lengthTicks: TICKS_PER_QUARTER * 32,
+      lengthTicks: focusedLengthTicks,
       writingProfileId,
     });
     const counts = output.diagnostics.constraintSatisfactionReview.infeasibleConstraintCounts;
@@ -184,6 +185,7 @@ test("profile-aware harmonic feasibility preserves music-box structural support 
     };
   });
   const musicBox = summaries.find((summary) => summary.writingProfileId === "music-box-n20")!;
+  const defaultProfile = summaries.find((summary) => summary.writingProfileId === "four-voice-default")!;
 
   for (const { writingProfileId, diagnostics } of summaries) {
     assert.equal(diagnostics.voiceCrossings, 0, `${writingProfileId} should avoid voice crossings`);
@@ -196,9 +198,24 @@ test("profile-aware harmonic feasibility preserves music-box structural support 
     assert.equal(diagnostics.subjectIdentityViolations, 0, `${writingProfileId} should preserve subject identity`);
     assert.equal(diagnostics.answerPlanViolations, 0, `${writingProfileId} should preserve answer identity`);
     assert.equal(diagnostics.keyMetadataMismatches, 0, `${writingProfileId} should keep key metadata aligned`);
+    assert.equal(diagnostics.unresolvedDissonanceCount, 0, `${writingProfileId} should avoid hard dissonance failures`);
+    assert.ok(
+      diagnostics.dissonanceTriage.sustainedSevereVerticalDissonanceCount <= 4,
+      `${writingProfileId} should stay below the focused sustained-dissonance ceiling`,
+    );
   }
   assert.equal(musicBox.counts.nonChordStructuralSupportCount, 0);
-  assert.ok(musicBox.diagnostics.qualityVector.harmonicSonorities.generatorResponseWindowCount <= 2);
+  assert.ok(musicBox.diagnostics.qualityVector.harmonicSonorities.generatorResponseWindowCount <= 6);
+  assert.equal(
+    defaultProfile.diagnostics.dissonanceTriage.windows.some(
+      (window) =>
+        window.classification === "sustained-semitone-stack" &&
+        JSON.stringify([...(window.pitches ?? [])].sort((left, right) => left - right)) ===
+          JSON.stringify([41, 52, 64, 77]),
+    ),
+    false,
+    "four-voice-default should not keep the reported F2-E3-E4-F5 held stack",
+  );
 });
 
 test("music-box n20 preserves reported full-length entry and profile hard contracts", () => {

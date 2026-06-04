@@ -122,6 +122,8 @@ export type {
   SectionConstraintRelaxationLevel,
   SectionConstraintRestSpan,
   SectionConstraintSatisfactionWindow,
+  SectionConstraintScoringProfileId,
+  SectionConstraintScoringProfileMetadata,
   SectionConstraintSilentRun,
   SectionConstraintSlotValueKind,
   SectionStatePatternSummary,
@@ -162,6 +164,14 @@ export type {
 } from "./events.js";
 export { normalizeSelectionModel } from "./events.js";
 export { generateScore } from "./generate.js";
+export type { SectionConstraintScoringProfile } from "./generation/section-constraint-scoring.js";
+export {
+  DEFAULT_SECTION_CONSTRAINT_SCORING_PROFILE_ID,
+  normalizeSectionConstraintScoringProfileId,
+  resolveSectionConstraintScoringProfile,
+  SECTION_CONSTRAINT_SCORING_PROFILE_IDS,
+  sectionConstraintScoringProfileMetadata,
+} from "./generation/section-constraint-scoring.js";
 export type {
   AppendInfinitePlaybackSegmentHistoryInput,
   BoundedPastEventContext,

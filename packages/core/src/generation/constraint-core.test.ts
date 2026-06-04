@@ -12,6 +12,11 @@ import {
 } from "./constraint-core.js";
 import { evaluateCandidate } from "./evaluation.js";
 import { createMeterContext } from "./meter.js";
+import { sectionConstraintSoftCost } from "./section-constraint-problem.js";
+import {
+  resolveSectionConstraintScoringProfile,
+  sectionConstraintSoftCostFromCounts,
+} from "./section-constraint-scoring.js";
 import type { Exposition } from "./types.js";
 
 test("constraint evaluator rejects current-contract hard failures", () => {
@@ -234,6 +239,73 @@ test("constraint evaluator ranks unresolved entry support without penalizing pre
 
   assert.equal(softCost(unresolved, "unresolved-entry-support-instability"), 1);
   assert.equal(softCost(prepared, "unresolved-entry-support-instability"), 0);
+});
+
+test("section CSP soft profile weights are shared by total cost and breakdown", () => {
+  const profile = resolveSectionConstraintScoringProfile("entry-balanced");
+  const plan = harmonicPlan("subject-return");
+  const result = evaluateScoreDraft(
+    {
+      ...draft(
+        [
+          note({
+            voice: "soprano",
+            startTick: 0,
+            durationTicks: TICKS_PER_QUARTER * 2,
+            pitch: 72,
+            role: "subject",
+          }),
+          note({
+            voice: "alto",
+            startTick: 0,
+            durationTicks: TICKS_PER_QUARTER * 2,
+            pitch: 73,
+            role: "counter-subject",
+          }),
+          note({
+            voice: "tenor",
+            startTick: 0,
+            durationTicks: TICKS_PER_QUARTER,
+            pitch: 60,
+            role: "free-counterpoint",
+          }),
+          note({
+            voice: "bass",
+            startTick: 0,
+            durationTicks: TICKS_PER_QUARTER,
+            pitch: 48,
+            role: "free-counterpoint",
+          }),
+        ],
+        resolveWritingProfile("four-voice-default"),
+        [
+          plannedEntry({
+            voice: "soprano",
+            form: "subject",
+            state: "subject-return",
+            expectedDegreePattern: [0],
+            actualPitchClassSequence: [0],
+          }),
+        ],
+        [plan],
+      ),
+      constraintProfileId: profile.id,
+    },
+    sectionCspWindow(plan),
+  );
+  const review = result.window.sectionConstraintReview;
+  assert.ok(review !== undefined);
+  const counts = review.infeasibleConstraintCounts;
+  const expectedEntryCost =
+    counts.entrySupportInstabilityCount * profile.weights.entrySupportInstability +
+    counts.unresolvedEntrySupportInstabilityCount * profile.weights.unresolvedEntrySupportInstability +
+    counts.unresolvedSevereEntryIntervalCount * profile.weights.unresolvedSevereEntryInterval +
+    counts.entryAdjacentSecondFrictionCount * profile.weights.entryAdjacentSecondFriction +
+    counts.unresolvedAccentedEntryClashCount * profile.weights.unresolvedAccentedEntryClash +
+    counts.leapToSilenceCount * profile.weights.leapToSilence;
+
+  assert.equal(softCost(result, "section-csp-entry-support"), expectedEntryCost);
+  assert.equal(sectionConstraintSoftCost(review, profile.id), sectionConstraintSoftCostFromCounts(counts, profile));
 });
 
 test("constraint evaluator explains episode and free-counterpoint candidate costs", () => {

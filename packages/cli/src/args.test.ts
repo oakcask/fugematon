@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { DEFAULT_WRITING_PROFILE_ID } from "@fugematon/core";
+import { DEFAULT_SECTION_CONSTRAINT_SCORING_PROFILE_ID, DEFAULT_WRITING_PROFILE_ID } from "@fugematon/core";
 import { DEFAULT_PERFORMANCE_PROFILE_ID } from "@fugematon/performance";
 import { helpText, parseArgs } from "./args.js";
 
@@ -64,7 +64,19 @@ test("parseArgs parses review command", () => {
     out: "review",
     performanceProfileId: DEFAULT_PERFORMANCE_PROFILE_ID,
     writingProfileId: DEFAULT_WRITING_PROFILE_ID,
+    constraintProfileId: DEFAULT_SECTION_CONSTRAINT_SCORING_PROFILE_ID,
   });
+  assert.deepEqual(
+    parseArgs(["review", "--ticks", "960", "--out", "review", "--constraint-profile", "entry-balanced"]),
+    {
+      name: "review",
+      lengthTicks: 960,
+      out: "review",
+      performanceProfileId: DEFAULT_PERFORMANCE_PROFILE_ID,
+      writingProfileId: DEFAULT_WRITING_PROFILE_ID,
+      constraintProfileId: "entry-balanced",
+    },
+  );
   assert.equal(parseArgs(["review", "--out", "review"]).name, "review");
 });
 
@@ -93,6 +105,7 @@ test("parseArgs parses review-ab command", () => {
       variantModel: "section-local-planner",
       performanceProfileId: DEFAULT_PERFORMANCE_PROFILE_ID,
       writingProfileId: DEFAULT_WRITING_PROFILE_ID,
+      constraintProfileId: DEFAULT_SECTION_CONSTRAINT_SCORING_PROFILE_ID,
     },
   );
   assert.deepEqual(parseArgs(["review-ab", "--out", "selection-review"]), {
@@ -105,6 +118,7 @@ test("parseArgs parses review-ab command", () => {
     variantModel: "candidate-oracle-selection",
     performanceProfileId: DEFAULT_PERFORMANCE_PROFILE_ID,
     writingProfileId: DEFAULT_WRITING_PROFILE_ID,
+    constraintProfileId: DEFAULT_SECTION_CONSTRAINT_SCORING_PROFILE_ID,
   });
 });
 
@@ -126,6 +140,7 @@ test("helpText includes the selection A/B review command", () => {
   assert.match(helpText(), /--variant-model baseline\|candidate-oracle-selection\|section-local-planner/);
   assert.match(helpText(), /--performance-profile organ-default\|strict-counterpoint/);
   assert.match(helpText(), /--writing-profile four-voice-default\|piano-two-hand/);
+  assert.match(helpText(), /--constraint-profile current\|entry-soft\|entry-balanced\|entry-strict\|entry-strict-leap/);
 });
 
 test("parseArgs rejects invalid arguments", () => {
@@ -139,6 +154,10 @@ test("parseArgs rejects invalid arguments", () => {
   assert.throws(
     () => parseArgs(["review-ab", "--ticks", "960", "--out", "review", "--variant-model", "unknown"]),
     /--variant-model/,
+  );
+  assert.throws(
+    () => parseArgs(["review", "--out", "review", "--constraint-profile", "unknown"]),
+    /--constraint-profile/,
   );
   assert.throws(
     () =>

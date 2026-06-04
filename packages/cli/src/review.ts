@@ -7,6 +7,8 @@ import type {
   GenerationOutput,
   NoteEvent,
   PlannedEntry,
+  SectionConstraintScoringProfileId,
+  SectionConstraintScoringProfileMetadata,
   SelectionModel,
   WritingProfileId,
   WritingProfileMetadata,
@@ -15,6 +17,7 @@ import {
   type BaselineBeautyGateResult,
   type ContourMotionGateResult,
   compareDiagnosticsToReferenceProfile,
+  DEFAULT_SECTION_CONSTRAINT_SCORING_PROFILE_ID,
   evaluateBaselineBeautyGate,
   evaluateContourMotionGate,
   evaluateMelodyTextureGate,
@@ -31,7 +34,9 @@ import {
   type ReviewGatePolicyResult,
   ROTATION_REVIEW_SEEDS,
   type RotationRobustnessGateResult,
+  resolveSectionConstraintScoringProfile,
   resolveWritingProfileMetadata,
+  sectionConstraintScoringProfileMetadata,
   summarizeHistoricalReferenceCalibration,
   summarizeReferenceDiagnosticsComparisons,
   TICKS_PER_QUARTER,
@@ -63,17 +68,29 @@ export async function writeReviewBundle(
   selectionModel: SelectionModel = "baseline",
   performanceProfileId: PerformanceProfileId = DEFAULT_PERFORMANCE_PROFILE_ID,
   writingProfileId?: WritingProfileId,
+  constraintProfileId: SectionConstraintScoringProfileId = DEFAULT_SECTION_CONSTRAINT_SCORING_PROFILE_ID,
 ): Promise<ReviewSummary> {
   await mkdir(outDirectory, { recursive: true });
   const performanceProfile = performanceProfileMetadata(getPerformanceProfile(performanceProfileId));
   const writingProfile = resolveWritingProfileMetadata(writingProfileId);
+  const constraintProfile = sectionConstraintScoringProfileMetadata(
+    resolveSectionConstraintScoringProfile(constraintProfileId),
+  );
   const summarySeeds: ReviewSummarySeed[] = [];
   const referenceComparisons: ReferenceDiagnosticsComparison[] = [];
   const listeningReview = createListeningReview(lengthTicks, performanceProfile);
   const pairwisePreferences = createPairwisePreferences(lengthTicks, performanceProfile);
 
   for (const { seed, category } of [...REPRESENTATIVE_REVIEW_SEEDS, ...ROTATION_REVIEW_SEEDS]) {
-    const output = generateScore({ seed, lengthTicks, selectionModel, writingProfileId: writingProfile.id });
+    const startedAt = performance.now();
+    const output = generateScore({
+      seed,
+      lengthTicks,
+      selectionModel,
+      writingProfileId: writingProfile.id,
+      constraintProfileId: constraintProfile.id,
+    });
+    const generationTimeMs = roundRatio(performance.now() - startedAt);
     const safeSeed = seed.replaceAll(/[^a-z0-9-]/gi, "-");
     const diagnosticsFile = `${safeSeed}.diagnostics.json`;
     const midiFile = `${safeSeed}.mid`;
@@ -89,6 +106,8 @@ export async function writeReviewBundle(
       diagnosticsFile,
       midiFile,
       performanceProfile,
+      constraintProfile,
+      generationTimeMs,
       output,
     });
     referenceComparisons.push(referenceComparison);
@@ -97,11 +116,12 @@ export async function writeReviewBundle(
   }
 
   const summary: ReviewSummary = {
-    schemaVersion: 20,
+    schemaVersion: 21,
     lengthTicks,
     selectionModel,
     performanceProfile,
     writingProfile,
+    constraintProfile,
     referenceDiagnostics: summarizeReferenceDiagnosticsComparisons(referenceComparisons),
     historicalReferenceCalibration: summarizeHistoricalReferenceCalibration(),
     qualityProfileComparison: summarizeQualityProfileComparison(summarySeeds),
@@ -129,6 +149,7 @@ export async function writeAbReviewBundle(
   variantModel: SelectionModel,
   performanceProfileId: PerformanceProfileId = DEFAULT_PERFORMANCE_PROFILE_ID,
   writingProfileId?: WritingProfileId,
+  constraintProfileId: SectionConstraintScoringProfileId = DEFAULT_SECTION_CONSTRAINT_SCORING_PROFILE_ID,
 ): Promise<void> {
   const baselineDirectory = join(outDirectory, "baseline");
   const variantDirectory = join(outDirectory, "variant");
@@ -140,6 +161,7 @@ export async function writeAbReviewBundle(
     baselineModel,
     performanceProfileId,
     writingProfileId,
+    constraintProfileId,
   );
   const variantSummary = await writeReviewBundle(
     variantDirectory,
@@ -147,6 +169,7 @@ export async function writeAbReviewBundle(
     variantModel,
     performanceProfileId,
     writingProfileId,
+    constraintProfileId,
   );
   const comparison = compareReviewSummaries({
     lengthTicks,
@@ -172,11 +195,12 @@ export async function writeAbReviewBundle(
 }
 
 type ReviewSummary = {
-  schemaVersion: 20;
+  schemaVersion: 21;
   lengthTicks: number;
   selectionModel: SelectionModel;
   performanceProfile: PerformanceProfileMetadata;
   writingProfile: WritingProfileMetadata;
+  constraintProfile: SectionConstraintScoringProfileMetadata;
   referenceDiagnostics: ReferenceDiagnosticsAggregate;
   historicalReferenceCalibration: HistoricalReferenceCalibrationSummary;
   qualityProfileComparison: QualityProfileComparison;
@@ -190,6 +214,8 @@ type ReviewSummarySeed = {
   diagnosticsFile: string;
   midiFile: string;
   performanceProfile: PerformanceProfileMetadata;
+  constraintProfile: SectionConstraintScoringProfileMetadata;
+  generationTimeMs: number;
   initialSubjectProfile: InitialSubjectProfile;
   diagnosticsSummary: ReviewDiagnosticsSummary;
   referenceComparison: ReferenceDiagnosticsComparison;
@@ -207,6 +233,8 @@ function createReviewSummarySeed({
   diagnosticsFile,
   midiFile,
   performanceProfile,
+  constraintProfile,
+  generationTimeMs,
   output,
 }: {
   seed: string;
@@ -214,6 +242,8 @@ function createReviewSummarySeed({
   diagnosticsFile: string;
   midiFile: string;
   performanceProfile: PerformanceProfileMetadata;
+  constraintProfile: SectionConstraintScoringProfileMetadata;
+  generationTimeMs: number;
   output: GenerationOutput;
 }): {
   summarySeed: ReviewSummarySeed;
@@ -239,6 +269,8 @@ function createReviewSummarySeed({
       diagnosticsFile,
       midiFile,
       performanceProfile,
+      constraintProfile,
+      generationTimeMs,
       initialSubjectProfile: summarizeInitialSubjectProfile(output),
       diagnosticsSummary: summarizeDiagnostics(diagnostics),
       referenceComparison,
@@ -253,7 +285,7 @@ function createReviewSummarySeed({
 }
 
 type AbReviewComparisonSummary = {
-  schemaVersion: 5;
+  schemaVersion: 6;
   lengthTicks: number;
   baseline: ReviewBundleSide;
   variant: ReviewBundleSide;
@@ -267,6 +299,7 @@ type ReviewBundleSide = {
   summaryFile: string;
   selectionModel: SelectionModel;
   performanceProfile: PerformanceProfileMetadata;
+  constraintProfile: SectionConstraintScoringProfileMetadata;
 };
 
 type AbReviewSeedComparison = {
@@ -287,6 +320,8 @@ type AbReviewSeedComparison = {
 };
 
 type ReviewSeedComparisonSnapshot = {
+  constraintProfile: SectionConstraintScoringProfileMetadata;
+  generationTimeMs: number;
   diagnosticsSummary: ReviewDiagnosticsSummary;
   referenceComparison: ReferenceDiagnosticsComparison;
   candidatePoolOracle: CandidatePoolOracleSummary;
@@ -310,12 +345,25 @@ type ReviewSeedComparisonDeltas = {
   qualityVectorDistance: number;
   localSentinelCount: number;
   phraseConvergenceReviewFindings: number;
+  constraintSolverCandidates: number;
+  generatorRejectedCandidates: number;
+  generationTimeMs: number;
   adoptionReadyChanged: boolean;
 };
 
 type ReviewDiagnosticsSummary = {
   hardConstraintFailures: number;
   warningCount: number;
+  constraintProfile: SectionConstraintScoringProfileMetadata;
+  constraintSatisfaction: {
+    solverCandidateCount: number;
+    selectedRelaxationLevel: GenerationDiagnostics["constraintSatisfactionReview"]["selectedRelaxationLevel"];
+    infeasibleConstraintCounts: GenerationDiagnostics["constraintSatisfactionReview"]["infeasibleConstraintCounts"];
+  };
+  generatorSearch: {
+    evaluatedCandidateCount: number;
+    rejectedCandidateCount: number;
+  };
   texture: {
     counterSubjectIdentityRetention: number;
     rhythmicIndependenceScore: number;
@@ -330,6 +378,10 @@ type ReviewDiagnosticsSummary = {
     unresolvedEntrySupportInstabilityCount: number;
     severeEntryIntervalCount: number;
     unresolvedSevereEntryIntervalCount: number;
+    entryAdjacentSecondFrictionCount: number;
+    unresolvedAccentedEntryClashCount: number;
+    leapToSilenceCount: number;
+    sustainedSevereVerticalDissonanceCount: number;
     soloTexture: GenerationDiagnostics["soloTexture"];
     pitchContourMotion: GenerationDiagnostics["pitchContourMotion"];
     lowerVoiceVocality: GenerationDiagnostics["lowerVoiceVocality"];
@@ -466,7 +518,7 @@ function compareReviewSummaries({
   variantSummary: ReviewSummary;
 }): AbReviewComparisonSummary {
   return {
-    schemaVersion: 5,
+    schemaVersion: 6,
     lengthTicks,
     baseline: {
       label: baselineLabel,
@@ -474,6 +526,7 @@ function compareReviewSummaries({
       summaryFile: "baseline/summary.json",
       selectionModel: baselineSummary.selectionModel,
       performanceProfile: baselineSummary.performanceProfile,
+      constraintProfile: baselineSummary.constraintProfile,
     },
     variant: {
       label: variantLabel,
@@ -481,6 +534,7 @@ function compareReviewSummaries({
       summaryFile: "variant/summary.json",
       selectionModel: variantSummary.selectionModel,
       performanceProfile: variantSummary.performanceProfile,
+      constraintProfile: variantSummary.constraintProfile,
     },
     subjectFamilyDiversity: compareSubjectFamilyDiversity(
       baselineSummary.subjectFamilyDiversity,
@@ -511,6 +565,13 @@ function compareReviewSeed(baselineSeed: ReviewSummarySeed, variantSeed: ReviewS
     localSentinelCount: variant.qualityVector.localSentinels.length - baseline.qualityVector.localSentinels.length,
     phraseConvergenceReviewFindings:
       variant.phraseConvergenceReview.findings.length - baseline.phraseConvergenceReview.findings.length,
+    constraintSolverCandidates:
+      variant.diagnosticsSummary.constraintSatisfaction.solverCandidateCount -
+      baseline.diagnosticsSummary.constraintSatisfaction.solverCandidateCount,
+    generatorRejectedCandidates:
+      variant.diagnosticsSummary.generatorSearch.rejectedCandidateCount -
+      baseline.diagnosticsSummary.generatorSearch.rejectedCandidateCount,
+    generationTimeMs: roundRatio(variant.generationTimeMs - baseline.generationTimeMs),
     adoptionReadyChanged: variant.reviewGatePolicy.adoptionReady !== baseline.reviewGatePolicy.adoptionReady,
   };
 
@@ -542,6 +603,8 @@ function createReviewSeedSnapshot(seed: ReviewSummarySeed): ReviewSeedComparison
   };
 
   return {
+    constraintProfile: seed.constraintProfile,
+    generationTimeMs: seed.generationTimeMs,
     diagnosticsSummary: seed.diagnosticsSummary,
     referenceComparison: seed.referenceComparison,
     candidatePoolOracle: seed.diagnosticsSummary.candidatePoolOracle,
@@ -574,6 +637,9 @@ function describeImprovements(
   }
   if (deltas.candidatePoolViableCandidates > 0) {
     improvements.push("candidate pool has more viable alternatives");
+  }
+  if (deltas.generatorRejectedCandidates < 0) {
+    improvements.push("generator rejected fewer candidates");
   }
   if (deltas.qualityVectorDistance < 0) {
     improvements.push("quality vector distance decreased");
@@ -611,6 +677,9 @@ function describeRegressions(
   }
   if (deltas.candidatePoolViableCandidates < 0) {
     regressions.push("candidate pool has fewer viable alternatives");
+  }
+  if (deltas.generatorRejectedCandidates > 0) {
+    regressions.push("generator rejected more candidates");
   }
   if (deltas.qualityVectorDistance > 0) {
     regressions.push("quality vector distance increased");
@@ -766,6 +835,12 @@ function summarizeDiagnostics(diagnostics: GenerationDiagnostics): ReviewDiagnos
       ),
       severeEntryIntervalCount: diagnostics.severeEntryIntervalCount,
       unresolvedSevereEntryIntervalCount: diagnostics.unresolvedSevereEntryIntervalCount,
+      entryAdjacentSecondFrictionCount:
+        diagnostics.constraintSatisfactionReview.infeasibleConstraintCounts.entryAdjacentSecondFrictionCount,
+      unresolvedAccentedEntryClashCount:
+        diagnostics.constraintSatisfactionReview.infeasibleConstraintCounts.unresolvedAccentedEntryClashCount,
+      leapToSilenceCount: diagnostics.constraintSatisfactionReview.infeasibleConstraintCounts.leapToSilenceCount,
+      sustainedSevereVerticalDissonanceCount: diagnostics.dissonanceTriage.sustainedSevereVerticalDissonanceCount,
       soloTexture: diagnostics.soloTexture,
       pitchContourMotion: diagnostics.pitchContourMotion,
       lowerVoiceVocality: diagnostics.lowerVoiceVocality,
@@ -789,6 +864,16 @@ function summarizeDiagnostics(diagnostics: GenerationDiagnostics): ReviewDiagnos
     },
     candidateEvaluation: summarizeCandidateEvaluation(diagnostics),
     candidatePoolOracle: diagnostics.candidatePoolOracle,
+    constraintProfile: diagnostics.constraintProfile,
+    constraintSatisfaction: {
+      solverCandidateCount: diagnostics.constraintSatisfactionReview.solverCandidateCount,
+      selectedRelaxationLevel: diagnostics.constraintSatisfactionReview.selectedRelaxationLevel,
+      infeasibleConstraintCounts: diagnostics.constraintSatisfactionReview.infeasibleConstraintCounts,
+    },
+    generatorSearch: {
+      evaluatedCandidateCount: diagnostics.generatorSearchTrace.evaluatedCandidateCount,
+      rejectedCandidateCount: diagnostics.generatorSearchTrace.rejectedCandidateCount,
+    },
     texturePlanningReview: diagnostics.texturePlanningReview,
     meterConsistencyReview: diagnostics.meterConsistencyReview,
     phraseRepetitionReview: diagnostics.phraseRepetitionReview,

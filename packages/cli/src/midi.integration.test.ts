@@ -520,7 +520,7 @@ test("review command writes diagnostics and MIDI files for review seeds", async 
       comparisons: unknown[];
     };
 
-    assert.equal(summary.schemaVersion, 20);
+    assert.equal(summary.schemaVersion, 21);
     assert.equal(summary.lengthTicks, 9600);
     assert.equal(summary.selectionModel, "section-local-planner");
     assert.deepEqual(summary.performanceProfile, { id: "organ-default", version: 3 });
@@ -866,8 +866,8 @@ test("review command writes diagnostics and MIDI files for review seeds", async 
     }
     for (const seed of ["fugue-smoke", "modal-cadence", "modal-answer"] as const) {
       const candidateEvaluation = findReviewSeed(summary.seeds, seed).diagnosticsSummary.candidateEvaluation;
-      assert.equal(candidateEvaluation.featureVersion, 9);
-      assert.equal(candidateEvaluation.evaluationModelVersion, 18);
+      assert.equal(candidateEvaluation.featureVersion, 10);
+      assert.equal(candidateEvaluation.evaluationModelVersion, 19);
       assert.ok(candidateEvaluation.selectedCandidateEvaluationCount > 0);
       assert.ok(candidateEvaluation.totalSectionExplanationCount > 0);
       assert.equal(candidateEvaluation.sectionSoloTextureRiskWarningThreshold, 6);
@@ -1087,7 +1087,7 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
     assert.equal(pairwisePreferences.manualListeningGap.unlistened, true);
     assert.match(pairwisePreferences.manualListeningGap.note, /no preference judgement/);
     assert.equal(pairwisePreferences.comparisons.length, comparison.seeds.length);
-    assert.equal(comparison.schemaVersion, 5);
+    assert.equal(comparison.schemaVersion, 6);
     assert.equal(comparison.lengthTicks, 960);
     assert.deepEqual(comparison.baseline, {
       label: "current",
@@ -1095,6 +1095,7 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
       summaryFile: "baseline/summary.json",
       selectionModel: "baseline",
       performanceProfile: { id: "strict-counterpoint", version: 3 },
+      constraintProfile: { id: "current", version: 1 },
     });
     assert.deepEqual(comparison.variant, {
       label: "candidate",
@@ -1102,6 +1103,7 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
       summaryFile: "variant/summary.json",
       selectionModel: "candidate-oracle-selection",
       performanceProfile: { id: "strict-counterpoint", version: 3 },
+      constraintProfile: { id: "current", version: 1 },
     });
     assert.equal(comparison.subjectFamilyDiversity.baseline.seedCount, comparison.seeds.length);
     assert.equal(comparison.subjectFamilyDiversity.variant.seedCount, comparison.seeds.length);

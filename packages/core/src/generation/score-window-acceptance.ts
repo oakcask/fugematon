@@ -229,13 +229,19 @@ function scoreWindowFromDissonance(window: DissonanceTriageWindow): ScoreWindowA
   return {
     kind: "dissonance-triage",
     startTick: window.startTick,
+    durationTicks: window.durationTicks,
     state: window.state,
     voices: window.voices,
     roles: window.roles,
     classification: window.classification,
-    symptom: "local semitone or entry clash needs score-window explanation before metric adoption",
+    symptom:
+      window.response === "generator-response-required"
+        ? "sustained severe vertical dissonance needs generator response before metric adoption"
+        : window.response === "accepted-context"
+          ? "sustained dissonance is prepared and resolved as suspension-like context"
+          : "local semitone or entry clash needs score-window explanation before metric adoption",
     theoryBasis: "counterpoint",
-    response: "review-required",
+    response: window.response,
   };
 }
 
