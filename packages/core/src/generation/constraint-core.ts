@@ -94,6 +94,7 @@ const HARD_FAILURE_EXPLANATIONS: Record<ConstraintHardFailureCode, string> = {
   "pitch-bounds": "MIDI pitch must stay inside 0-127",
   "velocity-bounds": "MIDI velocity must stay inside 0-127",
   "writing-profile-pitch": "note pitch must satisfy the active WritingProfile pitch and range contract",
+  "writing-profile-same-pitch-overlap": "music-box voices must not strike the exact same MIDI pitch at the same time",
   "range-violation": "voice pitch must stay inside the active voice range",
   "voice-crossing": "adjacent contrapuntal voices must not cross",
   "subject-identity-violation": "subject and subject-fragment entries must match the planned pitch-class identity",
@@ -147,6 +148,9 @@ export function evaluateScoreDraft(
     addHardFailure(hardFailures, failure.code, failure.affectedNotes);
   }
   for (const failure of localEntryPlanFailures(analyzableNotes, subjectEntries)) {
+    addHardFailure(hardFailures, failure.code, failure.affectedNotes);
+  }
+  for (const failure of musicBoxSamePitchOverlapFailures(analyzableNotes, draft.writingProfile)) {
     addHardFailure(hardFailures, failure.code, failure.affectedNotes);
   }
 
@@ -253,6 +257,7 @@ export function buildGeneratorSearchTrace(
         windowEndTick: candidate.result.window.endTick,
         hardFailureCount: candidate.result.hardFailures.reduce((sum, failure) => sum + failure.count, 0),
         hardFailures: hardFailureCodes,
+        affectedNotes: candidate.result.affectedNotes.slice(0, 8),
         softCost: candidate.result.totalSoftCost,
         selected,
         reason: selected ? selectedReason(candidate.result) : rejectedReason(candidate.result),
@@ -262,6 +267,11 @@ export function buildGeneratorSearchTrace(
 }
 
 function compareConstraintCandidates(left: ConstraintCandidate, right: ConstraintCandidate): number {
+  const leftNonSamePitchHardFailureCount = nonSamePitchHardFailureCount(left.result);
+  const rightNonSamePitchHardFailureCount = nonSamePitchHardFailureCount(right.result);
+  if (leftNonSamePitchHardFailureCount !== rightNonSamePitchHardFailureCount) {
+    return leftNonSamePitchHardFailureCount - rightNonSamePitchHardFailureCount;
+  }
   const leftHardFailureCount = left.result.hardFailures.reduce((sum, failure) => sum + failure.count, 0);
   const rightHardFailureCount = right.result.hardFailures.reduce((sum, failure) => sum + failure.count, 0);
   if (leftHardFailureCount !== rightHardFailureCount) {
@@ -271,6 +281,12 @@ function compareConstraintCandidates(left: ConstraintCandidate, right: Constrain
     return left.result.totalSoftCost - right.result.totalSoftCost;
   }
   return left.candidateId.localeCompare(right.candidateId);
+}
+
+function nonSamePitchHardFailureCount(result: ConstraintResult): number {
+  return result.hardFailures
+    .filter((failure) => failure.code !== "writing-profile-same-pitch-overlap")
+    .reduce((sum, failure) => sum + failure.count, 0);
 }
 
 function fullDraftWindow(draft: ScoreDraft): ConstraintWindow {
@@ -446,6 +462,39 @@ function localEntryPlanFailures(
   return failures;
 }
 
+function musicBoxSamePitchOverlapFailures(
+  notes: readonly NoteEvent[],
+  writingProfile: WritingProfile,
+): Array<{ code: ConstraintHardFailureCode; affectedNotes: ConstraintAffectedNote[] }> {
+  if (writingProfile.playability?.kind !== "music-box") {
+    return [];
+  }
+
+  const failures: Array<{ code: ConstraintHardFailureCode; affectedNotes: ConstraintAffectedNote[] }> = [];
+  const sortedNotes = [...notes].sort(compareNoteEvents);
+  for (let leftIndex = 0; leftIndex < sortedNotes.length; leftIndex += 1) {
+    const left = sortedNotes[leftIndex];
+    if (left === undefined) {
+      continue;
+    }
+    for (let rightIndex = leftIndex + 1; rightIndex < sortedNotes.length; rightIndex += 1) {
+      const right = sortedNotes[rightIndex];
+      if (right === undefined || right.startTick >= left.startTick + left.durationTicks) {
+        break;
+      }
+      if (left.voice === right.voice || left.pitch !== right.pitch || !notesOverlap(left, right)) {
+        continue;
+      }
+      failures.push({
+        code: "writing-profile-same-pitch-overlap",
+        affectedNotes: [left, right].map(toAffectedNote),
+      });
+    }
+  }
+
+  return failures;
+}
+
 function entryNotesForPlan(notes: readonly NoteEvent[], entry: PlannedEntry): NoteEvent[] {
   const entryRole = noteRoleForEntryForm(entry.form);
   const roleNotes = notes
@@ -488,6 +537,12 @@ function activeNoteAt(notes: readonly NoteEvent[], voice: Voice, tick: number): 
 
 function overlapsWindow(note: NoteEvent, window: ConstraintWindow): boolean {
   return note.startTick < window.endTick && window.startTick < note.startTick + note.durationTicks;
+}
+
+function notesOverlap(left: NoteEvent, right: NoteEvent): boolean {
+  return (
+    left.startTick < right.startTick + right.durationTicks && right.startTick < left.startTick + left.durationTicks
+  );
 }
 
 function addHardFailure(

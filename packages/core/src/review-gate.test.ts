@@ -67,6 +67,54 @@ test("review gate policy preserves review-signal breaches without blocking hard-
   assert.equal(policy.policy.name, "review-gate-policy");
 });
 
+test("review gate policy blocks music-box exact same-pitch overlaps", () => {
+  const diagnostics = cloneDiagnostics(
+    generateScore({
+      seed: "music-box-profile",
+      lengthTicks: REVIEW_LENGTH_TICKS,
+      selectionModel: "baseline",
+      writingProfileId: "music-box-n20",
+    }).diagnostics,
+  );
+  diagnostics.samePitchOverlapCount = 1;
+  diagnostics.writingProfileConstraints = {
+    ...diagnostics.writingProfileConstraints,
+    profileId: "music-box-n20",
+  };
+
+  const policy = evaluateReviewGatePolicy("music-box-profile", diagnostics);
+
+  assert.equal(policy.hardConstraintPassed, false);
+  assert.equal(policy.adoptionReady, false);
+  assert.ok(
+    policy.hardFailures.some(
+      (finding) => finding.metric === "samePitchOverlapCount" && finding.policy === "hard-failure",
+    ),
+  );
+});
+
+test("review gate policy keeps default-profile exact same-pitch overlap breaches review-required", () => {
+  const diagnostics = cloneDiagnostics(
+    generateScore({ seed: "fugue-smoke", lengthTicks: REVIEW_LENGTH_TICKS, selectionModel: "baseline" }).diagnostics,
+  );
+  diagnostics.samePitchOverlapCount = MELODY_TEXTURE_DIAGNOSTICS_PROFILE.maxSamePitchOverlapCount + 1;
+  diagnostics.writingProfileConstraints = {
+    ...diagnostics.writingProfileConstraints,
+    profileId: "four-voice-default",
+  };
+
+  const policy = evaluateReviewGatePolicy("fugue-smoke", diagnostics);
+
+  assert.equal(policy.hardConstraintPassed, true);
+  assert.equal(policy.adoptionReady, true);
+  assert.ok(policy.hardFailures.every((finding) => finding.metric !== "samePitchOverlapCount"));
+  assert.ok(
+    policy.reviewSignals.some(
+      (finding) => finding.metric === "samePitchOverlapCount" && finding.policy === "review-required",
+    ),
+  );
+});
+
 function cloneDiagnostics(diagnostics: GenerationDiagnostics): GenerationDiagnostics {
   return structuredClone(diagnostics);
 }
