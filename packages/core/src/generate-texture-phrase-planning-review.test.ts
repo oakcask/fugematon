@@ -9,6 +9,7 @@ test("generateScore applies texture and phrase-unit planning across review seeds
     topEntryPatternFamilyDelta: -15,
     unisonOverlapDelta: -100,
     sharedRhythmOverlapDelta: -100,
-    leapRecoveryMissDelta: 45,
+    leapRecoveryMissDelta: 49,
+    counterSubjectIdentityRetentionDelta: 0.09,
   });
 });

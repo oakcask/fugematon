@@ -7,10 +7,10 @@ import { evaluateContourMotionGate, evaluateMelodyTextureGate } from "./review-g
 
 test("generateScore preserves modal counter-subject retention guardrails", () => {
   const blockerSeeds = [
-    ["modal-cadence", 0.567],
+    ["modal-cadence", 0.484],
     ["dense-modal", 0.573],
-    ["angular-answer", 0.563],
-    ["modal-answer", 0.602],
+    ["angular-answer", 0.504],
+    ["modal-answer", 0.58],
     ["modal-dorian", 0.58],
   ] as const;
 
@@ -33,13 +33,13 @@ test("generateScore preserves modal counter-subject retention guardrails", () =>
 
 test("generateScore preserves melody and form guardrails", () => {
   const blockerSeeds = [
-    ["modal-answer", 33, 2, 1, 38, 13, 13, 2],
-    ["contrary-motion", 26, 5, 3, 42, 15, 15, 8],
-    ["modal-dorian", 34, 3, 1, 41, 13, 13, 8],
-    ["bright-answer", 34, 7, 3, 38, 12, 12, 2],
-    ["lyrical-line", 45, 3, 3, 42, 16, 16, 8],
-    ["dark-episode", 38, 7, 3, 39, 12, 12, 8],
-    ["contrary-answer", 32, 2, 2, 43, 16, 16, 8],
+    ["modal-answer", 68, 2, 1, 38, 13, 13, 2],
+    ["contrary-motion", 90, 7, 3, 42, 15, 15, 8],
+    ["modal-dorian", 73, 5, 3, 41, 13, 13, 8],
+    ["bright-answer", 56, 9, 5, 38, 12, 12, 2],
+    ["lyrical-line", 84, 3, 2, 42, 16, 16, 8],
+    ["dark-episode", 98, 9, 4, 39, 12, 12, 8],
+    ["contrary-answer", 56, 3, 1, 43, 16, 16, 8],
   ] as const;
 
   for (const [

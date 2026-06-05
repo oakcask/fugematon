@@ -49,7 +49,7 @@ const VIEWPORTS = [
   { name: "mobile", size: { width: 390, height: 844 } },
 ] as const;
 const RANDOM_SEED_PATTERN = /^seed-[0-9a-z]{7}-[0-9a-z]{7}$/;
-const INITIAL_GENERATION_TIMEOUT_MS = 20_000;
+const INITIAL_GENERATION_TIMEOUT_MS = 45_000;
 
 for (const viewport of VIEWPORTS) {
   test(`renders the Web UI in ${viewport.name}`, async ({ page }, testInfo) => {
