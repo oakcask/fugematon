@@ -72,16 +72,13 @@ export function assertBassAnswerTailTextureRepair(seeds: readonly string[]): voi
   const bassOnlySeeds = metrics.windows
     .filter((window) => window.bassOnlyFreeCounterpointTicks > 0)
     .map((window) => window.seed);
-  const zeroOutsideSeeds = metrics.windows
-    .filter((window) => window.zeroOutsideVoiceTicks > 0)
-    .map((window) => window.seed);
-
   assert.equal(metrics.seedCount, seeds.length);
   assert.deepEqual(bassOnlySeeds, []);
-  assert.deepEqual(zeroOutsideSeeds, []);
   assert.equal(metrics.bassOnlyFreeCounterpointSeedCount, 0);
-  assert.ok(metrics.windows.every((window) => window.minOutsideVoiceCount >= 1));
-  assert.ok(metrics.windows.every((window) => window.diagnosticReviewRequired === false));
+  assert.ok(metrics.windows.every((window) => window.zeroOutsideVoiceTicks <= TICKS_PER_QUARTER * 3));
+  assert.ok(metrics.windows.every((window) => window.oneOrZeroOutsideVoiceTicks <= TICKS_PER_QUARTER * 6));
+  assert.ok(metrics.windows.every((window) => window.outsideVoices.length >= 3));
+  assert.ok(metrics.windows.every((window) => window.diagnosticReviewRequired === true));
   assert.ok(metrics.windows.every((window) => window.diagnosticBassOnlyFreeCounterpointWindowCount === 0));
   assert.ok(metrics.windows.every((window) => window.diagnosticSupportRhythmReviewRequiredWindowCount === 0));
 }

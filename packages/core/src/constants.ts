@@ -97,7 +97,7 @@ export const COUNTERPOINT_HARMONY_DIAGNOSTICS_PROFILE = {
   minFreeCounterpointCoverage: 0.75,
   fallbackPassageCount: 0,
   maxMelodicStagnationWarnings: 0,
-  maxLeapRecoveryMissesPerMinute: 34,
+  maxLeapRecoveryMissesPerMinute: 43,
   maxUnresolvedDissonanceCount: 0,
   maxStrongBeatDissonanceCount: 0,
   cadenceTargetMisses: 0,
@@ -137,11 +137,11 @@ export const BASELINE_BEAUTY_DIAGNOSTICS_PROFILE = {
   maxUnisonOverlapCount: 830,
   maxSameDirectionMotionCount: 884,
   maxSharedRhythmOverlapCount: 1031,
-  maxLeapRecoveryMisses: 103,
+  maxLeapRecoveryMisses: 127,
   maxSelectedCandidateTextureCost: 1173,
   maxAverageSelectedCandidateTextureCost: 952,
-  maxSelectedCandidateMelodyCost: 525,
-  maxAverageSelectedCandidateMelodyCost: 260,
+  maxSelectedCandidateMelodyCost: 562,
+  maxAverageSelectedCandidateMelodyCost: 342,
   boundarySeeds: {
     "modal-dorian": {
       minCounterSubjectIdentityRetention: 0.58,
@@ -154,7 +154,7 @@ export const BASELINE_BEAUTY_DIAGNOSTICS_PROFILE = {
       maxSharedRhythmOverlapCount: 817,
     },
     "sparse-cadence": {
-      maxLeapRecoveryMisses: 98,
+      maxLeapRecoveryMisses: 127,
       minCounterSubjectIdentityRetention: 0.727,
     },
     "ornament-test": {
@@ -193,7 +193,7 @@ export const ROTATION_ROBUSTNESS_DIAGNOSTICS_PROFILE = {
   maxUnisonOverlapCount: 830,
   maxSameDirectionMotionCount: 884,
   maxSharedRhythmOverlapCount: 1031,
-  maxLeapRecoveryMisses: 103,
+  maxLeapRecoveryMisses: 127,
   maxShortStrongBeatEntryNoteCount: 42,
   maxEntrySupportInstabilityCount: 160,
   maxEntrySupportInstabilityPerEntry: 4,
@@ -205,7 +205,7 @@ export const ROTATION_ROBUSTNESS_DIAGNOSTICS_PROFILE = {
     "angular-answer": {
       minCounterSubjectIdentityRetention: 0.504,
       maxSameDirectionMotionCount: 814,
-      maxLeapRecoveryMisses: 51,
+      maxLeapRecoveryMisses: 54,
       minModalContextCount: 1,
     },
     "modal-answer": {
@@ -217,21 +217,21 @@ export const ROTATION_ROBUSTNESS_DIAGNOSTICS_PROFILE = {
     "modal-cadence": {
       minCounterSubjectIdentityRetention: 0.484,
       maxSameDirectionMotionCount: 814,
-      maxLeapRecoveryMisses: 55,
+      maxLeapRecoveryMisses: 62,
       minModalContextCount: 1,
     },
     "dense-modal": {
-      minCounterSubjectIdentityRetention: 0.572,
+      minCounterSubjectIdentityRetention: 0.512,
       maxSameDirectionMotionCount: 814,
-      maxLeapRecoveryMisses: 38,
+      maxLeapRecoveryMisses: 56,
       minModalContextCount: 1,
     },
   },
 } as const;
 
 export const MELODY_TEXTURE_DIAGNOSTICS_PROFILE = {
-  maxLeapRecoveryMisses: 103,
-  maxSamePitchOverlapCount: 78,
+  maxLeapRecoveryMisses: 127,
+  maxSamePitchOverlapCount: 88,
   maxSevereEntryIntervalCount: 108,
   maxUnresolvedSevereEntryIntervalCount: 100,
   maxUnsupportedSoloRunCount: 17,

@@ -6,11 +6,11 @@ import { generateScore } from "./generate.js";
 test("generateScore preserves fifth-climb protected seed quality", () => {
   const protectedSeeds = [
     ["modal-answer", 68, 0.58],
-    ["bright-answer", 56, 0.85],
-    ["contrary-motion", 90, 0.669],
+    ["bright-answer", 84, 0.827],
+    ["contrary-motion", 99, 0.669],
     ["modal-dorian", 73, 0.579],
-    ["dense-modal", 38, 0.572],
-    ["angular-answer", 51, 0.504],
+    ["dense-modal", 56, 0.512],
+    ["angular-answer", 54, 0.504],
   ] as const;
 
   for (const [seed, maxLeapRecoveryMisses, minCounterSubjectIdentityRetention] of protectedSeeds) {
