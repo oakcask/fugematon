@@ -10,7 +10,7 @@
 
 ## Read First
 
-* [Generator constraint rebuild](generator-constraint-rebuild.md): in-progress architecture rewrite. Freezes current-contract hard constraints and public schema while moving generation toward deterministic local constraint solving and diagnostics-backed soft scoring.
+* [Generator constraint rebuild](generator-constraint-rebuild.md): in-progress architecture rewrite. Current target is continuation generation as a section-slot CSP solver with deterministic backtracking, so unexplained voice silence and unsupported texture collapse are avoided during candidate construction instead of repaired after generation.
 * [Constrained keyboard writing profiles](constrained-keyboard-writing-profiles.md): completed follow-up. Adds opt-in `WritingProfile` variants for piano, harpsichord, and programmable music boxes so pitch range, hand reach, and mechanism limits can constrain generation separately from playback `PerformanceProfile`.
 * [Initial subject rhetoric diversity repair](initial-subject-rhetoric-diversity-repair.md): completed quality follow-up. Replaces adopted-path fixed-profile subject selection with a constrained subject-rhetoric generator and extends top-N rhetoric diagnostics.
 * [Playback source realism feasibility](playback-source-realism-feasibility.md): investigation note. Compares a SpessaSynth + SoundFont pilot, a custom VSCO WAV sampler, and notices-page requirements before distributing third-party playback software or audio assets.

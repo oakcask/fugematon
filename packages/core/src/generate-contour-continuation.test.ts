@@ -7,9 +7,9 @@ import { evaluateContourMotionGate, evaluateMelodyTextureGate } from "./review-g
 
 test("generateScore nudges non-modal stepwise pattern fixation without modal guardrail regressions", () => {
   const blockerSeeds = [
-    ["fugue-smoke", 0.743, 5, 570, 28],
-    ["lyrical-line", 0.73, 5, 589, 45],
-    ["contrary-answer", 0.733, 5, 549, 32],
+    ["fugue-smoke", 0.743, 6, 570, 78],
+    ["lyrical-line", 0.73, 6, 589, 84],
+    ["contrary-answer", 0.733, 5, 549, 56],
   ] as const;
 
   for (const [

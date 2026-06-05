@@ -319,11 +319,7 @@ let nextGenerationRequestId = 0;
 let nextSegmentIndex = 0;
 let prefetchedSegment: PrefetchedSegment | undefined;
 let segmentChainActive = false;
-const generationWorker = new Worker(new URL("./generation-worker.ts", import.meta.url), { type: "module" });
-
-generationWorker.addEventListener("message", (event: MessageEvent<GenerationWorkerResponse>) => {
-  handleGenerationWorkerResponse(event.data);
-});
+let generationWorker = createGenerationWorker();
 
 renderTransportButtons();
 regenerateScore(state.seed, "replace");
@@ -410,9 +406,13 @@ function regenerateScore(seed: string, urlUpdateMode: UrlUpdateMode = "push"): v
   const playbackMode = playbackModeSelect.value as InfinitePlaybackMode;
   seedInput.value = nextSeed;
   cancelPlayback();
+  const hasQueuedOrRunningGeneration = primaryGenerationInFlight || activePrefetchGenerationRequestId !== undefined;
   prefetchedSegment = undefined;
   activePrefetchGenerationRequestId = undefined;
   nextSegmentIndex = 0;
+  if (hasQueuedOrRunningGeneration) {
+    replaceGenerationWorker();
+  }
   const requestId = nextRequestId();
   activePrimaryGenerationRequestId = requestId;
   primaryGenerationInFlight = true;
@@ -448,6 +448,20 @@ function regenerateScore(seed: string, urlUpdateMode: UrlUpdateMode = "push"): v
     segmentIndex,
     mode: playbackMode,
   });
+}
+
+function createGenerationWorker(): Worker {
+  const worker = new Worker(new URL("./generation-worker.ts", import.meta.url), { type: "module" });
+  worker.addEventListener("message", (event: MessageEvent<GenerationWorkerResponse>) => {
+    handleGenerationWorkerResponse(event.data);
+  });
+  return worker;
+}
+
+function replaceGenerationWorker(): void {
+  const disposableWorker = generationWorker as Worker & { terminate?: () => void };
+  disposableWorker.terminate?.();
+  generationWorker = createGenerationWorker();
 }
 
 function createRandomSeed(): string {

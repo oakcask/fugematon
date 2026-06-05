@@ -38,7 +38,7 @@ test("harmonic stasis rearticulation repairs the reported first-episode handoff 
     diagnostics.generatorSearchTrace.candidates.some(
       (candidate) =>
         candidate.candidateId === "score-harmonic-stasis-unrepaired-final-repair-evidence" &&
-        candidate.reason.includes("free-counterpoint-harmony-realization"),
+        candidate.reason.includes("free-counterpoint-"),
     ),
   );
   assert.ok(

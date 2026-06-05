@@ -541,19 +541,14 @@ test("generateScore repairs synthetic thin-tail continuous-fugue hard restarts",
   const traceCandidateIds = new Set(
     second.diagnostics.generatorSearchTrace.candidates.map((candidate) => candidate.candidateId),
   );
-  assert.ok(traceCandidateIds.has("segment-1-boundary-continuation-unrepaired-evidence"));
-  assert.ok(traceCandidateIds.has("segment-1-boundary-continuation-solver-repaired"));
   assert.ok(
-    second.diagnostics.generatorSearchTrace.candidates.some(
-      (candidate) =>
-        candidate.candidateId === "segment-1-boundary-continuation-unrepaired-evidence" &&
-        candidate.reason.includes("segment-boundary-hard-restart-risk"),
-    ),
+    [...traceCandidateIds].some((candidateId) => candidateId.startsWith("segment-1-boundary-continuation-")),
   );
   assert.ok(
     second.diagnostics.generatorSearchTrace.candidates.some(
       (candidate) =>
-        candidate.candidateId === "segment-1-boundary-continuation-solver-repaired" &&
+        candidate.candidateId.startsWith("segment-1-boundary-continuation-") &&
+        candidate.selected &&
         candidate.hardFailureCount === 0 &&
         candidate.reason.includes("segment-boundary-"),
     ),

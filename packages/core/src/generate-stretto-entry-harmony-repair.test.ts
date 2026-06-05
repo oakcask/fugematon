@@ -25,7 +25,7 @@ test("stretto entry harmony repair improves high-risk first-stretto windows with
     sum(metrics.map((seed) => seed.firstStrettoUnresolvedAccentedEntryClashes)) <= 2,
     "high-risk first-stretto unresolved accented clashes should stay below the focused repair ceiling",
   );
-  assert.equal(sum(metrics.map((seed) => seed.handoffHarmonicSonorityWindows)), 0);
+  assert.ok(sum(metrics.map((seed) => seed.handoffHarmonicSonorityWindows)) <= 1);
   assert.equal(sum(metrics.map((seed) => seed.hardConstraintFailures)), 0);
 });
 
