@@ -511,6 +511,13 @@ export function addTextureNote(
   pitch = weakDissonanceSafePitch(notes, pattern, startTick, durationTicks, pitch);
   pitch = counterSubjectSafePitch(notes, pattern, startTick, durationTicks, pitch);
   pitch = entryHarmonySafePitch(notes, { ...pattern, metricalHarmonyIntent }, startTick, durationTicks, pitch);
+  pitch = highRegisterSopranoSupportPitch(
+    notes,
+    { ...pattern, metricalHarmonyIntent },
+    startTick,
+    durationTicks,
+    pitch,
+  );
   if (pattern.writingProfile !== undefined && !isPitchAllowedByWritingProfile(pattern.writingProfile, pitch)) {
     pitch = placePitchInWritingProfile(pitchClass, pattern.voice, registerTarget, pattern.writingProfile);
   }
@@ -584,6 +591,58 @@ function entryHarmonySafePitch(
     .filter((candidatePitch) => !createsPitchClassUnisonAtTick(notes, pattern.voice, startTick, candidatePitch));
 
   return nearestPitch(candidates, pitch) ?? pitch;
+}
+
+function highRegisterSopranoSupportPitch(
+  notes: readonly NoteEvent[],
+  pattern: TextureNotePattern,
+  startTick: number,
+  durationTicks: number,
+  pitch: number,
+): number {
+  if (
+    pattern.writingProfile === undefined ||
+    !usesConstrainedSopranoContourProfile(pattern.writingProfile) ||
+    pattern.voice !== "soprano" ||
+    (pattern.role !== "free-counterpoint" && pattern.role !== "counter-subject")
+  ) {
+    return pitch;
+  }
+
+  const previous = previousTextureNote(notes, pattern.voice, startTick);
+  const threshold = Math.min(
+    voiceRangeForProfile(pattern.writingProfile, pattern.voice).max,
+    registerTargetForVoice(pattern.writingProfile, pattern.voice) + 9,
+  );
+  if (previous === undefined || pitch < threshold || Math.abs(pitch - previous.pitch) < 7) {
+    return pitch;
+  }
+
+  const noteShape = textureNoteShape(pattern, startTick, durationTicks, pitch);
+  const anchor =
+    pattern.harmonicPlan === undefined ? undefined : nearestHarmonicAnchor(startTick, [pattern.harmonicPlan]);
+  const chordTonePitchClassesAtTick =
+    anchor === undefined ? undefined : chordTonePitchClasses(anchor.localKey, anchor.function);
+  const candidates = pattern.writingProfile.absolutePitchSet
+    .filter((candidatePitch) => candidatePitch < threshold)
+    .filter((candidatePitch) => candidatePitch >= voiceRangeForProfile(pattern.writingProfile!, pattern.voice).min)
+    .filter((candidatePitch) => keepsAdjacentVoiceOrder(notes, noteShape, candidatePitch))
+    .filter((candidatePitch) => !createsSemitoneAtTick(notes, pattern.voice, startTick, candidatePitch))
+    .filter((candidatePitch) => !createsPitchClassUnisonAtTick(notes, pattern.voice, startTick, candidatePitch));
+  const harmonicCandidates =
+    chordTonePitchClassesAtTick === undefined
+      ? candidates
+      : candidates.filter((candidatePitch) => chordTonePitchClassesAtTick.includes(positiveModulo(candidatePitch, 12)));
+  const viableCandidates = harmonicCandidates.length > 0 ? harmonicCandidates : candidates;
+
+  return (
+    [...viableCandidates].sort(
+      (left, right) =>
+        Math.abs(left - previous.pitch) - Math.abs(right - previous.pitch) ||
+        Math.abs(left - pitch) - Math.abs(right - pitch) ||
+        left - right,
+    )[0] ?? pitch
+  );
 }
 
 function isFunctionBearingPassingIntent(intent: MetricalHarmonyIntent | undefined): boolean {
@@ -873,6 +932,10 @@ function repairTextureVoiceCrossings(
         continue;
       }
 
+      if (repairMode === "solver" && writingProfile !== undefined) {
+        continue;
+      }
+
       if (repairMode === "solver") {
         const repair = chooseResidualVoiceCrossingRepair(
           notes,
@@ -1014,7 +1077,11 @@ function chooseProfileVoiceOrderRepairAtTick(
         return;
       }
       const cost = selected.reduce(
-        (sum, { note, pitch }) => sum + Math.abs(note.pitch - pitch) + voiceOrderRepairRoleCost(note.role),
+        (sum, { note, pitch }) =>
+          sum +
+          Math.abs(note.pitch - pitch) +
+          voiceOrderRepairRoleCost(note.role) +
+          voiceOrderRepairPitchCost(note, pitch, writingProfile),
         0,
       );
       if (best === undefined || cost < best.cost) {
@@ -1126,6 +1193,18 @@ function voiceOrderRepairRoleCost(role: NoteEvent["role"] | undefined): number {
     return 10;
   }
   return 4;
+}
+
+function voiceOrderRepairPitchCost(note: NoteEvent, pitch: number, writingProfile: WritingProfile): number {
+  if (!usesConstrainedSopranoContourProfile(writingProfile)) {
+    return 0;
+  }
+
+  const highRegisterThreshold = Math.min(
+    voiceRangeForProfile(writingProfile, note.voice).max,
+    registerTargetForVoice(writingProfile, note.voice) + 9,
+  );
+  return note.voice === "soprano" && pitch >= highRegisterThreshold ? 96 : 0;
 }
 
 function chooseResidualVoiceCrossingRepair(
@@ -2417,7 +2496,83 @@ export function repairTextureVoiceCrossingsForNotes(
   repairTextureVoiceCrossings(notes, startTick, endTick - startTick, sectionPlans, writingProfile, "solver");
   if (writingProfile !== undefined) {
     repairProfileVoiceOrderBySearch(notes, startTick, endTick, writingProfile);
+    if (usesConstrainedSopranoContourProfile(writingProfile)) {
+      relaxHighRegisterSopranoSupportLeaps(notes, sectionPlans, writingProfile);
+    }
   }
+}
+
+function usesConstrainedSopranoContourProfile(writingProfile: WritingProfile): boolean {
+  return writingProfile.playability?.kind === "music-box";
+}
+
+function relaxHighRegisterSopranoSupportLeaps(
+  notes: Exposition["notes"],
+  sectionPlans: readonly HarmonicPlan[],
+  writingProfile: WritingProfile,
+): void {
+  const threshold = Math.min(
+    voiceRangeForProfile(writingProfile, "soprano").max,
+    registerTargetForVoice(writingProfile, "soprano") + 9,
+  );
+  const sopranoSupportNotes = notes
+    .filter(
+      (note) =>
+        note.voice === "soprano" &&
+        (note.role === "free-counterpoint" || note.role === "counter-subject") &&
+        note.pitch >= threshold,
+    )
+    .sort(compareNoteEvents);
+
+  for (const note of sopranoSupportNotes) {
+    const previous = previousTextureNoteBefore(notes, note);
+    if (previous === undefined || Math.abs(note.pitch - previous.pitch) < 7) {
+      continue;
+    }
+    const replacement = highRegisterSopranoReplacementPitch(notes, note, sectionPlans, writingProfile, threshold);
+    if (replacement !== undefined) {
+      note.pitch = replacement;
+    }
+  }
+}
+
+function highRegisterSopranoReplacementPitch(
+  notes: readonly NoteEvent[],
+  note: NoteEvent,
+  sectionPlans: readonly HarmonicPlan[],
+  writingProfile: WritingProfile,
+  threshold: number,
+): number | undefined {
+  const plan = sectionPlanForTick(sectionPlans, note.startTick);
+  const anchor = plan === undefined ? undefined : nearestHarmonicAnchor(note.startTick, [plan]);
+  const chordTonePitchClassesAtTick =
+    anchor === undefined ? undefined : chordTonePitchClasses(anchor.localKey, anchor.function);
+  const candidates = writingProfile.absolutePitchSet
+    .filter((candidatePitch) => candidatePitch < threshold)
+    .filter((candidatePitch) => candidatePitch >= voiceRangeForProfile(writingProfile, note.voice).min)
+    .filter((candidatePitch) => keepsAdjacentVoiceOrder(notes, note, candidatePitch))
+    .filter((candidatePitch) => !createsSemitoneAtTick(notes, note.voice, note.startTick, candidatePitch))
+    .filter((candidatePitch) => !createsPitchClassUnisonAtTick(notes, note.voice, note.startTick, candidatePitch));
+  const harmonicCandidates =
+    chordTonePitchClassesAtTick === undefined
+      ? candidates
+      : candidates.filter((candidatePitch) => chordTonePitchClassesAtTick.includes(positiveModulo(candidatePitch, 12)));
+  const viableCandidates = harmonicCandidates.length > 0 ? harmonicCandidates : candidates;
+  const previous = previousTextureNoteBefore(notes, note);
+
+  return [...viableCandidates].sort(
+    (left, right) =>
+      Math.abs(left - (previous?.pitch ?? note.pitch)) - Math.abs(right - (previous?.pitch ?? note.pitch)) ||
+      Math.abs(left - note.pitch) - Math.abs(right - note.pitch) ||
+      left - right,
+  )[0];
+}
+
+function previousTextureNoteBefore(notes: readonly NoteEvent[], note: NoteEvent): NoteEvent | undefined {
+  return notes
+    .filter((candidate) => candidate !== note && candidate.voice === note.voice && candidate.startTick < note.startTick)
+    .sort(compareNoteEvents)
+    .at(-1);
 }
 
 function repairProfileVoiceOrderBySearch(
@@ -2506,7 +2661,11 @@ function chooseGlobalVoiceOrderStackRepair(
         return;
       }
       const cost = selected.reduce(
-        (sum, { note, pitch }) => sum + Math.abs(note.pitch - pitch) + voiceOrderRepairRoleCost(note.role),
+        (sum, { note, pitch }) =>
+          sum +
+          Math.abs(note.pitch - pitch) +
+          voiceOrderRepairRoleCost(note.role) +
+          voiceOrderRepairPitchCost(note, pitch, writingProfile),
         0,
       );
       if (

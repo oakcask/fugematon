@@ -24,7 +24,7 @@ Do not repair this with a literal seed, key, pitch, measure, or voice exception.
 
 * choose or transpose keys from the active profile's pitch-class support, or explicitly degrade to a documented reduced-mode profile when the pitch set cannot realize the requested mode;
 * build subject, answer, and subject-fragment candidates against the active profile before entry plans are accepted;
-* make tenor / bass adjacent-order preservation part of profile-aware pitch placement, not only a final score cleanup;
+* make adjacent-order preservation part of profile-aware pitch placement, not only a final score cleanup;
 * run score-level support cleanup and harmonic support solvers on profile-constrained notes, then re-check hard constraints after any final projection;
 * keep final `constrainNotesToWritingProfile` as a safety net, not as the main mechanism that makes generated notes profile-compatible.
 
@@ -38,10 +38,12 @@ Cross-seed `music-box-n20` key / subject feasibility is `review-required` now an
 
 ## Verification gap
 
-Implementation update: the repair is now represented as a constrained-profile feasibility slice. Key selection rejects profile-infeasible key / subject / answer combinations, subject selection filters against the active profile pitch-class domains, adjacent voice-order repair can move a constrained vertical stack by legal same-pitch-class octaves, and final `WritingProfile` projection is checked as a no-op invariant instead of mutating notes.
+Implementation update: the repair is now represented as a constrained-profile feasibility slice. Key selection rejects profile-infeasible key / subject / answer combinations, subject selection filters against the active profile pitch-class domains, adjacent voice-order search runs inside exposition / texture candidate construction, and final `WritingProfile` projection is checked as a no-op invariant instead of mutating notes.
 
 Focused regression evidence: `seed-04fup6t-1rmrxhp` now reports 0 voice crossings, range violations, writing-profile pitch violations, subject-identity violations, answer-plan violations, and key metadata mismatches for `music-box-n20`, `music-box-n40`, and `four-voice-default`. The `music-box-n20` repair deterministically chooses C major for the constrained profile rather than the infeasible Db major plan, while the chromatic and default profiles preserve their feasible seed-derived key.
 
 Default-profile review gate sync: the constrained-profile planning slice leaves hard constraints repaired in the default review seeds but shifts two review-only aggregate baselines. Score-beauty batch two keeps four seeds, three initial subject rhythm patterns, three climax indexes, top subject-fragment family share at 0.5, and unresolved severe entry intervals at 15 quarters, while counter-subject identity retention totals 2.923. Episode motivic repetition batch F keeps 0 hard failures, full derivation coverage, no generic free-counterpoint duration, no unsupported solo or bass-tail review windows, and mechanical reuse total 5; repeated stock formula total is 253 across `modal-cadence`, `contrary-answer`, and `dense-modal`. These remain `ci-blocking` regression sentinels for hard failures and `ci-observed` review-signal ceilings for phrase repetition / counter-subject retention.
+
+Additional focused evidence: the reported seed is in 3/4. The `music-box-n20` q=9-12 soprano window now avoids A6 while keeping 0 voice crossings and 0 profile / entry hard-contract failures. This is handled by profile-aware voice-order search plus a high-register soprano-leap soft cost and support-pitch fallback, not by a seed, tick, pitch, or voice exception.
 
 No listening pass was performed. The evidence is ScoreEvent and diagnostics based.
