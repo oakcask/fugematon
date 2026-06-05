@@ -992,7 +992,9 @@ test("cancels pending playback before regenerating the score", async ({ page }) 
   await seedInput.fill("mobile-regenerate");
   await page.getByRole("button", { name: "Regenerate" }).click();
   await expect(seedInput).toHaveValue("mobile-regenerate");
-  await expect(page.locator("#transport-status")).toHaveText("Ready to play", { timeout: 20_000 });
+  await expect(page.locator("#transport-status")).toHaveText("Ready to play", {
+    timeout: INITIAL_GENERATION_TIMEOUT_MS,
+  });
 
   await page.evaluate(() => (window as AudioTestWindow).__audioTest.resolveResume());
   await page.waitForTimeout(50);
