@@ -20,6 +20,56 @@
 
 この台帳は以後、文献が実装方針、review 採否、quality policy、phase scope、または license 判断に影響した時点で更新します。既存 review docs の URL 付き参考文献は、次に該当文書へ触れる時に必要なものから昇格します。
 
+## anders-miranda-music-cp-2011
+
+* Citation: Anders, Torsten, and Eduardo R. Miranda. "Constraint Programming Systems for Modeling Music Theories and Composition." *ACM Computing Surveys* 43, no. 4, 2011.
+* Stable identifier: https://doi.org/10.1145/1978802.197880
+* Source type: article
+* Accessed: 2026-06-03
+* Verification: high - University repository metadata was checked for DOI, authors, journal, publication date, and abstract scope.
+* Cache key: `references/doi/anders-miranda-2011-music-cp`
+* Notes: Survey of declarative and modular constraint-programming systems for music theory and composition.
+
+## sprockeels-van-roy-diatony-2024
+
+* Citation: Sprockeels, Damien, and Peter Van Roy. "Expressing Musical Ideas with Constraint Programming Using a Model of Tonal Harmony." *Proceedings of IJCAI 2024*, pp. 7753-7761.
+* Stable identifier: https://doi.org/10.24963/ijcai.2024/858
+* Source type: article
+* Accessed: 2026-06-03
+* Verification: high - IJCAI proceedings page was checked for DOI, authors, title, pages, and abstract scope.
+* Cache key: `references/doi/sprockeels-van-roy-2024-diatony`
+* Notes: Constraint-programming model for four-voice diatonic tonal harmony using Gecode.
+
+## tanaka-first-species-ip-2022
+
+* Citation: Tanaka, Tsubasa. "Formulating First Species Counterpoint With Integer Programming." Zenodo, 2022.
+* Stable identifier: https://doi.org/10.5281/zenodo.6573688
+* Source type: article
+* Accessed: 2026-06-03
+* Verification: medium - CiNii metadata was checked for author, title, publication date, DOI, and description.
+* Cache key: `references/doi/tanaka-2022-first-species-ip`
+* Notes: Integer-programming formulation of first-species counterpoint as strict constraint satisfaction with optimization.
+
+## boenn-anton-asp-2010
+
+* Citation: Boenn, Georg, Martin Brain, Marina De Vos, and John ffitch. "Automatic Music Composition using Answer Set Programming." arXiv:1006.4948, 2010.
+* Stable identifier: https://arxiv.org/abs/1006.4948
+* Source type: article
+* Accessed: 2026-06-03
+* Verification: high - arXiv metadata was checked for title, authors, abstract, and submission date.
+* Cache key: `references/arxiv/boenn-2010-anton-asp`
+* Notes: Describes ANTON, a declarative ASP system for melodic, harmonic, and rhythmic composition and diagnostics.
+
+## komosinski-szachewicz-counterpoint-2015
+
+* Citation: Komosinski, Maciej, and Przemyslaw Szachewicz. "Automatic Species Counterpoint Composition by Means of the Dominance Relation." 2015.
+* Stable identifier: https://www.cs.put.poznan.pl/mkomosinski/research/counterpoint-composition-dominance-relation.pdf
+* Source type: article
+* Accessed: 2026-06-03
+* Verification: medium - author-hosted PDF was checked for title and counterpoint optimization scope.
+* Cache key: `references/url/komosinski-szachewicz-2015-counterpoint`
+* Notes: Species-counterpoint composition framed as constraint and preference optimization.
+
 ## parncutt-keyboard-fingering-1997
 
 * Citation: Parncutt, Richard, John A. Sloboda, Eric F. Clarke, Matti Raekallio, and Peter Desain. "An Ergonomic Model of Keyboard Fingering for Melodic Fragments." *Music Perception*, 1997.

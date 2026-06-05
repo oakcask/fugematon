@@ -23,6 +23,7 @@ import { createMeterContext } from "./generation/meter.js";
 import { buildPhraseConvergenceReviewSummary } from "./generation/phrase-convergence-review.js";
 import { buildPhraseDevelopmentReviewSummary } from "./generation/phrase-development-review.js";
 import { buildScoreWindowAcceptanceSummary } from "./generation/score-window-acceptance.js";
+import { buildConstraintSatisfactionReview } from "./generation/section-constraint-problem.js";
 import { buildExposition, buildFugueContinuationScore, buildFugueScore } from "./generation/sections.js";
 import { buildSubject } from "./generation/subject.js";
 import { applyTerminalClosureIntent, buildTerminalClosureReviewSummary } from "./generation/terminal-closure-review.js";
@@ -101,6 +102,11 @@ export function generateScore(input: GenerationInput): GenerationOutput {
     writingProfile,
   );
   const diagnostics = analyzeScore(score.notes, score.subjectEntries, score.sectionPlans, writingProfile);
+  const constraintSatisfactionReview = buildConstraintSatisfactionReview({
+    notes: score.notes,
+    subjectEntries: score.subjectEntries,
+    sectionPlans: score.sectionPlans,
+  });
   const localSentinelCandidateTrace = buildLocalSentinelCandidateTraceSummary(
     score.selectedCandidateEvaluations,
     diagnostics.qualityVector,
@@ -280,6 +286,7 @@ export function generateScore(input: GenerationInput): GenerationOutput {
       entryBoundaryContinuity: diagnostics.entryBoundaryContinuity,
       bassAnswerTailTexture: diagnostics.bassAnswerTailTexture,
       qualityVector: diagnostics.qualityVector,
+      constraintSatisfactionReview,
       generatorSearchTrace,
       localSentinelCandidateTrace,
       phraseConvergenceReview,

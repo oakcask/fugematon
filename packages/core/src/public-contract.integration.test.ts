@@ -20,6 +20,10 @@ test("public API emits the stable score metadata envelope", () => {
   });
   const metadata = output.events.filter((event): event is MetaEvent => event.kind === "meta");
   const notes = output.events.filter((event): event is NoteEvent => event.kind === "note");
+  assert.equal(
+    output.events.some((event) => String(event.kind) === "rest"),
+    false,
+  );
   const firstMetadataTypes = metadata.slice(0, 6).map((event) => event.type);
   const scoreEnd = output.events.at(-1);
   const generatorVersion = metadata.find(
@@ -188,6 +192,24 @@ test("public diagnostics expose finite candidate score dimensions", () => {
   assert.equal(typeof output.diagnostics.qualityVector.harmonicSonorities.focusedWindowCount, "number");
   assert.equal(typeof output.diagnostics.qualityVector.harmonicSonorities.generatorResponseWindowCount, "number");
   assert.ok(Array.isArray(output.diagnostics.qualityVector.harmonicSonorities.windows));
+  assert.equal(output.diagnostics.constraintSatisfactionReview.schemaVersion, 1);
+  assert.equal(typeof output.diagnostics.constraintSatisfactionReview.windowCount, "number");
+  assert.equal(typeof output.diagnostics.constraintSatisfactionReview.intentionalRestSpanCount, "number");
+  assert.equal(typeof output.diagnostics.constraintSatisfactionReview.unplannedSilentRunCount, "number");
+  assert.equal(typeof output.diagnostics.constraintSatisfactionReview.maxUnplannedSilentRunTicks, "number");
+  assert.equal(typeof output.diagnostics.constraintSatisfactionReview.solverCandidateCount, "number");
+  assert.ok(Array.isArray(output.diagnostics.constraintSatisfactionReview.windows));
+  assert.ok(
+    output.diagnostics.constraintSatisfactionReview.windows.every(
+      (window) =>
+        Number.isSafeInteger(window.startTick) &&
+        Number.isSafeInteger(window.endTick) &&
+        Array.isArray(window.intentionalRestSpans) &&
+        Array.isArray(window.unplannedSilentRuns) &&
+        window.unplannedSilentRuns.every((run) => run.state === window.state && typeof run.reason === "string") &&
+        window.intentionalRestSpans.every((span) => span.state === window.state && typeof span.reason === "string"),
+    ),
+  );
   assert.equal(output.diagnostics.generatorSearchTrace.schemaVersion, 1);
   assert.equal(output.diagnostics.generatorSearchTrace.mode, "solver");
   assert.ok(output.diagnostics.generatorSearchTrace.evaluatedCandidateCount >= 2);

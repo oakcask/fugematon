@@ -368,7 +368,10 @@ export type ConstraintHardFailureCode =
   | "known-voice"
   | "pitch-bounds"
   | "velocity-bounds"
-  | "writing-profile-pitch";
+  | "writing-profile-pitch"
+  | "intentional-rest-reason"
+  | "section-voice-coverage"
+  | "structural-harmonic-support";
 
 export type GeneratorSearchTraceCandidate = {
   candidateId: string;
@@ -388,6 +391,77 @@ export type GeneratorSearchTrace = {
   rejectedCandidateCount: number;
   selectedCandidateId: string;
   candidates: GeneratorSearchTraceCandidate[];
+};
+
+export type IntentionalRestReason =
+  | "cadence-breath"
+  | "entry-handoff-delay"
+  | "register-relief"
+  | "suspension-resolution"
+  | "pedal-thinning";
+
+export type SectionConstraintSlotValueKind = "note" | "hold" | "intentional-rest";
+
+export type SectionConstraintRestSpan = {
+  voice: Voice;
+  startTick: number;
+  endTick: number;
+  durationTicks: number;
+  state: FugueState | "unplanned";
+  reason: IntentionalRestReason;
+};
+
+export type SectionConstraintSilentRun = {
+  voice: Voice;
+  startTick: number;
+  endTick: number;
+  durationTicks: number;
+  state: FugueState | "unplanned";
+  planned: boolean;
+  reason: IntentionalRestReason | "unplanned";
+};
+
+export type SectionConstraintInfeasibleCounts = {
+  invalidIntentionalRestReason: number;
+  minActiveVoiceViolation: number;
+  unsupportedSolo: number;
+  allVoiceSilence: number;
+  longUnplannedSilentRun: number;
+  structuralChordSupportMiss: number;
+  structuralRootSupportMiss: number;
+};
+
+export type SectionConstraintRelaxationLevel =
+  | "none"
+  | "density-floor-review"
+  | "structural-support-review"
+  | "infeasible";
+
+export type SectionConstraintSatisfactionWindow = {
+  startTick: number;
+  endTick: number;
+  state: FugueState | "unplanned";
+  minActiveVoices: number;
+  maxActiveVoices: number;
+  intentionalRestSpans: SectionConstraintRestSpan[];
+  unplannedSilentRuns: SectionConstraintSilentRun[];
+  infeasibleConstraintCounts: SectionConstraintInfeasibleCounts;
+  selectedRelaxationLevel: SectionConstraintRelaxationLevel;
+  solverCandidateCount: number;
+};
+
+export type ConstraintSatisfactionReviewSummary = {
+  schemaVersion: 1;
+  windowCount: number;
+  intentionalRestSpanCount: number;
+  unplannedSilentRunCount: number;
+  maxUnplannedSilentRunTicks: number;
+  unsupportedSoloWindowCount: number;
+  allVoiceSilenceWindowCount: number;
+  infeasibleConstraintCounts: SectionConstraintInfeasibleCounts;
+  selectedRelaxationLevel: SectionConstraintRelaxationLevel;
+  solverCandidateCount: number;
+  windows: SectionConstraintSatisfactionWindow[];
 };
 
 export type ScoreDimension = {
@@ -1656,6 +1730,7 @@ export type GenerationDiagnostics = {
   entryBoundaryContinuity: EntryBoundaryContinuitySummary;
   bassAnswerTailTexture: BassAnswerTailTextureSummary;
   qualityVector: QualityVector;
+  constraintSatisfactionReview: ConstraintSatisfactionReviewSummary;
   generatorSearchTrace: GeneratorSearchTrace;
   localSentinelCandidateTrace: LocalSentinelCandidateTraceSummary;
   phraseConvergenceReview: PhraseConvergenceReviewSummary;

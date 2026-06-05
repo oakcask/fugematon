@@ -2241,6 +2241,7 @@ function buildContinuationConstraintCandidate(
       meterContext: section.sectionPlans[0]?.meterContext,
       entry: section.subjectEntries[0],
       terminalSupport: terminalSupportCandidate,
+      sectionConstraintProblem: true,
     }),
   };
 }

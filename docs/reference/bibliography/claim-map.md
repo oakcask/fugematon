@@ -20,6 +20,16 @@ Fugematon 固有の設計判断、review 判断、quality policy と文献根拠
 
 既存 Phase/review docs の literature claims は、次に該当文書や関連実装へ触れる時に必要なものから claim entry へ昇格します。新しい文献根拠で実装方針、quality gate、phase scope、review 採否を変える場合は、その変更と同じ差分で entry を追加します。
 
+## section-constraint-csp-local-first
+
+* Claim: Fugematon should model continuation voice slots with a deterministic local finite-domain CSP before considering an external solver dependency; section slots may be `note`, `hold`, or internal `intentional-rest`, while public `ScoreEvent` remains limited to note/meta events.
+* Applies to: design | generation | diagnostics | phase-scope
+* Evidence: `music-constraint-programming`; current `Generator Constraint Rebuild` local solver architecture.
+* Confidence: medium
+* Verification state: page-checked
+* Limits: This claim does not prove the local solver is musically complete, does not promote every texture diagnostic to a CI hard gate, and does not reject future external solver comparison after bounded local search fails documented acceptance thresholds.
+* Used by: `docs/phases/generator-constraint-rebuild.md`, `docs/reference/quality-metrics/diagnostics.md`
+
 ## keyboard-writing-profile-separates-compass-and-playability
 
 * Claim: Fugematon should model piano, harpsichord, and music-box target constraints as `WritingProfile` generation constraints, not as `PerformanceProfile` playback settings; absolute pitch compass is necessary but piano also needs hand-assignment and reach evidence, while music-box targets need supported pitch-set and mechanism-limit enforcement.
