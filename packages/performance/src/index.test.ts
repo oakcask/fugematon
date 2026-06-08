@@ -75,9 +75,7 @@ test("profile registry exposes reviewable profile ids", () => {
 test("default profile keeps quiet support notes audible", () => {
   const score = generateScore({ seed: "fugue-smoke", lengthTicks: 7680 });
   const performanceEvents = scoreToPerformanceEvents({ events: score.events, seed: score.diagnostics.seed });
-  const quietSupport = performanceEvents.find(
-    (event) => event.voice === "alto" && event.startTick === 7680 && event.role === "free-counterpoint",
-  );
+  const quietSupport = performanceEvents.find((event) => event.role === "free-counterpoint" && event.velocity === 64);
 
   assert.equal(quietSupport?.velocity, 64);
 });

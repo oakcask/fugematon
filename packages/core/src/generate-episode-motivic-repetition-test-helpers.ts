@@ -78,7 +78,10 @@ export function assertEpisodeMotivicRepetitionReviewBatch(batch: EpisodeMotivicR
     summaries.every((summary) => summary.genericFreeCounterpointDurationTicks === 0),
     JSON.stringify(summaries, null, 2),
   );
-  assert.ok(summaries.every((summary) => summary.unsupportedSoloWindowCount <= 6), JSON.stringify(summaries, null, 2));
+  assert.ok(
+    summaries.every((summary) => summary.unsupportedSoloWindowCount <= 6),
+    JSON.stringify(summaries, null, 2),
+  );
   assert.ok(
     summaries.reduce((sum, summary) => sum + summary.repeatedStockFormulaCount, 0) <=
       batch.maxRepeatedStockFormulaCount,

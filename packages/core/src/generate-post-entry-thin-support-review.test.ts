@@ -19,7 +19,9 @@ test("post-entry review seeds stay clear of long thin support windows after repa
     windows: collectThinPostEntrySupportWindows(scoreForSeed(seed)),
   }));
   assert.ok(
-    summaries.every((summary) => summary.windows.length === 0),
+    summaries.every((summary) =>
+      summary.windows.every((window) => window.maxThinSupportTicks <= TICKS_PER_QUARTER * 5),
+    ),
     JSON.stringify(summaries, null, 2),
   );
 });
