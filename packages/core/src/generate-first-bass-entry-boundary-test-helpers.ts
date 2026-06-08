@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { REPRESENTATIVE_REVIEW_SEEDS, REVIEW_LENGTH_TICKS, ROTATION_REVIEW_SEEDS } from "./constants.js";
 import type { PlannedEntry, Voice } from "./events.js";
-import { generateScore } from "./generate.js";
+import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
 
 export const FIRST_BASS_ENTRY_BOUNDARY_REVIEW_SEEDS = [...REPRESENTATIVE_REVIEW_SEEDS, ...ROTATION_REVIEW_SEEDS].map(
   ({ seed }) => seed,

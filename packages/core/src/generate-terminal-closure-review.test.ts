@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { FUGUE_FORM_REVIEW_LENGTH_TICKS, TICKS_PER_QUARTER } from "./constants.js";
 import type { CadenceKind, HarmonicPlan, KeySignature, NoteEvent, ScoreEvent, Voice } from "./events.js";
-import { generateScore } from "./generate.js";
+import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
 import { buildHarmonicPlan } from "./generation/harmony.js";
 import { createMeterContext } from "./generation/meter.js";
 import { buildTerminalClosureReviewSummary } from "./generation/terminal-closure-review.js";

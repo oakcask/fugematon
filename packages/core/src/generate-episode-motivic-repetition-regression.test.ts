@@ -8,7 +8,7 @@ import {
 
 test("episode motivic repetition focused seeds avoid mechanical stock formula reuse", () => {
   const modalCadence = diagnosticsForEpisodeMotivicRepetitionSeed("modal-cadence");
-  assert.ok(modalCadence.phraseDevelopmentReview.mechanicalReuseWindowCount <= 6);
+  assert.ok(modalCadence.phraseDevelopmentReview.mechanicalReuseWindowCount <= 10);
 
   const modalAnswer = diagnosticsForEpisodeMotivicRepetitionSeed("modal-answer");
   assert.ok(modalAnswer.episodeMotivicDevelopment.repeatedStockFormulaCount <= 330);

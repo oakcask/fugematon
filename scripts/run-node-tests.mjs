@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
 import { readdir } from "node:fs/promises";
+import { availableParallelism } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -19,7 +20,7 @@ export async function collectNodeTestFiles({ rootPath = defaultRootPath() } = {}
     .sort();
 }
 
-export async function runNodeTests(testFiles) {
+export async function runNodeTests(testFiles, { concurrency = defaultNodeTestConcurrency(testFiles.length) } = {}) {
   if (testFiles.length === 0) {
     console.error(
       [
@@ -31,36 +32,124 @@ export async function runNodeTests(testFiles) {
     return 1;
   }
 
-  const child = spawn(process.execPath, ["--test", ...testFiles], {
-    stdio: "inherit",
+  const shards = createNodeTestShards(testFiles, concurrency);
+  if (shards.length > 1) {
+    console.error(
+      [
+        `test.node-runner-local-shards: running ${testFiles.length} test files across ${shards.length} node --test shards;`,
+        "why=local tests should use available CPU cores;",
+        "action=set FUGEMATON_NODE_TEST_CONCURRENCY to override local parallelism",
+      ].join(" "),
+    );
+  }
+
+  const results = await Promise.all(
+    shards.map(async (shardFiles, shardIndex) => {
+      const result = await runNodeTestShard(shardFiles, { shardIndex, shardCount: shards.length });
+      writeBufferedOutput(result);
+      return result;
+    }),
+  );
+
+  return results.every((result) => result.exitCode === 0) ? 0 : 1;
+}
+
+export function createNodeTestShards(testFiles, concurrency) {
+  const requestedConcurrency = Number.isFinite(concurrency) ? Math.floor(concurrency) : 1;
+  const shardCount = Math.max(1, Math.min(testFiles.length, requestedConcurrency));
+  const shards = Array.from({ length: shardCount }, () => []);
+
+  for (const [index, testFile] of testFiles.entries()) {
+    shards[index % shardCount].push(testFile);
+  }
+
+  return shards.filter((shard) => shard.length > 0);
+}
+
+export function defaultNodeTestConcurrency(testFileCount) {
+  const explicitConcurrency = Number.parseInt(process.env.FUGEMATON_NODE_TEST_CONCURRENCY ?? "", 10);
+  if (Number.isInteger(explicitConcurrency) && explicitConcurrency > 0) {
+    return Math.min(testFileCount, explicitConcurrency);
+  }
+
+  return Math.min(testFileCount, availableParallelism());
+}
+
+async function runNodeTestShard(testFiles, { shardIndex, shardCount }) {
+  const child = spawn(process.execPath, ["--test", "--test-isolation=none", ...testFiles], {
+    stdio: ["ignore", "pipe", "pipe"],
   });
+
+  const stdout = [];
+  const stderr = [];
+  child.stdout.on("data", (chunk) => stdout.push(chunk));
+  child.stderr.on("data", (chunk) => stderr.push(chunk));
 
   return await new Promise((resolve) => {
     child.on("error", (error) => {
-      console.error(
-        [
-          "test.node-runner-spawn-failed: failed to start node --test;",
-          "why=local tests could not execute;",
-          `action=check Node.js installation and test runner arguments; detail=${error.message}`,
-        ].join(" "),
-      );
-      resolve(1);
+      resolve({
+        exitCode: 1,
+        shardIndex,
+        shardCount,
+        stderr: Buffer.concat([
+          ...stderr,
+          Buffer.from(
+            [
+              "",
+              [
+                "test.node-runner-spawn-failed: failed to start node --test;",
+                "why=local tests could not execute;",
+                `action=check Node.js installation and test runner arguments; detail=${error.message}`,
+              ].join(" "),
+            ].join("\n"),
+          ),
+        ]),
+        stdout: Buffer.concat(stdout),
+      });
     });
     child.on("exit", (code, signal) => {
+      const exitCode = signal === null ? (code ?? 1) : 1;
       if (signal !== null) {
-        console.error(
-          [
-            "test.node-runner-terminated: node --test was terminated by a signal;",
-            "why=local tests did not complete;",
-            `action=rerun pnpm test or inspect resource limits; signal=${signal}`,
-          ].join(" "),
+        stderr.push(
+          Buffer.from(
+            [
+              "",
+              [
+                "test.node-runner-terminated: node --test was terminated by a signal;",
+                "why=local tests did not complete;",
+                `action=rerun pnpm test or inspect resource limits; signal=${signal}`,
+              ].join(" "),
+            ].join("\n"),
+          ),
         );
-        resolve(1);
-      } else {
-        resolve(code ?? 1);
       }
+      resolve({
+        exitCode,
+        shardIndex,
+        shardCount,
+        stderr: Buffer.concat(stderr),
+        stdout: Buffer.concat(stdout),
+      });
     });
   });
+}
+
+function writeBufferedOutput({ shardIndex, shardCount, stdout, stderr }) {
+  if (shardCount > 1) {
+    process.stderr.write(`test.node-runner-shard-output: shard=${shardIndex + 1}/${shardCount}\n`);
+  }
+  if (stdout.length > 0) {
+    process.stdout.write(stdout);
+    if (stdout.at(-1) !== 10) {
+      process.stdout.write("\n");
+    }
+  }
+  if (stderr.length > 0) {
+    process.stderr.write(stderr);
+    if (stderr.at(-1) !== 10) {
+      process.stderr.write("\n");
+    }
+  }
 }
 
 async function collectFiles(rootPath, directory = ".") {

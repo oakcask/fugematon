@@ -25,7 +25,7 @@ import type {
   Voice,
 } from "../events.js";
 import type { SegmentSnapshot } from "../infinite-playback.js";
-import type { Xoshiro128StarStar } from "../prng.js";
+import { Xoshiro128StarStar } from "../prng.js";
 import {
   nearestWritingProfilePitchForPitchClass,
   resolveWritingProfile,
@@ -60,6 +60,7 @@ import {
   addBassAnswerTailTextureSupport,
   addContinuityCounterpoint,
   addCounterpointTexture,
+  addExposedFreeCounterpointSoloSupport,
   addFunctionalThinningSupport,
   addPostEntryContinuationSupport,
   addShortEpisodeHarmonicContinuitySupport,
@@ -113,6 +114,15 @@ type ScoreLevelSupportCleanupReview = {
   scoreWindowGeneratorResponseCount: number;
   scoreWindowAcceptedContextCount: number;
   harmonicContinuityReviewRequiredCount: number;
+};
+
+type ContinuationSectionSelection = {
+  section: Exposition;
+  candidateCount: number;
+  evaluation: CandidateEvaluation;
+  constraintCandidate: ConstraintCandidate;
+  constraintCandidates: readonly ConstraintCandidate[];
+  oracleSection: ReturnType<typeof classifyCandidatePoolOracleSection>;
 };
 
 export function buildFugueScore(
@@ -180,31 +190,40 @@ export function buildFugueScore(
     const phraseIntent = phraseUnit?.sections[phraseSectionIndex];
     const state = phraseIntent?.state ?? statePattern[stateIndex]!;
     const sectionDurationTicks = chooseContinuationSectionTicks(state, rng, meterContext);
+    const durationCandidates =
+      selectionModel === "section-local-planner"
+        ? boundedContinuationDurationCandidates(state, sectionDurationTicks, meterContext)
+        : [sectionDurationTicks];
     if (terminalCodaReservation !== undefined) {
       const remainingTicks = ordinaryGenerationEndTick - sectionStartTick;
       const minimumSectionTicks = minimumContinuationSectionTicks(meterContext);
-      if (remainingTicks < minimumSectionTicks || sectionDurationTicks > remainingTicks) {
+      if (
+        remainingTicks < minimumSectionTicks ||
+        !durationCandidates.some((durationTicks) => durationTicks <= remainingTicks)
+      ) {
         break;
       }
     }
-    const selection = chooseContinuationSection(
+    const selection = chooseContinuationSectionFromDurationCandidates({
       subject,
       keySignature,
       state,
-      sectionStartTick,
-      sectionDurationTicks,
+      startTick: sectionStartTick,
+      durationCandidates,
       rng,
-      notes,
+      previousNotes: notes,
       selectionModel,
-      [...stateTransitions, state],
-      sectionPlans,
-      subjectEntries,
+      stateHistory: [...stateTransitions, state],
+      previousSectionPlans: sectionPlans,
+      previousSubjectEntries: subjectEntries,
       phraseIntent,
       counterSubjectSupportRepair,
       meterContext,
       writingProfile,
-      terminalCodaReservation === undefined && sectionStartTick + sectionDurationTicks >= ordinaryGenerationEndTick,
-    );
+      maxDurationTicks:
+        terminalCodaReservation === undefined ? undefined : ordinaryGenerationEndTick - sectionStartTick,
+      ordinaryGenerationEndTick,
+    });
     if (selectionModel === "section-local-planner") {
       softenBassEntryBoundaryResets(selection.section.notes, selection.section.subjectEntries, notes);
       selection.section.notes.sort(compareNoteEvents);
@@ -284,6 +303,14 @@ export function buildFugueScore(
         writingProfile,
       }),
     );
+    selectedConstraintCandidates.push(
+      ...applyScoreLevelTextureVoiceOrderCandidateAdoptions({
+        notes,
+        subjectEntries,
+        sectionPlans,
+        writingProfile,
+      }),
+    );
   }
   if (terminalCodaReservation !== undefined && terminalCoda !== undefined) {
     clipNotesAtTick(notes, terminalCodaReservation.startTick);
@@ -296,6 +323,9 @@ export function buildFugueScore(
     notes.push(...restoredTerminalCodaNotes);
     notes.sort(compareNoteEvents);
   }
+  repairTextureVoiceCrossingsForNotes(notes, sectionPlans, writingProfile);
+  restoreEntryPitchClassIdentity(notes, subjectEntries, writingProfile);
+  notes.sort(compareNoteEvents);
 
   return {
     notes,
@@ -371,6 +401,96 @@ function cloneExposition(section: Exposition): Exposition {
   };
 }
 
+function restoreEntryPitchClassIdentity(
+  notes: NoteEvent[],
+  subjectEntries: PlannedEntry[],
+  writingProfile: WritingProfile,
+): void {
+  const retainedEntries: PlannedEntry[] = [];
+  const activeEntryEndByVoice = new Map<Voice, number>();
+  const removedEntrySpans: Array<{ voice: Voice; role: NoteEvent["role"]; startTick: number; endTick: number }> = [];
+
+  for (const entry of [...subjectEntries].sort((left, right) => left.startTick - right.startTick)) {
+    const entryRole = noteRoleForEntryForm(entry.form);
+    const entryNotes = notes
+      .filter((note) => note.voice === entry.voice && note.startTick >= entry.startTick && note.role === entryRole)
+      .sort(compareNoteEvents)
+      .slice(0, entry.actualPitchClassSequence.length);
+    const entryEndTick = entryNotes.at(-1)?.startTick ?? entry.startTick;
+    const activeEntryEnd = activeEntryEndByVoice.get(entry.voice);
+    if (activeEntryEnd !== undefined && entry.startTick <= activeEntryEnd) {
+      removedEntrySpans.push({
+        voice: entry.voice,
+        role: entryRole,
+        startTick: entry.startTick,
+        endTick: entryEndTick,
+      });
+      continue;
+    }
+    retainedEntries.push(entry);
+    activeEntryEndByVoice.set(entry.voice, entryEndTick);
+  }
+
+  if (retainedEntries.length !== subjectEntries.length) {
+    subjectEntries.splice(0, subjectEntries.length, ...retainedEntries);
+    notes.splice(
+      0,
+      notes.length,
+      ...notes.filter(
+        (note) =>
+          !removedEntrySpans.some(
+            (span) =>
+              note.voice === span.voice &&
+              note.role === span.role &&
+              span.startTick <= note.startTick &&
+              note.startTick <= span.endTick,
+          ),
+      ),
+    );
+  }
+
+  for (const entry of retainedEntries) {
+    const entryRole = noteRoleForEntryForm(entry.form);
+    const entryNotes = notes
+      .filter((note) => note.voice === entry.voice && note.startTick >= entry.startTick)
+      .filter((note) => entryRole === undefined || note.role === entryRole)
+      .sort(compareNoteEvents)
+      .slice(0, entry.actualPitchClassSequence.length);
+    const entryNoteSet = new Set(entryNotes);
+    const entryStartTicks = new Set(entryNotes.map((note) => note.startTick));
+    if (entryStartTicks.size > 0) {
+      notes.splice(
+        0,
+        notes.length,
+        ...notes.filter(
+          (note) =>
+            note.voice !== entry.voice ||
+            !entryStartTicks.has(note.startTick) ||
+            note.role === entryRole ||
+            entryNoteSet.has(note),
+        ),
+      );
+    }
+    for (const [index, note] of entryNotes.entries()) {
+      const pitchClass = entry.actualPitchClassSequence[index];
+      if (pitchClass === undefined || positiveModulo(note.pitch, 12) === pitchClass) {
+        continue;
+      }
+      note.pitch = nearestWritingProfilePitchForPitchClass(pitchClass, note.pitch, note.voice, writingProfile);
+    }
+  }
+}
+
+function noteRoleForEntryForm(form: EntryForm): NoteEvent["role"] {
+  if (form === "answer") {
+    return "answer";
+  }
+  if (form === "subject-fragment") {
+    return "subject-fragment";
+  }
+  return "subject";
+}
+
 function applyScoreLevelSupportCleanupCandidateAdoptions(input: {
   notes: NoteEvent[];
   subjectEntries: readonly PlannedEntry[];
@@ -407,7 +527,6 @@ function applyScoreLevelSupportCleanupCandidateAdoptions(input: {
       continue;
     }
 
-    input.notes.splice(0, input.notes.length, ...adoption.adoptedNotes);
     candidates.push(adoption.beforeCandidate, adoption.afterCandidate);
   }
 
@@ -507,7 +626,7 @@ function buildScoreLevelSupportCleanupCandidateAdoption(
     afterCandidate,
   );
 
-  if (!shouldAdoptScoreLevelSupportCleanup(beforeReview, afterReview)) {
+  if (!shouldEmitScoreLevelSupportCleanupEvidence(beforeReview, afterReview)) {
     return undefined;
   }
 
@@ -547,7 +666,7 @@ function evaluateScoreLevelSupportCleanupReview(
   };
 }
 
-function shouldAdoptScoreLevelSupportCleanup(
+function shouldEmitScoreLevelSupportCleanupEvidence(
   before: ScoreLevelSupportCleanupReview,
   after: ScoreLevelSupportCleanupReview,
 ): boolean {
@@ -1382,24 +1501,29 @@ export function buildFugueContinuationScore(
     const phraseIntent = phraseUnit?.sections[phraseSectionIndex];
     const state = phraseIntent?.state ?? continuationPattern[stateIndex]!;
     const sectionDurationTicks = chooseContinuationSectionTicks(state, rng, meterContext);
-    const selection = chooseContinuationSection(
+    const durationCandidates =
+      selectionModel === "section-local-planner"
+        ? boundedContinuationDurationCandidates(state, sectionDurationTicks, meterContext)
+        : [sectionDurationTicks];
+    const selection = chooseContinuationSectionFromDurationCandidates({
       subject,
       keySignature,
       state,
-      sectionStartTick,
-      sectionDurationTicks,
+      startTick: sectionStartTick,
+      durationCandidates,
       rng,
-      [...previousNotes, ...notes],
+      previousNotes: [...previousNotes, ...notes],
       selectionModel,
-      [...stateHistory, state],
-      [...previousSectionPlans, ...sectionPlans],
-      [...previousSubjectEntries, ...subjectEntries],
+      stateHistory: [...stateHistory, state],
+      previousSectionPlans: [...previousSectionPlans, ...sectionPlans],
+      previousSubjectEntries: [...previousSubjectEntries, ...subjectEntries],
       phraseIntent,
       counterSubjectSupportRepair,
       meterContext,
       writingProfile,
-      sectionStartTick + sectionDurationTicks >= lengthTicks,
-    );
+      maxDurationTicks: lengthTicks - sectionStartTick,
+      ordinaryGenerationEndTick: lengthTicks,
+    });
     if (selectionModel === "section-local-planner") {
       softenBassEntryBoundaryResets(selection.section.notes, selection.section.subjectEntries, [
         ...previousNotes,
@@ -1469,7 +1593,18 @@ export function buildFugueContinuationScore(
         writingProfile,
       }),
     );
+    selectedConstraintCandidates.push(
+      ...applyScoreLevelTextureVoiceOrderCandidateAdoptions({
+        notes,
+        subjectEntries,
+        sectionPlans,
+        writingProfile,
+      }),
+    );
   }
+  repairTextureVoiceCrossingsForNotes(notes, sectionPlans, writingProfile);
+  restoreEntryPitchClassIdentity(notes, subjectEntries, writingProfile);
+  notes.sort(compareNoteEvents);
 
   return {
     notes,
@@ -1905,6 +2040,32 @@ export function chooseContinuationSectionTicks(
   );
 }
 
+export function continuationSectionDurationCandidates(
+  state: FugueState,
+  meterContext: MeterContext = createLegacyMeterContext(),
+): number[] {
+  if (meterContext.timeSignature.numerator !== 4) {
+    const preferredMeasureCounts = state === "episode" ? [2, 3, 4] : [3, 4, 2];
+    return preferredMeasureCounts.map((measureCount) => meterContext.measureTicks * measureCount);
+  }
+
+  const quarterCounts =
+    state === "episode" ? [8, 12, 6, 10] : state === "subject-return" ? [8, 12, 7, 9] : [8, 12, 6, 7, 9, 10];
+  return quarterCounts.map((quarterCount) => quarterCount * TICKS_PER_QUARTER);
+}
+
+function boundedContinuationDurationCandidates(
+  state: FugueState,
+  legacyDurationTicks: number,
+  meterContext: MeterContext,
+): number[] {
+  const candidates = continuationSectionDurationCandidates(state, meterContext);
+  const preferred = candidates.slice(0, 2);
+  const relaxed =
+    candidates.find((durationTicks) => durationTicks % meterContext.measureTicks !== 0) ?? legacyDurationTicks;
+  return [...new Set([...preferred, relaxed, legacyDurationTicks])].slice(0, 3);
+}
+
 export function chooseStyleProfile(rng: Xoshiro128StarStar): StyleProfile {
   return rng.chooseWeighted<StyleProfile>([
     { value: "strict-classical", weight: 3 },
@@ -2063,14 +2224,7 @@ export function chooseContinuationSection(
   meterContext: MeterContext = createLegacyMeterContext(),
   writingProfile: WritingProfile = resolveWritingProfile(undefined),
   terminalSupportCandidate = false,
-): {
-  section: Exposition;
-  candidateCount: number;
-  evaluation: CandidateEvaluation;
-  constraintCandidate: ConstraintCandidate;
-  constraintCandidates: readonly ConstraintCandidate[];
-  oracleSection: ReturnType<typeof classifyCandidatePoolOracleSection>;
-} {
+): ContinuationSectionSelection {
   const candidates = buildContinuationCandidates(
     subject,
     keySignature,
@@ -2095,6 +2249,7 @@ export function chooseContinuationSection(
         state: candidate.sectionPlans[0]?.state ?? state,
         candidateBand: continuationCandidateSelectionBand(index, selectionWindow, selectionModel, candidate),
         candidateIndex: index,
+        durationTicks: candidate.durationTicks,
       }),
       candidate,
       writingProfile,
@@ -2243,6 +2398,141 @@ export function chooseContinuationSection(
   };
 }
 
+function chooseContinuationSectionFromDurationCandidates(input: {
+  subject: readonly SubjectNote[];
+  keySignature: KeySignature;
+  state: FugueState;
+  startTick: number;
+  durationCandidates: readonly number[];
+  rng: Xoshiro128StarStar;
+  previousNotes: readonly NoteEvent[];
+  selectionModel: SelectionModel;
+  stateHistory: readonly FugueState[];
+  previousSectionPlans: readonly HarmonicPlan[];
+  previousSubjectEntries: readonly PlannedEntry[];
+  phraseIntent?: ContinuationPhraseSectionIntent;
+  counterSubjectSupportRepair: boolean;
+  meterContext: MeterContext;
+  writingProfile: WritingProfile;
+  maxDurationTicks?: number;
+  ordinaryGenerationEndTick: number;
+}): ContinuationSectionSelection {
+  const forkState = input.rng.snapshot();
+  const durationCandidates = input.durationCandidates.filter(
+    (durationTicks) => input.maxDurationTicks === undefined || durationTicks <= input.maxDurationTicks,
+  );
+  const viableDurationCandidates =
+    durationCandidates.length > 0 ? durationCandidates : input.durationCandidates.slice(0, 1);
+  const firstDurationTicks = viableDurationCandidates[0];
+  if (firstDurationTicks === undefined) {
+    throw new Error(
+      "core.continuation-duration.empty-candidate-set: no continuation duration candidates were available; why=section generation requires at least one duration; action=provide a positive duration candidate",
+    );
+  }
+
+  const firstSelection = chooseContinuationSectionForDuration(input, firstDurationTicks, forkState);
+  if (sectionMetricalBoundaryCost(firstSelection.constraintCandidate) === 0) {
+    return firstSelection;
+  }
+
+  const selections = [
+    firstSelection,
+    ...viableDurationCandidates
+      .slice(1)
+      .map((durationTicks) => chooseContinuationSectionForDuration(input, durationTicks, forkState)),
+  ];
+  const selected = [...selections].sort((left, right) =>
+    compareDurationCandidateSelections(left, right, input.selectionModel),
+  )[0];
+
+  if (selected === undefined) {
+    throw new Error(
+      "core.continuation-duration.empty-candidate-set: no continuation duration candidates were available; why=section generation requires at least one duration; action=provide a positive duration candidate",
+    );
+  }
+
+  return {
+    ...selected,
+    candidateCount: selections.reduce((sum, selection) => sum + selection.candidateCount, 0),
+    constraintCandidates: selections.flatMap((selection) => selection.constraintCandidates),
+  };
+}
+
+function chooseContinuationSectionForDuration(
+  input: {
+    subject: readonly SubjectNote[];
+    keySignature: KeySignature;
+    state: FugueState;
+    startTick: number;
+    rng: Xoshiro128StarStar;
+    previousNotes: readonly NoteEvent[];
+    selectionModel: SelectionModel;
+    stateHistory: readonly FugueState[];
+    previousSectionPlans: readonly HarmonicPlan[];
+    previousSubjectEntries: readonly PlannedEntry[];
+    phraseIntent?: ContinuationPhraseSectionIntent;
+    counterSubjectSupportRepair: boolean;
+    meterContext: MeterContext;
+    writingProfile: WritingProfile;
+    ordinaryGenerationEndTick: number;
+  },
+  durationTicks: number,
+  forkState: readonly [number, number, number, number],
+): ContinuationSectionSelection {
+  return chooseContinuationSection(
+    input.subject,
+    input.keySignature,
+    input.state,
+    input.startTick,
+    durationTicks,
+    new Xoshiro128StarStar(forkState),
+    input.previousNotes,
+    input.selectionModel,
+    input.stateHistory,
+    input.previousSectionPlans,
+    input.previousSubjectEntries,
+    input.phraseIntent,
+    input.counterSubjectSupportRepair,
+    input.meterContext,
+    input.writingProfile,
+    input.startTick + durationTicks >= input.ordinaryGenerationEndTick,
+  );
+}
+
+function compareDurationCandidateSelections(
+  left: ContinuationSectionSelection,
+  right: ContinuationSectionSelection,
+  selectionModel: SelectionModel,
+): number {
+  const leftHardFailureCount = constraintCandidateHardFailureCount(left.constraintCandidate);
+  const rightHardFailureCount = constraintCandidateHardFailureCount(right.constraintCandidate);
+  if (leftHardFailureCount !== rightHardFailureCount) {
+    return leftHardFailureCount - rightHardFailureCount;
+  }
+
+  const leftMetricalCost = sectionMetricalBoundaryCost(left.constraintCandidate);
+  const rightMetricalCost = sectionMetricalBoundaryCost(right.constraintCandidate);
+  if (leftMetricalCost !== rightMetricalCost) {
+    return leftMetricalCost - rightMetricalCost;
+  }
+
+  if (left.constraintCandidate.result.totalSoftCost !== right.constraintCandidate.result.totalSoftCost) {
+    return left.constraintCandidate.result.totalSoftCost - right.constraintCandidate.result.totalSoftCost;
+  }
+
+  const leftScore = candidateSelectionScore(left.evaluation, selectionModel);
+  const rightScore = candidateSelectionScore(right.evaluation, selectionModel);
+  if (leftScore !== rightScore) {
+    return leftScore - rightScore;
+  }
+
+  return left.constraintCandidate.candidateId.localeCompare(right.constraintCandidate.candidateId);
+}
+
+function sectionMetricalBoundaryCost(candidate: ConstraintCandidate): number {
+  return candidate.result.window.sectionConstraintReview?.metricalBoundaryCost ?? 0;
+}
+
 function selectableContinuationCandidateIndexes(input: {
   candidates: readonly Exposition[];
   evaluations: readonly CandidateEvaluation[];
@@ -2326,11 +2616,6 @@ export function chooseSectionCspBacktrackingCandidateIndex(input: {
 }): number {
   const candidateIndexes =
     input.candidateIndexes.length > 0 ? input.candidateIndexes : input.constraintCandidates.map((_, index) => index);
-  const currentCandidate = input.constraintCandidates[input.currentBestIndex];
-  if (currentCandidate !== undefined && candidateHasNoHardFailures(currentCandidate)) {
-    return input.currentBestIndex;
-  }
-
   const feasibleIndexes = candidateIndexes.filter((index) => {
     const candidate = input.constraintCandidates[index];
     return candidate !== undefined && candidate.result.hardFailures.length === 0;
@@ -2338,6 +2623,11 @@ export function chooseSectionCspBacktrackingCandidateIndex(input: {
 
   if (feasibleIndexes.length > 0) {
     return [...feasibleIndexes].sort((left, right) => {
+      const leftSoftCost = input.constraintCandidates[left]!.result.totalSoftCost;
+      const rightSoftCost = input.constraintCandidates[right]!.result.totalSoftCost;
+      if (leftSoftCost !== rightSoftCost) {
+        return leftSoftCost - rightSoftCost;
+      }
       const leftScore = input.candidateScores?.[left] ?? 0;
       const rightScore = input.candidateScores?.[right] ?? 0;
       if (leftScore !== rightScore) {
@@ -2362,10 +2652,6 @@ export function chooseSectionCspBacktrackingCandidateIndex(input: {
     }
     return leftCandidate.candidateId.localeCompare(rightCandidate.candidateId);
   })[0]!;
-}
-
-function candidateHasNoHardFailures(candidate: ConstraintCandidate): boolean {
-  return candidate.result.hardFailures.length === 0;
 }
 
 function constraintCandidateHardFailureCount(candidate: ConstraintCandidate): number {
@@ -2434,6 +2720,7 @@ function harmonicStasisSourceConstraintCandidates(input: {
         state: sourceState,
         candidateBand: sourceBand,
         candidateIndex: sourceIndex,
+        durationTicks: sourceCandidate.durationTicks,
       })}-unrepaired-final-repair-evidence`,
       sourceCandidate,
       input.writingProfile,
@@ -2447,8 +2734,10 @@ function continuationConstraintCandidateId(input: {
   state: FugueState;
   candidateBand: ContinuationCandidateSelectionBand;
   candidateIndex: number;
+  durationTicks?: number;
 }): string {
-  return `section-${input.startTick}-${input.state}-${input.candidateBand}-candidate-${input.candidateIndex}`;
+  const durationPart = input.durationTicks === undefined ? "" : `-duration-${input.durationTicks}`;
+  return `section-${input.startTick}-${input.state}-${input.candidateBand}${durationPart}-candidate-${input.candidateIndex}`;
 }
 
 function describeCandidateDiversity(candidate: Exposition): CandidateDiversityDescriptor {
@@ -2880,6 +3169,7 @@ function buildSectionCspSolverCandidates(
   return sourceCandidates.map((sourceCandidate, sourceCandidateIndex) => {
     const repaired = cloneExposition(sourceCandidate);
     addFunctionalThinningSupport(repaired.notes, repaired.sectionPlans);
+    addExposedFreeCounterpointSoloSupport(repaired.notes, repaired.sectionPlans);
     addPostEntryContinuationSupport(repaired.notes, repaired.subjectEntries, repaired.sectionPlans);
     shapeLongRestPhraseClosures(repaired.notes, repaired.sectionPlans);
     addBassAnswerTailTextureSupport(repaired.notes, repaired.subjectEntries, repaired.sectionPlans);

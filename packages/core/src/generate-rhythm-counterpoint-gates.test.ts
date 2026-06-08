@@ -5,7 +5,7 @@ import {
   REVIEW_LENGTH_TICKS,
   VOICE_INDEPENDENCE_DIAGNOSTICS_PROFILE,
 } from "./constants.js";
-import { generateScore } from "./generate.js";
+import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
 import { evaluateVoiceIndependenceGate } from "./review-gate.js";
 
 test("generateScore exposes rhythm and entry support diagnostics", () => {

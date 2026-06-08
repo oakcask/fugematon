@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { REVIEW_LENGTH_TICKS } from "./constants.js";
-import { generateScore } from "./generate.js";
+import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
 import { evaluateReviewGatePolicy } from "./review-gate.js";
 
 const PHRASE_DEVELOPMENT_FOCUSED_REVIEW_SEEDS = [

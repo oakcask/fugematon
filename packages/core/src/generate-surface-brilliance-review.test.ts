@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { REVIEW_LENGTH_TICKS } from "./constants.js";
-import { generateScore } from "./generate.js";
+import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
 
 test("surface brilliance separates kinetic modal color from fugue-smoke control", () => {
   const kineticModal = generateScore({ seed: "seed-19l7uit-1u226cc", lengthTicks: REVIEW_LENGTH_TICKS }).diagnostics

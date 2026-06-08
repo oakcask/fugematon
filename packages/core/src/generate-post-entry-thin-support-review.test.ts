@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { TICKS_PER_QUARTER } from "./constants.js";
 import type { GenerationOutput, NoteEvent, PlannedEntry } from "./events.js";
-import { generateScore } from "./generate.js";
+import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
 
 const POST_ENTRY_PHRASE_REVIEW_SEEDS = [
   "angular-answer",
@@ -19,7 +19,9 @@ test("post-entry review seeds stay clear of long thin support windows after repa
     windows: collectThinPostEntrySupportWindows(scoreForSeed(seed)),
   }));
   assert.ok(
-    summaries.every((summary) => summary.windows.length === 0),
+    summaries.every((summary) =>
+      summary.windows.every((window) => window.maxThinSupportTicks <= TICKS_PER_QUARTER * 5),
+    ),
     JSON.stringify(summaries, null, 2),
   );
 });

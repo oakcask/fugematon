@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import { REVIEW_LENGTH_TICKS } from "./constants.js";
-import { generateScore } from "./generate.js";
-import { requireOracleBlocker, summarizeContinuationPatterns } from "./generate-test-helpers.js";
+import {
+  cachedGenerateScore as generateScore,
+  requireOracleBlocker,
+  summarizeContinuationPatterns,
+} from "./generate-test-helpers.js";
 import { evaluateReviewGatePolicy } from "./review-gate.js";
 
 export function assertSectionHistoryPlannerBatch(seeds: readonly string[]): void {

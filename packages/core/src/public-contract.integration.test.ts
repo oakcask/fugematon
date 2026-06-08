@@ -192,18 +192,30 @@ test("public diagnostics expose finite candidate score dimensions", () => {
   assert.equal(typeof output.diagnostics.qualityVector.harmonicSonorities.focusedWindowCount, "number");
   assert.equal(typeof output.diagnostics.qualityVector.harmonicSonorities.generatorResponseWindowCount, "number");
   assert.ok(Array.isArray(output.diagnostics.qualityVector.harmonicSonorities.windows));
-  assert.equal(output.diagnostics.constraintSatisfactionReview.schemaVersion, 1);
+  assert.equal(output.diagnostics.constraintSatisfactionReview.schemaVersion, 2);
   assert.equal(typeof output.diagnostics.constraintSatisfactionReview.windowCount, "number");
   assert.equal(typeof output.diagnostics.constraintSatisfactionReview.intentionalRestSpanCount, "number");
   assert.equal(typeof output.diagnostics.constraintSatisfactionReview.unplannedSilentRunCount, "number");
   assert.equal(typeof output.diagnostics.constraintSatisfactionReview.maxUnplannedSilentRunTicks, "number");
   assert.equal(typeof output.diagnostics.constraintSatisfactionReview.solverCandidateCount, "number");
+  assert.equal(typeof output.diagnostics.constraintSatisfactionReview.metricalBoundaryCost, "number");
+  assert.equal(typeof output.diagnostics.constraintSatisfactionReview.offMeasurePhraseBoundaryCount, "number");
+  assert.equal(typeof output.diagnostics.constraintSatisfactionReview.offMeasureHarmonicAnchorCount, "number");
+  assert.equal(typeof output.diagnostics.constraintSatisfactionReview.offMeasureEntryStartCount, "number");
+  assert.equal(typeof output.diagnostics.constraintSatisfactionReview.unpreparedTransitionCount, "number");
+  assert.equal(typeof output.diagnostics.constraintSatisfactionReview.preparedPickupCount, "number");
   assert.ok(Array.isArray(output.diagnostics.constraintSatisfactionReview.windows));
   assert.ok(
     output.diagnostics.constraintSatisfactionReview.windows.every(
       (window) =>
         Number.isSafeInteger(window.startTick) &&
         Number.isSafeInteger(window.endTick) &&
+        typeof window.metricalBoundaryCost === "number" &&
+        typeof window.offMeasurePhraseBoundaryCount === "number" &&
+        typeof window.offMeasureHarmonicAnchorCount === "number" &&
+        typeof window.offMeasureEntryStartCount === "number" &&
+        typeof window.unpreparedTransitionCount === "number" &&
+        typeof window.preparedPickupCount === "number" &&
         Array.isArray(window.intentionalRestSpans) &&
         Array.isArray(window.unplannedSilentRuns) &&
         window.unplannedSilentRuns.every((run) => run.state === window.state && typeof run.reason === "string") &&

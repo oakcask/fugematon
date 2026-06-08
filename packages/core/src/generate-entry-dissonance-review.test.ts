@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { TICKS_PER_QUARTER } from "./constants.js";
-import { generateScore } from "./generate.js";
+import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
 
 const ENTRY_DISSONANCE_REVIEW_SEEDS = ["contrary-motion", "tight-stretto", "circle-fifths", "modal-cadence"] as const;
 

@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { REVIEW_LENGTH_TICKS, TICKS_PER_QUARTER } from "./constants.js";
-import { generateScore } from "./generate.js";
+import { REVIEW_LENGTH_TICKS } from "./constants.js";
 import {
   assertQualityVectorReviewPreconditions,
   QUALITY_VECTOR_REVIEW_SEEDS,
 } from "./generate-quality-review-test-helpers.js";
+import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
 
 test("generateScore keeps quality-vector review seed batch B1 ready for review-only diagnostics", () => {
   assertQualityVectorReviewPreconditions(QUALITY_VECTOR_REVIEW_SEEDS.slice(4, 6));
@@ -48,31 +48,18 @@ test("generateScore exposes quality vector diagnostics", () => {
   );
 });
 
-test("generateScore exposes harmonic sonority review windows for thin bass-answer tail support", () => {
+test("generateScore keeps thin bass-answer tail support review-visible", () => {
   const output = generateScore({
     seed: "fugue-smoke",
     lengthTicks: 7680,
     selectionModel: "section-local-planner",
   });
-  const barSevenStartTick = TICKS_PER_QUARTER * 24;
-  const barSevenEndTick = TICKS_PER_QUARTER * 28;
   const sonority = output.diagnostics.qualityVector.harmonicSonorities;
-  const barSevenWindows = sonority.windows.filter(
-    (window) => barSevenStartTick <= window.startTick && window.startTick < barSevenEndTick,
-  );
+  const bassTail = output.diagnostics.bassAnswerTailTexture;
 
-  assert.ok(sonority.generatorResponseWindowCount > 0);
-  assert.ok(
-    barSevenWindows.some(
-      (window) =>
-        window.classification === "non-chord-structural-support" &&
-        window.response === "generator-response-required" &&
-        window.structuralIntentMismatchCount > 0,
-    ),
-  );
-  assert.ok(
-    output.diagnostics.scoreWindowAcceptance.windows.some(
-      (window) => window.kind === "harmonic-sonority" && barSevenStartTick <= window.startTick,
-    ),
-  );
+  assert.equal(sonority.generatorResponseWindowCount, 0);
+  assert.equal(sonority.focusedWindowCount, 0);
+  assert.equal(bassTail.reviewRequired, true);
+  assert.ok(bassTail.zeroOutsideVoiceWindowCount > 0);
+  assert.ok(bassTail.windows.some((window) => window.classification === "review-required"));
 });

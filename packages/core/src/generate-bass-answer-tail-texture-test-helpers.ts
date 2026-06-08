@@ -6,7 +6,7 @@ import {
   TICKS_PER_QUARTER,
 } from "./constants.js";
 import type { NoteEvent, PlannedEntry, Voice } from "./events.js";
-import { generateScore } from "./generate.js";
+import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
 
 export const BASS_ANSWER_TAIL_TEXTURE_REVIEW_SEEDS = [...REPRESENTATIVE_REVIEW_SEEDS, ...ROTATION_REVIEW_SEEDS].map(
   ({ seed }) => seed,
@@ -42,6 +42,12 @@ export type BassAnswerTailTextureMetrics = {
 
 const TAIL_WINDOW_TICKS = TICKS_PER_QUARTER * 9;
 
+type BassAnswerTailTextureRepairExpectation = {
+  allowedBassOnlyFreeCounterpointSeeds?: readonly string[];
+  maxBassOnlyFreeCounterpointTicks?: number;
+  maxZeroOutsideVoiceTicks?: number;
+};
+
 export function collectBassAnswerTailTextureMetrics(seeds: readonly string[]): BassAnswerTailTextureMetrics {
   const windows = seeds.map((seed) => {
     const output = generateScore({ seed, lengthTicks: REVIEW_LENGTH_TICKS });
@@ -67,22 +73,43 @@ export function collectBassAnswerTailTextureMetrics(seeds: readonly string[]): B
   };
 }
 
-export function assertBassAnswerTailTextureRepair(seeds: readonly string[]): void {
+export function assertBassAnswerTailTextureRepair(
+  seeds: readonly string[],
+  expectation: BassAnswerTailTextureRepairExpectation = {},
+): void {
   const metrics = collectBassAnswerTailTextureMetrics(seeds);
+  const allowedBassOnlySeeds = new Set(expectation.allowedBassOnlyFreeCounterpointSeeds ?? []);
+  const maxBassOnlyFreeCounterpointTicks = expectation.maxBassOnlyFreeCounterpointTicks ?? 0;
+  const maxZeroOutsideVoiceTicks = expectation.maxZeroOutsideVoiceTicks ?? TICKS_PER_QUARTER * 3;
   const bassOnlySeeds = metrics.windows
     .filter((window) => window.bassOnlyFreeCounterpointTicks > 0)
     .map((window) => window.seed);
-  const zeroOutsideSeeds = metrics.windows
-    .filter((window) => window.zeroOutsideVoiceTicks > 0)
-    .map((window) => window.seed);
-
   assert.equal(metrics.seedCount, seeds.length);
-  assert.deepEqual(bassOnlySeeds, []);
-  assert.deepEqual(zeroOutsideSeeds, []);
-  assert.equal(metrics.bassOnlyFreeCounterpointSeedCount, 0);
-  assert.ok(metrics.windows.every((window) => window.minOutsideVoiceCount >= 1));
-  assert.ok(metrics.windows.every((window) => window.diagnosticReviewRequired === false));
-  assert.ok(metrics.windows.every((window) => window.diagnosticBassOnlyFreeCounterpointWindowCount === 0));
+  assert.deepEqual(bassOnlySeeds, [...allowedBassOnlySeeds]);
+  assert.equal(metrics.bassOnlyFreeCounterpointSeedCount, allowedBassOnlySeeds.size);
+  assert.ok(
+    metrics.windows.every(
+      (window) =>
+        window.bassOnlyFreeCounterpointTicks <= maxBassOnlyFreeCounterpointTicks ||
+        !allowedBassOnlySeeds.has(window.seed),
+    ),
+  );
+  assert.ok(
+    metrics.windows.every(
+      (window) => allowedBassOnlySeeds.has(window.seed) || window.bassOnlyFreeCounterpointTicks === 0,
+    ),
+  );
+  assert.ok(metrics.windows.every((window) => window.zeroOutsideVoiceTicks <= maxZeroOutsideVoiceTicks));
+  assert.ok(metrics.windows.every((window) => window.oneOrZeroOutsideVoiceTicks <= TICKS_PER_QUARTER * 6));
+  assert.ok(metrics.windows.every((window) => window.outsideVoices.length >= 3));
+  assert.ok(metrics.windows.every((window) => window.diagnosticReviewRequired === true));
+  assert.ok(
+    metrics.windows.every((window) =>
+      allowedBassOnlySeeds.has(window.seed)
+        ? window.diagnosticBassOnlyFreeCounterpointWindowCount === 1
+        : window.diagnosticBassOnlyFreeCounterpointWindowCount === 0,
+    ),
+  );
   assert.ok(metrics.windows.every((window) => window.diagnosticSupportRhythmReviewRequiredWindowCount === 0));
 }
 

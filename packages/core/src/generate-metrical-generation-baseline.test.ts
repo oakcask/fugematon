@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { TICKS_PER_QUARTER } from "./constants.js";
 import type { MetaEvent, NoteEvent, Voice } from "./events.js";
-import { generateScore } from "./generate.js";
+import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
 
 const FOCUSED_THREE_FOUR_SEEDS = ["seed-0kowcm6-0am7x3f", "seed-0zereox-1v729ih", "tight-stretto"] as const;
 const FOUR_FOUR_CONTROL_SEEDS = ["fugue-smoke", "bach-001", "contrary-motion"] as const;

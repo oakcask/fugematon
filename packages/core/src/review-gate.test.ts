@@ -6,7 +6,7 @@ import {
   REVIEW_LENGTH_TICKS,
 } from "./constants.js";
 import type { GenerationDiagnostics } from "./events.js";
-import { generateScore } from "./generate.js";
+import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
 import { evaluateContourMotionGate, evaluateReviewGatePolicy } from "./review-gate.js";
 
 test("review gate policy keeps hard constraints as failures", () => {

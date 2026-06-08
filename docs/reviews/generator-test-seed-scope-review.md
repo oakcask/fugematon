@@ -23,3 +23,10 @@
 ## Remaining Work
 
 * The slowest remaining generator test file is the terminal-closure review. It should be handled separately because it covers different continuous/endless-program behavior and longer terminal-coda generation.
+
+## Follow-up: Shared Test Generation Cache
+
+* The test runner now uses `node --test --test-isolation=none`, so source files in the same shard can share imported test helper modules instead of running each matched file in a separate test process.
+* Generator regression tests use a test-only `cachedGenerateScore()` helper for ordinary generated-score fixtures. The helper clones cached outputs before returning them, so caller mutation does not leak across tests.
+* Production `generateScore()` remains uncached. The generator API contract and the fugue-form CPU budget test keep direct calls so public behavior and throughput evidence are not hidden by the test cache.
+* CI / review scope: duplicated generated-score fixtures are `remove-or-archive` as repeated compute, not as separate musical evidence. The cache keeps existing seed coverage intact while reducing repeated generation cost. Musical breadth beyond focused CI remains `review-required` review-bundle work.

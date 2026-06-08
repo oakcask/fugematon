@@ -443,6 +443,12 @@ export type SectionConstraintSatisfactionWindow = {
   state: FugueState | "unplanned";
   minActiveVoices: number;
   maxActiveVoices: number;
+  metricalBoundaryCost: number;
+  offMeasurePhraseBoundaryCount: number;
+  offMeasureHarmonicAnchorCount: number;
+  offMeasureEntryStartCount: number;
+  unpreparedTransitionCount: number;
+  preparedPickupCount: number;
   intentionalRestSpans: SectionConstraintRestSpan[];
   unplannedSilentRuns: SectionConstraintSilentRun[];
   infeasibleConstraintCounts: SectionConstraintInfeasibleCounts;
@@ -451,13 +457,19 @@ export type SectionConstraintSatisfactionWindow = {
 };
 
 export type ConstraintSatisfactionReviewSummary = {
-  schemaVersion: 1;
+  schemaVersion: 2;
   windowCount: number;
   intentionalRestSpanCount: number;
   unplannedSilentRunCount: number;
   maxUnplannedSilentRunTicks: number;
   unsupportedSoloWindowCount: number;
   allVoiceSilenceWindowCount: number;
+  metricalBoundaryCost: number;
+  offMeasurePhraseBoundaryCount: number;
+  offMeasureHarmonicAnchorCount: number;
+  offMeasureEntryStartCount: number;
+  unpreparedTransitionCount: number;
+  preparedPickupCount: number;
   infeasibleConstraintCounts: SectionConstraintInfeasibleCounts;
   selectedRelaxationLevel: SectionConstraintRelaxationLevel;
   solverCandidateCount: number;

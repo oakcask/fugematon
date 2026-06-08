@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { TICKS_PER_QUARTER } from "./constants.js";
 import type { GenerationOutput, NoteEvent } from "./events.js";
-import { generateScore } from "./generate.js";
+import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
 
 const POST_ENTRY_PHRASE_REVIEW_SEEDS = [
   "angular-answer",
@@ -32,8 +32,8 @@ test("free-counterpoint review seeds keep repeated surface phrase signatures bel
     .filter((summary) => summary.seedCount === POST_ENTRY_PHRASE_REVIEW_SEEDS.length)
     .sort((left, right) => right.count - left.count);
 
-  assert.ok(repeatedSignatures.length >= 1, JSON.stringify(repeatedSignatures.slice(0, 10), null, 2));
-  assert.ok(repeatedSignatures[0]?.count !== undefined && repeatedSignatures[0].count <= 9);
+  assert.ok(signatureCounts.size > 0, JSON.stringify(repeatedSignatures.slice(0, 10), null, 2));
+  assert.ok((repeatedSignatures[0]?.count ?? 0) <= 9);
 });
 
 function scoreForSeed(seed: string): GenerationOutput {

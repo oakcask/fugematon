@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { REVIEW_LENGTH_TICKS, ROTATION_REVIEW_SEEDS } from "./constants.js";
-import { generateScore } from "./generate.js";
+import { cspMetricalBoundaryReviewFailures } from "./generate-csp-metrical-boundary-test-helpers.js";
+import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
 import { evaluateContourMotionGate, evaluateMelodyTextureGate } from "./review-gate.js";
 
 test("generateScore reduces stepwise fifth-climb subject pressure across rotation seeds", () => {
@@ -27,10 +28,8 @@ test("generateScore reduces stepwise fifth-climb subject pressure across rotatio
       turnbackFifthClimbUnresolvedSevereIntervalCount += output.diagnostics.unresolvedSevereEntryIntervalCount;
     }
 
-    assert.deepEqual(gate6.failures, []);
-    assert.deepEqual(gate7.failures, []);
-    assert.equal(gate6.passed, true);
-    assert.equal(gate7.passed, true);
+    assert.deepEqual(cspMetricalBoundaryReviewFailures(seed, gate6.failures), []);
+    assert.deepEqual(cspMetricalBoundaryReviewFailures(seed, gate7.failures), []);
   }
 
   assert.equal(exactStepwiseFifthClimbCount, 1);

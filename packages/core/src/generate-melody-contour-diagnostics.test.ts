@@ -1,8 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { MELODY_TEXTURE_DIAGNOSTICS_PROFILE, REVIEW_LENGTH_TICKS, TICKS_PER_QUARTER } from "./constants.js";
-import { generateScore } from "./generate.js";
-import { requireSelectedCandidateEvaluation, stepwisePatternRole } from "./generate-test-helpers.js";
+import {
+  cachedGenerateScore as generateScore,
+  requireSelectedCandidateEvaluation,
+  stepwisePatternRole,
+} from "./generate-test-helpers.js";
 import {
   compareDiagnosticsToReferenceProfile,
   normalizeDiagnosticsForReference,

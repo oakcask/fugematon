@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { REVIEW_LENGTH_TICKS, ROTATION_REVIEW_SEEDS } from "./constants.js";
-import { generateScore } from "./generate.js";
+import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
 
 const SUBJECT_FAMILY_DIVERSITY_ROTATION_SEEDS = ROTATION_REVIEW_SEEDS.slice(4).map(({ seed }) => seed);
 

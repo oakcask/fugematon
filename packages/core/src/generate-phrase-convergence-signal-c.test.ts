@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { REVIEW_LENGTH_TICKS } from "./constants.js";
-import { generateScore } from "./generate.js";
+import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
 
 const PHRASE_CONVERGENCE_FOCUSED_SEEDS = ["minor-entry", "sparse-cadence", "random-listen-check"] as const;
 

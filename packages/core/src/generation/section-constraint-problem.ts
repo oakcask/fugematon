@@ -14,6 +14,7 @@ import type {
   Voice,
 } from "../events.js";
 import { chordTonePitchClasses, rootDegreeForFunction } from "./harmony.js";
+import { beatStrengthAtTick, isCompoundMidpoint, isMeasureDownbeat, previousMeasureDownbeat } from "./meter.js";
 import { scaleDegreePitchClass } from "./pitch.js";
 import { positiveModulo, roundRatio } from "./shared.js";
 
@@ -130,12 +131,18 @@ export function evaluateSectionConstraintProblem(input: {
   problem: SectionConstraintProblem;
   notes: readonly NoteEvent[];
   sectionPlan: HarmonicPlan;
+  subjectEntries?: readonly PlannedEntry[];
 }): SectionConstraintSatisfactionWindow {
   const gridTicks = inferGridTicks(input.problem);
   const infeasibleConstraintCounts = emptyInfeasibleCounts();
   const intentionalRestSpans = mergeIntentionalRestSpans(input.problem.slots, input.sectionPlan.state);
   const unplannedSilentRuns = mergeSilentRuns(input.problem.slots, input.sectionPlan.state);
   const slotTicks = uniqueSlotStartTicks(input.problem.slots);
+  const metricalBoundary = evaluateMetricalBoundary({
+    notes: input.notes,
+    sectionPlan: input.sectionPlan,
+    subjectEntries: input.subjectEntries ?? [],
+  });
   let minActiveVoices = Number.POSITIVE_INFINITY;
   let maxActiveVoices = 0;
 
@@ -207,6 +214,12 @@ export function evaluateSectionConstraintProblem(input: {
     state: input.problem.window.state,
     minActiveVoices: Number.isFinite(minActiveVoices) ? minActiveVoices : 0,
     maxActiveVoices,
+    metricalBoundaryCost: metricalBoundary.cost,
+    offMeasurePhraseBoundaryCount: metricalBoundary.offMeasurePhraseBoundaryCount,
+    offMeasureHarmonicAnchorCount: metricalBoundary.offMeasureHarmonicAnchorCount,
+    offMeasureEntryStartCount: metricalBoundary.offMeasureEntryStartCount,
+    unpreparedTransitionCount: metricalBoundary.unpreparedTransitionCount,
+    preparedPickupCount: metricalBoundary.preparedPickupCount,
     intentionalRestSpans,
     unplannedSilentRuns,
     infeasibleConstraintCounts,
@@ -232,6 +245,7 @@ export function buildConstraintSatisfactionReview(input: {
         problem,
         notes: input.notes,
         sectionPlan,
+        subjectEntries: input.subjectEntries,
       });
     });
   const infeasibleConstraintCounts = sumInfeasibleCounts(windows.map((window) => window.infeasibleConstraintCounts));
@@ -242,18 +256,174 @@ export function buildConstraintSatisfactionReview(input: {
   );
 
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     windowCount: windows.length,
     intentionalRestSpanCount: windows.reduce((sum, window) => sum + window.intentionalRestSpans.length, 0),
     unplannedSilentRunCount: unplannedSilentRuns.length,
     maxUnplannedSilentRunTicks: Math.max(0, ...unplannedSilentRuns.map((run) => run.durationTicks)),
     unsupportedSoloWindowCount: infeasibleConstraintCounts.unsupportedSolo,
     allVoiceSilenceWindowCount: infeasibleConstraintCounts.allVoiceSilence,
+    metricalBoundaryCost: windows.reduce((sum, window) => sum + window.metricalBoundaryCost, 0),
+    offMeasurePhraseBoundaryCount: windows.reduce((sum, window) => sum + window.offMeasurePhraseBoundaryCount, 0),
+    offMeasureHarmonicAnchorCount: windows.reduce((sum, window) => sum + window.offMeasureHarmonicAnchorCount, 0),
+    offMeasureEntryStartCount: windows.reduce((sum, window) => sum + window.offMeasureEntryStartCount, 0),
+    unpreparedTransitionCount: windows.reduce((sum, window) => sum + window.unpreparedTransitionCount, 0),
+    preparedPickupCount: windows.reduce((sum, window) => sum + window.preparedPickupCount, 0),
     infeasibleConstraintCounts,
     selectedRelaxationLevel,
     solverCandidateCount: windows.reduce((sum, window) => sum + window.solverCandidateCount, 0),
     windows,
   };
+}
+
+function evaluateMetricalBoundary(input: {
+  notes: readonly NoteEvent[];
+  sectionPlan: HarmonicPlan;
+  subjectEntries: readonly PlannedEntry[];
+}): {
+  cost: number;
+  offMeasurePhraseBoundaryCount: number;
+  offMeasureHarmonicAnchorCount: number;
+  offMeasureEntryStartCount: number;
+  unpreparedTransitionCount: number;
+  preparedPickupCount: number;
+} {
+  const startTick = input.sectionPlan.startTick;
+  const endTick = input.sectionPlan.startTick + input.sectionPlan.durationTicks;
+  const meterContext = input.sectionPlan.meterContext;
+  const offMeasure = !isMeasureDownbeat(startTick, meterContext);
+  const endOffMeasure = !isMeasureDownbeat(endTick, meterContext);
+  const hasEntryStart = input.subjectEntries.some(
+    (entry) => entry.startTick === startTick && entry.state === input.sectionPlan.state,
+  );
+  const hasHarmonicAnchor = input.sectionPlan.anchors.some(
+    (anchor) => anchor.tick === startTick && !anchor.cadenceTarget,
+  );
+  const boundaryKindCount = 1 + (hasEntryStart ? 1 : 0) + (hasHarmonicAnchor ? 1 : 0);
+
+  if (!offMeasure) {
+    const endBoundary = evaluatePhraseBoundaryAtTick(input.notes, input.sectionPlan, endTick);
+    return {
+      cost: endBoundary.cost,
+      offMeasurePhraseBoundaryCount: endOffMeasure ? 1 : 0,
+      offMeasureHarmonicAnchorCount: 0,
+      offMeasureEntryStartCount: 0,
+      unpreparedTransitionCount: endBoundary.unprepared ? 1 : 0,
+      preparedPickupCount: endBoundary.prepared ? 1 : 0,
+    };
+  }
+
+  const endBoundary = evaluatePhraseBoundaryAtTick(input.notes, input.sectionPlan, endTick);
+  if (isCompoundMidpoint(startTick, meterContext)) {
+    return {
+      cost: 1 + endBoundary.cost,
+      offMeasurePhraseBoundaryCount: 1 + (endOffMeasure ? 1 : 0),
+      offMeasureHarmonicAnchorCount: hasHarmonicAnchor ? 1 : 0,
+      offMeasureEntryStartCount: hasEntryStart ? 1 : 0,
+      unpreparedTransitionCount: endBoundary.unprepared ? 1 : 0,
+      preparedPickupCount: endBoundary.prepared ? 1 : 0,
+    };
+  }
+
+  if (hasPreparedBoundarySupport(input.notes, input.sectionPlan)) {
+    return {
+      cost: 2 + endBoundary.cost,
+      offMeasurePhraseBoundaryCount: 1 + (endOffMeasure ? 1 : 0),
+      offMeasureHarmonicAnchorCount: hasHarmonicAnchor ? 1 : 0,
+      offMeasureEntryStartCount: hasEntryStart ? 1 : 0,
+      unpreparedTransitionCount: endBoundary.unprepared ? 1 : 0,
+      preparedPickupCount: 1 + (endBoundary.prepared ? 1 : 0),
+    };
+  }
+
+  const baseCost = beatStrengthAtTick(startTick, meterContext) === "offbeat" ? 24 : 14;
+  const convergenceCost = boundaryKindCount >= 3 ? 10 : 0;
+  return {
+    cost: baseCost + convergenceCost + endBoundary.cost,
+    offMeasurePhraseBoundaryCount: 1 + (endOffMeasure ? 1 : 0),
+    offMeasureHarmonicAnchorCount: hasHarmonicAnchor ? 1 : 0,
+    offMeasureEntryStartCount: hasEntryStart ? 1 : 0,
+    unpreparedTransitionCount: 1 + (endBoundary.unprepared ? 1 : 0),
+    preparedPickupCount: endBoundary.prepared ? 1 : 0,
+  };
+}
+
+function evaluatePhraseBoundaryAtTick(
+  notes: readonly NoteEvent[],
+  sectionPlan: HarmonicPlan,
+  tick: number,
+): { cost: number; prepared: boolean; unprepared: boolean } {
+  if (isMeasureDownbeat(tick, sectionPlan.meterContext)) {
+    return { cost: 0, prepared: false, unprepared: false };
+  }
+  if (isCompoundMidpoint(tick, sectionPlan.meterContext)) {
+    return { cost: 1, prepared: false, unprepared: false };
+  }
+  const boundaryPlan = { ...sectionPlan, startTick: tick };
+  if (hasPreparedBoundarySupport(notes, boundaryPlan)) {
+    return { cost: 2, prepared: true, unprepared: false };
+  }
+  return {
+    cost: beatStrengthAtTick(tick, sectionPlan.meterContext) === "offbeat" ? 24 : 14,
+    prepared: false,
+    unprepared: true,
+  };
+}
+
+function hasPreparedBoundarySupport(notes: readonly NoteEvent[], sectionPlan: HarmonicPlan): boolean {
+  const startTick = sectionPlan.startTick;
+  const measureStartTick = previousMeasureDownbeat(startTick, sectionPlan.meterContext);
+  const measureEndTick = measureStartTick + sectionPlan.meterContext.measureTicks;
+  const nextDownbeatTick = measureEndTick;
+  const heldSupportVoices = notes.filter(
+    (note) => note.startTick < startTick && startTick < note.startTick + note.durationTicks,
+  );
+  const sustainedPickupVoices = notes.filter(
+    (note) => note.startTick === startTick && note.startTick + note.durationTicks > nextDownbeatTick,
+  );
+
+  return (
+    heldSupportVoices.length > 0 ||
+    heldSupportVoices.some((note) => note.metricalHarmonyIntent === "strong-non-chord-tone") ||
+    sustainedPickupVoices.length >= 2 ||
+    hasCadentialBoundarySupport(sectionPlan) ||
+    hasDirectedBoundaryContour(notes, sectionPlan, measureStartTick, measureEndTick)
+  );
+}
+
+function hasCadentialBoundarySupport(sectionPlan: HarmonicPlan): boolean {
+  return sectionPlan.anchors.some(
+    (anchor) =>
+      anchor.cadenceTarget &&
+      anchor.tick < sectionPlan.startTick &&
+      sectionPlan.startTick - anchor.tick <= sectionPlan.meterContext.strongBeatIntervalTicks,
+  );
+}
+
+function hasDirectedBoundaryContour(
+  notes: readonly NoteEvent[],
+  sectionPlan: HarmonicPlan,
+  measureStartTick: number,
+  measureEndTick: number,
+): boolean {
+  return [...new Set(notes.map((note) => note.voice))].some((voice) => {
+    const attacks = notes
+      .filter(
+        (note) =>
+          note.voice === voice &&
+          measureStartTick <= note.startTick &&
+          note.startTick < measureEndTick &&
+          note.startTick <= sectionPlan.startTick,
+      )
+      .sort((left, right) => left.startTick - right.startTick || left.pitch - right.pitch);
+    const last = attacks.at(-1);
+    const previous = attacks.at(-2);
+    if (last === undefined || previous === undefined || last.startTick !== sectionPlan.startTick) {
+      return false;
+    }
+    const interval = Math.abs(last.pitch - previous.pitch);
+    return interval > 0 && interval <= 5;
+  });
 }
 
 function activeNoteAt(notes: readonly NoteEvent[], voice: Voice, tick: number): NoteEvent | undefined {

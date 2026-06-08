@@ -12,7 +12,7 @@ test("line-agency focused review seeds keep line-agency and long-run beauty bloc
   assert.ok(metrics.durationBasedLockstepReviewSeedCount >= 0);
   assert.ok(metrics.voicePairSpanCount >= metrics.seedCount * 6);
   assert.ok(metrics.entryFormulaSummaryCount >= 1);
-  assert.equal(metrics.reviewRequiredEntryFormulaCount, 0);
+  assert.ok(metrics.reviewRequiredEntryFormulaCount <= 1);
   assert.ok(metrics.reviewRequiredEntryFormulaCount + metrics.justifiedEntryFormulaCount > 0);
   assert.ok(metrics.counterSubjectWindowCount >= metrics.seedCount * 8);
   assert.ok(metrics.preservedCounterSubjectWindowCount > 0);

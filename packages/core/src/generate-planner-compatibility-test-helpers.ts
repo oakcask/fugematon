@@ -1,8 +1,11 @@
 import assert from "node:assert/strict";
 import { REVIEW_LENGTH_TICKS } from "./constants.js";
 import type { SelectionModel } from "./events.js";
-import { generateScore } from "./generate.js";
-import { assertCandidatePoolOracleShape, requireSelectedCandidateEvaluation } from "./generate-test-helpers.js";
+import {
+  assertCandidatePoolOracleShape,
+  cachedGenerateScore as generateScore,
+  requireSelectedCandidateEvaluation,
+} from "./generate-test-helpers.js";
 import {
   compareDiagnosticsToReferenceProfile,
   REFERENCE_DIAGNOSTICS_PROFILE,

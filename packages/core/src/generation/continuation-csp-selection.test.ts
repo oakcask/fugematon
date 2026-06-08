@@ -5,7 +5,22 @@ import type { ConstraintHardFailureCode } from "../events.js";
 import { generateScore } from "../generate.js";
 import { resolveWritingProfile } from "../writing-profile.js";
 import type { ConstraintCandidate } from "./constraint-core.js";
-import { chooseSectionCspBacktrackingCandidateIndex } from "./sections.js";
+import { chooseSectionCspBacktrackingCandidateIndex, continuationSectionDurationCandidates } from "./sections.js";
+
+test("duration candidates prefer measure-aligned values before relaxed cross-metric values", () => {
+  assert.deepEqual(
+    continuationSectionDurationCandidates("episode").map((durationTicks) => durationTicks / TICKS_PER_QUARTER),
+    [8, 12, 6, 10],
+  );
+  assert.deepEqual(
+    continuationSectionDurationCandidates("subject-return").map((durationTicks) => durationTicks / TICKS_PER_QUARTER),
+    [8, 12, 7, 9],
+  );
+  assert.deepEqual(
+    continuationSectionDurationCandidates("stretto-like").map((durationTicks) => durationTicks / TICKS_PER_QUARTER),
+    [8, 12, 6, 7, 9, 10],
+  );
+});
 
 test("section CSP backtracking prefers a feasible continuation variant over coverage failures", () => {
   const selectedIndex = chooseSectionCspBacktrackingCandidateIndex({
@@ -53,6 +68,20 @@ test("section CSP backtracking chooses deterministic relaxation when every candi
   assert.equal(selectedIndex, 3);
 });
 
+test("section CSP backtracking chooses lower metrical soft cost when hard failures are tied", () => {
+  const selectedIndex = chooseSectionCspBacktrackingCandidateIndex({
+    currentBestIndex: 0,
+    candidateIndexes: [0, 1],
+    constraintCandidates: [
+      constraintCandidate("section-960-episode-section-csp-duration-2880-candidate-0", [], 24),
+      constraintCandidate("section-960-episode-section-csp-duration-3840-candidate-1", [], 0),
+    ],
+    candidateScores: [0, 0],
+  });
+
+  assert.equal(selectedIndex, 1);
+});
+
 test("generated continuation exposes section-CSP candidate rows without public rest events", () => {
   const output = generateScore({
     seed: "fugue-smoke",
@@ -60,11 +89,18 @@ test("generated continuation exposes section-CSP candidate rows without public r
   });
   const traceCandidates = output.diagnostics.generatorSearchTrace.candidates;
 
-  assert.ok(traceCandidates.some((candidate) => candidate.candidateId.includes("-section-csp-candidate-")));
+  assert.ok(traceCandidates.some((candidate) => candidate.candidateId.includes("-section-csp-duration-")));
   assert.ok(
     traceCandidates.some(
       (candidate) =>
-        candidate.candidateId.includes("-section-csp-candidate-") && candidate.reason.includes("section-csp-"),
+        candidate.candidateId.includes("-section-csp-duration-") && candidate.reason.includes("section-csp-"),
+    ),
+  );
+  assert.ok(
+    traceCandidates.some(
+      (candidate) =>
+        candidate.candidateId.includes("-section-csp-duration-") &&
+        candidate.reason.includes("section-csp-metrical-boundary"),
     ),
   );
   assert.ok(

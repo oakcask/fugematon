@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { REVIEW_LENGTH_TICKS } from "./constants.js";
 import type { NoteEvent } from "./events.js";
-import { generateScore } from "./generate.js";
+import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
 
 export function assertBassEntrySupportSeeds(seeds: readonly string[]) {
   for (const seed of seeds) {

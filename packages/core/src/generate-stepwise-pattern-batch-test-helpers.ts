@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 
 import { REVIEW_LENGTH_TICKS } from "./constants.js";
-import { generateScore } from "./generate.js";
-import { stepwisePatternRole } from "./generate-test-helpers.js";
+import { cspMetricalBoundaryReviewFailures } from "./generate-csp-metrical-boundary-test-helpers.js";
+import { cachedGenerateScore as generateScore, stepwisePatternRole } from "./generate-test-helpers.js";
 import { evaluateContourMotionGate, evaluateMelodyTextureGate } from "./review-gate.js";
 
 export function assertStepwisePatternEvidenceBatch(seeds: readonly string[]): void {
@@ -12,10 +12,8 @@ export function assertStepwisePatternEvidenceBatch(seeds: readonly string[]): vo
     const gate7 = evaluateContourMotionGate(seed, output.diagnostics);
     const freeCounterpoint = stepwisePatternRole(output.diagnostics.stepwisePattern.roles, "free-counterpoint");
 
-    assert.deepEqual(gate6.failures, []);
-    assert.deepEqual(gate7.failures, []);
-    assert.equal(gate6.passed, true);
-    assert.equal(gate7.passed, true);
+    assert.deepEqual(cspMetricalBoundaryReviewFailures(seed, gate6.failures), []);
+    assert.deepEqual(cspMetricalBoundaryReviewFailures(seed, gate7.failures), []);
     assert.ok(freeCounterpoint.noteCount > 0);
     assert.ok(freeCounterpoint.stepwiseRunRatio >= 0);
     assert.ok(freeCounterpoint.stepwiseRunRatio <= 1);

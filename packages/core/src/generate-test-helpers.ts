@@ -2,12 +2,54 @@ import assert from "node:assert/strict";
 import { TICKS_PER_QUARTER } from "./constants.js";
 import type {
   CandidatePoolOracleBlocker,
+  GenerationInput,
+  GenerationOutput,
   MetaEvent,
   NoteRole,
   ScoreEvent,
   StepwisePatternRoleSummary,
 } from "./events.js";
-import type { generateScore } from "./generate.js";
+import { generateScore as generateScoreUncached } from "./generate.js";
+
+const MAX_CACHED_GENERATION_OUTPUTS = 128;
+const cachedGenerationOutputs = new Map<string, GenerationOutput>();
+
+export function cachedGenerateScore(input: GenerationInput): GenerationOutput {
+  const cacheKey = generationCacheKey(input);
+  const cached = cachedGenerationOutputs.get(cacheKey);
+  if (cached !== undefined) {
+    cachedGenerationOutputs.delete(cacheKey);
+    cachedGenerationOutputs.set(cacheKey, cached);
+    return cloneGenerationOutput(cached);
+  }
+
+  const output = generateScoreUncached(input);
+  cachedGenerationOutputs.set(cacheKey, cloneGenerationOutput(output));
+  if (cachedGenerationOutputs.size > MAX_CACHED_GENERATION_OUTPUTS) {
+    const oldestKey = cachedGenerationOutputs.keys().next().value;
+    if (oldestKey !== undefined) {
+      cachedGenerationOutputs.delete(oldestKey);
+    }
+  }
+
+  return output;
+}
+
+function generationCacheKey(input: GenerationInput): string {
+  return JSON.stringify([
+    input.seed,
+    input.lengthTicks,
+    input.writingProfileId,
+    input.segmentIndex,
+    input.selectionModel,
+    input.mode,
+    input.previousSegmentSnapshot,
+  ]);
+}
+
+function cloneGenerationOutput(output: GenerationOutput): GenerationOutput {
+  return structuredClone(output);
+}
 
 export function countIssues(issues: readonly { code: string }[], code: string): number {
   return issues.filter((issue) => issue.code === code).length;
@@ -49,7 +91,7 @@ export function positiveModulo(value: number, divisor: number): number {
 }
 
 export function requireSelectedCandidateEvaluation(
-  selectedCandidateEvaluations: ReturnType<typeof generateScore>["diagnostics"]["selectedCandidateEvaluations"],
+  selectedCandidateEvaluations: GenerationOutput["diagnostics"]["selectedCandidateEvaluations"],
 ) {
   const selectedEvaluation = selectedCandidateEvaluations[0];
 
@@ -64,9 +106,7 @@ export function requireSelectedCandidateEvaluation(
   return selectedEvaluation;
 }
 
-export function assertCandidatePoolOracleShape(
-  oracle: ReturnType<typeof generateScore>["diagnostics"]["candidatePoolOracle"],
-) {
+export function assertCandidatePoolOracleShape(oracle: GenerationOutput["diagnostics"]["candidatePoolOracle"]) {
   assert.equal(oracle.schemaVersion, 5);
   assert.ok(oracle.sectionCount > 0);
   assert.ok(oracle.candidateCount >= oracle.sectionCount);
@@ -109,7 +149,7 @@ export function assertCandidatePoolOracleShape(
 }
 
 export function requireOracleBlocker(
-  oracle: ReturnType<typeof generateScore>["diagnostics"]["candidatePoolOracle"],
+  oracle: GenerationOutput["diagnostics"]["candidatePoolOracle"],
   blocker: CandidatePoolOracleBlocker,
 ) {
   const summary = oracle.blockerClassifications.find((candidate) => candidate.blocker === blocker);

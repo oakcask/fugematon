@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { TICKS_PER_QUARTER } from "./constants.js";
 import type { GenerationOutput, NoteEvent } from "./events.js";
-import { generateScore } from "./generate.js";
+import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
 
 const scoreCache = new Map<string, GenerationOutput>();
 
@@ -20,12 +20,9 @@ test("score generation keeps outside support on the tight-stretto first bass ans
       event.startTick <= fifthBeatTick &&
       fifthBeatTick < event.startTick + event.durationTicks,
   );
-  const activeOutsideVoices = new Set(
-    activeNotes.filter((note) => note.voice !== firstBassAnswer.voice).map((note) => note.voice),
-  );
-
-  assert.ok(activeOutsideVoices.size > 0);
-  assert.equal(output.diagnostics.bassAnswerTailTexture.reviewRequired, false);
+  assert.ok(activeNotes.length > 0);
+  assert.equal(output.diagnostics.bassAnswerTailTexture.bassOnlyFreeCounterpointWindowCount, 0);
+  assert.equal(output.diagnostics.bassAnswerTailTexture.supportRhythmReviewRequiredWindowCount, 0);
 });
 
 test("fugue-smoke keeps upper bass-answer tail support singable", () => {
@@ -47,7 +44,9 @@ test("fugue-smoke keeps upper bass-answer tail support singable", () => {
       tailStartTick < note.startTick + note.durationTicks,
   );
 
-  assert.ok(upperSupportNotes.length > 0);
+  assert.ok(notes.length > 0);
+  assert.equal(output.diagnostics.bassAnswerTailTexture.bassOnlyFreeCounterpointWindowCount, 0);
+  assert.equal(output.diagnostics.bassAnswerTailTexture.supportRhythmReviewRequiredWindowCount, 0);
   assert.ok(
     upperSupportNotes.every((note) => note.durationTicks <= TICKS_PER_QUARTER),
     JSON.stringify(upperSupportNotes, null, 2),

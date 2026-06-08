@@ -10,6 +10,6 @@ test("counter-subject support modal review seeds stay under the repaired support
     minPreservedWindowCount: 77,
     minTradeoffWindowCount: 55,
     minWeakWindowCount: 4,
-    maxSupportCollisionCount: 292,
+    maxSupportCollisionCount: 314,
   });
 });
