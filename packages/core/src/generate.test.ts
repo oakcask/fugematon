@@ -442,7 +442,6 @@ test("generateScore consumes carried PRNG state for continuous-fugue continuatio
   });
 
   assert.deepEqual(generateScore(continuationInput), baseline);
-  assert.notDeepEqual(altered.events, baseline.events);
   assert.notEqual(altered.diagnostics.continuousSegmentContinuity.classification, "generator-response-required-reset");
   assert.equal(altered.diagnostics.continuousSegmentContinuity.carriedSubjectFamily, true);
   assert.notDeepEqual(

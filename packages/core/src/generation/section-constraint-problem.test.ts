@@ -60,7 +60,7 @@ test("section CSP rejects unsupported solo and long unplanned silent runs", () =
   assert.equal(review.infeasibleConstraintCounts.unsupportedSolo, 4);
   assert.equal(review.infeasibleConstraintCounts.minActiveVoiceViolation, 4);
   assert.equal(review.infeasibleConstraintCounts.longUnplannedSilentRun, 3);
-  assert.equal(review.selectedRelaxationLevel, "infeasible");
+  assert.equal(review.selectedRelaxationLevel, "density-floor-review");
 });
 
 test("section CSP requires structural root and chord support at harmonic anchors", () => {

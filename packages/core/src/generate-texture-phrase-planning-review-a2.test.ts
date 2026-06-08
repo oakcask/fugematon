@@ -11,5 +11,6 @@ test("generateScore applies texture and phrase-unit planning across review seeds
     sharedRhythmOverlapDelta: 272,
     leapRecoveryMissDelta: 70,
     bassRootSupportDelta: -2,
+    counterSubjectIdentityRetentionDelta: 0.69,
   });
 });

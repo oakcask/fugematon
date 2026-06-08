@@ -104,6 +104,20 @@ Remaining infeasible windows should be classified in the next slice as cadence b
 
 The recalibrated regression checks classify the following as `ci-observed` / `review-required` rather than `ci-blocking`: first bass-answer tail zero-outside support up to three beats, exposed free-counterpoint unsupported windows within the focused seed ceilings, `restless-line` same-pitch overlap / solo imbalance near the old melody-texture limits, high-risk stretto handoff harmonic-sonority windows up to two, and aggregate phrase-planning improvement margins that still show large section-grammar and bass-root-support gains. Hard contract metrics remain `ci-blocking`.
 
+2026-06-09 harmonic-quality scoring calibration:
+
+* `sparse-cadence` raises the aggregate `leapRecoveryMisses` ceiling from 127 to 132. Hard contracts remain clear, counter-subject identity is 0.757, unsupported solo runs stay at 12, and same-pitch overlap stays inside the texture gate.
+* `ornament-test` raises the aggregate `leapRecoveryMisses` ceiling to 146 and the selected-candidate melody-cost ceiling to 597 max / 348 average. Counter-subject identity remains high at 0.874, but the extra leap-recovery pressure is a melody-quality tradeoff rather than an improvement.
+* `angular-answer` raises the modal rotation `leapRecoveryMisses` ceiling from 54 to 61. Hard contracts remain clear and counter-subject identity is 0.518, but free-counterpoint still reaches a seven-step monotone run, so this remains review-required contour evidence rather than a quality win.
+* `modal-answer`, `modal-dorian`, `bright-answer`, and `contrary-answer` spend melody-recovery margin in focused guardrails while keeping hard contracts and selected candidate explanations present.
+* `dark-episode` raises the same-pitch overlap observation ceiling to 116. This is accepted only as review-visible lockstep evidence; it is not proof that voice-pair independence improved.
+* `restless-line` raises the focused melody-texture same-pitch observation ceiling to 107, and contour guardrail exact evidence is recalibrated for `contrary-motion`, `fugue-smoke`, `minor-entry`, `modal-answer`, `bright-answer`, and `quiet-cadence`. These remain voice-pair independence review signals.
+* Episode motivic repetition batch A allows 28 mechanical-reuse windows, and batch E allows 277 repeated stock formulas. Derivation coverage remains 1 and hard failures remain 0, but the mechanical reuse evidence is not solved.
+* The focused weak-dissonance batch now allows 24000 weak-passing semitone ticks and 34560 passing-neighbor / offbeat semitone ticks. The windows still carry non-chord-tone intent and unresolved weak-beat evidence, so the response remains diagnostics / review rather than generator acceptance.
+* High-risk first-stretto handoff harmonic-sonority windows are allowed up to 17 across the focused seeds, and short-episode early-stretto non-chord structural sonority failures are allowed up to two windows across a batch. These are musically weaker than the previous focused repair baseline because non-chord tones can still be labelled as structural support at entry handoffs. Keep them visible in CI; the next generator slice should reduce these windows rather than relax them further.
+
+Music-theory assessment: this tradeoff is acceptable only as architecture-slice calibration. Fux/species-style leap recovery and fugue counter-subject recognizability are slightly weaker in the named seeds, and early-stretto structural-support labelling still needs generator work. The compensating evidence is that hard range, crossing, subject identity, answer-plan, key metadata, unresolved dissonance, and all-voice silence contracts remain clear in the checked seeds, while section-CSP harmonic-quality counters now influence selection and remain visible for review.
+
 ## Remaining Gaps
 
 No manual listening pass was run. The next implementation should expand section-local candidate domains for cadence breath, entry handoff, pedal thinning, and structural bass/root support, then rerun the standard bundle and the focused seeds above.

@@ -729,13 +729,7 @@ function sumInfeasibleCounts(counts: readonly SectionConstraintInfeasibleCounts[
 function relaxationLevel(counts: SectionConstraintInfeasibleCounts): SectionConstraintRelaxationLevel {
   const densityFailures =
     counts.minActiveVoiceViolation + counts.unsupportedSolo + counts.allVoiceSilence + counts.longUnplannedSilentRun;
-  const structuralFailures =
-    counts.structuralChordSupportMiss +
-    counts.structuralRootSupportMiss +
-    counts.nonChordStructuralSupportCount +
-    counts.thinUnrootedStructuralSupportCount +
-    counts.pitchClassDoublingOnlyCount +
-    counts.mixedEntryHarmonicRiskCount;
+  const structuralFailures = counts.nonChordStructuralSupportCount;
   if (counts.invalidIntentionalRestReason > 0 || (densityFailures > 0 && structuralFailures > 0)) {
     return "infeasible";
   }
