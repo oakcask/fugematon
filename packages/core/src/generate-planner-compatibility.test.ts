@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { REVIEW_LENGTH_TICKS } from "./constants.js";
-import { generateScore } from "./generate.js";
 import { assertPlannerCompletionCompatibility } from "./generate-planner-compatibility-test-helpers.js";
+import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
 import { evaluateMelodyTextureGate } from "./review-gate.js";
 
 test("generateScore can compare the candidate-oracle selection model against baseline", () => {

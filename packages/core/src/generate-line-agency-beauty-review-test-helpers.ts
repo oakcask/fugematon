@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { REPRESENTATIVE_REVIEW_SEEDS, ROTATION_REVIEW_SEEDS, TICKS_PER_QUARTER } from "./constants.js";
-import { generateScore } from "./generate.js";
+import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
 import { evaluateReviewGatePolicy } from "./review-gate.js";
 
 export const LINE_AGENCY_REVIEW_SEEDS = [...REPRESENTATIVE_REVIEW_SEEDS, ...ROTATION_REVIEW_SEEDS].map(

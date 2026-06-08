@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { TICKS_PER_QUARTER } from "./constants.js";
-import { generateScore } from "./generate.js";
+import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
 
 const FOCUSED_LENGTH_TICKS = TICKS_PER_QUARTER * 64;
 const HIGH_RISK_SEEDS = ["long-arc", "dark-episode", "ornament-test", "bach-001"] as const;

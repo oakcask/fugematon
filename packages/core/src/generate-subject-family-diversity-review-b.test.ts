@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { REPRESENTATIVE_REVIEW_SEEDS, REVIEW_LENGTH_TICKS } from "./constants.js";
-import { generateScore } from "./generate.js";
+import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
 
 const SUBJECT_FAMILY_DIVERSITY_REVIEW_SEEDS = REPRESENTATIVE_REVIEW_SEEDS.slice(7, 11).map(({ seed }) => seed);
 

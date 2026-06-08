@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { REVIEW_LENGTH_TICKS } from "./constants.js";
 import type { CandidatePoolOracleBlocker } from "./events.js";
-import { generateScore } from "./generate.js";
+import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
 import { evaluateReviewGatePolicy } from "./review-gate.js";
 
 export function assertCandidateDiversityAdoptionSeedsReady(seeds: readonly string[]): void {

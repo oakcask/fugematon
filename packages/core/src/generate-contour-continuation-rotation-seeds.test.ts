@@ -1,8 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { REVIEW_LENGTH_TICKS, ROTATION_REVIEW_SEEDS } from "./constants.js";
-import { generateScore } from "./generate.js";
-import { summarizeContinuationPatterns } from "./generate-test-helpers.js";
+import { cachedGenerateScore as generateScore, summarizeContinuationPatterns } from "./generate-test-helpers.js";
 import { evaluateContourMotionGate, evaluateMelodyTextureGate } from "./review-gate.js";
 
 test("generateScore rotates rotation-seed long-run continuation patterns without gate regressions", () => {

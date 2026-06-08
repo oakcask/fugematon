@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { REVIEW_LENGTH_TICKS, TICKS_PER_QUARTER } from "./constants.js";
-import { generateScore } from "./generate.js";
 import {
   assertQualityVectorReviewPreconditions,
   QUALITY_VECTOR_REVIEW_SEEDS,
 } from "./generate-quality-review-test-helpers.js";
+import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
 
 test("generateScore keeps quality-vector review seed batch B1 ready for review-only diagnostics", () => {
   assertQualityVectorReviewPreconditions(QUALITY_VECTOR_REVIEW_SEEDS.slice(4, 6));

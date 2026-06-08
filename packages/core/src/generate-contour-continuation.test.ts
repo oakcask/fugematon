@@ -1,8 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { REVIEW_LENGTH_TICKS } from "./constants.js";
-import { generateScore } from "./generate.js";
-import { requireSelectedCandidateEvaluation, stepwisePatternRole } from "./generate-test-helpers.js";
+import {
+  cachedGenerateScore as generateScore,
+  requireSelectedCandidateEvaluation,
+  stepwisePatternRole,
+} from "./generate-test-helpers.js";
 import { evaluateContourMotionGate, evaluateMelodyTextureGate } from "./review-gate.js";
 
 test("generateScore nudges non-modal stepwise pattern fixation without modal guardrail regressions", () => {

@@ -1,8 +1,7 @@
 import assert from "node:assert/strict";
 
 import { REVIEW_LENGTH_TICKS } from "./constants.js";
-import { generateScore } from "./generate.js";
-import { stepwisePatternRole } from "./generate-test-helpers.js";
+import { cachedGenerateScore as generateScore, stepwisePatternRole } from "./generate-test-helpers.js";
 import { evaluateContourMotionGate, evaluateMelodyTextureGate } from "./review-gate.js";
 
 export function assertStepwisePatternEvidenceBatch(seeds: readonly string[]): void {

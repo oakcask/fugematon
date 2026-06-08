@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { TICKS_PER_QUARTER } from "./constants.js";
 import type { HarmonicPlan, NoteEvent, Voice } from "./events.js";
-import { generateScore } from "./generate.js";
+import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
 import { buildHarmonicPlan, chordTonePitchClasses } from "./generation/harmony.js";
 import { shapeLongRestPhraseClosures } from "./generation/texture.js";
 

@@ -10,7 +10,7 @@ import {
 } from "./constants.js";
 import type { KeySignature, MetaEvent, NoteEvent } from "./events.js";
 import { generateScore } from "./generate.js";
-import { asMetaEvent, countIssues } from "./generate-test-helpers.js";
+import { asMetaEvent, cachedGenerateScore, countIssues } from "./generate-test-helpers.js";
 import {
   analyzeWritingProfileConstraints,
   constrainNotePitchToWritingProfile,
@@ -24,6 +24,21 @@ test("generateScore is deterministic for identical input", () => {
   };
 
   assert.deepEqual(generateScore(input), generateScore(input));
+});
+
+test("cachedGenerateScore does not share mutable result objects", () => {
+  const input = {
+    seed: "cache-isolation",
+    lengthTicks: 960,
+  };
+  const first = cachedGenerateScore(input);
+  const expected = cachedGenerateScore(input);
+
+  first.events.push({ kind: "meta", type: "score-end", tick: 1, payload: { lengthTicks: 1 } });
+  first.diagnostics.warnings.push("mutated by caller");
+
+  assert.notStrictEqual(cachedGenerateScore(input), first);
+  assert.deepEqual(cachedGenerateScore(input), expected);
 });
 
 test("generateScore defaults to the four-voice writing profile without changing explicit default output", () => {

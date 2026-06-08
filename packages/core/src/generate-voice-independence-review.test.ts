@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { REVIEW_LENGTH_TICKS } from "./constants.js";
-import { generateScore } from "./generate.js";
 import { VOICE_INDEPENDENCE_REVIEW_SEEDS } from "./generate-score-beauty-adoption-test-helpers.js";
+import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
 
 test("voice independence review seeds keep voice-pair local evidence reviewable", () => {
   for (const seed of VOICE_INDEPENDENCE_REVIEW_SEEDS) {

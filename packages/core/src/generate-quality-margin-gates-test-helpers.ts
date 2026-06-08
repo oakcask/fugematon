@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { REVIEW_LENGTH_TICKS, ROTATION_ROBUSTNESS_DIAGNOSTICS_PROFILE } from "./constants.js";
-import { generateScore } from "./generate.js";
+import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
 import { evaluateRotationRobustnessGate } from "./review-gate.js";
 
 export function assertRotationRobustnessMarginGate(seed: string): void {

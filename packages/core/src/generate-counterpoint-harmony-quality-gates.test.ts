@@ -5,8 +5,7 @@ import {
   REPRESENTATIVE_REVIEW_SEEDS,
   REVIEW_LENGTH_TICKS,
 } from "./constants.js";
-import { generateScore } from "./generate.js";
-import { scoreMinutes } from "./generate-test-helpers.js";
+import { cachedGenerateScore as generateScore, scoreMinutes } from "./generate-test-helpers.js";
 
 test("generateScore validates counterpoint-harmony quality gate seeds", () => {
   const signatures = new Set<string>();

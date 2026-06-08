@@ -1,8 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { REVIEW_LENGTH_TICKS } from "./constants.js";
-import { generateScore } from "./generate.js";
-import { maximum, requireSelectedCandidateEvaluation } from "./generate-test-helpers.js";
+import {
+  cachedGenerateScore as generateScore,
+  maximum,
+  requireSelectedCandidateEvaluation,
+} from "./generate-test-helpers.js";
 import { evaluateContourMotionGate, evaluateMelodyTextureGate } from "./review-gate.js";
 
 test("generateScore balances entry harmony scoring with preservation guardrails", () => {

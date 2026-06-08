@@ -31,7 +31,7 @@ export async function runNodeTests(testFiles) {
     return 1;
   }
 
-  const child = spawn(process.execPath, ["--test", ...testFiles], {
+  const child = spawn(process.execPath, ["--test", "--test-isolation=none", ...testFiles], {
     stdio: "inherit",
   });
 

@@ -9,7 +9,7 @@ import type {
   NoteEvent,
   NoteRole,
 } from "./events.js";
-import { generateScore } from "./generate.js";
+import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
 import {
   analyzeHarmonicStasisRearticulation,
   repairHarmonicStasisRearticulation,

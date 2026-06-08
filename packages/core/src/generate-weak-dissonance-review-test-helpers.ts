@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { TICKS_PER_QUARTER } from "./constants.js";
-import { generateScore } from "./generate.js";
+import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
 
 export const WEAK_DISSONANCE_REVIEW_SEEDS = [
   "contrary-motion",

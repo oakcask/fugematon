@@ -1,8 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { REVIEW_LENGTH_TICKS } from "./constants.js";
-import { generateScore } from "./generate.js";
-import { maximum, requireSelectedCandidateEvaluation, roundMetric } from "./generate-test-helpers.js";
+import {
+  cachedGenerateScore as generateScore,
+  maximum,
+  requireSelectedCandidateEvaluation,
+  roundMetric,
+} from "./generate-test-helpers.js";
 import { evaluateContourMotionGate, evaluateMelodyTextureGate } from "./review-gate.js";
 
 test("generateScore preserves modal counter-subject retention guardrails", () => {

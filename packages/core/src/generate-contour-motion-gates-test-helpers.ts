@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { CONTOUR_MOTION_DIAGNOSTICS_PROFILE, REVIEW_LENGTH_TICKS } from "./constants.js";
-import { generateScore } from "./generate.js";
+import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
 import { evaluateContourMotionGate } from "./review-gate.js";
 
 type ReviewSeed = {

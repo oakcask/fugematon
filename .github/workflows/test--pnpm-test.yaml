@@ -96,6 +96,7 @@ jobs:
           mkdir -p test-results
           sed -e 's#/src/#/dist/#' -e 's#\.ts$#.js#' "$SHARD_SOURCE_FILE" > "$SHARD_DIST_FILE"
           xargs --no-run-if-empty node --test \
+            --test-isolation=none \
             --test-reporter=junit \
             --test-reporter-destination="$JUNIT_REPORT" \
             --test-reporter=spec \
