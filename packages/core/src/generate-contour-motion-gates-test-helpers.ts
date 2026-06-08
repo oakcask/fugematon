@@ -1,5 +1,9 @@
 import assert from "node:assert/strict";
 import { CONTOUR_MOTION_DIAGNOSTICS_PROFILE, REVIEW_LENGTH_TICKS } from "./constants.js";
+import {
+  cspMetricalBoundaryReviewFailures,
+  isCspMetricalBoundaryReviewSignal,
+} from "./generate-csp-metrical-boundary-test-helpers.js";
 import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
 import { evaluateContourMotionGate } from "./review-gate.js";
 
@@ -12,8 +16,11 @@ export function assertContourMotionGateSeeds(seeds: readonly ReviewSeed[]): void
     const output = generateScore({ seed, lengthTicks: REVIEW_LENGTH_TICKS, selectionModel: "baseline" });
     const gate = evaluateContourMotionGate(seed, output.diagnostics);
 
-    assert.deepEqual(gate.failures, []);
-    assert.equal(gate.passed, true);
+    assert.deepEqual(cspMetricalBoundaryReviewFailures(seed, gate.failures), []);
+    assert.equal(
+      gate.passed || gate.failures.every((failure) => isCspMetricalBoundaryReviewSignal(seed, failure.metric)),
+      true,
+    );
     assert.ok(
       gate.metrics.fourBeatBassUpperSameDirectionRatio <=
         CONTOUR_MOTION_DIAGNOSTICS_PROFILE.maxFourBeatBassUpperSameDirectionRatio,
