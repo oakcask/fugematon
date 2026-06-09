@@ -18,7 +18,7 @@ import { assessHarmonicSonority, hasSupportRole, isMixedEntryTexture } from "./h
 import { chordTonePitchClasses, rootDegreeForFunction } from "./harmony.js";
 import { beatStrengthAtTick, isCompoundMidpoint, isMeasureDownbeat, previousMeasureDownbeat } from "./meter.js";
 import { scaleDegreePitchClass } from "./pitch.js";
-import { positiveModulo, roundRatio } from "./shared.js";
+import { compareNoteEvents, positiveModulo, roundRatio } from "./shared.js";
 
 export const INTENTIONAL_REST_REASONS = [
   "cadence-breath",
@@ -145,6 +145,8 @@ export function evaluateSectionConstraintProblem(input: {
     sectionPlan: input.sectionPlan,
     subjectEntries: input.subjectEntries ?? [],
   });
+  addEntryConstraintCounts(infeasibleConstraintCounts, input);
+  addVoicePairPressureCounts(infeasibleConstraintCounts, input.notes, input.problem, gridTicks);
   let minActiveVoices = Number.POSITIVE_INFINITY;
   let maxActiveVoices = 0;
 
@@ -260,7 +262,7 @@ export function buildConstraintSatisfactionReview(input: {
   );
 
   return {
-    schemaVersion: 3,
+    schemaVersion: 4,
     windowCount: windows.length,
     intentionalRestSpanCount: windows.reduce((sum, window) => sum + window.intentionalRestSpans.length, 0),
     unplannedSilentRunCount: unplannedSilentRuns.length,
@@ -460,6 +462,278 @@ function addHarmonicQualityCounts(
   if (isMixedEntryTexture(activeNotes) && !supportNotesSustainAnchor(activeNotes, anchor)) {
     counts.mixedEntryHarmonicRiskCount += 1;
   }
+}
+
+function addEntryConstraintCounts(
+  counts: SectionConstraintInfeasibleCounts,
+  input: {
+    problem: SectionConstraintProblem;
+    notes: readonly NoteEvent[];
+    sectionPlan: HarmonicPlan;
+    subjectEntries?: readonly PlannedEntry[];
+  },
+): void {
+  for (const entry of plannedEntriesForSectionWindow(input.subjectEntries ?? [], input.notes, input.problem.window)) {
+    if (!entryPitchClassSequenceMatchesPlan(input.notes, entry)) {
+      counts.entryPlanViolationCount += 1;
+    }
+
+    const support = entrySupportInstabilityCounts(input.notes, entry);
+    counts.entrySupportInstabilityCount += support.instabilityCount;
+    counts.unresolvedEntrySupportInstabilityCount += support.unresolvedInstabilityCount;
+    counts.unresolvedSevereEntryIntervalCount += support.unresolvedSevereIntervalCount;
+  }
+}
+
+function plannedEntriesForSectionWindow(
+  entries: readonly PlannedEntry[],
+  notes: readonly NoteEvent[],
+  window: { startTick: number; endTick: number },
+): PlannedEntry[] {
+  return entries.filter((entry) => {
+    const entryEndTick = plannedEntryEndTick(notes, entry);
+    return entry.startTick < window.endTick && window.startTick < entryEndTick;
+  });
+}
+
+function plannedEntryEndTick(notes: readonly NoteEvent[], entry: PlannedEntry): number {
+  const entryNotes = entryNotesForPlan(notes, entry);
+  const lastEntryNote = entryNotes.at(-1);
+  if (lastEntryNote !== undefined) {
+    return lastEntryNote.startTick + lastEntryNote.durationTicks;
+  }
+  return entry.startTick + Math.max(1, entry.actualPitchClassSequence.length) * TICKS_PER_QUARTER;
+}
+
+function entryNotesForPlan(notes: readonly NoteEvent[], entry: PlannedEntry): NoteEvent[] {
+  const entryRole = noteRoleForEntryForm(entry.form);
+  const roleNotes = notes
+    .filter((note) => note.voice === entry.voice && note.startTick >= entry.startTick && note.role === entryRole)
+    .sort(compareNoteEvents)
+    .slice(0, entry.actualPitchClassSequence.length);
+  if (roleNotes.length > 0) {
+    return roleNotes;
+  }
+  return notes
+    .filter((note) => note.voice === entry.voice && note.startTick >= entry.startTick)
+    .sort(compareNoteEvents)
+    .slice(0, entry.actualPitchClassSequence.length);
+}
+
+function noteRoleForEntryForm(form: PlannedEntry["form"]): NoteEvent["role"] {
+  if (form === "answer") {
+    return "answer";
+  }
+  if (form === "subject-fragment") {
+    return "subject-fragment";
+  }
+  return "subject";
+}
+
+function entryPitchClassSequenceMatchesPlan(notes: readonly NoteEvent[], entry: PlannedEntry): boolean {
+  const entryNotes = entryNotesForPlan(notes, entry);
+  const pitchClassSequence = entryNotes.map((note) => positiveModulo(note.pitch, 12));
+  return (
+    pitchClassSequence.length === entry.actualPitchClassSequence.length &&
+    pitchClassSequence.every((pitchClass, index) => pitchClass === entry.actualPitchClassSequence[index])
+  );
+}
+
+function entrySupportInstabilityCounts(
+  notes: readonly NoteEvent[],
+  entry: PlannedEntry,
+): {
+  instabilityCount: number;
+  unresolvedInstabilityCount: number;
+  unresolvedSevereIntervalCount: number;
+} {
+  const ticks = entrySupportCheckpoints(notes, entry);
+  const unstableTicks = ticks.filter((tick) => hasEntrySupportInstabilityAt(notes, entry, tick));
+  const severeTicks = ticks.filter((tick) => hasSevereEntryIntervalAt(notes, entry, tick));
+  let unresolvedInstabilityCount = 0;
+  let unresolvedSevereIntervalCount = 0;
+
+  for (const tick of unstableTicks) {
+    if (!resolvesBeforeDeadline(ticks, unstableTicks, tick)) {
+      unresolvedInstabilityCount += 1;
+    }
+  }
+  for (const tick of severeTicks) {
+    if (!resolvesBeforeDeadline(ticks, severeTicks, tick)) {
+      unresolvedSevereIntervalCount += 1;
+    }
+  }
+
+  return {
+    instabilityCount: unstableTicks.length,
+    unresolvedInstabilityCount,
+    unresolvedSevereIntervalCount,
+  };
+}
+
+function resolvesBeforeDeadline(ticks: readonly number[], unstableTicks: readonly number[], tick: number): boolean {
+  const resolutionDeadlineTick = tick + TICKS_PER_QUARTER;
+  return ticks.some(
+    (candidateTick) =>
+      candidateTick > tick && candidateTick <= resolutionDeadlineTick && !unstableTicks.includes(candidateTick),
+  );
+}
+
+function entrySupportCheckpoints(notes: readonly NoteEvent[], entry: PlannedEntry): number[] {
+  const entryWindowEndTick = entry.startTick + TICKS_PER_QUARTER * 2;
+  return [
+    ...new Set(
+      notes
+        .filter((note) => note.startTick < entryWindowEndTick && entry.startTick < note.startTick + note.durationTicks)
+        .flatMap((note) => [note.startTick, note.startTick + note.durationTicks]),
+    ),
+  ]
+    .filter((tick) => tick >= entry.startTick && tick < entryWindowEndTick && tick % (TICKS_PER_QUARTER / 2) === 0)
+    .sort((left, right) => left - right);
+}
+
+function hasEntrySupportInstabilityAt(notes: readonly NoteEvent[], entry: PlannedEntry, tick: number): boolean {
+  return entrySupportPairsAt(notes, entry, tick).some(
+    ({ entryNote, supportNote }) =>
+      isEntrySupportInstability(entrySupportIntervalClass(entryNote, supportNote)) &&
+      !isPreparedOrResolvingEntrySupport(notes, entry, entryNote, supportNote, tick),
+  );
+}
+
+function hasSevereEntryIntervalAt(notes: readonly NoteEvent[], entry: PlannedEntry, tick: number): boolean {
+  return entrySupportPairsAt(notes, entry, tick).some(
+    ({ entryNote, supportNote }) =>
+      isSevereEntryInterval(entrySupportIntervalClass(entryNote, supportNote)) &&
+      !isPreparedOrResolvingEntrySupport(notes, entry, entryNote, supportNote, tick),
+  );
+}
+
+function entrySupportPairsAt(
+  notes: readonly NoteEvent[],
+  entry: PlannedEntry,
+  tick: number,
+): Array<{ entryNote: NoteEvent; supportNote: NoteEvent }> {
+  const entryNote = notes.find(
+    (note) =>
+      note.voice === entry.voice &&
+      note.startTick <= tick &&
+      tick < note.startTick + note.durationTicks &&
+      isEntryRole(note.role),
+  );
+  if (entryNote === undefined) {
+    return [];
+  }
+
+  return notes
+    .filter(
+      (note) =>
+        note.voice !== entry.voice &&
+        note.startTick <= tick &&
+        tick < note.startTick + note.durationTicks &&
+        (note.role === "counter-subject" || note.role === "free-counterpoint"),
+    )
+    .map((supportNote) => ({ entryNote, supportNote }));
+}
+
+function isEntryRole(role: NoteEvent["role"]): boolean {
+  return role === "subject" || role === "answer" || role === "subject-fragment";
+}
+
+function entrySupportIntervalClass(entryNote: NoteEvent, supportNote: NoteEvent): number {
+  return Math.abs(entryNote.pitch - supportNote.pitch) % 12;
+}
+
+function isPreparedOrResolvingEntrySupport(
+  notes: readonly NoteEvent[],
+  entry: PlannedEntry,
+  entryNote: NoteEvent,
+  supportNote: NoteEvent,
+  tick: number,
+): boolean {
+  const carriedIntoEntry =
+    supportNote.startTick < entry.startTick && entry.startTick < supportNote.startTick + supportNote.durationTicks;
+  const weakPassingMotion =
+    supportNote.role === "free-counterpoint" &&
+    supportNote.startTick > entry.startTick &&
+    supportNote.startTick === tick &&
+    tick % TICKS_PER_QUARTER !== 0;
+  const suspensionDeadline = entry.startTick + TICKS_PER_QUARTER;
+  const suspendedSupportEndsOnTime =
+    carriedIntoEntry && supportNote.startTick + supportNote.durationTicks <= suspensionDeadline;
+  return (
+    suspendedSupportEndsOnTime ||
+    ((carriedIntoEntry || weakPassingMotion) &&
+      (entryLineResolvesByStep(notes, entry, tick) ||
+        noteResolvesByStep(notes, entryNote, tick) ||
+        noteResolvesByStep(notes, supportNote, tick)))
+  );
+}
+
+function entryLineResolvesByStep(notes: readonly NoteEvent[], entry: PlannedEntry, tick: number): boolean {
+  const current = entrySupportPairsAt(notes, entry, tick)[0]?.entryNote;
+  return current !== undefined && noteResolvesByStep(notes, current, tick);
+}
+
+function noteResolvesByStep(notes: readonly NoteEvent[], current: NoteEvent, tick: number): boolean {
+  const next = notes.filter((note) => note.voice === current.voice && note.startTick > tick).sort(compareNoteEvents)[0];
+  return next !== undefined && next.startTick <= tick + TICKS_PER_QUARTER && Math.abs(next.pitch - current.pitch) <= 2;
+}
+
+function isEntrySupportInstability(intervalClass: number): boolean {
+  return (
+    intervalClass === 1 ||
+    intervalClass === 2 ||
+    intervalClass === 5 ||
+    intervalClass === 6 ||
+    intervalClass === 10 ||
+    intervalClass === 11
+  );
+}
+
+function isSevereEntryInterval(intervalClass: number): boolean {
+  return intervalClass === 1 || intervalClass === 2 || intervalClass === 10 || intervalClass === 11;
+}
+
+function addVoicePairPressureCounts(
+  counts: SectionConstraintInfeasibleCounts,
+  notes: readonly NoteEvent[],
+  problem: SectionConstraintProblem,
+  gridTicks: number,
+): void {
+  const ticks = pressureCheckpoints(notes, problem, gridTicks);
+  for (const tick of ticks) {
+    for (let leftIndex = 0; leftIndex < VOICES.length; leftIndex += 1) {
+      for (let rightIndex = leftIndex + 1; rightIndex < VOICES.length; rightIndex += 1) {
+        const left = activeNoteAt(notes, VOICES[leftIndex]!, tick);
+        const right = activeNoteAt(notes, VOICES[rightIndex]!, tick);
+        if (left === undefined || right === undefined) {
+          continue;
+        }
+        if (positiveModulo(left.pitch - right.pitch, 12) === 0) {
+          counts.voicePairUnisonPressureCount += 1;
+        }
+        if (left.startTick === right.startTick && left.durationTicks === right.durationTicks) {
+          counts.voicePairLockstepCount += 1;
+        }
+      }
+    }
+  }
+}
+
+function pressureCheckpoints(
+  notes: readonly NoteEvent[],
+  problem: SectionConstraintProblem,
+  gridTicks: number,
+): number[] {
+  const noteTicks = notes.flatMap((note) => [note.startTick, note.startTick + note.durationTicks]);
+  const slotTicks = uniqueSlotStartTicks(problem.slots);
+  const alignedTicks: number[] = [];
+  for (let tick = problem.window.startTick; tick < problem.window.endTick; tick += gridTicks) {
+    alignedTicks.push(tick);
+  }
+  return [...new Set([...noteTicks, ...slotTicks, ...alignedTicks])]
+    .filter((tick) => tick >= problem.window.startTick && tick < problem.window.endTick)
+    .sort((left, right) => left - right);
 }
 
 function supportNotesSustainAnchor(activeNotes: readonly NoteEvent[], anchor: HarmonicAnchor): boolean {
@@ -697,6 +971,12 @@ function emptyInfeasibleCounts(): SectionConstraintInfeasibleCounts {
     unsupportedSolo: 0,
     allVoiceSilence: 0,
     longUnplannedSilentRun: 0,
+    entryPlanViolationCount: 0,
+    entrySupportInstabilityCount: 0,
+    unresolvedEntrySupportInstabilityCount: 0,
+    unresolvedSevereEntryIntervalCount: 0,
+    voicePairUnisonPressureCount: 0,
+    voicePairLockstepCount: 0,
     structuralChordSupportMiss: 0,
     structuralRootSupportMiss: 0,
     nonChordStructuralSupportCount: 0,
@@ -714,6 +994,14 @@ function sumInfeasibleCounts(counts: readonly SectionConstraintInfeasibleCounts[
       unsupportedSolo: sum.unsupportedSolo + count.unsupportedSolo,
       allVoiceSilence: sum.allVoiceSilence + count.allVoiceSilence,
       longUnplannedSilentRun: sum.longUnplannedSilentRun + count.longUnplannedSilentRun,
+      entryPlanViolationCount: sum.entryPlanViolationCount + count.entryPlanViolationCount,
+      entrySupportInstabilityCount: sum.entrySupportInstabilityCount + count.entrySupportInstabilityCount,
+      unresolvedEntrySupportInstabilityCount:
+        sum.unresolvedEntrySupportInstabilityCount + count.unresolvedEntrySupportInstabilityCount,
+      unresolvedSevereEntryIntervalCount:
+        sum.unresolvedSevereEntryIntervalCount + count.unresolvedSevereEntryIntervalCount,
+      voicePairUnisonPressureCount: sum.voicePairUnisonPressureCount + count.voicePairUnisonPressureCount,
+      voicePairLockstepCount: sum.voicePairLockstepCount + count.voicePairLockstepCount,
       structuralChordSupportMiss: sum.structuralChordSupportMiss + count.structuralChordSupportMiss,
       structuralRootSupportMiss: sum.structuralRootSupportMiss + count.structuralRootSupportMiss,
       nonChordStructuralSupportCount: sum.nonChordStructuralSupportCount + count.nonChordStructuralSupportCount,
@@ -729,7 +1017,7 @@ function sumInfeasibleCounts(counts: readonly SectionConstraintInfeasibleCounts[
 function relaxationLevel(counts: SectionConstraintInfeasibleCounts): SectionConstraintRelaxationLevel {
   const densityFailures =
     counts.minActiveVoiceViolation + counts.unsupportedSolo + counts.allVoiceSilence + counts.longUnplannedSilentRun;
-  const structuralFailures = counts.nonChordStructuralSupportCount;
+  const structuralFailures = counts.entryPlanViolationCount + counts.nonChordStructuralSupportCount;
   if (counts.invalidIntentionalRestReason > 0 || (densityFailures > 0 && structuralFailures > 0)) {
     return "infeasible";
   }
@@ -763,6 +1051,7 @@ export function sectionConstraintHardFailureCount(window: SectionConstraintSatis
     counts.unsupportedSolo +
     counts.allVoiceSilence +
     counts.longUnplannedSilentRun +
+    counts.entryPlanViolationCount +
     counts.nonChordStructuralSupportCount
   );
 }
@@ -776,6 +1065,11 @@ export function sectionConstraintSoftCost(window: SectionConstraintSatisfactionW
       counts.longUnplannedSilentRun * 5 +
       counts.structuralChordSupportMiss * 4 +
       counts.structuralRootSupportMiss * 6 +
+      counts.entrySupportInstabilityCount +
+      counts.unresolvedEntrySupportInstabilityCount * 5 +
+      counts.unresolvedSevereEntryIntervalCount * 6 +
+      counts.voicePairUnisonPressureCount * 0.25 +
+      counts.voicePairLockstepCount * 0.125 +
       counts.thinUnrootedStructuralSupportCount * 3 +
       counts.pitchClassDoublingOnlyCount * 4 +
       counts.mixedEntryHarmonicRiskCount * 5,

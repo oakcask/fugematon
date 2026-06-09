@@ -105,32 +105,31 @@ export function evaluateScoreDraft(
   draft: ScoreDraft,
   window: ConstraintWindow = fullDraftWindow(draft),
 ): ConstraintResult {
-  const notes = draft.notes.filter((note) => overlapsWindow(note, window));
+  const expandedWindow = expandConstraintWindowForPlannedEntries(window, draft.subjectEntries, draft.notes);
+  const notes = draft.notes.filter((note) => overlapsWindow(note, expandedWindow));
   const shapeCheckNotes = draft.notes.filter(
-    (note) => overlapsWindow(note, window) || !hasSafeEventShape(note, draft.endTick),
+    (note) => overlapsWindow(note, expandedWindow) || !hasSafeEventShape(note, draft.endTick),
   );
   const analyzableNotes = notes.filter(isKnownVoiceNote);
-  const subjectEntries = draft.subjectEntries.filter(
-    (entry) => entry.startTick >= window.startTick && entry.startTick < window.endTick,
-  );
+  const subjectEntries = plannedEntriesForConstraintWindow(draft.subjectEntries, draft.notes, expandedWindow);
   const sectionPlans = draft.sectionPlans.filter(
-    (plan) => plan.startTick < window.endTick && window.startTick < plan.startTick + plan.durationTicks,
+    (plan) => plan.startTick < expandedWindow.endTick && expandedWindow.startTick < plan.startTick + plan.durationTicks,
   );
   const diagnostics = analyzeScoreSafely(analyzableNotes, subjectEntries, sectionPlans, draft.writingProfile);
   const writingProfileDiagnostics = analyzeWritingProfileConstraints(analyzableNotes, draft.writingProfile);
   const sectionConstraintReview =
-    window.sectionConstraintProblem === true && window.harmonicPlan !== undefined
+    expandedWindow.sectionConstraintProblem === true && expandedWindow.harmonicPlan !== undefined
       ? evaluateSectionConstraintProblem({
           problem: buildSectionConstraintProblem({
             notes: analyzableNotes,
-            sectionPlan: window.harmonicPlan,
+            sectionPlan: expandedWindow.harmonicPlan,
             subjectEntries,
           }),
           notes: analyzableNotes,
-          sectionPlan: window.harmonicPlan,
+          sectionPlan: expandedWindow.harmonicPlan,
           subjectEntries,
         })
-      : window.sectionConstraintReview;
+      : expandedWindow.sectionConstraintReview;
   const hardFailures = new Map<ConstraintHardFailureCode, ConstraintHardFailure>();
 
   for (const failure of directEventShapeFailures(shapeCheckNotes, draft.endTick)) {
@@ -178,16 +177,35 @@ export function evaluateScoreDraft(
     if (structuralSupportFailures > 0) {
       addHardFailure(hardFailures, "structural-harmonic-support", [], structuralSupportFailures);
     }
+    if (counts.entryPlanViolationCount > 0) {
+      const affectedEntries = subjectEntries.filter(
+        (entry) => !entryPitchClassSequenceMatchesPlan(analyzableNotes, entry),
+      );
+      const answerViolationCount = affectedEntries.filter((entry) => entry.form === "answer").length;
+      const subjectViolationCount = counts.entryPlanViolationCount - answerViolationCount;
+      if (subjectViolationCount > 0 && !hardFailures.has("subject-identity-violation")) {
+        addHardFailure(hardFailures, "subject-identity-violation", [], subjectViolationCount);
+      }
+      if (answerViolationCount > 0 && !hardFailures.has("answer-plan-violation")) {
+        addHardFailure(hardFailures, "answer-plan-violation", [], answerViolationCount);
+      }
+    }
   }
 
-  const softCosts = softFeatureCosts(draft, window, diagnostics, writingProfileDiagnostics, sectionConstraintReview);
+  const softCosts = softFeatureCosts(
+    draft,
+    expandedWindow,
+    diagnostics,
+    writingProfileDiagnostics,
+    sectionConstraintReview,
+  );
   const totalSoftCost = roundRatio(softCosts.reduce((sum, cost) => sum + cost.cost, 0));
   const sortedHardFailures = [...hardFailures.values()].sort((left, right) => left.code.localeCompare(right.code));
   const affectedNotes = uniqueAffectedNotes(sortedHardFailures.flatMap((failure) => failure.affectedNotes));
 
   return {
     schemaVersion: 1,
-    window: sectionConstraintReview === undefined ? window : { ...window, sectionConstraintReview },
+    window: sectionConstraintReview === undefined ? expandedWindow : { ...expandedWindow, sectionConstraintReview },
     hardFailures: sortedHardFailures,
     softCosts,
     totalSoftCost,
@@ -258,6 +276,42 @@ function fullDraftWindow(draft: ScoreDraft): ConstraintWindow {
     harmonicPlan: draft.sectionPlans[0],
     meterContext: draft.sectionPlans[0]?.meterContext,
   };
+}
+
+function expandConstraintWindowForPlannedEntries(
+  window: ConstraintWindow,
+  entries: readonly PlannedEntry[],
+  notes: readonly NoteEvent[],
+): ConstraintWindow {
+  const relevantEntries = plannedEntriesForConstraintWindow(entries, notes, window);
+  if (relevantEntries.length === 0) {
+    return window;
+  }
+  return {
+    ...window,
+    startTick: Math.min(window.startTick, ...relevantEntries.map((entry) => entry.startTick)),
+    endTick: Math.max(window.endTick, ...relevantEntries.map((entry) => plannedEntryEndTick(notes, entry))),
+  };
+}
+
+function plannedEntriesForConstraintWindow(
+  entries: readonly PlannedEntry[],
+  notes: readonly NoteEvent[],
+  window: Pick<ConstraintWindow, "startTick" | "endTick">,
+): PlannedEntry[] {
+  return entries.filter((entry) => {
+    const entryEndTick = plannedEntryEndTick(notes, entry);
+    return entry.startTick < window.endTick && window.startTick < entryEndTick;
+  });
+}
+
+function plannedEntryEndTick(notes: readonly NoteEvent[], entry: PlannedEntry): number {
+  const entryNotes = entryNotesForPlan(notes, entry);
+  const lastEntryNote = entryNotes.at(-1);
+  if (lastEntryNote !== undefined) {
+    return lastEntryNote.startTick + lastEntryNote.durationTicks;
+  }
+  return entry.startTick + Math.max(1, entry.actualPitchClassSequence.length) * TICKS_PER_QUARTER;
 }
 
 function directEventShapeFailures(
@@ -358,10 +412,7 @@ function localEntryPlanFailures(
 ): Array<{ code: CurrentContractDiagnosticIssueCode; affectedNotes: ConstraintAffectedNote[] }> {
   const failures: Array<{ code: CurrentContractDiagnosticIssueCode; affectedNotes: ConstraintAffectedNote[] }> = [];
   for (const entry of subjectEntries) {
-    const entryNotes = notes
-      .filter((note) => note.voice === entry.voice && note.startTick >= entry.startTick)
-      .sort(compareNoteEvents)
-      .slice(0, entry.expectedDegreePattern.length);
+    const entryNotes = entryNotesForPlan(notes, entry);
     const pitchClassSequence = entryNotes.map((note) => positiveModulo(note.pitch, 12));
     const matchesPlan =
       pitchClassSequence.length === entry.actualPitchClassSequence.length &&
@@ -388,6 +439,40 @@ function localEntryPlanFailures(
   }
 
   return failures;
+}
+
+function entryNotesForPlan(notes: readonly NoteEvent[], entry: PlannedEntry): NoteEvent[] {
+  const entryRole = noteRoleForEntryForm(entry.form);
+  const roleNotes = notes
+    .filter((note) => note.voice === entry.voice && note.startTick >= entry.startTick && note.role === entryRole)
+    .sort(compareNoteEvents)
+    .slice(0, entry.actualPitchClassSequence.length);
+  if (roleNotes.length > 0) {
+    return roleNotes;
+  }
+  return notes
+    .filter((note) => note.voice === entry.voice && note.startTick >= entry.startTick)
+    .sort(compareNoteEvents)
+    .slice(0, entry.expectedDegreePattern.length);
+}
+
+function noteRoleForEntryForm(form: PlannedEntry["form"]): NoteEvent["role"] {
+  if (form === "answer") {
+    return "answer";
+  }
+  if (form === "subject-fragment") {
+    return "subject-fragment";
+  }
+  return "subject";
+}
+
+function entryPitchClassSequenceMatchesPlan(notes: readonly NoteEvent[], entry: PlannedEntry): boolean {
+  const entryNotes = entryNotesForPlan(notes, entry);
+  const pitchClassSequence = entryNotes.map((note) => positiveModulo(note.pitch, 12));
+  return (
+    pitchClassSequence.length === entry.actualPitchClassSequence.length &&
+    pitchClassSequence.every((pitchClass, index) => pitchClass === entry.actualPitchClassSequence[index])
+  );
 }
 
 function activeNoteAt(notes: readonly NoteEvent[], voice: Voice, tick: number): NoteEvent | undefined {
@@ -614,6 +699,21 @@ function sectionConstraintSoftFeatureCosts(
         review.infeasibleConstraintCounts.structuralChordSupportMiss * 4 +
         review.infeasibleConstraintCounts.structuralRootSupportMiss * 6,
       explanation: "section-local CSP ranks structural beats by root and chord-tone support",
+    },
+    {
+      feature: "section-csp-entry-support",
+      cost:
+        review.infeasibleConstraintCounts.entrySupportInstabilityCount +
+        review.infeasibleConstraintCounts.unresolvedEntrySupportInstabilityCount * 5 +
+        review.infeasibleConstraintCounts.unresolvedSevereEntryIntervalCount * 6,
+      explanation: "section-local CSP ranks planned entries by support stability and unresolved severe entry intervals",
+    },
+    {
+      feature: "section-csp-voice-pair-independence",
+      cost:
+        review.infeasibleConstraintCounts.voicePairUnisonPressureCount * 0.25 +
+        review.infeasibleConstraintCounts.voicePairLockstepCount * 0.125,
+      explanation: "section-local CSP ranks voice pairs by unison pressure and shared rhythmic lockstep",
     },
     {
       feature: "section-csp-harmonic-quality",

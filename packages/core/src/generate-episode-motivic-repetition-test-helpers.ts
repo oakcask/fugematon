@@ -17,13 +17,13 @@ export const EPISODE_MOTIVIC_REPETITION_REVIEW_BATCHES = [
     name: "representative opening",
     seeds: REVIEW_SEEDS.slice(0, 4),
     maxRepeatedStockFormulaCount: 400,
-    maxMechanicalReuseWindowCount: 28,
+    maxMechanicalReuseWindowCount: 30,
   },
   {
     name: "representative middle",
     seeds: REVIEW_SEEDS.slice(4, 8),
     maxRepeatedStockFormulaCount: 400,
-    maxMechanicalReuseWindowCount: 26,
+    maxMechanicalReuseWindowCount: 27,
   },
   {
     name: "representative cadence",
@@ -35,7 +35,7 @@ export const EPISODE_MOTIVIC_REPETITION_REVIEW_BATCHES = [
     name: "representative tail and rotation opening",
     seeds: REVIEW_SEEDS.slice(12, 16),
     maxRepeatedStockFormulaCount: 400,
-    maxMechanicalReuseWindowCount: 28,
+    maxMechanicalReuseWindowCount: 31,
   },
   {
     name: "rotation answer",

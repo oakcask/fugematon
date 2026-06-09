@@ -1856,10 +1856,7 @@ function findEntryPlanIssues(notes: readonly NoteEvent[], subjectEntries: readon
   const issues: DiagnosticIssue[] = [];
 
   for (const entry of subjectEntries) {
-    const entryNotes = notes
-      .filter((note) => note.voice === entry.voice && note.startTick >= entry.startTick)
-      .sort(compareNoteEvents)
-      .slice(0, entry.expectedDegreePattern.length);
+    const entryNotes = entryNotesForPlan(notes, entry);
     const pitchClassSequence = entryNotes.map((note) => positiveModulo(note.pitch, 12));
     const matchesPlan =
       pitchClassSequence.length === entry.actualPitchClassSequence.length &&
@@ -1900,6 +1897,31 @@ function findEntryPlanIssues(notes: readonly NoteEvent[], subjectEntries: readon
   }
 
   return issues;
+}
+
+function entryNotesForPlan(notes: readonly NoteEvent[], entry: PlannedEntry): NoteEvent[] {
+  const entryRole = noteRoleForEntryForm(entry.form);
+  const roleNotes = notes
+    .filter((note) => note.voice === entry.voice && note.startTick >= entry.startTick && note.role === entryRole)
+    .sort(compareNoteEvents)
+    .slice(0, entry.actualPitchClassSequence.length);
+  if (roleNotes.length > 0) {
+    return roleNotes;
+  }
+  return notes
+    .filter((note) => note.voice === entry.voice && note.startTick >= entry.startTick)
+    .sort(compareNoteEvents)
+    .slice(0, entry.expectedDegreePattern.length);
+}
+
+function noteRoleForEntryForm(form: PlannedEntry["form"]): NoteEvent["role"] {
+  if (form === "answer") {
+    return "answer";
+  }
+  if (form === "subject-fragment") {
+    return "subject-fragment";
+  }
+  return "subject";
 }
 
 function activePitchesAt(notes: readonly NoteEvent[], tick: number): ActiveVerticality {
