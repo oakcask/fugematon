@@ -40,7 +40,7 @@ export const EPISODE_MOTIVIC_REPETITION_REVIEW_BATCHES = [
   {
     name: "rotation answer",
     seeds: REVIEW_SEEDS.slice(16, 19),
-    maxRepeatedStockFormulaCount: 277,
+    maxRepeatedStockFormulaCount: 278,
     maxMechanicalReuseWindowCount: 29,
   },
   {

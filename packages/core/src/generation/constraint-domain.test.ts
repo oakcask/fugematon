@@ -1,11 +1,13 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { resolveWritingProfile } from "../writing-profile.js";
+import { resolveWritingProfile, type WritingProfile } from "../writing-profile.js";
 import {
   buildConstraintDomain,
   filterPitchDomainByAdjacentOrder,
+  isHarmonicAnchorFeasibleForProfile,
   isKeyFeasibleForProfile,
   isSubjectDegreePlanFeasibleForProfile,
+  isSubjectEntryPlanFeasibleForProfile,
   voicePitchDomain,
 } from "./constraint-domain.js";
 
@@ -40,6 +42,43 @@ test("constraint domain rejects keys and subject plans that n20 cannot realize",
   assert.equal(
     isSubjectDegreePlanFeasibleForProfile([0, 1, 2, 3, 4, 3, 2, 1], { tonic: "Db", mode: "major" }, n20),
     false,
+  );
+});
+
+test("constraint domain rejects keys whose anchor roots cannot be supported by the profile bass", () => {
+  const profile = {
+    ...resolveWritingProfile("four-voice-default"),
+    absolutePitchSet: Array.from({ length: 25 }, (_, index) => 60 + index),
+    voiceRanges: {
+      soprano: { min: 67, max: 84 },
+      alto: { min: 60, max: 76 },
+      tenor: { min: 60, max: 67 },
+      bass: { min: 67, max: 72 },
+    },
+  } satisfies WritingProfile;
+  const key = { tonic: "C", mode: "major" } as const;
+
+  assert.equal(isSubjectDegreePlanFeasibleForProfile([0, 1, 2, 3, 4, 3, 2, 1], key, profile), true);
+  assert.equal(isHarmonicAnchorFeasibleForProfile(key, profile), false);
+  assert.equal(isKeyFeasibleForProfile(key, profile), false);
+  assert.equal(isHarmonicAnchorFeasibleForProfile(key, resolveWritingProfile("four-voice-default")), true);
+  assert.equal(isHarmonicAnchorFeasibleForProfile(key, resolveWritingProfile("harpsichord-manual")), true);
+  assert.equal(isHarmonicAnchorFeasibleForProfile(key, resolveWritingProfile("music-box-n20")), true);
+});
+
+test("constraint domain rejects subject entry plans that cannot keep profile voice order", () => {
+  const degrees = [0, 1, 3] as const;
+  const durations = [480, 1920, 480] as const;
+  const key = { tonic: "C", mode: "major" } as const;
+
+  assert.equal(isSubjectDegreePlanFeasibleForProfile(degrees, key, resolveWritingProfile("music-box-n20")), true);
+  assert.equal(
+    isSubjectEntryPlanFeasibleForProfile(degrees, durations, key, resolveWritingProfile("music-box-n20"), 1920),
+    false,
+  );
+  assert.equal(
+    isSubjectEntryPlanFeasibleForProfile(degrees, durations, key, resolveWritingProfile("four-voice-default"), 1920),
+    true,
   );
 });
 

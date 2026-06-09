@@ -1,5 +1,10 @@
-import type { KeyMode, KeySignature, NoteEvent, Voice } from "../events.js";
-import { voiceRangeForProfile, type WritingProfile } from "../writing-profile.js";
+import type { HarmonicFunction, KeyMode, KeySignature, NoteEvent, Voice } from "../events.js";
+import {
+  placePitchInWritingProfile,
+  registerTargetForVoice,
+  voiceRangeForProfile,
+  type WritingProfile,
+} from "../writing-profile.js";
 import { positiveModulo } from "./shared.js";
 
 export type ConstraintDomain = {
@@ -36,6 +41,7 @@ const MODE_SCALE_INTERVALS: Record<KeyMode, readonly number[]> = {
 
 const ENTRY_VOICES: readonly Voice[] = ["alto", "soprano", "tenor", "bass"];
 const SUBJECT_FEASIBILITY_DEGREES = [0, 1, 2, 3, 4, 3, 2, 1] as const;
+const HARMONIC_ANCHOR_FUNCTIONS: readonly HarmonicFunction[] = ["tonic", "predominant", "dominant", "cadential-tonic"];
 
 export function buildConstraintDomain(writingProfile: WritingProfile): ConstraintDomain {
   return {
@@ -87,7 +93,33 @@ export function filterPitchDomainByAdjacentOrder(input: {
 }
 
 export function isKeyFeasibleForProfile(keySignature: KeySignature, writingProfile: WritingProfile): boolean {
-  return isSubjectDegreePlanFeasibleForProfile(SUBJECT_FEASIBILITY_DEGREES, keySignature, writingProfile);
+  return (
+    isSubjectDegreePlanFeasibleForProfile(SUBJECT_FEASIBILITY_DEGREES, keySignature, writingProfile) &&
+    isHarmonicAnchorFeasibleForProfile(keySignature, writingProfile)
+  );
+}
+
+export function isHarmonicAnchorFeasibleForProfile(
+  keySignature: KeySignature,
+  writingProfile: WritingProfile,
+): boolean {
+  const domain = buildConstraintDomain(writingProfile);
+
+  return HARMONIC_ANCHOR_FUNCTIONS.every((harmonicFunction) => {
+    const rootPitchClass = scaleDegreePitchClassInKey(rootDegreeForFunction(harmonicFunction), 0, keySignature);
+    const chordTonePitchClasses = chordScaleDegreesForFunction(harmonicFunction).map((degree) =>
+      scaleDegreePitchClassInKey(degree, 0, keySignature),
+    );
+
+    return (
+      isPitchClassSupportedByVoice(domain, "bass", rootPitchClass) &&
+      chordTonePitchClasses.every(
+        (pitchClass) =>
+          domain.allowedPitchClasses.has(positiveModulo(pitchClass, 12)) &&
+          ENTRY_VOICES.some((voice) => isPitchClassSupportedByVoice(domain, voice, pitchClass)),
+      )
+    );
+  });
 }
 
 export function isSubjectDegreePlanFeasibleForProfile(
@@ -105,6 +137,56 @@ export function isSubjectDegreePlanFeasibleForProfile(
   return ENTRY_VOICES.every((voice, index) => {
     const pitchClasses = index % 2 === 0 ? subjectPitchClasses : answerPitchClasses;
     return pitchClasses.every((pitchClass) => isPitchClassSupportedByVoice(domain, voice, pitchClass));
+  });
+}
+
+export function isSubjectEntryPlanFeasibleForProfile(
+  degrees: readonly number[],
+  durations: readonly number[],
+  keySignature: KeySignature,
+  writingProfile: WritingProfile,
+  entrySpacingTicks: number,
+): boolean {
+  if (!isSubjectDegreePlanFeasibleForProfile(degrees, keySignature, writingProfile)) {
+    return false;
+  }
+
+  const entryNotes = ENTRY_VOICES.flatMap((voice, entryIndex) => {
+    const subjectDegrees = entryIndex % 2 === 0 ? degrees : answerDegreesForDomain(degrees);
+    const localKey = entryIndex % 2 === 0 ? keySignature : transposeKeyForDomain(keySignature, 7);
+    let offsetTick = 0;
+    return subjectDegrees.map((degree, noteIndex) => {
+      const durationTicks = durations[noteIndex] ?? 0;
+      const pitchClass = scaleDegreePitchClassInKey(degree, 0, localKey);
+      const note = {
+        voice,
+        startTick: entryIndex * entrySpacingTicks + offsetTick,
+        durationTicks,
+        pitch: placePitchInWritingProfile(
+          pitchClass,
+          voice,
+          registerTargetForVoice(writingProfile, voice),
+          writingProfile,
+        ),
+      };
+      offsetTick += durationTicks;
+      return note;
+    });
+  });
+
+  return entryNotes.every((note) => {
+    const lowerVoice = adjacentLowerVoice(note.voice);
+    if (lowerVoice === undefined) {
+      return true;
+    }
+    return entryNotes
+      .filter(
+        (other) =>
+          other.voice === lowerVoice &&
+          note.startTick < other.startTick + other.durationTicks &&
+          other.startTick < note.startTick + note.durationTicks,
+      )
+      .every((other) => note.pitch >= other.pitch);
   });
 }
 
@@ -139,6 +221,26 @@ function transposeKeyForDomain(keySignature: KeySignature, semitones: number): K
     tonic: transposedTonic,
     mode: keySignature.mode,
   };
+}
+
+function answerDegreesForDomain(degrees: readonly number[]): readonly number[] {
+  const answerKindIsTonal = degrees.some((degree) => degree === 4);
+  return answerKindIsTonal ? degrees.map((degree) => (degree === 4 ? 3 : degree)) : degrees;
+}
+
+function chordScaleDegreesForFunction(harmonicFunction: HarmonicFunction): readonly number[] {
+  const rootDegree = rootDegreeForFunction(harmonicFunction);
+  return [rootDegree, rootDegree + 2, rootDegree + 4];
+}
+
+function rootDegreeForFunction(harmonicFunction: HarmonicFunction): number {
+  if (harmonicFunction === "predominant") {
+    return 3;
+  }
+  if (harmonicFunction === "dominant") {
+    return 4;
+  }
+  return 0;
 }
 
 function adjacentHigherVoice(voice: Voice): Voice | undefined {

@@ -169,6 +169,38 @@ test("constrained writing profiles preserve hard profile and entry contracts for
   }
 });
 
+test("profile-aware harmonic feasibility preserves music-box structural support for the reported harmonic seed", () => {
+  const summaries = (["music-box-n20", "four-voice-default", "harpsichord-manual"] as const).map((writingProfileId) => {
+    const output = generateScore({
+      seed: "seed-1wudr38-0fbqzth",
+      lengthTicks: TICKS_PER_QUARTER * 32,
+      writingProfileId,
+    });
+    const counts = output.diagnostics.constraintSatisfactionReview.infeasibleConstraintCounts;
+    return {
+      writingProfileId,
+      diagnostics: output.diagnostics,
+      counts,
+    };
+  });
+  const musicBox = summaries.find((summary) => summary.writingProfileId === "music-box-n20")!;
+
+  for (const { writingProfileId, diagnostics } of summaries) {
+    assert.equal(diagnostics.voiceCrossings, 0, `${writingProfileId} should avoid voice crossings`);
+    assert.equal(diagnostics.rangeViolations, 0, `${writingProfileId} should avoid range violations`);
+    assert.equal(
+      diagnostics.writingProfilePitchViolations,
+      0,
+      `${writingProfileId} should avoid profile pitch violations`,
+    );
+    assert.equal(diagnostics.subjectIdentityViolations, 0, `${writingProfileId} should preserve subject identity`);
+    assert.equal(diagnostics.answerPlanViolations, 0, `${writingProfileId} should preserve answer identity`);
+    assert.equal(diagnostics.keyMetadataMismatches, 0, `${writingProfileId} should keep key metadata aligned`);
+  }
+  assert.equal(musicBox.counts.nonChordStructuralSupportCount, 0);
+  assert.ok(musicBox.diagnostics.qualityVector.harmonicSonorities.generatorResponseWindowCount <= 2);
+});
+
 test("writing profile diagnostics catch synthetic music-box and piano playability violations", () => {
   const musicBoxProfile = resolveWritingProfile("music-box-n20");
   const musicBoxDiagnostics = analyzeWritingProfileConstraints(
