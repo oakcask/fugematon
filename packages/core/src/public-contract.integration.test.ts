@@ -253,6 +253,7 @@ test("public diagnostics expose finite candidate score dimensions", () => {
         typeof candidate.windowEndTick === "number" &&
         typeof candidate.hardFailureCount === "number" &&
         Array.isArray(candidate.hardFailures) &&
+        Array.isArray(candidate.affectedNotes) &&
         typeof candidate.softCost === "number" &&
         typeof candidate.selected === "boolean" &&
         typeof candidate.reason === "string",

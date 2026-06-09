@@ -66,6 +66,66 @@ test("constraint evaluator rejects WritingProfile pitch contract failures", () =
   ]);
 });
 
+test("constraint evaluator rejects exact same-pitch overlaps for music-box profiles", () => {
+  const result = evaluateScoreDraft(
+    draft(
+      [
+        note({ voice: "soprano", pitch: 72, durationTicks: TICKS_PER_QUARTER * 2 }),
+        note({ voice: "alto", pitch: 72, startTick: TICKS_PER_QUARTER, durationTicks: TICKS_PER_QUARTER }),
+      ],
+      resolveWritingProfile("music-box-n20"),
+    ),
+  );
+  const trace = buildGeneratorSearchTrace(
+    [resultCandidate("same-pitch", result)],
+    resultCandidate("same-pitch", result),
+  );
+
+  assert.deepEqual(
+    result.hardFailures.map((failure) => failure.code),
+    ["writing-profile-same-pitch-overlap"],
+  );
+  assert.deepEqual(result.hardFailures[0]!.affectedNotes.map((affected) => affected.voice).sort(), ["alto", "soprano"]);
+  assert.deepEqual(
+    trace.candidates[0]!.affectedNotes.map((affected) => affected.pitch),
+    [72, 72],
+  );
+});
+
+test("constraint evaluator keeps exact same-pitch overlaps review-only for default profile", () => {
+  const result = evaluateScoreDraft(
+    draft(
+      [
+        note({ voice: "soprano", pitch: 72, durationTicks: TICKS_PER_QUARTER * 2 }),
+        note({ voice: "alto", pitch: 72, startTick: TICKS_PER_QUARTER, durationTicks: TICKS_PER_QUARTER }),
+      ],
+      resolveWritingProfile("four-voice-default"),
+    ),
+  );
+
+  assert.equal(
+    result.hardFailures.some((failure) => failure.code === "writing-profile-same-pitch-overlap"),
+    false,
+  );
+});
+
+test("constraint evaluator keeps music-box octave pitch-class unisons review-only", () => {
+  const result = evaluateScoreDraft(
+    draft(
+      [
+        note({ voice: "soprano", pitch: 84, durationTicks: TICKS_PER_QUARTER * 2 }),
+        note({ voice: "bass", pitch: 72, startTick: TICKS_PER_QUARTER, durationTicks: TICKS_PER_QUARTER }),
+      ],
+      resolveWritingProfile("music-box-n20"),
+    ),
+  );
+
+  assert.equal(
+    result.hardFailures.some((failure) => failure.code === "writing-profile-same-pitch-overlap"),
+    false,
+  );
+});
+
 test("constraint evaluator separates hard non-chord support from soft sonority quality costs", () => {
   const profile = resolveWritingProfile("four-voice-default");
   const plan = harmonicPlan("episode", true);
@@ -463,6 +523,14 @@ function constraintCandidate(candidateId: string, notes: readonly NoteEvent[]): 
     candidateId,
     draft: candidateDraft,
     result: evaluateScoreDraft(candidateDraft),
+  };
+}
+
+function resultCandidate(candidateId: string, result: ReturnType<typeof evaluateScoreDraft>): ConstraintCandidate {
+  return {
+    candidateId,
+    draft: resultDraft(result),
+    result,
   };
 }
 

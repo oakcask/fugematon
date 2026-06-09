@@ -382,9 +382,17 @@ export type ConstraintHardFailureCode =
   | "pitch-bounds"
   | "velocity-bounds"
   | "writing-profile-pitch"
+  | "writing-profile-same-pitch-overlap"
   | "intentional-rest-reason"
   | "section-voice-coverage"
   | "structural-harmonic-support";
+
+export type GeneratorSearchTraceAffectedNote = {
+  voice: string;
+  startTick: number;
+  durationTicks: number;
+  pitch: number;
+};
 
 export type GeneratorSearchTraceCandidate = {
   candidateId: string;
@@ -392,6 +400,7 @@ export type GeneratorSearchTraceCandidate = {
   windowEndTick: number;
   hardFailureCount: number;
   hardFailures: ConstraintHardFailureCode[];
+  affectedNotes: GeneratorSearchTraceAffectedNote[];
   softCost: number;
   selected: boolean;
   reason: string;

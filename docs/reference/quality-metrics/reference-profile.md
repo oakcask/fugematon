@@ -15,7 +15,7 @@ Reference profile は、Fugematon と参照作品を同じ diagnostics vocabular
 | --- | --- | --- |
 | `sharedRhythmOverlapPerVoicePairQuarter` | estimated active voice-pair quarter notes | 声部ペアの rhythm lockstep density。ゼロ要求ではなく density として比較する。 |
 | `unisonOverlapPerVoicePairQuarter` | estimated active voice-pair quarter notes | pitch-class unison の density。octave 違いを含み、文脈つきで許容される。 |
-| `samePitchOverlapPerVoicePairQuarter` | estimated active voice-pair quarter notes | exact same-pitch overlap の density。稀であるべきだが、短い doubling と局所文脈を確認する。 |
+| `samePitchOverlapPerVoicePairQuarter` | estimated active voice-pair quarter notes | exact same-pitch overlap の density。`music-box-*` では hard failure の profile contract、non-music-box では稀であるべき review-required signal として短い doubling と局所文脈を確認する。 |
 | `severeEntryIntervalPerEntry` | subject entry count | entry 周辺の seconds / sevenths の密度。長尺 score で count が膨らまないよう entry 数で割る。 |
 | `unresolvedSevereEntryIntervalPerEntry` | subject entry count | resolution deadline までに説明されない severe interval。entry harmony の強い review signal。 |
 | `leapRecoveryMissesPerQuarter` | score quarter notes | 旋律線の大跳躍回収 risk。 |

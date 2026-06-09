@@ -886,6 +886,7 @@ function classifyHardConstraintFailures(diagnostics: GenerationDiagnostics): Cla
     ...hardConstraintFailure("keyMetadataMismatches", diagnostics.keyMetadataMismatches),
     ...hardConstraintFailure("unresolvedDissonanceCount", diagnostics.unresolvedDissonanceCount),
     ...hardConstraintFailure("allVoiceSilenceGapCount", diagnostics.allVoiceSilenceGapCount),
+    ...musicBoxSamePitchOverlapFailure(diagnostics),
   ];
 }
 
@@ -895,6 +896,25 @@ function hardConstraintFailure(metric: string, actual: number): ClassifiedReview
   }
 
   return [{ metric, actual, expected: "0", policy: "hard-failure", source: "diagnostics" }];
+}
+
+function musicBoxSamePitchOverlapFailure(diagnostics: GenerationDiagnostics): ClassifiedReviewGateFinding[] {
+  if (
+    !diagnostics.writingProfileConstraints.profileId.startsWith("music-box-") ||
+    diagnostics.samePitchOverlapCount === 0
+  ) {
+    return [];
+  }
+
+  return [
+    {
+      metric: "samePitchOverlapCount",
+      actual: diagnostics.samePitchOverlapCount,
+      expected: "0 for music-box writing profiles",
+      policy: "hard-failure",
+      source: "diagnostics",
+    },
+  ];
 }
 
 function classifyLegacyGateFailure(failure: ReviewGateFailure): ClassifiedReviewGateFinding {

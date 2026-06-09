@@ -152,7 +152,8 @@ Segment 境界からの生成再開は、ring buffer replay ではなく snapsho
   * modal seed では、local mode の特徴音が主題または episode に現れ、tonal cadence だけに回収されすぎない。
 * Phase 5 は音楽的品質ゲートとして扱う。
   * hard constraints だけでなく、counter-subject coverage、free counterpoint coverage、melodic stagnation、leap recovery、leading tone resolution、dominant resolution、predominant direction、cadence target hit、harmonic function match、episode direction、stretto clarity を diagnostics または soft score に持たせる。
-  * `samePitchOverlapCount` は `unisonOverlapCount` と分けて扱う。同じ MIDI pitch を複数パートが同時に鳴らす exact unison は、明示的な doubling、終止、短い経過的重なりなどで説明できない限り、同じ楽器の texture では禁則寄りの制約にする。
+  * `samePitchOverlapCount` は `unisonOverlapCount` と分けて扱う。同じ MIDI pitch を複数パートが同時に鳴らす exact unison は、`music-box-*` writing profile では同じ櫛歯の同時要求として hard failure にする。non-music-box profile では、明示的な doubling、終止、短い経過的重なりなどで説明できるかを review-required signal として読む。octave 違いの pitch-class unison は `unisonOverlapCount` として review-only に残す。
+  * `seed-1wudr38-0fbqzth` の `music-box-n20` focused check では、exact same-pitch overlap を優先して除去すると sustained severe vertical dissonance windows が残る。これは同じ櫛歯の同時要求を hard failure とする profile contract を優先した tradeoff とし、sustained dissonance は generator-response review signal として隠さない。
   * tonal context では導音から主音への解決と predominant -> dominant -> tonic の進行を強く評価し、cadence 周辺では未解決を品質ゲートの対象にする。
   * deceptive motion、evaded cadence、pivot harmony、modulatory motion は、後続の harmonic anchor へ到達する場合に管理された曖昧さとして加点する。
   * 曖昧な解決が複数 section にわたって回収されない場合は unresolved ambiguity warning として扱う。

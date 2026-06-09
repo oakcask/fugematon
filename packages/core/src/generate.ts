@@ -4,6 +4,7 @@ import type {
   GenerationInput,
   GenerationOutput,
   HarmonicPlan,
+  NoteEvent,
   PlannedEntry,
   ScoreEvent,
   SectionConstraintScoringProfileId,
@@ -30,6 +31,7 @@ import {
   sectionConstraintScoringProfileMetadata,
 } from "./generation/section-constraint-scoring.js";
 import { buildExposition, buildFugueContinuationScore, buildFugueScore } from "./generation/sections.js";
+import { compareNoteEvents } from "./generation/shared.js";
 import { buildSubject } from "./generation/subject.js";
 import { applyTerminalClosureIntent, buildTerminalClosureReviewSummary } from "./generation/terminal-closure-review.js";
 import type { Exposition } from "./generation/types.js";
@@ -105,6 +107,12 @@ export function generateScore(input: GenerationInput): GenerationOutput {
       );
   applyTerminalClosureIntent(score, Math.max(input.lengthTicks, score.endTick), mode);
   annotateEpisodeMotivicDerivations(score.notes, score.sectionPlans);
+  repairMusicBoxSamePitchOverlaps(
+    score,
+    Math.max(input.lengthTicks, score.endTick),
+    writingProfile,
+    constraintProfile.id,
+  );
   const finalProfileInvariantCandidate = buildFinalWritingProfileInvariantCandidate(
     score,
     Math.max(input.lengthTicks, score.endTick),
@@ -360,6 +368,313 @@ function validateInput(input: GenerationInput): void {
   if (!Number.isSafeInteger(input.lengthTicks) || input.lengthTicks <= 0) {
     throw new Error("lengthTicks must be a positive safe integer");
   }
+}
+
+function repairMusicBoxSamePitchOverlaps(
+  score: Exposition & { selectedConstraintCandidates?: ConstraintCandidate[] },
+  generatedUntilTick: number,
+  writingProfile: WritingProfile,
+  constraintProfileId: SectionConstraintScoringProfileId,
+): void {
+  if (writingProfile.playability?.kind !== "music-box") {
+    return;
+  }
+
+  const beforeCandidate = buildScoreConstraintCandidate(
+    "score-music-box-same-pitch-overlap-unrepaired-final-repair-evidence",
+    score.notes,
+    score,
+    generatedUntilTick,
+    writingProfile,
+    constraintProfileId,
+  );
+  const safeNotes = removeVoiceCrossingFreeCounterpointNotes(
+    retuneStructuralMusicBoxDuplicateStrikes(
+      removeDuplicateFreeCounterpointStrikes(score.notes),
+      writingProfile,
+      false,
+    ),
+  );
+  const safeCandidate = buildScoreConstraintCandidate(
+    "score-music-box-same-pitch-overlap-solver-repaired",
+    safeNotes,
+    score,
+    generatedUntilTick,
+    writingProfile,
+    constraintProfileId,
+  );
+  const selectedCandidate = acceptableSamePitchRepair(beforeCandidate, safeCandidate)
+    ? broaderMusicBoxSamePitchRepair(safeCandidate, score, generatedUntilTick, writingProfile, constraintProfileId)
+    : undefined;
+
+  const afterCandidate =
+    selectedCandidate ?? (acceptableSamePitchRepair(beforeCandidate, safeCandidate) ? safeCandidate : undefined);
+  if (afterCandidate === undefined) {
+    return;
+  }
+
+  score.notes.splice(0, score.notes.length, ...(afterCandidate.draft.notes as NoteEvent[]));
+  score.selectedConstraintCandidates?.push(beforeCandidate, afterCandidate);
+}
+
+function broaderMusicBoxSamePitchRepair(
+  baselineCandidate: ConstraintCandidate,
+  score: Pick<Exposition, "subjectEntries" | "sectionPlans">,
+  generatedUntilTick: number,
+  writingProfile: WritingProfile,
+  constraintProfileId: SectionConstraintScoringProfileId,
+): ConstraintCandidate | undefined {
+  const repairedNotes = removeVoiceCrossingFreeCounterpointNotes(
+    retuneStructuralMusicBoxDuplicateStrikes(baselineCandidate.draft.notes, writingProfile, true),
+  );
+  const candidate = buildScoreConstraintCandidate(
+    "score-music-box-same-pitch-overlap-solver-repaired",
+    repairedNotes,
+    score,
+    generatedUntilTick,
+    writingProfile,
+    constraintProfileId,
+  );
+  return acceptableSamePitchRepair(baselineCandidate, candidate) ? candidate : undefined;
+}
+
+function acceptableSamePitchRepair(beforeCandidate: ConstraintCandidate, afterCandidate: ConstraintCandidate): boolean {
+  return (
+    hardFailureCount(afterCandidate.result, "writing-profile-same-pitch-overlap") <
+      hardFailureCount(beforeCandidate.result, "writing-profile-same-pitch-overlap") &&
+    nonSamePitchHardFailureCount(afterCandidate.result) <= nonSamePitchHardFailureCount(beforeCandidate.result)
+  );
+}
+
+function buildScoreConstraintCandidate(
+  candidateId: string,
+  notes: readonly NoteEvent[],
+  score: Pick<Exposition, "subjectEntries" | "sectionPlans">,
+  generatedUntilTick: number,
+  writingProfile: WritingProfile,
+  constraintProfileId: SectionConstraintScoringProfileId,
+): ConstraintCandidate {
+  const draft = {
+    notes,
+    subjectEntries: score.subjectEntries,
+    sectionPlans: score.sectionPlans,
+    endTick: generatedUntilTick,
+    writingProfile,
+    constraintProfileId,
+  };
+  return {
+    candidateId,
+    draft,
+    result: evaluateScoreDraft(draft),
+  };
+}
+
+function samePitchOverlaps(notes: readonly NoteEvent[]): Array<[NoteEvent, NoteEvent]> {
+  const overlaps: Array<[NoteEvent, NoteEvent]> = [];
+  const sortedNotes = [...notes].sort(compareNoteEvents);
+  for (let leftIndex = 0; leftIndex < sortedNotes.length; leftIndex += 1) {
+    const left = sortedNotes[leftIndex];
+    if (left === undefined) {
+      continue;
+    }
+    for (let rightIndex = leftIndex + 1; rightIndex < sortedNotes.length; rightIndex += 1) {
+      const right = sortedNotes[rightIndex];
+      if (right === undefined || right.startTick >= left.startTick + left.durationTicks) {
+        break;
+      }
+      if (left.voice !== right.voice && left.pitch === right.pitch && notesOverlap(left, right)) {
+        overlaps.push([left, right]);
+      }
+    }
+  }
+  return overlaps;
+}
+
+function hardFailureCount(result: ReturnType<typeof evaluateScoreDraft>, code: string): number {
+  return result.hardFailures.find((failure) => failure.code === code)?.count ?? 0;
+}
+
+function nonSamePitchHardFailureCount(result: ReturnType<typeof evaluateScoreDraft>): number {
+  return result.hardFailures
+    .filter((failure) => failure.code !== "writing-profile-same-pitch-overlap")
+    .reduce((sum, failure) => sum + failure.count, 0);
+}
+
+function removeDuplicateFreeCounterpointStrikes(notes: readonly NoteEvent[]): NoteEvent[] {
+  let repairedNotes = [...notes];
+  for (let attempt = 0; attempt < 256; attempt += 1) {
+    const droppableNote = samePitchOverlaps(repairedNotes)
+      .flat()
+      .find((note) => note.role === "free-counterpoint" || note.role === undefined);
+    if (droppableNote === undefined) {
+      break;
+    }
+    repairedNotes = repairedNotes.filter((note) => note !== droppableNote);
+  }
+  return repairedNotes;
+}
+
+function retuneStructuralMusicBoxDuplicateStrikes(
+  notes: readonly NoteEvent[],
+  writingProfile: WritingProfile,
+  includeEntryRoles: boolean,
+): NoteEvent[] {
+  const repairedNotes = [...notes];
+  for (let attempt = 0; attempt < 64; attempt += 1) {
+    const repair = samePitchOverlaps(repairedNotes)
+      .map((overlap) => structuralMusicBoxRetune(overlap, repairedNotes, writingProfile, includeEntryRoles))
+      .find((candidate) => candidate !== undefined);
+    if (repair === undefined) {
+      break;
+    }
+    repairedNotes[repair.noteIndex] = { ...repair.note, pitch: repair.pitch };
+  }
+  return repairedNotes;
+}
+
+function structuralMusicBoxRetune(
+  overlap: readonly [NoteEvent, NoteEvent],
+  notes: readonly NoteEvent[],
+  writingProfile: WritingProfile,
+  includeEntryRoles: boolean,
+): { note: NoteEvent; noteIndex: number; pitch: number } | undefined {
+  const orderedNotes = [...overlap].sort((left, right) => retuneRolePriority(left) - retuneRolePriority(right));
+  for (const note of orderedNotes) {
+    if (!includeEntryRoles && note.role !== "counter-subject") {
+      continue;
+    }
+    const pitch = structuralReplacementPitches(note, notes, writingProfile)[0];
+    if (pitch === undefined) {
+      continue;
+    }
+    return { note, noteIndex: notes.indexOf(note), pitch };
+  }
+  return undefined;
+}
+
+function retuneRolePriority(note: NoteEvent): number {
+  if (note.role === "counter-subject") {
+    return 0;
+  }
+  if (note.role === "free-counterpoint" || note.role === undefined) {
+    return 1;
+  }
+  if (note.voice === "bass" || note.voice === "tenor") {
+    return 2;
+  }
+  return 3;
+}
+
+function structuralReplacementPitches(
+  note: NoteEvent,
+  notes: readonly NoteEvent[],
+  writingProfile: WritingProfile,
+): number[] {
+  const samePitchClass = samePitchClassReplacementPitches(note, notes, writingProfile);
+  if (samePitchClass.length > 0 || note.role !== "counter-subject") {
+    return samePitchClass;
+  }
+  const range = writingProfile.voiceRanges[note.voice];
+  return writingProfile.absolutePitchSet
+    .filter(
+      (pitch) =>
+        pitch !== note.pitch &&
+        range.min <= pitch &&
+        pitch <= range.max &&
+        !notes.some(
+          (other) => other !== note && other.voice !== note.voice && other.pitch === pitch && notesOverlap(note, other),
+        ),
+    )
+    .sort(
+      (left, right) =>
+        Math.abs(left - note.pitch) - Math.abs(right - note.pitch) ||
+        preferredPitchPenalty(left, note.voice, writingProfile) -
+          preferredPitchPenalty(right, note.voice, writingProfile) ||
+        left - right,
+    );
+}
+
+function removeVoiceCrossingFreeCounterpointNotes(notes: readonly NoteEvent[]): NoteEvent[] {
+  let repairedNotes = [...notes];
+  for (let attempt = 0; attempt < 256; attempt += 1) {
+    const crossing = firstVoiceCrossing(repairedNotes);
+    if (crossing === undefined) {
+      break;
+    }
+    const droppable = crossing.find((note) => note.role === "free-counterpoint" || note.role === undefined);
+    if (droppable === undefined) {
+      break;
+    }
+    repairedNotes = repairedNotes.filter((note) => note !== droppable);
+  }
+  return repairedNotes;
+}
+
+function firstVoiceCrossing(notes: readonly NoteEvent[]): [NoteEvent, NoteEvent] | undefined {
+  const checkpoints = [...new Set(notes.flatMap((note) => [note.startTick, note.startTick + note.durationTicks]))].sort(
+    (left, right) => left - right,
+  );
+  const adjacentPairs: Array<[higher: NoteEvent["voice"], lower: NoteEvent["voice"]]> = [
+    ["soprano", "alto"],
+    ["alto", "tenor"],
+    ["tenor", "bass"],
+  ];
+
+  for (const tick of checkpoints) {
+    for (const [higher, lower] of adjacentPairs) {
+      const higherNote = notes.find(
+        (note) => note.voice === higher && note.startTick <= tick && tick < note.startTick + note.durationTicks,
+      );
+      const lowerNote = notes.find(
+        (note) => note.voice === lower && note.startTick <= tick && tick < note.startTick + note.durationTicks,
+      );
+      if (higherNote !== undefined && lowerNote !== undefined && higherNote.pitch < lowerNote.pitch) {
+        return [higherNote, lowerNote];
+      }
+    }
+  }
+  return undefined;
+}
+
+function samePitchClassReplacementPitches(
+  note: NoteEvent,
+  notes: readonly NoteEvent[],
+  writingProfile: WritingProfile,
+): number[] {
+  const range = writingProfile.voiceRanges[note.voice];
+  const pitchClass = positiveModulo(note.pitch, 12);
+  return writingProfile.absolutePitchSet
+    .filter(
+      (pitch) =>
+        pitch !== note.pitch &&
+        positiveModulo(pitch, 12) === pitchClass &&
+        range.min <= pitch &&
+        pitch <= range.max &&
+        !notes.some(
+          (other) => other !== note && other.voice !== note.voice && other.pitch === pitch && notesOverlap(note, other),
+        ),
+    )
+    .sort(
+      (left, right) =>
+        Math.abs(left - note.pitch) - Math.abs(right - note.pitch) ||
+        preferredPitchPenalty(left, note.voice, writingProfile) -
+          preferredPitchPenalty(right, note.voice, writingProfile) ||
+        left - right,
+    );
+}
+
+function preferredPitchPenalty(pitch: number, voice: NoteEvent["voice"], writingProfile: WritingProfile): number {
+  return pitch > (writingProfile.preferredMaxByVoice?.[voice] ?? writingProfile.voiceRanges[voice].max) ? 1 : 0;
+}
+
+function notesOverlap(left: NoteEvent, right: NoteEvent): boolean {
+  return (
+    left.startTick < right.startTick + right.durationTicks && right.startTick < left.startTick + left.durationTicks
+  );
+}
+
+function positiveModulo(value: number, divisor: number): number {
+  return ((value % divisor) + divisor) % divisor;
 }
 
 function resolveGenerationWritingProfile(input: GenerationInput): WritingProfile {

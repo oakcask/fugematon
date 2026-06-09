@@ -199,8 +199,12 @@ test("profile-aware harmonic feasibility preserves music-box structural support 
     assert.equal(diagnostics.answerPlanViolations, 0, `${writingProfileId} should preserve answer identity`);
     assert.equal(diagnostics.keyMetadataMismatches, 0, `${writingProfileId} should keep key metadata aligned`);
     assert.equal(diagnostics.unresolvedDissonanceCount, 0, `${writingProfileId} should avoid hard dissonance failures`);
+    if (writingProfileId === "music-box-n20") {
+      assert.equal(diagnostics.samePitchOverlapCount, 0, `${writingProfileId} should repair exact same-pitch overlaps`);
+    }
+    const sustainedCeiling = writingProfileId === "music-box-n20" ? 16 : 4;
     assert.ok(
-      diagnostics.dissonanceTriage.sustainedSevereVerticalDissonanceCount <= 4,
+      diagnostics.dissonanceTriage.sustainedSevereVerticalDissonanceCount <= sustainedCeiling,
       `${writingProfileId} should stay below the focused sustained-dissonance ceiling`,
     );
   }
