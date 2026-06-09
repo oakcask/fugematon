@@ -80,7 +80,7 @@ These fields are generator-side adoption evidence, not only explanation. The com
 
 `qualityVector.schemaVersion` 5 / `modelVersion` 5 adds `harmonicSonorities`:
 
-* `harmonicSonorities`: non-entry support-texture windows where the active sonority does not make the planned harmony audible. It checks actual pitch classes against the current harmonic anchor instead of trusting `metricalHarmonyIntent`.
+* `harmonicSonorities`: support-texture and mixed-entry windows where the active sonority does not make the planned harmony audible. It checks actual pitch classes against the current harmonic anchor instead of trusting `metricalHarmonyIntent`.
 * `non-chord-structural-support`: support notes labelled as structural chord/root support even though their actual pitch classes are outside the anchor chord. This is a generator-response signal because the score metadata is musically misleading.
 * `pitch-class-doubling-only`: two or more support voices collapse to one pitch class, producing texture but not a functional sonority.
 * `thin-unrooted-support`: a two-voice support window lacks root support and is too thin to establish the planned harmony.

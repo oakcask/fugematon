@@ -2,6 +2,7 @@ import { TICKS_PER_QUARTER, VOICES } from "../constants.js";
 import type {
   ConstraintSatisfactionReviewSummary,
   FugueState,
+  HarmonicAnchor,
   HarmonicPlan,
   IntentionalRestReason,
   NoteEvent,
@@ -13,6 +14,7 @@ import type {
   SectionConstraintSilentRun,
   Voice,
 } from "../events.js";
+import { assessHarmonicSonority, hasSupportRole, isMixedEntryTexture } from "./harmonic-sonority-review.js";
 import { chordTonePitchClasses, rootDegreeForFunction } from "./harmony.js";
 import { beatStrengthAtTick, isCompoundMidpoint, isMeasureDownbeat, previousMeasureDownbeat } from "./meter.js";
 import { scaleDegreePitchClass } from "./pitch.js";
@@ -203,6 +205,8 @@ export function evaluateSectionConstraintProblem(input: {
         infeasibleConstraintCounts.structuralRootSupportMiss += 1;
       }
     }
+
+    addHarmonicQualityCounts(infeasibleConstraintCounts, input.sectionPlan, anchor, activeNotes, gridTicks);
   }
 
   const selectedRelaxationLevel = relaxationLevel(infeasibleConstraintCounts);
@@ -256,7 +260,7 @@ export function buildConstraintSatisfactionReview(input: {
   );
 
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     windowCount: windows.length,
     intentionalRestSpanCount: windows.reduce((sum, window) => sum + window.intentionalRestSpans.length, 0),
     unplannedSilentRunCount: unplannedSilentRuns.length,
@@ -434,6 +438,40 @@ function activeNoteAt(notes: readonly NoteEvent[], voice: Voice, tick: number): 
 
 function activeNotesAt(notes: readonly NoteEvent[], tick: number): readonly NoteEvent[] {
   return notes.filter((note) => note.startTick <= tick && tick < note.startTick + note.durationTicks);
+}
+
+function addHarmonicQualityCounts(
+  counts: SectionConstraintInfeasibleCounts,
+  sectionPlan: HarmonicPlan,
+  anchor: HarmonicAnchor,
+  activeNotes: readonly NoteEvent[],
+  gridTicks: number,
+): void {
+  const sonority = assessHarmonicSonority(activeNotes, sectionPlan, anchor, anchor.tick, gridTicks);
+  if (sonority?.classification === "non-chord-structural-support") {
+    counts.nonChordStructuralSupportCount += sonority.structuralIntentMismatchCount;
+  }
+  if (sonority?.classification === "thin-unrooted-support") {
+    counts.thinUnrootedStructuralSupportCount += 1;
+  }
+  if (sonority?.classification === "pitch-class-doubling-only") {
+    counts.pitchClassDoublingOnlyCount += 1;
+  }
+  if (isMixedEntryTexture(activeNotes) && !supportNotesSustainAnchor(activeNotes, anchor)) {
+    counts.mixedEntryHarmonicRiskCount += 1;
+  }
+}
+
+function supportNotesSustainAnchor(activeNotes: readonly NoteEvent[], anchor: HarmonicAnchor): boolean {
+  if (!hasSupportRole(activeNotes)) {
+    return false;
+  }
+  const chordTonePitchClassesForAnchor = chordTonePitchClasses(anchor.localKey, anchor.function);
+  return activeNotes.some(
+    (note) =>
+      (note.role === "counter-subject" || note.role === "free-counterpoint") &&
+      chordTonePitchClassesForAnchor.includes(positiveModulo(note.pitch, 12)),
+  );
 }
 
 function inferIntentionalRestReason(input: {
@@ -661,6 +699,10 @@ function emptyInfeasibleCounts(): SectionConstraintInfeasibleCounts {
     longUnplannedSilentRun: 0,
     structuralChordSupportMiss: 0,
     structuralRootSupportMiss: 0,
+    nonChordStructuralSupportCount: 0,
+    thinUnrootedStructuralSupportCount: 0,
+    pitchClassDoublingOnlyCount: 0,
+    mixedEntryHarmonicRiskCount: 0,
   };
 }
 
@@ -674,6 +716,11 @@ function sumInfeasibleCounts(counts: readonly SectionConstraintInfeasibleCounts[
       longUnplannedSilentRun: sum.longUnplannedSilentRun + count.longUnplannedSilentRun,
       structuralChordSupportMiss: sum.structuralChordSupportMiss + count.structuralChordSupportMiss,
       structuralRootSupportMiss: sum.structuralRootSupportMiss + count.structuralRootSupportMiss,
+      nonChordStructuralSupportCount: sum.nonChordStructuralSupportCount + count.nonChordStructuralSupportCount,
+      thinUnrootedStructuralSupportCount:
+        sum.thinUnrootedStructuralSupportCount + count.thinUnrootedStructuralSupportCount,
+      pitchClassDoublingOnlyCount: sum.pitchClassDoublingOnlyCount + count.pitchClassDoublingOnlyCount,
+      mixedEntryHarmonicRiskCount: sum.mixedEntryHarmonicRiskCount + count.mixedEntryHarmonicRiskCount,
     }),
     emptyInfeasibleCounts(),
   );
@@ -682,7 +729,7 @@ function sumInfeasibleCounts(counts: readonly SectionConstraintInfeasibleCounts[
 function relaxationLevel(counts: SectionConstraintInfeasibleCounts): SectionConstraintRelaxationLevel {
   const densityFailures =
     counts.minActiveVoiceViolation + counts.unsupportedSolo + counts.allVoiceSilence + counts.longUnplannedSilentRun;
-  const structuralFailures = counts.structuralChordSupportMiss + counts.structuralRootSupportMiss;
+  const structuralFailures = counts.nonChordStructuralSupportCount;
   if (counts.invalidIntentionalRestReason > 0 || (densityFailures > 0 && structuralFailures > 0)) {
     return "infeasible";
   }
@@ -710,7 +757,14 @@ function maxRelaxationLevel(
 
 export function sectionConstraintHardFailureCount(window: SectionConstraintSatisfactionWindow): number {
   const counts = window.infeasibleConstraintCounts;
-  return Object.values(counts).reduce((sum, count) => sum + count, 0);
+  return (
+    counts.invalidIntentionalRestReason +
+    counts.minActiveVoiceViolation +
+    counts.unsupportedSolo +
+    counts.allVoiceSilence +
+    counts.longUnplannedSilentRun +
+    counts.nonChordStructuralSupportCount
+  );
 }
 
 export function sectionConstraintSoftCost(window: SectionConstraintSatisfactionWindow): number {
@@ -721,6 +775,9 @@ export function sectionConstraintSoftCost(window: SectionConstraintSatisfactionW
       counts.allVoiceSilence * 8 +
       counts.longUnplannedSilentRun * 5 +
       counts.structuralChordSupportMiss * 4 +
-      counts.structuralRootSupportMiss * 6,
+      counts.structuralRootSupportMiss * 6 +
+      counts.thinUnrootedStructuralSupportCount +
+      counts.pitchClassDoublingOnlyCount * 1.5 +
+      counts.mixedEntryHarmonicRiskCount * 2,
   );
 }

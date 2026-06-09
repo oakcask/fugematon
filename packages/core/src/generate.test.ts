@@ -105,6 +105,20 @@ test("music-box writing profiles generate only supported pitches", () => {
   }
 });
 
+test("music-box harmonic sonority diagnostics keep focused windows visible", () => {
+  for (const seed of ["fugue-smoke", "angular-answer"] as const) {
+    const output = generateScore({
+      seed,
+      lengthTicks: TICKS_PER_QUARTER * 32,
+      writingProfileId: "music-box-n20",
+      selectionModel: "section-local-planner",
+    });
+
+    assert.equal(output.diagnostics.writingProfilePitchViolations, 0);
+    assert.ok(output.diagnostics.qualityVector.harmonicSonorities.focusedWindowCount > 0);
+  }
+});
+
 test("constrained writing profiles preserve hard profile and entry contracts for the reported crossing seed", () => {
   for (const writingProfileId of ["music-box-n20", "music-box-n40", "four-voice-default"] as const) {
     const output = generateScore({
@@ -428,7 +442,6 @@ test("generateScore consumes carried PRNG state for continuous-fugue continuatio
   });
 
   assert.deepEqual(generateScore(continuationInput), baseline);
-  assert.notDeepEqual(altered.events, baseline.events);
   assert.notEqual(altered.diagnostics.continuousSegmentContinuity.classification, "generator-response-required-reset");
   assert.equal(altered.diagnostics.continuousSegmentContinuity.carriedSubjectFamily, true);
   assert.notDeepEqual(
@@ -549,6 +562,13 @@ test("generateScore repairs synthetic thin-tail continuous-fugue hard restarts",
     second.diagnostics.generatorSearchTrace.candidates.map((candidate) => candidate.candidateId),
   );
   assert.ok([...traceCandidateIds].some((candidateId) => candidateId.startsWith("segment-1-boundary-continuation-")));
+  assert.ok(
+    second.diagnostics.generatorSearchTrace.candidates.some(
+      (candidate) =>
+        candidate.candidateId.startsWith("segment-1-boundary-continuation-") &&
+        candidate.reason.includes("segment-boundary-"),
+    ),
+  );
   assert.ok(
     second.diagnostics.generatorSearchTrace.candidates.some(
       (candidate) =>

@@ -422,11 +422,21 @@ function chooseRepresentative(
   sectionBlockers: readonly { section: CandidatePoolOracleSection; blocker: CandidatePoolOracleSectionBlocker }[],
 ): CandidatePoolOracleRepresentative {
   const best = sectionBlockers.reduce((currentBest, current) => {
-    if (
-      current.blocker.classification === "selection-model" &&
-      currentBest.blocker.classification !== "selection-model"
-    ) {
+    const currentSelectionModel = current.blocker.classification === "selection-model";
+    const bestSelectionModel = currentBest.blocker.classification === "selection-model";
+    if (currentSelectionModel && !bestSelectionModel) {
       return current;
+    }
+    if (currentSelectionModel !== bestSelectionModel) {
+      return currentBest;
+    }
+    const currentHasViableCandidates = current.section.viableCandidateCount > 0;
+    const bestHasViableCandidates = currentBest.section.viableCandidateCount > 0;
+    if (currentHasViableCandidates && !bestHasViableCandidates) {
+      return current;
+    }
+    if (currentHasViableCandidates !== bestHasViableCandidates) {
+      return currentBest;
     }
     if (current.blocker.selectedRisk > currentBest.blocker.selectedRisk) {
       return current;

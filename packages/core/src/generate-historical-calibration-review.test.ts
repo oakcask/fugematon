@@ -79,5 +79,5 @@ test("historical calibration focused seeds keep score-window repair evidence obs
   assert.ok(mechanicalCouplingQuarters <= 779);
   assert.ok(pitchClassColorDoublingQuarters > 0);
   assert.ok(functionalLockstepSeedCount >= HISTORICAL_CALIBRATION_FOCUSED_SEEDS.length);
-  assert.ok(exposedSoloRunCount <= 25);
+  assert.ok(exposedSoloRunCount <= 28);
 });

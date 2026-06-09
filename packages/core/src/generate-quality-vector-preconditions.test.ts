@@ -57,9 +57,21 @@ test("generateScore keeps thin bass-answer tail support review-visible", () => {
   const sonority = output.diagnostics.qualityVector.harmonicSonorities;
   const bassTail = output.diagnostics.bassAnswerTailTexture;
 
-  assert.equal(sonority.generatorResponseWindowCount, 0);
-  assert.equal(sonority.focusedWindowCount, 0);
   assert.equal(bassTail.reviewRequired, true);
   assert.ok(bassTail.zeroOutsideVoiceWindowCount > 0);
   assert.ok(bassTail.windows.some((window) => window.classification === "review-required"));
+  assert.ok(sonority.generatorResponseWindowCount > 0);
+  assert.ok(
+    sonority.windows.some(
+      (window) =>
+        window.classification === "non-chord-structural-support" &&
+        window.response === "generator-response-required" &&
+        window.structuralIntentMismatchCount > 0,
+    ),
+  );
+  assert.ok(
+    output.diagnostics.scoreWindowAcceptance.windows.some(
+      (window) => window.kind === "harmonic-sonority" && window.response === "generator-response-required",
+    ),
+  );
 });

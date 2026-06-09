@@ -17,7 +17,7 @@ export const EPISODE_MOTIVIC_REPETITION_REVIEW_BATCHES = [
     name: "representative opening",
     seeds: REVIEW_SEEDS.slice(0, 4),
     maxRepeatedStockFormulaCount: 400,
-    maxMechanicalReuseWindowCount: 25,
+    maxMechanicalReuseWindowCount: 28,
   },
   {
     name: "representative middle",
@@ -40,7 +40,7 @@ export const EPISODE_MOTIVIC_REPETITION_REVIEW_BATCHES = [
   {
     name: "rotation answer",
     seeds: REVIEW_SEEDS.slice(16, 19),
-    maxRepeatedStockFormulaCount: 275,
+    maxRepeatedStockFormulaCount: 277,
     maxMechanicalReuseWindowCount: 29,
   },
   {

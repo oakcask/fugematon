@@ -60,7 +60,7 @@ test("section CSP rejects unsupported solo and long unplanned silent runs", () =
   assert.equal(review.infeasibleConstraintCounts.unsupportedSolo, 4);
   assert.equal(review.infeasibleConstraintCounts.minActiveVoiceViolation, 4);
   assert.equal(review.infeasibleConstraintCounts.longUnplannedSilentRun, 3);
-  assert.equal(review.selectedRelaxationLevel, "infeasible");
+  assert.equal(review.selectedRelaxationLevel, "density-floor-review");
 });
 
 test("section CSP requires structural root and chord support at harmonic anchors", () => {
@@ -99,7 +99,7 @@ test("section CSP diagnostics are deterministic for the same seed and input", ()
   const second = generateScore({ seed: "fugue-smoke", lengthTicks: TICKS_PER_QUARTER * 32 });
 
   assert.deepEqual(first.diagnostics.constraintSatisfactionReview, second.diagnostics.constraintSatisfactionReview);
-  assert.equal(first.diagnostics.constraintSatisfactionReview.schemaVersion, 2);
+  assert.equal(first.diagnostics.constraintSatisfactionReview.schemaVersion, 3);
   assert.ok(first.diagnostics.constraintSatisfactionReview.solverCandidateCount > 0);
   assert.equal(typeof first.diagnostics.constraintSatisfactionReview.metricalBoundaryCost, "number");
   assert.equal(typeof first.diagnostics.constraintSatisfactionReview.unpreparedTransitionCount, "number");

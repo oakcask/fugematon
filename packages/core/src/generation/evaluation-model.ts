@@ -1,5 +1,5 @@
 export const CANDIDATE_EVALUATION_FEATURE_VERSION = 9;
-export const CANDIDATE_EVALUATION_MODEL_VERSION = 17;
+export const CANDIDATE_EVALUATION_MODEL_VERSION = 18;
 
 export const CANDIDATE_EVALUATION_WEIGHTS = {
   hardFailure: 10_000,
@@ -51,8 +51,8 @@ export const CANDIDATE_EVALUATION_WEIGHTS = {
     severeEntryInterval: 1,
     unresolvedSevereEntryInterval: 2,
     unresolvedAccentedEntryClash: 0,
-    harmonicSonorityReviewWindow: 0,
-    harmonicSonorityGeneratorWindow: 0,
+    harmonicSonorityReviewWindow: 0.08,
+    harmonicSonorityGeneratorWindow: 0.3,
     harmonicStasisRearticulationReviewWindow: 0.05,
     harmonicStasisRearticulationGeneratorWindow: 0.2,
     modalCadenceEntryInstability: 1,
@@ -80,8 +80,8 @@ export const CANDIDATE_SELECTION_RISK_WEIGHTS = {
     unresolvedSevereInterval: 5,
     unresolvedDuration: 0.6,
     unresolvedAccentedEntryClash: 0,
-    harmonicSonorityReviewWindow: 0,
-    harmonicSonorityGeneratorWindow: 0,
+    harmonicSonorityReviewWindow: 1.2,
+    harmonicSonorityGeneratorWindow: 4,
   },
   stepwiseFixation: {
     selectedCost: 1.5,

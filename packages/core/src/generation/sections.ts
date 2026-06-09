@@ -227,7 +227,7 @@ export function buildFugueScore(
     if (selectionModel === "section-local-planner") {
       softenBassEntryBoundaryResets(selection.section.notes, selection.section.subjectEntries, notes);
       selection.section.notes.sort(compareNoteEvents);
-      selection.evaluation = evaluateCandidate(notes, selection.section, subjectEntries, sectionPlans);
+      selection.evaluation = evaluateCandidate(notes, selection.section, subjectEntries, sectionPlans, writingProfile);
     }
     const selectedState = selection.section.sectionPlans[0]?.state ?? state;
     stateTransitions.push(selectedState);
@@ -1535,6 +1535,7 @@ export function buildFugueContinuationScore(
         selection.section,
         [...previousSubjectEntries, ...subjectEntries],
         [...previousSectionPlans, ...sectionPlans],
+        writingProfile,
       );
     }
 
@@ -2239,7 +2240,7 @@ export function chooseContinuationSection(
     writingProfile,
   );
   const evaluations = candidates.map((candidate) =>
-    evaluateCandidate(previousNotes, candidate, previousSubjectEntries, previousSectionPlans),
+    evaluateCandidate(previousNotes, candidate, previousSubjectEntries, previousSectionPlans, writingProfile),
   );
   const selectionWindow = continuationCandidateSelectionWindow(state, selectionModel, candidates.length);
   const constraintCandidates = candidates.map((candidate, index) =>
@@ -2510,6 +2511,12 @@ function compareDurationCandidateSelections(
     return leftHardFailureCount - rightHardFailureCount;
   }
 
+  const leftHarmonicQualityCost = sectionHarmonicQualityCost(left.constraintCandidate);
+  const rightHarmonicQualityCost = sectionHarmonicQualityCost(right.constraintCandidate);
+  if (leftHarmonicQualityCost !== rightHarmonicQualityCost) {
+    return leftHarmonicQualityCost - rightHarmonicQualityCost;
+  }
+
   const leftMetricalCost = sectionMetricalBoundaryCost(left.constraintCandidate);
   const rightMetricalCost = sectionMetricalBoundaryCost(right.constraintCandidate);
   if (leftMetricalCost !== rightMetricalCost) {
@@ -2531,6 +2538,10 @@ function compareDurationCandidateSelections(
 
 function sectionMetricalBoundaryCost(candidate: ConstraintCandidate): number {
   return candidate.result.window.sectionConstraintReview?.metricalBoundaryCost ?? 0;
+}
+
+function sectionHarmonicQualityCost(candidate: ConstraintCandidate): number {
+  return candidate.result.softCosts.find((cost) => cost.feature === "section-csp-harmonic-quality")?.cost ?? 0;
 }
 
 function selectableContinuationCandidateIndexes(input: {
@@ -2649,6 +2660,11 @@ export function chooseSectionCspBacktrackingCandidateIndex(input: {
     }
     if (leftCandidate.result.totalSoftCost !== rightCandidate.result.totalSoftCost) {
       return leftCandidate.result.totalSoftCost - rightCandidate.result.totalSoftCost;
+    }
+    const leftScore = input.candidateScores?.[left] ?? 0;
+    const rightScore = input.candidateScores?.[right] ?? 0;
+    if (leftScore !== rightScore) {
+      return leftScore - rightScore;
     }
     return leftCandidate.candidateId.localeCompare(rightCandidate.candidateId);
   })[0]!;
