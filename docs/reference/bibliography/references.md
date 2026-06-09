@@ -70,6 +70,46 @@
 * Cache key: `references/url/komosinski-szachewicz-2015-counterpoint`
 * Notes: Species-counterpoint composition framed as constraint and preference optimization.
 
+## open-music-theory-second-species
+
+* Citation: Open Music Theory. "Second-Species Counterpoint."
+* Stable identifier: https://viva.pressbooks.pub/openmusictheory/chapter/second-species-counterpoint/
+* Source type: web-page
+* Accessed: 2026-06-04
+* Verification: medium - Page text was checked for weak-beat dissonance as stepwise passing-tone context.
+* Cache key: `sources/sustained-vertical-dissonance-2026-06-04.json`
+* Notes: Pedagogical source for species-counterpoint treatment of weak-beat dissonance.
+
+## open-music-theory-fourth-species
+
+* Citation: Open Music Theory. "Composing a fourth-species counterpoint."
+* Stable identifier: https://openmusictheory.github.io/fourthSpecies.html
+* Source type: web-page
+* Accessed: 2026-06-04
+* Verification: medium - Page text was checked for suspension preparation, dissonance, and stepwise resolution.
+* Cache key: `sources/sustained-vertical-dissonance-2026-06-04.json`
+* Notes: Pedagogical source for suspension handling in species counterpoint.
+
+## open-music-theory-species-counterpoint
+
+* Citation: Open Music Theory. "Introduction to Species Counterpoint."
+* Stable identifier: https://viva.pressbooks.pub/openmusictheory/chapter/species-counterpoint/
+* Source type: web-page
+* Accessed: 2026-06-04
+* Verification: medium - Page text was checked for perfect fourth treatment above the lowest voice.
+* Cache key: `sources/sustained-vertical-dissonance-2026-06-04.json`
+* Notes: Pedagogical source for consonance and dissonance categories in species counterpoint.
+
+## fundamentals-function-form-nonharmonic-tones
+
+* Citation: Milne Publishing. "15. Nonharmonic Tones." *Fundamentals, Function, and Form*.
+* Stable identifier: https://milnepublishing.geneseo.edu/fundamentals-function-form/chapter/15-nonharmonic-tones/
+* Source type: web-page
+* Accessed: 2026-06-04
+* Verification: medium - Page text was checked for passing and neighbor tone context.
+* Cache key: `sources/sustained-vertical-dissonance-2026-06-04.json`
+* Notes: Pedagogical source for nonharmonic tones and metrical displacement.
+
 ## parncutt-keyboard-fingering-1997
 
 * Citation: Parncutt, Richard, John A. Sloboda, Eric F. Clarke, Matti Raekallio, and Peter Desain. "An Ergonomic Model of Keyboard Fingering for Melodic Fragments." *Music Perception*, 1997.

@@ -250,10 +250,23 @@ export function normalizeSelectionModel(selectionModel: SelectionModel): Current
   return selectionModel;
 }
 
+export type SectionConstraintScoringProfileId =
+  | "current"
+  | "entry-soft"
+  | "entry-balanced"
+  | "entry-strict"
+  | "entry-strict-leap";
+
+export type SectionConstraintScoringProfileMetadata = {
+  id: SectionConstraintScoringProfileId;
+  version: number;
+};
+
 export type GenerationInput = {
   seed: string;
   lengthTicks: number;
   writingProfileId?: WritingProfileId;
+  constraintProfileId?: SectionConstraintScoringProfileId;
   segmentIndex?: number;
   selectionModel?: SelectionModel;
   previousSegmentSnapshot?: import("./infinite-playback.js").SegmentSnapshot;
@@ -431,6 +444,10 @@ export type SectionConstraintInfeasibleCounts = {
   entrySupportInstabilityCount: number;
   unresolvedEntrySupportInstabilityCount: number;
   unresolvedSevereEntryIntervalCount: number;
+  entryAdjacentSecondFrictionCount: number;
+  unresolvedAccentedEntryClashCount: number;
+  leapToSilenceCount: number;
+  sustainedSevereVerticalDissonanceCount: number;
   voicePairUnisonPressureCount: number;
   voicePairLockstepCount: number;
   structuralChordSupportMiss: number;
@@ -534,8 +551,8 @@ export type CandidateEvaluationExplanations = {
 };
 
 export type CandidateEvaluation = {
-  featureVersion: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
-  evaluationModelVersion: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18;
+  featureVersion: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
+  evaluationModelVersion: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19;
   totalCost: number;
   hardFailures: DiagnosticIssueCode[];
   explanations: CandidateEvaluationExplanations;
@@ -1479,24 +1496,35 @@ export type PhraseDevelopmentReviewSummary = {
 
 export type DissonanceTriageWindow = {
   startTick: number;
+  durationTicks?: number;
   state: FugueState | "mixed";
   voices: Voice[];
   roles: NoteRole[];
   metricalHarmonyIntents: MetricalHarmonyIntent[];
+  pitches?: number[];
+  pitchClasses?: number[];
   classification:
     | "weak-passing-semitone-clash"
     | "passing-neighbor-offbeat-semitone-clash"
     | "entry-adjacent-second-friction"
-    | "unresolved-accented-entry-clash";
-  response: "review-required";
+    | "unresolved-accented-entry-clash"
+    | "sustained-semitone-stack"
+    | "sustained-tritone"
+    | "sustained-fourth-above-bass"
+    | "sustained-severe-vertical-dissonance"
+    | "prepared-suspension";
+  response: "accepted-context" | "review-required" | "generator-response-required";
 };
 
 export type DissonanceTriageSummary = {
-  schemaVersion: 1;
+  schemaVersion: 2;
   weakPassingSemitoneClashTicks: number;
   passingNeighborOffbeatSemitoneClashTicks: number;
   entryAdjacentSecondFrictionCount: number;
   unresolvedAccentedEntryClashCount: number;
+  sustainedSevereVerticalDissonanceCount: number;
+  sustainedSevereVerticalDissonanceTicks: number;
+  maxSustainedSevereVerticalDissonanceTicks: number;
   windows: DissonanceTriageWindow[];
 };
 
@@ -1701,6 +1729,7 @@ export type GenerationDiagnostics = {
   generatorVersion: number;
   selectionModel: SelectionModel;
   writingProfile: WritingProfileMetadata;
+  constraintProfile: SectionConstraintScoringProfileMetadata;
   seed: string;
   lengthTicks: number;
   generatedUntilTick: number;

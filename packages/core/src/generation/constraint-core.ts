@@ -11,6 +11,7 @@ import type {
   NoteEvent,
   PlannedEntry,
   SectionConstraintSatisfactionWindow,
+  SectionConstraintScoringProfileId,
   Voice,
 } from "../events.js";
 import { analyzeWritingProfileConstraints, type WritingProfile } from "../writing-profile.js";
@@ -22,6 +23,7 @@ import {
   evaluateSectionConstraintProblem,
   sectionConstraintSoftCost,
 } from "./section-constraint-problem.js";
+import { resolveSectionConstraintScoringProfile } from "./section-constraint-scoring.js";
 import { compareNoteEvents, positiveModulo, roundRatio } from "./shared.js";
 
 export type ScoreDraft = {
@@ -30,6 +32,7 @@ export type ScoreDraft = {
   sectionPlans: readonly HarmonicPlan[];
   endTick: number;
   writingProfile: WritingProfile;
+  constraintProfileId?: SectionConstraintScoringProfileId;
   boundedPastContext?: {
     events: readonly NoteEvent[];
   };
@@ -117,6 +120,7 @@ export function evaluateScoreDraft(
   );
   const diagnostics = analyzeScoreSafely(analyzableNotes, subjectEntries, sectionPlans, draft.writingProfile);
   const writingProfileDiagnostics = analyzeWritingProfileConstraints(analyzableNotes, draft.writingProfile);
+  const constraintProfile = resolveSectionConstraintScoringProfile(draft.constraintProfileId);
   const sectionConstraintReview =
     expandedWindow.sectionConstraintProblem === true && expandedWindow.harmonicPlan !== undefined
       ? evaluateSectionConstraintProblem({
@@ -198,6 +202,7 @@ export function evaluateScoreDraft(
     diagnostics,
     writingProfileDiagnostics,
     sectionConstraintReview,
+    constraintProfile.id,
   );
   const totalSoftCost = roundRatio(softCosts.reduce((sum, cost) => sum + cost.cost, 0));
   const sortedHardFailures = [...hardFailures.values()].sort((left, right) => left.code.localeCompare(right.code));
@@ -515,6 +520,7 @@ function softFeatureCosts(
   diagnostics: ReturnType<typeof analyzeScore> | undefined,
   writingProfileDiagnostics: ReturnType<typeof analyzeWritingProfileConstraints>,
   sectionConstraintReview: SectionConstraintSatisfactionWindow | undefined,
+  constraintProfileId: SectionConstraintScoringProfileId,
 ): ConstraintSoftFeatureCost[] {
   const writingProfilePlayabilityCost =
     writingProfileDiagnostics.handSpanViolations +
@@ -530,7 +536,7 @@ function softFeatureCosts(
         cost: writingProfilePlayabilityCost,
         explanation: "WritingProfile playability evidence ranks viable candidates after pitch-contract checks",
       },
-      ...sectionConstraintSoftFeatureCosts(sectionConstraintReview),
+      ...sectionConstraintSoftFeatureCosts(sectionConstraintReview, constraintProfileId),
       ...continuousBoundarySoftFeatureCosts(window),
       ...terminalSupportSoftFeatureCosts(draft, window),
     ].filter((cost) => cost.cost > 0);
@@ -617,7 +623,7 @@ function softFeatureCosts(
       explanation:
         "free-counterpoint candidates are ranked by entry handoff support and explained solo or thinning context",
     },
-    ...sectionConstraintSoftFeatureCosts(sectionConstraintReview),
+    ...sectionConstraintSoftFeatureCosts(sectionConstraintReview, constraintProfileId),
     ...continuousBoundarySoftFeatureCosts(window),
     ...terminalSupportSoftFeatureCosts(draft, window),
     {
@@ -678,60 +684,73 @@ function usesConstrainedSopranoContourProfile(writingProfile: WritingProfile): b
 
 function sectionConstraintSoftFeatureCosts(
   review: SectionConstraintSatisfactionWindow | undefined,
+  constraintProfileId: SectionConstraintScoringProfileId,
 ): ConstraintSoftFeatureCost[] {
   if (review === undefined) {
     return [];
   }
+  const profile = resolveSectionConstraintScoringProfile(constraintProfileId);
+  const weights = profile.weights;
+  const counts = review.infeasibleConstraintCounts;
   return [
     {
       feature: "section-csp-voice-coverage",
       cost:
-        review.infeasibleConstraintCounts.minActiveVoiceViolation * 2 +
-        review.infeasibleConstraintCounts.unsupportedSolo * 6 +
-        review.infeasibleConstraintCounts.allVoiceSilence * 8 +
-        review.infeasibleConstraintCounts.longUnplannedSilentRun * 5,
+        counts.minActiveVoiceViolation * weights.minActiveVoiceViolation +
+        counts.unsupportedSolo * weights.unsupportedSolo +
+        counts.allVoiceSilence * weights.allVoiceSilence +
+        counts.longUnplannedSilentRun * weights.longUnplannedSilentRun,
       explanation:
         "section-local CSP ranks candidates by required voice coverage, unsupported solo exposure, and unplanned silence",
     },
     {
       feature: "section-csp-harmonic-support",
       cost:
-        review.infeasibleConstraintCounts.structuralChordSupportMiss * 4 +
-        review.infeasibleConstraintCounts.structuralRootSupportMiss * 6,
+        counts.structuralChordSupportMiss * weights.structuralChordSupportMiss +
+        counts.structuralRootSupportMiss * weights.structuralRootSupportMiss,
       explanation: "section-local CSP ranks structural beats by root and chord-tone support",
     },
     {
       feature: "section-csp-entry-support",
       cost:
-        review.infeasibleConstraintCounts.entrySupportInstabilityCount +
-        review.infeasibleConstraintCounts.unresolvedEntrySupportInstabilityCount * 5 +
-        review.infeasibleConstraintCounts.unresolvedSevereEntryIntervalCount * 6,
+        counts.entrySupportInstabilityCount * weights.entrySupportInstability +
+        counts.unresolvedEntrySupportInstabilityCount * weights.unresolvedEntrySupportInstability +
+        counts.unresolvedSevereEntryIntervalCount * weights.unresolvedSevereEntryInterval +
+        counts.entryAdjacentSecondFrictionCount * weights.entryAdjacentSecondFriction +
+        counts.unresolvedAccentedEntryClashCount * weights.unresolvedAccentedEntryClash +
+        counts.leapToSilenceCount * weights.leapToSilence,
       explanation: "section-local CSP ranks planned entries by support stability and unresolved severe entry intervals",
+    },
+    {
+      feature: "section-csp-sustained-dissonance",
+      cost: counts.sustainedSevereVerticalDissonanceCount * weights.sustainedSevereVerticalDissonance,
+      explanation:
+        "section-local CSP ranks held severe vertical dissonance as a soft generator-response cost before hard gates are adopted",
     },
     {
       feature: "section-csp-voice-pair-independence",
       cost:
-        review.infeasibleConstraintCounts.voicePairUnisonPressureCount * 0.25 +
-        review.infeasibleConstraintCounts.voicePairLockstepCount * 0.125,
+        counts.voicePairUnisonPressureCount * weights.voicePairUnisonPressure +
+        counts.voicePairLockstepCount * weights.voicePairLockstep,
       explanation: "section-local CSP ranks voice pairs by unison pressure and shared rhythmic lockstep",
     },
     {
       feature: "section-csp-harmonic-quality",
       cost:
-        review.infeasibleConstraintCounts.thinUnrootedStructuralSupportCount * 3 +
-        review.infeasibleConstraintCounts.pitchClassDoublingOnlyCount * 4 +
-        review.infeasibleConstraintCounts.mixedEntryHarmonicRiskCount * 5,
+        counts.thinUnrootedStructuralSupportCount * weights.thinUnrootedStructuralSupport +
+        counts.pitchClassDoublingOnlyCount * weights.pitchClassDoublingOnly +
+        counts.mixedEntryHarmonicRiskCount * weights.mixedEntryHarmonicRisk,
       explanation:
         "section-local CSP ranks audible sonority quality while keeping thin and mixed-entry evidence review-required",
     },
     {
       feature: "section-csp-rest-reason",
-      cost: review.infeasibleConstraintCounts.invalidIntentionalRestReason * 10,
+      cost: counts.invalidIntentionalRestReason * 10,
       explanation: "section-local CSP accepts only the allowed internal intentional-rest reasons",
     },
     {
       feature: "section-csp-search-width",
-      cost: Math.max(0, sectionConstraintSoftCost(review) / Math.max(1, review.solverCandidateCount)),
+      cost: Math.max(0, sectionConstraintSoftCost(review, profile.id) / Math.max(1, review.solverCandidateCount)),
       explanation: "section-local CSP exposes bounded deterministic candidate width as trace evidence",
     },
     {

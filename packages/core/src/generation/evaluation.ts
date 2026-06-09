@@ -224,6 +224,9 @@ export function evaluateCandidate(
   const unresolvedAccentedEntryClashCost =
     diagnostics.dissonanceTriage.unresolvedAccentedEntryClashCount *
     EVALUATION_WEIGHTS.harmony.unresolvedAccentedEntryClash;
+  const sustainedSevereVerticalDissonanceCost =
+    diagnostics.dissonanceTriage.sustainedSevereVerticalDissonanceCount *
+    EVALUATION_WEIGHTS.harmony.sustainedSevereVerticalDissonance;
   const harmonicSonorityCost =
     diagnostics.qualityVector.harmonicSonorities.reviewRequiredWindowCount *
       EVALUATION_WEIGHTS.harmony.harmonicSonorityReviewWindow +
@@ -239,6 +242,7 @@ export function evaluateCandidate(
     modalCadenceEntrySupportRiskCost +
     unresolvedEntrySupportInstabilityCost +
     unresolvedAccentedEntryClashCost +
+    sustainedSevereVerticalDissonanceCost +
     harmonicSonorityCost +
     harmonicStasisRearticulationCost;
   const harmony = {
@@ -294,6 +298,8 @@ export function evaluateCandidate(
       selectedEntryHarmonyRiskCost: entryHarmonyRiskCost,
       selectedModalCadenceEntrySupportRiskCost: modalCadenceEntrySupportRiskCost,
       unresolvedAccentedEntryClashCount: diagnostics.dissonanceTriage.unresolvedAccentedEntryClashCount,
+      sustainedSevereVerticalDissonanceCount: diagnostics.dissonanceTriage.sustainedSevereVerticalDissonanceCount,
+      sustainedSevereVerticalDissonanceTicks: diagnostics.dissonanceTriage.sustainedSevereVerticalDissonanceTicks,
       harmonicSonorityReviewRequiredWindowCount: diagnostics.qualityVector.harmonicSonorities.reviewRequiredWindowCount,
       harmonicSonorityGeneratorResponseWindowCount:
         diagnostics.qualityVector.harmonicSonorities.generatorResponseWindowCount,
@@ -302,6 +308,7 @@ export function evaluateCandidate(
       harmonicStasisRearticulationGeneratorResponseWindowCount:
         diagnostics.harmonicStasisRearticulation.generatorResponseWindowCount,
       selectedUnresolvedAccentedEntryClashCost: unresolvedAccentedEntryClashCost,
+      selectedSustainedSevereVerticalDissonanceCost: sustainedSevereVerticalDissonanceCost,
       selectedHarmonicSonorityCost: harmonicSonorityCost,
       selectedHarmonicStasisRearticulationCost: harmonicStasisRearticulationCost,
     },

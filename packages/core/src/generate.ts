@@ -6,6 +6,7 @@ import type {
   HarmonicPlan,
   PlannedEntry,
   ScoreEvent,
+  SectionConstraintScoringProfileId,
 } from "./events.js";
 import { normalizeSelectionModel } from "./events.js";
 import {
@@ -24,6 +25,10 @@ import { buildPhraseConvergenceReviewSummary } from "./generation/phrase-converg
 import { buildPhraseDevelopmentReviewSummary } from "./generation/phrase-development-review.js";
 import { buildScoreWindowAcceptanceSummary } from "./generation/score-window-acceptance.js";
 import { buildConstraintSatisfactionReview } from "./generation/section-constraint-problem.js";
+import {
+  resolveSectionConstraintScoringProfile,
+  sectionConstraintScoringProfileMetadata,
+} from "./generation/section-constraint-scoring.js";
 import { buildExposition, buildFugueContinuationScore, buildFugueScore } from "./generation/sections.js";
 import { buildSubject } from "./generation/subject.js";
 import { applyTerminalClosureIntent, buildTerminalClosureReviewSummary } from "./generation/terminal-closure-review.js";
@@ -43,6 +48,7 @@ export function generateScore(input: GenerationInput): GenerationOutput {
   const mode = normalizeInfinitePlaybackMode(input.mode);
   const initialRng = Xoshiro128StarStar.fromSeed(input.seed);
   const writingProfile = resolveGenerationWritingProfile(input);
+  const constraintProfile = resolveSectionConstraintScoringProfile(input.constraintProfileId);
   const initialKeySignature = chooseKeySignature(initialRng, input.seed, writingProfile);
   const initialTimeSignature = chooseTimeSignature(initialRng);
   const initialMeterContext = createMeterContext(initialTimeSignature);
@@ -69,6 +75,7 @@ export function generateScore(input: GenerationInput): GenerationOutput {
         lengthTicks: input.lengthTicks,
         meterContext,
         writingProfile,
+        constraintProfileId: constraintProfile.id,
       });
   const score = isContinuousContinuation
     ? buildFugueContinuationScore(subject, keySignature, input.lengthTicks, rng, {
@@ -80,6 +87,7 @@ export function generateScore(input: GenerationInput): GenerationOutput {
         firstStateHint: input.previousSegmentSnapshot!.sectionPlannerState.nextStateHint,
         previousDensityArc: input.previousSegmentSnapshot!.densityArc.recentVoiceCounts,
         writingProfile,
+        constraintProfileId: constraintProfile.id,
       })
     : buildFugueScore(
         subject,
@@ -93,6 +101,7 @@ export function generateScore(input: GenerationInput): GenerationOutput {
           initialExposition: expositionSearch?.selected.exposition,
         },
         writingProfile,
+        constraintProfile.id,
       );
   applyTerminalClosureIntent(score, Math.max(input.lengthTicks, score.endTick), mode);
   annotateEpisodeMotivicDerivations(score.notes, score.sectionPlans);
@@ -100,6 +109,7 @@ export function generateScore(input: GenerationInput): GenerationOutput {
     score,
     Math.max(input.lengthTicks, score.endTick),
     writingProfile,
+    constraintProfile.id,
   );
   const diagnostics = analyzeScore(score.notes, score.subjectEntries, score.sectionPlans, writingProfile);
   const constraintSatisfactionReview = buildConstraintSatisfactionReview({
@@ -133,7 +143,7 @@ export function generateScore(input: GenerationInput): GenerationOutput {
   const generatedUntilTick = Math.max(input.lengthTicks, score.endTick);
   const generatorSearchTrace =
     expositionSearch === undefined
-      ? buildContinuationGeneratorSearchTrace(score, generatedUntilTick, writingProfile)
+      ? buildContinuationGeneratorSearchTrace(score, generatedUntilTick, writingProfile, constraintProfile.id)
       : buildGeneratorSearchTrace(
           [...expositionSearch.candidates, ...score.selectedConstraintCandidates, finalProfileInvariantCandidate],
           expositionSearch.selected,
@@ -235,6 +245,7 @@ export function generateScore(input: GenerationInput): GenerationOutput {
       generatorVersion: GENERATOR_VERSION,
       selectionModel,
       writingProfile: { id: writingProfile.id, version: writingProfile.version },
+      constraintProfile: sectionConstraintScoringProfileMetadata(constraintProfile),
       seed: input.seed,
       lengthTicks: input.lengthTicks,
       generatedUntilTick,
@@ -376,36 +387,25 @@ function buildExpositionSearchCandidates(input: {
   subject: Parameters<typeof buildExposition>[0];
   keySignature: Parameters<typeof buildExposition>[1];
   lengthTicks: number;
-  meterContext: Parameters<typeof buildExposition>[3];
+  meterContext: Parameters<typeof buildExposition>[2];
   writingProfile: WritingProfile;
+  constraintProfileId: SectionConstraintScoringProfileId;
 }): {
   candidates: ExpositionSearchCandidate[];
   selected: ExpositionSearchCandidate;
 } {
-  const currentCounterSubjectSupportRepair = input.lengthTicks >= TICKS_PER_QUARTER * 288;
-  const alternativeCounterSubjectSupportRepair = !currentCounterSubjectSupportRepair;
   const candidates = [
     buildExpositionSearchCandidate(
       "exposition-a-current-contract",
-      buildExposition(
-        input.subject,
-        input.keySignature,
-        currentCounterSubjectSupportRepair,
-        input.meterContext,
-        input.writingProfile,
-      ),
+      buildExposition(input.subject, input.keySignature, input.meterContext, input.writingProfile),
       input.writingProfile,
+      input.constraintProfileId,
     ),
     buildExpositionSearchCandidate(
-      currentCounterSubjectSupportRepair ? "exposition-b-unrepaired-support" : "exposition-b-counter-subject-repair",
-      buildExposition(
-        input.subject,
-        input.keySignature,
-        alternativeCounterSubjectSupportRepair,
-        input.meterContext,
-        input.writingProfile,
-      ),
+      "exposition-b-current-contract-repeatability-check",
+      buildExposition(input.subject, input.keySignature, input.meterContext, input.writingProfile),
       input.writingProfile,
+      input.constraintProfileId,
     ),
   ];
 
@@ -419,6 +419,7 @@ function buildExpositionSearchCandidate(
   candidateId: string,
   exposition: Exposition,
   writingProfile: WritingProfile,
+  constraintProfileId: SectionConstraintScoringProfileId,
 ): ExpositionSearchCandidate {
   const draft = {
     notes: exposition.notes,
@@ -426,6 +427,7 @@ function buildExpositionSearchCandidate(
     sectionPlans: exposition.sectionPlans,
     endTick: exposition.endTick,
     writingProfile,
+    constraintProfileId,
   };
   return {
     candidateId,
@@ -439,6 +441,7 @@ function buildDiagnosticsOnlyGeneratorSearchTrace(
   score: Exposition,
   generatedUntilTick: number,
   writingProfile: WritingProfile,
+  constraintProfileId: SectionConstraintScoringProfileId,
 ) {
   const legacyConstraintCandidate = buildExpositionSearchCandidate(
     "legacy-generated-score",
@@ -450,6 +453,7 @@ function buildDiagnosticsOnlyGeneratorSearchTrace(
       durationTicks: generatedUntilTick,
     },
     writingProfile,
+    constraintProfileId,
   );
   return buildGeneratorSearchTrace(
     [legacyConstraintCandidate],
@@ -461,13 +465,14 @@ function buildContinuationGeneratorSearchTrace(
   score: Exposition & { selectedConstraintCandidates?: readonly ConstraintCandidate[] },
   generatedUntilTick: number,
   writingProfile: WritingProfile,
+  constraintProfileId: SectionConstraintScoringProfileId,
 ) {
   const candidates = [
     ...(score.selectedConstraintCandidates ?? []),
-    buildFinalWritingProfileInvariantCandidate(score, generatedUntilTick, writingProfile),
+    buildFinalWritingProfileInvariantCandidate(score, generatedUntilTick, writingProfile, constraintProfileId),
   ];
   if (candidates.length === 0) {
-    return buildDiagnosticsOnlyGeneratorSearchTrace(score, generatedUntilTick, writingProfile);
+    return buildDiagnosticsOnlyGeneratorSearchTrace(score, generatedUntilTick, writingProfile, constraintProfileId);
   }
 
   const selectedBoundaryCandidate =
@@ -482,6 +487,7 @@ function buildFinalWritingProfileInvariantCandidate(
   score: Pick<Exposition, "notes" | "subjectEntries" | "sectionPlans">,
   generatedUntilTick: number,
   writingProfile: WritingProfile,
+  constraintProfileId: SectionConstraintScoringProfileId,
 ): ConstraintCandidate {
   const projectedChangeCount = score.notes.filter(
     (note) => constrainNotePitchToWritingProfile(note, writingProfile) !== note.pitch,
@@ -492,6 +498,7 @@ function buildFinalWritingProfileInvariantCandidate(
     sectionPlans: score.sectionPlans,
     endTick: generatedUntilTick,
     writingProfile,
+    constraintProfileId,
   };
   const result = evaluateScoreDraft(draft);
   return {

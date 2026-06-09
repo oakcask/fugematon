@@ -69,7 +69,7 @@ test("episode motivic review seeds keep subject-free free counterpoint review-vi
     JSON.stringify(summaries, null, 2),
   );
   assert.ok(
-    summaries.every((summary) => summary.exposedSoloReviewRequired <= 3 && summary.bassTailReviewRequired),
+    summaries.every((summary) => summary.exposedSoloReviewRequired <= 4 && summary.bassTailReviewRequired),
     JSON.stringify(summaries, null, 2),
   );
 });

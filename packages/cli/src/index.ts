@@ -20,6 +20,7 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
       DEFAULT_SELECTION_MODEL,
       command.performanceProfileId,
       command.writingProfileId,
+      command.constraintProfileId,
     );
     return;
   }
@@ -34,6 +35,7 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
       command.variantModel,
       command.performanceProfileId,
       command.writingProfileId,
+      command.constraintProfileId,
     );
     return;
   }

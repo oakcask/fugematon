@@ -12,7 +12,7 @@ test("generateScore nudges non-modal stepwise pattern fixation without modal gua
   const blockerSeeds = [
     ["fugue-smoke", 0.743, 6, 570, 90],
     ["lyrical-line", 0.73, 6, 589, 92],
-    ["contrary-answer", 0.733, 6, 554, 65],
+    ["contrary-answer", 0.733, 6, 563, 66],
   ] as const;
 
   for (const [

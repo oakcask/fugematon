@@ -30,6 +30,16 @@ Fugematon 固有の設計判断、review 判断、quality policy と文献根拠
 * Limits: This claim does not prove the local solver is musically complete, does not promote every texture diagnostic to a CI hard gate, and does not reject future external solver comparison after bounded local search fails documented acceptance thresholds.
 * Used by: `docs/phases/generator-constraint-rebuild.md`, `docs/reference/quality-metrics/diagnostics.md`
 
+## sustained-vertical-dissonance-soft-repair
+
+* Claim: Fugematon should treat meter-length semitone or minor-ninth stacks, tritones, and fourths above the lowest active voice as generator-response soft costs when the window is held and not explained as a prepared, stepwise-resolving suspension.
+* Applies to: generation | scoring | diagnostics | review
+* Evidence: `species-dissonance-treatment`; focused `seed-1wudr38-0fbqzth` score-window evidence.
+* Confidence: medium
+* Verification state: page-checked
+* Limits: This claim keeps sustained severe vertical dissonance out of `unresolvedDissonanceCount` hard failures for now, preserves ordinary short weak passing/neighbor evidence as review-required, and does not ban prepared suspensions or style-profile-specific dissonance.
+* Used by: `docs/reference/quality-metrics/diagnostics.md`, `docs/reviews/sustained-vertical-dissonance-soft-repair.md`
+
 ## keyboard-writing-profile-separates-compass-and-playability
 
 * Claim: Fugematon should model piano, harpsichord, and music-box target constraints as `WritingProfile` generation constraints, not as `PerformanceProfile` playback settings; absolute pitch compass is necessary but piano also needs hand-assignment and reach evidence, while music-box targets need supported pitch-set and mechanism-limit enforcement.

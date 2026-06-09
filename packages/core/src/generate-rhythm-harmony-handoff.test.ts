@@ -82,7 +82,7 @@ test("fugue-smoke handoff diagnostics expose local transition-rhythm evidence", 
     (window) => window.kind === "transition-rhythm" && window.startTick === transitionTick,
   );
 
-  assert.equal(transitionWindows.length, 3);
+  assert.equal(transitionWindows.length, 1);
   assert.ok(
     transitionWindows.every(
       (window) =>
@@ -93,7 +93,7 @@ test("fugue-smoke handoff diagnostics expose local transition-rhythm evidence", 
     assert.equal(acceptanceWindow, undefined);
     return;
   }
-  assert.deepEqual(transitionRhythmWindow.boundaryKinds.sort(), ["entry-start", "harmonic-anchor", "phrase-boundary"]);
+  assert.deepEqual(transitionRhythmWindow.boundaryKinds.sort(), ["entry-start"]);
   assert.equal(transitionRhythmWindow.classification, "prepared-pickup");
   assert.equal(transitionRhythmWindow.response, "accepted-context");
   assert.equal(transitionRhythmWindow.activeVoiceCount, 4);

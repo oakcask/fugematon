@@ -5,6 +5,7 @@ import type {
   NoteEvent,
   NoteRole,
   PlannedEntry,
+  SectionConstraintScoringProfileId,
   Voice,
 } from "../events.js";
 import type { SegmentSnapshot } from "../infinite-playback.js";
@@ -71,6 +72,7 @@ export function applyContinuousBoundaryCarrySolver(input: {
   sectionPlans: readonly HarmonicPlan[];
   previousSnapshot?: SegmentSnapshot;
   writingProfile: WritingProfile;
+  constraintProfileId?: SectionConstraintScoringProfileId;
 }): ConstraintCandidate[] {
   if (input.previousSnapshot === undefined) {
     return [];
@@ -86,6 +88,7 @@ export function applyContinuousBoundaryCarrySolver(input: {
     subjectEntries: input.subjectEntries,
     sectionPlans: input.sectionPlans,
     writingProfile: input.writingProfile,
+    constraintProfileId: input.constraintProfileId,
   });
 
   applyContinuousBoundaryCarryRepair(input);
@@ -102,6 +105,7 @@ export function applyContinuousBoundaryCarrySolver(input: {
     subjectEntries: input.subjectEntries,
     sectionPlans: input.sectionPlans,
     writingProfile: input.writingProfile,
+    constraintProfileId: input.constraintProfileId,
   });
 
   return afterCandidateId.endsWith("candidate-0") ? [afterCandidate] : [beforeCandidate, afterCandidate];
@@ -218,6 +222,7 @@ function buildContinuousBoundaryCarryConstraintCandidate(input: {
   subjectEntries: readonly PlannedEntry[];
   sectionPlans: readonly HarmonicPlan[];
   writingProfile: WritingProfile;
+  constraintProfileId?: SectionConstraintScoringProfileId;
 }): ConstraintCandidate {
   const firstPlan = input.sectionPlans[0];
   const endTick = Math.max(0, ...input.notes.map((note) => note.startTick + note.durationTicks));
@@ -240,6 +245,7 @@ function buildContinuousBoundaryCarryConstraintCandidate(input: {
     sectionPlans: input.sectionPlans,
     endTick: Math.max(endTick, windowEndTick),
     writingProfile: input.writingProfile,
+    constraintProfileId: input.constraintProfileId,
   };
 
   return {

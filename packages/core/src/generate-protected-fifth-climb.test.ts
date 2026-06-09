@@ -5,7 +5,7 @@ import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js
 
 test("generateScore preserves fifth-climb protected seed quality", () => {
   const protectedSeeds = [
-    ["modal-answer", 71, 0.557],
+    ["modal-answer", 72, 0.557],
     ["bright-answer", 138, 0.827],
     ["contrary-motion", 99, 0.669],
     ["modal-dorian", 103, 0.579],
