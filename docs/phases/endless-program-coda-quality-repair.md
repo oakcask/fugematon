@@ -43,3 +43,12 @@ Controls remain stable: short `endless-program` uses `fallback-terminal-closure`
 ## Remaining Gap
 
 Archetype diversity and sparse-echo rhetorical weight remain `review-required`, not CI hard gates. Human listening was not performed in this pass; the after-pass only confirms score-event and diagnostic evidence.
+
+## CI / Review Scope
+
+The 22 seed coda bundle remains completion evidence and review history, but it is no longer run in full on every PR. PR CI keeps a four-seed terminal-coda target set that includes `angular-answer` as a pedal-entry sentinel. This preserves generated-coda acceptance, final-subject evidence, pedal-supported closure evidence, modal terminal rhetoric, and the fallback controls while removing duplicate review-only seeds from the regression shard.
+
+Classification:
+
+* `ci-observed`: four focused terminal-coda target seeds; reason: deterministic representative coverage for generated-coda source, accepted closure, final-fragment entry, and pedal-entry cadence; action: keep in PR CI.
+* `review-required`: full 22 seed coda bundle, archetype distribution, and sparse `cadential-echo` weight; reason: broad musical diversity and listening weight are review evidence rather than hard PR blockers; action: rerun during coda-quality review or when changing terminal coda selection.
