@@ -82,6 +82,20 @@ test("section CSP backtracking chooses lower metrical soft cost when hard failur
   assert.equal(selectedIndex, 1);
 });
 
+test("section CSP backtracking prefers the lower combined agency cost when density failures are tied", () => {
+  const selectedIndex = chooseSectionCspBacktrackingCandidateIndex({
+    currentBestIndex: 0,
+    candidateIndexes: [0, 1],
+    constraintCandidates: [
+      constraintCandidate("section-960-episode-section-csp-low-root-first-candidate-0", [], 18),
+      constraintCandidate("section-960-episode-section-csp-balanced-upper-agency-candidate-1", [], 6),
+    ],
+    candidateScores: [0, 0],
+  });
+
+  assert.equal(selectedIndex, 1);
+});
+
 test("generated continuation exposes section-CSP candidate rows without public rest events", () => {
   const output = generateScore({
     seed: "fugue-smoke",

@@ -155,6 +155,14 @@ export function evaluateSectionConstraintProblem(input: {
   });
   addEntryConstraintCounts(infeasibleConstraintCounts, input);
   addVoicePairPressureCounts(infeasibleConstraintCounts, input.notes, input.problem, gridTicks);
+  addUpperLineAgencyCounts(
+    infeasibleConstraintCounts,
+    input.notes,
+    input.sectionPlan,
+    input.problem,
+    gridTicks,
+    input.subjectEntries ?? [],
+  );
   addLeapToSilenceCounts(infeasibleConstraintCounts, input.notes, input.problem);
   addSustainedSevereVerticalDissonanceCounts(infeasibleConstraintCounts, input.notes, input.sectionPlan);
   let minActiveVoices = Number.POSITIVE_INFINITY;
@@ -272,7 +280,7 @@ export function buildConstraintSatisfactionReview(input: {
   );
 
   return {
-    schemaVersion: 4,
+    schemaVersion: 5,
     windowCount: windows.length,
     intentionalRestSpanCount: windows.reduce((sum, window) => sum + window.intentionalRestSpans.length, 0),
     unplannedSilentRunCount: unplannedSilentRuns.length,
@@ -762,6 +770,134 @@ function addVoicePairPressureCounts(
   }
 }
 
+function addUpperLineAgencyCounts(
+  counts: SectionConstraintInfeasibleCounts,
+  notes: readonly NoteEvent[],
+  sectionPlan: HarmonicPlan,
+  problem: SectionConstraintProblem,
+  gridTicks: number,
+  subjectEntries: readonly PlannedEntry[],
+): void {
+  if (sectionPlan.state === "exposition") {
+    return;
+  }
+
+  for (const tick of pressureCheckpoints(notes, problem, gridTicks)) {
+    if (isCadentialTick(sectionPlan, tick)) {
+      continue;
+    }
+    const activeNotes = activeNotesAt(notes, tick);
+    const activeVoiceCount = new Set(activeNotes.map((note) => note.voice)).size;
+    const minRequired = minActiveVoicesForSlot(sectionPlan, tick, activeNotes);
+    const sopranoNotes = activeNotes.filter((note) => note.voice === "soprano");
+    const lowerNotes = activeNotes.filter((note) => note.voice !== "soprano");
+    const sopranoHasFreeAgency = sopranoNotes.some(isFreeCounterpointRole);
+    const sopranoIsThematicOnly =
+      sopranoNotes.length > 0 &&
+      sopranoNotes.every((note) => isThematicUpperRole(note) && !isFreeCounterpointRole(note));
+    const lowerHasFiller = lowerNotes.some((note) => isFreeCounterpointRole(note) || isStructuralSupportNote(note));
+    const lowerActiveVoiceCount = new Set(lowerNotes.map((note) => note.voice)).size;
+    const outsidePlannedEntry = !hasPlannedEntryAt(subjectEntries, tick);
+
+    if (sopranoIsThematicOnly && lowerHasFiller) {
+      counts.upperVoiceThematicMonopolyCount += 1;
+    }
+    if (activeVoiceCount >= minRequired && lowerHasFiller && !sopranoHasFreeAgency) {
+      counts.lowerVoiceFillerDominanceCount += 1;
+    }
+    if (hasSupportFillerLockstep(activeNotes)) {
+      counts.supportFillerLockstepCount += 1;
+    }
+    if (
+      activeVoiceCount >= minRequired &&
+      sopranoNotes.length > 0 &&
+      lowerActiveVoiceCount < Math.min(3, minRequired)
+    ) {
+      counts.lowerLineContinuityGapCount += 1;
+    }
+    if (outsidePlannedEntry && activeVoiceCount >= minRequired && hasThematicSurfaceOnly(activeNotes)) {
+      counts.freeCounterpointScarcityCount += 1;
+    }
+  }
+  counts.shortStructuralSupportChurnCount += shortStructuralSupportChurnCount(notes, sectionPlan, problem, gridTicks);
+}
+
+function isThematicUpperRole(note: NoteEvent): boolean {
+  return (
+    note.role === "subject" ||
+    note.role === "answer" ||
+    note.role === "subject-fragment" ||
+    note.role === "counter-subject"
+  );
+}
+
+function isFreeCounterpointRole(note: NoteEvent): boolean {
+  return note.role === "free-counterpoint";
+}
+
+function isStructuralSupportNote(note: NoteEvent): boolean {
+  return (
+    note.role === "free-counterpoint" &&
+    (note.metricalHarmonyIntent === "structural-root-support" ||
+      note.metricalHarmonyIntent === "structural-chord-tone")
+  );
+}
+
+function hasSupportFillerLockstep(activeNotes: readonly NoteEvent[]): boolean {
+  return activeNotes.some(
+    (note) =>
+      isStructuralSupportNote(note) &&
+      activeNotes.some(
+        (other) =>
+          other !== note &&
+          other.voice !== note.voice &&
+          other.startTick === note.startTick &&
+          other.durationTicks === note.durationTicks,
+      ),
+  );
+}
+
+function hasPlannedEntryAt(subjectEntries: readonly PlannedEntry[], tick: number): boolean {
+  return subjectEntries.some((entry) => entry.startTick <= tick && tick < entry.startTick + TICKS_PER_QUARTER * 2);
+}
+
+function hasThematicSurfaceOnly(activeNotes: readonly NoteEvent[]): boolean {
+  return activeNotes.length > 0 && activeNotes.every((note) => isThematicUpperRole(note));
+}
+
+function shortStructuralSupportChurnCount(
+  notes: readonly NoteEvent[],
+  sectionPlan: HarmonicPlan,
+  problem: SectionConstraintProblem,
+  gridTicks: number,
+): number {
+  let count = 0;
+  for (const voice of VOICES) {
+    const supportNotes = notes
+      .filter(
+        (note) =>
+          note.voice === voice &&
+          isStructuralSupportNote(note) &&
+          note.durationTicks <= gridTicks &&
+          note.startTick >= problem.window.startTick &&
+          note.startTick < problem.window.endTick &&
+          !isCadentialTick(sectionPlan, note.startTick),
+      )
+      .sort(compareNoteEvents);
+    for (let index = 1; index < supportNotes.length; index += 1) {
+      const previous = supportNotes[index - 1]!;
+      const current = supportNotes[index]!;
+      if (
+        previous.startTick + previous.durationTicks === current.startTick &&
+        (previous.pitch === current.pitch || previous.metricalHarmonyIntent === current.metricalHarmonyIntent)
+      ) {
+        count += 1;
+      }
+    }
+  }
+  return count;
+}
+
 function addLeapToSilenceCounts(
   counts: SectionConstraintInfeasibleCounts,
   notes: readonly NoteEvent[],
@@ -1116,6 +1252,12 @@ function emptyInfeasibleCounts(): SectionConstraintInfeasibleCounts {
     thinUnrootedStructuralSupportCount: 0,
     pitchClassDoublingOnlyCount: 0,
     mixedEntryHarmonicRiskCount: 0,
+    upperVoiceThematicMonopolyCount: 0,
+    lowerVoiceFillerDominanceCount: 0,
+    supportFillerLockstepCount: 0,
+    lowerLineContinuityGapCount: 0,
+    freeCounterpointScarcityCount: 0,
+    shortStructuralSupportChurnCount: 0,
   };
 }
 
@@ -1148,6 +1290,14 @@ function sumInfeasibleCounts(counts: readonly SectionConstraintInfeasibleCounts[
         sum.thinUnrootedStructuralSupportCount + count.thinUnrootedStructuralSupportCount,
       pitchClassDoublingOnlyCount: sum.pitchClassDoublingOnlyCount + count.pitchClassDoublingOnlyCount,
       mixedEntryHarmonicRiskCount: sum.mixedEntryHarmonicRiskCount + count.mixedEntryHarmonicRiskCount,
+      upperVoiceThematicMonopolyCount:
+        sum.upperVoiceThematicMonopolyCount + count.upperVoiceThematicMonopolyCount,
+      lowerVoiceFillerDominanceCount: sum.lowerVoiceFillerDominanceCount + count.lowerVoiceFillerDominanceCount,
+      supportFillerLockstepCount: sum.supportFillerLockstepCount + count.supportFillerLockstepCount,
+      lowerLineContinuityGapCount: sum.lowerLineContinuityGapCount + count.lowerLineContinuityGapCount,
+      freeCounterpointScarcityCount: sum.freeCounterpointScarcityCount + count.freeCounterpointScarcityCount,
+      shortStructuralSupportChurnCount:
+        sum.shortStructuralSupportChurnCount + count.shortStructuralSupportChurnCount,
     }),
     emptyInfeasibleCounts(),
   );

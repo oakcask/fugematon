@@ -71,6 +71,8 @@ type FunctionalSupportProfile = {
   durationTicks: readonly number[];
 };
 
+export type UnexplainedRestThinningSupportPolicy = "balanced-upper-agency" | "low-root-first";
+
 type TextureVoiceCrossingRepairMode = "legacy" | "solver";
 
 type EntryCounterpointTextureInput = {
@@ -1582,10 +1584,11 @@ export function addUnexplainedRestThinningSupport(
   notes: Exposition["notes"],
   sectionPlans: readonly HarmonicPlan[],
   writingProfile?: WritingProfile,
+  policy: UnexplainedRestThinningSupportPolicy = "low-root-first",
 ): void {
   for (const run of findUnexplainedRestThinningRuns(notes, sectionPlans)) {
     const plan = sectionPlanForTick(sectionPlans, run.startTick);
-    const supportVoices = unexplainedRestSupportVoices(notes, run);
+    const supportVoices = unexplainedRestSupportVoices(notes, run, plan, policy);
     if (plan === undefined || supportVoices.length === 0) {
       continue;
     }
@@ -3335,12 +3338,50 @@ function exposedSoloSupportVoice(
 function unexplainedRestSupportVoices(
   notes: readonly NoteEvent[],
   run: { startTick: number; endTick: number; activeVoices: readonly Voice[] },
+  plan: HarmonicPlan | undefined,
+  policy: UnexplainedRestThinningSupportPolicy,
 ): Voice[] {
   const requiredSupportCount = Math.max(0, 3 - run.activeVoices.length);
-  return (["bass", "tenor", "alto", "soprano"] as const)
+  const fallbackOrder = ["bass", "tenor", "alto", "soprano"] as const;
+  const voiceOrder =
+    policy === "balanced-upper-agency" && shouldPreferUpperAgencySupport(notes, run, plan)
+      ? (["soprano", "alto", "tenor", "bass"] as const)
+      : fallbackOrder;
+  return voiceOrder
     .filter((voice) => !run.activeVoices.includes(voice))
     .filter((voice) => !hasOverlap(notes, voice, run.startTick, run.endTick - run.startTick))
     .slice(0, requiredSupportCount);
+}
+
+function shouldPreferUpperAgencySupport(
+  notes: readonly NoteEvent[],
+  run: { startTick: number; endTick: number; activeVoices: readonly Voice[] },
+  plan: HarmonicPlan | undefined,
+): boolean {
+  return (
+    plan !== undefined &&
+    plan.state !== "exposition" &&
+    !hasNearbyCadenceTarget(plan, run.startTick) &&
+    !run.activeVoices.includes("soprano") &&
+    !hasOverlap(notes, "soprano", run.startTick, run.endTick - run.startTick) &&
+    (hasLowerSupportFloor(run.activeVoices) || hasActiveStructuralLowSupport(notes, run.startTick))
+  );
+}
+
+function hasLowerSupportFloor(activeVoices: readonly Voice[]): boolean {
+  const lowerVoices = activeVoices.filter((voice) => voice !== "soprano");
+  return lowerVoices.length >= 2 && lowerVoices.some((voice) => voice === "tenor" || voice === "bass");
+}
+
+function hasActiveStructuralLowSupport(notes: readonly NoteEvent[], tick: number): boolean {
+  return notes.some(
+    (note) =>
+      (note.voice === "tenor" || note.voice === "bass") &&
+      note.startTick <= tick &&
+      tick < note.startTick + note.durationTicks &&
+      (note.metricalHarmonyIntent === "structural-root-support" ||
+        note.metricalHarmonyIntent === "structural-chord-tone"),
+  );
 }
 
 export function counterSubjectDegreesForMode(mode: KeyMode): readonly number[] {

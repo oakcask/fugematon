@@ -75,6 +75,7 @@ import {
   shapeLongRestPhraseClosures,
   softenBassEntryBoundaryResets,
   softenFirstBassEntryBoundaryReset,
+  type UnexplainedRestThinningSupportPolicy,
 } from "./texture.js";
 import type { Exposition, FugueScore, SubjectNote } from "./types.js";
 
@@ -120,6 +121,10 @@ type ScoreLevelSupportCleanupReview = {
   scoreWindowAcceptedContextCount: number;
   harmonicContinuityReviewRequiredCount: number;
   cspDensityFailureCount: number;
+  cspUpperLineAgencyFailureCount: number;
+  cspLowerLineContinuityGapCount: number;
+  cspFreeCounterpointScarcityCount: number;
+  cspShortStructuralSupportChurnCount: number;
 };
 
 type ContinuationSectionSelection = {
@@ -671,7 +676,7 @@ function buildScoreLevelSupportCleanupCandidateAdoption(
     afterCandidate,
   );
 
-  if (!shouldEmitScoreLevelSupportCleanupEvidence(beforeReview, afterReview)) {
+  if (!shouldEmitScoreLevelSupportCleanupEvidence(beforeReview, afterReview, surface.id)) {
     return undefined;
   }
 
@@ -709,13 +714,24 @@ function evaluateScoreLevelSupportCleanupReview(
     scoreWindowAcceptedContextCount: scoreWindowAcceptance.acceptedContextWindowCount,
     harmonicContinuityReviewRequiredCount: diagnostics.harmonicContinuity.reviewRequiredWindowCount,
     cspDensityFailureCount: cspDensityFailureCount(notes, subjectEntries, sectionPlans),
+    ...cspAgencyFailureCounts(notes, subjectEntries, sectionPlans),
   };
 }
 
 function shouldEmitScoreLevelSupportCleanupEvidence(
   before: ScoreLevelSupportCleanupReview,
   after: ScoreLevelSupportCleanupReview,
+  surfaceId: string,
 ): boolean {
+  if (
+    surfaceId === "unexplained-rest-thinning-support" &&
+    (after.cspUpperLineAgencyFailureCount > before.cspUpperLineAgencyFailureCount ||
+      after.cspLowerLineContinuityGapCount > before.cspLowerLineContinuityGapCount ||
+      after.cspFreeCounterpointScarcityCount > before.cspFreeCounterpointScarcityCount ||
+      after.cspShortStructuralSupportChurnCount > before.cspShortStructuralSupportChurnCount)
+  ) {
+    return false;
+  }
   return (
     after.hardFailureCount <= before.hardFailureCount &&
     hasScoreWindowReviewEvidence(before) &&
@@ -745,6 +761,29 @@ function cspDensityFailureCount(
     counts.allVoiceSilence +
     counts.longUnplannedSilentRun
   );
+}
+
+function cspAgencyFailureCounts(
+  notes: readonly NoteEvent[],
+  subjectEntries: readonly PlannedEntry[],
+  sectionPlans: readonly HarmonicPlan[],
+): Pick<
+  ScoreLevelSupportCleanupReview,
+  | "cspUpperLineAgencyFailureCount"
+  | "cspLowerLineContinuityGapCount"
+  | "cspFreeCounterpointScarcityCount"
+  | "cspShortStructuralSupportChurnCount"
+> {
+  const counts = buildConstraintSatisfactionReview({ notes, subjectEntries, sectionPlans }).infeasibleConstraintCounts;
+  return {
+    cspUpperLineAgencyFailureCount:
+      counts.upperVoiceThematicMonopolyCount +
+      counts.lowerVoiceFillerDominanceCount +
+      counts.supportFillerLockstepCount,
+    cspLowerLineContinuityGapCount: counts.lowerLineContinuityGapCount,
+    cspFreeCounterpointScarcityCount: counts.freeCounterpointScarcityCount,
+    cspShortStructuralSupportChurnCount: counts.shortStructuralSupportChurnCount,
+  };
 }
 
 function noteFingerprint(notes: readonly NoteEvent[]): string {
@@ -3375,27 +3414,39 @@ function buildSectionCspSolverCandidates(
   sourceCandidates: readonly Exposition[],
   writingProfile: WritingProfile,
 ): Exposition[] {
-  return sourceCandidates.map((sourceCandidate, sourceCandidateIndex) => {
-    const repaired = cloneExposition(sourceCandidate);
-    addFunctionalThinningSupport(repaired.notes, repaired.sectionPlans, writingProfile);
-    addUnexplainedRestThinningSupport(repaired.notes, repaired.sectionPlans, writingProfile);
-    addExposedFreeCounterpointSoloSupport(repaired.notes, repaired.sectionPlans, writingProfile);
-    addPostEntryContinuationSupport(repaired.notes, repaired.subjectEntries, repaired.sectionPlans, writingProfile);
-    shapeLongRestPhraseClosures(repaired.notes, repaired.sectionPlans);
-    addBassAnswerTailTextureSupport(repaired.notes, repaired.subjectEntries, repaired.sectionPlans, writingProfile);
-    addShortEpisodeHarmonicContinuitySupport(repaired.notes, repaired.sectionPlans, writingProfile);
-    if (sourceCandidateIndex < 16) {
-      repairSustainedSevereVerticalDissonance(repaired.notes, repaired.sectionPlans, writingProfile);
-    }
-    repairTextureVoiceCrossingsForNotes(repaired.notes, repaired.sectionPlans, writingProfile);
-    repaired.notes.sort(compareNoteEvents);
-
-    return {
-      ...repaired,
-      constraintCandidateFamily: "section-csp-variant" as const,
-      constraintSourceCandidateIndex: sourceCandidateIndex,
-    };
+  const policies: readonly UnexplainedRestThinningSupportPolicy[] = ["low-root-first", "balanced-upper-agency"];
+  return sourceCandidates.flatMap((sourceCandidate, sourceCandidateIndex) => {
+    return policies.map((policy) =>
+      buildSectionCspSolverCandidate(sourceCandidate, sourceCandidateIndex, policy, writingProfile),
+    );
   });
+}
+
+function buildSectionCspSolverCandidate(
+  sourceCandidate: Exposition,
+  sourceCandidateIndex: number,
+  supportPolicy: UnexplainedRestThinningSupportPolicy,
+  writingProfile: WritingProfile,
+): Exposition {
+  const repaired = cloneExposition(sourceCandidate);
+  addFunctionalThinningSupport(repaired.notes, repaired.sectionPlans, writingProfile);
+  addUnexplainedRestThinningSupport(repaired.notes, repaired.sectionPlans, writingProfile, supportPolicy);
+  addExposedFreeCounterpointSoloSupport(repaired.notes, repaired.sectionPlans, writingProfile);
+  addPostEntryContinuationSupport(repaired.notes, repaired.subjectEntries, repaired.sectionPlans, writingProfile);
+  shapeLongRestPhraseClosures(repaired.notes, repaired.sectionPlans);
+  addBassAnswerTailTextureSupport(repaired.notes, repaired.subjectEntries, repaired.sectionPlans, writingProfile);
+  addShortEpisodeHarmonicContinuitySupport(repaired.notes, repaired.sectionPlans, writingProfile);
+  if (sourceCandidateIndex < 16) {
+    repairSustainedSevereVerticalDissonance(repaired.notes, repaired.sectionPlans, writingProfile);
+  }
+  repairTextureVoiceCrossingsForNotes(repaired.notes, repaired.sectionPlans, writingProfile);
+  repaired.notes.sort(compareNoteEvents);
+
+  return {
+    ...repaired,
+    constraintCandidateFamily: "section-csp-variant" as const,
+    constraintSourceCandidateIndex: sourceCandidateIndex,
+  };
 }
 
 export function buildContinuationCandidates(

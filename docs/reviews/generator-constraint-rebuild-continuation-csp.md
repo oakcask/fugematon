@@ -2,6 +2,18 @@
 
 Status: implementation slice accepted for focused tests and standard review evidence. Manual listening remains open, score-level support cleanup remains fallback evidence, and `constraintSatisfactionReview` remains `review-required`.
 
+## 2026-06-11 Upper-Line Agency Update
+
+Reported symptom: the collective-rest density repair could make the flagged windows pass `minActiveVoiceViolation` and `unsupportedSolo` while the soprano carried subject / answer / counter-subject material and the alto, tenor, and bass supplied mostly functional filler. The false acceptance was not a hard-contract failure, but it left the continuation sounding less like independent free counterpoint.
+
+Generator cause: `unexplained-rest-thinning-support` had a support-order choice that could improve soprano free-counterpoint while thinning tenor / bass activity, and score-level cleanup could adopt a density improvement after section selection. The section-CSP soft costs had no explicit signal for lower-line continuity gaps, free-counterpoint scarcity, or short structural-support churn, so balanced upper agency could win by hollowing out the lower support.
+
+Project response: `constraintSatisfactionReview` schema 5 keeps `upperVoiceThematicMonopolyCount`, `lowerVoiceFillerDominanceCount`, and `supportFillerLockstepCount`, and adds `lowerLineContinuityGapCount`, `freeCounterpointScarcityCount`, and `shortStructuralSupportChurnCount`. These counts feed the `section-csp-upper-line-agency` soft cost and remain outside relaxation level and hard failure count. The default `unexplained-rest-thinning-support` policy is again `low-root-first`; section-CSP support variants compare both `low-root-first` and `balanced-upper-agency` repairs for each source candidate. Balanced upper support can choose soprano only when low / middle support is already present, and score-level `unexplained-rest-thinning-support` cleanup refuses adoption when upper agency, lower-line continuity, free-counterpoint scarcity, or short support churn gets worse.
+
+Theory basis: species-counterpoint and fugue texture treat density as insufficient by itself; a full texture still needs audible line independence and role distribution. This update therefore uses a review-required soft cost rather than a hard ban, because thematic soprano prominence can be musically valid in some sections.
+
+Manual listening gap: this update is score-window and diagnostics based. The flagged seed windows still need a listening pass before promoting any upper-line agency threshold beyond review-required evidence.
+
 ## 2026-06-04 Metrical-Boundary Update
 
 This update covers the CSP metrical-rhythm repair slice. It adds measure-aligned duration candidates, a `section-csp-metrical-boundary` soft cost, schema 2 metrical fields in `constraintSatisfactionReview`, section-CSP support alternatives for exposed solo / thinning cases, and final hard-contract entry identity cleanup for impossible same-voice entry overlaps. Public `ScoreEvent` remains note/meta only.

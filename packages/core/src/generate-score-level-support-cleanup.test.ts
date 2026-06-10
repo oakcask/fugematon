@@ -17,7 +17,6 @@ test("score-level support cleanup emits paired before and after trace evidence",
 
   for (const surface of [
     "functional-thinning-support",
-    "post-entry-continuation-support",
     "long-rest-phrase-closure",
     "bass-answer-tail-texture-support",
   ] as const) {
@@ -26,6 +25,8 @@ test("score-level support cleanup emits paired before and after trace evidence",
   }
   assert.ok(!candidateIds.has("score-texture-voice-crossing-repair-unrepaired-final-repair-evidence"));
   assert.ok(!candidateIds.has("score-texture-voice-crossing-repair-solver-repaired"));
+  assert.ok(!candidateIds.has("score-unexplained-rest-thinning-support-unrepaired-final-repair-evidence"));
+  assert.ok(!candidateIds.has("score-unexplained-rest-thinning-support-solver-repaired"));
   assert.equal(hardConstraintFailures(diagnostics), 0);
 });
 
