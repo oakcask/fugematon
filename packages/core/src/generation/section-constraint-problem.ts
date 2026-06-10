@@ -124,6 +124,8 @@ export function buildSectionConstraintProblem(input: {
     }
   }
 
+  normalizeUnsupportedCollectiveRests(slots, input.notes, input.sectionPlan, input.subjectEntries ?? []);
+
   return {
     schemaVersion: 1,
     window: {
@@ -870,6 +872,53 @@ function inferIntentionalRestReason(input: {
   }
 
   return undefined;
+}
+
+function normalizeUnsupportedCollectiveRests(
+  slots: SectionConstraintSlot[],
+  notes: readonly NoteEvent[],
+  sectionPlan: HarmonicPlan,
+  subjectEntries: readonly PlannedEntry[],
+): void {
+  for (const tick of uniqueSlotStartTicks(slots)) {
+    const tickSlots = slots.filter((slot) => slot.startTick === tick);
+    const activeCount = tickSlots.filter((slot) => slot.value?.kind === "note" || slot.value?.kind === "hold").length;
+    const plannedRestSlots = tickSlots.filter((slot) => slot.value?.kind === "intentional-rest");
+    if (
+      plannedRestSlots.length < 2 ||
+      activeCount >= minActiveVoicesForSlot(sectionPlan, tick, activeNotesAt(notes, tick))
+    ) {
+      continue;
+    }
+    if (hasExplainedCollectiveRestSupport(notes, sectionPlan, subjectEntries, tick, activeCount)) {
+      continue;
+    }
+    for (const slot of plannedRestSlots) {
+      if (slot.value?.kind === "intentional-rest" && isWeakCollectiveRestReason(slot.value.reason)) {
+        slot.value = undefined;
+      }
+    }
+  }
+}
+
+function isWeakCollectiveRestReason(reason: string): boolean {
+  return reason === "entry-handoff-delay" || reason === "register-relief";
+}
+
+function hasExplainedCollectiveRestSupport(
+  notes: readonly NoteEvent[],
+  sectionPlan: HarmonicPlan,
+  subjectEntries: readonly PlannedEntry[],
+  tick: number,
+  activeCount: number,
+): boolean {
+  if (isCadentialTick(sectionPlan, tick) || hasPedalSupport(notes, sectionPlan, tick)) {
+    return true;
+  }
+  const activeEntry = subjectEntries.some(
+    (entry) => entry.startTick <= tick && tick < entry.startTick + TICKS_PER_QUARTER,
+  );
+  return activeEntry && activeCount >= 2;
 }
 
 function isCadentialTick(sectionPlan: HarmonicPlan, tick: number): boolean {

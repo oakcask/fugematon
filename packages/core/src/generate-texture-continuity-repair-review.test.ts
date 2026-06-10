@@ -24,6 +24,34 @@ test("texture-continuity repair seeds keep exposed free-counterpoint solo window
   assertExposedFreeCounterpointSoloRepair(TEXTURE_CONTINUITY_REPAIR_REVIEW_SEEDS);
 });
 
+test("reported collective-rest seed keeps continuation density through the exposed measures", () => {
+  const output = generateScore({ seed: "seed-14ghpmk-0gt2zr6", lengthTicks: TICKS_PER_QUARTER * 64 });
+
+  for (const measure of [5, 7, 10, 13]) {
+    const startTick = (measure - 1) * TICKS_PER_QUARTER * 4;
+    const endTick = startTick + TICKS_PER_QUARTER * 4;
+    const windows = output.diagnostics.constraintSatisfactionReview.windows.filter(
+      (window) => window.startTick < endTick && startTick < window.endTick,
+    );
+    const densityFailures = windows.reduce((sum, window) => {
+      const counts = window.infeasibleConstraintCounts;
+      return (
+        sum +
+        counts.minActiveVoiceViolation +
+        counts.unsupportedSolo +
+        counts.allVoiceSilence +
+        counts.longUnplannedSilentRun
+      );
+    }, 0);
+
+    assert.equal(densityFailures, 0, `measure ${measure} should not expose collective-rest density failures`);
+    assert.ok(
+      longRestingVoiceCount(output, startTick, endTick) <= 1,
+      `measure ${measure} should not leave multiple voices in long simultaneous rests`,
+    );
+  }
+});
+
 function assertBassAnswerTailRepair(seeds: readonly string[], expectsReportedSeed: boolean): void {
   const summaries = seeds.map((seed) => {
     const output = scoreForSeed(seed);
@@ -77,6 +105,24 @@ function assertExposedFreeCounterpointSoloRepair(seeds: readonly string[]): void
     summaries.some((summary) => summary.functionExplainedWindowCount > 0),
     JSON.stringify(summaries, null, 2),
   );
+}
+
+function longRestingVoiceCount(output: GenerationOutput, startTick: number, endTick: number): number {
+  const notes = output.events.filter((event) => event.kind === "note");
+  return (["soprano", "alto", "tenor", "bass"] as const).filter((voice) => {
+    const voiceNotes = notes
+      .filter((note) => note.voice === voice)
+      .sort((left, right) => left.startTick - right.startTick);
+    return voiceNotes.some((note, index) => {
+      const next = voiceNotes[index + 1];
+      if (next === undefined) {
+        return false;
+      }
+      const restStartTick = note.startTick + note.durationTicks;
+      const restEndTick = next.startTick;
+      return restStartTick < endTick && startTick < restEndTick && restEndTick - restStartTick >= TICKS_PER_QUARTER;
+    });
+  }).length;
 }
 
 function scoreForSeed(seed: string): GenerationOutput {

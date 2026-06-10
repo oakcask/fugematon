@@ -49,6 +49,7 @@ import { createLegacyMeterContext, previousMeasureDownbeat } from "./meter.js";
 import { buildPhraseDevelopmentReviewSummary } from "./phrase-development-review.js";
 import { melodicRoleForScaleDegree, scaleDegreePitchClass } from "./pitch.js";
 import { buildScoreWindowAcceptanceSummary } from "./score-window-acceptance.js";
+import { buildConstraintSatisfactionReview } from "./section-constraint-problem.js";
 import { candidateSelectionScore } from "./selection-risk-adjustments.js";
 import {
   compareNoteEvents,
@@ -65,6 +66,7 @@ import {
   addCounterpointTexture,
   addExposedFreeCounterpointSoloSupport,
   addFunctionalThinningSupport,
+  addUnexplainedRestThinningSupport,
   addPostEntryContinuationSupport,
   addShortEpisodeHarmonicContinuitySupport,
   type ContinuityLineKind,
@@ -117,6 +119,7 @@ type ScoreLevelSupportCleanupReview = {
   scoreWindowGeneratorResponseCount: number;
   scoreWindowAcceptedContextCount: number;
   harmonicContinuityReviewRequiredCount: number;
+  cspDensityFailureCount: number;
 };
 
 type ContinuationSectionSelection = {
@@ -535,6 +538,10 @@ function applyScoreLevelSupportCleanupCandidateAdoptions(input: {
       apply: (notes) => addFunctionalThinningSupport(notes, input.sectionPlans, input.writingProfile),
     },
     {
+      id: "unexplained-rest-thinning-support",
+      apply: (notes) => addUnexplainedRestThinningSupport(notes, input.sectionPlans, input.writingProfile),
+    },
+    {
       id: "post-entry-continuation-support",
       apply: (notes) =>
         addPostEntryContinuationSupport(notes, input.subjectEntries, input.sectionPlans, input.writingProfile),
@@ -556,6 +563,9 @@ function applyScoreLevelSupportCleanupCandidateAdoptions(input: {
       continue;
     }
 
+    if (surface.id === "unexplained-rest-thinning-support") {
+      input.notes.splice(0, input.notes.length, ...adoption.adoptedNotes);
+    }
     candidates.push(adoption.beforeCandidate, adoption.afterCandidate);
   }
 
@@ -698,6 +708,7 @@ function evaluateScoreLevelSupportCleanupReview(
     scoreWindowGeneratorResponseCount: scoreWindowAcceptance.generatorResponseWindowCount,
     scoreWindowAcceptedContextCount: scoreWindowAcceptance.acceptedContextWindowCount,
     harmonicContinuityReviewRequiredCount: diagnostics.harmonicContinuity.reviewRequiredWindowCount,
+    cspDensityFailureCount: cspDensityFailureCount(notes, subjectEntries, sectionPlans),
   };
 }
 
@@ -708,7 +719,8 @@ function shouldEmitScoreLevelSupportCleanupEvidence(
   return (
     after.hardFailureCount <= before.hardFailureCount &&
     hasScoreWindowReviewEvidence(before) &&
-    hasScoreWindowReviewEvidence(after)
+    hasScoreWindowReviewEvidence(after) &&
+    after.cspDensityFailureCount <= before.cspDensityFailureCount
   );
 }
 
@@ -719,6 +731,20 @@ function hasScoreWindowReviewEvidence(review: ScoreLevelSupportCleanupReview): b
     review.scoreWindowAcceptedContextCount,
     review.harmonicContinuityReviewRequiredCount,
   ].every((count) => Number.isSafeInteger(count) && count >= 0);
+}
+
+function cspDensityFailureCount(
+  notes: readonly NoteEvent[],
+  subjectEntries: readonly PlannedEntry[],
+  sectionPlans: readonly HarmonicPlan[],
+): number {
+  const counts = buildConstraintSatisfactionReview({ notes, subjectEntries, sectionPlans }).infeasibleConstraintCounts;
+  return (
+    counts.minActiveVoiceViolation +
+    counts.unsupportedSolo +
+    counts.allVoiceSilence +
+    counts.longUnplannedSilentRun
+  );
 }
 
 function noteFingerprint(notes: readonly NoteEvent[]): string {
@@ -3352,6 +3378,7 @@ function buildSectionCspSolverCandidates(
   return sourceCandidates.map((sourceCandidate, sourceCandidateIndex) => {
     const repaired = cloneExposition(sourceCandidate);
     addFunctionalThinningSupport(repaired.notes, repaired.sectionPlans, writingProfile);
+    addUnexplainedRestThinningSupport(repaired.notes, repaired.sectionPlans, writingProfile);
     addExposedFreeCounterpointSoloSupport(repaired.notes, repaired.sectionPlans, writingProfile);
     addPostEntryContinuationSupport(repaired.notes, repaired.subjectEntries, repaired.sectionPlans, writingProfile);
     shapeLongRestPhraseClosures(repaired.notes, repaired.sectionPlans);

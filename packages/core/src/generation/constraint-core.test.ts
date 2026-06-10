@@ -368,6 +368,61 @@ test("section CSP soft profile weights are shared by total cost and breakdown", 
   assert.equal(sectionConstraintSoftCost(review, profile.id), sectionConstraintSoftCostFromCounts(counts, profile));
 });
 
+test("section CSP rejects collective rest relief without cadence or pedal support", () => {
+  const plan = { ...harmonicPlan("subject-return"), durationTicks: TICKS_PER_QUARTER * 6 };
+  const result = evaluateScoreDraft(
+    {
+      ...draft(
+        [
+          note({ voice: "alto", startTick: 0, durationTicks: TICKS_PER_QUARTER * 6, pitch: 64 }),
+          note({ voice: "bass", startTick: 0, durationTicks: TICKS_PER_QUARTER * 6, pitch: 48 }),
+          note({
+            voice: "soprano",
+            startTick: 0,
+            durationTicks: TICKS_PER_QUARTER,
+            pitch: 78,
+            role: "free-counterpoint",
+          }),
+          note({
+            voice: "soprano",
+            startTick: TICKS_PER_QUARTER * 4,
+            durationTicks: TICKS_PER_QUARTER,
+            pitch: 74,
+            role: "free-counterpoint",
+          }),
+          note({
+            voice: "tenor",
+            startTick: 0,
+            durationTicks: TICKS_PER_QUARTER,
+            pitch: 50,
+            role: "free-counterpoint",
+          }),
+          note({
+            voice: "tenor",
+            startTick: TICKS_PER_QUARTER * 4,
+            durationTicks: TICKS_PER_QUARTER,
+            pitch: 57,
+            role: "free-counterpoint",
+          }),
+        ],
+        resolveWritingProfile("four-voice-default"),
+        [],
+        [plan],
+      ),
+      endTick: TICKS_PER_QUARTER * 6,
+    },
+    sectionCspWindow(plan),
+  );
+  const review = result.window.sectionConstraintReview;
+
+  assert.ok(review !== undefined);
+  assert.ok(
+    review.unplannedSilentRuns.filter((run) => !run.planned && run.durationTicks > TICKS_PER_QUARTER * 2).length >= 2,
+  );
+  assert.ok(review.infeasibleConstraintCounts.longUnplannedSilentRun >= 2);
+  assert.ok(result.hardFailures.some((failure) => failure.code === "section-voice-coverage"));
+});
+
 test("constraint evaluator explains episode and free-counterpoint candidate costs", () => {
   const result = evaluateScoreDraft(
     draft(

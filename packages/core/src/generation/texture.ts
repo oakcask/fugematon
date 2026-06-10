@@ -1578,6 +1578,34 @@ export function addFunctionalThinningSupport(
   repairTextureVoiceCrossingsForPlans(notes, sectionPlans, writingProfile);
 }
 
+export function addUnexplainedRestThinningSupport(
+  notes: Exposition["notes"],
+  sectionPlans: readonly HarmonicPlan[],
+  writingProfile?: WritingProfile,
+): void {
+  for (const run of findUnexplainedRestThinningRuns(notes, sectionPlans)) {
+    const plan = sectionPlanForTick(sectionPlans, run.startTick);
+    const supportVoices = unexplainedRestSupportVoices(notes, run);
+    if (plan === undefined || supportVoices.length === 0) {
+      continue;
+    }
+
+    for (const supportVoice of supportVoices) {
+      addFunctionalSupportForRun(notes, {
+        run,
+        plan,
+        supportVoice,
+        maxNoteTicks: TICKS_PER_QUARTER * 2,
+        meterAnchored: true,
+        strictSemitoneAvoidance: true,
+        writingProfile,
+      });
+    }
+  }
+
+  repairTextureVoiceCrossingsForPlans(notes, sectionPlans, writingProfile);
+}
+
 export function addBassAnswerTailTextureSupport(
   notes: Exposition["notes"],
   subjectEntries: readonly PlannedEntry[],
@@ -2976,6 +3004,46 @@ function findUnsupportedThinningRuns(
   return runs.filter((run) => run.endTick - run.startTick >= TICKS_PER_QUARTER);
 }
 
+function findUnexplainedRestThinningRuns(
+  notes: readonly NoteEvent[],
+  sectionPlans: readonly HarmonicPlan[],
+): { startTick: number; endTick: number; activeVoices: readonly Voice[] }[] {
+  const scoreStartTick = Math.min(...notes.map((note) => note.startTick));
+  const scoreEndTick = Math.max(...notes.map((note) => note.startTick + note.durationTicks));
+  const stepTicks = TICKS_PER_QUARTER / 2;
+  const runs: { startTick: number; endTick: number; activeVoices: readonly Voice[] }[] = [];
+  let currentRun: { startTick: number; endTick: number; activeVoices: readonly Voice[] } | undefined;
+
+  for (let startTick = scoreStartTick; startTick < scoreEndTick; startTick += stepTicks) {
+    const endTick = Math.min(scoreEndTick, startTick + stepTicks);
+    const activeVoices = activeVoicesDuring(notes, startTick, endTick);
+    const plan = sectionPlanForTick(sectionPlans, startTick);
+
+    if (isUnexplainedRestThinningSegment({ activeVoices, startTick, plan, notes })) {
+      if (
+        currentRun !== undefined &&
+        currentRun.endTick === startTick &&
+        currentRun.activeVoices.join(">") === activeVoices.join(">")
+      ) {
+        currentRun.endTick = endTick;
+      } else {
+        if (currentRun !== undefined) {
+          runs.push(currentRun);
+        }
+        currentRun = { startTick, endTick, activeVoices };
+      }
+    } else if (currentRun !== undefined) {
+      runs.push(currentRun);
+      currentRun = undefined;
+    }
+  }
+  if (currentRun !== undefined) {
+    runs.push(currentRun);
+  }
+
+  return runs.filter((run) => run.endTick - run.startTick >= TICKS_PER_QUARTER);
+}
+
 function findBassAnswerTailSupportRuns(
   notes: readonly NoteEvent[],
   subjectEntries: readonly PlannedEntry[],
@@ -3129,6 +3197,24 @@ function isUnsupportedThinningSegment(input: {
   );
 }
 
+function isUnexplainedRestThinningSegment(input: {
+  activeVoices: readonly Voice[];
+  startTick: number;
+  plan: HarmonicPlan | undefined;
+  notes: readonly NoteEvent[];
+}): boolean {
+  const { activeVoices, startTick, plan, notes } = input;
+  return (
+    plan !== undefined &&
+    plan.state !== "exposition" &&
+    activeVoices.length > 0 &&
+    activeVoices.length < 3 &&
+    sectionStartDistance(plan, startTick) > TICKS_PER_QUARTER / 2 &&
+    sectionEndDistance(plan, startTick) > TICKS_PER_QUARTER / 2 &&
+    !hasPedalLikeRestSupport(notes, plan, startTick)
+  );
+}
+
 function isAbruptUpperSolo(activeVoices: readonly Voice[]): boolean {
   return activeVoices.length === 1 && !activeVoices.includes("bass");
 }
@@ -3143,6 +3229,24 @@ function sectionEndDistance(plan: HarmonicPlan, tick: number): number {
 
 function hasNearbyCadenceTarget(plan: HarmonicPlan, tick: number): boolean {
   return plan.anchors.some((anchor) => anchor.cadenceTarget && Math.abs(anchor.tick - tick) <= TICKS_PER_QUARTER);
+}
+
+function hasPedalLikeRestSupport(notes: readonly NoteEvent[], plan: HarmonicPlan, tick: number): boolean {
+  const anchor = plan.anchors
+    .map((candidate) => ({ anchor: candidate, distance: Math.abs(candidate.tick - tick) }))
+    .sort((left, right) => left.distance - right.distance)[0]?.anchor;
+  if (anchor === undefined) {
+    return false;
+  }
+  const rootPitchClass = scaleDegreePitchClass(rootDegreeForFunction(anchor.function), 0, anchor.localKey);
+  return notes.some(
+    (note) =>
+      (note.voice === "bass" || note.voice === "tenor") &&
+      note.startTick <= tick &&
+      tick < note.startTick + note.durationTicks &&
+      note.durationTicks >= plan.meterContext.beatTicks * 2 &&
+      positiveModulo(note.pitch, 12) === rootPitchClass,
+  );
 }
 
 function activeVoicesDuring(notes: readonly NoteEvent[], startTick: number, endTick: number): Voice[] {
@@ -3226,6 +3330,17 @@ function exposedSoloSupportVoice(
   return VOICE_ENTRY_ORDER.filter((voice) => voice !== run.activeVoice).find(
     (voice) => !hasOverlap(notes, voice, run.startTick, run.endTick - run.startTick),
   );
+}
+
+function unexplainedRestSupportVoices(
+  notes: readonly NoteEvent[],
+  run: { startTick: number; endTick: number; activeVoices: readonly Voice[] },
+): Voice[] {
+  const requiredSupportCount = Math.max(0, 3 - run.activeVoices.length);
+  return (["bass", "tenor", "alto", "soprano"] as const)
+    .filter((voice) => !run.activeVoices.includes(voice))
+    .filter((voice) => !hasOverlap(notes, voice, run.startTick, run.endTick - run.startTick))
+    .slice(0, requiredSupportCount);
 }
 
 export function counterSubjectDegreesForMode(mode: KeyMode): readonly number[] {
