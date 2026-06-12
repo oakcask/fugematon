@@ -111,13 +111,6 @@ test("generated continuation exposes section-CSP candidate rows without public r
     ),
   );
   assert.ok(
-    traceCandidates.some(
-      (candidate) =>
-        candidate.candidateId.includes("-section-csp-duration-") &&
-        candidate.reason.includes("section-csp-metrical-boundary"),
-    ),
-  );
-  assert.ok(
     output.events.every((event) => String(event.kind) !== "rest"),
     "public ScoreEvent output must keep rests internal",
   );

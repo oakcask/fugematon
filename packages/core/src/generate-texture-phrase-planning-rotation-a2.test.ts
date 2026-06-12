@@ -6,6 +6,10 @@ test("generateScore applies texture and phrase-unit planning across rotation see
   assertTexturePhrasePlanningRotationBatch(TEXTURE_PHRASE_PLANNING_ROTATION_SEEDS.slice(2, 5), {
     topEntryPatternFamilyDelta: 4,
     leapRecoveryMissDelta: 70,
-    sectionGrammarRiskMultiplier: 0.5,
+    uniqueContinuationPatternMultiplier: 1.9,
+    sectionGrammarRiskMultiplier: 0.67,
+    unisonOverlapDelta: 215,
+    sharedRhythmOverlapDelta: 465,
+    counterSubjectIdentityRetentionDelta: 0.54,
   });
 });

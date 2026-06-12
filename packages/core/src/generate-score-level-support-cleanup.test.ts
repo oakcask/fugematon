@@ -15,14 +15,12 @@ test("score-level support cleanup emits paired before and after trace evidence",
   }).diagnostics;
   const candidateIds = new Set(diagnostics.generatorSearchTrace.candidates.map((candidate) => candidate.candidateId));
 
-  for (const surface of [
-    "functional-thinning-support",
-    "long-rest-phrase-closure",
-    "bass-answer-tail-texture-support",
-  ] as const) {
+  for (const surface of ["long-rest-phrase-closure", "bass-answer-tail-texture-support"] as const) {
     assert.ok(candidateIds.has(`score-${surface}-unrepaired-final-repair-evidence`));
     assert.ok(candidateIds.has(`score-${surface}-solver-repaired`));
   }
+  assert.ok(!candidateIds.has("score-functional-thinning-support-unrepaired-final-repair-evidence"));
+  assert.ok(!candidateIds.has("score-functional-thinning-support-solver-repaired"));
   assert.ok(!candidateIds.has("score-texture-voice-crossing-repair-unrepaired-final-repair-evidence"));
   assert.ok(!candidateIds.has("score-texture-voice-crossing-repair-solver-repaired"));
   assert.ok(!candidateIds.has("score-unexplained-rest-thinning-support-unrepaired-final-repair-evidence"));

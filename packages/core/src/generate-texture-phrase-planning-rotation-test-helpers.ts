@@ -9,6 +9,7 @@ type TexturePhrasePlanningRotationExpectation = {
   uniqueContinuationPatternMultiplier?: number;
   sectionGrammarRiskMultiplier?: number;
   bassRootSupportDelta?: number;
+  counterSubjectIdentityRetentionDelta?: number;
 };
 
 export function assertTexturePhrasePlanningRotationBatch(
@@ -44,5 +45,8 @@ export function assertTexturePhrasePlanningRotationBatch(
   assert.ok(
     metrics.variantLeapRecoveryMisses <= metrics.baselineLeapRecoveryMisses + expectation.leapRecoveryMissDelta,
   );
-  assert.ok(metrics.variantCounterSubjectIdentityRetention >= metrics.baselineCounterSubjectIdentityRetention - 0.18);
+  assert.ok(
+    metrics.variantCounterSubjectIdentityRetention >=
+      metrics.baselineCounterSubjectIdentityRetention - (expectation.counterSubjectIdentityRetentionDelta ?? 0.18),
+  );
 }

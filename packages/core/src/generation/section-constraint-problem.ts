@@ -838,8 +838,7 @@ function isFreeCounterpointRole(note: NoteEvent): boolean {
 function isStructuralSupportNote(note: NoteEvent): boolean {
   return (
     note.role === "free-counterpoint" &&
-    (note.metricalHarmonyIntent === "structural-root-support" ||
-      note.metricalHarmonyIntent === "structural-chord-tone")
+    (note.metricalHarmonyIntent === "structural-root-support" || note.metricalHarmonyIntent === "structural-chord-tone")
   );
 }
 
@@ -1290,14 +1289,12 @@ function sumInfeasibleCounts(counts: readonly SectionConstraintInfeasibleCounts[
         sum.thinUnrootedStructuralSupportCount + count.thinUnrootedStructuralSupportCount,
       pitchClassDoublingOnlyCount: sum.pitchClassDoublingOnlyCount + count.pitchClassDoublingOnlyCount,
       mixedEntryHarmonicRiskCount: sum.mixedEntryHarmonicRiskCount + count.mixedEntryHarmonicRiskCount,
-      upperVoiceThematicMonopolyCount:
-        sum.upperVoiceThematicMonopolyCount + count.upperVoiceThematicMonopolyCount,
+      upperVoiceThematicMonopolyCount: sum.upperVoiceThematicMonopolyCount + count.upperVoiceThematicMonopolyCount,
       lowerVoiceFillerDominanceCount: sum.lowerVoiceFillerDominanceCount + count.lowerVoiceFillerDominanceCount,
       supportFillerLockstepCount: sum.supportFillerLockstepCount + count.supportFillerLockstepCount,
       lowerLineContinuityGapCount: sum.lowerLineContinuityGapCount + count.lowerLineContinuityGapCount,
       freeCounterpointScarcityCount: sum.freeCounterpointScarcityCount + count.freeCounterpointScarcityCount,
-      shortStructuralSupportChurnCount:
-        sum.shortStructuralSupportChurnCount + count.shortStructuralSupportChurnCount,
+      shortStructuralSupportChurnCount: sum.shortStructuralSupportChurnCount + count.shortStructuralSupportChurnCount,
     }),
     emptyInfeasibleCounts(),
   );
