@@ -48,9 +48,9 @@ Fugematon 固有の設計判断、review 判断、quality policy と文献根拠
 * Confidence: medium
 * Verification state: page-checked
 * Limits: This claim does not require a complete fingering solver in the first implementation, does not set universal hand-span thresholds, and does not require every four-voice texture to survive unchanged under a music-box profile.
-* Used by: `docs/phases/constrained-keyboard-writing-profiles.md`
+* Used by: `docs/reference/design.md`, `docs/phases/generator-constraint-rebuild.md`, `docs/reviews/music-box-n20-voice-crossing-structural-review.md`
 
-## episode-motivic-development-before-phase-8
+## episode-motivic-development-basis
 
 * Claim: Fugematon should treat short subject-free spans as potentially valid, but Phase 8 should wait until free counterpoint and episode material have review-visible derivation from subject, answer, counter-subject, cadence figure, or prior episode material.
 * Applies to: generation | diagnostics | review | phase-scope
@@ -58,7 +58,7 @@ Fugematon 固有の設計判断、review 判断、quality policy と文献根拠
 * Confidence: medium
 * Verification state: score-example-checked
 * Limits: This claim does not require every episode to be long, every note to literally match the subject, or historical WTC measure counts to become thresholds.
-* Used by: `docs/phases/episode-motivic-development.md`, `docs/reviews/episode-motivic-development-replan.md`, `docs/phases/phase-8.md`
+* Used by: `docs/reference/design.md`, `docs/phases/generator-constraint-rebuild.md`, `docs/reviews/generator-constraint-rebuild-episode-free-counterpoint.md`
 
 ## initial-subject-rhetoric-diversity
 
@@ -68,7 +68,7 @@ Fugematon 固有の設計判断、review 判断、quality policy と文献根拠
 * Confidence: medium
 * Verification state: source-family
 * Limits: This claim does not require learned subject generation, historical subject templates, or maximum difference between all seeds. Motivic recurrence inside one score remains valid when it is function-bearing.
-* Used by: `docs/phases/initial-subject-rhetoric-diversity-repair.md`, `docs/reviews/initial-subject-rhetoric-diversity-completion.md`
+* Used by: `docs/reference/design.md`, `docs/reference/quality-metrics/diagnostics.md`
 
 ## endless-program-coda-continuity
 
@@ -78,7 +78,7 @@ Fugematon 固有の設計判断、review 判断、quality policy と文献根拠
 * Confidence: medium
 * Verification state: score-example-checked
 * Limits: This claim does not require strict Bach style for every style profile, does not ban prepared pedal points or final held sonorities, and does not make every non-thematic final bar a failure when liquidation or cadence function is review-visible. Chorale-style final cadence evidence is a closure floor, not sufficient proof of fugal coda quality. Archetype diversity is review-required evidence, not a CI hard gate.
-* Used by: `docs/phases/endless-program-terminal-coda-historical-style-repair.md`, `docs/phases/endless-program-coda-quality-repair.md`, `docs/reviews/endless-program-coda-quality-gap-review.md`
+* Used by: `docs/phases/endless-program-terminal-stretta-planner.md`, `docs/reviews/endless-program-coda-historical-ending-review.md`, `docs/reference/quality-metrics/diagnostics.md`
 
 ## playback-source-notices-required
 
