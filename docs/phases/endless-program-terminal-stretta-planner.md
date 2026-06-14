@@ -2,7 +2,7 @@
 
 Status: planned.
 
-This plan follows [Endless program coda quality repair](endless-program-coda-quality-repair.md) and [Endless Program Coda Historical Ending Review](../reviews/endless-program-coda-historical-ending-review.md).
+This plan follows the current coda diagnostics and [Endless Program Coda Historical Ending Review](../reviews/endless-program-coda-historical-ending-review.md).
 
 ## Problem
 
