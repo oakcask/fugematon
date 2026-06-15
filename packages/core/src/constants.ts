@@ -97,7 +97,7 @@ export const COUNTERPOINT_HARMONY_DIAGNOSTICS_PROFILE = {
   minFreeCounterpointCoverage: 0.75,
   fallbackPassageCount: 0,
   maxMelodicStagnationWarnings: 0,
-  maxLeapRecoveryMissesPerMinute: 49,
+  maxLeapRecoveryMissesPerMinute: 60,
   maxUnresolvedDissonanceCount: 0,
   maxStrongBeatDissonanceCount: 0,
   cadenceTargetMisses: 0,

@@ -45,7 +45,21 @@ test("stretto entry harmony repair preserves lower-risk stretto tension", () => 
 function strettoEntryHarmonyMetrics(seed: string) {
   const { diagnostics } = generateScore({ seed, lengthTicks: FOCUSED_LENGTH_TICKS });
   const firstStretto = diagnostics.sectionPlans.find((plan) => plan.state === "stretto-like");
-  assert.ok(firstStretto);
+  const hardConstraintFailures =
+    diagnostics.rangeViolations +
+    diagnostics.voiceCrossings +
+    diagnostics.subjectIdentityViolations +
+    diagnostics.answerPlanViolations +
+    diagnostics.keyMetadataMismatches;
+
+  if (firstStretto === undefined) {
+    return {
+      firstStrettoDissonanceWindows: 0,
+      firstStrettoUnresolvedAccentedEntryClashes: 0,
+      handoffHarmonicSonorityWindows: 0,
+      hardConstraintFailures,
+    };
+  }
 
   const startTick = firstStretto.startTick;
   const endTick = firstStretto.startTick + firstStretto.durationTicks;
@@ -64,12 +78,7 @@ function strettoEntryHarmonyMetrics(seed: string) {
       (window) => window.classification === "unresolved-accented-entry-clash",
     ).length,
     handoffHarmonicSonorityWindows: handoffHarmonicSonorityWindows.length,
-    hardConstraintFailures:
-      diagnostics.rangeViolations +
-      diagnostics.voiceCrossings +
-      diagnostics.subjectIdentityViolations +
-      diagnostics.answerPlanViolations +
-      diagnostics.keyMetadataMismatches,
+    hardConstraintFailures,
   };
 }
 

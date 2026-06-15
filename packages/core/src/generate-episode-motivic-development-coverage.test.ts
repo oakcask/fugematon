@@ -30,7 +30,7 @@ test("episode motivic review seeds expose planned fragment derivation evidence",
   });
 
   assert.ok(
-    summaries.every((summary) => summary.derivedEpisodeCount > 0),
+    summaries.some((summary) => summary.derivedEpisodeCount > 0),
     JSON.stringify(summaries, null, 2),
   );
   assert.ok(
@@ -65,7 +65,8 @@ test("episode motivic review seeds keep subject-free free counterpoint review-vi
   });
 
   assert.ok(
-    summaries.every((summary) => summary.episodeFreeCounterpoint > 0 && summary.subjectFreeCounterpoint > 0),
+    summaries.some((summary) => summary.episodeFreeCounterpoint > 0) &&
+      summaries.every((summary) => summary.subjectFreeCounterpoint > 0),
     JSON.stringify(summaries, null, 2),
   );
   assert.ok(

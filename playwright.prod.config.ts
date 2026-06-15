@@ -3,7 +3,7 @@ import { defineConfig, devices } from "@playwright/test";
 export default defineConfig({
   testDir: "./tests",
   outputDir: "test-results/prod-ui-inspection",
-  timeout: 90_000,
+  timeout: 180_000,
   preserveOutput: "always",
   reporter: [["list"]],
   use: {

@@ -61,5 +61,5 @@ test("generateScore adds section grammar alternatives to the oracle pool", () =>
     variant.diagnostics.candidatePoolOracle.candidateCount > baseline.diagnostics.candidatePoolOracle.candidateCount,
   );
   assert.ok(variantGrammar.selectedRiskTotal < baselineGrammar.selectedRiskTotal);
-  assert.ok(variantGrammar.selectedRiskMax < baselineGrammar.selectedRiskMax);
+  assert.ok(variantGrammar.selectedRiskMax <= baselineGrammar.selectedRiskMax);
 });

@@ -34,7 +34,7 @@ test("texture-continuity repair review batch B keeps bass-answer tail thinning b
   );
 });
 
-test("texture-continuity repair review batch B keeps exposed free-counterpoint solo windows bounded and review-visible", () => {
+test("texture-continuity repair review batch B resolves exposed free-counterpoint solo windows", () => {
   const summaries = TEXTURE_CONTINUITY_REPAIR_REVIEW_SEEDS.map((seed) => {
     const summary = scoreForSeed(seed).diagnostics.exposedFreeCounterpointSolo;
     return {
@@ -47,11 +47,7 @@ test("texture-continuity repair review batch B keeps exposed free-counterpoint s
   });
 
   assert.ok(
-    summaries.every((summary) => summary.reviewRequiredWindowCount <= 4),
-    JSON.stringify(summaries, null, 2),
-  );
-  assert.ok(
-    summaries.some((summary) => summary.functionExplainedWindowCount > 0),
+    summaries.every((summary) => summary.reviewRequiredWindowCount === 0),
     JSON.stringify(summaries, null, 2),
   );
 });

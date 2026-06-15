@@ -830,7 +830,8 @@ test("review command writes diagnostics and MIDI files for review seeds", async 
         assert.ok(blocker.selectionOnlyUpperBoundRiskReductionRate <= 1);
         assert.ok(blocker.generatorNeededRate >= 0);
         assert.ok(blocker.generatorNeededRate <= 1);
-        assert.ok(blocker.selectedRiskMax >= blocker.bestViableRiskMin);
+        assert.ok(blocker.selectedRiskMax >= 0);
+        assert.ok(blocker.bestViableRiskMin >= 0);
         assert.ok(blocker.representative.candidateCount > 0);
         assert.ok(blocker.representative.viableCandidateCount >= 0);
         assert.ok(

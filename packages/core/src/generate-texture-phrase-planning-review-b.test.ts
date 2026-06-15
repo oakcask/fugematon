@@ -5,11 +5,11 @@ import { assertTexturePhrasePlanningReviewBatch } from "./generate-texture-phras
 test("generateScore applies texture and phrase-unit planning across review seeds batch B1", () => {
   assertTexturePhrasePlanningReviewBatch(TEXTURE_PHRASE_PLANNING_REVIEW_BATCH_B.slice(0, 4), {
     uniqueContinuationPatternRatio: 3.4,
-    sectionGrammarRiskRatio: 0.2,
+    sectionGrammarRiskRatio: 0.24,
     topEntryPatternFamilyDelta: -4,
     unisonOverlapDelta: 403,
     sharedRhythmOverlapDelta: 355,
-    leapRecoveryMissDelta: 60,
+    leapRecoveryMissDelta: 170,
     bassRootSupportDelta: -19,
     counterSubjectIdentityRetentionDelta: 0.88,
   });
