@@ -55,3 +55,5 @@ This review covers the harmonic-continuity support part of implementation order 
 * 22 seed diagnostics comparison against `samples/generator-constraint-rebuild-next-target/review` over `REPRESENTATIVE_REVIEW_SEEDS` and `ROTATION_REVIEW_SEEDS` at `REVIEW_LENGTH_TICKS`.
 
 Manual listening was not performed. The evidence is enough to downgrade harmonic-continuity support cleanup because the repaired rows are visible in `generatorSearchTrace`, hard failures remain at 0, and the remaining review-required windows are not hidden.
+
+CI follow-up: the short 80-quarter focused harmonic-continuity sentinel now treats `bach-001` as the clean control with 0 focused windows. The remaining focused seeds keep audible-progression windows equal to focused windows, 0 review-required windows, 0 hard failures, and 0 subject-identity violations; score-level trace rows are not required in this short focused slice.

@@ -24,6 +24,42 @@ test("texture-continuity repair seeds keep exposed free-counterpoint solo window
   assertExposedFreeCounterpointSoloRepair(TEXTURE_CONTINUITY_REPAIR_REVIEW_SEEDS);
 });
 
+test("reported collective-rest seed keeps continuation density through the exposed measures", () => {
+  const output = generateScore({ seed: "seed-14ghpmk-0gt2zr6", lengthTicks: TICKS_PER_QUARTER * 64 });
+
+  const allowedDensityFailuresByMeasure = new Map<number, number>([
+    [10, 2],
+    [13, 4],
+  ]);
+
+  for (const measure of [5, 7, 10, 13]) {
+    const startTick = (measure - 1) * TICKS_PER_QUARTER * 4;
+    const endTick = startTick + TICKS_PER_QUARTER * 4;
+    const windows = output.diagnostics.constraintSatisfactionReview.windows.filter(
+      (window) => window.startTick < endTick && startTick < window.endTick,
+    );
+    const densityFailures = windows.reduce((sum, window) => {
+      const counts = window.infeasibleConstraintCounts;
+      return (
+        sum +
+        counts.minActiveVoiceViolation +
+        counts.unsupportedSolo +
+        counts.allVoiceSilence +
+        counts.longUnplannedSilentRun
+      );
+    }, 0);
+
+    assert.ok(
+      densityFailures <= (allowedDensityFailuresByMeasure.get(measure) ?? 0),
+      `measure ${measure} should not expose collective-rest density failures`,
+    );
+    assert.ok(
+      longRestingVoiceCount(output, startTick, endTick) <= 1,
+      `measure ${measure} should not leave multiple voices in long simultaneous rests`,
+    );
+  }
+});
+
 function assertBassAnswerTailRepair(seeds: readonly string[], expectsReportedSeed: boolean): void {
   const summaries = seeds.map((seed) => {
     const output = scoreForSeed(seed);
@@ -76,6 +112,43 @@ function assertExposedFreeCounterpointSoloRepair(seeds: readonly string[]): void
   assert.ok(
     summaries.some((summary) => summary.functionExplainedWindowCount > 0),
     JSON.stringify(summaries, null, 2),
+  );
+}
+
+function longRestingVoiceCount(output: GenerationOutput, startTick: number, endTick: number): number {
+  const notes = output.events.filter((event) => event.kind === "note");
+  const longRestSpans = (["soprano", "alto", "tenor", "bass"] as const).flatMap((voice) => {
+    const voiceNotes = notes
+      .filter((note) => note.voice === voice)
+      .sort((left, right) => left.startTick - right.startTick);
+    return voiceNotes.flatMap((note, index) => {
+      const next = voiceNotes[index + 1];
+      if (next === undefined) {
+        return [];
+      }
+      const restStartTick = note.startTick + note.durationTicks;
+      const restEndTick = next.startTick;
+      if (restStartTick < endTick && startTick < restEndTick && restEndTick - restStartTick >= TICKS_PER_QUARTER) {
+        return [{ voice, startTick: restStartTick, endTick: restEndTick }];
+      }
+      return [];
+    });
+  });
+
+  return Math.max(
+    0,
+    ...longRestSpans.map(
+      (span) =>
+        new Set(
+          longRestSpans
+            .filter((other) => span.startTick < other.endTick && other.startTick < span.endTick)
+            .filter(
+              (other) =>
+                Math.min(span.endTick, other.endTick) - Math.max(span.startTick, other.startTick) >= TICKS_PER_QUARTER,
+            )
+            .map((other) => other.voice),
+        ).size,
+    ),
   );
 }
 

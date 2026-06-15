@@ -6,9 +6,9 @@ test("generateScore applies texture and phrase-unit planning across review seeds
   assertTexturePhrasePlanningReviewBatch(TEXTURE_PHRASE_PLANNING_REVIEW_BATCH_A.slice(2, 4), {
     uniqueContinuationPatternRatio: 2.6,
     sectionGrammarRiskRatio: 0.405,
-    topEntryPatternFamilyDelta: -14,
+    topEntryPatternFamilyDelta: -12,
     unisonOverlapDelta: -50,
     sharedRhythmOverlapDelta: 128,
-    leapRecoveryMissDelta: 30,
+    leapRecoveryMissDelta: 70,
   });
 });

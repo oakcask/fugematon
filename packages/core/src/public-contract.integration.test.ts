@@ -196,7 +196,7 @@ test("public diagnostics expose finite candidate score dimensions", () => {
   assert.equal(typeof output.diagnostics.qualityVector.harmonicSonorities.focusedWindowCount, "number");
   assert.equal(typeof output.diagnostics.qualityVector.harmonicSonorities.generatorResponseWindowCount, "number");
   assert.ok(Array.isArray(output.diagnostics.qualityVector.harmonicSonorities.windows));
-  assert.equal(output.diagnostics.constraintSatisfactionReview.schemaVersion, 4);
+  assert.equal(output.diagnostics.constraintSatisfactionReview.schemaVersion, 5);
   assert.equal(typeof output.diagnostics.constraintSatisfactionReview.windowCount, "number");
   assert.equal(typeof output.diagnostics.constraintSatisfactionReview.intentionalRestSpanCount, "number");
   assert.equal(typeof output.diagnostics.constraintSatisfactionReview.unplannedSilentRunCount, "number");
@@ -234,6 +234,12 @@ test("public diagnostics expose finite candidate score dimensions", () => {
         typeof window.infeasibleConstraintCounts.pitchClassDoublingOnlyCount === "number" &&
         typeof window.infeasibleConstraintCounts.mixedEntryHarmonicRiskCount === "number" &&
         typeof window.infeasibleConstraintCounts.sustainedSevereVerticalDissonanceCount === "number" &&
+        typeof window.infeasibleConstraintCounts.upperVoiceThematicMonopolyCount === "number" &&
+        typeof window.infeasibleConstraintCounts.lowerVoiceFillerDominanceCount === "number" &&
+        typeof window.infeasibleConstraintCounts.supportFillerLockstepCount === "number" &&
+        typeof window.infeasibleConstraintCounts.lowerLineContinuityGapCount === "number" &&
+        typeof window.infeasibleConstraintCounts.freeCounterpointScarcityCount === "number" &&
+        typeof window.infeasibleConstraintCounts.shortStructuralSupportChurnCount === "number" &&
         Array.isArray(window.intentionalRestSpans) &&
         Array.isArray(window.unplannedSilentRuns) &&
         window.unplannedSilentRuns.every((run) => run.state === window.state && typeof run.reason === "string") &&

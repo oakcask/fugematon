@@ -1,7 +1,15 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { TICKS_PER_QUARTER } from "../constants.js";
-import type { FugueState, HarmonicPlan, KeySignature, NoteEvent, PlannedEntry, Voice } from "../events.js";
+import type {
+  FugueState,
+  HarmonicPlan,
+  KeySignature,
+  MetricalHarmonyIntent,
+  NoteEvent,
+  PlannedEntry,
+  Voice,
+} from "../events.js";
 import { generateScore } from "../generate.js";
 import { buildHarmonicPlan } from "./harmony.js";
 import { createMeterContext } from "./meter.js";
@@ -99,10 +107,180 @@ test("section CSP diagnostics are deterministic for the same seed and input", ()
   const second = generateScore({ seed: "fugue-smoke", lengthTicks: TICKS_PER_QUARTER * 32 });
 
   assert.deepEqual(first.diagnostics.constraintSatisfactionReview, second.diagnostics.constraintSatisfactionReview);
-  assert.equal(first.diagnostics.constraintSatisfactionReview.schemaVersion, 4);
+  assert.equal(first.diagnostics.constraintSatisfactionReview.schemaVersion, 5);
   assert.ok(first.diagnostics.constraintSatisfactionReview.solverCandidateCount > 0);
   assert.equal(typeof first.diagnostics.constraintSatisfactionReview.metricalBoundaryCost, "number");
   assert.equal(typeof first.diagnostics.constraintSatisfactionReview.unpreparedTransitionCount, "number");
+});
+
+test("section CSP counts upper-line thematic monopoly as soft agency evidence", () => {
+  const plan = sectionPlan({ state: "subject-return", durationTicks: TICKS_PER_QUARTER * 4 });
+  const notes = [
+    note({ voice: "soprano", startTick: 0, durationTicks: plan.durationTicks, pitch: 72, role: "subject" }),
+    note({ voice: "alto", startTick: 0, durationTicks: plan.durationTicks, pitch: 64, role: "free-counterpoint" }),
+    note({ voice: "tenor", startTick: 0, durationTicks: plan.durationTicks, pitch: 55, role: "free-counterpoint" }),
+    note({ voice: "bass", startTick: 0, durationTicks: plan.durationTicks, pitch: 48, role: "free-counterpoint" }),
+  ];
+  const review = evaluateSectionConstraintProblem({
+    problem: buildSectionConstraintProblem({ notes, sectionPlan: plan }),
+    notes,
+    sectionPlan: plan,
+  });
+
+  assert.ok(review.infeasibleConstraintCounts.upperVoiceThematicMonopolyCount > 0);
+  assert.ok(review.infeasibleConstraintCounts.lowerVoiceFillerDominanceCount > 0);
+  assert.equal(review.selectedRelaxationLevel, "none");
+});
+
+test("section CSP accepts upper free-counterpoint agency with the same density", () => {
+  const plan = sectionPlan({ state: "episode", durationTicks: TICKS_PER_QUARTER * 2 });
+  const notes = [
+    note({ voice: "soprano", startTick: 0, durationTicks: plan.durationTicks, pitch: 72, role: "free-counterpoint" }),
+    note({ voice: "alto", startTick: 0, durationTicks: plan.durationTicks, pitch: 64, role: "free-counterpoint" }),
+    note({ voice: "tenor", startTick: 0, durationTicks: plan.durationTicks, pitch: 55, role: "free-counterpoint" }),
+    note({ voice: "bass", startTick: 0, durationTicks: plan.durationTicks, pitch: 48, role: "free-counterpoint" }),
+  ];
+  const review = evaluateSectionConstraintProblem({
+    problem: buildSectionConstraintProblem({ notes, sectionPlan: plan }),
+    notes,
+    sectionPlan: plan,
+  });
+
+  assert.equal(review.infeasibleConstraintCounts.upperVoiceThematicMonopolyCount, 0);
+  assert.equal(review.infeasibleConstraintCounts.lowerVoiceFillerDominanceCount, 0);
+});
+
+test("section CSP counts lower-line continuity gaps when upper agency thins low support", () => {
+  const plan: HarmonicPlan = {
+    ...sectionPlan({ state: "episode", durationTicks: TICKS_PER_QUARTER * 4 }),
+    cadenceKind: "deceptive",
+  };
+  const notes = [
+    note({ voice: "soprano", startTick: 0, durationTicks: plan.durationTicks, pitch: 72, role: "free-counterpoint" }),
+    note({ voice: "alto", startTick: 0, durationTicks: plan.durationTicks, pitch: 64, role: "free-counterpoint" }),
+    note({ voice: "tenor", startTick: 0, durationTicks: plan.durationTicks, pitch: 55, role: "free-counterpoint" }),
+  ];
+  const review = evaluateSectionConstraintProblem({
+    problem: buildSectionConstraintProblem({ notes, sectionPlan: plan }),
+    notes,
+    sectionPlan: plan,
+  });
+
+  assert.ok(review.infeasibleConstraintCounts.lowerLineContinuityGapCount > 0);
+});
+
+test("section CSP counts free-counterpoint scarcity away from planned entries and cadences", () => {
+  const plan: HarmonicPlan = {
+    ...sectionPlan({ state: "episode", durationTicks: TICKS_PER_QUARTER * 4 }),
+    cadenceKind: "deceptive",
+    anchors: [
+      { tick: 0, localKey: cMajor(), function: "tonic", cadenceTarget: false },
+      { tick: TICKS_PER_QUARTER * 2, localKey: cMajor(), function: "tonic", cadenceTarget: false },
+    ],
+  };
+  const notes = [
+    note({ voice: "soprano", startTick: 0, durationTicks: plan.durationTicks, pitch: 72, role: "subject-fragment" }),
+    note({ voice: "alto", startTick: 0, durationTicks: plan.durationTicks, pitch: 64, role: "counter-subject" }),
+    note({ voice: "tenor", startTick: 0, durationTicks: plan.durationTicks, pitch: 55, role: "counter-subject" }),
+    note({ voice: "bass", startTick: 0, durationTicks: plan.durationTicks, pitch: 48, role: "answer" }),
+  ];
+  const review = evaluateSectionConstraintProblem({
+    problem: buildSectionConstraintProblem({ notes, sectionPlan: plan }),
+    notes,
+    sectionPlan: plan,
+  });
+
+  assert.ok(review.infeasibleConstraintCounts.freeCounterpointScarcityCount > 0);
+  assert.equal(review.selectedRelaxationLevel, "none");
+});
+
+test("section CSP counts structural support lockstep as soft agency evidence", () => {
+  const basePlan = sectionPlan({ state: "episode", durationTicks: TICKS_PER_QUARTER * 4 });
+  const plan: HarmonicPlan = {
+    ...basePlan,
+    cadenceKind: "half",
+    anchors: [
+      { tick: 0, localKey: cMajor(), function: "tonic", cadenceTarget: false },
+      { tick: TICKS_PER_QUARTER * 2, localKey: cMajor(), function: "tonic", cadenceTarget: false },
+    ],
+  };
+  const notes = [
+    note({ voice: "soprano", startTick: 0, durationTicks: plan.durationTicks, pitch: 72, role: "free-counterpoint" }),
+    note({
+      voice: "alto",
+      startTick: 0,
+      durationTicks: plan.durationTicks,
+      pitch: 64,
+      role: "free-counterpoint",
+      metricalHarmonyIntent: "structural-chord-tone",
+    }),
+    note({
+      voice: "tenor",
+      startTick: 0,
+      durationTicks: plan.durationTicks,
+      pitch: 55,
+      role: "free-counterpoint",
+      metricalHarmonyIntent: "structural-chord-tone",
+    }),
+    note({
+      voice: "bass",
+      startTick: 0,
+      durationTicks: plan.durationTicks,
+      pitch: 48,
+      role: "free-counterpoint",
+      metricalHarmonyIntent: "structural-root-support",
+    }),
+  ];
+  const review = evaluateSectionConstraintProblem({
+    problem: buildSectionConstraintProblem({ notes, sectionPlan: plan }),
+    notes,
+    sectionPlan: plan,
+  });
+
+  assert.ok(review.infeasibleConstraintCounts.supportFillerLockstepCount > 0);
+  assert.equal(review.selectedRelaxationLevel, "none");
+});
+
+test("section CSP counts short structural support churn as soft agency evidence", () => {
+  const plan: HarmonicPlan = {
+    ...sectionPlan({ state: "episode", durationTicks: TICKS_PER_QUARTER * 4 }),
+    cadenceKind: "deceptive",
+  };
+  const notes = [
+    note({ voice: "soprano", startTick: 0, durationTicks: plan.durationTicks, pitch: 72, role: "free-counterpoint" }),
+    note({ voice: "alto", startTick: 0, durationTicks: plan.durationTicks, pitch: 64, role: "free-counterpoint" }),
+    note({
+      voice: "tenor",
+      startTick: 0,
+      durationTicks: TICKS_PER_QUARTER,
+      pitch: 55,
+      role: "free-counterpoint",
+      metricalHarmonyIntent: "structural-chord-tone",
+    }),
+    note({
+      voice: "tenor",
+      startTick: TICKS_PER_QUARTER,
+      durationTicks: TICKS_PER_QUARTER,
+      pitch: 55,
+      role: "free-counterpoint",
+      metricalHarmonyIntent: "structural-chord-tone",
+    }),
+    note({
+      voice: "bass",
+      startTick: 0,
+      durationTicks: plan.durationTicks,
+      pitch: 48,
+      role: "free-counterpoint",
+      metricalHarmonyIntent: "structural-root-support",
+    }),
+  ];
+  const review = evaluateSectionConstraintProblem({
+    problem: buildSectionConstraintProblem({ notes, sectionPlan: plan }),
+    notes,
+    sectionPlan: plan,
+  });
+
+  assert.ok(review.infeasibleConstraintCounts.shortStructuralSupportChurnCount > 0);
 });
 
 test("section CSP metrical-boundary cost ranks downbeat, prepared pickup, and unprepared offbeat", () => {
@@ -200,6 +378,7 @@ function note(input: {
   durationTicks?: number;
   pitch: number;
   role?: NoteEvent["role"];
+  metricalHarmonyIntent?: MetricalHarmonyIntent;
 }): NoteEvent {
   return {
     kind: "note",
@@ -209,6 +388,7 @@ function note(input: {
     pitch: input.pitch,
     velocity: 72,
     role: input.role ?? "free-counterpoint",
+    metricalHarmonyIntent: input.metricalHarmonyIntent,
   };
 }
 

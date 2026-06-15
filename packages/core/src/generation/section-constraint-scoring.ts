@@ -34,6 +34,12 @@ export type SectionConstraintScoringWeights = {
   thinUnrootedStructuralSupport: number;
   pitchClassDoublingOnly: number;
   mixedEntryHarmonicRisk: number;
+  upperVoiceThematicMonopoly: number;
+  lowerVoiceFillerDominance: number;
+  supportFillerLockstep: number;
+  lowerLineContinuityGap: number;
+  freeCounterpointScarcity: number;
+  shortStructuralSupportChurn: number;
 };
 
 export type SectionConstraintScoringProfile = SectionConstraintScoringProfileMetadata & {
@@ -59,6 +65,12 @@ const CURRENT_WEIGHTS: SectionConstraintScoringWeights = {
   thinUnrootedStructuralSupport: 3,
   pitchClassDoublingOnly: 4,
   mixedEntryHarmonicRisk: 5,
+  upperVoiceThematicMonopoly: 8,
+  lowerVoiceFillerDominance: 6,
+  supportFillerLockstep: 4,
+  lowerLineContinuityGap: 10,
+  freeCounterpointScarcity: 7,
+  shortStructuralSupportChurn: 5,
 };
 
 const SECTION_CONSTRAINT_SCORING_PROFILES: Record<SectionConstraintScoringProfileId, SectionConstraintScoringProfile> =
@@ -85,6 +97,12 @@ const SECTION_CONSTRAINT_SCORING_PROFILES: Record<SectionConstraintScoringProfil
         unresolvedAccentedEntryClash: 8,
         leapToSilence: 8,
         voicePairUnisonPressure: 0.5,
+        upperVoiceThematicMonopoly: 12,
+        lowerVoiceFillerDominance: 9,
+        supportFillerLockstep: 6,
+        lowerLineContinuityGap: 14,
+        freeCounterpointScarcity: 10,
+        shortStructuralSupportChurn: 7,
       },
     },
     "entry-strict": {
@@ -99,6 +117,12 @@ const SECTION_CONSTRAINT_SCORING_PROFILES: Record<SectionConstraintScoringProfil
         unresolvedAccentedEntryClash: 8,
         leapToSilence: 8,
         voicePairUnisonPressure: 0.5,
+        upperVoiceThematicMonopoly: 12,
+        lowerVoiceFillerDominance: 9,
+        supportFillerLockstep: 6,
+        lowerLineContinuityGap: 14,
+        freeCounterpointScarcity: 10,
+        shortStructuralSupportChurn: 7,
       },
     },
     "entry-strict-leap": {
@@ -113,6 +137,12 @@ const SECTION_CONSTRAINT_SCORING_PROFILES: Record<SectionConstraintScoringProfil
         unresolvedAccentedEntryClash: 8,
         leapToSilence: 16,
         voicePairUnisonPressure: 0.5,
+        upperVoiceThematicMonopoly: 12,
+        lowerVoiceFillerDominance: 9,
+        supportFillerLockstep: 6,
+        lowerLineContinuityGap: 14,
+        freeCounterpointScarcity: 10,
+        shortStructuralSupportChurn: 7,
       },
     },
   };
@@ -164,6 +194,12 @@ export function sectionConstraintSoftCostFromCounts(
       counts.voicePairLockstepCount * weights.voicePairLockstep +
       counts.thinUnrootedStructuralSupportCount * weights.thinUnrootedStructuralSupport +
       counts.pitchClassDoublingOnlyCount * weights.pitchClassDoublingOnly +
-      counts.mixedEntryHarmonicRiskCount * weights.mixedEntryHarmonicRisk,
+      counts.mixedEntryHarmonicRiskCount * weights.mixedEntryHarmonicRisk +
+      counts.upperVoiceThematicMonopolyCount * weights.upperVoiceThematicMonopoly +
+      counts.lowerVoiceFillerDominanceCount * weights.lowerVoiceFillerDominance +
+      counts.supportFillerLockstepCount * weights.supportFillerLockstep +
+      counts.lowerLineContinuityGapCount * weights.lowerLineContinuityGap +
+      counts.freeCounterpointScarcityCount * weights.freeCounterpointScarcity +
+      counts.shortStructuralSupportChurnCount * weights.shortStructuralSupportChurn,
   );
 }

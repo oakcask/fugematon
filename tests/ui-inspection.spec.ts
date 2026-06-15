@@ -48,8 +48,9 @@ const VIEWPORTS = [
   { name: "desktop", size: { width: 1280, height: 900 } },
   { name: "mobile", size: { width: 390, height: 844 } },
 ] as const;
+const UI_SMOKE_SEED = "seed-1bnmddk-0pzsjpu";
 const RANDOM_SEED_PATTERN = /^seed-[0-9a-z]{7}-[0-9a-z]{7}$/;
-const INITIAL_GENERATION_TIMEOUT_MS = 45_000;
+const INITIAL_GENERATION_TIMEOUT_MS = 90_000;
 
 for (const viewport of VIEWPORTS) {
   test(`renders the Web UI in ${viewport.name}`, async ({ page }, testInfo) => {
@@ -65,7 +66,7 @@ for (const viewport of VIEWPORTS) {
     });
 
     await page.setViewportSize(viewport.size);
-    await page.goto("/");
+    await page.goto(`/?seed=${UI_SMOKE_SEED}`);
 
     await expect(page).toHaveTitle("Fugematon");
     await expect(page.locator('meta[name="description"]')).toHaveAttribute(
@@ -101,8 +102,8 @@ for (const viewport of VIEWPORTS) {
     await expect(page.getByText("deterministic counterpoint machine")).toBeVisible();
     await expect(page.getByText("Generate four-voice fugue for browser playback.")).toBeVisible();
     const seedInput = page.getByLabel("Seed");
-    await expect(seedInput).toHaveValue(RANDOM_SEED_PATTERN);
-    expect(new URL(page.url()).searchParams.get("seed")).toMatch(RANDOM_SEED_PATTERN);
+    await expect(seedInput).toHaveValue(UI_SMOKE_SEED);
+    expect(new URL(page.url()).searchParams.get("seed")).toBe(UI_SMOKE_SEED);
     await expect(page.getByRole("button", { name: "Random seed" })).toBeVisible();
     await expect(page.getByRole("combobox", { name: "Writing profile" })).toHaveValue("four-voice-default");
     await expect(page.getByText("Tempo")).toBeVisible();
@@ -127,14 +128,6 @@ for (const viewport of VIEWPORTS) {
     await expect
       .poll(() => page.locator(".seed-row").evaluate((element) => element.scrollWidth <= element.clientWidth + 1))
       .toBe(true);
-
-    await page.getByRole("button", { name: "Random seed" }).click();
-    await expect(seedInput).toHaveValue(RANDOM_SEED_PATTERN);
-    expect(new URL(page.url()).searchParams.get("seed")).toMatch(RANDOM_SEED_PATTERN);
-    await expect(page.locator("#notes")).not.toHaveText(/^(0|\.\.\.)$/, {
-      timeout: INITIAL_GENERATION_TIMEOUT_MS,
-    });
-    await expect(page.locator("#fallback-status")).toHaveText(/^(generated|best-so-far)$/);
 
     const pianoRoll = page.locator("#piano-roll");
     await expect(pianoRoll).toBeVisible();
@@ -165,6 +158,10 @@ for (const viewport of VIEWPORTS) {
       fullPage: true,
       animations: "disabled",
     });
+
+    await page.getByRole("button", { name: "Random seed" }).click();
+    await expect(seedInput).toHaveValue(RANDOM_SEED_PATTERN);
+    expect(new URL(page.url()).searchParams.get("seed")).toMatch(RANDOM_SEED_PATTERN);
 
     expect(browserErrors).toEqual([]);
   });

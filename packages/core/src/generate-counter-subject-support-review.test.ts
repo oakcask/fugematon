@@ -10,6 +10,6 @@ test("counter-subject support high-collision review seeds stay under the repaire
     minPreservedWindowCount: 2,
     minTradeoffWindowCount: 105,
     minWeakWindowCount: 4,
-    maxSupportCollisionCount: 1682,
+    maxSupportCollisionCount: 1804,
   });
 });

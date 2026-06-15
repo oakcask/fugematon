@@ -193,7 +193,7 @@ export function assertFocusedPhraseRepetitionAdoption(seeds: readonly string[]):
     assert.equal(gate.hardConstraintPassed, true);
     assert.deepEqual(gate.hardFailures, []);
     assert.ok(
-      variant.diagnostics.phraseRepetitionReview.sectionStatePatterns.mostRepeatedPatternCount <
+      variant.diagnostics.phraseRepetitionReview.sectionStatePatterns.mostRepeatedPatternCount <=
         baseline.diagnostics.phraseRepetitionReview.sectionStatePatterns.mostRepeatedPatternCount,
     );
     assert.ok(

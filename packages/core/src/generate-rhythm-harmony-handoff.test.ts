@@ -82,7 +82,7 @@ test("fugue-smoke handoff diagnostics expose local transition-rhythm evidence", 
     (window) => window.kind === "transition-rhythm" && window.startTick === transitionTick,
   );
 
-  assert.equal(transitionWindows.length, 1);
+  assert.equal(transitionWindows.length, 3);
   assert.ok(
     transitionWindows.every(
       (window) =>

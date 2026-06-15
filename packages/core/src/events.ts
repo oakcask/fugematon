@@ -465,6 +465,12 @@ export type SectionConstraintInfeasibleCounts = {
   thinUnrootedStructuralSupportCount: number;
   pitchClassDoublingOnlyCount: number;
   mixedEntryHarmonicRiskCount: number;
+  upperVoiceThematicMonopolyCount: number;
+  lowerVoiceFillerDominanceCount: number;
+  supportFillerLockstepCount: number;
+  lowerLineContinuityGapCount: number;
+  freeCounterpointScarcityCount: number;
+  shortStructuralSupportChurnCount: number;
 };
 
 export type SectionConstraintRelaxationLevel =
@@ -493,7 +499,7 @@ export type SectionConstraintSatisfactionWindow = {
 };
 
 export type ConstraintSatisfactionReviewSummary = {
-  schemaVersion: 4;
+  schemaVersion: 5;
   windowCount: number;
   intentionalRestSpanCount: number;
   unplannedSilentRunCount: number;

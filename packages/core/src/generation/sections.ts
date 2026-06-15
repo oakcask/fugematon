@@ -5,6 +5,7 @@ import type {
   CadenceKind,
   CandidateDiversityDescriptor,
   CandidateEvaluation,
+  ConstraintHardFailureCode,
   EntryForm,
   EpisodeMotiveSource,
   EpisodeTargetFunction,
@@ -49,6 +50,7 @@ import { createLegacyMeterContext, previousMeasureDownbeat } from "./meter.js";
 import { buildPhraseDevelopmentReviewSummary } from "./phrase-development-review.js";
 import { melodicRoleForScaleDegree, scaleDegreePitchClass } from "./pitch.js";
 import { buildScoreWindowAcceptanceSummary } from "./score-window-acceptance.js";
+import { buildConstraintSatisfactionReview } from "./section-constraint-problem.js";
 import { candidateSelectionScore } from "./selection-risk-adjustments.js";
 import {
   compareNoteEvents,
@@ -67,12 +69,14 @@ import {
   addFunctionalThinningSupport,
   addPostEntryContinuationSupport,
   addShortEpisodeHarmonicContinuitySupport,
+  addUnexplainedRestThinningSupport,
   type ContinuityLineKind,
   fillAllVoiceSilenceGaps,
   repairTextureVoiceCrossingsForNotes,
   shapeLongRestPhraseClosures,
   softenBassEntryBoundaryResets,
   softenFirstBassEntryBoundaryReset,
+  type UnexplainedRestThinningSupportPolicy,
 } from "./texture.js";
 import type { Exposition, FugueScore, SubjectNote } from "./types.js";
 
@@ -117,6 +121,11 @@ type ScoreLevelSupportCleanupReview = {
   scoreWindowGeneratorResponseCount: number;
   scoreWindowAcceptedContextCount: number;
   harmonicContinuityReviewRequiredCount: number;
+  cspDensityFailureCount: number;
+  cspUpperLineAgencyFailureCount: number;
+  cspLowerLineContinuityGapCount: number;
+  cspFreeCounterpointScarcityCount: number;
+  cspShortStructuralSupportChurnCount: number;
 };
 
 type ContinuationSectionSelection = {
@@ -340,6 +349,7 @@ export function buildFugueScore(
   }
   repairTextureVoiceCrossingsForNotes(notes, sectionPlans, writingProfile);
   restoreEntryPitchClassIdentity(notes, subjectEntries, writingProfile);
+  repairResidualEntryVoiceCrossingOctaves(notes, subjectEntries, sectionPlans, writingProfile);
   if (selectionModel === "section-local-planner") {
     selectedConstraintCandidates.push(
       ...applyScoreLevelSustainedDissonanceSolver({
@@ -435,14 +445,33 @@ function restoreEntryPitchClassIdentity(
   const retainedEntries: PlannedEntry[] = [];
   const activeEntryEndByVoice = new Map<Voice, number>();
   const removedEntrySpans: Array<{ voice: Voice; role: NoteEvent["role"]; startTick: number; endTick: number }> = [];
+  const demotedEntryNotes = new Set<NoteEvent>();
+  const sortedEntries = [...subjectEntries].sort((left, right) => left.startTick - right.startTick);
 
-  for (const entry of [...subjectEntries].sort((left, right) => left.startTick - right.startTick)) {
+  for (const [entryIndex, entry] of sortedEntries.entries()) {
     const entryRole = noteRoleForEntryForm(entry.form);
+    const nextEntryStart = sortedEntries
+      .slice(entryIndex + 1)
+      .find(
+        (candidate) => candidate.voice === entry.voice && noteRoleForEntryForm(candidate.form) === entryRole,
+      )?.startTick;
     const entryNotes = notes
-      .filter((note) => note.voice === entry.voice && note.startTick >= entry.startTick && note.role === entryRole)
+      .filter(
+        (note) =>
+          note.voice === entry.voice &&
+          note.startTick >= entry.startTick &&
+          (nextEntryStart === undefined || note.startTick < nextEntryStart) &&
+          note.role === entryRole,
+      )
       .sort(compareNoteEvents)
       .slice(0, entry.actualPitchClassSequence.length);
     const entryEndTick = entryNotes.at(-1)?.startTick ?? entry.startTick;
+    if (entryNotes.length < entry.actualPitchClassSequence.length) {
+      for (const note of entryNotes) {
+        demotedEntryNotes.add(note);
+      }
+      continue;
+    }
     const activeEntryEnd = activeEntryEndByVoice.get(entry.voice);
     if (activeEntryEnd !== undefined && entry.startTick <= activeEntryEnd) {
       removedEntrySpans.push({
@@ -474,6 +503,9 @@ function restoreEntryPitchClassIdentity(
       ),
     );
   }
+  for (const note of demotedEntryNotes) {
+    note.role = "free-counterpoint";
+  }
 
   for (const entry of retainedEntries) {
     const entryRole = noteRoleForEntryForm(entry.form);
@@ -499,12 +531,80 @@ function restoreEntryPitchClassIdentity(
     }
     for (const [index, note] of entryNotes.entries()) {
       const pitchClass = entry.actualPitchClassSequence[index];
-      if (pitchClass === undefined || positiveModulo(note.pitch, 12) === pitchClass) {
+      if (pitchClass === undefined) {
         continue;
       }
-      note.pitch = nearestWritingProfilePitchForPitchClass(pitchClass, note.pitch, note.voice, writingProfile);
+      if (positiveModulo(note.pitch, 12) !== pitchClass) {
+        note.pitch = nearestWritingProfilePitchForPitchClass(pitchClass, note.pitch, note.voice, writingProfile);
+      }
     }
   }
+}
+
+function repairResidualEntryVoiceCrossingOctaves(
+  notes: NoteEvent[],
+  subjectEntries: readonly PlannedEntry[],
+  sectionPlans: readonly HarmonicPlan[],
+  writingProfile: WritingProfile,
+): void {
+  let before = analyzeScore(notes, subjectEntries, sectionPlans, writingProfile);
+  for (let pass = 0; pass < 4 && before.voiceCrossings > 0; pass += 1) {
+    const crossing = before.issues.find((issue) => issue.code === "voice-crossing" && issue.voices.length === 2);
+    const tick = crossing?.tick;
+    const [higherVoice, lowerVoice] = crossing?.voices ?? [];
+    if (tick === undefined || !isVoice(higherVoice) || !isVoice(lowerVoice)) {
+      return;
+    }
+
+    const repairs = [
+      { voice: lowerVoice, direction: -12 },
+      { voice: higherVoice, direction: 12 },
+    ] as const;
+    let accepted = false;
+    for (const repair of repairs) {
+      const repairedNotes = cloneNotes(notes);
+      const note = activeNoteAt(repairedNotes, repair.voice, tick);
+      if (note === undefined) {
+        continue;
+      }
+      const pitchClass = positiveModulo(note.pitch, 12);
+      const repairedPitch = nearestWritingProfilePitchForPitchClass(
+        pitchClass,
+        note.pitch + repair.direction,
+        note.voice,
+        writingProfile,
+      );
+      if (repairedPitch === note.pitch || positiveModulo(repairedPitch, 12) !== pitchClass) {
+        continue;
+      }
+      note.pitch = repairedPitch;
+      const after = analyzeScore(repairedNotes, subjectEntries, sectionPlans, writingProfile);
+      if (
+        after.voiceCrossings < before.voiceCrossings &&
+        after.subjectIdentityViolations <= before.subjectIdentityViolations &&
+        after.answerPlanViolations <= before.answerPlanViolations &&
+        after.rangeViolations <= before.rangeViolations
+      ) {
+        notes.splice(0, notes.length, ...repairedNotes);
+        before = after;
+        accepted = true;
+        break;
+      }
+    }
+    if (!accepted) {
+      return;
+    }
+  }
+}
+
+function activeNoteAt(notes: readonly NoteEvent[], voice: Voice, tick: number): NoteEvent | undefined {
+  return notes
+    .filter((note) => note.voice === voice)
+    .find((note) => note.startTick <= tick && tick < note.startTick + note.durationTicks);
+}
+
+function isVoice(value: string | undefined): value is Voice {
+  return value !== undefined && VOICE_ENTRY_ORDER.includes(value as Voice);
 }
 
 function noteRoleForEntryForm(form: EntryForm): NoteEvent["role"] {
@@ -533,6 +633,10 @@ function applyScoreLevelSupportCleanupCandidateAdoptions(input: {
     {
       id: "functional-thinning-support",
       apply: (notes) => addFunctionalThinningSupport(notes, input.sectionPlans, input.writingProfile),
+    },
+    {
+      id: "unexplained-rest-thinning-support",
+      apply: (notes) => addUnexplainedRestThinningSupport(notes, input.sectionPlans, input.writingProfile),
     },
     {
       id: "post-entry-continuation-support",
@@ -661,7 +765,7 @@ function buildScoreLevelSupportCleanupCandidateAdoption(
     afterCandidate,
   );
 
-  if (!shouldEmitScoreLevelSupportCleanupEvidence(beforeReview, afterReview)) {
+  if (!shouldEmitScoreLevelSupportCleanupEvidence(beforeReview, afterReview, surface.id)) {
     return undefined;
   }
 
@@ -698,17 +802,30 @@ function evaluateScoreLevelSupportCleanupReview(
     scoreWindowGeneratorResponseCount: scoreWindowAcceptance.generatorResponseWindowCount,
     scoreWindowAcceptedContextCount: scoreWindowAcceptance.acceptedContextWindowCount,
     harmonicContinuityReviewRequiredCount: diagnostics.harmonicContinuity.reviewRequiredWindowCount,
+    cspDensityFailureCount: cspDensityFailureCount(notes, subjectEntries, sectionPlans),
+    ...cspAgencyFailureCounts(notes, subjectEntries, sectionPlans),
   };
 }
 
 function shouldEmitScoreLevelSupportCleanupEvidence(
   before: ScoreLevelSupportCleanupReview,
   after: ScoreLevelSupportCleanupReview,
+  surfaceId: string,
 ): boolean {
+  if (
+    surfaceId === "unexplained-rest-thinning-support" &&
+    (after.cspUpperLineAgencyFailureCount > before.cspUpperLineAgencyFailureCount ||
+      after.cspLowerLineContinuityGapCount > before.cspLowerLineContinuityGapCount ||
+      after.cspFreeCounterpointScarcityCount > before.cspFreeCounterpointScarcityCount ||
+      after.cspShortStructuralSupportChurnCount > before.cspShortStructuralSupportChurnCount)
+  ) {
+    return false;
+  }
   return (
     after.hardFailureCount <= before.hardFailureCount &&
     hasScoreWindowReviewEvidence(before) &&
-    hasScoreWindowReviewEvidence(after)
+    hasScoreWindowReviewEvidence(after) &&
+    after.cspDensityFailureCount <= before.cspDensityFailureCount
   );
 }
 
@@ -719,6 +836,40 @@ function hasScoreWindowReviewEvidence(review: ScoreLevelSupportCleanupReview): b
     review.scoreWindowAcceptedContextCount,
     review.harmonicContinuityReviewRequiredCount,
   ].every((count) => Number.isSafeInteger(count) && count >= 0);
+}
+
+function cspDensityFailureCount(
+  notes: readonly NoteEvent[],
+  subjectEntries: readonly PlannedEntry[],
+  sectionPlans: readonly HarmonicPlan[],
+): number {
+  const counts = buildConstraintSatisfactionReview({ notes, subjectEntries, sectionPlans }).infeasibleConstraintCounts;
+  return (
+    counts.minActiveVoiceViolation + counts.unsupportedSolo + counts.allVoiceSilence + counts.longUnplannedSilentRun
+  );
+}
+
+function cspAgencyFailureCounts(
+  notes: readonly NoteEvent[],
+  subjectEntries: readonly PlannedEntry[],
+  sectionPlans: readonly HarmonicPlan[],
+): Pick<
+  ScoreLevelSupportCleanupReview,
+  | "cspUpperLineAgencyFailureCount"
+  | "cspLowerLineContinuityGapCount"
+  | "cspFreeCounterpointScarcityCount"
+  | "cspShortStructuralSupportChurnCount"
+> {
+  const counts = buildConstraintSatisfactionReview({ notes, subjectEntries, sectionPlans }).infeasibleConstraintCounts;
+  return {
+    cspUpperLineAgencyFailureCount:
+      counts.upperVoiceThematicMonopolyCount +
+      counts.lowerVoiceFillerDominanceCount +
+      counts.supportFillerLockstepCount,
+    cspLowerLineContinuityGapCount: counts.lowerLineContinuityGapCount,
+    cspFreeCounterpointScarcityCount: counts.freeCounterpointScarcityCount,
+    cspShortStructuralSupportChurnCount: counts.shortStructuralSupportChurnCount,
+  };
 }
 
 function noteFingerprint(notes: readonly NoteEvent[]): string {
@@ -1735,6 +1886,7 @@ export function buildFugueContinuationScore(
   }
   repairTextureVoiceCrossingsForNotes(notes, sectionPlans, writingProfile);
   restoreEntryPitchClassIdentity(notes, subjectEntries, writingProfile);
+  repairResidualEntryVoiceCrossingOctaves(notes, subjectEntries, sectionPlans, writingProfile);
   if (selectionModel === "section-local-planner") {
     selectedConstraintCandidates.push(
       ...applyScoreLevelSustainedDissonanceSolver({
@@ -2108,6 +2260,23 @@ function createsShortAlternatingPhrase(stateHistory: readonly FugueState[]): boo
 
   const [first, second, third, fourth] = continuationStates.slice(-4);
   return first === third && second === fourth && first !== second;
+}
+
+function createsLongConsecutiveStateRun(stateHistory: readonly FugueState[], selectedState: FugueState): boolean {
+  if (selectedState === "exposition") {
+    return false;
+  }
+
+  const continuationStates = stateHistory.filter((state) => state !== "exposition");
+  let matchingRunLength = 0;
+  for (let index = continuationStates.length - 1; index >= 0; index -= 1) {
+    if (continuationStates[index] !== selectedState) {
+      break;
+    }
+    matchingRunLength += 1;
+  }
+
+  return matchingRunLength >= 2;
 }
 
 function averageActiveVoiceDensity(notes: readonly NoteEvent[], startTick: number, durationTicks: number): number {
@@ -2594,7 +2763,10 @@ function chooseContinuationSectionFromDurationCandidates(input: {
   }
 
   const firstSelection = chooseContinuationSectionForDuration(input, firstDurationTicks, forkState);
-  if (sectionMetricalBoundaryCost(firstSelection.constraintCandidate) === 0) {
+  if (
+    sectionMetricalBoundaryCost(firstSelection.constraintCandidate) === 0 &&
+    !selectionCreatesLongConsecutiveStateRun(firstSelection, input.stateHistory, input.selectionModel)
+  ) {
     return firstSelection;
   }
 
@@ -2605,7 +2777,7 @@ function chooseContinuationSectionFromDurationCandidates(input: {
       .map((durationTicks) => chooseContinuationSectionForDuration(input, durationTicks, forkState)),
   ];
   const selected = [...selections].sort((left, right) =>
-    compareDurationCandidateSelections(left, right, input.selectionModel),
+    compareDurationCandidateSelections(left, right, input.selectionModel, input.stateHistory),
   )[0];
 
   if (selected === undefined) {
@@ -2667,7 +2839,16 @@ function compareDurationCandidateSelections(
   left: ContinuationSectionSelection,
   right: ContinuationSectionSelection,
   selectionModel: SelectionModel,
+  stateHistory: readonly FugueState[] = [],
 ): number {
+  if (selectionModel === "section-local-planner") {
+    const leftCreatesLongRun = selectionCreatesLongConsecutiveStateRun(left, stateHistory, selectionModel);
+    const rightCreatesLongRun = selectionCreatesLongConsecutiveStateRun(right, stateHistory, selectionModel);
+    if (leftCreatesLongRun !== rightCreatesLongRun) {
+      return leftCreatesLongRun ? 1 : -1;
+    }
+  }
+
   const leftHardFailureCount = constraintCandidateHardFailureCount(left.constraintCandidate);
   const rightHardFailureCount = constraintCandidateHardFailureCount(right.constraintCandidate);
   if (leftHardFailureCount !== rightHardFailureCount) {
@@ -2697,6 +2878,32 @@ function compareDurationCandidateSelections(
   }
 
   return left.constraintCandidate.candidateId.localeCompare(right.constraintCandidate.candidateId);
+}
+
+function selectionCreatesLongConsecutiveStateRun(
+  selection: ContinuationSectionSelection,
+  stateHistory: readonly FugueState[],
+  selectionModel: SelectionModel,
+): boolean {
+  if (selectionModel !== "section-local-planner") {
+    return false;
+  }
+
+  const selectedState = selection.section.sectionPlans[0]?.state ?? stateHistory.at(-1);
+  if (selectedState === undefined || selectedState === "exposition") {
+    return false;
+  }
+
+  const previousStates = stateHistory.slice(0, -1).filter((state) => state !== "exposition");
+  let matchingRunLength = 0;
+  for (let index = previousStates.length - 1; index >= 0; index -= 1) {
+    if (previousStates[index] !== selectedState) {
+      break;
+    }
+    matchingRunLength += 1;
+  }
+
+  return matchingRunLength >= 2;
 }
 
 function sectionMetricalBoundaryCost(candidate: ConstraintCandidate): number {
@@ -2788,8 +2995,31 @@ export function chooseSectionCspBacktrackingCandidateIndex(input: {
   constraintCandidates: readonly ConstraintCandidate[];
   candidateScores?: readonly number[];
 }): number {
-  const candidateIndexes =
-    input.candidateIndexes.length > 0 ? input.candidateIndexes : input.constraintCandidates.map((_, index) => index);
+  const currentCandidate = input.constraintCandidates[input.currentBestIndex]!;
+  const currentVoiceCoverageFailureCount = constraintCandidateHardFailureCountForCode(
+    currentCandidate,
+    "section-voice-coverage",
+  );
+  const hardImprovingSectionCspIndexes =
+    currentVoiceCoverageFailureCount > 0
+      ? input.constraintCandidates
+          .map((candidate, index) => ({ candidate, index }))
+          .filter(
+            ({ candidate }) =>
+              candidate.candidateId.includes("-section-csp-") &&
+              constraintCandidateHardFailureCountForCode(candidate, "section-voice-coverage") <
+                currentVoiceCoverageFailureCount,
+          )
+          .map(({ index }) => index)
+      : [];
+  const candidateIndexes = [
+    ...new Set(
+      (input.candidateIndexes.length > 0
+        ? input.candidateIndexes
+        : input.constraintCandidates.map((_, index) => index)
+      ).concat(hardImprovingSectionCspIndexes),
+    ),
+  ];
   const feasibleIndexes = candidateIndexes.filter((index) => {
     const candidate = input.constraintCandidates[index];
     return candidate !== undefined && candidate.result.hardFailures.length === 0;
@@ -2835,6 +3065,15 @@ export function chooseSectionCspBacktrackingCandidateIndex(input: {
 
 function constraintCandidateHardFailureCount(candidate: ConstraintCandidate): number {
   return candidate.result.hardFailures.reduce((sum, failure) => sum + failure.count, 0);
+}
+
+function constraintCandidateHardFailureCountForCode(
+  candidate: ConstraintCandidate,
+  code: ConstraintHardFailureCode,
+): number {
+  return candidate.result.hardFailures
+    .filter((failure) => failure.code === code)
+    .reduce((sum, failure) => sum + failure.count, 0);
 }
 
 function buildContinuationConstraintCandidate(
@@ -3002,7 +3241,11 @@ function avoidShortAlternatingPhraseSelection(input: {
   }
 
   const selectedState = input.candidates[input.bestIndex]?.sectionPlans[0]?.state ?? input.historyContext.plannedState;
-  if (!createsShortAlternatingPhrase([...input.historyContext.previousStateHistory, selectedState])) {
+  const createsLongRun = createsLongConsecutiveStateRun(input.historyContext.previousStateHistory, selectedState);
+  if (
+    !createsLongRun &&
+    !createsShortAlternatingPhrase([...input.historyContext.previousStateHistory, selectedState])
+  ) {
     return input.bestIndex;
   }
 
@@ -3034,6 +3277,9 @@ function avoidShortAlternatingPhraseSelection(input: {
     }
 
     const candidateState = input.candidates[index]?.sectionPlans[0]?.state ?? input.historyContext.plannedState;
+    if (createsLongRun && createsLongConsecutiveStateRun(input.historyContext.previousStateHistory, candidateState)) {
+      continue;
+    }
     if (createsShortAlternatingPhrase([...input.historyContext.previousStateHistory, candidateState])) {
       continue;
     }
@@ -3119,7 +3365,6 @@ function candidateBandCanBeSelected(
     index < window.selectableCandidateCount ||
     band === "section-grammar" ||
     band === "phrase-family" ||
-    band === "section-csp" ||
     band === "harmonic-stasis"
   );
 }
@@ -3305,6 +3550,8 @@ function preservesSectionLocalGuardrails(
     evaluationTexture.fourBeatOuterVoiceSameDirectionRatio <=
       baselineTexture.fourBeatOuterVoiceSameDirectionRatio + 0.02 &&
     evaluationMelody.leapRecoveryMisses <= baselineMelody.leapRecoveryMisses &&
+    evaluationSubject.subjectIdentityViolations <= baselineSubject.subjectIdentityViolations &&
+    evaluationSubject.answerPlanViolations <= baselineSubject.answerPlanViolations &&
     evaluationSubject.counterSubjectIdentityRetention >= baselineSubject.counterSubjectIdentityRetention &&
     evaluationHarmony.entrySupportInstabilityCount <= baselineHarmony.entrySupportInstabilityCount &&
     evaluationHarmony.severeEntryIntervalCount <= baselineHarmony.severeEntryIntervalCount &&
@@ -3349,26 +3596,41 @@ function buildSectionCspSolverCandidates(
   sourceCandidates: readonly Exposition[],
   writingProfile: WritingProfile,
 ): Exposition[] {
-  return sourceCandidates.map((sourceCandidate, sourceCandidateIndex) => {
-    const repaired = cloneExposition(sourceCandidate);
-    addFunctionalThinningSupport(repaired.notes, repaired.sectionPlans, writingProfile);
-    addExposedFreeCounterpointSoloSupport(repaired.notes, repaired.sectionPlans, writingProfile);
-    addPostEntryContinuationSupport(repaired.notes, repaired.subjectEntries, repaired.sectionPlans, writingProfile);
-    shapeLongRestPhraseClosures(repaired.notes, repaired.sectionPlans);
-    addBassAnswerTailTextureSupport(repaired.notes, repaired.subjectEntries, repaired.sectionPlans, writingProfile);
-    addShortEpisodeHarmonicContinuitySupport(repaired.notes, repaired.sectionPlans, writingProfile);
-    if (sourceCandidateIndex < 16) {
-      repairSustainedSevereVerticalDissonance(repaired.notes, repaired.sectionPlans, writingProfile);
-    }
-    repairTextureVoiceCrossingsForNotes(repaired.notes, repaired.sectionPlans, writingProfile);
-    repaired.notes.sort(compareNoteEvents);
-
-    return {
-      ...repaired,
-      constraintCandidateFamily: "section-csp-variant" as const,
-      constraintSourceCandidateIndex: sourceCandidateIndex,
-    };
+  const policies: readonly UnexplainedRestThinningSupportPolicy[] = ["low-root-first", "balanced-upper-agency"];
+  return sourceCandidates.flatMap((sourceCandidate, sourceCandidateIndex) => {
+    return policies.map((policy) =>
+      buildSectionCspSolverCandidate(sourceCandidate, sourceCandidateIndex, policy, writingProfile),
+    );
   });
+}
+
+function buildSectionCspSolverCandidate(
+  sourceCandidate: Exposition,
+  sourceCandidateIndex: number,
+  supportPolicy: UnexplainedRestThinningSupportPolicy,
+  writingProfile: WritingProfile,
+): Exposition {
+  const repaired = cloneExposition(sourceCandidate);
+  addFunctionalThinningSupport(repaired.notes, repaired.sectionPlans, writingProfile);
+  if (cspDensityFailureCount(repaired.notes, repaired.subjectEntries, repaired.sectionPlans) > 0) {
+    addUnexplainedRestThinningSupport(repaired.notes, repaired.sectionPlans, writingProfile, supportPolicy);
+  }
+  addExposedFreeCounterpointSoloSupport(repaired.notes, repaired.sectionPlans, writingProfile);
+  addPostEntryContinuationSupport(repaired.notes, repaired.subjectEntries, repaired.sectionPlans, writingProfile);
+  shapeLongRestPhraseClosures(repaired.notes, repaired.sectionPlans);
+  addBassAnswerTailTextureSupport(repaired.notes, repaired.subjectEntries, repaired.sectionPlans, writingProfile);
+  addShortEpisodeHarmonicContinuitySupport(repaired.notes, repaired.sectionPlans, writingProfile);
+  if (sourceCandidateIndex < 16) {
+    repairSustainedSevereVerticalDissonance(repaired.notes, repaired.sectionPlans, writingProfile);
+  }
+  repairTextureVoiceCrossingsForNotes(repaired.notes, repaired.sectionPlans, writingProfile);
+  repaired.notes.sort(compareNoteEvents);
+
+  return {
+    ...repaired,
+    constraintCandidateFamily: "section-csp-variant" as const,
+    constraintSourceCandidateIndex: sourceCandidateIndex,
+  };
 }
 
 export function buildContinuationCandidates(

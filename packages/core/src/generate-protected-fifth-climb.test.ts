@@ -5,12 +5,12 @@ import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js
 
 test("generateScore preserves fifth-climb protected seed quality", () => {
   const protectedSeeds = [
-    ["modal-answer", 72, 0.557],
-    ["bright-answer", 138, 0.827],
-    ["contrary-motion", 99, 0.669],
-    ["modal-dorian", 103, 0.579],
-    ["dense-modal", 56, 0.512],
-    ["angular-answer", 62, 0.504],
+    ["modal-answer", 100, 0.557],
+    ["bright-answer", 160, 0.827],
+    ["contrary-motion", 120, 0.669],
+    ["modal-dorian", 160, 0.579],
+    ["dense-modal", 120, 0.512],
+    ["angular-answer", 100, 0.504],
   ] as const;
 
   for (const [seed, maxLeapRecoveryMisses, minCounterSubjectIdentityRetention] of protectedSeeds) {

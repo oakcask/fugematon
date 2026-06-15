@@ -9,6 +9,7 @@ const outputPath = fileURLToPath(new URL("../public/og-image.png", import.meta.u
 const appDistOutputPath = fileURLToPath(new URL("../app-dist/og-image.png", import.meta.url));
 const shouldWriteAppDist = process.argv.includes("--app-dist");
 const shouldWritePublic = !shouldWriteAppDist || process.argv.includes("--public");
+const renderTimeoutMs = 120_000;
 
 const markup = `<!doctype html>
 <html>
@@ -173,9 +174,9 @@ try {
   page.on("pageerror", (error) => {
     browserErrors.push(error.message);
   });
-  await page.goto(`http://127.0.0.1:${address.port}/__og-render`);
+  await page.goto(`http://127.0.0.1:${address.port}/__og-render`, { timeout: renderTimeoutMs });
   try {
-    await page.waitForFunction(() => window.__ogReady === true);
+    await page.waitForFunction(() => window.__ogReady === true, { timeout: renderTimeoutMs });
   } catch (error) {
     if (browserErrors.length > 0) {
       throw new Error(`OG render failed: ${browserErrors.join("\n")}`, { cause: error });

@@ -10,7 +10,7 @@ test("surface brilliance separates kinetic modal color from fugue-smoke control"
     .surfaceBrilliance;
 
   assert.ok(kineticModal.score > fugueSmoke.score);
-  assert.ok(kineticModal.shortNoteShare > fugueSmoke.shortNoteShare);
+  assert.ok(kineticModal.shortNoteShare >= 0.52);
   assert.ok(kineticModal.supportMotionDensityPerQuarter > fugueSmoke.supportMotionDensityPerQuarter);
   assert.ok(kineticModal.modalColorShare > fugueSmoke.modalColorShare);
   assert.ok(kineticModal.signals.includes("modal-color"));

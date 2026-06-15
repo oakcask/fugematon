@@ -39,6 +39,7 @@ import { createSegmentEndSnapshot, normalizeInfinitePlaybackMode } from "./infin
 import { Xoshiro128StarStar } from "./prng.js";
 import {
   constrainNotePitchToWritingProfile,
+  constrainNotesToWritingProfile,
   DEFAULT_WRITING_PROFILE_ID,
   resolveWritingProfile,
   type WritingProfile,
@@ -107,6 +108,8 @@ export function generateScore(input: GenerationInput): GenerationOutput {
       );
   applyTerminalClosureIntent(score, Math.max(input.lengthTicks, score.endTick), mode);
   annotateEpisodeMotivicDerivations(score.notes, score.sectionPlans);
+  constrainNotesToWritingProfile(score.notes, writingProfile);
+  repairMusicBoxVoiceCrossings(score, writingProfile);
   repairMusicBoxSamePitchOverlaps(
     score,
     Math.max(input.lengthTicks, score.endTick),
@@ -417,6 +420,103 @@ function repairMusicBoxSamePitchOverlaps(
   score.selectedConstraintCandidates?.push(beforeCandidate, afterCandidate);
 }
 
+function repairMusicBoxVoiceCrossings(score: Exposition, writingProfile: WritingProfile): void {
+  if (writingProfile.playability?.kind !== "music-box") {
+    return;
+  }
+
+  let repairedNotes = removeVoiceCrossingFreeCounterpointNotes(score.notes);
+  for (let attempt = 0; attempt < 128; attempt += 1) {
+    const crossing = firstVoiceCrossing(repairedNotes);
+    if (crossing === undefined) {
+      break;
+    }
+    const repair = bestMusicBoxVoiceCrossingRetune(crossing, repairedNotes, score, writingProfile);
+    if (repair === undefined) {
+      break;
+    }
+    repairedNotes = repairedNotes.map((note) => (note === repair.note ? { ...note, pitch: repair.pitch } : note));
+  }
+
+  score.notes.splice(0, score.notes.length, ...repairedNotes);
+}
+
+function bestMusicBoxVoiceCrossingRetune(
+  crossing: readonly [NoteEvent, NoteEvent],
+  notes: readonly NoteEvent[],
+  score: Pick<Exposition, "subjectEntries" | "sectionPlans" | "endTick">,
+  writingProfile: WritingProfile,
+): { note: NoteEvent; pitch: number } | undefined {
+  const beforeFailureCount = totalHardFailureCount(
+    evaluateScoreDraft({
+      notes,
+      subjectEntries: score.subjectEntries,
+      sectionPlans: score.sectionPlans,
+      endTick: score.endTick,
+      writingProfile,
+      constraintProfileId: undefined,
+    }),
+  );
+  const candidates = crossing.flatMap((note) =>
+    musicBoxVoiceCrossingReplacementPitches(note, notes, writingProfile).map((pitch) => ({ note, pitch })),
+  );
+
+  return candidates
+    .map((candidate) => {
+      const candidateNotes = notes.map((note) =>
+        note === candidate.note ? { ...note, pitch: candidate.pitch } : note,
+      );
+      const failureCount = totalHardFailureCount(
+        evaluateScoreDraft({
+          notes: candidateNotes,
+          subjectEntries: score.subjectEntries,
+          sectionPlans: score.sectionPlans,
+          endTick: score.endTick,
+          writingProfile,
+          constraintProfileId: undefined,
+        }),
+      );
+      return {
+        ...candidate,
+        failureCount,
+        distance: Math.abs(candidate.pitch - candidate.note.pitch),
+      };
+    })
+    .filter((candidate) => candidate.failureCount < beforeFailureCount)
+    .sort(
+      (left, right) =>
+        left.failureCount - right.failureCount ||
+        retuneRolePriority(left.note) - retuneRolePriority(right.note) ||
+        left.distance - right.distance ||
+        left.pitch - right.pitch,
+    )[0];
+}
+
+function musicBoxVoiceCrossingReplacementPitches(
+  note: NoteEvent,
+  notes: readonly NoteEvent[],
+  writingProfile: WritingProfile,
+): number[] {
+  const range = writingProfile.voiceRanges[note.voice];
+  return writingProfile.absolutePitchSet
+    .filter(
+      (pitch) =>
+        pitch !== note.pitch &&
+        range.min <= pitch &&
+        pitch <= range.max &&
+        !notes.some(
+          (other) => other !== note && other.voice !== note.voice && other.pitch === pitch && notesOverlap(note, other),
+        ),
+    )
+    .sort(
+      (left, right) =>
+        Math.abs(left - note.pitch) - Math.abs(right - note.pitch) ||
+        preferredPitchPenalty(left, note.voice, writingProfile) -
+          preferredPitchPenalty(right, note.voice, writingProfile) ||
+        left - right,
+    );
+}
+
 function broaderMusicBoxSamePitchRepair(
   baselineCandidate: ConstraintCandidate,
   score: Pick<Exposition, "subjectEntries" | "sectionPlans">,
@@ -498,6 +598,10 @@ function nonSamePitchHardFailureCount(result: ReturnType<typeof evaluateScoreDra
   return result.hardFailures
     .filter((failure) => failure.code !== "writing-profile-same-pitch-overlap")
     .reduce((sum, failure) => sum + failure.count, 0);
+}
+
+function totalHardFailureCount(result: ReturnType<typeof evaluateScoreDraft>): number {
+  return result.hardFailures.reduce((sum, failure) => sum + failure.count, 0);
 }
 
 function removeDuplicateFreeCounterpointStrikes(notes: readonly NoteEvent[]): NoteEvent[] {

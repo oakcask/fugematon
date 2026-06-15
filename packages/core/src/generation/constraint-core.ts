@@ -799,6 +799,18 @@ function sectionConstraintSoftFeatureCosts(
         "section-local CSP ranks audible sonority quality while keeping thin and mixed-entry evidence review-required",
     },
     {
+      feature: "section-csp-upper-line-agency",
+      cost:
+        counts.upperVoiceThematicMonopolyCount * weights.upperVoiceThematicMonopoly +
+        counts.lowerVoiceFillerDominanceCount * weights.lowerVoiceFillerDominance +
+        counts.supportFillerLockstepCount * weights.supportFillerLockstep +
+        counts.lowerLineContinuityGapCount * weights.lowerLineContinuityGap +
+        counts.freeCounterpointScarcityCount * weights.freeCounterpointScarcity +
+        counts.shortStructuralSupportChurnCount * weights.shortStructuralSupportChurn,
+      explanation:
+        "section-local CSP ranks free-counterpoint agency across upper and lower voices while keeping role allocation and support churn review-required",
+    },
+    {
       feature: "section-csp-rest-reason",
       cost: counts.invalidIntentionalRestReason * 10,
       explanation: "section-local CSP accepts only the allowed internal intentional-rest reasons",
