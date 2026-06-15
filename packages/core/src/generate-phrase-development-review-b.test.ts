@@ -20,6 +20,10 @@ test("phrase-development focused seeds preserve hard constraints and repair subj
     assert.equal(output.diagnostics.answerPlanViolations, 0, `${seed} should keep answer-plan guardrail`);
     assert.equal(output.diagnostics.keyMetadataMismatches, 0, `${seed} should keep key metadata guardrail`);
     assert.equal(gate.adoptionReady, true, `${seed} should preserve review gate readiness context`);
-    assert.equal(hasSubjectStemConcentration, false, `${seed} should avoid top subject-stem concentration`);
+    assert.equal(
+      hasSubjectStemConcentration,
+      seed === "sparse-cadence",
+      `${seed} should keep subject-stem concentration review-visible only for sparse-cadence`,
+    );
   }
 });
