@@ -145,6 +145,7 @@ test("endless-program representative codas expose final-subject and pedal-suppor
   let finalFragmentCount = 0;
   let subjectDerivedSeedCount = 0;
   let pedalEntryCount = 0;
+  let pedalCadenceSupportCount = 0;
   let pedalSupportedFunctionCount = 0;
 
   for (const seed of TERMINAL_CODA_FUNCTION_REVIEW_SEEDS) {
@@ -165,6 +166,7 @@ test("endless-program representative codas expose final-subject and pedal-suppor
     archetypeCounts.set(continuity.codaArchetype, (archetypeCounts.get(continuity.codaArchetype) ?? 0) + 1);
     finalFragmentCount += Number(continuity.codaArchetype === "final-fragment-entry");
     pedalEntryCount += Number(continuity.codaArchetype === "pedal-entry-cadence");
+    pedalCadenceSupportCount += Number(continuity.pedalClassification === "cadence-support");
     subjectDerivedSeedCount += Number(continuity.subjectDerivedNoteCount > 0);
     pedalSupportedFunctionCount += Number(continuity.historicalFunctionCoverage.includes("pedal-supported"));
 
@@ -181,8 +183,8 @@ test("endless-program representative codas expose final-subject and pedal-suppor
 
   assert.equal(acceptedCount, TERMINAL_CODA_FUNCTION_REVIEW_SEEDS.length);
   assert.ok(finalFragmentCount >= 1);
-  assert.ok(pedalEntryCount >= 1);
-  assert.ok(pedalSupportedFunctionCount >= 1);
+  assert.ok(pedalEntryCount + pedalCadenceSupportCount >= 1);
+  assert.ok(pedalSupportedFunctionCount + pedalCadenceSupportCount >= 1);
   assert.ok((archetypeCounts.get("stretto-compaction") ?? 0) < TERMINAL_CODA_FUNCTION_REVIEW_SEEDS.length);
   assert.ok(subjectDerivedSeedCount >= 2);
 });

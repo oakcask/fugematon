@@ -68,6 +68,24 @@ test("section CSP backtracking chooses deterministic relaxation when every candi
   assert.equal(selectedIndex, 3);
 });
 
+test("section CSP backtracking retries structural harmonic support failures", () => {
+  const selectedIndex = chooseSectionCspBacktrackingCandidateIndex({
+    currentBestIndex: 0,
+    candidateIndexes: [0],
+    constraintCandidates: [
+      constraintCandidate("section-960-episode-section-local-candidate-0", [
+        { code: "structural-harmonic-support", count: 2 },
+      ]),
+      constraintCandidate("section-960-episode-section-csp-candidate-1", [
+        { code: "structural-harmonic-support", count: 1 },
+      ]),
+    ],
+    candidateScores: [0, 10],
+  });
+
+  assert.equal(selectedIndex, 1);
+});
+
 test("section CSP backtracking chooses lower metrical soft cost when hard failures are tied", () => {
   const selectedIndex = chooseSectionCspBacktrackingCandidateIndex({
     currentBestIndex: 0,

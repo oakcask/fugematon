@@ -68,6 +68,7 @@ import {
   addExposedFreeCounterpointSoloSupport,
   addFunctionalThinningSupport,
   addPostEntryContinuationSupport,
+  addSectionStructuralAnchorSupport,
   addShortEpisodeHarmonicContinuitySupport,
   addUnexplainedRestThinningSupport,
   type ContinuityLineKind,
@@ -2996,19 +2997,17 @@ export function chooseSectionCspBacktrackingCandidateIndex(input: {
   candidateScores?: readonly number[];
 }): number {
   const currentCandidate = input.constraintCandidates[input.currentBestIndex]!;
-  const currentVoiceCoverageFailureCount = constraintCandidateHardFailureCountForCode(
-    currentCandidate,
-    "section-voice-coverage",
-  );
+  const currentBacktrackingFailureCount = sectionCspBacktrackingHardFailureCount(currentCandidate);
+  const currentMetricalBoundaryCost = sectionMetricalBoundaryCost(currentCandidate);
   const hardImprovingSectionCspIndexes =
-    currentVoiceCoverageFailureCount > 0
+    currentBacktrackingFailureCount > 0
       ? input.constraintCandidates
           .map((candidate, index) => ({ candidate, index }))
           .filter(
             ({ candidate }) =>
               candidate.candidateId.includes("-section-csp-") &&
-              constraintCandidateHardFailureCountForCode(candidate, "section-voice-coverage") <
-                currentVoiceCoverageFailureCount,
+              sectionCspBacktrackingHardFailureCount(candidate) < currentBacktrackingFailureCount &&
+              sectionMetricalBoundaryCost(candidate) <= currentMetricalBoundaryCost,
           )
           .map(({ index }) => index)
       : [];
@@ -3074,6 +3073,13 @@ function constraintCandidateHardFailureCountForCode(
   return candidate.result.hardFailures
     .filter((failure) => failure.code === code)
     .reduce((sum, failure) => sum + failure.count, 0);
+}
+
+function sectionCspBacktrackingHardFailureCount(candidate: ConstraintCandidate): number {
+  return (
+    constraintCandidateHardFailureCountForCode(candidate, "section-voice-coverage") +
+    constraintCandidateHardFailureCountForCode(candidate, "structural-harmonic-support")
+  );
 }
 
 function buildContinuationConstraintCandidate(
@@ -3620,6 +3626,7 @@ function buildSectionCspSolverCandidate(
   shapeLongRestPhraseClosures(repaired.notes, repaired.sectionPlans);
   addBassAnswerTailTextureSupport(repaired.notes, repaired.subjectEntries, repaired.sectionPlans, writingProfile);
   addShortEpisodeHarmonicContinuitySupport(repaired.notes, repaired.sectionPlans, writingProfile);
+  addSectionStructuralAnchorSupport(repaired.notes, repaired.sectionPlans, writingProfile);
   if (sourceCandidateIndex < 16) {
     repairSustainedSevereVerticalDissonance(repaired.notes, repaired.sectionPlans, writingProfile);
   }

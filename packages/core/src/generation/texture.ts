@@ -1775,6 +1775,63 @@ export function addShortEpisodeHarmonicContinuitySupport(
   repairFocusedBassRootSupport(notes, sortedPlans, writingProfile);
 }
 
+export function addSectionStructuralAnchorSupport(
+  notes: Exposition["notes"],
+  sectionPlans: readonly HarmonicPlan[],
+  writingProfile?: WritingProfile,
+): void {
+  const scoreEndTick = Math.max(...notes.map((note) => note.startTick + note.durationTicks));
+
+  for (const plan of sectionPlans) {
+    for (const anchor of plan.anchors) {
+      if (
+        anchor.tick < plan.startTick ||
+        anchor.tick >= plan.startTick + plan.durationTicks ||
+        anchor.tick >= scoreEndTick
+      ) {
+        continue;
+      }
+      if (!shouldStrengthenSectionAnchor(notes, plan, anchor)) {
+        continue;
+      }
+
+      supportBassRootAtTick(notes, plan, anchor.tick, anchor, writingProfile);
+      repairStructuralSupportAtTick(notes, anchor.tick, anchor, writingProfile);
+      if (activeVoicesDuring(notes, anchor.tick, anchor.tick + plan.meterContext.beatTicks).length <= 2) {
+        supportUpperChordToneAtTick(notes, plan, anchor.tick, anchor, writingProfile);
+      }
+    }
+  }
+
+  repairTextureVoiceCrossingsForPlans(notes, sectionPlans, writingProfile);
+}
+
+function shouldStrengthenSectionAnchor(
+  notes: readonly NoteEvent[],
+  plan: HarmonicPlan,
+  anchor: HarmonicPlan["anchors"][number],
+): boolean {
+  const activeNotes = notes.filter(
+    (note) => note.startTick <= anchor.tick && anchor.tick < note.startTick + note.durationTicks,
+  );
+  const chordPitchClasses = chordTonePitchClasses(anchor.localKey, anchor.function);
+  const hasChordSupport = activeNotes.some((note) => chordPitchClasses.includes(positiveModulo(note.pitch, 12)));
+  const structuralSupportIsNonChord = activeNotes.some(
+    (note) =>
+      (note.metricalHarmonyIntent === "structural-root-support" ||
+        note.metricalHarmonyIntent === "structural-chord-tone") &&
+      !chordPitchClasses.includes(positiveModulo(note.pitch, 12)),
+  );
+  if (!hasChordSupport || structuralSupportIsNonChord) {
+    return true;
+  }
+  if (anchor.cadenceTarget || anchor.function === "tonic" || anchor.function === "cadential-tonic") {
+    const rootPitchClass = scaleDegreePitchClass(rootDegreeForFunction(anchor.function), 0, anchor.localKey);
+    return !activeNotes.some((note) => positiveModulo(note.pitch, 12) === rootPitchClass);
+  }
+  return activeVoicesDuring(notes, anchor.tick, anchor.tick + plan.meterContext.beatTicks).length <= 2;
+}
+
 function isFinalHandoffTextureCheckpoint(plan: HarmonicPlan, tick: number): boolean {
   const handoffStartTick = plan.startTick + plan.durationTicks - plan.meterContext.measureTicks;
   return handoffStartTick <= tick && tick < plan.startTick + plan.durationTicks;
