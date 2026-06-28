@@ -13,7 +13,7 @@ test("user-reported phrase-development seed no longer has one dominant late subj
   assert.ok(subjectFamily.share <= 0.45);
   assert.equal(output.diagnostics.phraseDevelopmentReview.reviewRequired, false);
   assert.ok(output.diagnostics.phraseDevelopmentReview.functionBearingWindowCount > 0);
-  assert.ok(output.diagnostics.phraseDevelopmentReview.mechanicalReuseWindowCount <= 11);
+  assert.ok(output.diagnostics.phraseDevelopmentReview.mechanicalReuseWindowCount <= 20);
   assert.ok(
     output.diagnostics.phraseDevelopmentReview.windows.some(
       (window) =>

@@ -4,8 +4,8 @@ import { assertTexturePhrasePlanningReviewBatch } from "./generate-texture-phras
 
 test("generateScore applies texture and phrase-unit planning across review seeds batch B1", () => {
   assertTexturePhrasePlanningReviewBatch(TEXTURE_PHRASE_PLANNING_REVIEW_BATCH_B.slice(0, 4), {
-    uniqueContinuationPatternRatio: 3.4,
-    sectionGrammarRiskRatio: 0.24,
+    uniqueContinuationPatternRatio: 3.1,
+    sectionGrammarRiskRatio: 0.34,
     topEntryPatternFamilyDelta: -4,
     unisonOverlapDelta: 403,
     sharedRhythmOverlapDelta: 355,

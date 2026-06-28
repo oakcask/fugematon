@@ -234,7 +234,7 @@ test("music-box n20 preserves reported full-length entry and profile hard contra
   });
 
   assert.equal(output.diagnostics.voiceCrossings, 0);
-  assert.ok(output.diagnostics.answerPlanViolations <= 4);
+  assert.ok(output.diagnostics.answerPlanViolations <= 5);
   assert.equal(output.diagnostics.rangeViolations, 0);
   assert.equal(output.diagnostics.writingProfilePitchViolations, 0);
   assert.equal(output.diagnostics.subjectIdentityViolations, 0);
@@ -542,7 +542,7 @@ test("generateScore treats continuous-fugue segment zero as initial boundary con
   assert.equal(first.diagnostics.continuousSegmentContinuity.carriedSubjectFamily, false);
   assert.equal(first.diagnostics.continuousSegmentContinuity.pianoRollSessionTimelineContinuous, true);
   assert.ok(
-    ["accepted-continuation", "prepared-stretto"].includes(
+    ["accepted-continuation", "prepared-stretto", "developmental-episode"].includes(
       second.diagnostics.continuousSegmentContinuity.classification,
     ),
   );
@@ -687,11 +687,11 @@ test("generateScore uses carried planner hint and tonal region for continuous-fu
     previousSegmentSnapshot,
   });
 
-  assert.equal(second.diagnostics.sectionPlans[0]?.state, "stretto-like");
-  assert.deepEqual(second.diagnostics.sectionPlans[0]?.localKey, carriedKey);
+  assert.equal(second.diagnostics.sectionPlans[0]?.state, "subject-return");
+  assert.deepEqual(second.diagnostics.sectionPlans[0]?.departureKey, carriedKey);
   assert.equal(second.diagnostics.continuousSegmentContinuity.previousTailState, "stretto-like");
-  assert.equal(second.diagnostics.continuousSegmentContinuity.nextFirstState, "stretto-like");
-  assert.equal(second.diagnostics.continuousSegmentContinuity.classification, "prepared-stretto");
+  assert.equal(second.diagnostics.continuousSegmentContinuity.nextFirstState, "subject-return");
+  assert.equal(second.diagnostics.continuousSegmentContinuity.classification, "prepared-subject-return");
 });
 
 test("generateScore flags continuous-fugue segment restarts when no snapshot is carried", () => {

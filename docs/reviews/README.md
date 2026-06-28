@@ -4,7 +4,7 @@
 
 ## Read First
 
-* [Generator constraint rebuild continuation CSP review](generator-constraint-rebuild-continuation-csp.md): current architecture evidence. Continuation selection consults section-CSP candidate rows before adoption, but all 22 standard seeds still reach infeasible relaxation, so `constraintSatisfactionReview` remains review-required.
+* [Generator constraint rebuild continuation CSP review](generator-constraint-rebuild-continuation-csp.md): current architecture evidence. Continuation selection now searches section-CSP support-policy and structural-anchor variants before adoption; remaining density, structural, and metrical relaxation stays review-required.
 * [Generator constraint rebuild section CSP review](generator-constraint-rebuild-section-csp.md): current CSP surface baseline. It defines note / hold / internal-rest section slots, public no-rest-event compatibility, and why the surface was not adoption-ready by itself.
 * [Generator constraint rebuild exposition search review](generator-constraint-rebuild-exposition-search.md): current initial-generation solver evidence.
 * [Generator constraint rebuild entry support review](generator-constraint-rebuild-entry-support.md): current entry-local support evidence.

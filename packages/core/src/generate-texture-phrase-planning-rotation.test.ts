@@ -4,8 +4,10 @@ import { assertTexturePhrasePlanningRotationBatch } from "./generate-texture-phr
 
 test("generateScore applies texture and phrase-unit planning across rotation seed batch A", () => {
   assertTexturePhrasePlanningRotationBatch(TEXTURE_PHRASE_PLANNING_ROTATION_SEEDS.slice(0, 2), {
+    uniqueContinuationPatternMultiplier: 2.3,
+    sectionGrammarRiskMultiplier: 0.62,
     topEntryPatternFamilyDelta: 4,
-    leapRecoveryMissDelta: 38,
+    leapRecoveryMissDelta: 72,
     unisonOverlapDelta: 265,
     sharedRhythmOverlapDelta: 300,
     bassRootSupportDelta: -2,

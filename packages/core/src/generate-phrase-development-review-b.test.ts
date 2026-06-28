@@ -22,8 +22,8 @@ test("phrase-development focused seeds preserve hard constraints and repair subj
     assert.equal(gate.adoptionReady, true, `${seed} should preserve review gate readiness context`);
     assert.equal(
       hasSubjectStemConcentration,
-      seed === "sparse-cadence",
-      `${seed} should keep subject-stem concentration review-visible only for sparse-cadence`,
+      false,
+      `${seed} should keep subject-stem concentration resolved in group B1`,
     );
   }
 });

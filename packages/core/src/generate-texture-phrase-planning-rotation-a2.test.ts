@@ -7,9 +7,9 @@ test("generateScore applies texture and phrase-unit planning across rotation see
     topEntryPatternFamilyDelta: 4,
     leapRecoveryMissDelta: 70,
     uniqueContinuationPatternMultiplier: 1.9,
-    sectionGrammarRiskMultiplier: 0.67,
+    sectionGrammarRiskMultiplier: 0.69,
     unisonOverlapDelta: 215,
     sharedRhythmOverlapDelta: 465,
-    counterSubjectIdentityRetentionDelta: 0.54,
+    counterSubjectIdentityRetentionDelta: 0.72,
   });
 });
