@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import { REPRESENTATIVE_REVIEW_SEEDS, REVIEW_LENGTH_TICKS } from "./constants.js";
 import { cachedGenerateScore as generateScore, summarizeContinuationPatterns } from "./generate-test-helpers.js";
 import { evaluateContourMotionGate, evaluateMelodyTextureGate } from "./review-gate.js";
+import { reviewTest } from "./test-profile.js";
 
-test("generateScore rotates representative long-run continuation patterns without gate regressions", () => {
+reviewTest("generateScore rotates representative long-run continuation patterns without gate regressions", () => {
   const seeds = REPRESENTATIVE_REVIEW_SEEDS;
   let highSelectedSectionSoloTextureRiskCount = 0;
   let uniqueContinuationPatternCount = 0;

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { generateScore, planSegmentGenerationDeadlineResult } from "@fugematon/core";
 import type { GenerationWorkerRequest, GenerationWorkerResponse } from "./generation-worker-protocol.js";
+import { reviewTest } from "./test-profile.js";
 
 type WorkerHarnessScope = typeof globalThis & {
   onmessage: ((event: MessageEvent<GenerationWorkerRequest>) => void) | null;
@@ -124,7 +125,7 @@ test("generation worker preserves endless-program mode in deadline records", asy
   assert.equal(response.reviewSnapshot.terminalClosureStatus, "accepted");
 });
 
-test("generation worker keeps audible endless output with generated coda review signals", async () => {
+reviewTest("generation worker keeps audible endless output with generated coda review signals", async () => {
   const response = await dispatchWorkerRequest({
     requestId: 44,
     seed: "seed-19l7uit-1u226cc-segment-1",
@@ -143,7 +144,7 @@ test("generation worker keeps audible endless output with generated coda review 
   assert.ok(response.model.notes.length > 0);
 });
 
-test("generation worker keeps note-bearing endless output when review defects remain", async () => {
+reviewTest("generation worker keeps note-bearing endless output when review defects remain", async () => {
   const response = await dispatchWorkerRequest({
     requestId: 47,
     seed: "seed-1bnmddk-0pzsjpu",
@@ -223,30 +224,33 @@ test("generation worker playback output keeps safe best-so-far notes after deadl
   assert.ok(playbackOutput.diagnostics.noteCount > 0);
 });
 
-test("generation worker playback output keeps playable review-defective best-so-far notes after deadline", async () => {
-  const { createGenerationWorkerPlaybackOutput } = await workerReady;
-  const output = generateScore({
-    seed: "seed-1bnmddk-0pzsjpu",
-    lengthTicks: 129_600,
-    mode: "endless-program",
-  });
-  const deadlineResult = planSegmentGenerationDeadlineResult({
-    mode: "endless-program",
-    segmentIndex: 0,
-    startedAtMs: 0,
-    completedAtMs: 2000,
-    deadlineMs: 1500,
-    generatedCandidateSatisfiesHardConstraints: false,
-    bestSoFarCandidateSatisfiesHardConstraints: true,
-  });
-  const playbackOutput = createGenerationWorkerPlaybackOutput(output, deadlineResult, 129_600);
+reviewTest(
+  "generation worker playback output keeps playable review-defective best-so-far notes after deadline",
+  async () => {
+    const { createGenerationWorkerPlaybackOutput } = await workerReady;
+    const output = generateScore({
+      seed: "seed-1bnmddk-0pzsjpu",
+      lengthTicks: 129_600,
+      mode: "endless-program",
+    });
+    const deadlineResult = planSegmentGenerationDeadlineResult({
+      mode: "endless-program",
+      segmentIndex: 0,
+      startedAtMs: 0,
+      completedAtMs: 2000,
+      deadlineMs: 1500,
+      generatedCandidateSatisfiesHardConstraints: false,
+      bestSoFarCandidateSatisfiesHardConstraints: true,
+    });
+    const playbackOutput = createGenerationWorkerPlaybackOutput(output, deadlineResult, 129_600);
 
-  assert.equal(deadlineResult.returnedCandidateKind, "best-so-far");
-  assert.equal(playbackOutput, output);
-  assert.equal(satisfiesReviewHardConstraints(output), false);
-  assert.ok(playbackOutput.events.some((event) => event.kind === "note"));
-  assert.ok(playbackOutput.diagnostics.noteCount > 0);
-});
+    assert.equal(deadlineResult.returnedCandidateKind, "best-so-far");
+    assert.equal(playbackOutput, output);
+    assert.equal(satisfiesReviewHardConstraints(output), false);
+    assert.ok(playbackOutput.events.some((event) => event.kind === "note"));
+    assert.ok(playbackOutput.diagnostics.noteCount > 0);
+  },
+);
 
 test("generation worker playback output uses conservative fallback for no-note deadline results", async () => {
   const { createGenerationWorkerPlaybackOutput } = await workerReady;

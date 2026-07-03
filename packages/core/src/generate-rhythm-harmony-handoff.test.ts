@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import { TICKS_PER_QUARTER } from "./constants.js";
 import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
+import { reviewTest } from "./test-profile.js";
 
-test("fugue-smoke repairs the reopened rhythm and harmony handoff", () => {
+reviewTest("fugue-smoke repairs the reopened rhythm and harmony handoff", () => {
   const diagnostics = generateScore({
     seed: "fugue-smoke",
     lengthTicks: TICKS_PER_QUARTER * 288,
@@ -66,7 +66,7 @@ test("fugue-smoke repairs the reopened rhythm and harmony handoff", () => {
   assert.deepEqual(harmonicSonorityFailures, []);
 });
 
-test("fugue-smoke handoff diagnostics expose local transition-rhythm evidence", () => {
+reviewTest("fugue-smoke handoff diagnostics expose local transition-rhythm evidence", () => {
   const diagnostics = generateScore({
     seed: "fugue-smoke",
     lengthTicks: TICKS_PER_QUARTER * 288,

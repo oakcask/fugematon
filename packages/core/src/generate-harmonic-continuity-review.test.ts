@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import { TICKS_PER_QUARTER } from "./constants.js";
 import type { HarmonicPlan, KeySignature, NoteEvent } from "./events.js";
 import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
@@ -9,6 +8,7 @@ import {
   evaluateSectionConstraintProblem,
 } from "./generation/section-constraint-problem.js";
 import { addShortEpisodeHarmonicContinuitySupport } from "./generation/texture.js";
+import { reviewTest } from "./test-profile.js";
 import { resolveWritingProfile, type WritingProfile } from "./writing-profile.js";
 
 const HARMONIC_CONTINUITY_REVIEW_SEEDS = [
@@ -20,7 +20,7 @@ const HARMONIC_CONTINUITY_REVIEW_SEEDS = [
   "contrary-motion",
 ] as const;
 
-test("reported harmonic-continuity seed keeps the short pivot episode review-addressable", () => {
+reviewTest("reported harmonic-continuity seed keeps the short pivot episode review-addressable", () => {
   const diagnostics = generateScore({
     seed: "seed-1dxb2n8-1miapx7",
     lengthTicks: TICKS_PER_QUARTER * 80,
@@ -64,7 +64,7 @@ test("reported harmonic-continuity seed keeps the short pivot episode review-add
   assert.equal(hardConstraintFailures(diagnostics), 0);
 });
 
-test("focused harmonic-continuity review seeds expose repaired and remaining short-pivot evidence", () => {
+reviewTest("focused harmonic-continuity review seeds expose repaired and remaining short-pivot evidence", () => {
   const summaries = HARMONIC_CONTINUITY_REVIEW_SEEDS.map((seed) => {
     const diagnostics = generateScore({ seed, lengthTicks: TICKS_PER_QUARTER * 80 }).diagnostics;
 
@@ -115,7 +115,7 @@ test("focused harmonic-continuity review seeds expose repaired and remaining sho
   );
 });
 
-test("short pivot harmonic-continuity repair avoids unmotivated upper filler without prior material", () => {
+reviewTest("short pivot harmonic-continuity repair avoids unmotivated upper filler without prior material", () => {
   const meterContext = createMeterContext({ numerator: 4, denominator: 4 });
   const localKey: KeySignature = { tonic: "G", mode: "minor" };
   const targetKey: KeySignature = { tonic: "A", mode: "minor" };
@@ -190,7 +190,7 @@ test("short pivot harmonic-continuity repair avoids unmotivated upper filler wit
   );
 });
 
-test("short pivot support decorates earlier motivic contour against the local chord path", () => {
+reviewTest("short pivot support decorates earlier motivic contour against the local chord path", () => {
   const meterContext = createMeterContext({ numerator: 4, denominator: 4 });
   const localKey: KeySignature = { tonic: "C", mode: "major" };
   const targetKey: KeySignature = { tonic: "G", mode: "major" };
@@ -273,7 +273,7 @@ test("short pivot support decorates earlier motivic contour against the local ch
   assert.ok(tenorSupport.every((note) => note.metricalHarmonyIntent === "structural-chord-tone"));
 });
 
-test("short pivot structural support repair uses profile-domain chord tones before projection", () => {
+reviewTest("short pivot structural support repair uses profile-domain chord tones before projection", () => {
   const { pivotEpisode, followingStretto } = shortPivotPlans();
   const profile = resolveWritingProfile("music-box-n20");
   const notes: NoteEvent[] = [
@@ -297,7 +297,7 @@ test("short pivot structural support repair uses profile-domain chord tones befo
   assert.ok(profile.absolutePitchSet.includes(repairedTenor.pitch));
 });
 
-test("short pivot structural support repair leaves non-chord evidence when no profile chord tone exists", () => {
+reviewTest("short pivot structural support repair leaves non-chord evidence when no profile chord tone exists", () => {
   const { pivotEpisode, followingStretto } = shortPivotPlans();
   const profile = {
     ...resolveWritingProfile("music-box-n20"),

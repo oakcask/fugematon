@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import { TICKS_PER_QUARTER } from "./constants.js";
 import type { GenerationOutput } from "./events.js";
 import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
+import { reviewTest } from "./test-profile.js";
 
 const TEXTURE_CONTINUITY_REPAIR_REVIEW_SEEDS = [
   "seed-0i335vx-1n54a1x",
@@ -16,15 +16,18 @@ const EXPECTS_REPORTED_SEED = true;
 const REPAIR_REVIEW_LENGTH_TICKS = TICKS_PER_QUARTER * 288;
 const scoreCache = new Map<string, GenerationOutput>();
 
-test("texture-continuity repair seeds keep bass-answer tail thinning bounded and review-visible", () => {
+reviewTest("texture-continuity repair seeds keep bass-answer tail thinning bounded and review-visible", () => {
   assertBassAnswerTailRepair(TEXTURE_CONTINUITY_REPAIR_REVIEW_SEEDS, EXPECTS_REPORTED_SEED);
 });
 
-test("texture-continuity repair seeds keep exposed free-counterpoint solo windows bounded and review-visible", () => {
-  assertExposedFreeCounterpointSoloRepair(TEXTURE_CONTINUITY_REPAIR_REVIEW_SEEDS);
-});
+reviewTest(
+  "texture-continuity repair seeds keep exposed free-counterpoint solo windows bounded and review-visible",
+  () => {
+    assertExposedFreeCounterpointSoloRepair(TEXTURE_CONTINUITY_REPAIR_REVIEW_SEEDS);
+  },
+);
 
-test("reported collective-rest seed keeps continuation density through the exposed measures", () => {
+reviewTest("reported collective-rest seed keeps continuation density through the exposed measures", () => {
   const output = generateScore({ seed: "seed-14ghpmk-0gt2zr6", lengthTicks: TICKS_PER_QUARTER * 64 });
 
   const allowedDensityFailuresByMeasure = new Map<number, number>([

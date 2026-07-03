@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import {
   REPRESENTATIVE_REVIEW_SEEDS,
   REVIEW_LENGTH_TICKS,
@@ -7,8 +6,9 @@ import {
 } from "./constants.js";
 import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
 import { evaluateVoiceIndependenceGate } from "./review-gate.js";
+import { reviewTest } from "./test-profile.js";
 
-test("generateScore exposes rhythm and entry support diagnostics", () => {
+reviewTest("generateScore exposes rhythm and entry support diagnostics", () => {
   const output = generateScore({ seed: "fugue-smoke", lengthTicks: REVIEW_LENGTH_TICKS, selectionModel: "baseline" });
   const selectedEvaluation = output.diagnostics.selectedCandidateEvaluations[0];
 
@@ -22,7 +22,7 @@ test("generateScore exposes rhythm and entry support diagnostics", () => {
   assert.ok("harmonicFunctionMismatches" in selectedEvaluation.dimensions.harmony.features);
 });
 
-test("generateScore applies rhythm counterpoint gates across review seeds", () => {
+reviewTest("generateScore applies rhythm counterpoint gates across review seeds", () => {
   for (const { seed } of REPRESENTATIVE_REVIEW_SEEDS) {
     const output = generateScore({ seed, lengthTicks: REVIEW_LENGTH_TICKS, selectionModel: "baseline" });
     const gate = evaluateVoiceIndependenceGate(seed, output.diagnostics);

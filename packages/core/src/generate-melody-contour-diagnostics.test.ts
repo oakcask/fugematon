@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import { MELODY_TEXTURE_DIAGNOSTICS_PROFILE, REVIEW_LENGTH_TICKS, TICKS_PER_QUARTER } from "./constants.js";
 import {
   cachedGenerateScore as generateScore,
@@ -11,8 +10,9 @@ import {
   normalizeDiagnosticsForReference,
   REFERENCE_DIAGNOSTICS_PROFILE,
 } from "./reference-diagnostics.js";
+import { reviewTest } from "./test-profile.js";
 
-test("generateScore reports melody, entry, ornament, and solo diagnostics", () => {
+reviewTest("generateScore reports melody, entry, ornament, and solo diagnostics", () => {
   const output = generateScore({ seed: "fugue-smoke", lengthTicks: REVIEW_LENGTH_TICKS, selectionModel: "baseline" });
   const firstContinuationStartTick = output.diagnostics.sectionPlans.find(
     (plan) => plan.state !== "exposition",
@@ -37,7 +37,7 @@ test("generateScore reports melody, entry, ornament, and solo diagnostics", () =
   assert.ok((firstContinuationStartTick ?? 0) <= MELODY_TEXTURE_DIAGNOSTICS_PROFILE.maxFirstContinuationStartTick);
 });
 
-test("generateScore reports contour motion diagnostics", () => {
+reviewTest("generateScore reports contour motion diagnostics", () => {
   const output = generateScore({ seed: "wide-key", lengthTicks: REVIEW_LENGTH_TICKS, selectionModel: "baseline" });
   const { fourBeat, eightBeat } = output.diagnostics.pitchContourMotion;
 
@@ -64,7 +64,7 @@ test("generateScore reports contour motion diagnostics", () => {
   );
 });
 
-test("generateScore reports role and section stepwise pattern diagnostics", () => {
+reviewTest("generateScore reports role and section stepwise pattern diagnostics", () => {
   const output = generateScore({ seed: "fugue-smoke", lengthTicks: REVIEW_LENGTH_TICKS, selectionModel: "baseline" });
   const roles = new Set(output.diagnostics.stepwisePattern.roles.map((summary) => summary.role));
   const freeCounterpoint = stepwisePatternRole(output.diagnostics.stepwisePattern.roles, "free-counterpoint");
@@ -97,7 +97,7 @@ test("generateScore reports role and section stepwise pattern diagnostics", () =
   assert.ok("repeatedRoleDegreePatternCount" in selectedEvaluation.dimensions.texture.features);
 });
 
-test("generateScore catches free-counterpoint contour false positives with stepwise evidence", () => {
+reviewTest("generateScore catches free-counterpoint contour false positives with stepwise evidence", () => {
   const blockerSeeds = ["fugue-smoke", "lyrical-line", "contrary-answer", "bright-answer", "modal-answer"] as const;
 
   for (const seed of blockerSeeds) {
@@ -112,7 +112,7 @@ test("generateScore catches free-counterpoint contour false positives with stepw
   }
 });
 
-test("generateScore compares contour diagnostics to normalized reference profile axes", () => {
+reviewTest("generateScore compares contour diagnostics to normalized reference profile axes", () => {
   const output = generateScore({ seed: "fugue-smoke", lengthTicks: REVIEW_LENGTH_TICKS, selectionModel: "baseline" });
   const baselineMetrics = normalizeDiagnosticsForReference(output.diagnostics);
   const sharedRhythmAxis = REFERENCE_DIAGNOSTICS_PROFILE.metrics.find(

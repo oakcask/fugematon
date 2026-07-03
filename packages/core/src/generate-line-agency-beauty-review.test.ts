@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import {
   collectLineAgencyBeautyReviewMetrics,
   FOCUSED_LINE_AGENCY_REVIEW_SEEDS,
 } from "./generate-line-agency-beauty-review-test-helpers.js";
+import { reviewTest } from "./test-profile.js";
 
-test("line-agency focused review seeds keep line-agency and long-run beauty blockers observable", () => {
+reviewTest("line-agency focused review seeds keep line-agency and long-run beauty blockers observable", () => {
   const metrics = collectLineAgencyBeautyReviewMetrics(FOCUSED_LINE_AGENCY_REVIEW_SEEDS);
 
   assert.equal(metrics.seedCount, FOCUSED_LINE_AGENCY_REVIEW_SEEDS.length);

@@ -1,14 +1,14 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import { TICKS_PER_QUARTER } from "./constants.js";
 import type { HarmonicPlan, KeySignature, NoteEvent, PlannedEntry } from "./events.js";
 import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
 import { createMeterContext } from "./generation/meter.js";
 import { buildFugueScore } from "./generation/sections.js";
 import { Xoshiro128StarStar } from "./prng.js";
+import { reviewTest } from "./test-profile.js";
 import { resolveWritingProfile } from "./writing-profile.js";
 
-test("score-level support cleanup emits paired before and after trace evidence", () => {
+reviewTest("score-level support cleanup emits paired before and after trace evidence", () => {
   const diagnostics = generateScore({
     seed: "angular-answer",
     lengthTicks: TICKS_PER_QUARTER * 288,
@@ -28,7 +28,7 @@ test("score-level support cleanup emits paired before and after trace evidence",
   assert.equal(hardConstraintFailures(diagnostics), 0);
 });
 
-test("texture voice-order repair emits paired before and after trace evidence for a focused score delta", () => {
+reviewTest("texture voice-order repair emits paired before and after trace evidence for a focused score delta", () => {
   const meterContext = createMeterContext({ numerator: 4, denominator: 4 });
   const localKey: KeySignature = { tonic: "C", mode: "major" };
   const sectionPlan: HarmonicPlan = {

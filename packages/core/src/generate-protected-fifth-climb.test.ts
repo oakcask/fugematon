@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import { REVIEW_LENGTH_TICKS } from "./constants.js";
 import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
+import { reviewTest } from "./test-profile.js";
 
-test("generateScore preserves fifth-climb protected seed quality", () => {
+reviewTest("generateScore preserves fifth-climb protected seed quality", () => {
   const protectedSeeds = [
     ["modal-answer", 100, 0.557],
     ["bright-answer", 160, 0.827],

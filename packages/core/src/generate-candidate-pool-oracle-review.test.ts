@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import { REVIEW_LENGTH_TICKS, VOICES } from "./constants.js";
 import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
+import { reviewTest } from "./test-profile.js";
 
-test("generateScore exposes candidate pool oracle classifications", () => {
+reviewTest("generateScore exposes candidate pool oracle classifications", () => {
   const output = generateScore({ seed: "fugue-smoke", lengthTicks: REVIEW_LENGTH_TICKS, selectionModel: "baseline" });
   const oracle = output.diagnostics.candidatePoolOracle;
   const classifications = new Set(oracle.blockerClassifications.map((blocker) => blocker.classification));
@@ -61,7 +61,7 @@ test("generateScore exposes candidate pool oracle classifications", () => {
   }
 });
 
-test("generateScore exposes texture planning review summary signals", () => {
+reviewTest("generateScore exposes texture planning review summary signals", () => {
   const reviewSeeds = ["bach-001", "minor-entry", "modal-cadence", "dense-modal"] as const;
 
   for (const seed of reviewSeeds) {

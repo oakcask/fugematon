@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import { REVIEW_LENGTH_TICKS, ROTATION_ROBUSTNESS_DIAGNOSTICS_PROFILE } from "./constants.js";
 import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
+import { reviewTest } from "./test-profile.js";
 
-test("generateScore applies modal rotation margin gates", () => {
+reviewTest("generateScore applies modal rotation margin gates", () => {
   for (const [seed, profile] of Object.entries(ROTATION_ROBUSTNESS_DIAGNOSTICS_PROFILE.modalRotationSeeds)) {
     const output = generateScore({ seed, lengthTicks: REVIEW_LENGTH_TICKS, selectionModel: "baseline" });
 

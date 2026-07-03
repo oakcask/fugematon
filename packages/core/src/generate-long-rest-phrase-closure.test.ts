@@ -1,12 +1,12 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import { TICKS_PER_QUARTER } from "./constants.js";
 import type { HarmonicPlan, NoteEvent, Voice } from "./events.js";
 import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
 import { buildHarmonicPlan, chordTonePitchClasses } from "./generation/harmony.js";
 import { shapeLongRestPhraseClosures } from "./generation/texture.js";
+import { reviewTest } from "./test-profile.js";
 
-test("seed-1yc5rlr-184cz7l keeps bass-answer tail thinning review-visible", () => {
+reviewTest("seed-1yc5rlr-184cz7l keeps bass-answer tail thinning review-visible", () => {
   const output = generateScore({ seed: "seed-1yc5rlr-184cz7l", lengthTicks: TICKS_PER_QUARTER * 16 });
   const notes = output.events.filter((event): event is NoteEvent => event.kind === "note");
   const bassAnswer = output.diagnostics.subjectEntries.find(
@@ -33,7 +33,7 @@ test("seed-1yc5rlr-184cz7l keeps bass-answer tail thinning review-visible", () =
   assert.ok(output.diagnostics.bassAnswerTailTexture.zeroOutsideVoiceWindowCount > 0);
 });
 
-test("long-rest phrase closure leaves expressive short rests unchanged", () => {
+reviewTest("long-rest phrase closure leaves expressive short rests unchanged", () => {
   const plan = expositionHalfCadencePlan();
   const notes: NoteEvent[] = [
     {

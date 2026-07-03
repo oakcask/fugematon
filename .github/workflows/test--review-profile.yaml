@@ -1,0 +1,115 @@
+name: test / review profile
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "23 17 * * *"
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/test--review-profile.yaml
+      - package.json
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - scripts/**
+      - workflow-scripts/**
+      - tsconfig.json
+      - packages/**
+
+permissions:
+  actions: read
+  contents: read
+
+env:
+  # renovate: datasource=npm depName=pnpm
+  PNPM_VERSION: "11.1.2"
+  FUGEMATON_TEST_PROFILE: review
+
+jobs:
+  test-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 80
+    strategy:
+      fail-fast: false
+      matrix:
+        shard-id: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - name: Distribute test files
+        id: parallel-test
+        uses: int128/parallel-test-action@27a17b32204e5b7ab0cef7b10f084c82c1ac9a6d # v1.99.0
+        with:
+          test-files: |
+            packages/*/src/**/*.test.ts
+            scripts/*.test.mjs
+            workflow-scripts/*.test.mjs
+          test-report-artifact-name-prefix: node-test-review-junit-
+          test-report-branch: main
+          shard-count: ${{ strategy.job-total }}
+      - name: Setup pnpm
+        uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Run review tests with JUnit report
+        run: |
+          pnpm build
+          mkdir -p test-results
+          sed -e 's#/src/#/dist/#' -e 's#\.ts$#.js#' "$SHARD_SOURCE_FILE" > "$SHARD_DIST_FILE"
+          xargs --no-run-if-empty node --test \
+            --test-isolation=none \
+            --test-reporter=junit \
+            --test-reporter-destination="$JUNIT_REPORT" \
+            --test-reporter=spec \
+            --test-reporter-destination=stdout \
+            < "$SHARD_DIST_FILE"
+        env:
+          JUNIT_REPORT: test-results/node-test-review-junit-${{ matrix.shard-id }}.xml
+          SHARD_DIST_FILE: test-results/node-test-review-shard-${{ matrix.shard-id }}.txt
+          SHARD_SOURCE_FILE: ${{ steps.parallel-test.outputs.shards-directory }}/${{ matrix.shard-id }}
+      - name: Normalize JUnit report
+        if: always()
+        run: |
+          if [ -f "$JUNIT_REPORT" ]; then
+            node workflow-scripts/add-node-test-junit-file-attributes.mjs --junit-report "$JUNIT_REPORT"
+          fi
+        env:
+          JUNIT_REPORT: test-results/node-test-review-junit-${{ matrix.shard-id }}.xml
+      - name: Upload JUnit report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: node-test-review-junit-${{ matrix.shard-id }}
+          path: test-results/node-test-review-junit-${{ matrix.shard-id }}.xml
+          if-no-files-found: warn
+
+  slow-review-test-files:
+    needs: test-review
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version-file: .nvmrc
+      - name: Download JUnit report
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          pattern: node-test-review-junit-*
+          path: test-results
+          merge-multiple: true
+      - name: Check slow review test files
+        continue-on-error: true
+        run: node workflow-scripts/check-node-test-junit-budget.mjs --junit-report test-results --max-seconds 35

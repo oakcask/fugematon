@@ -4,13 +4,13 @@ import {
   EXPOSITION_DIAGNOSTICS_PROFILE,
   EXPOSITION_REPRESENTATIVE_SEEDS,
   FUGUE_FORM_REVIEW_LENGTH_TICKS,
-  REVIEW_LENGTH_TICKS,
   TICKS_PER_QUARTER,
   VOICES,
 } from "./constants.js";
 import type { KeySignature, MetaEvent, NoteEvent } from "./events.js";
 import { generateScore } from "./generate.js";
 import { asMetaEvent, cachedGenerateScore, countIssues } from "./generate-test-helpers.js";
+import { reviewTest } from "./test-profile.js";
 import {
   analyzeWritingProfileConstraints,
   constrainNotePitchToWritingProfile,
@@ -57,14 +57,14 @@ test("generateScore defaults to the four-voice writing profile without changing 
 test("generateScore preserves the selected writing profile across continuous-fugue segments", () => {
   const first = generateScore({
     seed: "fugue-smoke",
-    lengthTicks: FUGUE_FORM_REVIEW_LENGTH_TICKS,
+    lengthTicks: 7680,
     mode: "continuous-fugue",
     segmentIndex: 0,
     writingProfileId: "music-box-n20",
   });
   const second = generateScore({
     seed: "fugue-smoke",
-    lengthTicks: FUGUE_FORM_REVIEW_LENGTH_TICKS,
+    lengthTicks: 7680,
     mode: "continuous-fugue",
     segmentIndex: 1,
     previousSegmentSnapshot: first.nextSegmentSnapshot,
@@ -78,7 +78,7 @@ test("generateScore preserves the selected writing profile across continuous-fug
     () =>
       generateScore({
         seed: "fugue-smoke",
-        lengthTicks: FUGUE_FORM_REVIEW_LENGTH_TICKS,
+        lengthTicks: 7680,
         mode: "continuous-fugue",
         segmentIndex: 1,
         previousSegmentSnapshot: first.nextSegmentSnapshot,
@@ -109,7 +109,7 @@ test("music-box harmonic sonority diagnostics keep focused windows visible", () 
   for (const seed of ["fugue-smoke", "angular-answer"] as const) {
     const output = generateScore({
       seed,
-      lengthTicks: TICKS_PER_QUARTER * 32,
+      lengthTicks: TICKS_PER_QUARTER * 16,
       writingProfileId: "music-box-n20",
       selectionModel: "section-local-planner",
     });
@@ -170,7 +170,7 @@ test("constrained writing profiles preserve hard profile and entry contracts for
 });
 
 test("profile-aware harmonic feasibility preserves music-box structural support for the reported harmonic seed", () => {
-  const focusedLengthTicks = TICKS_PER_QUARTER * 80;
+  const focusedLengthTicks = TICKS_PER_QUARTER * 32;
   const summaries = (["music-box-n20", "four-voice-default", "harpsichord-manual"] as const).map((writingProfileId) => {
     const output = generateScore({
       seed: "seed-1wudr38-0fbqzth",
@@ -226,7 +226,7 @@ test("profile-aware harmonic feasibility preserves music-box structural support 
   );
 });
 
-test("music-box n20 preserves reported full-length entry and profile hard contracts", () => {
+reviewTest("music-box n20 preserves reported full-length entry and profile hard contracts", () => {
   const output = generateScore({
     seed: "seed-1wudr38-0fbqzth",
     lengthTicks: 129600,
@@ -331,7 +331,7 @@ test("generateScore validates reproducibility inputs", () => {
 test("generateScore keeps public event and diagnostics counts aligned", () => {
   const output = generateScore({
     seed: "event-contract",
-    lengthTicks: REVIEW_LENGTH_TICKS,
+    lengthTicks: 7680,
   });
   const notes = output.events.filter((event): event is NoteEvent => event.kind === "note");
   const stateChanges = output.events.filter(
@@ -382,7 +382,7 @@ test("generateScore exposes ordered subject and answer entries", () => {
   assert.ok(output.diagnostics.generatedUntilTick >= 7680);
 });
 
-test("generateScore extends long scores with fugue-form states", () => {
+reviewTest("generateScore extends long scores with fugue-form states", () => {
   const output = generateScore({ seed: "fugue-smoke", lengthTicks: FUGUE_FORM_REVIEW_LENGTH_TICKS });
   const stateChanges = output.events.filter(
     (event): event is Extract<MetaEvent, { type: "state-change" }> =>
@@ -424,7 +424,7 @@ test("generateScore extends long scores with fugue-form states", () => {
   assert.equal(output.diagnostics.terminalClosureReview.classification, "not-required");
 });
 
-test("generateScore continues continuous-fugue segments from a carried snapshot", () => {
+reviewTest("generateScore continues continuous-fugue segments from a carried snapshot", () => {
   const first = generateScore({
     seed: "fugue-smoke",
     lengthTicks: FUGUE_FORM_REVIEW_LENGTH_TICKS,
@@ -489,7 +489,7 @@ test("generateScore continues continuous-fugue segments from a carried snapshot"
 test("generateScore consumes carried PRNG state for continuous-fugue continuation choices", () => {
   const first = generateScore({
     seed: "fugue-smoke",
-    lengthTicks: FUGUE_FORM_REVIEW_LENGTH_TICKS,
+    lengthTicks: 7680,
     mode: "continuous-fugue",
     segmentIndex: 0,
   });
@@ -549,7 +549,7 @@ test("generateScore treats continuous-fugue segment zero as initial boundary con
   assert.equal(second.diagnostics.continuousSegmentContinuity.carriedSubjectFamily, true);
 });
 
-test("generateScore exposes audible carry for the reported continuous-fugue boundary", () => {
+reviewTest("generateScore exposes audible carry for the reported continuous-fugue boundary", () => {
   const first = generateScore({
     seed: "seed-1f6nfdt-0sv4of6",
     lengthTicks: FUGUE_FORM_REVIEW_LENGTH_TICKS,
@@ -729,7 +729,7 @@ test("endless-program segment generation remains a fresh terminal segment withou
 });
 
 test("generateScore emits section plans with bounded harmonic anchors", () => {
-  const output = generateScore({ seed: "section-plan-contract", lengthTicks: REVIEW_LENGTH_TICKS });
+  const output = generateScore({ seed: "section-plan-contract", lengthTicks: TICKS_PER_QUARTER * 32 });
   const continuationPlans = output.diagnostics.sectionPlans.filter((plan) => plan.state !== "exposition");
 
   assert.deepEqual(

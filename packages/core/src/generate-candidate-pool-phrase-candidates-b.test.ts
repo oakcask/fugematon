@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import { REVIEW_LENGTH_TICKS } from "./constants.js";
 import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
+import { reviewTest } from "./test-profile.js";
 
-test("generateScore keeps phrase family candidates traceable when selectable, batch B", () => {
+reviewTest("generateScore keeps phrase family candidates traceable when selectable, batch B", () => {
   for (const seed of ["modal-cadence", "dense-modal"] as const) {
     const output = generateScore({
       seed,

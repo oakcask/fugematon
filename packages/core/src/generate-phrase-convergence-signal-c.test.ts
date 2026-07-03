@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import { REVIEW_LENGTH_TICKS } from "./constants.js";
 import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
+import { reviewTest } from "./test-profile.js";
 
 const PHRASE_CONVERGENCE_FOCUSED_SEEDS = ["minor-entry", "sparse-cadence", "random-listen-check"] as const;
 
-test("phrase convergence boundary seeds keep default planner convergence comparable in CI", () => {
+reviewTest("phrase convergence boundary seeds keep default planner convergence comparable in CI", () => {
   for (const seed of PHRASE_CONVERGENCE_FOCUSED_SEEDS) {
     const legacy = generateScore({ seed, lengthTicks: REVIEW_LENGTH_TICKS, selectionModel: "baseline" });
     const current = generateScore({ seed, lengthTicks: REVIEW_LENGTH_TICKS });

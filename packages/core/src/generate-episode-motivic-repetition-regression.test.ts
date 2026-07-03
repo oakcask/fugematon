@@ -1,12 +1,12 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import {
   diagnosticsForEpisodeMotivicRepetitionSeed,
   repeatedFormulaCount,
   topRepeatedFormulaCount,
 } from "./generate-episode-motivic-repetition-test-helpers.js";
+import { reviewTest } from "./test-profile.js";
 
-test("episode motivic repetition focused seeds avoid mechanical stock formula reuse", () => {
+reviewTest("episode motivic repetition focused seeds avoid mechanical stock formula reuse", () => {
   const modalCadence = diagnosticsForEpisodeMotivicRepetitionSeed("modal-cadence");
   assert.ok(modalCadence.phraseDevelopmentReview.mechanicalReuseWindowCount <= 10);
 

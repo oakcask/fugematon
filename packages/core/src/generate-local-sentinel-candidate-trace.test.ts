@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import { REVIEW_LENGTH_TICKS } from "./constants.js";
 import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
+import { reviewTest } from "./test-profile.js";
 
-test("generateScore links unresolved entry sentinels to selected entry context and deadlines", () => {
+reviewTest("generateScore links unresolved entry sentinels to selected entry context and deadlines", () => {
   const output = generateScore({
     seed: "modal-cadence",
     lengthTicks: REVIEW_LENGTH_TICKS,
@@ -32,22 +32,25 @@ test("generateScore links unresolved entry sentinels to selected entry context a
   );
 });
 
-test("generateScore exposes candidate-diversity quality-vector features in selected candidate evaluations", () => {
-  const output = generateScore({
-    seed: "modal-cadence",
-    lengthTicks: REVIEW_LENGTH_TICKS,
-    selectionModel: "section-local-planner",
-  });
-  const selected = output.diagnostics.selectedCandidateEvaluations.at(-1);
+reviewTest(
+  "generateScore exposes candidate-diversity quality-vector features in selected candidate evaluations",
+  () => {
+    const output = generateScore({
+      seed: "modal-cadence",
+      lengthTicks: REVIEW_LENGTH_TICKS,
+      selectionModel: "section-local-planner",
+    });
+    const selected = output.diagnostics.selectedCandidateEvaluations.at(-1);
 
-  assert.ok(selected !== undefined);
-  assert.equal(typeof selected.dimensions.texture.features.qualityVectorPitchClassUnisonDuration, "number");
-  assert.equal(typeof selected.dimensions.texture.features.qualityVectorDurationBasedLockstep, "number");
-  assert.equal(
-    typeof selected.dimensions.harmony.features.qualityVectorUnresolvedEntrySevereIntervalDuration,
-    "number",
-  );
-  assert.ok(Number.isFinite(selected.dimensions.texture.features.qualityVectorPitchClassUnisonDuration));
-  assert.ok(Number.isFinite(selected.dimensions.texture.features.qualityVectorDurationBasedLockstep));
-  assert.ok(Number.isFinite(selected.dimensions.harmony.features.qualityVectorUnresolvedEntrySevereIntervalDuration));
-});
+    assert.ok(selected !== undefined);
+    assert.equal(typeof selected.dimensions.texture.features.qualityVectorPitchClassUnisonDuration, "number");
+    assert.equal(typeof selected.dimensions.texture.features.qualityVectorDurationBasedLockstep, "number");
+    assert.equal(
+      typeof selected.dimensions.harmony.features.qualityVectorUnresolvedEntrySevereIntervalDuration,
+      "number",
+    );
+    assert.ok(Number.isFinite(selected.dimensions.texture.features.qualityVectorPitchClassUnisonDuration));
+    assert.ok(Number.isFinite(selected.dimensions.texture.features.qualityVectorDurationBasedLockstep));
+    assert.ok(Number.isFinite(selected.dimensions.harmony.features.qualityVectorUnresolvedEntrySevereIntervalDuration));
+  },
+);

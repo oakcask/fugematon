@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import { TICKS_PER_QUARTER } from "./constants.js";
 import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
+import { reviewTest } from "./test-profile.js";
 
 const ENTRY_RESET_REVIEW_SEEDS = ["contrary-motion", "tight-stretto", "modal-cadence", "seed-0zereox-1v729ih"] as const;
 
-test("entry-reset review seeds avoid one-voice carry windows with outside resets", () => {
+reviewTest("entry-reset review seeds avoid one-voice carry windows with outside resets", () => {
   const summaries = ENTRY_RESET_REVIEW_SEEDS.map((seed) => {
     const diagnostics = generateScore({ seed, lengthTicks: TICKS_PER_QUARTER * 288 }).diagnostics;
     const oneVoiceCarryWindows = diagnostics.entryBoundaryContinuity.windows.filter(

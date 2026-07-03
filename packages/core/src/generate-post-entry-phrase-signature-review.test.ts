@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import { TICKS_PER_QUARTER } from "./constants.js";
 import type { GenerationOutput, NoteEvent } from "./events.js";
 import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
+import { reviewTest } from "./test-profile.js";
 
 const POST_ENTRY_PHRASE_REVIEW_SEEDS = [
   "angular-answer",
@@ -13,7 +13,7 @@ const POST_ENTRY_PHRASE_REVIEW_SEEDS = [
 
 const scoreCache = new Map<string, GenerationOutput>();
 
-test("free-counterpoint review seeds keep repeated surface phrase signatures below the repaired ceiling", () => {
+reviewTest("free-counterpoint review seeds keep repeated surface phrase signatures below the repaired ceiling", () => {
   const signatureCounts = new Map<string, number>();
   const signatureSeeds = new Map<string, Set<string>>();
 

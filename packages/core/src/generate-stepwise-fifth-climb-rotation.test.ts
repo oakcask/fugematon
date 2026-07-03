@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import { REVIEW_LENGTH_TICKS, ROTATION_REVIEW_SEEDS } from "./constants.js";
 import { cspMetricalBoundaryReviewFailures } from "./generate-csp-metrical-boundary-test-helpers.js";
 import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
 import { evaluateContourMotionGate, evaluateMelodyTextureGate } from "./review-gate.js";
+import { reviewTest } from "./test-profile.js";
 
-test("generateScore reduces stepwise fifth-climb subject pressure across rotation seeds", () => {
+reviewTest("generateScore reduces stepwise fifth-climb subject pressure across rotation seeds", () => {
   const exactStepwiseFifthClimbPattern = "0-1-2-3-4-3-2-1";
   const turnbackFifthClimbPattern = "0-1-2-3-4-3-1-2";
   let exactStepwiseFifthClimbCount = 0;

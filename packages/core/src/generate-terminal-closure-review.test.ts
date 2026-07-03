@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import { FUGUE_FORM_REVIEW_LENGTH_TICKS, TICKS_PER_QUARTER } from "./constants.js";
 import type { CadenceKind, HarmonicPlan, KeySignature, NoteEvent, ScoreEvent, Voice } from "./events.js";
 import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
 import { buildHarmonicPlan } from "./generation/harmony.js";
 import { createMeterContext } from "./generation/meter.js";
 import { buildTerminalClosureReviewSummary } from "./generation/terminal-closure-review.js";
+import { reviewTest } from "./test-profile.js";
 
 const C_MAJOR: KeySignature = { tonic: "C", mode: "major" };
 const D_DORIAN: KeySignature = { tonic: "D", mode: "dorian" };
@@ -34,7 +34,7 @@ function endlessReviewOutput(seed: string): ReturnType<typeof generateScore> {
   return output;
 }
 
-test("terminal closure review accepts authentic and modal terminal sonorities", () => {
+reviewTest("terminal closure review accepts authentic and modal terminal sonorities", () => {
   for (const [key, cadenceKind] of [
     [C_MAJOR, "authentic"],
     [D_DORIAN, "modal"],
@@ -59,7 +59,7 @@ test("terminal closure review accepts authentic and modal terminal sonorities", 
   }
 });
 
-test("terminal closure review keeps non-terminal cadence labels review-visible", () => {
+reviewTest("terminal closure review keeps non-terminal cadence labels review-visible", () => {
   for (const cadenceKind of ["half", "deceptive", "evaded", "modulatory"] as const) {
     const summary = buildTerminalClosureReviewSummary({
       events: scoreEvents(stableSonorityNotes(C_MAJOR, TICKS_PER_QUARTER), LENGTH_TICKS),
@@ -74,7 +74,7 @@ test("terminal closure review keeps non-terminal cadence labels review-visible",
   }
 });
 
-test("terminal closure review requires low-voice support and rejects unsupported thinning", () => {
+reviewTest("terminal closure review requires low-voice support and rejects unsupported thinning", () => {
   const summary = buildTerminalClosureReviewSummary({
     events: scoreEvents([note("soprano", 72, CADENCE_TICK, TICKS_PER_QUARTER)], LENGTH_TICKS),
     sectionPlans: [terminalPlan("authentic", C_MAJOR)],
@@ -87,7 +87,7 @@ test("terminal closure review requires low-voice support and rejects unsupported
   assert.equal(summary.classification, "generator-response-required");
 });
 
-test("terminal closure review treats a rest after stable terminal sonority as a piece boundary", () => {
+reviewTest("terminal closure review treats a rest after stable terminal sonority as a piece boundary", () => {
   const summary = buildTerminalClosureReviewSummary({
     events: scoreEvents(stableSonorityNotes(C_MAJOR, TICKS_PER_QUARTER / 2), LENGTH_TICKS),
     sectionPlans: [terminalPlan("authentic", C_MAJOR)],
@@ -99,13 +99,13 @@ test("terminal closure review treats a rest after stable terminal sonority as a 
   assert.equal(summary.classification, "accepted");
 });
 
-test("continuous-fugue generation does not require terminal closure", () => {
+reviewTest("continuous-fugue generation does not require terminal closure", () => {
   const output = generateScore({ seed: "fugue-smoke", lengthTicks: TICKS_PER_QUARTER * 16, mode: "continuous-fugue" });
 
   assert.equal(output.diagnostics.terminalClosureReview.classification, "not-required");
 });
 
-test("endless-program target seeds keep stable terminal closure evidence", () => {
+reviewTest("endless-program target seeds keep stable terminal closure evidence", () => {
   for (const seed of TERMINAL_CODA_TARGET_SEEDS) {
     const output = endlessReviewOutput(seed);
     const summary = output.diagnostics.terminalClosureReview;
@@ -139,7 +139,7 @@ test("endless-program target seeds keep stable terminal closure evidence", () =>
   }
 });
 
-test("endless-program representative codas expose final-subject and pedal-supported closing functions", () => {
+reviewTest("endless-program representative codas expose final-subject and pedal-supported closing functions", () => {
   const archetypeCounts = new Map<string, number>();
   let acceptedCount = 0;
   let finalFragmentCount = 0;
@@ -189,7 +189,7 @@ test("endless-program representative codas expose final-subject and pedal-suppor
   assert.ok(subjectDerivedSeedCount >= 2);
 });
 
-test("endless-program target codas keep derived pre-cadence motion before the landing", () => {
+reviewTest("endless-program target codas keep derived pre-cadence motion before the landing", () => {
   for (const seed of TERMINAL_CODA_TARGET_SEEDS) {
     const output = endlessReviewOutput(seed);
     const summary = output.diagnostics.terminalClosureReview;
@@ -239,7 +239,7 @@ test("endless-program target codas keep derived pre-cadence motion before the la
   }
 });
 
-test("generated self-contained coda keeps sudden final-attack reentry review-visible", () => {
+reviewTest("generated self-contained coda keeps sudden final-attack reentry review-visible", () => {
   const plan = terminalPlan("authentic", C_MAJOR, "self-contained-coda");
   const summary = buildTerminalClosureReviewSummary({
     events: scoreEvents(stableSonorityNotes(C_MAJOR, TICKS_PER_QUARTER), LENGTH_TICKS),
@@ -257,7 +257,7 @@ test("generated self-contained coda keeps sudden final-attack reentry review-vis
   assert.match(voiceReentryWindow?.reason ?? "", /4 terminal voice/);
 });
 
-test("generated all-voice long-tone coda is review-visible even with stable final sonority", () => {
+reviewTest("generated all-voice long-tone coda is review-visible even with stable final sonority", () => {
   const plan = terminalPlan("authentic", C_MAJOR, "self-contained-coda");
   plan.terminalCodaContext = {
     schemaVersion: 1,
@@ -299,7 +299,7 @@ test("generated all-voice long-tone coda is review-visible even with stable fina
   assert.equal(codaWindow?.classification, "review-required");
 });
 
-test("representative modal endless-program codas keep modal terminal rhetoric", () => {
+reviewTest("representative modal endless-program codas keep modal terminal rhetoric", () => {
   for (const seed of ["modal-cadence", "angular-answer"] as const) {
     const output = endlessReviewOutput(seed);
     const coda = output.diagnostics.sectionPlans.find((plan) => plan.terminalIntent === "self-contained-coda");
@@ -313,7 +313,7 @@ test("representative modal endless-program codas keep modal terminal rhetoric", 
   }
 });
 
-test("terminal closure intent preserves mode-specific boundary requirements", () => {
+reviewTest("terminal closure intent preserves mode-specific boundary requirements", () => {
   const lengthTicks = TICKS_PER_QUARTER * 16;
   const continuous = generateScore({ seed: "fugue-smoke", lengthTicks, mode: "continuous-fugue" });
   const endless = generateScore({ seed: "fugue-smoke", lengthTicks, mode: "endless-program" });
@@ -330,7 +330,7 @@ test("terminal closure intent preserves mode-specific boundary requirements", ()
   assert.equal(regenerative.nextSegmentSnapshot.mode, "regenerative-cycle");
 });
 
-test("short endless-program intent keeps fallback terminal-boundary safety net", () => {
+reviewTest("short endless-program intent keeps fallback terminal-boundary safety net", () => {
   const lengthTicks = TICKS_PER_QUARTER * 16;
   const terminalStartTick = lengthTicks - TICKS_PER_QUARTER;
   const continuous = generateScore({ seed: "fugue-smoke", lengthTicks, mode: "continuous-fugue" });
@@ -350,7 +350,7 @@ test("short endless-program intent keeps fallback terminal-boundary safety net",
   );
 });
 
-test("endless-program coda reserves planner-visible phrase time before the boundary", () => {
+reviewTest("endless-program coda reserves planner-visible phrase time before the boundary", () => {
   const output = endlessReviewOutput("fugue-smoke");
   const coda = output.diagnostics.sectionPlans.find((plan) => plan.terminalIntent === "self-contained-coda");
 

@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import { REPRESENTATIVE_REVIEW_SEEDS, REVIEW_LENGTH_TICKS } from "./constants.js";
 import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
+import { reviewTest } from "./test-profile.js";
 
 const SUBJECT_FAMILY_DIVERSITY_REVIEW_SEEDS = REPRESENTATIVE_REVIEW_SEEDS.slice(7, 11).map(({ seed }) => seed);
 
-test("phrase convergence review subjects keep second-a family concentration below the repair ceiling", () => {
+reviewTest("phrase convergence review subjects keep second-a family concentration below the repair ceiling", () => {
   const familyCounts = new Map<string, number>();
 
   for (const seed of SUBJECT_FAMILY_DIVERSITY_REVIEW_SEEDS) {

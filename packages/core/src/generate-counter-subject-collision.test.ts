@@ -1,12 +1,12 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import { TICKS_PER_QUARTER } from "./constants.js";
 import type { NoteEvent, PlannedEntry } from "./events.js";
 import { summarizeCounterSubjectWindows } from "./generation/quality-vector-subject-material.js";
+import { reviewTest } from "./test-profile.js";
 
 const cMajor = { tonic: "C", mode: "major" } as const;
 
-test("counter-subject support collisions use cyclic pitch-class distance", () => {
+reviewTest("counter-subject support collisions use cyclic pitch-class distance", () => {
   const notes: NoteEvent[] = [
     {
       kind: "note",

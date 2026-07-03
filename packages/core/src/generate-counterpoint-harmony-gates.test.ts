@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import { BASELINE_BEAUTY_DIAGNOSTICS_PROFILE, REPRESENTATIVE_REVIEW_SEEDS, REVIEW_LENGTH_TICKS } from "./constants.js";
 import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
 import { evaluateBaselineBeautyGate } from "./review-gate.js";
+import { reviewTest } from "./test-profile.js";
 
-test("generateScore applies baseline beauty gates across review seeds", () => {
+reviewTest("generateScore applies baseline beauty gates across review seeds", () => {
   for (const { seed } of REPRESENTATIVE_REVIEW_SEEDS) {
     const output = generateScore({ seed, lengthTicks: REVIEW_LENGTH_TICKS, selectionModel: "baseline" });
     const gate = evaluateBaselineBeautyGate(seed, output.diagnostics);

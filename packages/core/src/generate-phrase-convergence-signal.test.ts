@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import { REVIEW_LENGTH_TICKS } from "./constants.js";
 import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
+import { reviewTest } from "./test-profile.js";
 
 const PHRASE_CONVERGENCE_FOCUSED_SEEDS = ["bach-001", "fugue-smoke", "modal-cadence"] as const;
 
-test("phrase convergence focused seeds keep default planner convergence comparable in CI", () => {
+reviewTest("phrase convergence focused seeds keep default planner convergence comparable in CI", () => {
   let topSubjectFragmentFamilyShareTotal = 0;
 
   for (const seed of PHRASE_CONVERGENCE_FOCUSED_SEEDS) {

@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import {
   collectScoreBeautyReviewMetrics,
   SCORE_BEAUTY_REVIEW_BATCHES,
 } from "./generate-score-beauty-review-test-helpers.js";
+import { reviewTest } from "./test-profile.js";
 
-test("generateScore keeps score-beauty CI evidence in the first review batch", () => {
+reviewTest("generateScore keeps score-beauty CI evidence in the first review batch", () => {
   const metrics = collectScoreBeautyReviewMetrics(SCORE_BEAUTY_REVIEW_BATCHES.first);
 
   assert.equal(metrics.seedCount, 4);

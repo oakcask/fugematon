@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import { TICKS_PER_QUARTER } from "./constants.js";
 import type { FugueState, GenerationOutput, HarmonicPlan, NoteEvent } from "./events.js";
 import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
+import { reviewTest } from "./test-profile.js";
 
 const EPISODE_MOTIVIC_REVIEW_SEEDS = [
   "dark-episode",
@@ -14,7 +14,7 @@ const EPISODE_MOTIVIC_REVIEW_SEEDS = [
 const REVIEW_LENGTH_TICKS = TICKS_PER_QUARTER * 288;
 const scoreCache = new Map<string, GenerationOutput>();
 
-test("episode motivic review seeds expose planned fragment derivation evidence", () => {
+reviewTest("episode motivic review seeds expose planned fragment derivation evidence", () => {
   const summaries = EPISODE_MOTIVIC_REVIEW_SEEDS.map((seed) => {
     const fragmentDerivations = scoreForSeed(seed).diagnostics.phraseRepetitionReview.fragmentDerivations;
     return {
@@ -45,7 +45,7 @@ test("episode motivic review seeds expose planned fragment derivation evidence",
   );
 });
 
-test("episode motivic review seeds keep subject-free free counterpoint review-visible", () => {
+reviewTest("episode motivic review seeds keep subject-free free counterpoint review-visible", () => {
   const summaries = EPISODE_MOTIVIC_REVIEW_SEEDS.map((seed) => {
     const output = scoreForSeed(seed);
     const episodeFreeCounterpoint = notesInStates(output, ["episode"])

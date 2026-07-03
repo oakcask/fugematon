@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import {
   collectPostExpositionEntryBoundaryMetrics,
   POST_EXPOSITION_ENTRY_BOUNDARY_REVIEW_BATCH_A,
 } from "./generate-post-exposition-entry-boundary-test-helpers.js";
+import { reviewTest } from "./test-profile.js";
 
-test("post-exposition entry-boundary review bundle batch A exposes entry-boundary continuity diagnostics", () => {
+reviewTest("post-exposition entry-boundary review bundle batch A exposes entry-boundary continuity diagnostics", () => {
   const seeds = POST_EXPOSITION_ENTRY_BOUNDARY_REVIEW_BATCH_A.slice(0, 3);
   const metrics = collectPostExpositionEntryBoundaryMetrics(seeds);
 
