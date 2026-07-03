@@ -13,6 +13,7 @@
     "format:check": "biome format .",
     "code-metrics": "node workflow-scripts/check-code-metrics.mjs",
     "test": "pnpm build && node scripts/run-node-tests.mjs",
+    "test:review": "pnpm build && FUGEMATON_TEST_PROFILE=review node scripts/run-node-tests.mjs",
     "ui:inspect": "playwright test --project=chromium",
     "ui:inspect:prod": "playwright test --config playwright.prod.config.ts --project=chromium",
     "web:soundfont:prepare": "node workflow-scripts/web-playback-assets.mjs prepare-ubuntu-soundfont",

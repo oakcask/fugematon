@@ -1,12 +1,12 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import { TICKS_PER_QUARTER } from "./constants.js";
 import type { GenerationOutput, NoteEvent } from "./events.js";
 import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
+import { reviewTest } from "./test-profile.js";
 
 const scoreCache = new Map<string, GenerationOutput>();
 
-test("score generation keeps outside support on the tight-stretto first bass answer tail", () => {
+reviewTest("score generation keeps outside support on the tight-stretto first bass answer tail", () => {
   const output = scoreForSeed("tight-stretto");
   const firstBassAnswer = output.diagnostics.subjectEntries.find(
     (entry) => entry.voice === "bass" && entry.state === "exposition" && entry.form === "answer",
@@ -25,7 +25,7 @@ test("score generation keeps outside support on the tight-stretto first bass ans
   assert.equal(output.diagnostics.bassAnswerTailTexture.supportRhythmReviewRequiredWindowCount, 0);
 });
 
-test("fugue-smoke keeps upper bass-answer tail support singable", () => {
+reviewTest("fugue-smoke keeps upper bass-answer tail support singable", () => {
   const output = scoreForSeed("fugue-smoke");
   const notes = output.events.filter((event): event is NoteEvent => event.kind === "note");
   const firstBassAnswer = output.diagnostics.subjectEntries.find(

@@ -12,6 +12,17 @@ CI の seed と metric は、生成器の破綻を早く止めるための最小
 | `manual-listening` | 自動 metric だけでは判断できない聴感、長時間疲労、pairwise preference。 | listening note と未実施 gap を残す。CI では pass/fail にしない。 |
 | `remove-or-archive` | 重複、説明力のない metric、古い phase だけの expected value、修正済み症状の過剰 seed。 | 削除、doc-only history 化、または review-only へ降格する。削除理由と置き換え先を記録する。 |
 
+## Test Profiles
+
+PR CI は通常の `pnpm test` で走る `ci-blocking` scope を対象にします。ここには public contract、schema、determinism、hard constraint、短時間 sentinel を残します。長尺 score 生成、seed batch review、美的品質や style fit の傾向確認は `review-required` として `reviewTest(...)` に置き、通常 profile では skip として記録します。
+
+`FUGEMATON_TEST_PROFILE=review pnpm test` または `pnpm test:review` は `review-required` を含む全 Node test を実行します。GitHub Actions では PR workflow とは別に review profile workflow を `workflow_dispatch`、scheduled run、`main` push で実行し、JUnit artifact と slow-test summary を残します。review workflow の slow-test budget は、長尺 coverage の配置見直しに使う advisory signal であり、PR merge blocker にはしません。
+
+CI / review scope for the current split:
+
+* `ci-blocking`: normal-profile smoke、public API contract、short continuous-fugue writing-profile propagation、synthetic UI layout contract、worker request/error/deadline contracts。
+* `review-required`: `generate-*-review*.test.ts` seed batches、full-length fugue-form continuation/carry checks、music-box full-length contract、generated full-score display review、endless-program full-length worker review signals。
+
 ## Metric Criteria
 
 `ci-blocking` にしてよい metric は、次をすべて満たすものに限ります。

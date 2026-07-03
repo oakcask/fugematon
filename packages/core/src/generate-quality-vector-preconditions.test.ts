@@ -1,17 +1,17 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import { REVIEW_LENGTH_TICKS } from "./constants.js";
 import {
   assertQualityVectorReviewPreconditions,
   QUALITY_VECTOR_REVIEW_SEEDS,
 } from "./generate-quality-review-test-helpers.js";
 import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
+import { reviewTest } from "./test-profile.js";
 
-test("generateScore keeps quality-vector review seed batch B1 ready for review-only diagnostics", () => {
+reviewTest("generateScore keeps quality-vector review seed batch B1 ready for review-only diagnostics", () => {
   assertQualityVectorReviewPreconditions(QUALITY_VECTOR_REVIEW_SEEDS.slice(4, 6));
 });
 
-test("generateScore exposes quality vector diagnostics", () => {
+reviewTest("generateScore exposes quality vector diagnostics", () => {
   const output = generateScore({
     seed: "fugue-smoke",
     lengthTicks: REVIEW_LENGTH_TICKS,
@@ -48,7 +48,7 @@ test("generateScore exposes quality vector diagnostics", () => {
   );
 });
 
-test("generateScore keeps thin bass-answer tail support review-visible", () => {
+reviewTest("generateScore keeps thin bass-answer tail support review-visible", () => {
   const output = generateScore({
     seed: "fugue-smoke",
     lengthTicks: 7680,

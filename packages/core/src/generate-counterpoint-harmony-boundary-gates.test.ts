@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import { BASELINE_BEAUTY_DIAGNOSTICS_PROFILE, REVIEW_LENGTH_TICKS } from "./constants.js";
 import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
+import { reviewTest } from "./test-profile.js";
 
-test("generateScore applies baseline beauty boundary seed gates", () => {
+reviewTest("generateScore applies baseline beauty boundary seed gates", () => {
   const boundaryProfiles = BASELINE_BEAUTY_DIAGNOSTICS_PROFILE.boundarySeeds;
 
   for (const [seed, profile] of Object.entries(boundaryProfiles)) {

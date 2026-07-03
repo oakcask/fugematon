@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import {
   collectTexturePhrasePlanningMetrics,
   TEXTURE_PHRASE_PLANNING_ROTATION_SEEDS,
 } from "./generate-quality-review-test-helpers.js";
+import { reviewTest } from "./test-profile.js";
 
-test("generateScore applies texture and phrase-unit planning across rotation seed batch B", () => {
+reviewTest("generateScore applies texture and phrase-unit planning across rotation seed batch B", () => {
   const metrics = collectTexturePhrasePlanningMetrics(TEXTURE_PHRASE_PLANNING_ROTATION_SEEDS.slice(5));
 
   assert.equal(metrics.changedStateSequenceCount, metrics.seedCount);

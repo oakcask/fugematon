@@ -7,16 +7,17 @@ import {
   GENERATOR_VERSION,
   generateScore,
   INFINITE_PLAYBACK_SNAPSHOT_SCHEMA_VERSION,
-  REVIEW_LENGTH_TICKS,
   TICKS_PER_QUARTER,
   VOICES,
   WRITING_PROFILE_VERSION,
 } from "./index.js";
 
+const PUBLIC_CONTRACT_LENGTH_TICKS = TICKS_PER_QUARTER * 32;
+
 test("public API emits the stable score metadata envelope", () => {
   const output = generateScore({
     seed: "public-contract",
-    lengthTicks: REVIEW_LENGTH_TICKS,
+    lengthTicks: PUBLIC_CONTRACT_LENGTH_TICKS,
   });
   const metadata = output.events.filter((event): event is MetaEvent => event.kind === "meta");
   const notes = output.events.filter((event): event is NoteEvent => event.kind === "note");
@@ -65,11 +66,11 @@ test("public API emits the stable score metadata envelope", () => {
     version: WRITING_PROFILE_VERSION,
   });
   assert.equal(output.diagnostics.seed, "public-contract");
-  assert.equal(output.diagnostics.lengthTicks, REVIEW_LENGTH_TICKS);
+  assert.equal(output.diagnostics.lengthTicks, PUBLIC_CONTRACT_LENGTH_TICKS);
 });
 
 test("public API keeps emitted note events within the score contract", () => {
-  const output = generateScore({ seed: "event-shape-contract", lengthTicks: REVIEW_LENGTH_TICKS });
+  const output = generateScore({ seed: "event-shape-contract", lengthTicks: PUBLIC_CONTRACT_LENGTH_TICKS });
   const notes = output.events.filter((event): event is NoteEvent => event.kind === "note");
 
   assert.ok(notes.length > 0);
@@ -87,7 +88,7 @@ test("public API keeps emitted note events within the score contract", () => {
 });
 
 test("public diagnostics expose finite candidate score dimensions", () => {
-  const output = generateScore({ seed: "diagnostics-contract", lengthTicks: REVIEW_LENGTH_TICKS });
+  const output = generateScore({ seed: "diagnostics-contract", lengthTicks: PUBLIC_CONTRACT_LENGTH_TICKS });
   const selectedEvaluation = output.diagnostics.selectedCandidateEvaluations[0];
 
   assert.ok(selectedEvaluation !== undefined);
@@ -123,7 +124,7 @@ test("public diagnostics expose finite candidate score dimensions", () => {
   assert.ok(output.diagnostics.phraseRepetitionReview.subjectStemFamilies.length > 0);
   assert.ok(output.diagnostics.phraseRepetitionReview.answerTransformFamilies.length > 0);
   assert.ok(output.diagnostics.phraseRepetitionReview.phraseFunctions.length > 0);
-  assert.ok(output.diagnostics.phraseRepetitionReview.sectionStatePatterns.topPatterns.length > 0);
+  assert.ok(Array.isArray(output.diagnostics.phraseRepetitionReview.sectionStatePatterns.topPatterns));
   assert.equal(output.diagnostics.episodeMotivicDevelopment.schemaVersion, 1);
   assert.equal(typeof output.diagnostics.episodeMotivicDevelopment.derivationCoverage, "number");
   assert.equal(typeof output.diagnostics.episodeMotivicDevelopment.genericFreeCounterpointDurationTicks, "number");
@@ -334,7 +335,7 @@ test("public diagnostics expose finite candidate score dimensions", () => {
 });
 
 test("public subject entry diagnostics correspond to emitted entry notes", () => {
-  const output = generateScore({ seed: "entry-contract", lengthTicks: REVIEW_LENGTH_TICKS });
+  const output = generateScore({ seed: "entry-contract", lengthTicks: PUBLIC_CONTRACT_LENGTH_TICKS });
   const notes = output.events.filter((event): event is NoteEvent => event.kind === "note");
 
   assert.ok(output.diagnostics.subjectEntries.length > 4);

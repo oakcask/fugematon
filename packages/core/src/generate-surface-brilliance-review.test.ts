@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import { REVIEW_LENGTH_TICKS } from "./constants.js";
 import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
+import { reviewTest } from "./test-profile.js";
 
-test("surface brilliance separates kinetic modal color from fugue-smoke control", () => {
+reviewTest("surface brilliance separates kinetic modal color from fugue-smoke control", () => {
   const kineticModal = generateScore({ seed: "seed-19l7uit-1u226cc", lengthTicks: REVIEW_LENGTH_TICKS }).diagnostics
     .surfaceBrilliance;
   const fugueSmoke = generateScore({ seed: "fugue-smoke", lengthTicks: REVIEW_LENGTH_TICKS }).diagnostics
@@ -17,7 +17,7 @@ test("surface brilliance separates kinetic modal color from fugue-smoke control"
   assert.ok(kineticModal.tradeoffs.includes("counter-subject-identity-tradeoff"));
 });
 
-test("surface brilliance treats modal color as a reusable structural signal", () => {
+reviewTest("surface brilliance treats modal color as a reusable structural signal", () => {
   const denseModal = generateScore({ seed: "dense-modal", lengthTicks: REVIEW_LENGTH_TICKS }).diagnostics
     .surfaceBrilliance;
   const bachControl = generateScore({ seed: "bach-001", lengthTicks: REVIEW_LENGTH_TICKS }).diagnostics

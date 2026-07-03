@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import { REVIEW_LENGTH_TICKS, TICKS_PER_QUARTER } from "./constants.js";
 import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
 import { evaluateReviewGatePolicy } from "./review-gate.js";
+import { reviewTest } from "./test-profile.js";
 
 const HISTORICAL_CALIBRATION_FOCUSED_SEEDS = [
   "circle-fifths",
@@ -11,7 +11,7 @@ const HISTORICAL_CALIBRATION_FOCUSED_SEEDS = [
   "tight-stretto",
 ] as const;
 
-test("historical calibration focused seeds keep score-window repair evidence observable", () => {
+reviewTest("historical calibration focused seeds keep score-window repair evidence observable", () => {
   let unresolvedEntrySevereIntervalQuarters = 0;
   let unresolvedEntrySentinelCount = 0;
   let pitchClassUnisonDuration = 0;

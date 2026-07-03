@@ -1,12 +1,12 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import { TICKS_PER_QUARTER } from "./constants.js";
 import type { GenerationOutput, NoteEvent, PlannedEntry } from "./events.js";
 import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
+import { reviewTest } from "./test-profile.js";
 
 const SWEEP_SEEDS = Array.from({ length: 40 }, (_, index) => `isrd-sweep-${String(index).padStart(3, "0")}`);
 
-test("section-local planner lowers ad hoc initial subject rhetoric concentration", () => {
+reviewTest("section-local planner lowers ad hoc initial subject rhetoric concentration", () => {
   const baselineLabels = SWEEP_SEEDS.map((seed) => initialSubjectRhetoricLabel(seed, "baseline"));
   const plannerLabels = SWEEP_SEEDS.map((seed) => initialSubjectRhetoricLabel(seed, "section-local-planner"));
 
@@ -15,7 +15,7 @@ test("section-local planner lowers ad hoc initial subject rhetoric concentration
   assert.ok(new Set(plannerLabels).size >= new Set(baselineLabels).size * 3);
 });
 
-test("baseline keeps legacy initial subject profiles", () => {
+reviewTest("baseline keeps legacy initial subject profiles", () => {
   const baselineSignatures = SWEEP_SEEDS.map((seed) => initialSubjectSignature(seed, "baseline"));
   const legacySignatures = new Set([
     subjectSignature([0, 1, 2, 3, 4, 3, 1, 2], [1, 1, 0.5, 0.5, 1, 1, 1, 1]),
@@ -33,7 +33,7 @@ test("baseline keeps legacy initial subject profiles", () => {
   assert.ok(baselineSignatures.every((signature) => legacySignatures.has(signature)));
 });
 
-test("section-local planner keeps generated subject rhetoric answer-compatible", () => {
+reviewTest("section-local planner keeps generated subject rhetoric answer-compatible", () => {
   for (const seed of SWEEP_SEEDS) {
     const output = generateScore({
       seed,
@@ -64,7 +64,7 @@ test("section-local planner keeps generated subject rhetoric answer-compatible",
   }
 });
 
-test("modal, triple, and compound subjects expose multiple rhetoric families", () => {
+reviewTest("modal, triple, and compound subjects expose multiple rhetoric families", () => {
   const focusedSeeds = [
     "isrd-sweep-008",
     "isrd-sweep-009",

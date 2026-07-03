@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import { REPRESENTATIVE_REVIEW_SEEDS, REVIEW_LENGTH_TICKS } from "./constants.js";
 import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
 import { evaluateContourMotionGate, evaluateMelodyTextureGate } from "./review-gate.js";
+import { reviewTest } from "./test-profile.js";
 
-test("generateScore reduces stepwise fifth-climb subject pressure across representative seeds", () => {
+reviewTest("generateScore reduces stepwise fifth-climb subject pressure across representative seeds", () => {
   const exactStepwiseFifthClimbPattern = "0-1-2-3-4-3-2-1";
   const turnbackFifthClimbPattern = "0-1-2-3-4-3-1-2";
   let exactStepwiseFifthClimbCount = 0;

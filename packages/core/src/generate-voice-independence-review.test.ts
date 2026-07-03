@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import { REVIEW_LENGTH_TICKS } from "./constants.js";
 import { VOICE_INDEPENDENCE_REVIEW_SEEDS } from "./generate-score-beauty-adoption-test-helpers.js";
 import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
+import { reviewTest } from "./test-profile.js";
 
-test("voice independence review seeds keep voice-pair local evidence reviewable", () => {
+reviewTest("voice independence review seeds keep voice-pair local evidence reviewable", () => {
   for (const seed of VOICE_INDEPENDENCE_REVIEW_SEEDS) {
     const output = generateScore({ seed, lengthTicks: REVIEW_LENGTH_TICKS });
     const vector = output.diagnostics.qualityVector;

@@ -1,9 +1,9 @@
-import test from "node:test";
 import {
   assertEpisodeMotivicRepetitionReviewBatch,
   EPISODE_MOTIVIC_REPETITION_REVIEW_BATCHES,
 } from "./generate-episode-motivic-repetition-test-helpers.js";
+import { reviewTest } from "./test-profile.js";
 
-test("episode motivic repetition review batch B keeps derivation coverage and texture guardrails", () => {
+reviewTest("episode motivic repetition review batch B keeps derivation coverage and texture guardrails", () => {
   assertEpisodeMotivicRepetitionReviewBatch(EPISODE_MOTIVIC_REPETITION_REVIEW_BATCHES[1]);
 });

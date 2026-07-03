@@ -1,12 +1,12 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import { TICKS_PER_QUARTER } from "./constants.js";
 import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
+import { reviewTest } from "./test-profile.js";
 
 const FOCUSED_LENGTH_TICKS = TICKS_PER_QUARTER * 64;
 const HIGH_RISK_SEEDS = ["long-arc", "dark-episode", "ornament-test", "bach-001"] as const;
 
-test("stretto entry harmony repair keeps the reported handoff window at the repaired ceiling", () => {
+reviewTest("stretto entry harmony repair keeps the reported handoff window at the repaired ceiling", () => {
   const metrics = strettoEntryHarmonyMetrics("seed-1db5j19-1nhjtae");
 
   assert.ok(metrics.firstStrettoUnresolvedAccentedEntryClashes <= 1);
@@ -14,7 +14,7 @@ test("stretto entry harmony repair keeps the reported handoff window at the repa
   assert.equal(metrics.hardConstraintFailures, 0);
 });
 
-test("stretto entry harmony repair improves high-risk first-stretto windows without hard failures", () => {
+reviewTest("stretto entry harmony repair improves high-risk first-stretto windows without hard failures", () => {
   const metrics = HIGH_RISK_SEEDS.map(strettoEntryHarmonyMetrics);
 
   assert.ok(
@@ -32,7 +32,7 @@ test("stretto entry harmony repair improves high-risk first-stretto windows with
   assert.equal(sum(metrics.map((seed) => seed.hardConstraintFailures)), 0);
 });
 
-test("stretto entry harmony repair preserves lower-risk stretto tension", () => {
+reviewTest("stretto entry harmony repair preserves lower-risk stretto tension", () => {
   const tightStretto = strettoEntryHarmonyMetrics("tight-stretto");
   const modalDorian = strettoEntryHarmonyMetrics("modal-dorian");
 

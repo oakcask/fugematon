@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import { REVIEW_LENGTH_TICKS } from "./constants.js";
 import {
   cachedGenerateScore as generateScore,
@@ -7,8 +6,9 @@ import {
   requireSelectedCandidateEvaluation,
 } from "./generate-test-helpers.js";
 import { evaluateContourMotionGate, evaluateMelodyTextureGate } from "./review-gate.js";
+import { reviewTest } from "./test-profile.js";
 
-test("generateScore balances entry harmony scoring with preservation guardrails", () => {
+reviewTest("generateScore balances entry harmony scoring with preservation guardrails", () => {
   const blockerSeeds = [
     ["fugue-smoke", 76, 64, 48, 2, 2, 2],
     ["modal-cadence", 96, 48, 0, 2, 1, 0],
@@ -67,7 +67,7 @@ test("generateScore balances entry harmony scoring with preservation guardrails"
   }
 });
 
-test("generateScore preserves voice-pair independence blocker evidence under scoring changes", () => {
+reviewTest("generateScore preserves voice-pair independence blocker evidence under scoring changes", () => {
   const blockerSeeds = [
     ["contrary-motion", 36, 534, 830, 0, 0, 22, 7, 50, 12],
     ["fugue-smoke", 54, 550, 830, 0, 0, 22, 7, 50, 12],
@@ -114,7 +114,7 @@ test("generateScore preserves voice-pair independence blocker evidence under sco
   }
 });
 
-test("generateScore guards exact pitch lockstep without gate regressions", () => {
+reviewTest("generateScore guards exact pitch lockstep without gate regressions", () => {
   const blockerSeeds = [
     ["bright-answer", 53, 737, 664, 138, 0.827],
     ["quiet-cadence", 55, 729, 667, 98, 0.858],

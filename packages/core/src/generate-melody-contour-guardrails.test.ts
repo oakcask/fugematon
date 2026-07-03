@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import { REVIEW_LENGTH_TICKS } from "./constants.js";
 import {
   cachedGenerateScore as generateScore,
@@ -8,8 +7,9 @@ import {
   roundMetric,
 } from "./generate-test-helpers.js";
 import { evaluateContourMotionGate, evaluateMelodyTextureGate } from "./review-gate.js";
+import { reviewTest } from "./test-profile.js";
 
-test("generateScore preserves modal counter-subject retention guardrails", () => {
+reviewTest("generateScore preserves modal counter-subject retention guardrails", () => {
   const blockerSeeds = [
     ["modal-cadence", 0.519],
     ["dense-modal", 0.512],
@@ -35,7 +35,7 @@ test("generateScore preserves modal counter-subject retention guardrails", () =>
   }
 });
 
-test("generateScore preserves melody and form guardrails", () => {
+reviewTest("generateScore preserves melody and form guardrails", () => {
   const blockerSeeds = [
     ["modal-answer", 86, 3, 2, 38, 13, 13, 2],
     ["contrary-motion", 99, 7, 3, 42, 16, 16, 8],

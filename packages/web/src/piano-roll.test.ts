@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { FUGUE_FORM_REVIEW_LENGTH_TICKS, generateScore } from "@fugematon/core";
+import { generateScore } from "@fugematon/core";
 import {
   computeActivePitches,
   computeActivePitchMarkerLayout,
@@ -18,9 +18,7 @@ import {
 import { appendPlaybackModelSessionTimeline, createPlaybackModel, type PlaybackModel } from "./score.js";
 
 test("computePianoRollLayout maps visible notes into canvas bounds", () => {
-  const model = createPlaybackModel(
-    generateScore({ seed: "fugue-smoke", lengthTicks: FUGUE_FORM_REVIEW_LENGTH_TICKS }),
-  );
+  const model = syntheticPianoRollModel();
   const viewport = computePianoRollViewport(model, 0);
   const layout = computePianoRollLayout(model, 960, 360, viewport, 0);
 
@@ -56,9 +54,7 @@ test("computePianoRollLayout uses the full vertical roll range", () => {
 });
 
 test("computePianoRollViewport starts at the opening and follows playback", () => {
-  const model = createPlaybackModel(
-    generateScore({ seed: "fugue-smoke", lengthTicks: FUGUE_FORM_REVIEW_LENGTH_TICKS }),
-  );
+  const model = syntheticPianoRollModel();
   const opening = computePianoRollViewport(model, 0);
   const following = computePianoRollViewport(model, DEFAULT_VIEWPORT_SECONDS * 2);
 
@@ -211,10 +207,8 @@ test("fallback notes render as stroke-only within the same visual bounds", () =>
 });
 
 test("computeActivePitches returns currently sounding pitches in ascending order", () => {
-  const model = createPlaybackModel(
-    generateScore({ seed: "fugue-smoke", lengthTicks: FUGUE_FORM_REVIEW_LENGTH_TICKS }),
-  );
-  const firstChordSecond = model.notes[0]!.startSecond;
+  const model = syntheticPianoRollModel();
+  const firstChordSecond = 0;
   const firstNotePitches = model.notes
     .filter((note) => note.startSecond <= firstChordSecond && firstChordSecond < note.startSecond + note.durationSecond)
     .map((note) => note.pitch);
@@ -287,6 +281,47 @@ function layoutPlaybackNote(input: { pitch: number; startSecond: number }): Play
       velocityToAttackEmphasis: 0.1,
       velocityToSustainGain: 0.2,
     },
+  };
+}
+
+function syntheticPianoRollModel(): PlaybackModel {
+  const subjectEntry = {
+    voice: "soprano",
+    form: "subject",
+    answerKind: undefined,
+    state: "exposition",
+    startTick: 0,
+  } as PlaybackModel["subjectEntries"][number];
+  const answerEntry = {
+    voice: "alto",
+    form: "answer",
+    answerKind: "tonal",
+    state: "exposition",
+    startTick: 960,
+  } as PlaybackModel["subjectEntries"][number];
+
+  return {
+    bpm: 60,
+    ticksPerQuarter: 480,
+    timeSignature: { numerator: 4, denominator: 4 },
+    keySignature: { tonic: "C", mode: "major" },
+    totalTicks: 480 * 60,
+    totalSeconds: 60,
+    pitchRange: { min: 48, max: 84 },
+    notes: [
+      { ...layoutPlaybackNote({ pitch: 60, startSecond: 0 }), voice: "soprano", role: "subject", entry: subjectEntry },
+      { ...layoutPlaybackNote({ pitch: 64, startSecond: 0 }), voice: "alto", role: "counter-subject" },
+      { ...layoutPlaybackNote({ pitch: 67, startSecond: 2 }), voice: "alto", role: "answer", entry: answerEntry },
+      { ...layoutPlaybackNote({ pitch: 55, startSecond: 3 }), voice: "tenor", role: "free-counterpoint" },
+      { ...layoutPlaybackNote({ pitch: 52, startSecond: 30 }), voice: "bass", role: "free-counterpoint" },
+    ],
+    stateTransitions: ["exposition"],
+    subjectEntries: [subjectEntry, answerEntry],
+    sectionPlans: [],
+    performanceProfile: {
+      id: "strict-counterpoint",
+      label: "Strict Counterpoint",
+    } as unknown as PlaybackModel["performanceProfile"],
   };
 }
 

@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import { REVIEW_LENGTH_TICKS } from "./constants.js";
 import { cachedGenerateScore as generateScore, requireOracleBlocker } from "./generate-test-helpers.js";
 import { evaluateReviewGatePolicy } from "./review-gate.js";
+import { reviewTest } from "./test-profile.js";
 
-test("generateScore adds register-blended section-local planner alternatives", () => {
+reviewTest("generateScore adds register-blended section-local planner alternatives", () => {
   const seed = "dense-modal";
   const baseline = generateScore({
     seed,
@@ -42,7 +42,7 @@ test("generateScore adds register-blended section-local planner alternatives", (
   );
 });
 
-test("generateScore adds section grammar alternatives to the oracle pool", () => {
+reviewTest("generateScore adds section grammar alternatives to the oracle pool", () => {
   const seed = "dense-modal";
   const baseline = generateScore({
     seed,

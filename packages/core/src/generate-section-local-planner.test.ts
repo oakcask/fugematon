@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import { REVIEW_LENGTH_TICKS } from "./constants.js";
 import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
 import { evaluateReviewGatePolicy } from "./review-gate.js";
+import { reviewTest } from "./test-profile.js";
 
-test("generateScore adds guarded section-local planner candidates", () => {
+reviewTest("generateScore adds guarded section-local planner candidates", () => {
   const blockerSeeds = ["modal-cadence", "dense-modal"] as const;
   let baselineHighSoloTextureSections = 0;
   let variantHighSoloTextureSections = 0;

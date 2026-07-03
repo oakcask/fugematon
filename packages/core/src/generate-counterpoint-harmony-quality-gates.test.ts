@@ -1,13 +1,13 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import {
   COUNTERPOINT_HARMONY_DIAGNOSTICS_PROFILE,
   REPRESENTATIVE_REVIEW_SEEDS,
   REVIEW_LENGTH_TICKS,
 } from "./constants.js";
 import { cachedGenerateScore as generateScore, scoreMinutes } from "./generate-test-helpers.js";
+import { reviewTest } from "./test-profile.js";
 
-test("generateScore validates counterpoint-harmony quality gate seeds", () => {
+reviewTest("generateScore validates counterpoint-harmony quality gate seeds", () => {
   const signatures = new Set<string>();
 
   for (const { seed } of REPRESENTATIVE_REVIEW_SEEDS) {

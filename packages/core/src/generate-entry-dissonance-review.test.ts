@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import { TICKS_PER_QUARTER } from "./constants.js";
 import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
+import { reviewTest } from "./test-profile.js";
 
 const ENTRY_DISSONANCE_REVIEW_SEEDS = ["contrary-motion", "tight-stretto", "circle-fifths", "modal-cadence"] as const;
 
-test("entry-dissonance review seeds keep unresolved accented entry clashes at the repaired ceiling", () => {
+reviewTest("entry-dissonance review seeds keep unresolved accented entry clashes at the repaired ceiling", () => {
   const summaries = ENTRY_DISSONANCE_REVIEW_SEEDS.map((seed) => {
     const diagnostics = generateScore({ seed, lengthTicks: TICKS_PER_QUARTER * 288 }).diagnostics;
     const entryAdjacentSecondFriction = diagnostics.qualityVector.entrySonorities.reduce(

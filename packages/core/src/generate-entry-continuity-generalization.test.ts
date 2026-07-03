@@ -1,12 +1,12 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import { TICKS_PER_QUARTER } from "./constants.js";
 import type { EntryForm, FugueState, KeySignature, NoteEvent, PlannedEntry, Voice } from "./events.js";
 import { analyzeEntryBoundaryContinuity } from "./generation/entry-boundary-continuity.js";
+import { reviewTest } from "./test-profile.js";
 
 const C_MAJOR: KeySignature = { tonic: "C", mode: "major" };
 
-test("entry-boundary continuity keeps first bass evidence separate from later bass windows", () => {
+reviewTest("entry-boundary continuity keeps first bass evidence separate from later bass windows", () => {
   const entryStartTick = TICKS_PER_QUARTER * 12;
   const summary = analyzeEntryBoundaryContinuity(
     [
@@ -28,7 +28,7 @@ test("entry-boundary continuity keeps first bass evidence separate from later ba
   assert.equal(summary.synchronizedResetCount, 1);
 });
 
-test("entry-boundary continuity accepts carried or delayed support at post-exposition bass entries", () => {
+reviewTest("entry-boundary continuity accepts carried or delayed support at post-exposition bass entries", () => {
   const entryStartTick = TICKS_PER_QUARTER * 20;
   const summary = analyzeEntryBoundaryContinuity(
     [
@@ -52,7 +52,7 @@ test("entry-boundary continuity accepts carried or delayed support at post-expos
   assert.deepEqual(window?.delayedOutsideVoices, ["soprano"]);
 });
 
-test("entry-boundary continuity exposes one-voice carry with two outside resets at first bass answer", () => {
+reviewTest("entry-boundary continuity exposes one-voice carry with two outside resets at first bass answer", () => {
   const entryStartTick = TICKS_PER_QUARTER * 12;
   const summary = analyzeEntryBoundaryContinuity(
     [
@@ -74,7 +74,7 @@ test("entry-boundary continuity exposes one-voice carry with two outside resets 
   assert.deepEqual(window?.outsideOnsetVoices.sort(), ["alto", "tenor"]);
 });
 
-test("entry-boundary continuity still flags unprepared post-exposition bass resets", () => {
+reviewTest("entry-boundary continuity still flags unprepared post-exposition bass resets", () => {
   const entryStartTick = TICKS_PER_QUARTER * 28;
   const summary = analyzeEntryBoundaryContinuity(
     [
@@ -94,7 +94,7 @@ test("entry-boundary continuity still flags unprepared post-exposition bass rese
   assert.equal(summary.windows[0]?.classification, "synchronized-reset");
 });
 
-test("entry-boundary continuity reviews non-bass entries by prior entry order and already-entered voices", () => {
+reviewTest("entry-boundary continuity reviews non-bass entries by prior entry order and already-entered voices", () => {
   const altoStartTick = TICKS_PER_QUARTER * 4;
   const sopranoStartTick = TICKS_PER_QUARTER * 8;
   const summary = analyzeEntryBoundaryContinuity(
@@ -116,7 +116,7 @@ test("entry-boundary continuity reviews non-bass entries by prior entry order an
   assert.equal(window?.classification, "continuity-supported");
 });
 
-test("entry-boundary continuity flags non-bass synchronized resets when multiple entered voices restart", () => {
+reviewTest("entry-boundary continuity flags non-bass synchronized resets when multiple entered voices restart", () => {
   const altoStartTick = TICKS_PER_QUARTER * 4;
   const sopranoStartTick = TICKS_PER_QUARTER * 8;
   const tenorStartTick = TICKS_PER_QUARTER * 12;

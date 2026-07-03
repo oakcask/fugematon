@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import {
   collectPhraseRepetitionMetrics,
   PHRASE_REPETITION_REVIEW_BATCH_A,
 } from "./generate-quality-review-test-helpers.js";
+import { reviewTest } from "./test-profile.js";
 
-test("generateScore completes phrase-repetition adoption across review seeds batch A1a", () => {
+reviewTest("generateScore completes phrase-repetition adoption across review seeds batch A1a", () => {
   assertPhraseRepetitionReviewBatch(PHRASE_REPETITION_REVIEW_BATCH_A.slice(0, 3), 3, -3);
 });
 

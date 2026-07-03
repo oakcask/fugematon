@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import {
   BEAUTY_TEXTURE_DIAGNOSTICS_PROFILE,
   COUNTERPOINT_HARMONY_DIAGNOSTICS_PROFILE,
@@ -15,8 +14,9 @@ import {
 import type { MetaEvent, NoteEvent } from "./events.js";
 import { generateScore } from "./generate.js";
 import { cpuUsageMilliseconds, positiveModulo, scoreMinutes } from "./generate-test-helpers.js";
+import { reviewTest } from "./test-profile.js";
 
-test("generateScore validates representative fugue-form seeds", () => {
+reviewTest("generateScore validates representative fugue-form seeds", () => {
   const startCpuUsage = process.cpuUsage();
 
   for (const { seed, category } of FUGUE_FORM_REPRESENTATIVE_SEEDS) {
@@ -51,7 +51,7 @@ test("generateScore validates representative fugue-form seeds", () => {
   );
 });
 
-test("generateScore validates representative subject-answer plan seeds", () => {
+reviewTest("generateScore validates representative subject-answer plan seeds", () => {
   for (const { seed, category } of SUBJECT_ANSWER_PLAN_REPRESENTATIVE_SEEDS) {
     const output = generateScore({ seed, lengthTicks: FUGUE_FORM_REVIEW_LENGTH_TICKS, selectionModel: "baseline" });
 
@@ -83,7 +83,7 @@ test("generateScore validates representative subject-answer plan seeds", () => {
   }
 });
 
-test("generateScore reports counterpoint texture metrics", () => {
+reviewTest("generateScore reports counterpoint texture metrics", () => {
   const output = generateScore({
     seed: "lyrical-line",
     lengthTicks: FUGUE_FORM_REVIEW_LENGTH_TICKS,
@@ -103,7 +103,7 @@ test("generateScore reports counterpoint texture metrics", () => {
   assert.ok(output.events.some((event) => event.kind === "note" && event.role === "free-counterpoint"));
 });
 
-test("generateScore keeps planned entries tied to emitted entry notes", () => {
+reviewTest("generateScore keeps planned entries tied to emitted entry notes", () => {
   const output = generateScore({
     seed: "entry-contract",
     lengthTicks: REVIEW_LENGTH_TICKS,
@@ -132,7 +132,7 @@ test("generateScore keeps planned entries tied to emitted entry notes", () => {
   }
 });
 
-test("generateScore reports beauty and texture diagnostics", () => {
+reviewTest("generateScore reports beauty and texture diagnostics", () => {
   const output = generateScore({ seed: "fugue-smoke", lengthTicks: REVIEW_LENGTH_TICKS, selectionModel: "baseline" });
   const selectedEvaluation = output.diagnostics.selectedCandidateEvaluations[0];
 
@@ -178,7 +178,7 @@ test("generateScore reports beauty and texture diagnostics", () => {
   assert.ok(output.diagnostics.durationDistribution.eighth > 0);
 });
 
-test("generateScore reports modal context diagnostics", () => {
+reviewTest("generateScore reports modal context diagnostics", () => {
   const output = generateScore({ seed: "modal-dorian", lengthTicks: REVIEW_LENGTH_TICKS, selectionModel: "baseline" });
   const keySignature = output.events.find(
     (event): event is Extract<MetaEvent, { type: "key-signature" }> =>

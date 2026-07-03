@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import { REVIEW_LENGTH_TICKS } from "./constants.js";
 import {
   cachedGenerateScore as generateScore,
@@ -7,8 +6,9 @@ import {
   stepwisePatternRole,
 } from "./generate-test-helpers.js";
 import { evaluateContourMotionGate, evaluateMelodyTextureGate } from "./review-gate.js";
+import { reviewTest } from "./test-profile.js";
 
-test("generateScore nudges non-modal stepwise pattern fixation without modal guardrail regressions", () => {
+reviewTest("generateScore nudges non-modal stepwise pattern fixation without modal guardrail regressions", () => {
   const blockerSeeds = [
     ["fugue-smoke", 0.743, 6, 570, 95],
     ["lyrical-line", 0.73, 6, 589, 95],

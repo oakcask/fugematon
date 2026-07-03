@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import { main } from "./index.js";
+import { reviewTest } from "./test-profile.js";
 
 test("generate command writes score event JSON to stdout", async () => {
   const stdout = await captureConsoleLog(() => main(["generate", "--seed", "bach-001", "--ticks", "960"]));
@@ -84,7 +85,7 @@ test("midi command writes a valid standard MIDI file", async () => {
   }
 });
 
-test("review command writes diagnostics and MIDI files for review seeds", async () => {
+reviewTest("review command writes diagnostics and MIDI files for review seeds", async () => {
   const directory = await mkdtemp(join(tmpdir(), "fugematon-review-"));
   try {
     await main(["review", "--ticks", "9600", "--out", directory]);

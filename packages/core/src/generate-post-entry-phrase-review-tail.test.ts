@@ -1,12 +1,12 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import { TICKS_PER_QUARTER } from "./constants.js";
 import type { GenerationOutput, NoteEvent } from "./events.js";
 import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
+import { reviewTest } from "./test-profile.js";
 
 const scoreCache = new Map<string, GenerationOutput>();
 
-test("score generation keeps tight-stretto first bass answer tail thinning review-visible", () => {
+reviewTest("score generation keeps tight-stretto first bass answer tail thinning review-visible", () => {
   const output = scoreForSeed("tight-stretto");
   const firstBassAnswer = output.diagnostics.subjectEntries.find(
     (entry) => entry.voice === "bass" && entry.state === "exposition" && entry.form === "answer",
@@ -32,7 +32,7 @@ test("score generation keeps tight-stretto first bass answer tail thinning revie
   assert.equal(hardConstraintFailures(output), 0);
 });
 
-test("fugue-smoke keeps bass-answer tail thinning bounded and review-visible", () => {
+reviewTest("fugue-smoke keeps bass-answer tail thinning bounded and review-visible", () => {
   const output = scoreForSeed("fugue-smoke");
   const firstBassAnswer = output.diagnostics.subjectEntries.find(
     (entry) => entry.voice === "bass" && entry.state === "exposition" && entry.form === "answer",

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import { REVIEW_LENGTH_TICKS } from "./constants.js";
 import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
+import { reviewTest } from "./test-profile.js";
 
 function assertPhraseFamilyCandidatesTraceable(reviewSeeds: readonly string[]) {
   for (const seed of reviewSeeds) {
@@ -23,6 +23,6 @@ function assertPhraseFamilyCandidatesTraceable(reviewSeeds: readonly string[]) {
   }
 }
 
-test("generateScore keeps phrase family candidates traceable when selectable", () => {
+reviewTest("generateScore keeps phrase family candidates traceable when selectable", () => {
   assertPhraseFamilyCandidatesTraceable(["angular-answer", "modal-dorian", "modal-answer"]);
 });

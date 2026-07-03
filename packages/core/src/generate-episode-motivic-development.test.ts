@@ -1,15 +1,15 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import { TICKS_PER_QUARTER } from "./constants.js";
 import type { GenerationOutput, NoteEvent } from "./events.js";
 import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
+import { reviewTest } from "./test-profile.js";
 
 const EPISODE_MOTIVIC_DEVELOPMENT_SEEDS = ["dark-episode", "fugue-smoke", "seed-0zereox-1v729ih"] as const;
 
 const REVIEW_LENGTH_TICKS = TICKS_PER_QUARTER * 288;
 const scoreCache = new Map<string, GenerationOutput>();
 
-test("subject-free notes expose episode motivic derivation metadata", () => {
+reviewTest("subject-free notes expose episode motivic derivation metadata", () => {
   const summaries = EPISODE_MOTIVIC_DEVELOPMENT_SEEDS.map((seed) => {
     const output = scoreForSeed(seed);
     const subjectFreeNotes = output.events.filter(
@@ -43,7 +43,7 @@ test("subject-free notes expose episode motivic derivation metadata", () => {
   );
 });
 
-test("episode motivic diagnostics summarize derivation coverage and stock formulas", () => {
+reviewTest("episode motivic diagnostics summarize derivation coverage and stock formulas", () => {
   const summaries = EPISODE_MOTIVIC_DEVELOPMENT_SEEDS.map((seed) => {
     const summary = scoreForSeed(seed).diagnostics.episodeMotivicDevelopment;
     return {

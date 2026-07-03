@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import { REVIEW_LENGTH_TICKS } from "./constants.js";
 import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
+import { reviewTest } from "./test-profile.js";
 
-test("generateScore exposes phrase convergence review signals for the explicit legacy baseline path", () => {
+reviewTest("generateScore exposes phrase convergence review signals for the explicit legacy baseline path", () => {
   const output = generateScore({ seed: "fugue-smoke", lengthTicks: REVIEW_LENGTH_TICKS, selectionModel: "baseline" });
   const review = output.diagnostics.phraseConvergenceReview;
 
@@ -26,7 +26,7 @@ test("generateScore exposes phrase convergence review signals for the explicit l
   assert.ok(review.findings.every((finding) => finding.severity === "review-required"));
 });
 
-test("generateScore uses the adopted planner as the normal phrase convergence default path", () => {
+reviewTest("generateScore uses the adopted planner as the normal phrase convergence default path", () => {
   const output = generateScore({ seed: "bach-001", lengthTicks: REVIEW_LENGTH_TICKS });
 
   assert.equal(output.diagnostics.selectionModel, "section-local-planner");
