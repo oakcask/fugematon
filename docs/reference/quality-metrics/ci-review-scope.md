@@ -14,9 +14,9 @@ CI の seed と metric は、生成器の破綻を早く止めるための最小
 
 ## Test Profiles
 
-PR CI は通常の `pnpm test` で走る `ci-blocking` scope を対象にします。ここには public contract、schema、determinism、hard constraint、短時間 sentinel を残します。長尺 score 生成、seed batch review、美的品質や style fit の傾向確認は `review-required` として `reviewTest(...)` に置き、通常 profile では skip として記録します。
+PR CI は通常の `pnpm test` で走る `ci-blocking` scope を対象にします。ここには public contract、schema、determinism、hard constraint、短時間 sentinel を残します。長尺 score 生成、seed batch review、美的品質や style fit の傾向確認は `review-required` として `reviewTest(...)` に置き、通常 profile では実行対象から外します。
 
-`FUGEMATON_TEST_PROFILE=review pnpm test` または `pnpm test:review` は `review-required` を含む全 Node test を実行します。GitHub Actions では PR workflow とは別に review profile workflow を `workflow_dispatch`、scheduled run、`main` push で実行し、JUnit artifact と slow-test summary を残します。review workflow の slow-test budget は、長尺 coverage の配置見直しに使う advisory signal であり、PR merge blocker にはしません。
+`FUGEMATON_TEST_PROFILE=review pnpm test` または `pnpm test:review` は `reviewTest(...)` の test name marker に一致する review-required test だけを実行します。GitHub Actions では PR workflow とは別に review profile workflow を `workflow_dispatch`、scheduled run、`main` push で実行し、JUnit artifact と slow-test summary を残します。review workflow の slow-test budget は、長尺 coverage の配置見直しに使う advisory signal であり、PR merge blocker にはしません。
 
 review profile 内の regression test は、同じ契約を確認できるなら長尺 bundle と同じ 129600 ticks や 22 seed 全量を使わず、focused length と targeted seed subset に圧縮します。22 seed / 129600 tick の標準 bundle は `pnpm fugematon review` の既定と manual / A/B review の evidence として残し、schema smoke や hard-contract sentinel へ重複させません。
 

@@ -3,7 +3,13 @@ import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
-import { collectNodeTestFiles, createNodeTestShards, defaultNodeTestConcurrency } from "./run-node-tests.mjs";
+import {
+  classifyTestSource,
+  collectNodeTestFiles,
+  createNodeTestShards,
+  defaultNodeTestConcurrency,
+  filterNodeTestFilesForProfile,
+} from "./run-node-tests.mjs";
 
 test("collectNodeTestFiles finds package dist tests recursively and script tests", async () => {
   const rootPath = await mkdtemp(join(tmpdir(), "fugematon-node-tests-"));
@@ -30,6 +36,36 @@ test("createNodeTestShards spreads files across the requested local concurrency"
   ]);
 });
 
+test("classifies test files for regular and review profiles", async () => {
+  const rootPath = await mkdtemp(join(tmpdir(), "fugematon-node-tests-"));
+  await writeProjectFile(rootPath, "packages/core/dist/regular.test.js", 'test("regular", () => {});\n');
+  await writeProjectFile(rootPath, "packages/core/dist/review.test.js", 'reviewTest("review", () => {});\n');
+  await writeProjectFile(
+    rootPath,
+    "packages/core/dist/mixed.test.js",
+    'test("regular", () => {});\nreviewTest("review", () => {});\n',
+  );
+
+  assert.deepEqual(classifyTestSource('test("regular", () => {});\nreviewTest("review", () => {});\n'), {
+    hasRegularTests: true,
+    hasReviewTests: true,
+  });
+  assert.deepEqual(
+    await filterNodeTestFilesForProfile(
+      ["packages/core/dist/mixed.test.js", "packages/core/dist/regular.test.js", "packages/core/dist/review.test.js"],
+      { rootPath, profile: "regular" },
+    ),
+    ["packages/core/dist/mixed.test.js", "packages/core/dist/regular.test.js"],
+  );
+  assert.deepEqual(
+    await filterNodeTestFilesForProfile(
+      ["packages/core/dist/mixed.test.js", "packages/core/dist/regular.test.js", "packages/core/dist/review.test.js"],
+      { rootPath, profile: "review" },
+    ),
+    ["packages/core/dist/mixed.test.js", "packages/core/dist/review.test.js"],
+  );
+});
+
 test("createNodeTestShards caps concurrency to the number of test files", () => {
   assert.deepEqual(createNodeTestShards(["a.test.js", "b.test.js"], 8), [["a.test.js"], ["b.test.js"]]);
 });
@@ -53,8 +89,8 @@ test("defaultNodeTestConcurrency honors the local override", () => {
   }
 });
 
-async function writeProjectFile(rootPath, relativePath) {
+async function writeProjectFile(rootPath, relativePath, content = "") {
   const filePath = join(rootPath, relativePath);
   await mkdir(join(filePath, ".."), { recursive: true });
-  await writeFile(filePath, "");
+  await writeFile(filePath, content);
 }

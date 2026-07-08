@@ -1,11 +1,14 @@
 import { spawn } from "node:child_process";
-import { readdir } from "node:fs/promises";
+import { readdir, readFile } from "node:fs/promises";
 import { availableParallelism } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const packageDistRootPattern = /^packages\/[^/]+\/dist\/.+\.test\.js$/;
 const scriptTestFilePattern = /^(scripts|workflow-scripts)\/[^/]+\.test\.mjs$/;
+const reviewTestPattern = /\breviewTest\s*\(/;
+const regularTestPattern = /(^|[^A-Za-z0-9_])test\s*\(/m;
+const reviewTestNamePattern = "^\\[review\\]";
 
 if (isMainModule()) {
   const testFiles = await collectNodeTestFiles();
@@ -15,9 +18,10 @@ if (isMainModule()) {
 
 export async function collectNodeTestFiles({ rootPath = defaultRootPath() } = {}) {
   const files = await collectFiles(rootPath);
-  return files
+  const testFiles = files
     .filter((filePath) => packageDistRootPattern.test(filePath) || scriptTestFilePattern.test(filePath))
     .sort();
+  return await filterNodeTestFilesForProfile(testFiles, { rootPath, profile: currentTestProfile() });
 }
 
 export async function runNodeTests(testFiles, { concurrency = defaultNodeTestConcurrency(testFiles.length) } = {}) {
@@ -76,7 +80,13 @@ export function defaultNodeTestConcurrency(testFileCount) {
 }
 
 async function runNodeTestShard(testFiles, { shardIndex, shardCount }) {
-  const child = spawn(process.execPath, ["--test", "--test-isolation=none", ...testFiles], {
+  const args = ["--test", "--test-isolation=none"];
+  if (currentTestProfile() === "review") {
+    args.push("--test-name-pattern", reviewTestNamePattern);
+  }
+  args.push(...testFiles);
+
+  const child = spawn(process.execPath, args, {
     stdio: ["ignore", "pipe", "pipe"],
   });
 
@@ -132,6 +142,37 @@ async function runNodeTestShard(testFiles, { shardIndex, shardCount }) {
       });
     });
   });
+}
+
+export async function filterNodeTestFilesForProfile(
+  testFiles,
+  { rootPath = defaultRootPath(), profile = "regular" } = {},
+) {
+  const classifiedFiles = await Promise.all(
+    testFiles.map(async (filePath) => ({
+      filePath,
+      classification: classifyTestSource(await readFile(path.join(rootPath, filePath), "utf8")),
+    })),
+  );
+
+  return classifiedFiles
+    .filter(({ classification }) =>
+      profile === "review"
+        ? classification.hasReviewTests
+        : !classification.hasReviewTests || classification.hasRegularTests,
+    )
+    .map(({ filePath }) => filePath);
+}
+
+export function classifyTestSource(source) {
+  return {
+    hasReviewTests: reviewTestPattern.test(source),
+    hasRegularTests: regularTestPattern.test(source),
+  };
+}
+
+function currentTestProfile() {
+  return process.env.FUGEMATON_TEST_PROFILE === "review" ? "review" : "regular";
 }
 
 function writeBufferedOutput({ shardIndex, shardCount, stdout, stderr }) {
