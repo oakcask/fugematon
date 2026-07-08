@@ -26,6 +26,8 @@ import {
 import { resolveSectionConstraintScoringProfile } from "./section-constraint-scoring.js";
 import { compareNoteEvents, positiveModulo, roundRatio } from "./shared.js";
 
+const HALF_BEAT_TICKS = TICKS_PER_QUARTER / 2;
+
 export type ScoreDraft = {
   notes: readonly NoteEvent[];
   subjectEntries: readonly PlannedEntry[];
@@ -674,9 +676,28 @@ function softFeatureCosts(
       feature: "free-counterpoint-entry-handoff-support",
       cost:
         diagnostics.exposedFreeCounterpointSolo.reviewRequiredWindowCount * 3 +
-        diagnostics.entryBoundaryContinuity.unsupportedEntryLocalThinningCount * 2,
+        diagnostics.entryBoundaryContinuity.unsupportedEntryLocalThinningCount * 5 +
+        diagnostics.entryBoundaryContinuity.synchronizedResetCount * 4,
       explanation:
         "free-counterpoint candidates are ranked by entry handoff support and explained solo or thinning context",
+    },
+    {
+      feature: "important-entry-tail-texture",
+      cost:
+        (diagnostics.importantEntryTailTexture.windows.reduce(
+          (sum, window) => sum + window.zeroOutsideVoiceTicks,
+          0,
+        ) /
+          HALF_BEAT_TICKS) *
+          8 +
+        (diagnostics.importantEntryTailTexture.windows.reduce(
+          (sum, window) => sum + Math.max(0, window.oneOutsideVoiceTicks - TICKS_PER_QUARTER * 2),
+          0,
+        ) /
+          HALF_BEAT_TICKS) *
+          3,
+      explanation:
+        "important entry windows are ranked by texture support from already-entered voices instead of bass-only repair",
     },
     ...sectionConstraintSoftFeatureCosts(sectionConstraintReview, constraintProfileId),
     ...continuousBoundarySoftFeatureCosts(window),

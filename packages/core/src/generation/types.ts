@@ -13,6 +13,7 @@ import type {
   GenerationOutput,
   HarmonicPlan,
   HarmonicStasisRearticulationSummary,
+  ImportantEntryTailTextureSummary,
   LowerVoiceVocalitySummary,
   MetricalHarmonyIntent,
   NoteEvent,
@@ -43,7 +44,7 @@ export type Exposition = {
   sectionPlans: HarmonicPlan[];
   endTick: number;
   durationTicks: number;
-  constraintCandidateFamily?: "harmonic-stasis-variant" | "section-csp-variant";
+  constraintCandidateFamily?: "harmonic-stasis-variant" | "section-csp-variant" | "entry-window-variant";
   constraintSourceCandidateIndex?: number;
 };
 
@@ -113,6 +114,7 @@ export type TextureDiagnostics = {
   phraseRepetitionReview: PhraseRepetitionReviewSummary;
   episodeMotivicDevelopment: EpisodeMotivicDevelopmentSummary;
   entryBoundaryContinuity: EntryBoundaryContinuitySummary;
+  importantEntryTailTexture: ImportantEntryTailTextureSummary;
   bassAnswerTailTexture: BassAnswerTailTextureSummary;
   qualityVector: QualityVector;
   dissonanceTriage: DissonanceTriageSummary;

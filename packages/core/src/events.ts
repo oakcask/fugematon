@@ -1391,6 +1391,32 @@ export type BassAnswerTailTextureSummary = {
   windows: BassAnswerTailTextureWindow[];
 };
 
+export type ImportantEntryTailTextureWindow = {
+  entryVoice: Voice;
+  entryOrderIndex: number;
+  form: EntryForm;
+  state: FugueState;
+  entryStartTick: number;
+  entryEndTick: number;
+  windowEndTick: number;
+  alreadyEnteredVoices: Voice[];
+  zeroOutsideVoiceTicks: number;
+  oneOutsideVoiceTicks: number;
+  minOutsideVoiceCount: number;
+  activeOutsideVoices: Voice[];
+  classification: "supported-tail" | "one-outside-tail" | "zero-outside-tail";
+};
+
+export type ImportantEntryTailTextureSummary = {
+  schemaVersion: 1;
+  reviewRequired: boolean;
+  importantEntryWindowCount: number;
+  zeroOutsideVoiceWindowCount: number;
+  oneOutsideVoiceWindowCount: number;
+  supportedTailWindowCount: number;
+  windows: ImportantEntryTailTextureWindow[];
+};
+
 export type LocalSentinelKind =
   | "long-exact-same-pitch-unison"
   | "long-pitch-class-unison"
@@ -1794,6 +1820,7 @@ export type GenerationDiagnostics = {
   phraseRepetitionReview: PhraseRepetitionReviewSummary;
   episodeMotivicDevelopment: EpisodeMotivicDevelopmentSummary;
   entryBoundaryContinuity: EntryBoundaryContinuitySummary;
+  importantEntryTailTexture: ImportantEntryTailTextureSummary;
   bassAnswerTailTexture: BassAnswerTailTextureSummary;
   qualityVector: QualityVector;
   constraintSatisfactionReview: ConstraintSatisfactionReviewSummary;

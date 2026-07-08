@@ -6,6 +6,8 @@ Status: candidate-domain slice accepted for focused tests and standard review ev
 
 This update covers the continuation CSP candidate-domain slice. Section-CSP variants now backtrack through the existing low-root-first versus balanced upper-agency support policies, section-local support cleanup surfaces, bass-root anchor reinforcement, long-rest closure, bass-answer tail support, harmonic-continuity support, and sustained-dissonance repair timing before score adoption.
 
+Follow-up entry-window update: continuation search now also builds focused `entry-window` variants from the same source candidate pool. These variants add ordinary free-counterpoint support inside important-entry windows when already-entered outside voices thin to zero or one voice, with oblique support preferred near strong beats or harmonic anchors. The existing section-CSP and score-level support cleanup surfaces remain fallback evidence until review bundles show no-op or failure-only behavior.
+
 Project response: the generator keeps the existing section templates as source material, then constructs deterministic section-CSP variants from the existing section-local, grammar, and phrase-family candidate pool. The variants apply low-root and balanced upper-agency support policies with structural anchor reinforcement so the selector can compare support ordering without adding an external solver. `chooseContinuationSection` treats both `section-voice-coverage` and `structural-harmonic-support` as hard-failure reasons that can trigger CSP backtracking.
 
 Standard generated bundle: `samples/generator-constraint-rebuild-next-target`, 22 standard review seeds, 129600 ticks.

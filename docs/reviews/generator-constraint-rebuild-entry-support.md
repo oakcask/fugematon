@@ -32,6 +32,10 @@ This review covers implementation order item 4 in [Generator Constraint Rebuild]
 
    `modal-dorian`, `bach-001`, `modal-answer`, and `minor-entry` all improve aggregate entry support and unresolved severe intervals. Their remaining max-4 windows are mostly subject-fragment episode entries. Remaining important subject / answer windows in the inspected diagnostics are classified as `prepared-collective-articulation` or `continuity-supported`, with delayed or staggered outside voices rather than unexplained all-voice reset.
 
+5. Entry tail texture is now generalized beyond first bass answer.
+
+   `importantEntryTailTexture` reads every important subject / answer / episode subject-fragment entry as an entry voice plus already-entered voices. Candidate ranking uses `important-entry-tail-texture` soft cost, and continuation search exposes `entry-window` variants that add support lines inside the entry-local window. This remains review evidence rather than a hard gate, because planned thinning, suspension release, cadence preparation, and solo rhetoric can still be musically valid.
+
 ## Seed Notes
 
 | Seed | Entry support | Unresolved support | Unresolved severe | Remaining max-4 explanation |
@@ -43,8 +47,8 @@ This review covers implementation order item 4 in [Generator Constraint Rebuild]
 
 ## Music-Theory Basis
 
-Theory basis remains source-family level: Fux/species counterpoint for prepared dissonance, suspension and stepwise resolution, plus common-practice fugue expectations for carried or staggered outside voices around subject / answer entries. This slice keeps those as soft ranking and diagnostic classification, not new hard failures.
+Theory basis remains source-family level: Fux/species counterpoint for prepared dissonance, suspension, stepwise resolution, and support by oblique / contrary motion, plus common-practice fugue expectations for carried or staggered outside voices around subject / answer entries. This slice keeps those as soft ranking and diagnostic classification, not new hard failures.
 
 ## Remaining Review Gaps
 
-Manual listening was not performed. Episode subject-fragment entry support still needs the later episode / free-counterpoint solver slice rather than broader entry-support reclassification.
+Manual listening was not performed. The generic entry-tail texture surface has focused unit coverage and build / node-test verification, but it has not yet been reviewed across a regenerated standard bundle for before / after seed deltas.
