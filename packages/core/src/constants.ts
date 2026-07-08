@@ -27,7 +27,7 @@ export const EXPOSITION_REPRESENTATIVE_SEEDS = [
   { seed: "wide-key", category: "boundary" },
 ] as const;
 
-export const FUGUE_FORM_REVIEW_LENGTH_TICKS = TICKS_PER_QUARTER * 270;
+export const FUGUE_FORM_REVIEW_LENGTH_TICKS = TICKS_PER_QUARTER * 96;
 
 export const FUGUE_FORM_DIAGNOSTICS_PROFILE = {
   rangeViolations: 0,

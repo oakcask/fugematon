@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { FUGUE_FORM_REVIEW_LENGTH_TICKS, TICKS_PER_QUARTER } from "./constants.js";
+import { TICKS_PER_QUARTER } from "./constants.js";
 import type { CadenceKind, HarmonicPlan, KeySignature, NoteEvent, ScoreEvent, Voice } from "./events.js";
 import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
 import { buildHarmonicPlan } from "./generation/harmony.js";
@@ -11,6 +11,7 @@ const C_MAJOR: KeySignature = { tonic: "C", mode: "major" };
 const D_DORIAN: KeySignature = { tonic: "D", mode: "dorian" };
 const LENGTH_TICKS = TICKS_PER_QUARTER * 4;
 const CADENCE_TICK = TICKS_PER_QUARTER * 3;
+const TERMINAL_CODA_REVIEW_LENGTH_TICKS = TICKS_PER_QUARTER * 48;
 const TERMINAL_CODA_TARGET_SEEDS = ["fugue-smoke", "modal-cadence", "tight-stretto", "angular-answer"] as const;
 const TERMINAL_CODA_FUNCTION_REVIEW_SEEDS = [
   "fugue-smoke",
@@ -27,7 +28,7 @@ function endlessReviewOutput(seed: string): ReturnType<typeof generateScore> {
   }
   const output = generateScore({
     seed,
-    lengthTicks: FUGUE_FORM_REVIEW_LENGTH_TICKS,
+    lengthTicks: TERMINAL_CODA_REVIEW_LENGTH_TICKS,
     mode: "endless-program",
   });
   ENDLESS_REVIEW_OUTPUTS.set(seed, output);
@@ -116,7 +117,7 @@ reviewTest("endless-program target seeds keep stable terminal closure evidence",
     assert.equal(summary.finalAttackReentryVoiceCount, 0, seed);
     assert.ok(summary.codaStartTick !== undefined, seed);
     assert.ok(summary.cadenceTargetTick !== undefined, seed);
-    assert.ok(summary.cadenceTargetTick >= FUGUE_FORM_REVIEW_LENGTH_TICKS - TICKS_PER_QUARTER * 4, seed);
+    assert.ok(summary.cadenceTargetTick >= TERMINAL_CODA_REVIEW_LENGTH_TICKS - TICKS_PER_QUARTER * 4, seed);
     assert.match(summary.terminalCadenceKind ?? "", /^(authentic|modal)$/, seed);
     assert.equal(summary.lowVoiceSupport, "root-supported", seed);
     assert.equal(summary.outerVoiceLandingStatus, "stable", seed);

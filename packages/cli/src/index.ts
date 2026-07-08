@@ -21,6 +21,7 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
       command.performanceProfileId,
       command.writingProfileId,
       command.constraintProfileId,
+      command.seedList,
     );
     return;
   }

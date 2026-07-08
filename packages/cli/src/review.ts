@@ -69,6 +69,7 @@ export async function writeReviewBundle(
   performanceProfileId: PerformanceProfileId = DEFAULT_PERFORMANCE_PROFILE_ID,
   writingProfileId?: WritingProfileId,
   constraintProfileId: SectionConstraintScoringProfileId = DEFAULT_SECTION_CONSTRAINT_SCORING_PROFILE_ID,
+  seedList?: readonly string[],
 ): Promise<ReviewSummary> {
   await mkdir(outDirectory, { recursive: true });
   const performanceProfile = performanceProfileMetadata(getPerformanceProfile(performanceProfileId));
@@ -81,7 +82,10 @@ export async function writeReviewBundle(
   const listeningReview = createListeningReview(lengthTicks, performanceProfile);
   const pairwisePreferences = createPairwisePreferences(lengthTicks, performanceProfile);
 
-  for (const { seed, category } of [...REPRESENTATIVE_REVIEW_SEEDS, ...ROTATION_REVIEW_SEEDS]) {
+  const reviewSeeds =
+    seedList === undefined ? [...REPRESENTATIVE_REVIEW_SEEDS, ...ROTATION_REVIEW_SEEDS] : resolveReviewSeeds(seedList);
+
+  for (const { seed, category } of reviewSeeds) {
     const startedAt = performance.now();
     const output = generateScore({
       seed,
@@ -138,6 +142,14 @@ export async function writeReviewBundle(
   );
 
   return summary;
+}
+
+function resolveReviewSeeds(seedList: readonly string[]): { seed: string; category: string }[] {
+  const standardSeedCategories = new Map<string, string>(
+    [...REPRESENTATIVE_REVIEW_SEEDS, ...ROTATION_REVIEW_SEEDS].map(({ seed, category }) => [seed, category]),
+  );
+
+  return seedList.map((seed) => ({ seed, category: standardSeedCategories.get(seed) ?? "targeted" }));
 }
 
 export async function writeAbReviewBundle(
