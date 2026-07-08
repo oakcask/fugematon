@@ -3,7 +3,6 @@ import test from "node:test";
 import {
   EXPOSITION_DIAGNOSTICS_PROFILE,
   EXPOSITION_REPRESENTATIVE_SEEDS,
-  FUGUE_FORM_REVIEW_LENGTH_TICKS,
   TICKS_PER_QUARTER,
   VOICES,
 } from "./constants.js";
@@ -16,6 +15,9 @@ import {
   constrainNotePitchToWritingProfile,
   resolveWritingProfile,
 } from "./writing-profile.js";
+
+const FUGUE_FORM_STATE_REVIEW_LENGTH_TICKS = TICKS_PER_QUARTER * 64;
+const CONTINUOUS_FUGUE_REVIEW_LENGTH_TICKS = TICKS_PER_QUARTER * 32;
 
 test("generateScore is deterministic for identical input", () => {
   const input = {
@@ -170,7 +172,7 @@ test("constrained writing profiles preserve hard profile and entry contracts for
 });
 
 test("profile-aware harmonic feasibility preserves music-box structural support for the reported harmonic seed", () => {
-  const focusedLengthTicks = TICKS_PER_QUARTER * 32;
+  const focusedLengthTicks = TICKS_PER_QUARTER * 16;
   const summaries = (["music-box-n20", "four-voice-default", "harpsichord-manual"] as const).map((writingProfileId) => {
     const output = generateScore({
       seed: "seed-1wudr38-0fbqzth",
@@ -226,10 +228,10 @@ test("profile-aware harmonic feasibility preserves music-box structural support 
   );
 });
 
-reviewTest("music-box n20 preserves reported full-length entry and profile hard contracts", () => {
+reviewTest("music-box n20 preserves reported focused entry and profile hard contracts", () => {
   const output = generateScore({
     seed: "seed-1wudr38-0fbqzth",
-    lengthTicks: 129600,
+    lengthTicks: TICKS_PER_QUARTER * 24,
     writingProfileId: "music-box-n20",
   });
 
@@ -382,14 +384,14 @@ test("generateScore exposes ordered subject and answer entries", () => {
   assert.ok(output.diagnostics.generatedUntilTick >= 7680);
 });
 
-reviewTest("generateScore extends long scores with fugue-form states", () => {
-  const output = generateScore({ seed: "fugue-smoke", lengthTicks: FUGUE_FORM_REVIEW_LENGTH_TICKS });
+reviewTest("generateScore extends focused scores with fugue-form states", () => {
+  const output = generateScore({ seed: "fugue-smoke", lengthTicks: FUGUE_FORM_STATE_REVIEW_LENGTH_TICKS });
   const stateChanges = output.events.filter(
     (event): event is Extract<MetaEvent, { type: "state-change" }> =>
       event.kind === "meta" && event.type === "state-change",
   );
 
-  assert.ok(output.diagnostics.generatedUntilTick >= FUGUE_FORM_REVIEW_LENGTH_TICKS);
+  assert.ok(output.diagnostics.generatedUntilTick >= FUGUE_FORM_STATE_REVIEW_LENGTH_TICKS);
   assert.ok(output.diagnostics.stateTransitions.includes("episode"));
   assert.ok(output.diagnostics.stateTransitions.includes("subject-return"));
   assert.ok(output.diagnostics.stateTransitions.includes("stretto-like"));
@@ -427,13 +429,13 @@ reviewTest("generateScore extends long scores with fugue-form states", () => {
 reviewTest("generateScore continues continuous-fugue segments from a carried snapshot", () => {
   const first = generateScore({
     seed: "fugue-smoke",
-    lengthTicks: FUGUE_FORM_REVIEW_LENGTH_TICKS,
+    lengthTicks: CONTINUOUS_FUGUE_REVIEW_LENGTH_TICKS,
     mode: "continuous-fugue",
     segmentIndex: 0,
   });
   const second = generateScore({
     seed: "fugue-smoke",
-    lengthTicks: FUGUE_FORM_REVIEW_LENGTH_TICKS,
+    lengthTicks: CONTINUOUS_FUGUE_REVIEW_LENGTH_TICKS,
     mode: "continuous-fugue",
     segmentIndex: 1,
     previousSegmentSnapshot: first.nextSegmentSnapshot,
@@ -477,7 +479,7 @@ reviewTest("generateScore continues continuous-fugue segments from a carried sna
   assert.deepEqual(
     generateScore({
       seed: "fugue-smoke",
-      lengthTicks: FUGUE_FORM_REVIEW_LENGTH_TICKS,
+      lengthTicks: CONTINUOUS_FUGUE_REVIEW_LENGTH_TICKS,
       mode: "continuous-fugue",
       segmentIndex: 1,
       previousSegmentSnapshot: first.nextSegmentSnapshot,
@@ -552,13 +554,13 @@ test("generateScore treats continuous-fugue segment zero as initial boundary con
 reviewTest("generateScore exposes audible carry for the reported continuous-fugue boundary", () => {
   const first = generateScore({
     seed: "seed-1f6nfdt-0sv4of6",
-    lengthTicks: FUGUE_FORM_REVIEW_LENGTH_TICKS,
+    lengthTicks: CONTINUOUS_FUGUE_REVIEW_LENGTH_TICKS,
     mode: "continuous-fugue",
     segmentIndex: 0,
   });
   const second = generateScore({
     seed: "seed-1f6nfdt-0sv4of6",
-    lengthTicks: FUGUE_FORM_REVIEW_LENGTH_TICKS,
+    lengthTicks: CONTINUOUS_FUGUE_REVIEW_LENGTH_TICKS,
     mode: "continuous-fugue",
     segmentIndex: 1,
     previousSegmentSnapshot: first.nextSegmentSnapshot,

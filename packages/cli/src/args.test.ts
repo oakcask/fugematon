@@ -65,9 +65,20 @@ test("parseArgs parses review command", () => {
     performanceProfileId: DEFAULT_PERFORMANCE_PROFILE_ID,
     writingProfileId: DEFAULT_WRITING_PROFILE_ID,
     constraintProfileId: DEFAULT_SECTION_CONSTRAINT_SCORING_PROFILE_ID,
+    seedList: undefined,
   });
   assert.deepEqual(
-    parseArgs(["review", "--ticks", "960", "--out", "review", "--constraint-profile", "entry-balanced"]),
+    parseArgs([
+      "review",
+      "--ticks",
+      "960",
+      "--out",
+      "review",
+      "--constraint-profile",
+      "entry-balanced",
+      "--seed-list",
+      "fugue-smoke, modal-cadence",
+    ]),
     {
       name: "review",
       lengthTicks: 960,
@@ -75,6 +86,7 @@ test("parseArgs parses review command", () => {
       performanceProfileId: DEFAULT_PERFORMANCE_PROFILE_ID,
       writingProfileId: DEFAULT_WRITING_PROFILE_ID,
       constraintProfileId: "entry-balanced",
+      seedList: ["fugue-smoke", "modal-cadence"],
     },
   );
   assert.equal(parseArgs(["review", "--out", "review"]).name, "review");
@@ -148,6 +160,7 @@ test("parseArgs rejects invalid arguments", () => {
   assert.throws(() => parseArgs(["generate", "--seed", "bach-001"]), /missing --ticks/);
   assert.throws(() => parseArgs(["midi", "--seed", "bach-001", "--ticks", "960"]), /missing --out/);
   assert.throws(() => parseArgs(["review", "--ticks", "0", "--out", "review"]), /--ticks/);
+  assert.throws(() => parseArgs(["review", "--out", "review", "--seed-list", ","]), /--seed-list/);
   assert.throws(() => parseArgs(["review", "--ticks", "960"]), /missing --out/);
   assert.throws(() => parseArgs(["review-ab", "--ticks", "0", "--out", "review"]), /--ticks/);
   assert.throws(() => parseArgs(["review-ab", "--ticks", "960"]), /missing --out/);

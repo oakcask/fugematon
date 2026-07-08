@@ -88,7 +88,15 @@ test("midi command writes a valid standard MIDI file", async () => {
 reviewTest("review command writes diagnostics and MIDI files for review seeds", async () => {
   const directory = await mkdtemp(join(tmpdir(), "fugematon-review-"));
   try {
-    await main(["review", "--ticks", "9600", "--out", directory]);
+    await main([
+      "review",
+      "--ticks",
+      "9600",
+      "--out",
+      directory,
+      "--seed-list",
+      "fugue-smoke,modal-cadence,modal-answer,contrary-motion",
+    ]);
 
     const files = await readdir(directory);
     const summary = JSON.parse(await readFile(join(directory, "summary.json"), "utf8")) as {

@@ -45,6 +45,7 @@ export type CliCommand =
       performanceProfileId: PerformanceProfileId;
       writingProfileId: WritingProfileId;
       constraintProfileId: SectionConstraintScoringProfileId;
+      seedList?: readonly string[];
     }
   | {
       name: "review-ab";
@@ -111,6 +112,7 @@ export function parseArgs(argv: readonly string[]): CliCommand {
       performanceProfileId: parsePerformanceProfileId(options.get("performance-profile")),
       writingProfileId: parseWritingProfileId(options.get("writing-profile")),
       constraintProfileId: parseConstraintProfileId(options.get("constraint-profile")),
+      seedList: parseSeedList(options.get("seed-list")),
     };
   }
 
@@ -156,7 +158,7 @@ export function helpText(): string {
     "  fugematon generate --seed <seed> --ticks <lengthTicks> [--out <file>] [--writing-profile four-voice-default|piano-two-hand|harpsichord-manual|music-box-n20|music-box-n40]",
     "  fugematon diagnose --seed <seed> --ticks <lengthTicks> [--writing-profile four-voice-default|piano-two-hand|harpsichord-manual|music-box-n20|music-box-n40]",
     "  fugematon midi --seed <seed> --ticks <lengthTicks> --out <file> [--performance-profile organ-default|strict-counterpoint] [--writing-profile four-voice-default|piano-two-hand|harpsichord-manual|music-box-n20|music-box-n40]",
-    "  fugematon review --out <directory> [--ticks <lengthTicks>] [--performance-profile organ-default|strict-counterpoint] [--writing-profile four-voice-default|piano-two-hand|harpsichord-manual|music-box-n20|music-box-n40] [--constraint-profile current|entry-soft|entry-balanced|entry-strict|entry-strict-leap]",
+    "  fugematon review --out <directory> [--ticks <lengthTicks>] [--seed-list <comma-separated-seeds>] [--performance-profile organ-default|strict-counterpoint] [--writing-profile four-voice-default|piano-two-hand|harpsichord-manual|music-box-n20|music-box-n40] [--constraint-profile current|entry-soft|entry-balanced|entry-strict|entry-strict-leap]",
     "  fugematon review-ab --out <directory> [--ticks <lengthTicks>] [--baseline-label <label>] [--variant-label <label>] [--baseline-model baseline|candidate-oracle-selection|section-local-planner] [--variant-model baseline|candidate-oracle-selection|section-local-planner] [--performance-profile organ-default|strict-counterpoint] [--writing-profile four-voice-default|piano-two-hand|harpsichord-manual|music-box-n20|music-box-n40] [--constraint-profile current|entry-soft|entry-balanced|entry-strict|entry-strict-leap]",
   ].join("\n");
 }
@@ -203,6 +205,22 @@ function parseConstraintProfileId(value: string | undefined): SectionConstraintS
   } catch {
     throw new Error(`--constraint-profile must be ${SECTION_CONSTRAINT_SCORING_PROFILE_IDS.join(", ")}`);
   }
+}
+
+function parseSeedList(value: string | undefined): readonly string[] | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  const seeds = value
+    .split(",")
+    .map((seed) => seed.trim())
+    .filter((seed) => seed.length > 0);
+  if (seeds.length === 0) {
+    throw new Error("--seed-list must include at least one seed");
+  }
+
+  return seeds;
 }
 
 function parseOptions(args: readonly string[]): Map<string, string> {
