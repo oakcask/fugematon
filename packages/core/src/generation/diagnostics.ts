@@ -12,6 +12,7 @@ import type {
   HarmonicContinuitySummary,
   HarmonicPlan,
   HarmonicStasisRearticulationSummary,
+  ImportantEntryTailTextureSummary,
   KeySignature,
   LowerVoiceVocalitySummary,
   LowerVoiceVocalityVoiceSummary,
@@ -42,6 +43,7 @@ import {
 import { analyzeBassAnswerTailTexture } from "./bass-answer-tail-texture.js";
 import { analyzeDissonanceTriage } from "./dissonance-triage.js";
 import { analyzeEntryBoundaryContinuity } from "./entry-boundary-continuity.js";
+import { analyzeImportantEntryTailTexture } from "./entry-tail-texture.js";
 import { analyzeEpisodeMotivicDevelopment } from "./episode-motivic-development.js";
 import { analyzeHarmonicContinuity } from "./harmonic-continuity-review.js";
 import { analyzeHarmonicStasisRearticulation } from "./harmonic-stasis-rearticulation.js";
@@ -109,6 +111,7 @@ export function analyzeScore(
   phraseRepetitionReview: PhraseRepetitionReviewSummary;
   episodeMotivicDevelopment: EpisodeMotivicDevelopmentSummary;
   entryBoundaryContinuity: EntryBoundaryContinuitySummary;
+  importantEntryTailTexture: ImportantEntryTailTextureSummary;
   bassAnswerTailTexture: BassAnswerTailTextureSummary;
   qualityVector: QualityVector;
   dissonanceTriage: DissonanceTriageSummary;
@@ -365,6 +368,7 @@ function analyzeTextureDiagnostics(
     phraseRepetitionReview,
     episodeMotivicDevelopment,
     entryBoundaryContinuity: analyzeEntryBoundaryContinuity(notes, subjectEntries),
+    importantEntryTailTexture: analyzeImportantEntryTailTexture(notes, subjectEntries),
     bassAnswerTailTexture: analyzeBassAnswerTailTexture(notes, subjectEntries),
     qualityVector,
     dissonanceTriage,

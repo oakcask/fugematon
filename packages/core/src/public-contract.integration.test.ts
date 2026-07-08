@@ -145,6 +145,10 @@ test("public diagnostics expose finite candidate score dimensions", () => {
     ),
   );
   assert.equal(output.diagnostics.bassAnswerTailTexture.schemaVersion, 3);
+  assert.equal(output.diagnostics.importantEntryTailTexture.schemaVersion, 1);
+  assert.equal(typeof output.diagnostics.importantEntryTailTexture.reviewRequired, "boolean");
+  assert.equal(typeof output.diagnostics.importantEntryTailTexture.zeroOutsideVoiceWindowCount, "number");
+  assert.ok(Array.isArray(output.diagnostics.importantEntryTailTexture.windows));
   assert.equal(typeof output.diagnostics.bassAnswerTailTexture.reviewRequired, "boolean");
   assert.equal(typeof output.diagnostics.bassAnswerTailTexture.bassOnlyFreeCounterpointWindowCount, "number");
   assert.equal(typeof output.diagnostics.bassAnswerTailTexture.supportRhythmReviewRequiredWindowCount, "number");

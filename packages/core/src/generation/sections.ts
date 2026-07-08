@@ -33,7 +33,7 @@ import {
   resolveWritingProfile,
   type WritingProfile,
 } from "../writing-profile.js";
-import { type ConstraintCandidate, evaluateScoreDraft } from "./constraint-core.js";
+import { type ConstraintCandidate, evaluateScoreDraft, selectBestConstraintCandidate } from "./constraint-core.js";
 import { isSubjectEntryPlanFeasibleForProfile } from "./constraint-domain.js";
 import { applyContinuousBoundaryCarrySolver } from "./continuous-boundary-carry.js";
 import { analyzeScore } from "./diagnostics.js";
@@ -65,6 +65,7 @@ import {
   addBassAnswerTailTextureSupport,
   addContinuityCounterpoint,
   addCounterpointTexture,
+  addEntryWindowContinuitySupport,
   addExposedFreeCounterpointSoloSupport,
   addFunctionalThinningSupport,
   addPostEntryContinuationSupport,
@@ -643,6 +644,11 @@ function applyScoreLevelSupportCleanupCandidateAdoptions(input: {
       id: "post-entry-continuation-support",
       apply: (notes) =>
         addPostEntryContinuationSupport(notes, input.subjectEntries, input.sectionPlans, input.writingProfile),
+    },
+    {
+      id: "entry-window-continuity-support",
+      apply: (notes) =>
+        addEntryWindowContinuitySupport(notes, input.subjectEntries, input.sectionPlans, input.writingProfile),
     },
     {
       id: "long-rest-phrase-closure",
@@ -2150,6 +2156,7 @@ type ContinuationCandidateSelectionBand =
   | "section-grammar"
   | "phrase-family"
   | "section-csp"
+  | "entry-window"
   | "harmonic-stasis";
 
 type ContinuationCandidateSelectionWindow = {
@@ -2502,6 +2509,13 @@ export function buildExposition(
     });
   }
 
+  const selectedEntryWindowCandidate = selectExpositionEntryWindowCandidate({
+    notes,
+    subjectEntries,
+    sectionPlans,
+    writingProfile,
+  });
+  notes.splice(0, notes.length, ...selectedEntryWindowCandidate.draft.notes);
   softenFirstBassEntryBoundaryReset(notes, subjectEntries);
   repairTextureVoiceCrossingsForNotes(notes, sectionPlans, writingProfile);
   notes.sort(compareNoteEvents);
@@ -2513,6 +2527,37 @@ export function buildExposition(
     endTick: Math.max(...notes.map((note) => note.startTick + note.durationTicks)),
     durationTicks: entrySpacingTicks * VOICE_ENTRY_ORDER.length,
   };
+}
+
+function selectExpositionEntryWindowCandidate(input: {
+  notes: readonly NoteEvent[];
+  subjectEntries: readonly PlannedEntry[];
+  sectionPlans: readonly HarmonicPlan[];
+  writingProfile: WritingProfile;
+}): ConstraintCandidate {
+  const baseNotes = cloneNotes(input.notes);
+  const supportNotes = cloneNotes(input.notes);
+  addEntryWindowContinuitySupport(supportNotes, input.subjectEntries, input.sectionPlans, input.writingProfile);
+  supportNotes.sort(compareNoteEvents);
+
+  const candidates = [
+    buildScoreLevelConstraintCandidate(
+      "exposition-entry-window-base",
+      baseNotes,
+      input.subjectEntries,
+      input.sectionPlans,
+      input.writingProfile,
+    ),
+    buildScoreLevelConstraintCandidate(
+      "exposition-entry-window-continuity-support",
+      supportNotes,
+      input.subjectEntries,
+      input.sectionPlans,
+      input.writingProfile,
+    ),
+  ];
+
+  return selectBestConstraintCandidate(candidates);
 }
 
 function expositionEntrySpacingTicks(meterContext: MeterContext): number {
@@ -2610,7 +2655,10 @@ export function chooseContinuationSection(
       !preservesSectionLocalGuardrails(
         evaluation,
         baselineEvaluation,
-        candidateBand === "section-grammar" || candidateBand === "phrase-family" || candidateBand === "section-csp",
+        candidateBand === "section-grammar" ||
+          candidateBand === "phrase-family" ||
+          candidateBand === "section-csp" ||
+          candidateBand === "entry-window",
       )
     ) {
       continue;
@@ -2939,7 +2987,10 @@ function selectableContinuationCandidateIndexes(input: {
       !preservesSectionLocalGuardrails(
         evaluation,
         input.baselineEvaluation,
-        candidateBand === "section-grammar" || candidateBand === "phrase-family" || candidateBand === "section-csp",
+        candidateBand === "section-grammar" ||
+          candidateBand === "phrase-family" ||
+          candidateBand === "section-csp" ||
+          candidateBand === "entry-window",
       )
     ) {
       continue;
@@ -3276,7 +3327,10 @@ function avoidShortAlternatingPhraseSelection(input: {
       !preservesSectionLocalGuardrails(
         evaluation,
         input.baselineEvaluation,
-        candidateBand === "section-grammar" || candidateBand === "phrase-family" || candidateBand === "section-csp",
+        candidateBand === "section-grammar" ||
+          candidateBand === "phrase-family" ||
+          candidateBand === "section-csp" ||
+          candidateBand === "entry-window",
       )
     ) {
       continue;
@@ -3337,6 +3391,9 @@ function continuationCandidateSelectionBand(
   if (candidate?.constraintCandidateFamily === "section-csp-variant") {
     return "section-csp";
   }
+  if (candidate?.constraintCandidateFamily === "entry-window-variant") {
+    return "entry-window";
+  }
   if (candidate?.constraintCandidateFamily === "harmonic-stasis-variant") {
     return "harmonic-stasis";
   }
@@ -3371,6 +3428,7 @@ function candidateBandCanBeSelected(
     index < window.selectableCandidateCount ||
     band === "section-grammar" ||
     band === "phrase-family" ||
+    band === "entry-window" ||
     band === "harmonic-stasis"
   );
 }
@@ -3610,6 +3668,29 @@ function buildSectionCspSolverCandidates(
   });
 }
 
+function buildEntryWindowSolverCandidates(
+  sourceCandidates: readonly Exposition[],
+  writingProfile: WritingProfile,
+): Exposition[] {
+  return sourceCandidates.flatMap((sourceCandidate, sourceCandidateIndex) => {
+    const repaired = cloneExposition(sourceCandidate);
+    addEntryWindowContinuitySupport(repaired.notes, repaired.subjectEntries, repaired.sectionPlans, writingProfile);
+    repaired.notes.sort(compareNoteEvents);
+
+    if (noteFingerprint(repaired.notes) === noteFingerprint(sourceCandidate.notes)) {
+      return [];
+    }
+
+    return [
+      {
+        ...repaired,
+        constraintCandidateFamily: "entry-window-variant" as const,
+        constraintSourceCandidateIndex: sourceCandidateIndex,
+      },
+    ];
+  });
+}
+
 function buildSectionCspSolverCandidate(
   sourceCandidate: Exposition,
   sourceCandidateIndex: number,
@@ -3622,6 +3703,7 @@ function buildSectionCspSolverCandidate(
     addUnexplainedRestThinningSupport(repaired.notes, repaired.sectionPlans, writingProfile, supportPolicy);
   }
   addExposedFreeCounterpointSoloSupport(repaired.notes, repaired.sectionPlans, writingProfile);
+  addEntryWindowContinuitySupport(repaired.notes, repaired.subjectEntries, repaired.sectionPlans, writingProfile);
   addPostEntryContinuationSupport(repaired.notes, repaired.subjectEntries, repaired.sectionPlans, writingProfile);
   shapeLongRestPhraseClosures(repaired.notes, repaired.sectionPlans);
   addBassAnswerTailTextureSupport(repaired.notes, repaired.subjectEntries, repaired.sectionPlans, writingProfile);
@@ -3661,6 +3743,7 @@ export function buildContinuationCandidates(
   const sectionGrammarCandidates: Exposition[] = [];
   const phraseFamilyOracleCandidates: Exposition[] = [];
   const sectionCspSolverCandidates: Exposition[] = [];
+  const entryWindowSolverCandidates: Exposition[] = [];
   const harmonicStasisSolverCandidates: Exposition[] = [];
   const includeSectionLocalPlannerCandidates = selectionModel === "section-local-planner";
   const phraseSubject = phraseSubjectForIntent(subject, state, startTick, selectionModel, phraseIntent);
@@ -3883,6 +3966,20 @@ export function buildContinuationCandidates(
         writingProfile,
       ),
     );
+    entryWindowSolverCandidates.push(
+      ...buildEntryWindowSolverCandidates(
+        [
+          ...candidates,
+          ...sectionLocalPlannerCandidates,
+          ...voicePairSupportCandidates,
+          ...registerPlannerCandidates,
+          ...sectionGrammarCandidates,
+          ...phraseFamilyOracleCandidates,
+          ...sectionCspSolverCandidates,
+        ],
+        writingProfile,
+      ),
+    );
     harmonicStasisSolverCandidates.push(
       ...buildHarmonicStasisSolverCandidates([
         ...candidates,
@@ -3892,6 +3989,7 @@ export function buildContinuationCandidates(
         ...sectionGrammarCandidates,
         ...phraseFamilyOracleCandidates,
         ...sectionCspSolverCandidates,
+        ...entryWindowSolverCandidates,
       ]),
     );
   }
@@ -3902,6 +4000,7 @@ export function buildContinuationCandidates(
   candidates.push(...sectionGrammarCandidates);
   candidates.push(...phraseFamilyOracleCandidates);
   candidates.push(...sectionCspSolverCandidates);
+  candidates.push(...entryWindowSolverCandidates);
   candidates.push(...harmonicStasisSolverCandidates);
 
   return candidates.length === 0

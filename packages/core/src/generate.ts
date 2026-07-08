@@ -306,6 +306,7 @@ export function generateScore(input: GenerationInput): GenerationOutput {
       phraseRepetitionReview: diagnostics.phraseRepetitionReview,
       episodeMotivicDevelopment: diagnostics.episodeMotivicDevelopment,
       entryBoundaryContinuity: diagnostics.entryBoundaryContinuity,
+      importantEntryTailTexture: diagnostics.importantEntryTailTexture,
       bassAnswerTailTexture: diagnostics.bassAnswerTailTexture,
       qualityVector: diagnostics.qualityVector,
       constraintSatisfactionReview,

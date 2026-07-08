@@ -6,6 +6,7 @@ import type {
   MetricalHarmonyIntent,
   NoteEvent,
   PlannedEntry,
+  EntryForm,
   Voice,
 } from "../events.js";
 import {
@@ -1694,6 +1695,37 @@ export function addPostEntryContinuationSupport(
   repairTextureVoiceCrossingsForPlans(notes, sectionPlans, writingProfile);
 }
 
+export function addEntryWindowContinuitySupport(
+  notes: Exposition["notes"],
+  subjectEntries: readonly PlannedEntry[],
+  sectionPlans: readonly HarmonicPlan[],
+  writingProfile?: WritingProfile,
+): void {
+  for (const run of findImportantEntryTailSupportRuns(notes, subjectEntries, sectionPlans)) {
+    const plan = sectionPlanForTick(sectionPlans, run.startTick) ?? sectionPlanForTick(sectionPlans, run.entryStartTick);
+    if (plan === undefined) {
+      continue;
+    }
+    const supportVoices = entryWindowSupportVoices(notes, run);
+    if (supportVoices.length === 0) {
+      continue;
+    }
+
+    addContinuityCounterpoint(notes, {
+      startTick: run.startTick,
+      durationTicks: run.endTick - run.startTick,
+      localKey: plan.targetKey,
+      harmonicPlan: plan,
+      maxVoiceCount: supportVoices.length,
+      voiceOrder: supportVoices,
+      lineKind: shouldUseObliqueEntryWindowSupport(plan, run.startTick) ? "oblique-support" : "linear",
+      writingProfile,
+    });
+  }
+
+  repairTextureVoiceCrossingsForPlans(notes, sectionPlans, writingProfile);
+}
+
 export function addExposedFreeCounterpointSoloSupport(
   notes: Exposition["notes"],
   sectionPlans: readonly HarmonicPlan[],
@@ -3155,6 +3187,98 @@ function findPostEntryThinSupportRuns(
   return runs;
 }
 
+function findImportantEntryTailSupportRuns(
+  notes: readonly NoteEvent[],
+  subjectEntries: readonly PlannedEntry[],
+  sectionPlans: readonly HarmonicPlan[],
+): { startTick: number; endTick: number; entryVoice: Voice; entryStartTick: number; alreadyEnteredVoices: Voice[] }[] {
+  const contexts = buildEntryTailSupportContexts(notes, subjectEntries);
+  return contexts.flatMap((context) => importantEntryTailSupportRunsForEntry(notes, context, sectionPlans));
+}
+
+function importantEntryTailSupportRunsForEntry(
+  notes: readonly NoteEvent[],
+  context: EntryTailSupportContext,
+  sectionPlans: readonly HarmonicPlan[],
+): { startTick: number; endTick: number; entryVoice: Voice; entryStartTick: number; alreadyEnteredVoices: Voice[] }[] {
+  const entryEndTick = importantEntryEndTick(notes, context.entry);
+  const plan = sectionPlanForTick(sectionPlans, context.entry.startTick);
+  const scanEndTick = Math.min(
+    plan === undefined ? entryEndTick + TICKS_PER_QUARTER * 4 : plan.startTick + plan.durationTicks,
+    entryEndTick + TICKS_PER_QUARTER * 4,
+  );
+  const stepTicks = TICKS_PER_QUARTER / 2;
+  const runs: {
+    startTick: number;
+    endTick: number;
+    entryVoice: Voice;
+    entryStartTick: number;
+    alreadyEnteredVoices: Voice[];
+  }[] = [];
+  let currentRun:
+    | {
+        startTick: number;
+        endTick: number;
+        entryVoice: Voice;
+        entryStartTick: number;
+        alreadyEnteredVoices: Voice[];
+      }
+    | undefined;
+
+  if (scanEndTick <= context.entry.startTick) {
+    return [];
+  }
+
+  for (let tick = context.entry.startTick; tick < scanEndTick; tick += stepTicks) {
+    const segmentEndTick = Math.min(scanEndTick, tick + stepTicks);
+    if (isThinImportantEntryTailSegment(notes, context, tick, segmentEndTick)) {
+      if (currentRun?.endTick === tick) {
+        currentRun.endTick = segmentEndTick;
+      } else {
+        if (currentRun !== undefined) {
+          runs.push(currentRun);
+        }
+        currentRun = {
+          startTick: tick,
+          endTick: segmentEndTick,
+          entryVoice: context.entry.voice,
+          entryStartTick: context.entry.startTick,
+          alreadyEnteredVoices: context.alreadyEnteredVoices,
+        };
+      }
+    } else if (currentRun !== undefined) {
+      runs.push(currentRun);
+      currentRun = undefined;
+    }
+  }
+  if (currentRun !== undefined) {
+    runs.push(currentRun);
+  }
+
+  return runs.filter((run) => run.endTick - run.startTick >= TICKS_PER_QUARTER);
+}
+
+function isThinImportantEntryTailSegment(
+  notes: readonly NoteEvent[],
+  context: EntryTailSupportContext,
+  startTick: number,
+  endTick: number,
+): boolean {
+  const entryVoiceActive = notes.some(
+    (note) =>
+      note.voice === context.entry.voice && note.startTick < endTick && startTick < note.startTick + note.durationTicks,
+  );
+  const outsideVoiceCount = context.alreadyEnteredVoices.filter(
+    (voice) =>
+      voice !== context.entry.voice &&
+      notes.some(
+        (note) => note.voice === voice && note.startTick < endTick && startTick < note.startTick + note.durationTicks,
+      ),
+  ).length;
+
+  return entryVoiceActive && outsideVoiceCount <= 1;
+}
+
 function postEntryThinSupportRunsForEntry(
   notes: readonly NoteEvent[],
   entry: PlannedEntry,
@@ -3372,6 +3496,94 @@ function activeOutsideVoiceSignature(
   ]
     .sort()
     .join(">");
+}
+
+type EntryTailSupportContext = {
+  entry: PlannedEntry;
+  entryOrderIndex: number;
+  alreadyEnteredVoices: Voice[];
+};
+
+function buildEntryTailSupportContexts(
+  notes: readonly NoteEvent[],
+  subjectEntries: readonly PlannedEntry[],
+): EntryTailSupportContext[] {
+  const importantEntries = [...subjectEntries].sort((left, right) => left.startTick - right.startTick);
+
+  return importantEntries
+    .map((entry, entryOrderIndex) => {
+      const previousEntryVoices = importantEntries
+        .slice(0, entryOrderIndex)
+        .filter((candidate) => candidate.startTick < entry.startTick)
+        .map((candidate) => candidate.voice);
+      const previousNoteVoices = notes.filter((note) => note.startTick < entry.startTick).map((note) => note.voice);
+
+      return {
+        entry,
+        entryOrderIndex,
+        alreadyEnteredVoices: uniqueVoices([...previousEntryVoices, ...previousNoteVoices]).filter(
+          (voice) => voice !== entry.voice,
+        ),
+      };
+    })
+    .filter(isReviewedImportantEntryTailSupportContext);
+}
+
+function isReviewedImportantEntryTailSupportContext(context: EntryTailSupportContext): boolean {
+  return (
+    context.alreadyEnteredVoices.length > 0 &&
+    (context.entry.form !== "subject-fragment" || context.entry.state === "episode")
+  );
+}
+
+function importantEntryEndTick(notes: readonly NoteEvent[], entry: PlannedEntry): number {
+  const role = noteRoleForEntryForm(entry.form);
+  const entryNotes = notes.filter(
+    (note) =>
+      note.voice === entry.voice &&
+      note.role === role &&
+      entry.startTick <= note.startTick &&
+      note.startTick < entry.startTick + TICKS_PER_QUARTER * 8,
+  );
+  return Math.max(entry.startTick, ...entryNotes.map((note) => note.startTick + note.durationTicks));
+}
+
+function noteRoleForEntryForm(form: EntryForm): NoteEvent["role"] {
+  if (form === "answer") {
+    return "answer";
+  }
+  if (form === "subject-fragment") {
+    return "subject-fragment";
+  }
+  return "subject";
+}
+
+function entryWindowSupportVoices(
+  notes: readonly NoteEvent[],
+  run: { startTick: number; endTick: number; entryVoice: Voice; alreadyEnteredVoices: readonly Voice[] },
+): Voice[] {
+  const outsideVoiceCount = run.alreadyEnteredVoices.filter(
+    (voice) =>
+      notes.some(
+        (note) =>
+          note.voice === voice && note.startTick < run.endTick && run.startTick < note.startTick + note.durationTicks,
+      ),
+  ).length;
+  const requiredSupportCount = Math.max(0, 2 - outsideVoiceCount);
+  return VOICE_ENTRY_ORDER.filter((voice) => voice !== run.entryVoice)
+    .filter((voice) => !hasOverlap(notes, voice, run.startTick, run.endTick - run.startTick))
+    .slice(0, requiredSupportCount);
+}
+
+function shouldUseObliqueEntryWindowSupport(plan: HarmonicPlan, tick: number): boolean {
+  return (
+    beatStrengthAtTick(tick, plan.meterContext) === "strong" ||
+    plan.anchors.some((anchor) => Math.abs(anchor.tick - tick) <= plan.meterContext.beatTicks / 2)
+  );
+}
+
+function uniqueVoices(voices: readonly Voice[]): Voice[] {
+  return VOICE_ENTRY_ORDER.filter((voice) => voices.includes(voice));
 }
 
 function postEntrySupportVoice(
