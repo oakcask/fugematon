@@ -41,6 +41,17 @@ function summarizeImportantEntryTailTextureWindow(
 ): ImportantEntryTailTextureWindow {
   const entryEndTick = importantEntryEndTick(notes, context.entry);
   const windowEndTick = Math.min(sectionEndTick, entryEndTick + ENTRY_TAIL_EXTENSION_TICKS);
+  const supportVoices = uniqueVoices([
+    ...context.alreadyEnteredVoices,
+    ...notes
+      .filter(
+        (note) =>
+          note.voice !== context.entry.voice &&
+          context.entry.startTick <= note.startTick &&
+          note.startTick < entryEndTick,
+      )
+      .map((note) => note.voice),
+  ]);
   let zeroOutsideVoiceTicks = 0;
   let oneOutsideVoiceTicks = 0;
   let minOutsideVoiceCount = Number.POSITIVE_INFINITY;
@@ -48,13 +59,11 @@ function summarizeImportantEntryTailTextureWindow(
 
   for (let tick = context.entry.startTick; tick < windowEndTick; tick += HALF_BEAT_TICKS) {
     const segmentEndTick = Math.min(windowEndTick, tick + HALF_BEAT_TICKS);
-    const outsideVoices = activeOutsideVoicesDuring(
-      notes,
-      context.entry.voice,
-      context.alreadyEnteredVoices,
-      tick,
-      segmentEndTick,
-    );
+    if (!isVoiceActiveDuring(notes, context.entry.voice, tick, segmentEndTick)) {
+      continue;
+    }
+
+    const outsideVoices = activeOutsideVoicesDuring(notes, context.entry.voice, supportVoices, tick, segmentEndTick);
     const segmentTicks = segmentEndTick - tick;
 
     for (const voice of outsideVoices) {
@@ -104,6 +113,12 @@ function activeOutsideVoicesDuring(
       notes.some(
         (note) => note.voice === voice && note.startTick < endTick && startTick < note.startTick + note.durationTicks,
       ),
+  );
+}
+
+function isVoiceActiveDuring(notes: readonly NoteEvent[], voice: Voice, startTick: number, endTick: number): boolean {
+  return notes.some(
+    (note) => note.voice === voice && note.startTick < endTick && startTick < note.startTick + note.durationTicks,
   );
 }
 

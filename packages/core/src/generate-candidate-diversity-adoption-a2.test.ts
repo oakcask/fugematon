@@ -3,8 +3,8 @@ import { CANDIDATE_DIVERSITY_ADOPTION_SEEDS } from "./generate-quality-review-te
 import { reviewTest } from "./test-profile.js";
 
 reviewTest(
-  "generateScore keeps candidate-diversity adoption seed batch A2a ready for generator-side quality work",
+  "generateScore keeps candidate-diversity adoption seed batch A2 ready for generator-side quality work",
   () => {
-    assertCandidateDiversityAdoptionSeedsReady(CANDIDATE_DIVERSITY_ADOPTION_SEEDS.slice(3, 4));
+    assertCandidateDiversityAdoptionSeedsReady(CANDIDATE_DIVERSITY_ADOPTION_SEEDS.slice(3, 6));
   },
 );

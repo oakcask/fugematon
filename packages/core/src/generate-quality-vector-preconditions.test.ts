@@ -7,8 +7,8 @@ import {
 import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
 import { reviewTest } from "./test-profile.js";
 
-reviewTest("generateScore keeps quality-vector review seed batch B1 ready for review-only diagnostics", () => {
-  assertQualityVectorReviewPreconditions(QUALITY_VECTOR_REVIEW_SEEDS.slice(4, 6));
+reviewTest("generateScore keeps quality-vector review seed batch B ready for review-only diagnostics", () => {
+  assertQualityVectorReviewPreconditions(QUALITY_VECTOR_REVIEW_SEEDS.slice(4));
 });
 
 reviewTest("generateScore exposes quality vector diagnostics", () => {

@@ -68,14 +68,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - name: List regular test files
+        id: node-test-files
+        run: node workflow-scripts/list-node-test-files.mjs --profile regular --github-output test-files
       - name: Distribute test files
         id: parallel-test
         uses: int128/parallel-test-action@27a17b32204e5b7ab0cef7b10f084c82c1ac9a6d # v1.99.0
         with:
-          test-files: |
-            packages/*/src/**/*.test.ts
-            scripts/*.test.mjs
-            workflow-scripts/*.test.mjs
+          test-files: ${{ steps.node-test-files.outputs.test-files }}
           test-report-artifact-name-prefix: node-test-junit-
           test-report-branch: main
           shard-count: ${{ strategy.job-total }}

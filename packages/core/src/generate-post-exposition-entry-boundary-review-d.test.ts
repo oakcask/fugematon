@@ -6,7 +6,7 @@ import {
 import { reviewTest } from "./test-profile.js";
 
 reviewTest("post-exposition entry-boundary review bundle batch D exposes entry-boundary continuity diagnostics", () => {
-  const seeds = POST_EXPOSITION_ENTRY_BOUNDARY_REVIEW_BATCH_D.slice(0, 3);
+  const seeds = POST_EXPOSITION_ENTRY_BOUNDARY_REVIEW_BATCH_D;
   const metrics = collectPostExpositionEntryBoundaryMetrics(seeds);
 
   assert.equal(metrics.seedCount, seeds.length);

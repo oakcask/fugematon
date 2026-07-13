@@ -5,6 +5,6 @@ import { reviewTest } from "./test-profile.js";
 reviewTest(
   "generateScore keeps candidate-diversity adoption seed batch B2 ready for generator-side quality work",
   () => {
-    assertCandidateDiversityAdoptionSeedsReady(CANDIDATE_DIVERSITY_ADOPTION_SEEDS.slice(9, 11));
+    assertCandidateDiversityAdoptionSeedsReady(CANDIDATE_DIVERSITY_ADOPTION_SEEDS.slice(9));
   },
 );

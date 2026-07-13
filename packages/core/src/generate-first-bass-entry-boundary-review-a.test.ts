@@ -4,6 +4,6 @@ import {
 } from "./generate-first-bass-entry-boundary-test-helpers.js";
 import { reviewTest } from "./test-profile.js";
 
-reviewTest("first bass-entry boundary review batch A1 repairs initial bass-entry outside-voice continuity", () => {
-  assertFirstBassEntryBoundaryContinuityEvidence(FIRST_BASS_ENTRY_BOUNDARY_REVIEW_BATCH_A.slice(0, 3));
+reviewTest("first bass-entry boundary review batch A repairs initial bass-entry outside-voice continuity", () => {
+  assertFirstBassEntryBoundaryContinuityEvidence(FIRST_BASS_ENTRY_BOUNDARY_REVIEW_BATCH_A);
 });
