@@ -2,6 +2,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const requiredSections = ["Intent", "Consequences", "Risks", "Verification"];
+const performanceBenchmarkFields = ["Baseline", "Workload", "Procedure", "Samples", "Result", "Correctness"];
 const isGitHubActions = process.env.GITHUB_ACTIONS === "true";
 
 if (isMainModule()) {
@@ -60,6 +61,26 @@ export function validatePullRequestDescription(body, { title = "" } = {}) {
     );
   }
 
+  if (isPerformanceConventionalSubject(title)) {
+    const verification = sections.find(({ title: sectionTitle }) => sectionTitle === "Verification");
+    const benchmarkMethod =
+      verification === undefined ? undefined : markdownH3Section(verification.content, "Benchmark method");
+    if (benchmarkMethod === undefined) {
+      errors.push(
+        "ci.pr-description.performance-benchmark-method: missing ### Benchmark method under ## Verification; why=reviewers cannot reproduce or evaluate a performance claim without its comparison method; action=add the benchmark subsection with Baseline, Workload, Procedure, Samples, Result, and Correctness fields",
+      );
+    } else {
+      const missingFields = performanceBenchmarkFields.filter(
+        (field) => !new RegExp(`^[ \\t]*-[ \\t]+${field}:[ \\t]*\\S.+$`, "m").test(benchmarkMethod),
+      );
+      if (missingFields.length > 0) {
+        errors.push(
+          `ci.pr-description.performance-benchmark-method: incomplete ### Benchmark method (missing: ${missingFields.join(", ")}); why=reviewers need the comparison, workload, procedure, sampling, result, and correctness evidence to assess a performance claim; action=add reviewer-facing values for every benchmark field in .github/pull_request_template.md`,
+        );
+      }
+    }
+  }
+
   return {
     errors,
     valid: errors.length === 0,
@@ -68,6 +89,10 @@ export function validatePullRequestDescription(body, { title = "" } = {}) {
 
 function isBreakingConventionalSubject(subject) {
   return /^[a-z]+(?:\([a-z0-9._-]+\))?!: .+$/.test(subject);
+}
+
+function isPerformanceConventionalSubject(subject) {
+  return /^perf(?:\([a-z0-9._-]+\))?!?: .+$/.test(subject);
 }
 
 function hasBreakingChangeLine(body) {
@@ -85,6 +110,17 @@ export function parseMarkdownH2Sections(body) {
       content: body.slice(heading.index + heading[0].length, nextHeading?.index ?? body.length),
     };
   });
+}
+
+function markdownH3Section(content, expectedTitle) {
+  const headingPattern = /^###(?!#)[ \t]+(.+?)[ \t#]*$/gm;
+  const headings = Array.from(content.matchAll(headingPattern));
+  const index = headings.findIndex((heading) => heading[1].trim() === expectedTitle);
+  if (index < 0) {
+    return undefined;
+  }
+  const heading = headings[index];
+  return stripTemplateComments(content.slice(heading.index + heading[0].length, headings[index + 1]?.index)).trim();
 }
 
 function stripTemplateComments(content) {

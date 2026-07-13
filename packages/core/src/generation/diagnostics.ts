@@ -308,10 +308,16 @@ function analyzeTextureDiagnostics(
   const entrySupportInstabilityDetails = analyzeEntrySupportInstabilities(notes, subjectEntries);
   const entrySupportSevereIntervalDetails = analyzeEntrySupportSevereIntervals(notes, subjectEntries);
   const qualityVector = analyzeQualityVector(notes, subjectEntries, sectionPlans);
-  const texturePlanningReview = analyzeTexturePlanningReviewSummary(notes, subjectEntries, sectionPlans);
+  const halfBeatTexture = halfBeatVerticalities(notes);
+  const texturePlanningReview = analyzeTexturePlanningReviewSummary(
+    notes,
+    subjectEntries,
+    sectionPlans,
+    halfBeatTexture,
+  );
   const phraseRepetitionReview = analyzePhraseRepetitionReviewSummary(subjectEntries, sectionPlans);
   const episodeMotivicDevelopment = analyzeEpisodeMotivicDevelopment(notes, sectionPlans);
-  const dissonanceTriage = analyzeDissonanceTriage(notes, sectionPlans, qualityVector.entrySonorities);
+  const dissonanceTriage = analyzeDissonanceTriage(notes, sectionPlans, qualityVector.entrySonorities, halfBeatTexture);
   const harmonicStasisRearticulation = analyzeHarmonicStasisRearticulation(notes, sectionPlans);
   const counterSubjectIdentityRetentionValue = counterSubjectIdentityRetention(counterSubjectNotes, sectionPlans);
   const durationDistributionSummary = durationDistribution(notes);
@@ -333,6 +339,7 @@ function analyzeTextureDiagnostics(
     unresolvedSevereEntryIntervalCount,
     sharedRhythmOverlapCount: verticalStats.sharedRhythmOverlapCount,
     ornamentDensity,
+    halfBeatTexture,
   });
 
   return {
@@ -390,8 +397,8 @@ function analyzeTexturePlanningReviewSummary(
   notes: readonly NoteEvent[],
   subjectEntries: readonly PlannedEntry[],
   sectionPlans: readonly HarmonicPlan[],
+  verticalities: readonly HalfBeatVerticality[],
 ): TexturePlanningReviewSummary {
-  const verticalities = halfBeatVerticalities(notes);
   return {
     schemaVersion: 1,
     adjacentVoiceIntervals: summarizeAdjacentVoiceIntervals(verticalities),
@@ -412,6 +419,7 @@ function analyzeSurfaceBrilliance({
   unresolvedSevereEntryIntervalCount,
   sharedRhythmOverlapCount,
   ornamentDensity,
+  halfBeatTexture,
 }: {
   notes: readonly NoteEvent[];
   sectionPlans: readonly HarmonicPlan[];
@@ -421,6 +429,7 @@ function analyzeSurfaceBrilliance({
   unresolvedSevereEntryIntervalCount: number;
   sharedRhythmOverlapCount: number;
   ornamentDensity: number;
+  halfBeatTexture: readonly HalfBeatVerticality[];
 }): SurfaceBrillianceSummary {
   const noteCount = Math.max(1, notes.length);
   const endTick = Math.max(1, ...notes.map((note) => note.startTick + note.durationTicks));
@@ -434,7 +443,6 @@ function analyzeSurfaceBrilliance({
     (note) =>
       (note.role === "free-counterpoint" || note.role === "counter-subject") && note.durationTicks <= TICKS_PER_QUARTER,
   ).length;
-  const verticalities = halfBeatVerticalities(notes);
   const planCount = Math.max(1, sectionPlans.length);
   const modalPlanCount = sectionPlans.filter((plan) => isModalMode(plan.localKey.mode)).length;
   const pivotPlanCount = sectionPlans.filter((plan) => plan.ambiguityIntent === "pivot-harmony").length;
@@ -444,7 +452,7 @@ function analyzeSurfaceBrilliance({
   const supportMotionDensityPerQuarter = roundRatio(supportMotionCount / totalQuarters);
   const upperRegisterAttackShare = roundRatio(notes.filter((note) => note.pitch >= 72).length / noteCount);
   const fourVoiceShare = roundRatio(
-    verticalities.filter((verticality) => verticality.active.size >= 4).length / Math.max(1, verticalities.length),
+    halfBeatTexture.filter((verticality) => verticality.active.size >= 4).length / Math.max(1, halfBeatTexture.length),
   );
   const modalColorShare = roundRatio(modalPlanCount / planCount);
   const pivotAmbiguityShare = roundRatio(pivotPlanCount / planCount);
@@ -966,6 +974,7 @@ function analyzeVerticalTexture(notes: readonly NoteEvent[]): {
   let unisonOverlapCount = 0;
   let sharedRhythmOverlapCount = 0;
   let sameDirectionMotionCount = 0;
+  const motions = new Map(VOICE_ENTRY_ORDER.map((voice) => [voice, motionByStartTick(notes, voice)]));
 
   for (const tick of checkpoints) {
     const activeNotes = notes.filter((note) => note.startTick <= tick && tick < note.startTick + note.durationTicks);
@@ -987,7 +996,9 @@ function analyzeVerticalTexture(notes: readonly NoteEvent[]): {
   }
 
   for (const tick of checkpoints) {
-    const moving = VOICE_ENTRY_ORDER.map((voice) => motionAt(notes, voice, tick)).filter((motion) => motion !== 0);
+    const moving = VOICE_ENTRY_ORDER.map((voice) => motions.get(voice)?.get(tick) ?? 0).filter(
+      (motion) => motion !== 0,
+    );
     for (let leftIndex = 0; leftIndex < moving.length; leftIndex += 1) {
       for (let rightIndex = leftIndex + 1; rightIndex < moving.length; rightIndex += 1) {
         if (moving[leftIndex] === moving[rightIndex]) {
@@ -1000,13 +1011,17 @@ function analyzeVerticalTexture(notes: readonly NoteEvent[]): {
   return { samePitchOverlapCount, unisonOverlapCount, sameDirectionMotionCount, sharedRhythmOverlapCount };
 }
 
-function motionAt(notes: readonly NoteEvent[], voice: Voice, tick: number): number {
+function motionByStartTick(notes: readonly NoteEvent[], voice: Voice): Map<number, number> {
   const voiceNotes = notes.filter((note) => note.voice === voice).sort(compareNoteEvents);
-  const index = voiceNotes.findIndex((note) => note.startTick === tick);
-  if (index <= 0) {
-    return 0;
+  const motions = new Map<number, number>();
+  for (let index = 0; index < voiceNotes.length; index += 1) {
+    const note = voiceNotes[index]!;
+    if (motions.has(note.startTick)) {
+      continue;
+    }
+    motions.set(note.startTick, index === 0 ? 0 : Math.sign(note.pitch - voiceNotes[index - 1]!.pitch));
   }
-  return Math.sign(voiceNotes[index]!.pitch - voiceNotes[index - 1]!.pitch);
+  return motions;
 }
 
 function expositionEntryStaggerScore(notes: readonly NoteEvent[]): number {

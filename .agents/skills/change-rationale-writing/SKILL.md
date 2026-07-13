@@ -78,6 +78,19 @@ Adapt headings to the repository's existing template. If a template asks for "Su
 
 When a pull request changes public behavior or compatibility, mark the PR title with `!` and include a `BREAKING CHANGE: ...` line in the description. Put the line where the repository template discusses compatibility or consequences, and explain the removed, changed, or incompatible contract from the consumer's point of view.
 
+### Performance PR Benchmark Evidence
+
+For every pull request whose Conventional Commit type is `perf`, include a `### Benchmark method` subsection under `## Verification`. Record these reviewer-facing fields:
+
+- `Baseline`: the comparison revision, configuration, or implementation.
+- `Workload`: representative inputs, sizes, seeds, profiles, and other parameters needed to reproduce the run.
+- `Procedure`: the benchmark command or harness and whether setup, build, warm-up, or teardown time is included.
+- `Samples`: iteration count, warm-up count, and reported statistic; explicitly label single-run measurements.
+- `Result`: before and after values with units, plus the computed change when useful.
+- `Correctness`: the check that confirms the optimization preserved required behavior or output.
+
+Keep the method reproducible without machine-specific or personal information. If reliable measurement is unavailable, do not claim a measured speedup; explain the missing evidence and why the PR should still be reviewed as `perf`.
+
 ## Decision Records in Change Descriptions
 
 Use a pull request description as a lightweight decision record when the change makes a durable project choice, such as enabling or disabling a lint rule, adopting or rejecting a dependency, changing an API contract, choosing a compatibility policy, or accepting a known maintenance tradeoff.

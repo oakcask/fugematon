@@ -140,6 +140,12 @@ function sameEntry(
 
 function explainVoicePairs(notes: readonly NoteEvent[]): CandidateVoicePairExplanation[] {
   const checkpoints = noteCheckpoints(notes);
+  const activeNotes = new Map<Voice, Map<number, NoteEvent | undefined>>();
+  const motions = new Map<Voice, Map<number, number>>();
+  for (const voice of VOICES) {
+    activeNotes.set(voice, new Map(checkpoints.map((tick) => [tick, activeNoteAt(notes, voice, tick)])));
+    motions.set(voice, motionByStartTick(notes, voice));
+  }
   const pairs: CandidateVoicePairExplanation[] = [];
 
   for (let leftIndex = 0; leftIndex < VOICES.length; leftIndex += 1) {
@@ -152,8 +158,8 @@ function explainVoicePairs(notes: readonly NoteEvent[]): CandidateVoicePairExpla
       let sameDirectionMotionCount = 0;
 
       for (const tick of checkpoints) {
-        const left = activeNoteAt(notes, leftVoice, tick);
-        const right = activeNoteAt(notes, rightVoice, tick);
+        const left = activeNotes.get(leftVoice)?.get(tick);
+        const right = activeNotes.get(rightVoice)?.get(tick);
         if (left === undefined || right === undefined) {
           continue;
         }
@@ -169,8 +175,8 @@ function explainVoicePairs(notes: readonly NoteEvent[]): CandidateVoicePairExpla
       }
 
       for (const tick of checkpoints) {
-        const leftMotion = motionAt(notes, leftVoice, tick);
-        const rightMotion = motionAt(notes, rightVoice, tick);
+        const leftMotion = motions.get(leftVoice)?.get(tick) ?? 0;
+        const rightMotion = motions.get(rightVoice)?.get(tick) ?? 0;
         if (leftMotion !== 0 && leftMotion === rightMotion) {
           sameDirectionMotionCount += 1;
         }
@@ -258,13 +264,17 @@ function activeNoteAt(notes: readonly NoteEvent[], voice: Voice, tick: number): 
   );
 }
 
-function motionAt(notes: readonly NoteEvent[], voice: Voice, tick: number): number {
+function motionByStartTick(notes: readonly NoteEvent[], voice: Voice): Map<number, number> {
   const voiceNotes = notes.filter((note) => note.voice === voice).sort(compareNotes);
-  const index = voiceNotes.findIndex((note) => note.startTick === tick);
-  if (index <= 0) {
-    return 0;
+  const motions = new Map<number, number>();
+  for (let index = 0; index < voiceNotes.length; index += 1) {
+    const note = voiceNotes[index]!;
+    if (motions.has(note.startTick)) {
+      continue;
+    }
+    motions.set(note.startTick, index === 0 ? 0 : Math.sign(note.pitch - voiceNotes[index - 1]!.pitch));
   }
-  return Math.sign(voiceNotes[index]!.pitch - voiceNotes[index - 1]!.pitch);
+  return motions;
 }
 
 function noteCheckpoints(notes: readonly NoteEvent[]): number[] {

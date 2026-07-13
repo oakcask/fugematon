@@ -14,7 +14,7 @@ import { createLegacyMeterContext } from "./meter.js";
 import { scoreWindowSectionStateAt, scoreWindowVoicePairs } from "./score-window-shared.js";
 import { positiveModulo, VOICE_ENTRY_ORDER } from "./shared.js";
 import type { ActivePitch } from "./types.js";
-import { halfBeatVerticalities } from "./verticality.js";
+import { type HalfBeatVerticality, halfBeatVerticalities } from "./verticality.js";
 
 const DISSONANCE_TRIAGE_WINDOW_LIMIT = 48;
 const PASSING_NEIGHBOR_OFFBEAT_INTENTS = new Set<MetricalHarmonyIntent>([
@@ -31,8 +31,9 @@ export function analyzeDissonanceTriage(
   notes: Parameters<typeof halfBeatVerticalities>[0],
   sectionPlans: readonly HarmonicPlan[],
   entrySonorities: readonly EntrySonoritySummary[],
+  verticalities?: readonly HalfBeatVerticality[],
 ): DissonanceTriageSummary {
-  const semitoneWindows = summarizeSemitoneClashWindows(notes, sectionPlans);
+  const semitoneWindows = summarizeSemitoneClashWindows(notes, sectionPlans, verticalities);
   const entryWindows = summarizeEntrySonorityWindows(entrySonorities);
   const sustainedWindows = summarizeSustainedSevereVerticalDissonanceWindows(notes, sectionPlans);
   const generatorResponseSustainedWindows = sustainedWindows.filter(
@@ -70,8 +71,9 @@ export function analyzeDissonanceTriage(
 function summarizeSemitoneClashWindows(
   notes: Parameters<typeof halfBeatVerticalities>[0],
   sectionPlans: readonly HarmonicPlan[],
+  verticalities: readonly HalfBeatVerticality[] = halfBeatVerticalities(notes),
 ): DissonanceTriageWindow[] {
-  return halfBeatVerticalities(notes).flatMap(({ tick, active }) => {
+  return verticalities.flatMap(({ tick, active }) => {
     if (tick % TICKS_PER_QUARTER === 0 || active.size < 2) {
       return [];
     }

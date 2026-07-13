@@ -173,3 +173,87 @@ test("rejects template sections left with only comments", () => {
   assert.equal(result.valid, false);
   assert.deepEqual(result.errors, ["## Intent must contain reviewer-facing content."]);
 });
+
+test("accepts benchmark methodology for a performance PR", () => {
+  const result = validatePullRequestDescription(
+    [
+      "## Intent",
+      "Reduce candidate-search latency.",
+      "",
+      "## Consequences",
+      "Generation uses less CPU time.",
+      "",
+      "## Risks",
+      "Cached inputs must remain immutable during search.",
+      "",
+      "## Verification",
+      "",
+      "### Benchmark method",
+      "",
+      "- Baseline: main before the optimization",
+      "- Workload: fixed seed at 38,400 ticks with default profiles",
+      "- Procedure: rebuild each revision, then time only the generator command",
+      "- Samples: one timed run per revision, reported as a single-run measurement",
+      "- Result: 14.79 seconds before and 8.42 seconds after",
+      "- Correctness: generated score JSON is byte-for-byte identical",
+    ].join("\n"),
+    { title: "perf(core): reuse candidate checkpoint analysis" },
+  );
+
+  assert.equal(result.valid, true);
+});
+
+test("rejects a performance PR without benchmark methodology", () => {
+  const result = validatePullRequestDescription(
+    [
+      "## Intent",
+      "Reduce candidate-search latency.",
+      "",
+      "## Consequences",
+      "Generation uses less CPU time.",
+      "",
+      "## Risks",
+      "Cached inputs must remain immutable during search.",
+      "",
+      "## Verification",
+      "- pnpm test",
+    ].join("\n"),
+    { title: "perf(core): reuse candidate checkpoint analysis" },
+  );
+
+  assert.equal(result.valid, false);
+  assert.deepEqual(result.errors, [
+    "ci.pr-description.performance-benchmark-method: missing ### Benchmark method under ## Verification; why=reviewers cannot reproduce or evaluate a performance claim without its comparison method; action=add the benchmark subsection with Baseline, Workload, Procedure, Samples, Result, and Correctness fields",
+  ]);
+});
+
+test("rejects incomplete benchmark methodology for a performance PR", () => {
+  const result = validatePullRequestDescription(
+    [
+      "## Intent",
+      "Reduce candidate-search latency.",
+      "",
+      "## Consequences",
+      "Generation uses less CPU time.",
+      "",
+      "## Risks",
+      "Cached inputs must remain immutable during search.",
+      "",
+      "## Verification",
+      "",
+      "### Benchmark method",
+      "",
+      "- Baseline: main before the optimization",
+      "- Workload: fixed seed at 38,400 ticks with default profiles",
+      "- Procedure: rebuild each revision, then time only the generator command",
+      "- Result: 14.79 seconds before and 8.42 seconds after",
+    ].join("\n"),
+    { title: "perf(core)!: replace candidate evaluation" },
+  );
+
+  assert.equal(result.valid, false);
+  assert.deepEqual(result.errors, [
+    "PRs marked breaking with ! in the title must include a BREAKING CHANGE: line describing the compatibility impact.",
+    "ci.pr-description.performance-benchmark-method: incomplete ### Benchmark method (missing: Samples, Correctness); why=reviewers need the comparison, workload, procedure, sampling, result, and correctness evidence to assess a performance claim; action=add reviewer-facing values for every benchmark field in .github/pull_request_template.md",
+  ]);
+});
