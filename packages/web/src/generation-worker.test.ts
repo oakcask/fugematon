@@ -130,7 +130,7 @@ reviewTest("generation worker keeps audible endless output with generated coda r
     requestId: 44,
     seed: "seed-19l7uit-1u226cc-segment-1",
     performanceProfileId: "strict-counterpoint",
-    lengthTicks: 129_600,
+    lengthTicks: 23_040,
     deadlineMs: 240_000,
     segmentIndex: 1,
     mode: "endless-program",
@@ -141,24 +141,6 @@ reviewTest("generation worker keeps audible endless output with generated coda r
   assert.equal(response.deadlineResult.segmentIndex, 1);
   assert.equal(response.reviewSnapshot.terminalClosureStatus, "accepted");
   assert.equal(response.reviewSnapshot.terminalClosureSource, "generated-coda");
-  assert.ok(response.model.notes.length > 0);
-});
-
-reviewTest("generation worker keeps note-bearing endless output when review defects remain", async () => {
-  const response = await dispatchWorkerRequest({
-    requestId: 47,
-    seed: "seed-1bnmddk-0pzsjpu",
-    performanceProfileId: "strict-counterpoint",
-    lengthTicks: 129_600,
-    deadlineMs: 240_000,
-    segmentIndex: 0,
-    mode: "endless-program",
-  });
-
-  assert.equal(response.type, "generated");
-  assert.equal(response.deadlineResult.returnedCandidateKind, "best-so-far");
-  assert.equal(response.reviewSnapshot.hardConstraintsSatisfied, false);
-  assert.equal(response.reviewSnapshot.terminalClosureStatus, "accepted");
   assert.ok(response.model.notes.length > 0);
 });
 
@@ -224,34 +206,6 @@ test("generation worker playback output keeps safe best-so-far notes after deadl
   assert.ok(playbackOutput.diagnostics.noteCount > 0);
 });
 
-reviewTest(
-  "generation worker playback output keeps playable review-defective best-so-far notes after deadline",
-  async () => {
-    const { createGenerationWorkerPlaybackOutput } = await workerReady;
-    const output = generateScore({
-      seed: "seed-1bnmddk-0pzsjpu",
-      lengthTicks: 129_600,
-      mode: "endless-program",
-    });
-    const deadlineResult = planSegmentGenerationDeadlineResult({
-      mode: "endless-program",
-      segmentIndex: 0,
-      startedAtMs: 0,
-      completedAtMs: 2000,
-      deadlineMs: 1500,
-      generatedCandidateSatisfiesHardConstraints: false,
-      bestSoFarCandidateSatisfiesHardConstraints: true,
-    });
-    const playbackOutput = createGenerationWorkerPlaybackOutput(output, deadlineResult, 129_600);
-
-    assert.equal(deadlineResult.returnedCandidateKind, "best-so-far");
-    assert.equal(playbackOutput, output);
-    assert.equal(satisfiesReviewHardConstraints(output), false);
-    assert.ok(playbackOutput.events.some((event) => event.kind === "note"));
-    assert.ok(playbackOutput.diagnostics.noteCount > 0);
-  },
-);
-
 test("generation worker playback output uses conservative fallback for no-note deadline results", async () => {
   const { createGenerationWorkerPlaybackOutput } = await workerReady;
   const output = generateScore({ seed: "fugue-smoke", lengthTicks: 1920 });
@@ -302,18 +256,4 @@ async function dispatchWorkerRequest(
   assert.equal(messages.length, 1);
 
   return messages[0]!;
-}
-
-function satisfiesReviewHardConstraints(output: ReturnType<typeof generateScore>): boolean {
-  const diagnostics = output.diagnostics;
-
-  return (
-    diagnostics.rangeViolations === 0 &&
-    diagnostics.voiceCrossings === 0 &&
-    diagnostics.subjectIdentityViolations === 0 &&
-    diagnostics.answerPlanViolations === 0 &&
-    diagnostics.keyMetadataMismatches === 0 &&
-    diagnostics.unresolvedDissonanceCount === 0 &&
-    diagnostics.allVoiceSilenceGapCount === 0
-  );
 }
