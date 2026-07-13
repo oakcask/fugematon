@@ -32,4 +32,16 @@ List the tests, manual checks, logs, screenshots, or other evidence used to redu
 Use "Not run" with a short reason when verification was skipped.
 Avoid GitHub mention syntax here unless deliberately notifying a user or team. Prefer root scripts,
 package paths, or escaped scoped package names when listing commands.
+
+For a PR whose title starts with the Conventional Commit type "perf", add this subsection and
+replace every placeholder with reviewer-facing content:
+
+### Benchmark method
+
+- Baseline: comparison revision, configuration, or implementation
+- Workload: inputs, sizes, seeds, profiles, and relevant parameters
+- Procedure: command or harness; state whether setup, build, warm-up, and teardown are timed
+- Samples: iteration and warm-up counts, statistic, or an explicit single-run label
+- Result: before and after values with units
+- Correctness: check that required behavior or output is preserved
 -->
