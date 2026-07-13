@@ -4,6 +4,7 @@
 
 ## Read First
 
+* [Generator constraint rebuild density and structural support review](generator-constraint-rebuild-density-structural.md): current continuation-CSP evidence. Density and structural-label false positives are classified by section function, true failures are repaired before adoption, and score-level cleanup remains non-adopting trace evidence.
 * [Generator constraint rebuild continuation CSP review](generator-constraint-rebuild-continuation-csp.md): current architecture evidence. Continuation selection now searches section-CSP support-policy and structural-anchor variants before adoption; remaining density, structural, and metrical relaxation stays review-required.
 * [Generator constraint rebuild section CSP review](generator-constraint-rebuild-section-csp.md): current CSP surface baseline. It defines note / hold / internal-rest section slots, public no-rest-event compatibility, and why the surface was not adoption-ready by itself.
 * [Generator constraint rebuild exposition search review](generator-constraint-rebuild-exposition-search.md): current initial-generation solver evidence.

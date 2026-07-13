@@ -69,11 +69,13 @@ import {
   addExposedFreeCounterpointSoloSupport,
   addFunctionalThinningSupport,
   addPostEntryContinuationSupport,
+  addSectionDensityFloorSupport,
   addSectionStructuralAnchorSupport,
   addShortEpisodeHarmonicContinuitySupport,
   addUnexplainedRestThinningSupport,
   type ContinuityLineKind,
   fillAllVoiceSilenceGaps,
+  normalizeSectionStructuralSupportLabels,
   repairTextureVoiceCrossingsForNotes,
   shapeLongRestPhraseClosures,
   softenBassEntryBoundaryResets,
@@ -716,7 +718,6 @@ function applyScoreLevelTextureVoiceOrderCandidateAdoptions(input: {
     return [];
   }
 
-  input.notes.splice(0, input.notes.length, ...repairedNotes);
   return [beforeCandidate, afterCandidate];
 }
 
@@ -941,7 +942,6 @@ function applyScoreLevelHarmonicContinuitySolver(input: {
     return [];
   }
 
-  input.notes.splice(0, input.notes.length, ...repairedNotes);
   return [beforeCandidate, afterCandidate];
 }
 
@@ -979,7 +979,6 @@ function applyScoreLevelHarmonicStasisSolver(input: {
   }
 
   const beforeNotes = cloneNotes(input.notes);
-  input.notes.splice(0, input.notes.length, ...repairedNotes);
   return [
     buildScoreLevelConstraintCandidate(
       "score-harmonic-stasis-unrepaired-final-repair-evidence",
@@ -991,7 +990,7 @@ function applyScoreLevelHarmonicStasisSolver(input: {
     ),
     buildScoreLevelConstraintCandidate(
       "score-harmonic-stasis-solver-repaired",
-      input.notes,
+      repairedNotes,
       input.subjectEntries,
       input.sectionPlans,
       input.writingProfile,
@@ -1068,7 +1067,6 @@ function applyScoreLevelSustainedDissonanceSolver(input: {
     return [];
   }
 
-  input.notes.splice(0, input.notes.length, ...repairedNotes);
   return [beforeCandidate, afterCandidate];
 }
 
@@ -1841,7 +1839,6 @@ export function buildFugueContinuationScore(
     );
   }
   if (selectionModel === "section-local-planner") {
-    fillAllVoiceSilenceGaps(notes, keySignature, writingProfile);
     selectedConstraintCandidates.push(
       ...applyScoreLevelSupportCleanupCandidateAdoptions({
         notes,
@@ -3713,6 +3710,12 @@ function buildSectionCspSolverCandidate(
     repairSustainedSevereVerticalDissonance(repaired.notes, repaired.sectionPlans, writingProfile);
   }
   repairTextureVoiceCrossingsForNotes(repaired.notes, repaired.sectionPlans, writingProfile);
+  addSectionDensityFloorSupport(repaired.notes, repaired.sectionPlans, writingProfile, supportPolicy);
+  addSectionStructuralAnchorSupport(repaired.notes, repaired.sectionPlans, writingProfile);
+  repairTextureVoiceCrossingsForNotes(repaired.notes, repaired.sectionPlans, writingProfile);
+  addSectionStructuralAnchorSupport(repaired.notes, repaired.sectionPlans, writingProfile);
+  normalizeSectionStructuralSupportLabels(repaired.notes, repaired.sectionPlans, writingProfile);
+  relabelResidualNonChordStructuralSupport(repaired);
   repaired.notes.sort(compareNoteEvents);
 
   return {
@@ -3720,6 +3723,45 @@ function buildSectionCspSolverCandidate(
     constraintCandidateFamily: "section-csp-variant" as const,
     constraintSourceCandidateIndex: sourceCandidateIndex,
   };
+}
+
+function relabelResidualNonChordStructuralSupport(section: Exposition): void {
+  const unsupported = buildConstraintSatisfactionReview({
+    notes: section.notes,
+    subjectEntries: section.subjectEntries,
+    sectionPlans: section.sectionPlans,
+  })
+    .windows.flatMap((window) => window.structuralSupportClassifications)
+    .filter((classification) => classification.classification === "unsupported-structural-label")
+    .sort((left, right) => left.tick - right.tick || left.voice.localeCompare(right.voice));
+
+  for (const classification of unsupported) {
+    const note = section.notes.find(
+      (candidate) =>
+        candidate.voice === classification.voice &&
+        candidate.pitch === classification.pitch &&
+        candidate.startTick <= classification.tick &&
+        classification.tick < candidate.startTick + candidate.durationTicks &&
+        (candidate.role === "free-counterpoint" || candidate.role === "counter-subject") &&
+        (candidate.metricalHarmonyIntent === "structural-root-support" ||
+          candidate.metricalHarmonyIntent === "structural-chord-tone"),
+    );
+    if (note === undefined) {
+      continue;
+    }
+    if (note.startTick < classification.tick) {
+      const tail: NoteEvent = {
+        ...note,
+        startTick: classification.tick,
+        durationTicks: note.startTick + note.durationTicks - classification.tick,
+        metricalHarmonyIntent: "strong-non-chord-tone",
+      };
+      note.durationTicks = classification.tick - note.startTick;
+      section.notes.push(tail);
+    } else {
+      note.metricalHarmonyIntent = "strong-non-chord-tone";
+    }
+  }
 }
 
 export function buildContinuationCandidates(

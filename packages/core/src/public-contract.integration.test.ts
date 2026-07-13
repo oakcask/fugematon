@@ -201,7 +201,7 @@ test("public diagnostics expose finite candidate score dimensions", () => {
   assert.equal(typeof output.diagnostics.qualityVector.harmonicSonorities.focusedWindowCount, "number");
   assert.equal(typeof output.diagnostics.qualityVector.harmonicSonorities.generatorResponseWindowCount, "number");
   assert.ok(Array.isArray(output.diagnostics.qualityVector.harmonicSonorities.windows));
-  assert.equal(output.diagnostics.constraintSatisfactionReview.schemaVersion, 5);
+  assert.equal(output.diagnostics.constraintSatisfactionReview.schemaVersion, 6);
   assert.equal(typeof output.diagnostics.constraintSatisfactionReview.windowCount, "number");
   assert.equal(typeof output.diagnostics.constraintSatisfactionReview.intentionalRestSpanCount, "number");
   assert.equal(typeof output.diagnostics.constraintSatisfactionReview.unplannedSilentRunCount, "number");
@@ -213,6 +213,13 @@ test("public diagnostics expose finite candidate score dimensions", () => {
   assert.equal(typeof output.diagnostics.constraintSatisfactionReview.offMeasureEntryStartCount, "number");
   assert.equal(typeof output.diagnostics.constraintSatisfactionReview.unpreparedTransitionCount, "number");
   assert.equal(typeof output.diagnostics.constraintSatisfactionReview.preparedPickupCount, "number");
+  assert.equal(typeof output.diagnostics.constraintSatisfactionReview.explainedDensityWindowCount, "number");
+  assert.equal(typeof output.diagnostics.constraintSatisfactionReview.unsupportedDensityWindowCount, "number");
+  assert.equal(
+    typeof output.diagnostics.constraintSatisfactionReview.legitimateNonChordStructuralSupportCount,
+    "number",
+  );
+  assert.equal(typeof output.diagnostics.constraintSatisfactionReview.unsupportedStructuralLabelCount, "number");
   assert.ok(Array.isArray(output.diagnostics.constraintSatisfactionReview.windows));
   assert.ok(
     output.diagnostics.constraintSatisfactionReview.windows.every(
@@ -225,6 +232,8 @@ test("public diagnostics expose finite candidate score dimensions", () => {
         typeof window.offMeasureEntryStartCount === "number" &&
         typeof window.unpreparedTransitionCount === "number" &&
         typeof window.preparedPickupCount === "number" &&
+        Array.isArray(window.densityClassifications) &&
+        Array.isArray(window.structuralSupportClassifications) &&
         typeof window.infeasibleConstraintCounts.entryPlanViolationCount === "number" &&
         typeof window.infeasibleConstraintCounts.entrySupportInstabilityCount === "number" &&
         typeof window.infeasibleConstraintCounts.unresolvedEntrySupportInstabilityCount === "number" &&

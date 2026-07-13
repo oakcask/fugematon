@@ -484,7 +484,7 @@ export function addTextureNote(
   durationTicks: number,
 ): void {
   const previous = previousTextureNote(notes, pattern.voice, startTick);
-  const metricalHarmonyIntent =
+  let metricalHarmonyIntent =
     pattern.metricalHarmonyIntent ??
     metricalHarmonyIntentForDegree({
       degree,
@@ -523,6 +523,7 @@ export function addTextureNote(
   if (pattern.writingProfile !== undefined && !isPitchAllowedByWritingProfile(pattern.writingProfile, pitch)) {
     pitch = placePitchInWritingProfile(pitchClass, pattern.voice, registerTarget, pattern.writingProfile);
   }
+  metricalHarmonyIntent = classifyRealizedStructuralIntent(pattern, pitch, startTick, metricalHarmonyIntent);
   notes.push({
     kind: "note",
     voice: pattern.voice,
@@ -532,6 +533,39 @@ export function addTextureNote(
     velocity: pattern.velocity,
     role: pattern.role,
     metricalHarmonyIntent,
+  });
+}
+
+function classifyRealizedStructuralIntent(
+  pattern: TextureNotePattern,
+  pitch: number,
+  tick: number,
+  intent: MetricalHarmonyIntent,
+): MetricalHarmonyIntent {
+  if (
+    pattern.harmonicPlan === undefined ||
+    (intent !== "structural-chord-tone" && intent !== "structural-root-support")
+  ) {
+    return intent;
+  }
+  const anchor = nearestHarmonicAnchor(tick, [pattern.harmonicPlan]);
+  if (
+    anchor === undefined ||
+    chordTonePitchClasses(anchor.localKey, anchor.function).includes(positiveModulo(pitch, 12))
+  ) {
+    return intent;
+  }
+  const realizedDegree = pitchScaleDegree(pitch, anchor.localKey);
+  if (realizedDegree === undefined) {
+    return beatStrengthAtTick(tick, pattern.harmonicPlan.meterContext) === "strong"
+      ? "strong-non-chord-tone"
+      : "weak-passing-tone";
+  }
+  return metricalHarmonyIntentForDegree({
+    degree: realizedDegree,
+    tick,
+    voice: pattern.voice,
+    harmonicPlan: pattern.harmonicPlan,
   });
 }
 
@@ -1610,6 +1644,84 @@ export function addUnexplainedRestThinningSupport(
   repairTextureVoiceCrossingsForPlans(notes, sectionPlans, writingProfile);
 }
 
+export function addSectionDensityFloorSupport(
+  notes: Exposition["notes"],
+  sectionPlans: readonly HarmonicPlan[],
+  writingProfile?: WritingProfile,
+  policy: UnexplainedRestThinningSupportPolicy = "low-root-first",
+): void {
+  for (const plan of sectionPlans.filter((candidate) => candidate.state !== "exposition")) {
+    const sectionEndTick = plan.startTick + plan.durationTicks;
+    for (let tick = plan.startTick; tick < sectionEndTick; tick += plan.meterContext.beatTicks) {
+      const activeVoices = activeVoicesDuring(notes, tick, Math.min(sectionEndTick, tick + 1));
+      const cadenceThinning =
+        sectionEndTick - tick <= plan.meterContext.beatTicks * 2 &&
+        (plan.cadenceKind === "authentic" || plan.cadenceKind === "modal" || plan.cadenceKind === "half");
+      const requiredVoiceCount = cadenceThinning || hasPedalLikeRestSupport(notes, plan, tick) ? 2 : 3;
+      if (activeVoices.length >= requiredVoiceCount) {
+        continue;
+      }
+      const supportVoiceOrder =
+        policy === "balanced-upper-agency" &&
+        shouldPreferUpperAgencySupport(
+          notes,
+          { startTick: tick, endTick: Math.min(sectionEndTick, tick + 1), activeVoices },
+          plan,
+        )
+          ? (["soprano", "alto", "tenor", "bass"] as const)
+          : (["bass", "tenor", "alto", "soprano"] as const);
+      const supportVoices = supportVoiceOrder
+        .filter((voice) => !activeVoices.includes(voice) && activeNoteAt(notes, voice, tick) === undefined)
+        .slice(0, requiredVoiceCount - activeVoices.length);
+      const anchor = nearestHarmonicAnchor(tick, [plan]);
+      if (anchor === undefined) {
+        continue;
+      }
+      for (const supportVoice of supportVoices) {
+        const nextStartTick = notes
+          .filter((note) => note.voice === supportVoice && note.startTick > tick)
+          .map((note) => note.startTick)
+          .sort((left, right) => left - right)[0];
+        const durationTicks = Math.min(
+          plan.meterContext.beatTicks,
+          sectionEndTick - tick,
+          (nextStartTick ?? sectionEndTick) - tick,
+        );
+        const supportDegree = supportedStructuralSupportDegree({
+          requestedDegree: supportStartingDegree(supportVoice, rootDegreeForFunction(anchor.function)),
+          supportVoice,
+          anchor,
+          writingProfile,
+        });
+        if (supportDegree === undefined || durationTicks <= 0 || hasOverlap(notes, supportVoice, tick, durationTicks)) {
+          continue;
+        }
+        addTextureNote(
+          notes,
+          {
+            voice: supportVoice,
+            localKey: anchor.localKey,
+            velocity: 48,
+            role: "free-counterpoint",
+            harmonicPlan: plan,
+            metricalHarmonyIntent:
+              supportVoice === "bass" &&
+              positiveModulo(supportDegree, 7) === positiveModulo(rootDegreeForFunction(anchor.function), 7)
+                ? "structural-root-support"
+                : "structural-chord-tone",
+            strictSemitoneAvoidance: true,
+            writingProfile,
+          },
+          supportDegree,
+          tick,
+          durationTicks,
+        );
+      }
+    }
+  }
+  repairTextureVoiceCrossingsForPlans(notes, sectionPlans, writingProfile);
+}
+
 export function addBassAnswerTailTextureSupport(
   notes: Exposition["notes"],
   subjectEntries: readonly PlannedEntry[],
@@ -1837,6 +1949,43 @@ export function addSectionStructuralAnchorSupport(
   }
 
   repairTextureVoiceCrossingsForPlans(notes, sectionPlans, writingProfile);
+}
+
+export function normalizeSectionStructuralSupportLabels(
+  notes: Exposition["notes"],
+  sectionPlans: readonly HarmonicPlan[],
+  writingProfile?: WritingProfile,
+): void {
+  for (const plan of sectionPlans) {
+    const anchors = plan.anchors
+      .filter((candidate) => plan.startTick <= candidate.tick && candidate.tick < plan.startTick + plan.durationTicks)
+      .sort((left, right) => left.tick - right.tick);
+    for (const anchor of anchors) {
+      repairStructuralSupportAtTick(notes, anchor.tick, anchor, writingProfile);
+      const chordPitchClasses = chordTonePitchClasses(anchor.localKey, anchor.function);
+      for (const note of notes.filter(
+        (candidate) =>
+          (candidate.role === "free-counterpoint" || candidate.role === "counter-subject") &&
+          candidate.startTick <= anchor.tick &&
+          anchor.tick < candidate.startTick + candidate.durationTicks &&
+          (candidate.metricalHarmonyIntent === "structural-root-support" ||
+            candidate.metricalHarmonyIntent === "structural-chord-tone") &&
+          !chordPitchClasses.includes(positiveModulo(candidate.pitch, 12)),
+      )) {
+        const localNote = splitTextureNoteAtTick(notes, note, anchor.tick);
+        const degree = pitchScaleDegree(localNote.pitch, anchor.localKey);
+        localNote.metricalHarmonyIntent =
+          degree === undefined
+            ? "strong-non-chord-tone"
+            : metricalHarmonyIntentForDegree({
+                degree,
+                tick: anchor.tick,
+                voice: localNote.voice,
+                harmonicPlan: plan,
+              });
+      }
+    }
+  }
 }
 
 function shouldStrengthenSectionAnchor(
@@ -2899,12 +3048,14 @@ function functionalSupportProfile(
     harmonicPlan: input.harmonicPlan,
     rootDegree: input.rootDegree,
   });
-  if (degrees === undefined) {
-    return undefined;
-  }
+  const fallbackDegrees = [
+    supportStartingDegree(input.voice, input.rootDegree),
+    input.rootDegree + 4,
+    input.rootDegree + 2,
+  ];
 
   return {
-    degrees,
+    degrees: degrees ?? fallbackDegrees,
     durationTicks: motifDurationPattern(motif, input),
   };
 }
