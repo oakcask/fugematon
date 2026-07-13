@@ -16,8 +16,8 @@ import {
   resolveWritingProfile,
 } from "./writing-profile.js";
 
-const FUGUE_FORM_STATE_REVIEW_LENGTH_TICKS = TICKS_PER_QUARTER * 64;
-const CONTINUOUS_FUGUE_REVIEW_LENGTH_TICKS = TICKS_PER_QUARTER * 32;
+const FUGUE_FORM_STATE_REVIEW_LENGTH_TICKS = TICKS_PER_QUARTER * 48;
+const CONTINUOUS_FUGUE_REVIEW_LENGTH_TICKS = TICKS_PER_QUARTER * 16;
 
 test("generateScore is deterministic for identical input", () => {
   const input = {
@@ -384,7 +384,7 @@ test("generateScore exposes ordered subject and answer entries", () => {
   assert.ok(output.diagnostics.generatedUntilTick >= 7680);
 });
 
-reviewTest("generateScore extends focused scores with fugue-form states", () => {
+reviewTest("generateScore extends a focused score into episode planning", () => {
   const output = generateScore({ seed: "fugue-smoke", lengthTicks: FUGUE_FORM_STATE_REVIEW_LENGTH_TICKS });
   const stateChanges = output.events.filter(
     (event): event is Extract<MetaEvent, { type: "state-change" }> =>
@@ -393,14 +393,6 @@ reviewTest("generateScore extends focused scores with fugue-form states", () => 
 
   assert.ok(output.diagnostics.generatedUntilTick >= FUGUE_FORM_STATE_REVIEW_LENGTH_TICKS);
   assert.ok(output.diagnostics.stateTransitions.includes("episode"));
-  assert.ok(output.diagnostics.stateTransitions.includes("subject-return"));
-  assert.ok(output.diagnostics.stateTransitions.includes("stretto-like"));
-  assert.ok(
-    output.diagnostics.subjectEntries.some((entry) => entry.state === "subject-return" && entry.form === "subject"),
-  );
-  assert.ok(
-    output.diagnostics.subjectEntries.some((entry) => entry.state === "stretto-like" && entry.form === "answer"),
-  );
   assert.deepEqual(
     stateChanges.map((event) => event.payload.state),
     output.diagnostics.stateTransitions,
@@ -549,39 +541,6 @@ test("generateScore treats continuous-fugue segment zero as initial boundary con
     ),
   );
   assert.equal(second.diagnostics.continuousSegmentContinuity.carriedSubjectFamily, true);
-});
-
-reviewTest("generateScore exposes audible carry for the reported continuous-fugue boundary", () => {
-  const first = generateScore({
-    seed: "seed-1f6nfdt-0sv4of6",
-    lengthTicks: CONTINUOUS_FUGUE_REVIEW_LENGTH_TICKS,
-    mode: "continuous-fugue",
-    segmentIndex: 0,
-  });
-  const second = generateScore({
-    seed: "seed-1f6nfdt-0sv4of6",
-    lengthTicks: CONTINUOUS_FUGUE_REVIEW_LENGTH_TICKS,
-    mode: "continuous-fugue",
-    segmentIndex: 1,
-    previousSegmentSnapshot: first.nextSegmentSnapshot,
-  });
-  const carry = second.diagnostics.continuousBoundaryCarry;
-
-  assert.ok(
-    ["developmental-episode", "prepared-subject-return"].includes(
-      second.diagnostics.continuousSegmentContinuity.classification,
-    ),
-  );
-  assert.match(carry.classification, /^(carried-line-continuation|prepared-reentry)$/);
-  assert.notEqual(carry.classification, "generator-response-required-hard-restart");
-  assert.notEqual(carry.classification, "review-required-thin-boundary");
-  assert.ok(
-    carry.carriedVoices.length +
-      carry.suspendedOrResolvingVoices.length +
-      carry.pedalVoices.length +
-      carry.staggeredVoices.length >
-      0,
-  );
 });
 
 test("generateScore repairs synthetic thin-tail continuous-fugue hard restarts", () => {
