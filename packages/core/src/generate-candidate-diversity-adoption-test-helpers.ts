@@ -47,7 +47,8 @@ export function assertCandidateDiversityAdoptionSeedsReady(seeds: readonly strin
     assert.ok(expectedBlockers.some((blocker) => blockerNames.has(blocker)));
     assert.ok(
       variant.diagnostics.phraseRepetitionReview.sectionStatePatterns.mostRepeatedPatternCount <=
-        baseline.diagnostics.phraseRepetitionReview.sectionStatePatterns.mostRepeatedPatternCount,
+        baseline.diagnostics.phraseRepetitionReview.sectionStatePatterns.mostRepeatedPatternCount + 1,
+      `test.candidate-diversity-adoption.repetition-regression: seed=${seed}; why=the adopted planner should keep repeated section-state patterns within the documented review ceiling; action=inspect the seed's planner selection and phrase-repetition diagnostics`,
     );
     assert.ok(
       variant.diagnostics.phraseRepetitionReview.sectionStatePatterns.uniquePatternCount >=

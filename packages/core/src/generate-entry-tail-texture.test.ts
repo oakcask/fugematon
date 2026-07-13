@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { TICKS_PER_QUARTER } from "./constants.js";
 import type { EntryForm, FugueState, KeySignature, NoteEvent, PlannedEntry, Voice } from "./events.js";
-import { analyzeImportantEntryTailTexture } from "./generation/entry-tail-texture.js";
 import { cachedGenerateScore as generateScore } from "./generate-test-helpers.js";
+import { analyzeImportantEntryTailTexture } from "./generation/entry-tail-texture.js";
 import { reviewTest } from "./test-profile.js";
 
 const C_MAJOR: KeySignature = { tonic: "C", mode: "major" };
@@ -62,6 +62,23 @@ reviewTest("important entry tail texture accepts carried and delayed support", (
   assert.equal(summary.windows[0]?.classification, "supported-tail");
 });
 
+reviewTest("important entry tail texture accepts delayed support across voice placement", () => {
+  const startTick = TICKS_PER_QUARTER * 12;
+  const summary = analyzeImportantEntryTailTexture(
+    [
+      note("soprano", startTick - TICKS_PER_QUARTER, TICKS_PER_QUARTER * 6),
+      note("alto", startTick + TICKS_PER_QUARTER, TICKS_PER_QUARTER * 4),
+      entryNote("bass", "answer", startTick, TICKS_PER_QUARTER * 4),
+    ],
+    [entry("bass", "answer", "subject-return", startTick)],
+    startTick + TICKS_PER_QUARTER * 8,
+  );
+
+  assert.equal(summary.reviewRequired, false);
+  assert.deepEqual(summary.windows[0]?.activeOutsideVoices, ["soprano", "alto"]);
+  assert.equal(summary.windows[0]?.classification, "supported-tail");
+});
+
 reviewTest("important entry tail texture includes episode subject fragments", () => {
   const startTick = TICKS_PER_QUARTER * 16;
   const summary = analyzeImportantEntryTailTexture(
@@ -81,8 +98,15 @@ reviewTest("important entry tail texture includes episode subject fragments", ()
 
 test("generated scores expose important entry tail texture without public rest events", () => {
   for (const seed of ["fugue-smoke", "bach-001", "modal-answer"] as const) {
-    const output = generateScore({ seed, lengthTicks: TICKS_PER_QUARTER * 64, selectionModel: "section-local-planner" });
-    assert.equal(output.events.some((event) => (event.kind as string) === "rest"), false);
+    const output = generateScore({
+      seed,
+      lengthTicks: TICKS_PER_QUARTER * 64,
+      selectionModel: "section-local-planner",
+    });
+    assert.equal(
+      output.events.some((event) => (event.kind as string) === "rest"),
+      false,
+    );
     assert.ok(output.diagnostics.importantEntryTailTexture.importantEntryWindowCount > 0);
     assert.equal(
       output.diagnostics.importantEntryTailTexture.windows.every((window) =>

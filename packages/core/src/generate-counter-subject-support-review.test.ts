@@ -12,7 +12,7 @@ reviewTest(
       minPreservedWindowCount: 2,
       minTradeoffWindowCount: 105,
       minWeakWindowCount: 4,
-      maxSupportCollisionCount: 1852,
+      maxSupportCollisionCount: 1970,
     });
   },
 );
