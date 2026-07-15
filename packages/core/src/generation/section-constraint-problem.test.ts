@@ -546,6 +546,8 @@ test("planned-entry preparation adds a local harmonic pickup without moving the 
   const pickup = notes.find((candidate) => candidate.voice === "bass" && candidate.startTick === startTick);
   assert.ok(pickup !== undefined);
   assert.equal(pickup.pitch % 12, 2);
+  assert.equal(pickup.motivicDerivation?.targetFunction, "prepare-subject-return");
+  assert.equal(pickup.motivicDerivation?.preparesNextEntry, true);
 });
 
 test("voice-pair rhythm staggering reduces mechanical coupling without changing the section span", () => {

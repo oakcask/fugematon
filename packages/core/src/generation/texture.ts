@@ -100,6 +100,7 @@ type TextureNotePattern = {
   freeCounterpointPhraseVariation?: boolean;
   strictSemitoneAvoidance?: boolean;
   preserveDurations?: boolean;
+  motivicDerivation?: NoteEvent["motivicDerivation"];
   writingProfile?: WritingProfile;
 };
 
@@ -534,6 +535,7 @@ export function addTextureNote(
     velocity: pattern.velocity,
     role: pattern.role,
     metricalHarmonyIntent,
+    motivicDerivation: pattern.motivicDerivation,
   });
 }
 
@@ -1893,6 +1895,14 @@ export function addPlannedEntryPreparationSupport(
         role: "free-counterpoint",
         harmonicPlan: plan,
         metricalHarmonyIntent: supportVoice === "bass" ? "structural-root-support" : "structural-chord-tone",
+        motivicDerivation: {
+          sourceMotive: "prior-episode-figure",
+          transformationKind: "rhythmic-paraphrase",
+          targetFunction: "prepare-subject-return",
+          sequenceDirection: "none",
+          preparesNextEntry: true,
+          preparesCadence: false,
+        },
         strictSemitoneAvoidance: true,
         writingProfile,
       },

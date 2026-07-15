@@ -4,13 +4,15 @@
 
 Continuation section-local search へ voice-pair independence と planned-entry preparation を組み込む実装 slice は導入済みとする。Entry、cadence、sequence、pedal support による機能的同期は accepted context に残し、説明のない free-counterpoint の同型 rhythm、exact collision、color doubling を別の soft cost として比較する。準備のない off-measure planned entry は entry tick を一律に移動せず、support voice と local harmony を補う候補を探索する。
 
-標準 22 seed、各 129600 ticks の再生成では、全 seed が relaxation `none`、public hard-contract failure、unsupported density、unsupported structural label は 0 を維持した。Mechanical lockstep pressure は 18423 から 1026、unison overlap は 11763 から 11365、unresolved accented entry-clash window は 31 から 21、leap-recovery miss は 2247 から 1164、mechanical-reuse window は 197 から 89 へ減った。
+標準 22 seed、各 129600 ticks の再生成では、全 seed が relaxation `none`、public hard-contract failure、unsupported density、unsupported structural label は 0 を維持した。Function-aware mechanical lockstep pressure は 18423 から 364、unison overlap は 11763 から 11365、unresolved accented entry-clash window は 31 から 23、leap-recovery miss は 2247 から 1164、mechanical-reuse window は 197 から 89 へ減った。
 
-この判断は ScoreEvent と diagnostics による agent-side 楽典レビューである。MIDI bundle は生成済みだが、人間の manual listening は未実施である。加えて、機能的同期を除いた `mechanicalCouplingTicks` は 22 seed 合計で小幅に減った一方、主要 7 seed ではすべて増えた。そのため、中心目的である「機能的 imitation を保った mechanical lockstep の減少」はまだ確認できず、ターゲットは未完了とする。`constraintSatisfactionReview`、voice-pair count、美的 count は `review-required` のままとし、新しい CI hard gate にしない。
+この判断は ScoreEvent と diagnostics による agent-side 楽典レビューである。MIDI bundle は生成済みだが、人間の manual listening は未実施である。初回実装後に主要 7 seed すべてで増えた `mechanicalCouplingTicks` は、planned-entry pickup と二声が共有する entry / cadence / sequence function の note-level provenance を最終診断が失っていた false positive を含んでいた。Function-aware follow-up では 22 seed 合計が 620040 から 306960 ticks となり、主要 7 seed はすべて実装前 baseline を下回る。Follow-up の 22 MIDI は初回実装 bundle と byte-identical であり、これは score change ではなく分類修正である。中心目的である「機能的 imitation を保った audible な mechanical lockstep の減少」はなお聴取で確認する必要があるため、ターゲットは未完了とする。`constraintSatisfactionReview`、voice-pair count、美的 count は `review-required` のままとし、新しい CI hard gate にしない。
 
 ## Implementation Review
 
 `voicePairFunctions` と section-CSP の voice-pair count は、subject support、cadence support、sequence pattern、pedal-like support を mechanical coupling から分離する。Candidate construction は free-counterpoint の連続音境界を半拍だけ決定的にずらす rotation variant を作り、section span、entry identity、cadence target を保持する。Exact collision と color doubling も別 feature とし、広い pitch-class unison count だけで機能的 reinforcement を拒否しない。
+
+Planned-entry preparation が作る support note は `prepare-subject-return` と `preparesNextEntry` を note-level motivic derivation に保持する。Rhythm pair は、片方が entry role / explicit pickup である場合、両方が `prepare-subject-return` または `extend-cadence` を共有する場合、または両方が同方向の sequence transformation を共有する場合だけ functional に分類する。`subject-return` section 全体や片側だけの function label は免除しないため、outside voice の説明のない lockstep は mechanical のまま残る。
 
 Off-measure planned entry preparation は、既に held support または downbeat を越える複数 pickup voice があれば何もしない。未準備の場合だけ low-root-first と balanced-upper-agency の support candidate を作り、entry start、section duration、entry handoff、active `WritingProfile`、local chord support を再評価する。Cadence target 近傍はこの mutation の対象外である。
 
@@ -18,47 +20,51 @@ Off-measure planned entry preparation は、既に held support または downbe
 
 Source candidate に対して mechanical coupling の相対改善 margin を要求する追加実験は棄却した。局所 margin を強めても後続 section の探索履歴が変わり、`close-imitation` の score-level mechanical coupling は 62,640 から 64,320 ticks へ悪化した一方、他の protected count は変わらなかった。局所 margin を長期 score の代理にせず、将来この blocker を再開する場合は bounded lookahead または section-history state で比較する必要がある。
 
+`subject-return` 内の pitch-class reinforcement まで section label から切り離して candidate cost に戻す追加実験も棄却した。4 seed の MIDI が変わり、`restless-line` では unresolved accented entry clash が 0 から 6、mechanical reuse が 5 から 7 へ悪化した。Rhythm lockstep は note-level function で分類する現行修正を維持するが、octave / color doubling の section-context 分類を同じ local cost へ直結させるには、後続 section を含む bounded lookahead と entry-clash / phrase-development guard が必要である。
+
 根拠は bibliography claim `section-constraint-csp-local-first`、source family `music-constraint-programming`、`species-dissonance-treatment`、common-practice fugue / episode evidence を再利用する。文献は bounded local hard/soft search、声部独立、跳躍回収、機能を持つ imitation と機械的反復の区別を支持するが、今回の重みや count threshold 自体は project inference である。
 
 ## Before and After
 
-| Evidence | Before | After |
-| --- | ---: | ---: |
-| relaxation `none` | 22 / 22 | 22 / 22 |
-| public hard-contract failures | 0 | 0 |
-| unsupported density / structural labels | 0 / 0 | 0 / 0 |
-| metrical-boundary cost / unprepared transitions | 480 / 20 | 240 / 10 |
-| mechanical lockstep pressure | 18423 | 1026 |
-| unison overlap | 11763 | 11365 |
-| unresolved accented entry-clash windows | 31 | 21 |
-| leap-recovery misses | 2247 | 1164 |
-| mechanical-reuse windows | 197 | 89 |
-| mechanical coupling ticks | 620280 | 620040 |
-| exact collision ticks | 125640 | 78240 |
+| Evidence | Before | Initial slice | Function-aware |
+| --- | ---: | ---: | ---: |
+| relaxation `none` | 22 / 22 | 22 / 22 | 22 / 22 |
+| public hard-contract failures | 0 | 0 | 0 |
+| unsupported density / structural labels | 0 / 0 | 0 / 0 | 0 / 0 |
+| metrical-boundary cost / unprepared transitions | 480 / 20 | 240 / 10 | 240 / 10 |
+| mechanical lockstep pressure | 18423 | 1026 | 364 |
+| unison overlap | 11763 | 11365 | 11365 |
+| unresolved accented entry-clash windows | 31 | 23 | 23 |
+| leap-recovery misses | 2247 | 1164 | 1164 |
+| mechanical-reuse windows | 197 | 89 | 89 |
+| mechanical coupling ticks | 620280 | 620040 | 306960 |
+| exact collision ticks | 125640 | 78240 | 78240 |
 
-Lockstep count の大幅な減少は、旧 count が機能的同期も同型 rhythm として数えていた診断再分類を含む。実音の mechanical-coupling duration は 620280 から 620040 ticks の小幅改善であり、count の減少だけを美的改善とは扱わない。一方、exact collision、unison overlap、entry clash、leap recovery、mechanical reuse も同時に改善しているため、再分類だけで結果を説明してはいない。
+初回 slice の lockstep count 減少は機能分類と score change の両方を含み、exact collision、unison overlap、entry clash、leap recovery、mechanical reuse も同時に改善した。Function-aware follow-up は MIDI を変えず mechanical coupling を再分類したため、306960 ticks を追加の audible improvement とは扱わない。代わりに、初回 slice の主要-seed regression と見えていた duration を、共有機能のある同期と残る outside-voice coupling に切り分ける診断精度の改善として扱う。
 
-Aggregate だけでは主要譜例の tradeoff が隠れる。同じ diagnostics 分類で比較すると、主要 seed の `mechanicalCouplingTicks` は次のようにすべて増えた。
+Aggregate だけでは主要譜例の tradeoff が隠れる。初回 slice では主要 seed の `mechanicalCouplingTicks` がすべて増えたが、function-aware follow-up で共有機能を分離すると全 seed が実装前 baseline を下回る。
 
-| Seed | Before | After |
-| --- | ---: | ---: |
-| `restless-line` | 37,680 | 40,080 |
-| `tight-stretto` | 58,680 | 66,600 |
-| `close-imitation` | 56,160 | 62,640 |
-| `fugue-smoke` | 23,520 | 26,880 |
-| `wide-key` | 24,720 | 25,680 |
-| `dense-modal` | 17,280 | 18,120 |
-| `modal-cadence` | 20,880 | 22,320 |
+| Seed | Before | Initial slice | Function-aware |
+| --- | ---: | ---: | ---: |
+| `restless-line` | 37,680 | 40,080 | 12,960 |
+| `tight-stretto` | 58,680 | 66,600 | 31,320 |
+| `close-imitation` | 56,160 | 62,640 | 53,520 |
+| `fugue-smoke` | 23,520 | 26,880 | 21,840 |
+| `wide-key` | 24,720 | 25,680 | 19,920 |
+| `dense-modal` | 17,280 | 18,120 | 0 |
+| `modal-cadence` | 20,880 | 22,320 | 0 |
 
-Exact collision は多くの主要 seed で減ったが、`fugue-smoke` は 480 から 1,440 ticks、`modal-cadence` は 5,520 から 6,960 ticks へ増えた。Entry clash、leap recovery、mechanical reuse の aggregate は改善したため、実装全体を棄却する根拠にはしない。ただし voice-pair independence 自体の完了根拠としても不十分である。主要 score window の聴取と、増加分が許容される機能的同期の分類漏れか、実際の outside-voice lockstep regression かの切り分けが必要である。
+Exact collision は多くの主要 seed で減ったが、`fugue-smoke` は 480 から 1,440 ticks、`modal-cadence` は 5,520 から 6,960 ticks へ増えた。Entry clash、leap recovery、mechanical reuse の aggregate は改善したため、実装全体を棄却する根拠にはしない。ただし voice-pair independence 自体の完了根拠としても不十分である。Function-aware classification は former coupling regression を説明したが、exact collision と残る outside-voice windows の聴取は必要である。
 
 ## Focused Score Windows
 
-The original bounded `voicePairSpans` list sorted every classification together by duration. In `restless-line`, 40,080 ticks of aggregate mechanical coupling were present but all 18 exposed rows were longer functional support, leaving no mechanical window for the required listening pass. The review list now keeps up to two longest rows per classification before filling its remaining capacity by duration. The regenerated `restless-line` diagnostics expose mechanical coupling at ticks 17,280 and 121,920 alongside exact collision, color doubling, subject support, cadence support, sequence support, and pitch-class reinforcement controls. Aggregate counts, selected music, and gate scope do not change; this is diagnostics coverage for the existing manual-review blocker.
+The original bounded `voicePairSpans` list sorted every classification together by duration. In the initial slice, `restless-line` had 40,080 ticks of reported mechanical coupling but all 18 exposed rows were longer functional support, leaving no mechanical window for the required listening pass. The review list keeps up to two longest rows per classification before filling its remaining capacity by duration. Function-aware provenance subsequently classifies the former ticks 17,280 and 121,920 rows as shared cadence / entry preparation, leaving no duration-qualified unexplained coupling span in `restless-line`. `tight-stretto`, `close-imitation`, and `fugue-smoke` still expose mechanical windows; `wide-key`, `dense-modal`, and `modal-cadence` retain functional and collision controls without inventing a mechanical row. Gate scope does not change.
 
-The refreshed 22-seed bundle keeps relaxation `none` throughout and has 0 public hard-contract, range, crossing, subject-identity, answer-plan, key-metadata, `WritingProfile` pitch, unsupported-density, or unsupported-structural-label failures. Every primary seed exposes at least one mechanical-coupling window and multiple accepted functional-control windows. All 22 MIDI files are byte-identical to an independent regeneration of the implemented candidate-search slice, confirming that the final-diagnostics selection is separated from candidate scoring and does not change the music under review.
+The refreshed 22-seed bundle keeps relaxation `none` throughout and has 0 public hard-contract, range, crossing, subject-identity, answer-plan, key-metadata, `WritingProfile` pitch, unsupported-density, or unsupported-structural-label failures. All 22 MIDI files are byte-identical to the initial implementation bundle. Unison overlap, exact collision, entry clash, leap recovery, mechanical reuse, and metrical cost are also unchanged by the follow-up, confirming that note provenance and pair classification do not buy a lower coupling count with another musical regression.
 
 Target completion review regenerated the same 22 seeds at 129600 ticks and compared them with the pre-implementation bundle referenced by `prompts/TARGET.md`. All 22 MIDI files differ, as expected from the adopted continuation candidates; the independent post-implementation regeneration above establishes determinism for the current slice. The refreshed checklist still records all 22 seeds as `not-reviewed`, and no pairwise preference is recorded. Therefore the lower reclassified lockstep count and the broader diagnostics window coverage do not establish an audible reduction in mechanical lockstep; they only make the unresolved listening question inspectable. This keeps the target incomplete and does not justify `prompts/STOP`.
+
+以下の window-level `lockstep` 値は初回 slice の before / after 分類であり、function-aware follow-up は同じ MIDI 内の共有機能をさらに分離する。
 
 * `restless-line`: tick 9120 の unprepared planned entry は解消した。Ticks 44160-48000 の `subject-return` は lockstep 38 -> 5、unison pressure 25 -> 3。Seed 全体は unison 644 -> 618、leap recovery 148 -> 57、mechanical reuse 6 -> 5、metrical cost 24 -> 0。
 * `tight-stretto`: ticks 13440-19200 の `subject-return` は lockstep 49 -> 12、unison pressure 28 -> 0、ticks 24960-30720 の `stretto-like` は 43 -> 4。Entry-clash window は 8 -> 0、leap recovery 86 -> 50、mechanical reuse 8 -> 2。5 個の unprepared planned-entry start は残り、聴取対象とする。
