@@ -2,14 +2,16 @@
 
 CI の seed と metric は、生成器の破綻を早く止めるための最小集合に保ちます。音楽的美しさの調査、metric の説明力確認、聴感上の比較は、CI へ広げる前に review bundle と music-theory review で扱います。
 
+この文書の分類は seed と metric の実行 scope を決めるものです。AI 譜面レビューが実装作業を止める `score-blocking` verdict は [Agent Score Review Policy](agent-score-review-policy.md) で扱い、`ci-blocking` とは同義にしません。Metric が存在しなくても score blocker は成立し、deterministic で説明可能な検出器ができた時点でのみ CI 昇格を検討します。
+
 ## Classification
 
 | Class | Use for | Required action |
 | --- | --- | --- |
 | `ci-blocking` | public contract、schema、determinism、hard constraint、既知の重大な音楽的破綻を安定して検出する軽量 check。 | PR CI で失敗させる。追加時は対象 seed、metric、実行時間への影響、失敗時の修正先を記録する。 |
 | `ci-observed` | CI 成果物や summary に残すが、単独では失敗させない観察値。 | regression note や review input として使う。しきい値を置く前に、音楽的症状と修正先を review で確認する。 |
-| `review-required` | 譜面上の良し悪し、metric truthfulness、style fit、seed 横断の傾向を見るもの。 | music-theory review、A/B review、manual listening で処理する。CI へ昇格するには `ci-blocking` の条件を満たす必要がある。 |
-| `manual-listening` | 自動 metric だけでは判断できない聴感、長時間疲労、pairwise preference。 | listening note と未実施 gap を残す。CI では pass/fail にしない。 |
+| `review-required` | 譜面上の良し悪し、metric truthfulness、style fit、seed 横断の傾向を見るもの。 | agent-side music-theory review で処理し、必要なら A/B review や manual listening を calibration に使う。CI へ昇格するには `ci-blocking` の条件を満たす必要がある。 |
+| `manual-listening` | 自動 metric や譜面だけでは判断できない聴感、長時間疲労、pairwise preference。 | listening note と未実施 gap を残す。CI と implementation completion の pass/fail にしない。 |
 | `remove-or-archive` | 重複、説明力のない metric、古い phase だけの expected value、修正済み症状の過剰 seed。 | 削除、doc-only history 化、または review-only へ降格する。削除理由と置き換え先を記録する。 |
 
 ## Test Profiles

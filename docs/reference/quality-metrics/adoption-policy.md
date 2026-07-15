@@ -2,6 +2,8 @@
 
 音楽品質の採否判断は、単独 metric の pass / fail ではなく、hard constraints、review signals、reference comparison、quality vector、manual listening を分けて扱います。
 
+実装ターゲットの完了判定には [Agent Score Review Policy](agent-score-review-policy.md) を適用します。Metric の policy class と、AI 譜面レビューの `score-blocking` / `score-concern` / `accepted` verdict は別の軸です。Manual listening 未実施は implementation completion を妨げません。
+
 ## Policy Classes
 
 | Class | Meaning | Blocks adoption |
@@ -9,7 +11,7 @@
 | `hard-failure` | 生成結果の破綻、または schema / readiness を壊すもの。 | Yes |
 | `review-required` | 音楽品質上の懸念。seed、section、声部、症状へ戻して読む。 | Not by itself |
 | `warning` | diagnostics warning または古い gate 由来の注意。 | Not by itself |
-| `manual` | manual listening / pairwise preference が必要な項目。 | Adoption evidence として扱う |
+| `manual` | manual listening / pairwise preference でのみ確認できる項目。 | No。未実施 gap を記録する |
 
 ## Review Gate Policy
 
@@ -71,7 +73,7 @@ Model adoption では、A/B summary の次の項目を合わせて読む。
 * Phase 14 では score-window musical acceptance、entry continuity、line agency、counter-subject survivability、phrase development、metric truthfulness が、reference aggregate や quality vector の green state より先に説明される。
 * Harmonic stasis rearticulation repair では same-voice short rearticulation、first-bass-answer handoff、all-free texture、functional-support provenance、harmonic function、harmonic-sonority classification、line agency retention が、motivic derivation labels の有無より先に説明される。
 * metric reconstruction がある場合は、old axis と new axis を同じ改善量として扱わず、何が reclassification で何が generated score の改善かを分けて記録する。
-* manual listening gap が残る場合は、採用根拠として未実施であることを明記する。
+* manual listening gap が残る場合は未実施であることを明記するが、それだけを理由に implementation target を未完了にしない。
 
 ## Regression Notes
 

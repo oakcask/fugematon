@@ -25,6 +25,7 @@
 
 * 音楽理論上のレビューを行う場合は、`music-theory-review` skill を使い、Fux 的な対位法を起点にしつつ、クラシック、ジャズ、ポピュラー音楽の文献調査と seed 横断の evidence を合わせて残す。
 * music-quality gate、diagnostics threshold、generator model、candidate scoring model、evaluation weights、section/planner model を変える場合、人間の聴取完了を待たずに、関連する複数 seed の生成譜面を楽典的にレビューする。
+* 実装完了には [Agent Score Review Policy](../reference/quality-metrics/agent-score-review-policy.md) を使う。未解決の `score-blocking` finding は metric がなくても実装を止め、manual listening 未実施は non-blocking gap として記録する。
 * 変更リスクに応じて代表 seed、境界 seed、rotation seed、adversarial seed から小集合を選び、レビューした seed、楽典上の所見、影響 metric、tradeoff、未実施の聴取 gap を該当 Phase または review doc に残す。
 * seed や metric を追加、削除、昇格、降格するレビューでは、[CI and review scope](../reference/quality-metrics/ci-review-scope.md) に従って、CI、review bundle、manual listening、削除または archive を分類する。
 * 指標の一般的な意味、正規化、採否 policy は [../reference/quality-metrics.md](../reference/quality-metrics.md) に置く。Review docs は seed evidence、音楽的症状、tradeoff、計画変更の根拠を残す場所。
