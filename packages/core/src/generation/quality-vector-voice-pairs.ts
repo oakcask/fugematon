@@ -22,6 +22,18 @@ const QUALITY_VECTOR_VOICE_PAIRS: readonly [Voice, Voice][] = [
   ["tenor", "bass"],
 ];
 
+const VOICE_PAIR_SPAN_CLASSIFICATIONS: readonly VoicePairSpanClassification[] = [
+  "mechanical-coupling",
+  "exact-collision",
+  "color-doubling",
+  "subject-support",
+  "cadence-support",
+  "sequence-support",
+  "pitch-class-reinforcement",
+];
+const VOICE_PAIR_SPAN_CLASSIFICATION_QUOTA = 2;
+const VOICE_PAIR_SPAN_LIMIT = 18;
+
 export function summarizeVoicePairUnisons(
   notes: readonly NoteEvent[],
   sectionPlans: readonly HarmonicPlan[],
@@ -143,7 +155,7 @@ export function summarizeVoicePairFunctions(
         summary.exactCollisionTicks += durationTicks;
       }
       if (pitchClassUnison && left.pitch !== right.pitch) {
-        if (isFunctionalReinforcement(left.role, right.role, section)) {
+        if (isFunctionalReinforcement(left, right, section)) {
           summary.functionalReinforcementTicks += durationTicks;
         } else {
           summary.pitchClassColorDoublingTicks += durationTicks;
@@ -153,11 +165,11 @@ export function summarizeVoicePairFunctions(
         continue;
       }
 
-      if (isEntryRole(left.role) || isEntryRole(right.role)) {
+      if (isEntrySupportPair(left, right)) {
         summary.subjectSupportLockstepTicks += durationTicks;
-      } else if (isCadenceSupport(section, startTick)) {
+      } else if (isCadenceSupport(section, startTick) || isCadenceSupportPair(left, right)) {
         summary.cadenceSupportLockstepTicks += durationTicks;
-      } else if (isSequenceSupport(section)) {
+      } else if (isSequenceSupport(section) || isSequenceSupportPair(left, right)) {
         summary.sequencePatternLockstepTicks += durationTicks;
       } else if (isPedalLikeSupport(left, right)) {
         summary.pedalLikeSupportLockstepTicks += durationTicks;
@@ -173,6 +185,7 @@ export function summarizeVoicePairFunctions(
 export function summarizeVoicePairSpans(
   notes: readonly NoteEvent[],
   sectionPlans: readonly HarmonicPlan[],
+  selection: "duration" | "review-coverage" = "duration",
 ): VoicePairSpanSummary[] {
   const checkpoints = noteCheckpoints(notes);
   const spans: VoicePairSpanSummary[] = [];
@@ -228,24 +241,36 @@ export function summarizeVoicePairSpans(
     }
   }
 
-  return spans
+  const spansByDuration = spans
     .filter((span) => span.durationTicks >= TICKS_PER_QUARTER)
     .sort(
       (left, right) =>
         right.durationTicks - left.durationTicks ||
         left.startTick - right.startTick ||
         voicePairLabel(left).localeCompare(voicePairLabel(right)),
-    )
-    .slice(0, 18);
+    );
+  return selection === "review-coverage"
+    ? selectVoicePairReviewSpans(spansByDuration)
+    : spansByDuration.slice(0, VOICE_PAIR_SPAN_LIMIT);
+}
+
+export function selectVoicePairReviewSpans(spansByDuration: readonly VoicePairSpanSummary[]): VoicePairSpanSummary[] {
+  const selected = VOICE_PAIR_SPAN_CLASSIFICATIONS.flatMap((classification) =>
+    spansByDuration
+      .filter((span) => span.classification === classification)
+      .slice(0, VOICE_PAIR_SPAN_CLASSIFICATION_QUOTA),
+  );
+  const selectedSet = new Set(selected);
+  return selected.concat(spansByDuration.filter((span) => !selectedSet.has(span))).slice(0, VOICE_PAIR_SPAN_LIMIT);
 }
 
 function isEntryRole(role: NoteEvent["role"]): boolean {
   return role === "subject" || role === "answer" || role === "subject-fragment";
 }
 
-function classifyVoicePairSpan(
-  left: Pick<NoteEvent, "pitch" | "role" | "startTick" | "durationTicks">,
-  right: Pick<NoteEvent, "pitch" | "role" | "startTick" | "durationTicks">,
+export function classifyVoicePairSpan(
+  left: Pick<NoteEvent, "pitch" | "role" | "startTick" | "durationTicks" | "motivicDerivation">,
+  right: Pick<NoteEvent, "pitch" | "role" | "startTick" | "durationTicks" | "motivicDerivation">,
   section: HarmonicPlan | undefined,
   tick: number,
 ): VoicePairSpanClassification | undefined {
@@ -254,7 +279,7 @@ function classifyVoicePairSpan(
   if (left.pitch === right.pitch) {
     return "exact-collision";
   }
-  if (pitchClassUnison && isFunctionalReinforcement(left.role, right.role, section)) {
+  if (pitchClassUnison && isFunctionalReinforcement(left, right, section)) {
     return "pitch-class-reinforcement";
   }
   if (pitchClassUnison) {
@@ -263,13 +288,13 @@ function classifyVoicePairSpan(
   if (!durationLockstep) {
     return undefined;
   }
-  if (isEntryRole(left.role) || isEntryRole(right.role)) {
+  if (isEntrySupportPair(left, right)) {
     return "subject-support";
   }
-  if (isCadenceSupport(section, tick)) {
+  if (isCadenceSupport(section, tick) || isCadenceSupportPair(left, right)) {
     return "cadence-support";
   }
-  if (isSequenceSupport(section)) {
+  if (isSequenceSupport(section) || isSequenceSupportPair(left, right)) {
     return "sequence-support";
   }
   return "mechanical-coupling";
@@ -296,17 +321,61 @@ function voicePairLabel(span: Pick<VoicePairSpanSummary, "leftVoice" | "rightVoi
 }
 
 function isFunctionalReinforcement(
-  leftRole: NoteEvent["role"],
-  rightRole: NoteEvent["role"],
+  left: Pick<NoteEvent, "role" | "motivicDerivation">,
+  right: Pick<NoteEvent, "role" | "motivicDerivation">,
   section: HarmonicPlan | undefined,
 ): boolean {
   return (
     section !== undefined &&
-    (isEntryRole(leftRole) ||
-      isEntryRole(rightRole) ||
-      leftRole === "counter-subject" ||
-      rightRole === "counter-subject" ||
+    (isEntrySupport(left) ||
+      isEntrySupport(right) ||
+      left.role === "counter-subject" ||
+      right.role === "counter-subject" ||
       section.state === "subject-return")
+  );
+}
+
+function isEntrySupport(note: Pick<NoteEvent, "role" | "motivicDerivation">): boolean {
+  return isEntryRole(note.role) || note.motivicDerivation?.preparesNextEntry === true;
+}
+
+function isEntrySupportPair(
+  left: Pick<NoteEvent, "role" | "motivicDerivation">,
+  right: Pick<NoteEvent, "role" | "motivicDerivation">,
+): boolean {
+  return isEntrySupport(left) || isEntrySupport(right) || sharedTargetFunction(left, right, "prepare-subject-return");
+}
+
+function isCadenceSupportPair(
+  left: Pick<NoteEvent, "motivicDerivation">,
+  right: Pick<NoteEvent, "motivicDerivation">,
+): boolean {
+  return (
+    left.motivicDerivation?.preparesCadence === true ||
+    right.motivicDerivation?.preparesCadence === true ||
+    sharedTargetFunction(left, right, "extend-cadence")
+  );
+}
+
+function isSequenceSupportPair(
+  left: Pick<NoteEvent, "motivicDerivation">,
+  right: Pick<NoteEvent, "motivicDerivation">,
+): boolean {
+  return (
+    left.motivicDerivation?.transformationKind === "sequence" &&
+    right.motivicDerivation?.transformationKind === "sequence" &&
+    left.motivicDerivation.sequenceDirection === right.motivicDerivation.sequenceDirection
+  );
+}
+
+function sharedTargetFunction(
+  left: Pick<NoteEvent, "motivicDerivation">,
+  right: Pick<NoteEvent, "motivicDerivation">,
+  targetFunction: NonNullable<NoteEvent["motivicDerivation"]>["targetFunction"],
+): boolean {
+  return (
+    left.motivicDerivation?.targetFunction === targetFunction &&
+    right.motivicDerivation?.targetFunction === targetFunction
   );
 }
 

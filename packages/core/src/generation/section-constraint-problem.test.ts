@@ -11,6 +11,7 @@ import type {
   Voice,
 } from "../events.js";
 import { generateScore } from "../generate.js";
+import { resolveWritingProfile } from "../writing-profile.js";
 import { buildHarmonicPlan } from "./harmony.js";
 import { createMeterContext } from "./meter.js";
 import {
@@ -19,6 +20,7 @@ import {
   isAllowedIntentionalRestReason,
   type SectionConstraintSlot,
 } from "./section-constraint-problem.js";
+import { addPlannedEntryPreparationSupport, staggerMechanicalVoicePairRhythms } from "./texture.js";
 
 test("section CSP accepts intentional rests only with allowed reasons", () => {
   const plan = sectionPlan({ state: "episode" });
@@ -208,7 +210,7 @@ test("section CSP diagnostics are deterministic for the same seed and input", ()
   const second = generateScore({ seed: "fugue-smoke", lengthTicks: TICKS_PER_QUARTER * 32 });
 
   assert.deepEqual(first.diagnostics.constraintSatisfactionReview, second.diagnostics.constraintSatisfactionReview);
-  assert.equal(first.diagnostics.constraintSatisfactionReview.schemaVersion, 6);
+  assert.equal(first.diagnostics.constraintSatisfactionReview.schemaVersion, 7);
   assert.ok(first.diagnostics.constraintSatisfactionReview.solverCandidateCount > 0);
   assert.equal(typeof first.diagnostics.constraintSatisfactionReview.metricalBoundaryCost, "number");
   assert.equal(typeof first.diagnostics.constraintSatisfactionReview.unpreparedTransitionCount, "number");
@@ -408,13 +410,26 @@ test("section CSP metrical-boundary cost ranks downbeat, prepared pickup, and un
     sectionPlan: offbeatPlan,
   });
 
-  assert.ok(downbeat.metricalBoundaryCost < prepared.metricalBoundaryCost);
+  assert.equal(downbeat.metricalBoundaryCost, prepared.metricalBoundaryCost);
   assert.ok(prepared.metricalBoundaryCost < offbeat.metricalBoundaryCost);
   assert.equal(prepared.preparedPickupCount > 0, true);
   assert.equal(offbeat.unpreparedTransitionCount > 0, true);
+  assert.ok(
+    prepared.metricalBoundaryClassifications.some(
+      (classification) =>
+        classification.classification === "prepared-pickup" && classification.response === "accepted-context",
+    ),
+  );
+  assert.ok(
+    offbeat.metricalBoundaryClassifications.some(
+      (classification) =>
+        classification.classification === "unprepared-transition" &&
+        classification.response === "generator-response-required",
+    ),
+  );
 });
 
-test("section CSP detects planned entry identity, support, unison, and lockstep pressure", () => {
+test("section CSP keeps planned-entry imitation out of mechanical lockstep pressure", () => {
   const plan = sectionPlan({ state: "subject-return", durationTicks: TICKS_PER_QUARTER * 4 });
   const entry = plannedEntry({
     voice: "soprano",
@@ -445,8 +460,123 @@ test("section CSP detects planned entry identity, support, unison, and lockstep 
   assert.equal(review.infeasibleConstraintCounts.entryPlanViolationCount, 1);
   assert.ok(review.infeasibleConstraintCounts.entrySupportInstabilityCount > 0);
   assert.ok(review.infeasibleConstraintCounts.unresolvedSevereEntryIntervalCount > 0);
-  assert.ok(review.infeasibleConstraintCounts.voicePairUnisonPressureCount > 0);
+  assert.equal(review.infeasibleConstraintCounts.voicePairUnisonPressureCount, 0);
+  assert.equal(review.infeasibleConstraintCounts.voicePairLockstepCount, 0);
+});
+
+test("section CSP counts unexplained free-counterpoint rhythm coupling", () => {
+  const plan = sectionPlan({ state: "subject-return", durationTicks: TICKS_PER_QUARTER * 8 });
+  const notes = [
+    note({ voice: "soprano", startTick: 0, durationTicks: TICKS_PER_QUARTER * 2, pitch: 72 }),
+    note({ voice: "alto", startTick: 0, durationTicks: TICKS_PER_QUARTER * 2, pitch: 64 }),
+    note({ voice: "tenor", startTick: 0, durationTicks: TICKS_PER_QUARTER * 2, pitch: 55 }),
+    note({ voice: "bass", startTick: 0, durationTicks: TICKS_PER_QUARTER * 2, pitch: 48 }),
+  ];
+  const review = evaluateSectionConstraintProblem({
+    problem: buildSectionConstraintProblem({ notes, sectionPlan: plan }),
+    notes,
+    sectionPlan: plan,
+  });
+
   assert.ok(review.infeasibleConstraintCounts.voicePairLockstepCount > 0);
+});
+
+test("planned-entry preparation adds a local harmonic pickup without moving the entry", () => {
+  const startTick = TICKS_PER_QUARTER;
+  const plan = sectionPlan({
+    state: "subject-return",
+    startTick,
+    durationTicks: TICKS_PER_QUARTER * 4,
+  });
+  plan.anchors = [
+    {
+      tick: startTick,
+      localKey: { tonic: "D", mode: "major" },
+      function: "tonic",
+      cadenceTarget: false,
+    },
+  ];
+  const entry = plannedEntry({
+    voice: "soprano",
+    state: "subject-return",
+    startTick,
+    actualPitchClassSequence: [0],
+  });
+  const notes = [
+    note({
+      voice: "soprano",
+      startTick,
+      durationTicks: plan.durationTicks,
+      pitch: 60,
+      role: "subject",
+    }),
+  ];
+  const before = evaluateSectionConstraintProblem({
+    problem: buildSectionConstraintProblem({ notes, sectionPlan: plan, subjectEntries: [entry] }),
+    notes,
+    sectionPlan: plan,
+    subjectEntries: [entry],
+  });
+
+  addPlannedEntryPreparationSupport(
+    notes,
+    [entry],
+    [plan],
+    "low-root-first",
+    resolveWritingProfile("four-voice-default"),
+  );
+  const after = evaluateSectionConstraintProblem({
+    problem: buildSectionConstraintProblem({ notes, sectionPlan: plan, subjectEntries: [entry] }),
+    notes,
+    sectionPlan: plan,
+    subjectEntries: [entry],
+  });
+
+  assert.ok(
+    before.metricalBoundaryClassifications.some(
+      (classification) => classification.plannedEntry && classification.classification === "unprepared-transition",
+    ),
+  );
+  assert.ok(
+    after.metricalBoundaryClassifications.some(
+      (classification) => classification.plannedEntry && classification.classification === "planned-entry-pickup",
+    ),
+  );
+  assert.equal(entry.startTick, startTick);
+  const pickup = notes.find((candidate) => candidate.voice === "bass" && candidate.startTick === startTick);
+  assert.ok(pickup !== undefined);
+  assert.equal(pickup.pitch % 12, 2);
+  assert.equal(pickup.motivicDerivation?.targetFunction, "prepare-subject-return");
+  assert.equal(pickup.motivicDerivation?.preparesNextEntry, true);
+});
+
+test("voice-pair rhythm staggering reduces mechanical coupling without changing the section span", () => {
+  const plan = sectionPlan({ state: "subject-return", durationTicks: TICKS_PER_QUARTER * 8 });
+  const notes = [
+    note({ voice: "soprano", startTick: 0, durationTicks: TICKS_PER_QUARTER * 2, pitch: 72 }),
+    note({ voice: "soprano", startTick: TICKS_PER_QUARTER * 2, durationTicks: TICKS_PER_QUARTER * 2, pitch: 71 }),
+    note({ voice: "alto", startTick: 0, durationTicks: TICKS_PER_QUARTER * 2, pitch: 64 }),
+    note({ voice: "alto", startTick: TICKS_PER_QUARTER * 2, durationTicks: TICKS_PER_QUARTER * 2, pitch: 65 }),
+  ];
+  const before = evaluateSectionConstraintProblem({
+    problem: buildSectionConstraintProblem({ notes, sectionPlan: plan }),
+    notes,
+    sectionPlan: plan,
+  });
+  const originalEndTick = Math.max(...notes.map((candidate) => candidate.startTick + candidate.durationTicks));
+
+  const changedBoundaryCount = staggerMechanicalVoicePairRhythms(notes, [plan], 0);
+  const after = evaluateSectionConstraintProblem({
+    problem: buildSectionConstraintProblem({ notes, sectionPlan: plan }),
+    notes,
+    sectionPlan: plan,
+  });
+
+  assert.ok(changedBoundaryCount > 0);
+  assert.ok(
+    after.infeasibleConstraintCounts.voicePairLockstepCount < before.infeasibleConstraintCounts.voicePairLockstepCount,
+  );
+  assert.equal(Math.max(...notes.map((candidate) => candidate.startTick + candidate.durationTicks)), originalEndTick);
 });
 
 function sectionPlan(input: { state: FugueState; startTick?: number; durationTicks?: number }): HarmonicPlan {

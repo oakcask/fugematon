@@ -849,8 +849,7 @@ function summarizeDiagnostics(diagnostics: GenerationDiagnostics): ReviewDiagnos
       unresolvedSevereEntryIntervalCount: diagnostics.unresolvedSevereEntryIntervalCount,
       entryAdjacentSecondFrictionCount:
         diagnostics.constraintSatisfactionReview.infeasibleConstraintCounts.entryAdjacentSecondFrictionCount,
-      unresolvedAccentedEntryClashCount:
-        diagnostics.constraintSatisfactionReview.infeasibleConstraintCounts.unresolvedAccentedEntryClashCount,
+      unresolvedAccentedEntryClashCount: diagnostics.dissonanceTriage.unresolvedAccentedEntryClashCount,
       leapToSilenceCount: diagnostics.constraintSatisfactionReview.infeasibleConstraintCounts.leapToSilenceCount,
       sustainedSevereVerticalDissonanceCount: diagnostics.dissonanceTriage.sustainedSevereVerticalDissonanceCount,
       soloTexture: diagnostics.soloTexture,

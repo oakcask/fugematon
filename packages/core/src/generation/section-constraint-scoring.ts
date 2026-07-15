@@ -57,11 +57,11 @@ const CURRENT_WEIGHTS: SectionConstraintScoringWeights = {
   unresolvedEntrySupportInstability: 5,
   unresolvedSevereEntryInterval: 6,
   entryAdjacentSecondFriction: 0,
-  unresolvedAccentedEntryClash: 0,
+  unresolvedAccentedEntryClash: 24,
   leapToSilence: 0,
   sustainedSevereVerticalDissonance: 16,
-  voicePairUnisonPressure: 0.25,
-  voicePairLockstep: 0.125,
+  voicePairUnisonPressure: 1,
+  voicePairLockstep: 1,
   thinUnrootedStructuralSupport: 3,
   pitchClassDoublingOnly: 4,
   mixedEntryHarmonicRisk: 5,
@@ -75,7 +75,7 @@ const CURRENT_WEIGHTS: SectionConstraintScoringWeights = {
 
 const SECTION_CONSTRAINT_SCORING_PROFILES: Record<SectionConstraintScoringProfileId, SectionConstraintScoringProfile> =
   {
-    current: { id: "current", version: 1, weights: CURRENT_WEIGHTS },
+    current: { id: "current", version: 2, weights: CURRENT_WEIGHTS },
     "entry-soft": {
       id: "entry-soft",
       version: 1,

@@ -4,6 +4,9 @@
 
 ## Read First
 
+* [Generator constraint rebuild important-entry-tail review](generator-constraint-rebuild-important-entry-tail.md): current exposition solver-ownership evidence. Finalized held, staggered, linear, and oblique support candidates remove unexplained first-bass-answer tail collapse while preserving hard contracts and keeping small localized voice-pair tradeoffs review-visible.
+* [Generator constraint rebuild voice-pair independence review](generator-constraint-rebuild-voice-pair-independence.md): current continuation-CSP independence evidence. Functional imitation stays distinct from mechanical coupling, off-measure planned entries gain local preparation candidates, and melody / phrase tradeoffs remain review-visible.
+* [Generator constraint rebuild metrical-boundary review](generator-constraint-rebuild-metrical-boundary.md): current continuation-CSP boundary evidence. Duration candidates restore unprepared transitions toward measure boundaries while planned-entry pickup and cadence rhetoric remain accepted context.
 * [Generator constraint rebuild density and structural support review](generator-constraint-rebuild-density-structural.md): current continuation-CSP evidence. Density and structural-label false positives are classified by section function, true failures are repaired before adoption, and score-level cleanup remains non-adopting trace evidence.
 * [Generator constraint rebuild continuation CSP review](generator-constraint-rebuild-continuation-csp.md): current architecture evidence. Continuation selection now searches section-CSP support-policy and structural-anchor variants before adoption; remaining density, structural, and metrical relaxation stays review-required.
 * [Generator constraint rebuild section CSP review](generator-constraint-rebuild-section-csp.md): current CSP surface baseline. It defines note / hold / internal-rest section slots, public no-rest-event compatibility, and why the surface was not adoption-ready by itself.
@@ -23,6 +26,7 @@
 
 * 音楽理論上のレビューを行う場合は、`music-theory-review` skill を使い、Fux 的な対位法を起点にしつつ、クラシック、ジャズ、ポピュラー音楽の文献調査と seed 横断の evidence を合わせて残す。
 * music-quality gate、diagnostics threshold、generator model、candidate scoring model、evaluation weights、section/planner model を変える場合、人間の聴取完了を待たずに、関連する複数 seed の生成譜面を楽典的にレビューする。
+* 実装完了には [Agent Score Review Policy](../reference/quality-metrics/agent-score-review-policy.md) を使う。未解決の `score-blocking` finding は metric がなくても実装を止め、manual listening 未実施は non-blocking gap として記録する。
 * 変更リスクに応じて代表 seed、境界 seed、rotation seed、adversarial seed から小集合を選び、レビューした seed、楽典上の所見、影響 metric、tradeoff、未実施の聴取 gap を該当 Phase または review doc に残す。
 * seed や metric を追加、削除、昇格、降格するレビューでは、[CI and review scope](../reference/quality-metrics/ci-review-scope.md) に従って、CI、review bundle、manual listening、削除または archive を分類する。
 * 指標の一般的な意味、正規化、採否 policy は [../reference/quality-metrics.md](../reference/quality-metrics.md) に置く。Review docs は seed evidence、音楽的症状、tradeoff、計画変更の根拠を残す場所。

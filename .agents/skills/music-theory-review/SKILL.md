@@ -13,13 +13,25 @@ Make music-theory review reproducible enough that an agent can find problems, co
 
 1. Start from `docs/README.md`, then open only the relevant phase, reference, and review docs.
 2. Identify the concrete musical concern: counterpoint, harmony, fugue form, melody, rhythm, texture, style fit, listening fatigue, or diagnostics coverage.
-3. For any change to a music-quality gate, diagnostics threshold, generator model, candidate scoring model, evaluation weights, or section/planner model, review generated scores across several relevant seeds before finalizing, without waiting for human listening. Treat the review as agent-side musical judgement that approximates a human first pass, while explicitly recording any remaining listening gaps.
+3. For any change to a music-quality gate, diagnostics threshold, generator model, candidate scoring model, evaluation weights, or section/planner model, review generated scores across several relevant seeds before finalizing, without waiting for human listening. Apply `docs/reference/quality-metrics/agent-score-review-policy.md`: unresolved high-confidence score blockers stop implementation, while manual-listening gaps do not.
 4. Do a literature and repertoire pass before designing or revising a generator model, and before making strong theory claims. Use Fux/species counterpoint as the default counterpoint baseline, then check broader classical, jazz, popular-music, generative-music evaluation, and historically relevant repertoire sources when the issue touches harmony, rhythm, form, phrase design, texture, style, or evaluation.
 5. Generate or inspect evidence across the relevant review seeds. Prefer existing review bundles and diagnostics when they answer the question; otherwise regenerate a bundle under `samples/<review-name>` or derive focused metrics from ScoreEvent data.
 6. When a symptom repeats across seeds, test whether it comes from a generator pattern, not only from the local diagnostics. Compare subject degree patterns, answer transforms, entry spacing, role assignments, section states, voice/register placement, and support-texture formulas against the affected metrics.
 7. If the review touches seed or metric scope, classify each affected item with `docs/reference/quality-metrics/ci-review-scope.md` before recommending CI expansion. Default uncertain beauty signals to `review-required`, not CI blocking.
 8. Separate findings into source-backed rules, project policy, and inference from generated artifacts.
 9. Update docs when the review changes phase scope, gate rationale, diagnostics priorities, seed selection, or music-quality expectations.
+
+## Agent Score Review Guardrails
+
+Use the verdicts and completion rules in `docs/reference/quality-metrics/agent-score-review-policy.md` for every generation-quality implementation review.
+
+* Do not leave an implementation target incomplete only because human listening or pairwise preference is missing.
+* Block on a high-confidence, localized score failure even when current diagnostics and aggregate metrics are green or do not cover the symptom.
+* Keep `score-blocking` separate from `ci-blocking`; a score finding can stop the agent loop before it has a reliable automated detector.
+* Require seed, location, section, voices or roles, intended function, observed symptom, style context, evidence strength, and likely repair owner for a score blocker.
+* Classify preference, style-dependent ambiguity, and playback-only effects as `score-concern` or `listening-gap`, not blockers.
+* After closing all score blockers, report the implementation complete and record manual listening as a non-blocking gap.
+* If the target itself is audio rendering, sampler behavior, playback latency, mix, or another sound-only behavior, state why score review cannot verify it and define the required audio evidence narrowly.
 
 ## Generator Model Design Rules
 
@@ -90,7 +102,7 @@ For each finding, record:
 
 When proposing a new or changed seed/metric, also record its CI / review scope classification: `ci-blocking`, `ci-observed`, `review-required`, `manual-listening`, or `remove-or-archive`. Include the reason and the action so review-only concerns do not silently become permanent CI cost.
 
-Prefer quantitative checks for repeated structural concerns: ratios, counts, per-seed maxima, windowed contour measures, entry-local intervals, role pairs, voice pairs, section-state grouping, and before/after comparisons. Pair this with listening judgement when the issue is aesthetic or style-dependent.
+Prefer quantitative checks for repeated structural concerns: ratios, counts, per-seed maxima, windowed contour measures, entry-local intervals, role pairs, voice pairs, section-state grouping, and before/after comparisons. Use score review to complete the implementation decision; record listening judgement as optional calibration when the issue is aesthetic or style-dependent.
 
 Do not stop at reporting top-level diagnostics when a musical failure repeats. Ask what generative choice made the failure likely. Useful checks include:
 
@@ -139,4 +151,4 @@ Lead with findings. For each finding, include the affected seeds and the theory 
 
 If seed or metric scope changed, include a short `CI / review scope` note that lists the classification, reason, and action for each affected seed or metric.
 
-If the evidence is incomplete, say exactly what is missing: unavailable source, no listening pass, insufficient seeds, missing diagnostics, or ungenerated review bundle.
+If the evidence is incomplete, say exactly what is missing: unavailable source, insufficient seeds, missing diagnostics, ungenerated review bundle, or a listening gap. A listening gap alone does not make a non-audio implementation target incomplete.

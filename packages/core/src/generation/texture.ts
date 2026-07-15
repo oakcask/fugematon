@@ -28,6 +28,7 @@ import {
 } from "./harmony.js";
 import { isModalMode } from "./key.js";
 import { melodicRoleForScaleDegree, scaleDegreePitchClass } from "./pitch.js";
+import { classifyVoicePairSpan } from "./quality-vector-voice-pairs.js";
 import {
   COUNTER_SUBJECT_DEGREES,
   compareNoteEvents,
@@ -99,6 +100,7 @@ type TextureNotePattern = {
   freeCounterpointPhraseVariation?: boolean;
   strictSemitoneAvoidance?: boolean;
   preserveDurations?: boolean;
+  motivicDerivation?: NoteEvent["motivicDerivation"];
   writingProfile?: WritingProfile;
 };
 
@@ -533,6 +535,7 @@ export function addTextureNote(
     velocity: pattern.velocity,
     role: pattern.role,
     metricalHarmonyIntent,
+    motivicDerivation: pattern.motivicDerivation,
   });
 }
 
@@ -1812,15 +1815,27 @@ export function addEntryWindowContinuitySupport(
   subjectEntries: readonly PlannedEntry[],
   sectionPlans: readonly HarmonicPlan[],
   writingProfile?: WritingProfile,
+  policy: {
+    voiceOrder?: readonly Voice[];
+    lineKind?: ContinuityLineKind;
+    preferHeldSupport?: boolean;
+  } = {},
 ): void {
-  for (const run of findImportantEntryTailSupportRuns(notes, subjectEntries, sectionPlans)) {
+  for (const run of findImportantEntryTailSupportRuns(notes, subjectEntries)) {
     const plan =
       sectionPlanForTick(sectionPlans, run.startTick) ?? sectionPlanForTick(sectionPlans, run.entryStartTick);
     if (plan === undefined) {
       continue;
     }
-    const supportVoices = entryWindowSupportVoices(notes, run);
+    const supportVoices = entryWindowSupportVoices(notes, run, policy.voiceOrder);
     if (supportVoices.length === 0) {
+      continue;
+    }
+    const heldSupportVoices = policy.preferHeldSupport
+      ? extendEntryWindowHeldSupport(notes, supportVoices, run.startTick, run.endTick)
+      : [];
+    const addedSupportVoices = supportVoices.filter((voice) => !heldSupportVoices.includes(voice));
+    if (addedSupportVoices.length === 0) {
       continue;
     }
 
@@ -1829,14 +1844,186 @@ export function addEntryWindowContinuitySupport(
       durationTicks: run.endTick - run.startTick,
       localKey: plan.targetKey,
       harmonicPlan: plan,
-      maxVoiceCount: supportVoices.length,
-      voiceOrder: supportVoices,
-      lineKind: shouldUseObliqueEntryWindowSupport(plan, run.startTick) ? "oblique-support" : "linear",
+      maxVoiceCount: addedSupportVoices.length,
+      voiceOrder: addedSupportVoices,
+      lineKind:
+        policy.lineKind ?? (shouldUseObliqueEntryWindowSupport(plan, run.startTick) ? "oblique-support" : "linear"),
       writingProfile,
     });
   }
 
   repairTextureVoiceCrossingsForPlans(notes, sectionPlans, writingProfile);
+}
+
+function extendEntryWindowHeldSupport(
+  notes: Exposition["notes"],
+  supportVoices: readonly Voice[],
+  startTick: number,
+  endTick: number,
+): Voice[] {
+  const heldVoices: Voice[] = [];
+  for (const voice of supportVoices) {
+    const carriedNote = notes
+      .filter((note) => note.voice === voice && note.startTick + note.durationTicks === startTick)
+      .sort(compareNoteEvents)
+      .at(-1);
+    if (carriedNote === undefined) {
+      continue;
+    }
+    carriedNote.durationTicks = endTick - carriedNote.startTick;
+    heldVoices.push(voice);
+  }
+  return heldVoices;
+}
+
+export function addPlannedEntryPreparationSupport(
+  notes: Exposition["notes"],
+  subjectEntries: readonly PlannedEntry[],
+  sectionPlans: readonly HarmonicPlan[],
+  policy: UnexplainedRestThinningSupportPolicy,
+  writingProfile?: WritingProfile,
+): void {
+  for (const entry of subjectEntries) {
+    const plan = sectionPlanForTick(sectionPlans, entry.startTick);
+    if (
+      plan === undefined ||
+      entry.state === "exposition" ||
+      entry.startTick % plan.meterContext.measureTicks === 0 ||
+      hasNearbyCadenceTarget(plan, entry.startTick)
+    ) {
+      continue;
+    }
+
+    const nextDownbeatTick =
+      entry.startTick + (plan.meterContext.measureTicks - (entry.startTick % plan.meterContext.measureTicks));
+    const run = {
+      startTick: entry.startTick,
+      endTick: Math.min(nextDownbeatTick + plan.meterContext.beatTicks / 2, plan.startTick + plan.durationTicks),
+    };
+    if (run.endTick <= run.startTick || hasPreparedPlannedEntryPickup(notes, entry, nextDownbeatTick)) {
+      continue;
+    }
+
+    const voiceOrder =
+      policy === "balanced-upper-agency"
+        ? (["soprano", "alto", "tenor", "bass"] as const)
+        : (["bass", "tenor", "alto", "soprano"] as const);
+    const supportVoice = voiceOrder
+      .filter((voice) => voice !== entry.voice)
+      .find((voice) => !hasOverlap(notes, voice, run.startTick, run.endTick - run.startTick));
+    if (supportVoice === undefined) {
+      continue;
+    }
+
+    const anchor = nearestHarmonicAnchor(entry.startTick, [plan]);
+    const rootDegree = anchor === undefined ? 0 : rootDegreeForFunction(anchor.function);
+    const supportDegrees = anchor === undefined ? [0, 2, 4] : chordScaleDegreesForFunction(anchor.function);
+    const supportDegree =
+      supportVoice === "bass" ? rootDegree : (supportDegrees.find((degree) => degree !== rootDegree) ?? rootDegree);
+    addTextureNote(
+      notes,
+      {
+        voice: supportVoice,
+        localKey: anchor?.localKey ?? plan.targetKey,
+        velocity: 50,
+        role: "free-counterpoint",
+        harmonicPlan: plan,
+        metricalHarmonyIntent: supportVoice === "bass" ? "structural-root-support" : "structural-chord-tone",
+        motivicDerivation: {
+          sourceMotive: "prior-episode-figure",
+          transformationKind: "rhythmic-paraphrase",
+          targetFunction: "prepare-subject-return",
+          sequenceDirection: "none",
+          preparesNextEntry: true,
+          preparesCadence: false,
+        },
+        strictSemitoneAvoidance: true,
+        writingProfile,
+      },
+      supportDegree,
+      run.startTick,
+      run.endTick - run.startTick,
+    );
+  }
+
+  repairTextureVoiceCrossingsForPlans(notes, sectionPlans, writingProfile);
+}
+
+export function staggerMechanicalVoicePairRhythms(
+  notes: Exposition["notes"],
+  sectionPlans: readonly HarmonicPlan[],
+  rotation: number,
+): number {
+  const voiceOrder = VOICE_ENTRY_ORDER.map(
+    (_, index) => VOICE_ENTRY_ORDER[(index + rotation) % VOICE_ENTRY_ORDER.length]!,
+  );
+  let changedBoundaryCount = 0;
+
+  for (const voice of voiceOrder) {
+    const voiceNotes = notes.filter((note) => note.voice === voice).sort(compareNoteEvents);
+    for (let index = 0; index < voiceNotes.length - 1 && changedBoundaryCount < 4; index += 1) {
+      const current = voiceNotes[index]!;
+      const next = voiceNotes[index + 1]!;
+      const boundaryTick = current.startTick + current.durationTicks;
+      const plan = sectionPlanForTick(sectionPlans, Math.max(current.startTick, boundaryTick - 1));
+      if (
+        plan === undefined ||
+        !isTextureRole(current.role) ||
+        !isTextureRole(next.role) ||
+        boundaryTick !== next.startTick ||
+        current.durationTicks < TICKS_PER_QUARTER ||
+        next.durationTicks < TICKS_PER_QUARTER ||
+        hasNearbyCadenceTarget(plan, boundaryTick)
+      ) {
+        continue;
+      }
+      const coupled = notes.some(
+        (other) =>
+          other.voice !== voice &&
+          other.startTick === current.startTick &&
+          other.durationTicks === current.durationTicks &&
+          classifyVoicePairSpan(current, other, plan, current.startTick) === "mechanical-coupling",
+      );
+      if (!coupled) {
+        continue;
+      }
+
+      const shiftTicks = Math.min(
+        plan.meterContext.beatTicks / 2,
+        current.durationTicks - plan.meterContext.beatTicks / 2,
+        next.durationTicks - plan.meterContext.beatTicks / 2,
+      );
+      if (shiftTicks <= 0) {
+        continue;
+      }
+      const extendCurrent = (changedBoundaryCount + rotation) % 2 === 0;
+      current.durationTicks += extendCurrent ? shiftTicks : -shiftTicks;
+      next.startTick += extendCurrent ? shiftTicks : -shiftTicks;
+      next.durationTicks += extendCurrent ? -shiftTicks : shiftTicks;
+      changedBoundaryCount += 1;
+    }
+  }
+
+  return changedBoundaryCount;
+}
+
+function hasPreparedPlannedEntryPickup(
+  notes: readonly NoteEvent[],
+  entry: PlannedEntry,
+  nextDownbeatTick: number,
+): boolean {
+  const heldSupport = notes.some(
+    (note) =>
+      note.voice !== entry.voice &&
+      note.startTick < entry.startTick &&
+      entry.startTick < note.startTick + note.durationTicks,
+  );
+  const sustainedPickupVoiceCount = new Set(
+    notes
+      .filter((note) => note.startTick === entry.startTick && note.startTick + note.durationTicks >= nextDownbeatTick)
+      .map((note) => note.voice),
+  ).size;
+  return heldSupport || sustainedPickupVoiceCount >= 2;
 }
 
 export function addExposedFreeCounterpointSoloSupport(
@@ -3366,23 +3553,17 @@ function findPostEntryThinSupportRuns(
 function findImportantEntryTailSupportRuns(
   notes: readonly NoteEvent[],
   subjectEntries: readonly PlannedEntry[],
-  sectionPlans: readonly HarmonicPlan[],
 ): { startTick: number; endTick: number; entryVoice: Voice; entryStartTick: number; alreadyEnteredVoices: Voice[] }[] {
   const contexts = buildEntryTailSupportContexts(notes, subjectEntries);
-  return contexts.flatMap((context) => importantEntryTailSupportRunsForEntry(notes, context, sectionPlans));
+  return contexts.flatMap((context) => importantEntryTailSupportRunsForEntry(notes, context));
 }
 
 function importantEntryTailSupportRunsForEntry(
   notes: readonly NoteEvent[],
   context: EntryTailSupportContext,
-  sectionPlans: readonly HarmonicPlan[],
 ): { startTick: number; endTick: number; entryVoice: Voice; entryStartTick: number; alreadyEnteredVoices: Voice[] }[] {
   const entryEndTick = importantEntryEndTick(notes, context.entry);
-  const plan = sectionPlanForTick(sectionPlans, context.entry.startTick);
-  const scanEndTick = Math.min(
-    plan === undefined ? entryEndTick + TICKS_PER_QUARTER * 4 : plan.startTick + plan.durationTicks,
-    entryEndTick + TICKS_PER_QUARTER * 4,
-  );
+  const scanEndTick = entryEndTick + TICKS_PER_QUARTER * 4;
   const stepTicks = TICKS_PER_QUARTER / 2;
   const runs: {
     startTick: number;
@@ -3390,6 +3571,7 @@ function importantEntryTailSupportRunsForEntry(
     entryVoice: Voice;
     entryStartTick: number;
     alreadyEnteredVoices: Voice[];
+    outsideVoiceSignature: string;
   }[] = [];
   let currentRun:
     | {
@@ -3398,6 +3580,7 @@ function importantEntryTailSupportRunsForEntry(
         entryVoice: Voice;
         entryStartTick: number;
         alreadyEnteredVoices: Voice[];
+        outsideVoiceSignature: string;
       }
     | undefined;
 
@@ -3408,7 +3591,15 @@ function importantEntryTailSupportRunsForEntry(
   for (let tick = context.entry.startTick; tick < scanEndTick; tick += stepTicks) {
     const segmentEndTick = Math.min(scanEndTick, tick + stepTicks);
     if (isThinImportantEntryTailSegment(notes, context, tick, segmentEndTick)) {
-      if (currentRun?.endTick === tick) {
+      const outsideVoiceSignature = context.alreadyEnteredVoices
+        .filter((voice) =>
+          notes.some(
+            (note) =>
+              note.voice === voice && note.startTick < segmentEndTick && tick < note.startTick + note.durationTicks,
+          ),
+        )
+        .join(">");
+      if (currentRun?.endTick === tick && currentRun.outsideVoiceSignature === outsideVoiceSignature) {
         currentRun.endTick = segmentEndTick;
       } else {
         if (currentRun !== undefined) {
@@ -3420,6 +3611,7 @@ function importantEntryTailSupportRunsForEntry(
           entryVoice: context.entry.voice,
           entryStartTick: context.entry.startTick,
           alreadyEnteredVoices: context.alreadyEnteredVoices,
+          outsideVoiceSignature,
         };
       }
     } else if (currentRun !== undefined) {
@@ -3737,6 +3929,7 @@ function noteRoleForEntryForm(form: EntryForm): NoteEvent["role"] {
 function entryWindowSupportVoices(
   notes: readonly NoteEvent[],
   run: { startTick: number; endTick: number; entryVoice: Voice; alreadyEnteredVoices: readonly Voice[] },
+  preferredVoiceOrder: readonly Voice[] = VOICE_ENTRY_ORDER,
 ): Voice[] {
   const outsideVoiceCount = run.alreadyEnteredVoices.filter((voice) =>
     notes.some(
@@ -3745,7 +3938,8 @@ function entryWindowSupportVoices(
     ),
   ).length;
   const requiredSupportCount = Math.max(0, 2 - outsideVoiceCount);
-  return VOICE_ENTRY_ORDER.filter((voice) => voice !== run.entryVoice)
+  return uniqueVoiceOrder([...preferredVoiceOrder, ...VOICE_ENTRY_ORDER])
+    .filter((voice) => voice !== run.entryVoice)
     .filter((voice) => !hasOverlap(notes, voice, run.startTick, run.endTick - run.startTick))
     .slice(0, requiredSupportCount);
 }

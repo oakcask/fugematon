@@ -9,6 +9,7 @@ import type {
   PlannedEntry,
   SectionConstraintDensityClassification,
   SectionConstraintInfeasibleCounts,
+  SectionConstraintMetricalBoundaryClassification,
   SectionConstraintRelaxationLevel,
   SectionConstraintRestSpan,
   SectionConstraintSatisfactionWindow,
@@ -22,6 +23,7 @@ import { assessHarmonicSonority, hasSupportRole, isMixedEntryTexture } from "./h
 import { chordTonePitchClasses, rootDegreeForFunction } from "./harmony.js";
 import { beatStrengthAtTick, isCompoundMidpoint, isMeasureDownbeat, previousMeasureDownbeat } from "./meter.js";
 import { scaleDegreePitchClass } from "./pitch.js";
+import { classifyVoicePairSpan } from "./quality-vector-voice-pairs.js";
 import {
   resolveSectionConstraintScoringProfile,
   sectionConstraintSoftCostFromCounts,
@@ -159,7 +161,7 @@ export function evaluateSectionConstraintProblem(input: {
     subjectEntries: input.subjectEntries ?? [],
   });
   addEntryConstraintCounts(infeasibleConstraintCounts, input);
-  addVoicePairPressureCounts(infeasibleConstraintCounts, input.notes, input.problem, gridTicks);
+  addVoicePairPressureCounts(infeasibleConstraintCounts, input.notes, input.sectionPlan, input.problem, gridTicks);
   addUpperLineAgencyCounts(
     infeasibleConstraintCounts,
     input.notes,
@@ -279,6 +281,7 @@ export function evaluateSectionConstraintProblem(input: {
     offMeasureEntryStartCount: metricalBoundary.offMeasureEntryStartCount,
     unpreparedTransitionCount: metricalBoundary.unpreparedTransitionCount,
     preparedPickupCount: metricalBoundary.preparedPickupCount,
+    metricalBoundaryClassifications: metricalBoundary.classifications,
     intentionalRestSpans,
     unplannedSilentRuns,
     densityClassifications,
@@ -317,7 +320,7 @@ export function buildConstraintSatisfactionReview(input: {
   );
 
   return {
-    schemaVersion: 6,
+    schemaVersion: 7,
     windowCount: windows.length,
     intentionalRestSpanCount: windows.reduce((sum, window) => sum + window.intentionalRestSpans.length, 0),
     unplannedSilentRunCount: unplannedSilentRuns.length,
@@ -330,6 +333,7 @@ export function buildConstraintSatisfactionReview(input: {
     offMeasureEntryStartCount: windows.reduce((sum, window) => sum + window.offMeasureEntryStartCount, 0),
     unpreparedTransitionCount: windows.reduce((sum, window) => sum + window.unpreparedTransitionCount, 0),
     preparedPickupCount: windows.reduce((sum, window) => sum + window.preparedPickupCount, 0),
+    metricalBoundaryClassifications: windows.flatMap((window) => window.metricalBoundaryClassifications),
     explainedDensityWindowCount: windows.reduce(
       (sum, window) =>
         sum +
@@ -381,90 +385,99 @@ function evaluateMetricalBoundary(input: {
   offMeasureEntryStartCount: number;
   unpreparedTransitionCount: number;
   preparedPickupCount: number;
+  classifications: SectionConstraintMetricalBoundaryClassification[];
 } {
   const startTick = input.sectionPlan.startTick;
   const endTick = input.sectionPlan.startTick + input.sectionPlan.durationTicks;
-  const meterContext = input.sectionPlan.meterContext;
-  const offMeasure = !isMeasureDownbeat(startTick, meterContext);
-  const endOffMeasure = !isMeasureDownbeat(endTick, meterContext);
-  const hasEntryStart = input.subjectEntries.some(
-    (entry) => entry.startTick === startTick && entry.state === input.sectionPlan.state,
-  );
-  const hasHarmonicAnchor = input.sectionPlan.anchors.some(
-    (anchor) => anchor.tick === startTick && !anchor.cadenceTarget,
-  );
-  const boundaryKindCount = 1 + (hasEntryStart ? 1 : 0) + (hasHarmonicAnchor ? 1 : 0);
-
-  if (!offMeasure) {
-    const endBoundary = evaluatePhraseBoundaryAtTick(input.notes, input.sectionPlan, endTick);
-    return {
-      cost: endBoundary.cost,
-      offMeasurePhraseBoundaryCount: endOffMeasure ? 1 : 0,
-      offMeasureHarmonicAnchorCount: 0,
-      offMeasureEntryStartCount: 0,
-      unpreparedTransitionCount: endBoundary.unprepared ? 1 : 0,
-      preparedPickupCount: endBoundary.prepared ? 1 : 0,
-    };
-  }
-
-  const endBoundary = evaluatePhraseBoundaryAtTick(input.notes, input.sectionPlan, endTick);
-  if (isCompoundMidpoint(startTick, meterContext)) {
-    return {
-      cost: 1 + endBoundary.cost,
-      offMeasurePhraseBoundaryCount: 1 + (endOffMeasure ? 1 : 0),
-      offMeasureHarmonicAnchorCount: hasHarmonicAnchor ? 1 : 0,
-      offMeasureEntryStartCount: hasEntryStart ? 1 : 0,
-      unpreparedTransitionCount: endBoundary.unprepared ? 1 : 0,
-      preparedPickupCount: endBoundary.prepared ? 1 : 0,
-    };
-  }
-
-  if (hasPreparedBoundarySupport(input.notes, input.sectionPlan)) {
-    return {
-      cost: 2 + endBoundary.cost,
-      offMeasurePhraseBoundaryCount: 1 + (endOffMeasure ? 1 : 0),
-      offMeasureHarmonicAnchorCount: hasHarmonicAnchor ? 1 : 0,
-      offMeasureEntryStartCount: hasEntryStart ? 1 : 0,
-      unpreparedTransitionCount: endBoundary.unprepared ? 1 : 0,
-      preparedPickupCount: 1 + (endBoundary.prepared ? 1 : 0),
-    };
-  }
-
-  const baseCost = beatStrengthAtTick(startTick, meterContext) === "offbeat" ? 24 : 14;
-  const convergenceCost = boundaryKindCount >= 3 ? 10 : 0;
+  const classifications = [
+    classifyMetricalBoundary(input.notes, input.subjectEntries, input.sectionPlan, startTick, "section-start"),
+    classifyMetricalBoundary(input.notes, input.subjectEntries, input.sectionPlan, endTick, "section-end"),
+  ];
   return {
-    cost: baseCost + convergenceCost + endBoundary.cost,
-    offMeasurePhraseBoundaryCount: 1 + (endOffMeasure ? 1 : 0),
-    offMeasureHarmonicAnchorCount: hasHarmonicAnchor ? 1 : 0,
-    offMeasureEntryStartCount: hasEntryStart ? 1 : 0,
-    unpreparedTransitionCount: 1 + (endBoundary.unprepared ? 1 : 0),
-    preparedPickupCount: endBoundary.prepared ? 1 : 0,
+    cost: classifications.reduce((sum, classification) => sum + classification.cost, 0),
+    offMeasurePhraseBoundaryCount: classifications.filter(
+      (classification) => !isMeasureDownbeat(classification.tick, input.sectionPlan.meterContext),
+    ).length,
+    offMeasureHarmonicAnchorCount: classifications.filter(
+      (classification) =>
+        !isMeasureDownbeat(classification.tick, input.sectionPlan.meterContext) &&
+        input.sectionPlan.anchors.some((anchor) => anchor.tick === classification.tick && !anchor.cadenceTarget),
+    ).length,
+    offMeasureEntryStartCount: classifications.filter(
+      (classification) =>
+        !isMeasureDownbeat(classification.tick, input.sectionPlan.meterContext) && classification.plannedEntry,
+    ).length,
+    unpreparedTransitionCount: classifications.filter(
+      (classification) => classification.classification === "unprepared-transition",
+    ).length,
+    preparedPickupCount: classifications.filter((classification) =>
+      ["prepared-pickup", "planned-entry-pickup", "cadence-rhetoric"].includes(classification.classification),
+    ).length,
+    classifications,
   };
 }
 
-function evaluatePhraseBoundaryAtTick(
+function classifyMetricalBoundary(
   notes: readonly NoteEvent[],
+  subjectEntries: readonly PlannedEntry[],
   sectionPlan: HarmonicPlan,
   tick: number,
-): { cost: number; prepared: boolean; unprepared: boolean } {
+  edge: SectionConstraintMetricalBoundaryClassification["edge"],
+): SectionConstraintMetricalBoundaryClassification {
+  const plannedEntry = subjectEntries.some((entry) => entry.startTick === tick && entry.state === sectionPlan.state);
+  const cadencePreparation = hasCadentialBoundarySupport({ ...sectionPlan, startTick: tick });
+  const base = { tick, edge, state: sectionPlan.state, plannedEntry, cadencePreparation };
   if (isMeasureDownbeat(tick, sectionPlan.meterContext)) {
-    return { cost: 0, prepared: false, unprepared: false };
+    return {
+      ...base,
+      pickupPreparation: "measure-downbeat",
+      classification: "meter-confirming",
+      response: "accepted-context",
+      cost: 0,
+    };
   }
   if (isCompoundMidpoint(tick, sectionPlan.meterContext)) {
-    return { cost: 1, prepared: false, unprepared: false };
+    return {
+      ...base,
+      pickupPreparation: "compound-midpoint",
+      classification: "compound-meter-continuation",
+      response: "accepted-context",
+      cost: 1,
+    };
   }
   const boundaryPlan = { ...sectionPlan, startTick: tick };
-  if (hasPreparedBoundarySupport(notes, boundaryPlan)) {
-    return { cost: 2, prepared: true, unprepared: false };
+  const pickupPreparation = preparedBoundarySupport(notes, boundaryPlan);
+  if (pickupPreparation !== "unprepared") {
+    return {
+      ...base,
+      pickupPreparation,
+      classification: cadencePreparation
+        ? "cadence-rhetoric"
+        : plannedEntry
+          ? "planned-entry-pickup"
+          : "prepared-pickup",
+      response: "accepted-context",
+      cost: 0,
+    };
   }
+  const boundaryKindCount =
+    1 +
+    (plannedEntry ? 1 : 0) +
+    (sectionPlan.anchors.some((anchor) => anchor.tick === tick && !anchor.cadenceTarget) ? 1 : 0);
   return {
-    cost: beatStrengthAtTick(tick, sectionPlan.meterContext) === "offbeat" ? 24 : 14,
-    prepared: false,
-    unprepared: true,
+    ...base,
+    pickupPreparation: "unprepared",
+    classification: "unprepared-transition",
+    response: "generator-response-required",
+    cost:
+      (beatStrengthAtTick(tick, sectionPlan.meterContext) === "offbeat" ? 24 : 14) + (boundaryKindCount >= 3 ? 10 : 0),
   };
 }
 
-function hasPreparedBoundarySupport(notes: readonly NoteEvent[], sectionPlan: HarmonicPlan): boolean {
+function preparedBoundarySupport(
+  notes: readonly NoteEvent[],
+  sectionPlan: HarmonicPlan,
+): SectionConstraintMetricalBoundaryClassification["pickupPreparation"] {
   const startTick = sectionPlan.startTick;
   const measureStartTick = previousMeasureDownbeat(startTick, sectionPlan.meterContext);
   const measureEndTick = measureStartTick + sectionPlan.meterContext.measureTicks;
@@ -473,16 +486,25 @@ function hasPreparedBoundarySupport(notes: readonly NoteEvent[], sectionPlan: Ha
     (note) => note.startTick < startTick && startTick < note.startTick + note.durationTicks,
   );
   const sustainedPickupVoices = notes.filter(
-    (note) => note.startTick === startTick && note.startTick + note.durationTicks > nextDownbeatTick,
+    (note) => note.startTick === startTick && note.startTick + note.durationTicks >= nextDownbeatTick,
   );
 
-  return (
-    heldSupportVoices.length > 0 ||
-    heldSupportVoices.some((note) => note.metricalHarmonyIntent === "strong-non-chord-tone") ||
-    sustainedPickupVoices.length >= 2 ||
-    hasCadentialBoundarySupport(sectionPlan) ||
-    hasDirectedBoundaryContour(notes, sectionPlan, measureStartTick, measureEndTick)
-  );
+  if (heldSupportVoices.some((note) => note.metricalHarmonyIntent === "strong-non-chord-tone")) {
+    return "suspension-support";
+  }
+  if (heldSupportVoices.length > 0) {
+    return "held-support";
+  }
+  if (sustainedPickupVoices.length >= 2) {
+    return "sustained-pickup";
+  }
+  if (hasCadentialBoundarySupport(sectionPlan)) {
+    return "cadential-support";
+  }
+  if (hasDirectedBoundaryContour(notes, sectionPlan, measureStartTick, measureEndTick)) {
+    return "directed-contour";
+  }
+  return "unprepared";
 }
 
 function hasCadentialBoundarySupport(sectionPlan: HarmonicPlan): boolean {
@@ -945,6 +967,7 @@ function isSemitoneEntryFriction(intervalClass: number): boolean {
 function addVoicePairPressureCounts(
   counts: SectionConstraintInfeasibleCounts,
   notes: readonly NoteEvent[],
+  sectionPlan: HarmonicPlan,
   problem: SectionConstraintProblem,
   gridTicks: number,
 ): void {
@@ -957,10 +980,11 @@ function addVoicePairPressureCounts(
         if (left === undefined || right === undefined) {
           continue;
         }
-        if (positiveModulo(left.pitch - right.pitch, 12) === 0) {
+        const classification = classifyVoicePairSpan(left, right, sectionPlan, tick);
+        if (classification === "exact-collision" || classification === "color-doubling") {
           counts.voicePairUnisonPressureCount += 1;
         }
-        if (left.startTick === right.startTick && left.durationTicks === right.durationTicks) {
+        if (classification === "mechanical-coupling") {
           counts.voicePairLockstepCount += 1;
         }
       }

@@ -26,10 +26,11 @@ export function analyzeQualityVector(
   notes: readonly NoteEvent[],
   subjectEntries: readonly PlannedEntry[],
   sectionPlans: readonly HarmonicPlan[],
+  voicePairSpanSelection: "duration" | "review-coverage" = "duration",
 ): QualityVector {
   const voicePairUnisons = summarizeVoicePairUnisons(notes, sectionPlans);
   const voicePairFunctions = summarizeVoicePairFunctions(notes, sectionPlans);
-  const voicePairSpans = summarizeVoicePairSpans(notes, sectionPlans);
+  const voicePairSpans = summarizeVoicePairSpans(notes, sectionPlans, voicePairSpanSelection);
   const sopranoRepeatedNotePressure = summarizeSopranoRepeatedNotePressure(notes);
   const entrySevereIntervals = summarizeEntrySevereIntervalDurations(notes, subjectEntries);
   const entrySonorities = summarizeEntrySonorities(notes, subjectEntries);

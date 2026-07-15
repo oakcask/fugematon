@@ -117,6 +117,41 @@ test("generated scores expose important entry tail texture without public rest e
   }
 });
 
+test("exposition search selects finalized entry-tail support and preserves non-bass variants", () => {
+  const output = generateScore({
+    seed: "fugue-smoke",
+    lengthTicks: TICKS_PER_QUARTER * 64,
+    selectionModel: "section-local-planner",
+  });
+
+  assert.equal(output.diagnostics.importantEntryTailTexture.zeroOutsideVoiceWindowCount, 0);
+  assert.equal(output.diagnostics.bassAnswerTailTexture.zeroOutsideVoiceWindowCount, 0);
+  assert.equal(
+    output.diagnostics.importantEntryTailTexture.windows.some(
+      (window) => window.entryVoice !== "bass" && window.zeroOutsideVoiceTicks === 0,
+    ),
+    true,
+  );
+  assert.equal(
+    output.diagnostics.importantEntryTailTexture.windows.some(
+      (window) => window.form === "subject-fragment" && window.zeroOutsideVoiceTicks === 0,
+    ),
+    true,
+  );
+
+  const expositionCandidates = output.diagnostics.generatorSearchTrace.candidates.filter((candidate) =>
+    candidate.candidateId.startsWith("exposition-entry-window-final-"),
+  );
+  assert.equal(expositionCandidates.length, 4);
+  assert.equal(
+    expositionCandidates.some((candidate) => candidate.hardFailureCount > 0),
+    false,
+  );
+  const selectedExpositionCandidates = expositionCandidates.filter((candidate) => candidate.selected);
+  assert.equal(selectedExpositionCandidates.length, 1);
+  assert.notEqual(selectedExpositionCandidates[0]?.candidateId, "exposition-entry-window-final-base");
+});
+
 function note(voice: Voice, startTick: number, durationTicks: number): NoteEvent {
   return {
     kind: "note",

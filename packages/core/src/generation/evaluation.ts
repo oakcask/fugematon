@@ -109,6 +109,33 @@ export function evaluateCandidate(
       ornamentDensity: diagnostics.ornamentDensity,
     },
   };
+  const functionalVoicePairLockstepTicks = diagnostics.qualityVector.voicePairFunctions.reduce(
+    (sum, pair) =>
+      sum +
+      pair.subjectSupportLockstepTicks +
+      pair.cadenceSupportLockstepTicks +
+      pair.sequencePatternLockstepTicks +
+      pair.pedalLikeSupportLockstepTicks,
+    0,
+  );
+  const mechanicalVoicePairCouplingTicks = diagnostics.qualityVector.voicePairFunctions.reduce(
+    (sum, pair) => sum + pair.mechanicalCouplingTicks,
+    0,
+  );
+  const exactVoicePairCollisionTicks = diagnostics.qualityVector.voicePairFunctions.reduce(
+    (sum, pair) => sum + pair.exactCollisionTicks,
+    0,
+  );
+  const colorDoublingTicks = diagnostics.qualityVector.voicePairFunctions.reduce(
+    (sum, pair) => sum + pair.pitchClassColorDoublingTicks,
+    0,
+  );
+  const mechanicalVoiceIndependenceSelectionCost =
+    (mechanicalVoicePairCouplingTicks / TICKS_PER_QUARTER) *
+      EVALUATION_WEIGHTS.texture.voiceIndependenceSelectionSharedRhythmOverlap +
+    (exactVoicePairCollisionTicks / TICKS_PER_QUARTER) *
+      EVALUATION_WEIGHTS.texture.voiceIndependenceSelectionUnisonOverlap +
+    (colorDoublingTicks / TICKS_PER_QUARTER) * EVALUATION_WEIGHTS.texture.unisonOverlap;
   const voiceIndependenceSelectionCost =
     diagnostics.unisonOverlapCount * EVALUATION_WEIGHTS.texture.voiceIndependenceSelectionUnisonOverlap +
     diagnostics.sharedRhythmOverlapCount * EVALUATION_WEIGHTS.texture.voiceIndependenceSelectionSharedRhythmOverlap;
@@ -165,7 +192,12 @@ export function evaluateCandidate(
         0,
       ),
       selectedVoiceIndependenceSelectionCost: voiceIndependenceSelectionCost,
+      selectedMechanicalVoiceIndependenceCost: mechanicalVoiceIndependenceSelectionCost,
       selectedVoicePairLockstepSelectionCost: voicePairLockstepSelectionCost,
+      functionalVoicePairLockstepQuarters: functionalVoicePairLockstepTicks / TICKS_PER_QUARTER,
+      mechanicalVoicePairCouplingQuarters: mechanicalVoicePairCouplingTicks / TICKS_PER_QUARTER,
+      exactVoicePairCollisionQuarters: exactVoicePairCollisionTicks / TICKS_PER_QUARTER,
+      colorDoublingQuarters: colorDoublingTicks / TICKS_PER_QUARTER,
       qualityVectorPitchClassUnisonDuration: qualityVectorAxisValue(diagnostics, "pitchClassUnisonDuration"),
       qualityVectorDurationBasedLockstep: qualityVectorAxisValue(diagnostics, "durationBasedLockstep"),
       lineAgencyCost,

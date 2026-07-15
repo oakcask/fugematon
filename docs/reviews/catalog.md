@@ -4,6 +4,7 @@
 
 ## Current Entries
 
+* [Generator constraint rebuild important-entry-tail review](generator-constraint-rebuild-important-entry-tail.md)
 * [Generator constraint rebuild continuation CSP review](generator-constraint-rebuild-continuation-csp.md)
 * [Generator constraint rebuild section CSP review](generator-constraint-rebuild-section-csp.md)
 * [Generator constraint rebuild exposition search review](generator-constraint-rebuild-exposition-search.md)

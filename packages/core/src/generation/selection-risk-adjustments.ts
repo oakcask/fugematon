@@ -68,16 +68,17 @@ function voicePairLockstepSelectionRiskAdjustment(evaluation: CandidateEvaluatio
   const {
     selectedVoicePairLockstepSelectionCost,
     samePitchOverlapCount,
-    qualityVectorPitchClassUnisonDuration,
-    qualityVectorDurationBasedLockstep,
+    exactVoicePairCollisionQuarters,
+    colorDoublingQuarters,
+    mechanicalVoicePairCouplingQuarters,
   } = evaluation.dimensions.texture.features;
 
   return (
     selectedVoicePairLockstepSelectionCost * CANDIDATE_SELECTION_RISK_WEIGHTS.voicePairLockstep.selectedCost +
     samePitchOverlapCount * CANDIDATE_SELECTION_RISK_WEIGHTS.voicePairLockstep.samePitchOverlap +
-    qualityVectorPitchClassUnisonDuration *
+    (exactVoicePairCollisionQuarters + colorDoublingQuarters * 0.25) *
       CANDIDATE_SELECTION_RISK_WEIGHTS.voicePairLockstep.pitchClassUnisonDuration +
-    qualityVectorDurationBasedLockstep * CANDIDATE_SELECTION_RISK_WEIGHTS.voicePairLockstep.durationBasedLockstep
+    mechanicalVoicePairCouplingQuarters * CANDIDATE_SELECTION_RISK_WEIGHTS.voicePairLockstep.durationBasedLockstep
   );
 }
 

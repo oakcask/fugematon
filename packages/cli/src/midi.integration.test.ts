@@ -211,6 +211,16 @@ reviewTest("review command writes diagnostics and MIDI files for review seeds", 
         };
         diagnosticsSummary: {
           hardConstraintFailures: number;
+          constraintSatisfaction: {
+            selectedRelaxationLevel: string;
+            infeasibleConstraintCounts: {
+              minActiveVoiceViolation: number;
+              unsupportedSolo: number;
+              allVoiceSilence: number;
+              longUnplannedSilentRun: number;
+              nonChordStructuralSupportCount: number;
+            };
+          };
           texture: {
             rhythmicIndependenceScore: number;
             samePitchOverlapCount: number;
@@ -219,6 +229,7 @@ reviewTest("review command writes diagnostics and MIDI files for review seeds", 
             unresolvedEntrySupportInstabilityCount: number;
             severeEntryIntervalCount: number;
             unresolvedSevereEntryIntervalCount: number;
+            unresolvedAccentedEntryClashCount: number;
             soloTexture: {
               unsupportedSoloRunCount: number;
               abruptTextureDropCount: number;
@@ -628,6 +639,9 @@ reviewTest("review command writes diagnostics and MIDI files for review seeds", 
       comparisons: [],
     });
     for (const entry of summary.seeds) {
+      const seedDiagnostics = JSON.parse(await readFile(join(directory, entry.diagnosticsFile), "utf8")) as {
+        dissonanceTriage: { unresolvedAccentedEntryClashCount: number };
+      };
       assert.ok(files.includes(entry.diagnosticsFile));
       assert.ok(files.includes(entry.midiFile));
       assert.ok(!entry.diagnosticsFile.includes(directory));
@@ -636,7 +650,27 @@ reviewTest("review command writes diagnostics and MIDI files for review seeds", 
       assert.ok(entry.initialSubjectProfile.rhythmPattern.length > 0);
       assert.notEqual(entry.initialSubjectProfile.contourClass, "");
       assert.ok(!entry.midiFile.includes(directory));
-      assert.ok(entry.diagnosticsSummary.hardConstraintFailures >= 0);
+      assert.equal(entry.diagnosticsSummary.hardConstraintFailures, 0);
+      assert.equal(entry.diagnosticsSummary.constraintSatisfaction.selectedRelaxationLevel, "none");
+      assert.deepEqual(
+        {
+          minActiveVoiceViolation:
+            entry.diagnosticsSummary.constraintSatisfaction.infeasibleConstraintCounts.minActiveVoiceViolation,
+          unsupportedSolo: entry.diagnosticsSummary.constraintSatisfaction.infeasibleConstraintCounts.unsupportedSolo,
+          allVoiceSilence: entry.diagnosticsSummary.constraintSatisfaction.infeasibleConstraintCounts.allVoiceSilence,
+          longUnplannedSilentRun:
+            entry.diagnosticsSummary.constraintSatisfaction.infeasibleConstraintCounts.longUnplannedSilentRun,
+          nonChordStructuralSupportCount:
+            entry.diagnosticsSummary.constraintSatisfaction.infeasibleConstraintCounts.nonChordStructuralSupportCount,
+        },
+        {
+          minActiveVoiceViolation: 0,
+          unsupportedSolo: 0,
+          allVoiceSilence: 0,
+          longUnplannedSilentRun: 0,
+          nonChordStructuralSupportCount: 0,
+        },
+      );
       assert.equal(entry.referenceComparison.profileId, "fugue-reference-profile");
       assert.equal(entry.referenceComparison.seed, entry.seed);
       assert.ok(entry.referenceComparison.normalizers.scoreQuarterNotes > 0);
@@ -699,6 +733,10 @@ reviewTest("review command writes diagnostics and MIDI files for review seeds", 
       assert.ok(entry.diagnosticsSummary.texture.unresolvedEntrySupportInstabilityCount >= 0);
       assert.ok(entry.diagnosticsSummary.texture.severeEntryIntervalCount >= 0);
       assert.ok(entry.diagnosticsSummary.texture.unresolvedSevereEntryIntervalCount >= 0);
+      assert.equal(
+        entry.diagnosticsSummary.texture.unresolvedAccentedEntryClashCount,
+        seedDiagnostics.dissonanceTriage.unresolvedAccentedEntryClashCount,
+      );
       assert.ok(entry.diagnosticsSummary.texture.soloTexture.unsupportedSoloRunCount >= 0);
       assert.ok(entry.diagnosticsSummary.texture.soloTexture.abruptTextureDropCount >= 0);
       assert.ok(entry.diagnosticsSummary.texture.pitchContourMotion.fourBeat.bassUpperSameDirectionRatio >= 0);
@@ -1077,7 +1115,7 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
       summaryFile: "baseline/summary.json",
       selectionModel: "baseline",
       performanceProfile: { id: "strict-counterpoint", version: 3 },
-      constraintProfile: { id: "current", version: 1 },
+      constraintProfile: { id: "current", version: 2 },
     });
     assert.deepEqual(comparison.variant, {
       label: "candidate",
@@ -1085,7 +1123,7 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
       summaryFile: "variant/summary.json",
       selectionModel: "candidate-oracle-selection",
       performanceProfile: { id: "strict-counterpoint", version: 3 },
-      constraintProfile: { id: "current", version: 1 },
+      constraintProfile: { id: "current", version: 2 },
     });
     assert.equal(comparison.subjectFamilyDiversity.baseline.seedCount, comparison.seeds.length);
     assert.equal(comparison.subjectFamilyDiversity.variant.seedCount, comparison.seeds.length);

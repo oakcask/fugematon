@@ -4,7 +4,7 @@ export function activeNoteForVoiceAt(
   notes: readonly NoteEvent[],
   voice: Voice,
   tick: number,
-): Pick<NoteEvent, "pitch" | "role" | "startTick" | "durationTicks"> | undefined {
+): Pick<NoteEvent, "pitch" | "role" | "startTick" | "durationTicks" | "motivicDerivation"> | undefined {
   return notes.find(
     (note) => note.voice === voice && note.startTick <= tick && tick < note.startTick + note.durationTicks,
   );

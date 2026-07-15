@@ -60,7 +60,7 @@ test("public API emits the stable score metadata envelope", () => {
   assert.ok(output.diagnostics.candidatePoolOracle.phraseFamilyCandidateCount >= 0);
   assert.equal(output.diagnostics.generatorVersion, GENERATOR_VERSION);
   assert.equal(output.diagnostics.selectionModel, DEFAULT_SELECTION_MODEL);
-  assert.deepEqual(output.diagnostics.constraintProfile, { id: "current", version: 1 });
+  assert.deepEqual(output.diagnostics.constraintProfile, { id: "current", version: 2 });
   assert.deepEqual(output.diagnostics.writingProfile, {
     id: "four-voice-default",
     version: WRITING_PROFILE_VERSION,
@@ -201,7 +201,7 @@ test("public diagnostics expose finite candidate score dimensions", () => {
   assert.equal(typeof output.diagnostics.qualityVector.harmonicSonorities.focusedWindowCount, "number");
   assert.equal(typeof output.diagnostics.qualityVector.harmonicSonorities.generatorResponseWindowCount, "number");
   assert.ok(Array.isArray(output.diagnostics.qualityVector.harmonicSonorities.windows));
-  assert.equal(output.diagnostics.constraintSatisfactionReview.schemaVersion, 6);
+  assert.equal(output.diagnostics.constraintSatisfactionReview.schemaVersion, 7);
   assert.equal(typeof output.diagnostics.constraintSatisfactionReview.windowCount, "number");
   assert.equal(typeof output.diagnostics.constraintSatisfactionReview.intentionalRestSpanCount, "number");
   assert.equal(typeof output.diagnostics.constraintSatisfactionReview.unplannedSilentRunCount, "number");
@@ -213,6 +213,7 @@ test("public diagnostics expose finite candidate score dimensions", () => {
   assert.equal(typeof output.diagnostics.constraintSatisfactionReview.offMeasureEntryStartCount, "number");
   assert.equal(typeof output.diagnostics.constraintSatisfactionReview.unpreparedTransitionCount, "number");
   assert.equal(typeof output.diagnostics.constraintSatisfactionReview.preparedPickupCount, "number");
+  assert.ok(Array.isArray(output.diagnostics.constraintSatisfactionReview.metricalBoundaryClassifications));
   assert.equal(typeof output.diagnostics.constraintSatisfactionReview.explainedDensityWindowCount, "number");
   assert.equal(typeof output.diagnostics.constraintSatisfactionReview.unsupportedDensityWindowCount, "number");
   assert.equal(
@@ -232,6 +233,7 @@ test("public diagnostics expose finite candidate score dimensions", () => {
         typeof window.offMeasureEntryStartCount === "number" &&
         typeof window.unpreparedTransitionCount === "number" &&
         typeof window.preparedPickupCount === "number" &&
+        Array.isArray(window.metricalBoundaryClassifications) &&
         Array.isArray(window.densityClassifications) &&
         Array.isArray(window.structuralSupportClassifications) &&
         typeof window.infeasibleConstraintCounts.entryPlanViolationCount === "number" &&
@@ -375,7 +377,7 @@ test("public subject entry diagnostics correspond to emitted entry notes", () =>
 
 function assertCandidateEvaluation(evaluation: CandidateEvaluation): void {
   assert.equal(evaluation.featureVersion, 10);
-  assert.equal(evaluation.evaluationModelVersion, 19);
+  assert.equal(evaluation.evaluationModelVersion, 20);
   assert.ok(Number.isFinite(evaluation.totalCost));
   assert.ok(evaluation.explanations.entries.length > 0);
   assert.ok(evaluation.explanations.voicePairs.length > 0);
