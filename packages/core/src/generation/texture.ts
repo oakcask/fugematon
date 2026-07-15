@@ -28,6 +28,7 @@ import {
 } from "./harmony.js";
 import { isModalMode } from "./key.js";
 import { melodicRoleForScaleDegree, scaleDegreePitchClass } from "./pitch.js";
+import { classifyVoicePairSpan } from "./quality-vector-voice-pairs.js";
 import {
   COUNTER_SUBJECT_DEGREES,
   compareNoteEvents,
@@ -1837,6 +1838,148 @@ export function addEntryWindowContinuitySupport(
   }
 
   repairTextureVoiceCrossingsForPlans(notes, sectionPlans, writingProfile);
+}
+
+export function addPlannedEntryPreparationSupport(
+  notes: Exposition["notes"],
+  subjectEntries: readonly PlannedEntry[],
+  sectionPlans: readonly HarmonicPlan[],
+  policy: UnexplainedRestThinningSupportPolicy,
+  writingProfile?: WritingProfile,
+): void {
+  for (const entry of subjectEntries) {
+    const plan = sectionPlanForTick(sectionPlans, entry.startTick);
+    if (
+      plan === undefined ||
+      entry.state === "exposition" ||
+      entry.startTick % plan.meterContext.measureTicks === 0 ||
+      hasNearbyCadenceTarget(plan, entry.startTick)
+    ) {
+      continue;
+    }
+
+    const nextDownbeatTick =
+      entry.startTick + (plan.meterContext.measureTicks - (entry.startTick % plan.meterContext.measureTicks));
+    const run = {
+      startTick: entry.startTick,
+      endTick: Math.min(nextDownbeatTick + plan.meterContext.beatTicks / 2, plan.startTick + plan.durationTicks),
+    };
+    if (run.endTick <= run.startTick || hasPreparedPlannedEntryPickup(notes, entry, nextDownbeatTick)) {
+      continue;
+    }
+
+    const voiceOrder =
+      policy === "balanced-upper-agency"
+        ? (["soprano", "alto", "tenor", "bass"] as const)
+        : (["bass", "tenor", "alto", "soprano"] as const);
+    const supportVoice = voiceOrder
+      .filter((voice) => voice !== entry.voice)
+      .find((voice) => !hasOverlap(notes, voice, run.startTick, run.endTick - run.startTick));
+    if (supportVoice === undefined) {
+      continue;
+    }
+
+    const anchor = nearestHarmonicAnchor(entry.startTick, [plan]);
+    const rootDegree = anchor === undefined ? 0 : rootDegreeForFunction(anchor.function);
+    const supportDegrees = anchor === undefined ? [0, 2, 4] : chordScaleDegreesForFunction(anchor.function);
+    const supportDegree =
+      supportVoice === "bass" ? rootDegree : (supportDegrees.find((degree) => degree !== rootDegree) ?? rootDegree);
+    addTextureNote(
+      notes,
+      {
+        voice: supportVoice,
+        localKey: anchor?.localKey ?? plan.targetKey,
+        velocity: 50,
+        role: "free-counterpoint",
+        harmonicPlan: plan,
+        metricalHarmonyIntent: supportVoice === "bass" ? "structural-root-support" : "structural-chord-tone",
+        strictSemitoneAvoidance: true,
+        writingProfile,
+      },
+      supportDegree,
+      run.startTick,
+      run.endTick - run.startTick,
+    );
+  }
+
+  repairTextureVoiceCrossingsForPlans(notes, sectionPlans, writingProfile);
+}
+
+export function staggerMechanicalVoicePairRhythms(
+  notes: Exposition["notes"],
+  sectionPlans: readonly HarmonicPlan[],
+  rotation: number,
+): number {
+  const voiceOrder = VOICE_ENTRY_ORDER.map(
+    (_, index) => VOICE_ENTRY_ORDER[(index + rotation) % VOICE_ENTRY_ORDER.length]!,
+  );
+  let changedBoundaryCount = 0;
+
+  for (const voice of voiceOrder) {
+    const voiceNotes = notes.filter((note) => note.voice === voice).sort(compareNoteEvents);
+    for (let index = 0; index < voiceNotes.length - 1 && changedBoundaryCount < 4; index += 1) {
+      const current = voiceNotes[index]!;
+      const next = voiceNotes[index + 1]!;
+      const boundaryTick = current.startTick + current.durationTicks;
+      const plan = sectionPlanForTick(sectionPlans, Math.max(current.startTick, boundaryTick - 1));
+      if (
+        plan === undefined ||
+        !isTextureRole(current.role) ||
+        !isTextureRole(next.role) ||
+        boundaryTick !== next.startTick ||
+        current.durationTicks < TICKS_PER_QUARTER ||
+        next.durationTicks < TICKS_PER_QUARTER ||
+        hasNearbyCadenceTarget(plan, boundaryTick)
+      ) {
+        continue;
+      }
+      const coupled = notes.some(
+        (other) =>
+          other.voice !== voice &&
+          other.startTick === current.startTick &&
+          other.durationTicks === current.durationTicks &&
+          classifyVoicePairSpan(current, other, plan, current.startTick) === "mechanical-coupling",
+      );
+      if (!coupled) {
+        continue;
+      }
+
+      const shiftTicks = Math.min(
+        plan.meterContext.beatTicks / 2,
+        current.durationTicks - plan.meterContext.beatTicks / 2,
+        next.durationTicks - plan.meterContext.beatTicks / 2,
+      );
+      if (shiftTicks <= 0) {
+        continue;
+      }
+      const extendCurrent = (changedBoundaryCount + rotation) % 2 === 0;
+      current.durationTicks += extendCurrent ? shiftTicks : -shiftTicks;
+      next.startTick += extendCurrent ? shiftTicks : -shiftTicks;
+      next.durationTicks += extendCurrent ? -shiftTicks : shiftTicks;
+      changedBoundaryCount += 1;
+    }
+  }
+
+  return changedBoundaryCount;
+}
+
+function hasPreparedPlannedEntryPickup(
+  notes: readonly NoteEvent[],
+  entry: PlannedEntry,
+  nextDownbeatTick: number,
+): boolean {
+  const heldSupport = notes.some(
+    (note) =>
+      note.voice !== entry.voice &&
+      note.startTick < entry.startTick &&
+      entry.startTick < note.startTick + note.durationTicks,
+  );
+  const sustainedPickupVoiceCount = new Set(
+    notes
+      .filter((note) => note.startTick === entry.startTick && note.startTick + note.durationTicks >= nextDownbeatTick)
+      .map((note) => note.voice),
+  ).size;
+  return heldSupport || sustainedPickupVoiceCount >= 2;
 }
 
 export function addExposedFreeCounterpointSoloSupport(

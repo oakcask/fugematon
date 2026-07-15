@@ -1077,7 +1077,7 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
       summaryFile: "baseline/summary.json",
       selectionModel: "baseline",
       performanceProfile: { id: "strict-counterpoint", version: 3 },
-      constraintProfile: { id: "current", version: 1 },
+      constraintProfile: { id: "current", version: 2 },
     });
     assert.deepEqual(comparison.variant, {
       label: "candidate",
@@ -1085,7 +1085,7 @@ test("review-ab command writes baseline, variant, and comparison summaries", asy
       summaryFile: "variant/summary.json",
       selectionModel: "candidate-oracle-selection",
       performanceProfile: { id: "strict-counterpoint", version: 3 },
-      constraintProfile: { id: "current", version: 1 },
+      constraintProfile: { id: "current", version: 2 },
     });
     assert.equal(comparison.subjectFamilyDiversity.baseline.seedCount, comparison.seeds.length);
     assert.equal(comparison.subjectFamilyDiversity.variant.seedCount, comparison.seeds.length);

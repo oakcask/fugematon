@@ -46,7 +46,7 @@ import {
 } from "./harmonic-stasis-rearticulation.js";
 import { buildHarmonicPlan, cadenceKindForSection } from "./harmony.js";
 import { characteristicScaleDegree, isModalMode, tonicPitchClass, transposeKey } from "./key.js";
-import { createLegacyMeterContext, previousMeasureDownbeat } from "./meter.js";
+import { createLegacyMeterContext, isMeasureDownbeat, previousMeasureDownbeat } from "./meter.js";
 import { buildPhraseDevelopmentReviewSummary } from "./phrase-development-review.js";
 import { melodicRoleForScaleDegree, scaleDegreePitchClass } from "./pitch.js";
 import { buildScoreWindowAcceptanceSummary } from "./score-window-acceptance.js";
@@ -68,6 +68,7 @@ import {
   addEntryWindowContinuitySupport,
   addExposedFreeCounterpointSoloSupport,
   addFunctionalThinningSupport,
+  addPlannedEntryPreparationSupport,
   addPostEntryContinuationSupport,
   addSectionDensityFloorSupport,
   addSectionStructuralAnchorSupport,
@@ -80,6 +81,7 @@ import {
   shapeLongRestPhraseClosures,
   softenBassEntryBoundaryResets,
   softenFirstBassEntryBoundaryReset,
+  staggerMechanicalVoicePairRhythms,
   type UnexplainedRestThinningSupportPolicy,
 } from "./texture.js";
 import type { Exposition, FugueScore, SubjectNote } from "./types.js";
@@ -160,6 +162,7 @@ export function buildFugueScore(
   const stateChanges: FugueScore["stateChanges"] = [];
   const selectedCandidateEvaluations: CandidateEvaluation[] = [];
   const selectedConstraintCandidates: ConstraintCandidate[] = [];
+  const selectedConstraintCandidateIds: string[] = [];
   const candidatePoolOracleSections: ReturnType<typeof classifyCandidatePoolOracleSection>[] = [];
   let terminalCoda: Exposition | undefined;
   let protectedTerminalCodaNotes: NoteEvent[] = [];
@@ -206,7 +209,7 @@ export function buildFugueScore(
     const sectionDurationTicks = chooseContinuationSectionTicks(state, rng, meterContext);
     const durationCandidates =
       selectionModel === "section-local-planner"
-        ? boundedContinuationDurationCandidates(state, sectionDurationTicks, meterContext)
+        ? boundedContinuationDurationCandidates(state, sectionDurationTicks, meterContext, sectionStartTick)
         : [sectionDurationTicks];
     if (terminalCodaReservation !== undefined) {
       const remainingTicks = ordinaryGenerationEndTick - sectionStartTick;
@@ -238,11 +241,6 @@ export function buildFugueScore(
         terminalCodaReservation === undefined ? undefined : ordinaryGenerationEndTick - sectionStartTick,
       ordinaryGenerationEndTick,
     });
-    if (selectionModel === "section-local-planner") {
-      softenBassEntryBoundaryResets(selection.section.notes, selection.section.subjectEntries, notes);
-      selection.section.notes.sort(compareNoteEvents);
-      selection.evaluation = evaluateCandidate(notes, selection.section, subjectEntries, sectionPlans, writingProfile);
-    }
     const selectedState = selection.section.sectionPlans[0]?.state ?? state;
     stateTransitions.push(selectedState);
     stateChanges.push({ tick: sectionStartTick, state: selectedState });
@@ -252,6 +250,7 @@ export function buildFugueScore(
     candidateEvaluations += selection.candidateCount;
     selectedCandidateEvaluations.push(selection.evaluation);
     selectedConstraintCandidates.push(...selection.constraintCandidates);
+    selectedConstraintCandidateIds.push(selection.constraintCandidate.candidateId);
     candidatePoolOracleSections.push(selection.oracleSection);
     sectionStartTick += selection.section.durationTicks;
     stateIndex += 1;
@@ -328,6 +327,7 @@ export function buildFugueScore(
         sectionPlans,
         writingProfile,
         constraintProfileId,
+        stage: "pre-entry-normalization",
       }),
     );
     selectedConstraintCandidates.push(
@@ -362,6 +362,7 @@ export function buildFugueScore(
         sectionPlans,
         writingProfile,
         constraintProfileId,
+        stage: "post-entry-normalization",
       }),
     );
   }
@@ -374,6 +375,7 @@ export function buildFugueScore(
     candidateEvaluations,
     selectedCandidateEvaluations,
     selectedConstraintCandidates,
+    selectedConstraintCandidateIds,
     candidatePoolOracle: summarizeCandidatePoolOracleSections(candidatePoolOracleSections),
     stateTransitions,
     stateChanges,
@@ -1005,6 +1007,7 @@ function applyScoreLevelSustainedDissonanceSolver(input: {
   sectionPlans: readonly HarmonicPlan[];
   writingProfile: WritingProfile;
   constraintProfileId: SectionConstraintScoringProfileId;
+  stage: "pre-entry-normalization" | "post-entry-normalization";
 }): ConstraintCandidate[] {
   const before = analyzeScore(input.notes, input.subjectEntries, input.sectionPlans, input.writingProfile);
   if (before.dissonanceTriage.sustainedSevereVerticalDissonanceCount === 0) {
@@ -1038,7 +1041,7 @@ function applyScoreLevelSustainedDissonanceSolver(input: {
 
   const beforeNotes = cloneNotes(input.notes);
   const beforeCandidate = buildScoreLevelConstraintCandidate(
-    "score-sustained-dissonance-unrepaired-final-repair-evidence",
+    `score-sustained-dissonance-${input.stage}-unrepaired-final-repair-evidence`,
     beforeNotes,
     input.subjectEntries,
     input.sectionPlans,
@@ -1046,7 +1049,7 @@ function applyScoreLevelSustainedDissonanceSolver(input: {
     input.constraintProfileId,
   );
   const afterCandidate = buildScoreLevelConstraintCandidate(
-    "score-sustained-dissonance-solver-repaired",
+    `score-sustained-dissonance-${input.stage}-solver-repaired`,
     repairedNotes,
     input.subjectEntries,
     input.sectionPlans,
@@ -1736,6 +1739,7 @@ export function buildFugueContinuationScore(
   const stateChanges: FugueScore["stateChanges"] = [];
   const selectedCandidateEvaluations: CandidateEvaluation[] = [];
   const selectedConstraintCandidates: ConstraintCandidate[] = [];
+  const selectedConstraintCandidateIds: string[] = [];
   const candidatePoolOracleSections: ReturnType<typeof classifyCandidatePoolOracleSection>[] = [];
   const previousNotes = input.previousEvents.filter((event): event is NoteEvent => event.kind === "note");
   const previousSectionHistory = input.previousSectionFunctions.map((section) => section.state);
@@ -1775,7 +1779,7 @@ export function buildFugueContinuationScore(
     const sectionDurationTicks = chooseContinuationSectionTicks(state, rng, meterContext);
     const durationCandidates =
       selectionModel === "section-local-planner"
-        ? boundedContinuationDurationCandidates(state, sectionDurationTicks, meterContext)
+        ? boundedContinuationDurationCandidates(state, sectionDurationTicks, meterContext, sectionStartTick)
         : [sectionDurationTicks];
     const selection = chooseContinuationSectionFromDurationCandidates({
       subject,
@@ -1796,21 +1800,6 @@ export function buildFugueContinuationScore(
       maxDurationTicks: lengthTicks - sectionStartTick,
       ordinaryGenerationEndTick: lengthTicks,
     });
-    if (selectionModel === "section-local-planner") {
-      softenBassEntryBoundaryResets(selection.section.notes, selection.section.subjectEntries, [
-        ...previousNotes,
-        ...notes,
-      ]);
-      selection.section.notes.sort(compareNoteEvents);
-      selection.evaluation = evaluateCandidate(
-        [...previousNotes, ...notes],
-        selection.section,
-        [...previousSubjectEntries, ...subjectEntries],
-        [...previousSectionPlans, ...sectionPlans],
-        writingProfile,
-      );
-    }
-
     const selectedState = selection.section.sectionPlans[0]?.state ?? state;
     stateTransitions.push(selectedState);
     stateChanges.push({ tick: sectionStartTick, state: selectedState });
@@ -1820,6 +1809,7 @@ export function buildFugueContinuationScore(
     candidateEvaluations += selection.candidateCount;
     selectedCandidateEvaluations.push(selection.evaluation);
     selectedConstraintCandidates.push(...selection.constraintCandidates);
+    selectedConstraintCandidateIds.push(selection.constraintCandidate.candidateId);
     candidatePoolOracleSections.push(selection.oracleSection);
     sectionStartTick += selection.section.durationTicks;
     stateIndex = (stateIndex + 1) % continuationPattern.length;
@@ -1876,6 +1866,7 @@ export function buildFugueContinuationScore(
         sectionPlans,
         writingProfile,
         constraintProfileId,
+        stage: "pre-entry-normalization",
       }),
     );
     selectedConstraintCandidates.push(
@@ -1899,6 +1890,7 @@ export function buildFugueContinuationScore(
         sectionPlans,
         writingProfile,
         constraintProfileId,
+        stage: "post-entry-normalization",
       }),
     );
   }
@@ -1911,6 +1903,7 @@ export function buildFugueContinuationScore(
     candidateEvaluations,
     selectedCandidateEvaluations,
     selectedConstraintCandidates,
+    selectedConstraintCandidateIds,
     candidatePoolOracle: summarizeCandidatePoolOracleSections(candidatePoolOracleSections),
     stateTransitions,
     stateChanges,
@@ -2154,6 +2147,7 @@ type ContinuationCandidateSelectionBand =
   | "phrase-family"
   | "section-csp"
   | "entry-window"
+  | "voice-independence"
   | "harmonic-stasis";
 
 type ContinuationCandidateSelectionWindow = {
@@ -2359,6 +2353,7 @@ export function chooseContinuationSectionTicks(
 export function continuationSectionDurationCandidates(
   state: FugueState,
   meterContext: MeterContext = createLegacyMeterContext(),
+  startTick = 0,
 ): number[] {
   if (meterContext.timeSignature.numerator !== 4) {
     const preferredMeasureCounts = state === "episode" ? [2, 3, 4] : [3, 4, 2];
@@ -2367,19 +2362,45 @@ export function continuationSectionDurationCandidates(
 
   const quarterCounts =
     state === "episode" ? [8, 12, 6, 10] : state === "subject-return" ? [8, 12, 7, 9] : [8, 12, 6, 7, 9, 10];
-  return quarterCounts.map((quarterCount) => quarterCount * TICKS_PER_QUARTER);
+  const baseCandidates = quarterCounts.map((quarterCount) => quarterCount * TICKS_PER_QUARTER);
+  if (isMeasureDownbeat(startTick, meterContext)) {
+    return baseCandidates;
+  }
+  const alignedCandidates = baseCandidates
+    .slice(0, 2)
+    .map((durationTicks) => nearestMeasureLandingDuration(durationTicks, startTick, meterContext));
+  return [...new Set([...alignedCandidates, ...baseCandidates])];
 }
 
 function boundedContinuationDurationCandidates(
   state: FugueState,
   legacyDurationTicks: number,
   meterContext: MeterContext,
+  startTick: number,
 ): number[] {
-  const candidates = continuationSectionDurationCandidates(state, meterContext);
+  const candidates = continuationSectionDurationCandidates(state, meterContext, startTick);
   const preferred = candidates.slice(0, 2);
   const relaxed =
     candidates.find((durationTicks) => durationTicks % meterContext.measureTicks !== 0) ?? legacyDurationTicks;
   return [...new Set([...preferred, relaxed, legacyDurationTicks])].slice(0, 3);
+}
+
+function nearestMeasureLandingDuration(
+  preferredDurationTicks: number,
+  startTick: number,
+  meterContext: MeterContext,
+): number {
+  const endOffset = (startTick + preferredDurationTicks) % meterContext.measureTicks;
+  if (endOffset === 0) {
+    return preferredDurationTicks;
+  }
+  const lower = preferredDurationTicks - endOffset;
+  const upper = lower + meterContext.measureTicks;
+  const minimum = minimumContinuationSectionTicks(meterContext);
+  if (lower < minimum) {
+    return upper;
+  }
+  return preferredDurationTicks - lower <= upper - preferredDurationTicks ? lower : upper;
 }
 
 export function chooseStyleProfile(rng: Xoshiro128StarStar): StyleProfile {
@@ -2611,25 +2632,25 @@ export function chooseContinuationSection(
     meterContext,
     writingProfile,
   );
+  if (selectionModel === "section-local-planner") {
+    for (const candidate of candidates) {
+      softenBassEntryBoundaryResets(candidate.notes, candidate.subjectEntries, previousNotes);
+      if (cspDensityFailureCount(candidate.notes, candidate.subjectEntries, candidate.sectionPlans) > 0) {
+        addSectionDensityFloorSupport(candidate.notes, candidate.sectionPlans, writingProfile, "balanced-upper-agency");
+      }
+      if (candidate.constraintCandidateFamily === "section-csp-variant") {
+        addSectionStructuralAnchorSupport(candidate.notes, candidate.sectionPlans, writingProfile);
+        repairTextureVoiceCrossingsForNotes(candidate.notes, candidate.sectionPlans, writingProfile);
+        normalizeSectionStructuralSupportLabels(candidate.notes, candidate.sectionPlans, writingProfile);
+        relabelResidualNonChordStructuralSupport(candidate);
+      }
+      candidate.notes.sort(compareNoteEvents);
+    }
+  }
   const evaluations = candidates.map((candidate) =>
     evaluateCandidate(previousNotes, candidate, previousSubjectEntries, previousSectionPlans, writingProfile),
   );
   const selectionWindow = continuationCandidateSelectionWindow(state, selectionModel, candidates.length);
-  const constraintCandidates = candidates.map((candidate, index) =>
-    buildContinuationConstraintCandidate(
-      continuationConstraintCandidateId({
-        startTick,
-        state: candidate.sectionPlans[0]?.state ?? state,
-        candidateBand: continuationCandidateSelectionBand(index, selectionWindow, selectionModel, candidate),
-        candidateIndex: index,
-        durationTicks: candidate.durationTicks,
-      }),
-      candidate,
-      writingProfile,
-      constraintProfileId,
-      terminalSupportCandidate,
-    ),
-  );
   let bestIndex = bestContinuationCandidateIndex(
     evaluations.slice(0, selectionWindow.baselineCandidateCount),
     selectionModel === "section-local-planner" ? "candidate-oracle-selection" : selectionModel,
@@ -2719,6 +2740,35 @@ export function chooseContinuationSection(
     historyContext,
     selectionModel,
   });
+  if (selectionModel === "section-local-planner") {
+    const selectedCandidate = candidates[bestIndex]!;
+    const localCandidates = [
+      ...buildPlannedEntryPreparationSolverCandidates(selectedCandidate, bestIndex, writingProfile),
+      ...buildVoiceIndependenceSolverCandidates(selectedCandidate, bestIndex, writingProfile),
+    ];
+    for (const candidate of localCandidates) {
+      candidates.push(candidate);
+      evaluations.push(
+        evaluateCandidate(previousNotes, candidate, previousSubjectEntries, previousSectionPlans, writingProfile),
+      );
+    }
+  }
+  const constraintCandidates = candidates.map((candidate, index) =>
+    buildContinuationConstraintCandidate(
+      continuationConstraintCandidateId({
+        startTick,
+        state: candidate.sectionPlans[0]?.state ?? state,
+        candidateBand: continuationCandidateSelectionBand(index, selectionWindow, selectionModel, candidate),
+        candidateIndex: index,
+        durationTicks: candidate.durationTicks,
+      }),
+      candidate,
+      writingProfile,
+      constraintProfileId,
+      terminalSupportCandidate,
+      previousNotes,
+    ),
+  );
   bestIndex = chooseSectionCspBacktrackingCandidateIndex({
     currentBestIndex: bestIndex,
     candidateIndexes: selectableContinuationCandidateIndexes({
@@ -2726,7 +2776,7 @@ export function chooseContinuationSection(
       evaluations,
       selectionWindow,
       selectionModel,
-      baselineEvaluation,
+      baselineEvaluation: evaluations[bestIndex]!,
     }),
     constraintCandidates,
     candidateScores: continuationCandidateBacktrackingScores({
@@ -2980,15 +3030,8 @@ function selectableContinuationCandidateIndexes(input: {
       continue;
     }
     if (
-      candidateBand !== "baseline" &&
-      !preservesSectionLocalGuardrails(
-        evaluation,
-        input.baselineEvaluation,
-        candidateBand === "section-grammar" ||
-          candidateBand === "phrase-family" ||
-          candidateBand === "section-csp" ||
-          candidateBand === "entry-window",
-      )
+      evaluation !== input.baselineEvaluation &&
+      !preservesSectionLocalGuardrails(evaluation, input.baselineEvaluation, true)
     ) {
       continue;
     }
@@ -3067,7 +3110,15 @@ export function chooseSectionCspBacktrackingCandidateIndex(input: {
       ).concat(hardImprovingSectionCspIndexes),
     ),
   ];
-  const feasibleIndexes = candidateIndexes.filter((index) => {
+  const paretoCandidateIndexes =
+    currentCandidate.result.hardFailures.length === 0
+      ? candidateIndexes.filter(
+          (index) =>
+            index === input.currentBestIndex ||
+            preservesContinuationSoftCostVector(input.constraintCandidates[index]!, currentCandidate),
+        )
+      : candidateIndexes;
+  const feasibleIndexes = paretoCandidateIndexes.filter((index) => {
     const candidate = input.constraintCandidates[index];
     return candidate !== undefined && candidate.result.hardFailures.length === 0;
   });
@@ -3110,6 +3161,35 @@ export function chooseSectionCspBacktrackingCandidateIndex(input: {
   })[0]!;
 }
 
+const CONTINUATION_TRADEOFF_SOFT_FEATURES = [
+  "section-csp-voice-coverage",
+  "section-csp-harmonic-support",
+  "section-csp-entry-support",
+  "section-csp-sustained-dissonance",
+  "section-csp-voice-pair-independence",
+  "section-csp-harmonic-quality",
+  "section-csp-upper-line-agency",
+  "section-csp-metrical-boundary",
+  "episode-motivic-derivation",
+  "episode-cadence-entry-preparation",
+  "free-counterpoint-harmony-realization",
+  "free-counterpoint-independent-contour-rhythm",
+  "free-counterpoint-clash-resolution",
+  "free-counterpoint-entry-handoff-support",
+  "important-entry-tail-texture",
+  "leap-recovery",
+] as const;
+
+function preservesContinuationSoftCostVector(candidate: ConstraintCandidate, baseline: ConstraintCandidate): boolean {
+  return CONTINUATION_TRADEOFF_SOFT_FEATURES.every(
+    (feature) => constraintSoftFeatureCost(candidate, feature) <= constraintSoftFeatureCost(baseline, feature),
+  );
+}
+
+function constraintSoftFeatureCost(candidate: ConstraintCandidate, feature: string): number {
+  return candidate.result.softCosts.find((cost) => cost.feature === feature)?.cost ?? 0;
+}
+
 function constraintCandidateHardFailureCount(candidate: ConstraintCandidate): number {
   return candidate.result.hardFailures.reduce((sum, failure) => sum + failure.count, 0);
 }
@@ -3136,11 +3216,12 @@ function buildContinuationConstraintCandidate(
   writingProfile: WritingProfile,
   constraintProfileId: SectionConstraintScoringProfileId,
   terminalSupportCandidate: boolean,
+  previousNotes: readonly NoteEvent[] = [],
 ): ConstraintCandidate {
   const sectionStartTick = section.sectionPlans[0]?.startTick ?? 0;
   const sectionEndTick = sectionStartTick + section.durationTicks;
   const draft = {
-    notes: section.notes,
+    notes: [...previousNotes, ...section.notes],
     subjectEntries: section.subjectEntries,
     sectionPlans: section.sectionPlans,
     endTick: Math.max(section.endTick, sectionEndTick),
@@ -3391,6 +3472,9 @@ function continuationCandidateSelectionBand(
   if (candidate?.constraintCandidateFamily === "entry-window-variant") {
     return "entry-window";
   }
+  if (candidate?.constraintCandidateFamily === "voice-independence-variant") {
+    return "voice-independence";
+  }
   if (candidate?.constraintCandidateFamily === "harmonic-stasis-variant") {
     return "harmonic-stasis";
   }
@@ -3426,6 +3510,7 @@ function candidateBandCanBeSelected(
     band === "section-grammar" ||
     band === "phrase-family" ||
     band === "entry-window" ||
+    band === "voice-independence" ||
     band === "harmonic-stasis"
   );
 }
@@ -3597,6 +3682,8 @@ function preservesSectionLocalGuardrails(
   const baselineSubject = baselineEvaluation.dimensions.subjectClarity.features;
   const evaluationHarmony = evaluation.dimensions.harmony.features;
   const baselineHarmony = baselineEvaluation.dimensions.harmony.features;
+  const evaluationForm = evaluation.dimensions.form.features;
+  const baselineForm = baselineEvaluation.dimensions.form.features;
   const soloTextureAllowance = allowNeutralSoloTexture ? 0 : 4;
 
   return (
@@ -3608,9 +3695,24 @@ function preservesSectionLocalGuardrails(
     evaluationTexture.sharedRhythmOverlapCount <= baselineTexture.sharedRhythmOverlapCount &&
     evaluationTexture.qualityVectorPitchClassUnisonDuration <= baselineTexture.qualityVectorPitchClassUnisonDuration &&
     evaluationTexture.qualityVectorDurationBasedLockstep <= baselineTexture.qualityVectorDurationBasedLockstep &&
+    preservesVoicePairIndependenceGuardrails(
+      {
+        mechanicalVoicePairCouplingQuarters: evaluationTexture.mechanicalVoicePairCouplingQuarters,
+        exactVoicePairCollisionQuarters: evaluationTexture.exactVoicePairCollisionQuarters,
+        colorDoublingQuarters: evaluationTexture.colorDoublingQuarters,
+      },
+      {
+        mechanicalVoicePairCouplingQuarters: baselineTexture.mechanicalVoicePairCouplingQuarters,
+        exactVoicePairCollisionQuarters: baselineTexture.exactVoicePairCollisionQuarters,
+        colorDoublingQuarters: baselineTexture.colorDoublingQuarters,
+      },
+    ) &&
+    evaluationTexture.selectedMechanicalVoiceIndependenceCost <=
+      baselineTexture.selectedMechanicalVoiceIndependenceCost &&
     evaluationTexture.fourBeatOuterVoiceSameDirectionRatio <=
       baselineTexture.fourBeatOuterVoiceSameDirectionRatio + 0.02 &&
     evaluationMelody.leapRecoveryMisses <= baselineMelody.leapRecoveryMisses &&
+    evaluationForm.phraseMechanicalReuseWindowCount <= baselineForm.phraseMechanicalReuseWindowCount &&
     evaluationSubject.subjectIdentityViolations <= baselineSubject.subjectIdentityViolations &&
     evaluationSubject.answerPlanViolations <= baselineSubject.answerPlanViolations &&
     evaluationSubject.counterSubjectIdentityRetention >= baselineSubject.counterSubjectIdentityRetention &&
@@ -3621,6 +3723,23 @@ function preservesSectionLocalGuardrails(
       (baselineHarmony.unresolvedAccentedEntryClashCount ?? 0) &&
     evaluationHarmony.qualityVectorUnresolvedEntrySevereIntervalDuration <=
       baselineHarmony.qualityVectorUnresolvedEntrySevereIntervalDuration
+  );
+}
+
+type VoicePairIndependenceGuardrailFeatures = {
+  mechanicalVoicePairCouplingQuarters: number;
+  exactVoicePairCollisionQuarters: number;
+  colorDoublingQuarters: number;
+};
+
+export function preservesVoicePairIndependenceGuardrails(
+  evaluation: VoicePairIndependenceGuardrailFeatures,
+  baseline: VoicePairIndependenceGuardrailFeatures,
+): boolean {
+  return (
+    evaluation.mechanicalVoicePairCouplingQuarters <= baseline.mechanicalVoicePairCouplingQuarters &&
+    evaluation.exactVoicePairCollisionQuarters <= baseline.exactVoicePairCollisionQuarters &&
+    evaluation.colorDoublingQuarters <= baseline.colorDoublingQuarters
   );
 }
 
@@ -3670,18 +3789,75 @@ function buildEntryWindowSolverCandidates(
   writingProfile: WritingProfile,
 ): Exposition[] {
   return sourceCandidates.flatMap((sourceCandidate, sourceCandidateIndex) => {
+    const variants: Exposition[] = [];
     const repaired = cloneExposition(sourceCandidate);
     addEntryWindowContinuitySupport(repaired.notes, repaired.subjectEntries, repaired.sectionPlans, writingProfile);
     repaired.notes.sort(compareNoteEvents);
 
-    if (noteFingerprint(repaired.notes) === noteFingerprint(sourceCandidate.notes)) {
-      return [];
-    }
-
-    return [
-      {
+    if (noteFingerprint(repaired.notes) !== noteFingerprint(sourceCandidate.notes)) {
+      variants.push({
         ...repaired,
         constraintCandidateFamily: "entry-window-variant" as const,
+        constraintSourceCandidateIndex: sourceCandidateIndex,
+      });
+    }
+
+    return variants;
+  });
+}
+
+function buildPlannedEntryPreparationSolverCandidates(
+  sourceCandidate: Exposition,
+  sourceCandidateIndex: number,
+  writingProfile: WritingProfile,
+): Exposition[] {
+  return (["low-root-first", "balanced-upper-agency"] as const).flatMap((policy) => {
+    const prepared = cloneExposition(sourceCandidate);
+    addPlannedEntryPreparationSupport(
+      prepared.notes,
+      prepared.subjectEntries,
+      prepared.sectionPlans,
+      policy,
+      writingProfile,
+    );
+    if (noteFingerprint(prepared.notes) === noteFingerprint(sourceCandidate.notes)) {
+      return [];
+    }
+    addEntryWindowContinuitySupport(prepared.notes, prepared.subjectEntries, prepared.sectionPlans, writingProfile);
+    addSectionStructuralAnchorSupport(prepared.notes, prepared.sectionPlans, writingProfile);
+    prepared.notes.sort(compareNoteEvents);
+    return [
+      {
+        ...prepared,
+        constraintCandidateFamily: "entry-window-variant" as const,
+        constraintSourceCandidateIndex: sourceCandidateIndex,
+      },
+    ];
+  });
+}
+
+function buildVoiceIndependenceSolverCandidates(
+  sourceCandidate: Exposition,
+  sourceCandidateIndex: number,
+  writingProfile: WritingProfile,
+): Exposition[] {
+  return [0, 1].flatMap((rotation) => {
+    const independent = cloneExposition(sourceCandidate);
+    const changedBoundaryCount = staggerMechanicalVoicePairRhythms(
+      independent.notes,
+      independent.sectionPlans,
+      rotation,
+    );
+    if (changedBoundaryCount === 0) {
+      return [];
+    }
+    repairTextureVoiceCrossingsForNotes(independent.notes, independent.sectionPlans, writingProfile);
+    normalizeSectionStructuralSupportLabels(independent.notes, independent.sectionPlans, writingProfile);
+    independent.notes.sort(compareNoteEvents);
+    return [
+      {
+        ...independent,
+        constraintCandidateFamily: "voice-independence-variant" as const,
         constraintSourceCandidateIndex: sourceCandidateIndex,
       },
     ];

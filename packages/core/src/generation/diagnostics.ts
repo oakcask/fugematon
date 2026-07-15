@@ -72,6 +72,7 @@ export function analyzeScore(
   subjectEntries: readonly PlannedEntry[],
   sectionPlans: readonly HarmonicPlan[],
   writingProfile: WritingProfile = resolveWritingProfile(undefined),
+  options: { voicePairSpanSelection?: "duration" | "review-coverage" } = {},
 ): {
   rangeViolations: number;
   voiceCrossings: number;
@@ -190,7 +191,12 @@ export function analyzeScore(
   const keyMetadataMismatches = countIssues(issues, "key-metadata-mismatch");
   const counterSubjectCoverage = textureCoverage(notes, "counter-subject");
   const freeCounterpointCoverage = textureCoverage(notes, "free-counterpoint");
-  const textureDiagnostics = analyzeTextureDiagnostics(notes, subjectEntries, sectionPlans);
+  const textureDiagnostics = analyzeTextureDiagnostics(
+    notes,
+    subjectEntries,
+    sectionPlans,
+    options.voicePairSpanSelection,
+  );
   const meterConsistencyReview = analyzeMeterConsistency(subjectEntries, sectionPlans);
   const fallbackPassageCount = notes.filter((note) => note.role === "fallback").length;
   const melodicStagnationWarnings = countIssues(issues, "melodic-stagnation");
@@ -297,6 +303,7 @@ function analyzeTextureDiagnostics(
   notes: readonly NoteEvent[],
   subjectEntries: readonly PlannedEntry[],
   sectionPlans: readonly HarmonicPlan[],
+  voicePairSpanSelection: "duration" | "review-coverage" = "duration",
 ): TextureDiagnostics {
   const counterSubjectNotes = notes.filter((note) => note.role === "counter-subject").sort(compareNoteEvents);
   const freeCounterpointNotes = notes.filter((note) => note.role === "free-counterpoint").sort(compareNoteEvents);
@@ -307,7 +314,7 @@ function analyzeTextureDiagnostics(
   const supportNoteCount = Math.max(1, supportNotes.length);
   const entrySupportInstabilityDetails = analyzeEntrySupportInstabilities(notes, subjectEntries);
   const entrySupportSevereIntervalDetails = analyzeEntrySupportSevereIntervals(notes, subjectEntries);
-  const qualityVector = analyzeQualityVector(notes, subjectEntries, sectionPlans);
+  const qualityVector = analyzeQualityVector(notes, subjectEntries, sectionPlans, voicePairSpanSelection);
   const halfBeatTexture = halfBeatVerticalities(notes);
   const texturePlanningReview = analyzeTexturePlanningReviewSummary(
     notes,

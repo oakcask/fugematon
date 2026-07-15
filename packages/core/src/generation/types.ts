@@ -44,7 +44,11 @@ export type Exposition = {
   sectionPlans: HarmonicPlan[];
   endTick: number;
   durationTicks: number;
-  constraintCandidateFamily?: "harmonic-stasis-variant" | "section-csp-variant" | "entry-window-variant";
+  constraintCandidateFamily?:
+    | "harmonic-stasis-variant"
+    | "section-csp-variant"
+    | "entry-window-variant"
+    | "voice-independence-variant";
   constraintSourceCandidateIndex?: number;
 };
 
@@ -52,6 +56,7 @@ export type FugueScore = Exposition & {
   candidateEvaluations: number;
   selectedCandidateEvaluations: CandidateEvaluation[];
   selectedConstraintCandidates: ConstraintCandidate[];
+  selectedConstraintCandidateIds: string[];
   candidatePoolOracle: CandidatePoolOracleSummary;
   stateTransitions: FugueState[];
   stateChanges: {

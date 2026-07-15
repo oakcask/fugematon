@@ -243,8 +243,10 @@ export function buildGeneratorSearchTrace(
   candidates: readonly ConstraintCandidate[],
   selectedCandidate: ConstraintCandidate,
   mode: GeneratorSearchTrace["mode"] = "diagnostics-only",
+  additionalSelectedCandidateIds: readonly string[] = [],
 ): GeneratorSearchTrace {
   const sortedCandidates = [...candidates].sort((left, right) => left.candidateId.localeCompare(right.candidateId));
+  const selectedCandidateIds = new Set([selectedCandidate.candidateId, ...additionalSelectedCandidateIds]);
   return {
     schemaVersion: 1,
     mode,
@@ -252,7 +254,7 @@ export function buildGeneratorSearchTrace(
     rejectedCandidateCount: sortedCandidates.filter((candidate) => candidate.result.hardFailures.length > 0).length,
     selectedCandidateId: selectedCandidate.candidateId,
     candidates: sortedCandidates.map((candidate) => {
-      const selected = candidate.candidateId === selectedCandidate.candidateId;
+      const selected = selectedCandidateIds.has(candidate.candidateId);
       const hardFailureCodes = candidate.result.hardFailures.map((failure) => failure.code);
       return {
         candidateId: candidate.candidateId,

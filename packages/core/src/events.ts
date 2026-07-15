@@ -465,6 +465,32 @@ export type SectionConstraintStructuralSupportClassification = {
   response: "accepted-context" | "generator-response-required";
 };
 
+export type SectionConstraintMetricalBoundaryClassification = {
+  tick: number;
+  edge: "section-start" | "section-end";
+  state: FugueState | "unplanned";
+  plannedEntry: boolean;
+  cadencePreparation: boolean;
+  pickupPreparation:
+    | "measure-downbeat"
+    | "compound-midpoint"
+    | "held-support"
+    | "suspension-support"
+    | "sustained-pickup"
+    | "cadential-support"
+    | "directed-contour"
+    | "unprepared";
+  classification:
+    | "meter-confirming"
+    | "compound-meter-continuation"
+    | "prepared-pickup"
+    | "planned-entry-pickup"
+    | "cadence-rhetoric"
+    | "unprepared-transition";
+  response: "accepted-context" | "generator-response-required";
+  cost: number;
+};
+
 export type SectionConstraintInfeasibleCounts = {
   invalidIntentionalRestReason: number;
   minActiveVoiceViolation: number;
@@ -513,6 +539,7 @@ export type SectionConstraintSatisfactionWindow = {
   offMeasureEntryStartCount: number;
   unpreparedTransitionCount: number;
   preparedPickupCount: number;
+  metricalBoundaryClassifications: SectionConstraintMetricalBoundaryClassification[];
   intentionalRestSpans: SectionConstraintRestSpan[];
   unplannedSilentRuns: SectionConstraintSilentRun[];
   densityClassifications: SectionConstraintDensityClassification[];
@@ -523,7 +550,7 @@ export type SectionConstraintSatisfactionWindow = {
 };
 
 export type ConstraintSatisfactionReviewSummary = {
-  schemaVersion: 6;
+  schemaVersion: 7;
   windowCount: number;
   intentionalRestSpanCount: number;
   unplannedSilentRunCount: number;
@@ -536,6 +563,7 @@ export type ConstraintSatisfactionReviewSummary = {
   offMeasureEntryStartCount: number;
   unpreparedTransitionCount: number;
   preparedPickupCount: number;
+  metricalBoundaryClassifications: SectionConstraintMetricalBoundaryClassification[];
   explainedDensityWindowCount: number;
   unsupportedDensityWindowCount: number;
   legitimateNonChordStructuralSupportCount: number;
@@ -595,7 +623,7 @@ export type CandidateEvaluationExplanations = {
 
 export type CandidateEvaluation = {
   featureVersion: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
-  evaluationModelVersion: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19;
+  evaluationModelVersion: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20;
   totalCost: number;
   hardFailures: DiagnosticIssueCode[];
   explanations: CandidateEvaluationExplanations;

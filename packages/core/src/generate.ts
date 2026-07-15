@@ -122,7 +122,9 @@ export function generateScore(input: GenerationInput): GenerationOutput {
     writingProfile,
     constraintProfile.id,
   );
-  const diagnostics = analyzeScore(score.notes, score.subjectEntries, score.sectionPlans, writingProfile);
+  const diagnostics = analyzeScore(score.notes, score.subjectEntries, score.sectionPlans, writingProfile, {
+    voicePairSpanSelection: "review-coverage",
+  });
   const constraintSatisfactionReview = buildConstraintSatisfactionReview({
     notes: score.notes,
     subjectEntries: score.subjectEntries,
@@ -159,6 +161,7 @@ export function generateScore(input: GenerationInput): GenerationOutput {
           [...expositionSearch.candidates, ...score.selectedConstraintCandidates, finalProfileInvariantCandidate],
           expositionSearch.selected,
           "solver",
+          score.selectedConstraintCandidateIds,
         );
 
   const firstState = score.stateTransitions[0] ?? (isContinuousContinuation ? "episode" : "exposition");
@@ -882,7 +885,10 @@ function buildDiagnosticsOnlyGeneratorSearchTrace(
 }
 
 function buildContinuationGeneratorSearchTrace(
-  score: Exposition & { selectedConstraintCandidates?: readonly ConstraintCandidate[] },
+  score: Exposition & {
+    selectedConstraintCandidates?: readonly ConstraintCandidate[];
+    selectedConstraintCandidateIds?: readonly string[];
+  },
   generatedUntilTick: number,
   writingProfile: WritingProfile,
   constraintProfileId: SectionConstraintScoringProfileId,
@@ -900,7 +906,12 @@ function buildContinuationGeneratorSearchTrace(
     candidates.find((candidate) => candidate.candidateId.includes("boundary-continuation-candidate-0")) ??
     selectBestConstraintCandidate(candidates);
 
-  return buildGeneratorSearchTrace(candidates, selectedBoundaryCandidate, "solver");
+  return buildGeneratorSearchTrace(
+    candidates,
+    selectedBoundaryCandidate,
+    "solver",
+    score.selectedConstraintCandidateIds,
+  );
 }
 
 function buildFinalWritingProfileInvariantCandidate(

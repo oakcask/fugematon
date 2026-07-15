@@ -22,6 +22,18 @@ const QUALITY_VECTOR_VOICE_PAIRS: readonly [Voice, Voice][] = [
   ["tenor", "bass"],
 ];
 
+const VOICE_PAIR_SPAN_CLASSIFICATIONS: readonly VoicePairSpanClassification[] = [
+  "mechanical-coupling",
+  "exact-collision",
+  "color-doubling",
+  "subject-support",
+  "cadence-support",
+  "sequence-support",
+  "pitch-class-reinforcement",
+];
+const VOICE_PAIR_SPAN_CLASSIFICATION_QUOTA = 2;
+const VOICE_PAIR_SPAN_LIMIT = 18;
+
 export function summarizeVoicePairUnisons(
   notes: readonly NoteEvent[],
   sectionPlans: readonly HarmonicPlan[],
@@ -173,6 +185,7 @@ export function summarizeVoicePairFunctions(
 export function summarizeVoicePairSpans(
   notes: readonly NoteEvent[],
   sectionPlans: readonly HarmonicPlan[],
+  selection: "duration" | "review-coverage" = "duration",
 ): VoicePairSpanSummary[] {
   const checkpoints = noteCheckpoints(notes);
   const spans: VoicePairSpanSummary[] = [];
@@ -228,22 +241,34 @@ export function summarizeVoicePairSpans(
     }
   }
 
-  return spans
+  const spansByDuration = spans
     .filter((span) => span.durationTicks >= TICKS_PER_QUARTER)
     .sort(
       (left, right) =>
         right.durationTicks - left.durationTicks ||
         left.startTick - right.startTick ||
         voicePairLabel(left).localeCompare(voicePairLabel(right)),
-    )
-    .slice(0, 18);
+    );
+  return selection === "review-coverage"
+    ? selectVoicePairReviewSpans(spansByDuration)
+    : spansByDuration.slice(0, VOICE_PAIR_SPAN_LIMIT);
+}
+
+export function selectVoicePairReviewSpans(spansByDuration: readonly VoicePairSpanSummary[]): VoicePairSpanSummary[] {
+  const selected = VOICE_PAIR_SPAN_CLASSIFICATIONS.flatMap((classification) =>
+    spansByDuration
+      .filter((span) => span.classification === classification)
+      .slice(0, VOICE_PAIR_SPAN_CLASSIFICATION_QUOTA),
+  );
+  const selectedSet = new Set(selected);
+  return selected.concat(spansByDuration.filter((span) => !selectedSet.has(span))).slice(0, VOICE_PAIR_SPAN_LIMIT);
 }
 
 function isEntryRole(role: NoteEvent["role"]): boolean {
   return role === "subject" || role === "answer" || role === "subject-fragment";
 }
 
-function classifyVoicePairSpan(
+export function classifyVoicePairSpan(
   left: Pick<NoteEvent, "pitch" | "role" | "startTick" | "durationTicks">,
   right: Pick<NoteEvent, "pitch" | "role" | "startTick" | "durationTicks">,
   section: HarmonicPlan | undefined,
