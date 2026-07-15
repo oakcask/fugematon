@@ -4,7 +4,7 @@
 
 ## Read First
 
-* [Generator constraint rebuild important-entry-tail review](generator-constraint-rebuild-important-entry-tail.md): current exposition solver-ownership evidence. Finalized held, staggered, linear, and oblique support candidates remove unexplained first-bass-answer tail collapse while preserving hard contracts and voice-pair controls.
+* [Generator constraint rebuild important-entry-tail review](generator-constraint-rebuild-important-entry-tail.md): current exposition solver-ownership evidence. Finalized held, staggered, linear, and oblique support candidates remove unexplained first-bass-answer tail collapse while preserving hard contracts and keeping small localized voice-pair tradeoffs review-visible.
 * [Generator constraint rebuild voice-pair independence review](generator-constraint-rebuild-voice-pair-independence.md): current continuation-CSP independence evidence. Functional imitation stays distinct from mechanical coupling, off-measure planned entries gain local preparation candidates, and melody / phrase tradeoffs remain review-visible.
 * [Generator constraint rebuild metrical-boundary review](generator-constraint-rebuild-metrical-boundary.md): current continuation-CSP boundary evidence. Duration candidates restore unprepared transitions toward measure boundaries while planned-entry pickup and cadence rhetoric remain accepted context.
 * [Generator constraint rebuild density and structural support review](generator-constraint-rebuild-density-structural.md): current continuation-CSP evidence. Density and structural-label false positives are classified by section function, true failures are repaired before adoption, and score-level cleanup remains non-adopting trace evidence.
