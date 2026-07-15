@@ -135,6 +135,7 @@ export function evaluateScoreDraft(
           notes: analyzableNotes,
           sectionPlan: expandedWindow.harmonicPlan,
           subjectEntries,
+          includeClassifications: false,
         })
       : expandedWindow.sectionConstraintReview;
   const hardFailures = new Map<ConstraintHardFailureCode, ConstraintHardFailure>();
@@ -684,10 +685,7 @@ function softFeatureCosts(
     {
       feature: "important-entry-tail-texture",
       cost:
-        (diagnostics.importantEntryTailTexture.windows.reduce(
-          (sum, window) => sum + window.zeroOutsideVoiceTicks,
-          0,
-        ) /
+        (diagnostics.importantEntryTailTexture.windows.reduce((sum, window) => sum + window.zeroOutsideVoiceTicks, 0) /
           HALF_BEAT_TICKS) *
           8 +
         (diagnostics.importantEntryTailTexture.windows.reduce(
@@ -1123,21 +1121,26 @@ function terminalFinalRest(
 }
 
 function selectedReason(result: ConstraintResult): string {
+  const relaxation = result.window.sectionConstraintReview?.selectedRelaxationLevel;
   if (result.hardFailures.length === 0) {
     return appendSoftCostSummary(
-      "selected by deterministic constraint ordering with no current-contract hard failures",
+      `selected by deterministic constraint ordering with no current-contract hard failures; relaxation=${relaxation ?? "none"}`,
       result,
     );
   }
-  return "retained only as diagnostics-only legacy output; future solver path must reject this candidate";
+  return `retained only as diagnostics-only legacy output; relaxation=${relaxation ?? "infeasible"}; future solver path must reject this candidate`;
 }
 
 function rejectedReason(result: ConstraintResult): string {
+  const relaxation = result.window.sectionConstraintReview?.selectedRelaxationLevel;
   if (result.hardFailures.length === 0) {
-    return appendSoftCostSummary("not selected after deterministic soft-cost and candidate-id tie-break", result);
+    return appendSoftCostSummary(
+      `not selected after deterministic soft-cost and candidate-id tie-break; relaxation=${relaxation ?? "none"}`,
+      result,
+    );
   }
   return appendSoftCostSummary(
-    `rejected for hard failures: ${result.hardFailures.map((failure) => failure.code).join(", ")}`,
+    `rejected for hard failures: ${result.hardFailures.map((failure) => failure.code).join(", ")}; relaxation=${relaxation ?? "infeasible"}`,
     result,
   );
 }

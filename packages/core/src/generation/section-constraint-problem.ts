@@ -7,12 +7,14 @@ import type {
   IntentionalRestReason,
   NoteEvent,
   PlannedEntry,
+  SectionConstraintDensityClassification,
   SectionConstraintInfeasibleCounts,
   SectionConstraintRelaxationLevel,
   SectionConstraintRestSpan,
   SectionConstraintSatisfactionWindow,
   SectionConstraintScoringProfileId,
   SectionConstraintSilentRun,
+  SectionConstraintStructuralSupportClassification,
   Voice,
 } from "../events.js";
 import { analyzeDissonanceTriage } from "./dissonance-triage.js";
@@ -142,12 +144,15 @@ export function evaluateSectionConstraintProblem(input: {
   notes: readonly NoteEvent[];
   sectionPlan: HarmonicPlan;
   subjectEntries?: readonly PlannedEntry[];
+  includeClassifications?: boolean;
 }): SectionConstraintSatisfactionWindow {
   const gridTicks = inferGridTicks(input.problem);
   const infeasibleConstraintCounts = emptyInfeasibleCounts();
   const intentionalRestSpans = mergeIntentionalRestSpans(input.problem.slots, input.sectionPlan.state);
   const unplannedSilentRuns = mergeSilentRuns(input.problem.slots, input.sectionPlan.state);
   const slotTicks = uniqueSlotStartTicks(input.problem.slots);
+  const densityClassifications: SectionConstraintDensityClassification[] = [];
+  const structuralSupportClassifications: SectionConstraintStructuralSupportClassification[] = [];
   const metricalBoundary = evaluateMetricalBoundary({
     notes: input.notes,
     sectionPlan: input.sectionPlan,
@@ -180,23 +185,42 @@ export function evaluateSectionConstraintProblem(input: {
     const minRequired = minActiveVoicesForSlot(input.sectionPlan, tick, activeNotes);
     minActiveVoices = Math.min(minActiveVoices, activeVoiceCount);
     maxActiveVoices = Math.max(maxActiveVoices, activeVoiceCount);
+    const densityClassification = classifyDensityWindow(input.problem.slots, tick, activeVoiceCount, minRequired);
+    if (densityClassification !== undefined && input.includeClassifications !== false) {
+      densityClassifications.push(densityClassification);
+    }
+    const unsupportedDensity = densityClassification?.response === "generator-response-required";
 
     if (activeVoiceCount === 0) {
       infeasibleConstraintCounts.allVoiceSilence += 1;
     }
-    if (activeVoiceCount === 1) {
+    if (activeVoiceCount === 1 && unsupportedDensity) {
       infeasibleConstraintCounts.unsupportedSolo += 1;
     }
-    if (activeVoiceCount < minRequired) {
+    if (activeVoiceCount < minRequired && unsupportedDensity) {
       infeasibleConstraintCounts.minActiveVoiceViolation += 1;
     }
   }
 
   for (const run of unplannedSilentRuns) {
+    const collapsesTexture = slotTicks
+      .filter((tick) => run.startTick <= tick && tick < run.endTick)
+      .some((tick) => {
+        const activeNotes = activeNotesAt(input.notes, tick);
+        const activeVoiceCount = new Set(activeNotes.map((note) => note.voice)).size;
+        const minRequired = minActiveVoicesForSlot(input.sectionPlan, tick, activeNotes);
+        return (
+          activeVoiceCount < minRequired &&
+          classifyDensityWindow(input.problem.slots, tick, activeVoiceCount, minRequired)?.response ===
+            "generator-response-required"
+        );
+      });
     if (
       !run.planned &&
       run.durationTicks > TICKS_PER_QUARTER * 2 &&
-      !isCadentialTick(input.sectionPlan, run.startTick)
+      !isCadentialTick(input.sectionPlan, run.startTick) &&
+      infeasibleConstraintCounts.minActiveVoiceViolation > 0 &&
+      collapsesTexture
     ) {
       infeasibleConstraintCounts.longUnplannedSilentRun += 1;
     }
@@ -226,7 +250,18 @@ export function evaluateSectionConstraintProblem(input: {
       }
     }
 
-    addHarmonicQualityCounts(infeasibleConstraintCounts, input.sectionPlan, anchor, activeNotes, gridTicks);
+    const classifications = classifyStructuralSupportAtAnchor(input.notes, anchor);
+    if (input.includeClassifications !== false) {
+      structuralSupportClassifications.push(...classifications);
+    }
+    addHarmonicQualityCounts(
+      infeasibleConstraintCounts,
+      input.sectionPlan,
+      anchor,
+      activeNotes,
+      gridTicks,
+      classifications,
+    );
   }
 
   const selectedRelaxationLevel = relaxationLevel(infeasibleConstraintCounts);
@@ -246,6 +281,8 @@ export function evaluateSectionConstraintProblem(input: {
     preparedPickupCount: metricalBoundary.preparedPickupCount,
     intentionalRestSpans,
     unplannedSilentRuns,
+    densityClassifications,
+    structuralSupportClassifications,
     infeasibleConstraintCounts,
     selectedRelaxationLevel,
     solverCandidateCount,
@@ -280,7 +317,7 @@ export function buildConstraintSatisfactionReview(input: {
   );
 
   return {
-    schemaVersion: 5,
+    schemaVersion: 6,
     windowCount: windows.length,
     intentionalRestSpanCount: windows.reduce((sum, window) => sum + window.intentionalRestSpans.length, 0),
     unplannedSilentRunCount: unplannedSilentRuns.length,
@@ -293,6 +330,39 @@ export function buildConstraintSatisfactionReview(input: {
     offMeasureEntryStartCount: windows.reduce((sum, window) => sum + window.offMeasureEntryStartCount, 0),
     unpreparedTransitionCount: windows.reduce((sum, window) => sum + window.unpreparedTransitionCount, 0),
     preparedPickupCount: windows.reduce((sum, window) => sum + window.preparedPickupCount, 0),
+    explainedDensityWindowCount: windows.reduce(
+      (sum, window) =>
+        sum +
+        window.densityClassifications.filter((classification) => classification.response === "accepted-context").length,
+      0,
+    ),
+    unsupportedDensityWindowCount: windows.reduce(
+      (sum, window) =>
+        sum +
+        window.densityClassifications.filter(
+          (classification) => classification.response === "generator-response-required",
+        ).length,
+      0,
+    ),
+    legitimateNonChordStructuralSupportCount: windows.reduce(
+      (sum, window) =>
+        sum +
+        window.structuralSupportClassifications.filter(
+          (classification) =>
+            classification.classification === "passing-tone" ||
+            classification.classification === "neighbor-tone" ||
+            classification.classification === "suspension",
+        ).length,
+      0,
+    ),
+    unsupportedStructuralLabelCount: windows.reduce(
+      (sum, window) =>
+        sum +
+        window.structuralSupportClassifications.filter(
+          (classification) => classification.classification === "unsupported-structural-label",
+        ).length,
+      0,
+    ),
     infeasibleConstraintCounts,
     selectedRelaxationLevel,
     solverCandidateCount: windows.reduce((sum, window) => sum + window.solverCandidateCount, 0),
@@ -466,10 +536,13 @@ function addHarmonicQualityCounts(
   anchor: HarmonicAnchor,
   activeNotes: readonly NoteEvent[],
   gridTicks: number,
+  classifications: readonly SectionConstraintStructuralSupportClassification[],
 ): void {
   const sonority = assessHarmonicSonority(activeNotes, sectionPlan, anchor, anchor.tick, gridTicks);
   if (sonority?.classification === "non-chord-structural-support") {
-    counts.nonChordStructuralSupportCount += sonority.structuralIntentMismatchCount;
+    counts.nonChordStructuralSupportCount += classifications.filter(
+      (classification) => classification.classification === "unsupported-structural-label",
+    ).length;
   }
   if (sonority?.classification === "thin-unrooted-support") {
     counts.thinUnrootedStructuralSupportCount += 1;
@@ -480,6 +553,131 @@ function addHarmonicQualityCounts(
   if (isMixedEntryTexture(activeNotes) && !supportNotesSustainAnchor(activeNotes, anchor)) {
     counts.mixedEntryHarmonicRiskCount += 1;
   }
+}
+
+function classifyDensityWindow(
+  slots: readonly SectionConstraintSlot[],
+  tick: number,
+  activeVoiceCount: number,
+  requiredVoiceCount: number,
+): SectionConstraintDensityClassification | undefined {
+  const tickSlots = slots.filter((slot) => slot.startTick === tick);
+  const endTick = Math.max(tick + 1, ...tickSlots.map((slot) => slot.endTick));
+  const restReasons = tickSlots
+    .map((slot) => (slot.value?.kind === "intentional-rest" ? slot.value.reason : undefined))
+    .filter((reason): reason is IntentionalRestReason =>
+      reason === undefined ? false : isAllowedIntentionalRestReason(reason),
+    );
+
+  if (activeVoiceCount >= requiredVoiceCount) {
+    if (restReasons.length === 0) {
+      return undefined;
+    }
+    return {
+      startTick: tick,
+      endTick,
+      activeVoiceCount,
+      requiredVoiceCount,
+      reason: preferredRestReason(restReasons),
+      response: "accepted-context",
+    };
+  }
+
+  if (activeVoiceCount > 0 && restReasons.length >= Math.max(1, requiredVoiceCount - activeVoiceCount)) {
+    return {
+      startTick: tick,
+      endTick,
+      activeVoiceCount,
+      requiredVoiceCount,
+      reason: preferredRestReason(restReasons),
+      response: "accepted-context",
+    };
+  }
+
+  return {
+    startTick: tick,
+    endTick,
+    activeVoiceCount,
+    requiredVoiceCount,
+    reason: activeVoiceCount >= requiredVoiceCount ? "supported-texture" : "unsupported-collapse",
+    response: activeVoiceCount >= requiredVoiceCount ? "accepted-context" : "generator-response-required",
+  };
+}
+
+function preferredRestReason(reasons: readonly IntentionalRestReason[]): IntentionalRestReason {
+  const priority: readonly IntentionalRestReason[] = [
+    "cadence-breath",
+    "entry-handoff-delay",
+    "pedal-thinning",
+    "suspension-resolution",
+    "register-relief",
+  ];
+  return priority.find((reason) => reasons.includes(reason)) ?? reasons[0]!;
+}
+
+function classifyStructuralSupportAtAnchor(
+  notes: readonly NoteEvent[],
+  anchor: HarmonicAnchor,
+): SectionConstraintStructuralSupportClassification[] {
+  const chordPitchClasses = chordTonePitchClasses(anchor.localKey, anchor.function);
+  return activeNotesAt(notes, anchor.tick)
+    .filter(
+      (note) =>
+        (note.role === "free-counterpoint" || note.role === "counter-subject") &&
+        (note.metricalHarmonyIntent === "structural-chord-tone" ||
+          note.metricalHarmonyIntent === "structural-root-support"),
+    )
+    .map((note) => {
+      const chordTone = chordPitchClasses.includes(positiveModulo(note.pitch, 12));
+      const classification = chordTone ? "chord-tone-support" : nonHarmonicSupportFunction(notes, note, anchor.tick);
+      return {
+        tick: anchor.tick,
+        voice: note.voice,
+        pitch: note.pitch,
+        classification,
+        response:
+          classification === "unsupported-structural-label" ? "generator-response-required" : "accepted-context",
+      };
+    });
+}
+
+function nonHarmonicSupportFunction(
+  notes: readonly NoteEvent[],
+  note: NoteEvent,
+  tick: number,
+): SectionConstraintStructuralSupportClassification["classification"] {
+  const voiceNotes = notes.filter((candidate) => candidate.voice === note.voice).sort(compareNoteEvents);
+  const previous = [...voiceNotes]
+    .filter((candidate) => candidate.startTick + candidate.durationTicks <= note.startTick)
+    .at(-1);
+  const next = voiceNotes.find((candidate) => candidate.startTick >= note.startTick + note.durationTicks);
+  const previousStep = previous === undefined ? undefined : note.pitch - previous.pitch;
+  const nextStep = next === undefined ? undefined : next.pitch - note.pitch;
+  const resolvesByStep = nextStep !== undefined && Math.abs(nextStep) <= 2 && Math.abs(nextStep) > 0;
+
+  if (note.startTick < tick && resolvesByStep) {
+    return "suspension";
+  }
+  if (
+    previousStep !== undefined &&
+    nextStep !== undefined &&
+    Math.abs(previousStep) <= 2 &&
+    Math.abs(nextStep) <= 2 &&
+    Math.sign(previousStep) === Math.sign(nextStep) &&
+    Math.sign(previousStep) !== 0
+  ) {
+    return "passing-tone";
+  }
+  if (
+    previous !== undefined &&
+    next !== undefined &&
+    Math.abs(previousStep ?? 0) <= 2 &&
+    Math.abs(nextStep ?? 0) <= 2 &&
+    positiveModulo(previous.pitch, 12) === positiveModulo(next.pitch, 12)
+  ) {
+    return "neighbor-tone";
+  }
+  return "unsupported-structural-label";
 }
 
 function addEntryConstraintCounts(

@@ -443,6 +443,28 @@ export type SectionConstraintSilentRun = {
   reason: IntentionalRestReason | "unplanned";
 };
 
+export type SectionConstraintDensityClassification = {
+  startTick: number;
+  endTick: number;
+  activeVoiceCount: number;
+  requiredVoiceCount: number;
+  reason: IntentionalRestReason | "supported-texture" | "unsupported-collapse";
+  response: "accepted-context" | "generator-response-required";
+};
+
+export type SectionConstraintStructuralSupportClassification = {
+  tick: number;
+  voice: Voice;
+  pitch: number;
+  classification:
+    | "chord-tone-support"
+    | "passing-tone"
+    | "neighbor-tone"
+    | "suspension"
+    | "unsupported-structural-label";
+  response: "accepted-context" | "generator-response-required";
+};
+
 export type SectionConstraintInfeasibleCounts = {
   invalidIntentionalRestReason: number;
   minActiveVoiceViolation: number;
@@ -493,13 +515,15 @@ export type SectionConstraintSatisfactionWindow = {
   preparedPickupCount: number;
   intentionalRestSpans: SectionConstraintRestSpan[];
   unplannedSilentRuns: SectionConstraintSilentRun[];
+  densityClassifications: SectionConstraintDensityClassification[];
+  structuralSupportClassifications: SectionConstraintStructuralSupportClassification[];
   infeasibleConstraintCounts: SectionConstraintInfeasibleCounts;
   selectedRelaxationLevel: SectionConstraintRelaxationLevel;
   solverCandidateCount: number;
 };
 
 export type ConstraintSatisfactionReviewSummary = {
-  schemaVersion: 5;
+  schemaVersion: 6;
   windowCount: number;
   intentionalRestSpanCount: number;
   unplannedSilentRunCount: number;
@@ -512,6 +536,10 @@ export type ConstraintSatisfactionReviewSummary = {
   offMeasureEntryStartCount: number;
   unpreparedTransitionCount: number;
   preparedPickupCount: number;
+  explainedDensityWindowCount: number;
+  unsupportedDensityWindowCount: number;
+  legitimateNonChordStructuralSupportCount: number;
+  unsupportedStructuralLabelCount: number;
   infeasibleConstraintCounts: SectionConstraintInfeasibleCounts;
   selectedRelaxationLevel: SectionConstraintRelaxationLevel;
   solverCandidateCount: number;

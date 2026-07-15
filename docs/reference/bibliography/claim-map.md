@@ -28,7 +28,7 @@ Fugematon 固有の設計判断、review 判断、quality policy と文献根拠
 * Confidence: medium
 * Verification state: page-checked
 * Limits: This claim does not prove the local solver is musically complete, does not promote every texture diagnostic to a CI hard gate, and does not reject future external solver comparison after bounded local search fails documented acceptance thresholds.
-* Used by: `docs/phases/generator-constraint-rebuild.md`, `docs/reference/quality-metrics/diagnostics.md`
+* Used by: `docs/phases/generator-constraint-rebuild.md`, `docs/reference/quality-metrics/diagnostics.md`, `docs/reviews/generator-constraint-rebuild-density-structural.md`
 
 ## sustained-vertical-dissonance-soft-repair
 

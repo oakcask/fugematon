@@ -71,6 +71,107 @@ test("section CSP rejects unsupported solo and long unplanned silent runs", () =
   assert.equal(review.selectedRelaxationLevel, "density-floor-review");
 });
 
+test("section CSP accepts function-classified entry handoff thinning", () => {
+  const plan: HarmonicPlan = {
+    ...sectionPlan({ state: "subject-return", durationTicks: TICKS_PER_QUARTER * 4 }),
+    cadenceKind: "deceptive",
+  };
+  const notes = [
+    note({ voice: "soprano", startTick: 0, durationTicks: plan.durationTicks, pitch: 72, role: "subject" }),
+    note({ voice: "tenor", startTick: 0, durationTicks: plan.durationTicks, pitch: 55 }),
+    note({ voice: "alto", startTick: TICKS_PER_QUARTER, durationTicks: TICKS_PER_QUARTER * 3, pitch: 64 }),
+    note({ voice: "bass", startTick: TICKS_PER_QUARTER, durationTicks: TICKS_PER_QUARTER * 3, pitch: 48 }),
+  ];
+  const entry = plannedEntry({ voice: "soprano", state: "subject-return", actualPitchClassSequence: [0] });
+  const review = evaluateSectionConstraintProblem({
+    problem: buildSectionConstraintProblem({
+      notes,
+      sectionPlan: plan,
+      subjectEntries: [entry],
+      intentionalRests: [
+        {
+          voice: "alto",
+          startTick: 0,
+          endTick: TICKS_PER_QUARTER,
+          durationTicks: TICKS_PER_QUARTER,
+          state: plan.state,
+          reason: "entry-handoff-delay",
+        },
+        {
+          voice: "bass",
+          startTick: 0,
+          endTick: TICKS_PER_QUARTER,
+          durationTicks: TICKS_PER_QUARTER,
+          state: plan.state,
+          reason: "entry-handoff-delay",
+        },
+      ],
+    }),
+    notes,
+    sectionPlan: plan,
+    subjectEntries: [entry],
+  });
+
+  assert.equal(review.infeasibleConstraintCounts.minActiveVoiceViolation, 0);
+  assert.ok(
+    review.densityClassifications.every(
+      (classification) =>
+        classification.reason === "entry-handoff-delay" && classification.response === "accepted-context",
+    ),
+  );
+});
+
+test("section CSP separates passing support from an unsupported structural label", () => {
+  const startTick = TICKS_PER_QUARTER;
+  const plan: HarmonicPlan = {
+    ...sectionPlan({ state: "episode", startTick, durationTicks: TICKS_PER_QUARTER * 2 }),
+    cadenceKind: "deceptive",
+  };
+  const passingNotes = [
+    note({ voice: "soprano", startTick: 0, pitch: 60 }),
+    note({
+      voice: "soprano",
+      startTick,
+      pitch: 62,
+      metricalHarmonyIntent: "structural-chord-tone",
+    }),
+    note({ voice: "soprano", startTick: startTick * 2, pitch: 64 }),
+    ...supportedNotes(startTick, plan.durationTicks).filter((candidate) => candidate.voice !== "soprano"),
+  ];
+  const passing = evaluateSectionConstraintProblem({
+    problem: buildSectionConstraintProblem({ notes: passingNotes, sectionPlan: plan }),
+    notes: passingNotes,
+    sectionPlan: plan,
+  });
+  const unsupportedNotes = passingNotes
+    .filter((candidate) => candidate.voice !== "soprano")
+    .concat(
+      note({
+        voice: "soprano",
+        startTick,
+        durationTicks: plan.durationTicks,
+        pitch: 62,
+        metricalHarmonyIntent: "structural-chord-tone",
+      }),
+    );
+  const unsupported = evaluateSectionConstraintProblem({
+    problem: buildSectionConstraintProblem({ notes: unsupportedNotes, sectionPlan: plan }),
+    notes: unsupportedNotes,
+    sectionPlan: plan,
+  });
+
+  assert.equal(passing.infeasibleConstraintCounts.nonChordStructuralSupportCount, 0);
+  assert.ok(
+    passing.structuralSupportClassifications.some((classification) => classification.classification === "passing-tone"),
+  );
+  assert.ok(unsupported.infeasibleConstraintCounts.nonChordStructuralSupportCount > 0);
+  assert.ok(
+    unsupported.structuralSupportClassifications.some(
+      (classification) => classification.classification === "unsupported-structural-label",
+    ),
+  );
+});
+
 test("section CSP requires structural root and chord support at harmonic anchors", () => {
   const plan = sectionPlan({ state: "subject-return" });
   const unsupported = evaluateSectionConstraintProblem({
@@ -107,7 +208,7 @@ test("section CSP diagnostics are deterministic for the same seed and input", ()
   const second = generateScore({ seed: "fugue-smoke", lengthTicks: TICKS_PER_QUARTER * 32 });
 
   assert.deepEqual(first.diagnostics.constraintSatisfactionReview, second.diagnostics.constraintSatisfactionReview);
-  assert.equal(first.diagnostics.constraintSatisfactionReview.schemaVersion, 5);
+  assert.equal(first.diagnostics.constraintSatisfactionReview.schemaVersion, 6);
   assert.ok(first.diagnostics.constraintSatisfactionReview.solverCandidateCount > 0);
   assert.equal(typeof first.diagnostics.constraintSatisfactionReview.metricalBoundaryCost, "number");
   assert.equal(typeof first.diagnostics.constraintSatisfactionReview.unpreparedTransitionCount, "number");

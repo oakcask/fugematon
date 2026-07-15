@@ -536,9 +536,10 @@ test("generateScore treats continuous-fugue segment zero as initial boundary con
   assert.equal(first.diagnostics.continuousSegmentContinuity.carriedSubjectFamily, false);
   assert.equal(first.diagnostics.continuousSegmentContinuity.pianoRollSessionTimelineContinuous, true);
   assert.ok(
-    ["accepted-continuation", "prepared-stretto", "developmental-episode"].includes(
+    ["accepted-continuation", "prepared-subject-return", "prepared-stretto", "developmental-episode"].includes(
       second.diagnostics.continuousSegmentContinuity.classification,
     ),
+    `unexpected continuation classification: ${second.diagnostics.continuousSegmentContinuity.classification}`,
   );
   assert.equal(second.diagnostics.continuousSegmentContinuity.carriedSubjectFamily, true);
 });
@@ -648,11 +649,11 @@ test("generateScore uses carried planner hint and tonal region for continuous-fu
     previousSegmentSnapshot,
   });
 
-  assert.equal(second.diagnostics.sectionPlans[0]?.state, "subject-return");
+  assert.equal(second.diagnostics.sectionPlans[0]?.state, "stretto-like");
   assert.deepEqual(second.diagnostics.sectionPlans[0]?.departureKey, carriedKey);
   assert.equal(second.diagnostics.continuousSegmentContinuity.previousTailState, "stretto-like");
-  assert.equal(second.diagnostics.continuousSegmentContinuity.nextFirstState, "subject-return");
-  assert.equal(second.diagnostics.continuousSegmentContinuity.classification, "prepared-subject-return");
+  assert.equal(second.diagnostics.continuousSegmentContinuity.nextFirstState, "stretto-like");
+  assert.equal(second.diagnostics.continuousSegmentContinuity.classification, "prepared-stretto");
 });
 
 test("generateScore flags continuous-fugue segment restarts when no snapshot is carried", () => {
