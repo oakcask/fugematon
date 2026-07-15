@@ -161,8 +161,9 @@ export function buildFugueScore(
   const stateTransitions: FugueState[] = ["exposition"];
   const stateChanges: FugueScore["stateChanges"] = [];
   const selectedCandidateEvaluations: CandidateEvaluation[] = [];
-  const selectedConstraintCandidates: ConstraintCandidate[] = [];
-  const selectedConstraintCandidateIds: string[] = [];
+  const selectedConstraintCandidates: ConstraintCandidate[] = [...(exposition.constraintCandidates ?? [])];
+  const selectedConstraintCandidateIds: string[] =
+    exposition.selectedConstraintCandidateId === undefined ? [] : [exposition.selectedConstraintCandidateId];
   const candidatePoolOracleSections: ReturnType<typeof classifyCandidatePoolOracleSection>[] = [];
   let terminalCoda: Exposition | undefined;
   let protectedTerminalCodaNotes: NoteEvent[] = [];
@@ -2527,15 +2528,13 @@ export function buildExposition(
     });
   }
 
-  const selectedEntryWindowCandidate = selectExpositionEntryWindowCandidate({
+  const entryWindowSelection = selectExpositionEntryWindowCandidate({
     notes,
     subjectEntries,
     sectionPlans,
     writingProfile,
   });
-  notes.splice(0, notes.length, ...selectedEntryWindowCandidate.draft.notes);
-  softenFirstBassEntryBoundaryReset(notes, subjectEntries);
-  repairTextureVoiceCrossingsForNotes(notes, sectionPlans, writingProfile);
+  notes.splice(0, notes.length, ...entryWindowSelection.selected.draft.notes);
   notes.sort(compareNoteEvents);
 
   return {
@@ -2544,6 +2543,8 @@ export function buildExposition(
     sectionPlans,
     endTick: Math.max(...notes.map((note) => note.startTick + note.durationTicks)),
     durationTicks: entrySpacingTicks * VOICE_ENTRY_ORDER.length,
+    constraintCandidates: entryWindowSelection.candidates,
+    selectedConstraintCandidateId: entryWindowSelection.selected.candidateId,
   };
 }
 
@@ -2552,30 +2553,137 @@ function selectExpositionEntryWindowCandidate(input: {
   subjectEntries: readonly PlannedEntry[];
   sectionPlans: readonly HarmonicPlan[];
   writingProfile: WritingProfile;
-}): ConstraintCandidate {
-  const baseNotes = cloneNotes(input.notes);
+}): { candidates: ConstraintCandidate[]; selected: ConstraintCandidate } {
+  const baseNotes = finalizeExpositionEntryWindowCandidate(cloneNotes(input.notes), input);
   const supportNotes = cloneNotes(input.notes);
   addEntryWindowContinuitySupport(supportNotes, input.subjectEntries, input.sectionPlans, input.writingProfile);
-  supportNotes.sort(compareNoteEvents);
+  const finalizedSupportNotes = finalizeExpositionEntryWindowCandidate(supportNotes, input);
+
+  const linearSupportNotes = cloneNotes(input.notes);
+  softenFirstBassEntryBoundaryReset(linearSupportNotes, input.subjectEntries);
+  addEntryWindowContinuitySupport(linearSupportNotes, input.subjectEntries, input.sectionPlans, input.writingProfile, {
+    voiceOrder: ["tenor", "soprano", "alto", "bass"],
+    lineKind: "linear",
+  });
+  const finalizedLinearSupportNotes = finalizeExpositionEntryWindowCandidate(linearSupportNotes, input);
+
+  const heldSupportNotes = cloneNotes(input.notes);
+  softenFirstBassEntryBoundaryReset(heldSupportNotes, input.subjectEntries);
+  addEntryWindowContinuitySupport(heldSupportNotes, input.subjectEntries, input.sectionPlans, input.writingProfile, {
+    voiceOrder: ["tenor", "soprano", "alto", "bass"],
+    lineKind: "linear",
+    preferHeldSupport: true,
+  });
+  const finalizedHeldSupportNotes = finalizeExpositionEntryWindowCandidate(heldSupportNotes, input);
 
   const candidates = [
     buildScoreLevelConstraintCandidate(
-      "exposition-entry-window-base",
+      "exposition-entry-window-final-base",
       baseNotes,
       input.subjectEntries,
       input.sectionPlans,
       input.writingProfile,
     ),
     buildScoreLevelConstraintCandidate(
-      "exposition-entry-window-continuity-support",
-      supportNotes,
+      "exposition-entry-window-final-continuity-support",
+      finalizedSupportNotes,
+      input.subjectEntries,
+      input.sectionPlans,
+      input.writingProfile,
+    ),
+    buildScoreLevelConstraintCandidate(
+      "exposition-entry-window-final-linear-support",
+      finalizedLinearSupportNotes,
+      input.subjectEntries,
+      input.sectionPlans,
+      input.writingProfile,
+    ),
+    buildScoreLevelConstraintCandidate(
+      "exposition-entry-window-final-held-or-staggered-support",
+      finalizedHeldSupportNotes,
       input.subjectEntries,
       input.sectionPlans,
       input.writingProfile,
     ),
   ];
 
-  return selectBestConstraintCandidate(candidates);
+  return { candidates, selected: selectExpositionEntryWindowConstraintCandidate(candidates, input.writingProfile) };
+}
+
+function selectExpositionEntryWindowConstraintCandidate(
+  candidates: readonly ConstraintCandidate[],
+  writingProfile: WritingProfile,
+): ConstraintCandidate {
+  const baseCandidate = candidates[0]!;
+  const baseControls = expositionEntryWindowControlFeatures(baseCandidate, writingProfile);
+  const supportCandidates = candidates.filter(
+    (candidate) =>
+      constraintCandidateHardFailureCount(candidate) <= constraintCandidateHardFailureCount(baseCandidate) &&
+      constraintSoftFeatureCost(candidate, "important-entry-tail-texture") <
+        constraintSoftFeatureCost(baseCandidate, "important-entry-tail-texture"),
+  );
+  const pairPreservingCandidates = supportCandidates.filter((candidate) => {
+    const controls = expositionEntryWindowControlFeatures(candidate, writingProfile);
+    return (
+      controls.mechanicalCouplingTicks <= baseControls.mechanicalCouplingTicks &&
+      controls.exactCollisionTicks <= baseControls.exactCollisionTicks &&
+      controls.unresolvedAccentedEntryClashCount <= baseControls.unresolvedAccentedEntryClashCount
+    );
+  });
+  const fullyPreservingCandidates = pairPreservingCandidates.filter((candidate) => {
+    const controls = expositionEntryWindowControlFeatures(candidate, writingProfile);
+    return (
+      controls.leapRecoveryMisses <= baseControls.leapRecoveryMisses &&
+      controls.mechanicalReuseWindowCount <= baseControls.mechanicalReuseWindowCount
+    );
+  });
+  const selectionPool =
+    fullyPreservingCandidates.length > 0
+      ? fullyPreservingCandidates
+      : pairPreservingCandidates.length > 0
+        ? pairPreservingCandidates
+        : supportCandidates.length > 0
+          ? supportCandidates
+          : candidates;
+  return selectBestConstraintCandidate(selectionPool);
+}
+
+function expositionEntryWindowControlFeatures(candidate: ConstraintCandidate, writingProfile: WritingProfile) {
+  const diagnostics = analyzeScore(
+    candidate.draft.notes,
+    candidate.draft.subjectEntries,
+    candidate.draft.sectionPlans,
+    writingProfile,
+  );
+  const spanTicks = (classification: "mechanical-coupling" | "exact-collision") =>
+    diagnostics.qualityVector.voicePairSpans
+      .filter((span) => span.classification === classification)
+      .reduce((sum, span) => sum + span.durationTicks, 0);
+  return {
+    mechanicalCouplingTicks: spanTicks("mechanical-coupling"),
+    exactCollisionTicks: spanTicks("exact-collision"),
+    unresolvedAccentedEntryClashCount: diagnostics.dissonanceTriage.unresolvedAccentedEntryClashCount,
+    leapRecoveryMisses: diagnostics.leapRecoveryMisses,
+    mechanicalReuseWindowCount: buildPhraseDevelopmentReviewSummary(
+      candidate.draft.subjectEntries,
+      candidate.draft.sectionPlans,
+      diagnostics.phraseRepetitionReview,
+    ).mechanicalReuseWindowCount,
+  };
+}
+
+function finalizeExpositionEntryWindowCandidate(
+  notes: NoteEvent[],
+  input: {
+    subjectEntries: readonly PlannedEntry[];
+    sectionPlans: readonly HarmonicPlan[];
+    writingProfile: WritingProfile;
+  },
+): NoteEvent[] {
+  softenFirstBassEntryBoundaryReset(notes, input.subjectEntries);
+  repairTextureVoiceCrossingsForNotes(notes, input.sectionPlans, input.writingProfile);
+  notes.sort(compareNoteEvents);
+  return notes;
 }
 
 function expositionEntrySpacingTicks(meterContext: MeterContext): number {

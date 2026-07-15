@@ -50,6 +50,8 @@ export type Exposition = {
     | "entry-window-variant"
     | "voice-independence-variant";
   constraintSourceCandidateIndex?: number;
+  constraintCandidates?: ConstraintCandidate[];
+  selectedConstraintCandidateId?: string;
 };
 
 export type FugueScore = Exposition & {

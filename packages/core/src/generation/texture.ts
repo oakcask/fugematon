@@ -1815,15 +1815,27 @@ export function addEntryWindowContinuitySupport(
   subjectEntries: readonly PlannedEntry[],
   sectionPlans: readonly HarmonicPlan[],
   writingProfile?: WritingProfile,
+  policy: {
+    voiceOrder?: readonly Voice[];
+    lineKind?: ContinuityLineKind;
+    preferHeldSupport?: boolean;
+  } = {},
 ): void {
-  for (const run of findImportantEntryTailSupportRuns(notes, subjectEntries, sectionPlans)) {
+  for (const run of findImportantEntryTailSupportRuns(notes, subjectEntries)) {
     const plan =
       sectionPlanForTick(sectionPlans, run.startTick) ?? sectionPlanForTick(sectionPlans, run.entryStartTick);
     if (plan === undefined) {
       continue;
     }
-    const supportVoices = entryWindowSupportVoices(notes, run);
+    const supportVoices = entryWindowSupportVoices(notes, run, policy.voiceOrder);
     if (supportVoices.length === 0) {
+      continue;
+    }
+    const heldSupportVoices = policy.preferHeldSupport
+      ? extendEntryWindowHeldSupport(notes, supportVoices, run.startTick, run.endTick)
+      : [];
+    const addedSupportVoices = supportVoices.filter((voice) => !heldSupportVoices.includes(voice));
+    if (addedSupportVoices.length === 0) {
       continue;
     }
 
@@ -1832,14 +1844,36 @@ export function addEntryWindowContinuitySupport(
       durationTicks: run.endTick - run.startTick,
       localKey: plan.targetKey,
       harmonicPlan: plan,
-      maxVoiceCount: supportVoices.length,
-      voiceOrder: supportVoices,
-      lineKind: shouldUseObliqueEntryWindowSupport(plan, run.startTick) ? "oblique-support" : "linear",
+      maxVoiceCount: addedSupportVoices.length,
+      voiceOrder: addedSupportVoices,
+      lineKind:
+        policy.lineKind ?? (shouldUseObliqueEntryWindowSupport(plan, run.startTick) ? "oblique-support" : "linear"),
       writingProfile,
     });
   }
 
   repairTextureVoiceCrossingsForPlans(notes, sectionPlans, writingProfile);
+}
+
+function extendEntryWindowHeldSupport(
+  notes: Exposition["notes"],
+  supportVoices: readonly Voice[],
+  startTick: number,
+  endTick: number,
+): Voice[] {
+  const heldVoices: Voice[] = [];
+  for (const voice of supportVoices) {
+    const carriedNote = notes
+      .filter((note) => note.voice === voice && note.startTick + note.durationTicks === startTick)
+      .sort(compareNoteEvents)
+      .at(-1);
+    if (carriedNote === undefined) {
+      continue;
+    }
+    carriedNote.durationTicks = endTick - carriedNote.startTick;
+    heldVoices.push(voice);
+  }
+  return heldVoices;
 }
 
 export function addPlannedEntryPreparationSupport(
@@ -3519,23 +3553,17 @@ function findPostEntryThinSupportRuns(
 function findImportantEntryTailSupportRuns(
   notes: readonly NoteEvent[],
   subjectEntries: readonly PlannedEntry[],
-  sectionPlans: readonly HarmonicPlan[],
 ): { startTick: number; endTick: number; entryVoice: Voice; entryStartTick: number; alreadyEnteredVoices: Voice[] }[] {
   const contexts = buildEntryTailSupportContexts(notes, subjectEntries);
-  return contexts.flatMap((context) => importantEntryTailSupportRunsForEntry(notes, context, sectionPlans));
+  return contexts.flatMap((context) => importantEntryTailSupportRunsForEntry(notes, context));
 }
 
 function importantEntryTailSupportRunsForEntry(
   notes: readonly NoteEvent[],
   context: EntryTailSupportContext,
-  sectionPlans: readonly HarmonicPlan[],
 ): { startTick: number; endTick: number; entryVoice: Voice; entryStartTick: number; alreadyEnteredVoices: Voice[] }[] {
   const entryEndTick = importantEntryEndTick(notes, context.entry);
-  const plan = sectionPlanForTick(sectionPlans, context.entry.startTick);
-  const scanEndTick = Math.min(
-    plan === undefined ? entryEndTick + TICKS_PER_QUARTER * 4 : plan.startTick + plan.durationTicks,
-    entryEndTick + TICKS_PER_QUARTER * 4,
-  );
+  const scanEndTick = entryEndTick + TICKS_PER_QUARTER * 4;
   const stepTicks = TICKS_PER_QUARTER / 2;
   const runs: {
     startTick: number;
@@ -3543,6 +3571,7 @@ function importantEntryTailSupportRunsForEntry(
     entryVoice: Voice;
     entryStartTick: number;
     alreadyEnteredVoices: Voice[];
+    outsideVoiceSignature: string;
   }[] = [];
   let currentRun:
     | {
@@ -3551,6 +3580,7 @@ function importantEntryTailSupportRunsForEntry(
         entryVoice: Voice;
         entryStartTick: number;
         alreadyEnteredVoices: Voice[];
+        outsideVoiceSignature: string;
       }
     | undefined;
 
@@ -3561,7 +3591,15 @@ function importantEntryTailSupportRunsForEntry(
   for (let tick = context.entry.startTick; tick < scanEndTick; tick += stepTicks) {
     const segmentEndTick = Math.min(scanEndTick, tick + stepTicks);
     if (isThinImportantEntryTailSegment(notes, context, tick, segmentEndTick)) {
-      if (currentRun?.endTick === tick) {
+      const outsideVoiceSignature = context.alreadyEnteredVoices
+        .filter((voice) =>
+          notes.some(
+            (note) =>
+              note.voice === voice && note.startTick < segmentEndTick && tick < note.startTick + note.durationTicks,
+          ),
+        )
+        .join(">");
+      if (currentRun?.endTick === tick && currentRun.outsideVoiceSignature === outsideVoiceSignature) {
         currentRun.endTick = segmentEndTick;
       } else {
         if (currentRun !== undefined) {
@@ -3573,6 +3611,7 @@ function importantEntryTailSupportRunsForEntry(
           entryVoice: context.entry.voice,
           entryStartTick: context.entry.startTick,
           alreadyEnteredVoices: context.alreadyEnteredVoices,
+          outsideVoiceSignature,
         };
       }
     } else if (currentRun !== undefined) {
@@ -3890,6 +3929,7 @@ function noteRoleForEntryForm(form: EntryForm): NoteEvent["role"] {
 function entryWindowSupportVoices(
   notes: readonly NoteEvent[],
   run: { startTick: number; endTick: number; entryVoice: Voice; alreadyEnteredVoices: readonly Voice[] },
+  preferredVoiceOrder: readonly Voice[] = VOICE_ENTRY_ORDER,
 ): Voice[] {
   const outsideVoiceCount = run.alreadyEnteredVoices.filter((voice) =>
     notes.some(
@@ -3898,7 +3938,8 @@ function entryWindowSupportVoices(
     ),
   ).length;
   const requiredSupportCount = Math.max(0, 2 - outsideVoiceCount);
-  return VOICE_ENTRY_ORDER.filter((voice) => voice !== run.entryVoice)
+  return uniqueVoiceOrder([...preferredVoiceOrder, ...VOICE_ENTRY_ORDER])
+    .filter((voice) => voice !== run.entryVoice)
     .filter((voice) => !hasOverlap(notes, voice, run.startTick, run.endTick - run.startTick))
     .slice(0, requiredSupportCount);
 }
