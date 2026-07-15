@@ -5,12 +5,16 @@
 ## Read First
 
 * [Generator constraint rebuild](generator-constraint-rebuild.md): in-progress architecture rewrite. Continuation generation is moving toward section-slot CSP construction with deterministic backtracking, so unexplained voice silence and unsupported texture collapse are avoided during candidate construction instead of repaired after generation.
+* [Reference evaluation learning loop](reference-evaluation-learning-loop.md): planned reference-corpus, shared-feature, blind A/B, pairwise-model, shadow-evaluation, and active-learning work that closes the Phase 10 quality-lane remainder without allowing learned preference to override hard constraints.
+* [Pairwise listening review tool](pairwise-listening-review-tool.md): planned local blind-listening application for controlled A/B playback, bias-resistant response capture, atomic save/resume, and validated export into the evaluation loop.
 * [Endless program terminal stretta planner](endless-program-terminal-stretta-planner.md): planned follow-up for `endless-program` endings. It treats the current coda as cadence-safe but still potentially appended, and makes terminal stretta the preferred fugal ending when constraints allow it.
 * [Playback source realism feasibility](playback-source-realism-feasibility.md): current playback-source and notices/licensing basis. Read it before changing SoundFont, sampler, notices, or audio-asset delivery policy.
 
 ## Read When
 
 * Changing generator architecture, solver ownership, repair downgrade policy, hard/soft/review gate separation, or legacy expected-value treatment: read [Generator constraint rebuild](generator-constraint-rebuild.md) and the linked current reviews.
+* Changing reference-score ingestion, evaluation features, pairwise labels, learned evaluation weights, shadow adoption, or A/B prioritization: read [Reference evaluation learning loop](reference-evaluation-learning-loop.md), [quality metrics](../reference/quality-metrics.md), and [bibliography governance](../reference/bibliography/README.md).
+* Changing blind listening UX, synchronized A/B playback, response persistence, keyboard review flow, or post-choice analysis: read [Pairwise listening review tool](pairwise-listening-review-tool.md) and its parent [evaluation loop](reference-evaluation-learning-loop.md).
 * Changing `endless-program` terminal rhetoric, coda planning, terminal stretta, or coda diagnostics: read [Endless program terminal stretta planner](endless-program-terminal-stretta-planner.md) and [Endless Program Coda Historical Ending Review](../reviews/endless-program-coda-historical-ending-review.md).
 * Changing playback realism, SpessaSynth, SoundFont assets, samplers, notices, or asset license metadata: read [Playback source realism feasibility](playback-source-realism-feasibility.md).
 * Changing implementation order or public contracts: also read [../reference/technical-plan.md](../reference/technical-plan.md).
