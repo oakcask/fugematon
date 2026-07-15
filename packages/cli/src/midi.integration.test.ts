@@ -211,6 +211,16 @@ reviewTest("review command writes diagnostics and MIDI files for review seeds", 
         };
         diagnosticsSummary: {
           hardConstraintFailures: number;
+          constraintSatisfaction: {
+            selectedRelaxationLevel: string;
+            infeasibleConstraintCounts: {
+              minActiveVoiceViolation: number;
+              unsupportedSolo: number;
+              allVoiceSilence: number;
+              longUnplannedSilentRun: number;
+              nonChordStructuralSupportCount: number;
+            };
+          };
           texture: {
             rhythmicIndependenceScore: number;
             samePitchOverlapCount: number;
@@ -640,7 +650,27 @@ reviewTest("review command writes diagnostics and MIDI files for review seeds", 
       assert.ok(entry.initialSubjectProfile.rhythmPattern.length > 0);
       assert.notEqual(entry.initialSubjectProfile.contourClass, "");
       assert.ok(!entry.midiFile.includes(directory));
-      assert.ok(entry.diagnosticsSummary.hardConstraintFailures >= 0);
+      assert.equal(entry.diagnosticsSummary.hardConstraintFailures, 0);
+      assert.equal(entry.diagnosticsSummary.constraintSatisfaction.selectedRelaxationLevel, "none");
+      assert.deepEqual(
+        {
+          minActiveVoiceViolation:
+            entry.diagnosticsSummary.constraintSatisfaction.infeasibleConstraintCounts.minActiveVoiceViolation,
+          unsupportedSolo: entry.diagnosticsSummary.constraintSatisfaction.infeasibleConstraintCounts.unsupportedSolo,
+          allVoiceSilence: entry.diagnosticsSummary.constraintSatisfaction.infeasibleConstraintCounts.allVoiceSilence,
+          longUnplannedSilentRun:
+            entry.diagnosticsSummary.constraintSatisfaction.infeasibleConstraintCounts.longUnplannedSilentRun,
+          nonChordStructuralSupportCount:
+            entry.diagnosticsSummary.constraintSatisfaction.infeasibleConstraintCounts.nonChordStructuralSupportCount,
+        },
+        {
+          minActiveVoiceViolation: 0,
+          unsupportedSolo: 0,
+          allVoiceSilence: 0,
+          longUnplannedSilentRun: 0,
+          nonChordStructuralSupportCount: 0,
+        },
+      );
       assert.equal(entry.referenceComparison.profileId, "fugue-reference-profile");
       assert.equal(entry.referenceComparison.seed, entry.seed);
       assert.ok(entry.referenceComparison.normalizers.scoreQuarterNotes > 0);
