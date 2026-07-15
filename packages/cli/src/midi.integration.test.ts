@@ -219,6 +219,7 @@ reviewTest("review command writes diagnostics and MIDI files for review seeds", 
             unresolvedEntrySupportInstabilityCount: number;
             severeEntryIntervalCount: number;
             unresolvedSevereEntryIntervalCount: number;
+            unresolvedAccentedEntryClashCount: number;
             soloTexture: {
               unsupportedSoloRunCount: number;
               abruptTextureDropCount: number;
@@ -628,6 +629,9 @@ reviewTest("review command writes diagnostics and MIDI files for review seeds", 
       comparisons: [],
     });
     for (const entry of summary.seeds) {
+      const seedDiagnostics = JSON.parse(await readFile(join(directory, entry.diagnosticsFile), "utf8")) as {
+        dissonanceTriage: { unresolvedAccentedEntryClashCount: number };
+      };
       assert.ok(files.includes(entry.diagnosticsFile));
       assert.ok(files.includes(entry.midiFile));
       assert.ok(!entry.diagnosticsFile.includes(directory));
@@ -699,6 +703,10 @@ reviewTest("review command writes diagnostics and MIDI files for review seeds", 
       assert.ok(entry.diagnosticsSummary.texture.unresolvedEntrySupportInstabilityCount >= 0);
       assert.ok(entry.diagnosticsSummary.texture.severeEntryIntervalCount >= 0);
       assert.ok(entry.diagnosticsSummary.texture.unresolvedSevereEntryIntervalCount >= 0);
+      assert.equal(
+        entry.diagnosticsSummary.texture.unresolvedAccentedEntryClashCount,
+        seedDiagnostics.dissonanceTriage.unresolvedAccentedEntryClashCount,
+      );
       assert.ok(entry.diagnosticsSummary.texture.soloTexture.unsupportedSoloRunCount >= 0);
       assert.ok(entry.diagnosticsSummary.texture.soloTexture.abruptTextureDropCount >= 0);
       assert.ok(entry.diagnosticsSummary.texture.pitchContourMotion.fourBeat.bassUpperSameDirectionRatio >= 0);
