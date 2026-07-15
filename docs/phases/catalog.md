@@ -5,6 +5,8 @@
 ## Current Entries
 
 * [Generator constraint rebuild](generator-constraint-rebuild.md): active generator architecture rewrite and current implementation target.
+* [Reference evaluation learning loop](reference-evaluation-learning-loop.md): planned implementation of reference-score ingestion, contextual features, blind A/B labels, deterministic pairwise evaluation, shadow reports, and active-learning review queues.
+* [Pairwise listening review tool](pairwise-listening-review-tool.md): planned local review UI and session contract for controlled blind A/B playback, response persistence, and evaluation-loop export.
 * [Endless program terminal stretta planner](endless-program-terminal-stretta-planner.md): planned coda-specific terminal process work.
 * [Playback source realism feasibility](playback-source-realism-feasibility.md): current SoundFont / sampler / notices and license basis.
 

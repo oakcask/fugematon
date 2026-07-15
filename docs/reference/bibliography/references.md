@@ -329,3 +329,63 @@
 * Verification: low - project forum page was checked for SoundFont attribution and MIT license discussion; this is supporting evidence, not the primary license file.
 * Cache key: sources/playback-source-license-feasibility-2026-06-01.json
 * Notes: Useful for attribution leads, but implementation should ship or link the authoritative license/notice text with the asset.
+
+## music21-corpus-documentation
+
+* Citation: music21. "music21.corpus documentation."
+* Stable identifier: https://music21.org/music21docs/moduleReference/moduleCorpus.html
+* Source type: documentation
+* Accessed: 2026-05-17
+* Verification: medium - official documentation metadata and corpus access scope were checked; individual corpus-item redistribution terms were not exhaustively verified.
+* Cache key: `music21-corpus-docs`
+* Notes: Documentation for local and core corpus access across supported score representations. License and redistribution status remain item-specific.
+
+## kernscores-corpus
+
+* Citation: KernScores. "KernScores."
+* Stable identifier: https://kern.humdrum.org/
+* Source type: corpus
+* Accessed: 2026-05-17
+* Verification: medium - corpus landing page and Humdrum-oriented score access were checked; individual work rights require manifest-level verification.
+* Cache key: `kernscores-home`
+* Notes: Public score library and potential Humdrum `**kern` ingestion source.
+
+## fang-bach-or-mock-2020
+
+* Citation: Fang, Alexander, Alisa Liu, Prem Seetharaman, and Bryan Pardo. "Bach or Mock? A Grading Function for Chorales in the Style of J.S. Bach." arXiv:2006.13329, 2020.
+* Stable identifier: https://arxiv.org/abs/2006.13329
+* Source type: article
+* Accessed: 2026-07-16
+* Verification: high - arXiv metadata and abstract were checked for authors, date, interpretable musical-feature evaluation, and expert-comparison scope.
+* Cache key: `fang-bach-or-mock-2020`
+* Notes: Interpretable, musically motivated grading features for generated four-part Bach-style chorales.
+
+## zhu-bachmmmachine-2021
+
+* Citation: Zhu, Yunyao, Stephen Hahn, Simon Mak, Yue Jiang, and Cynthia Rudin. "BacHMMachine: An Interpretable and Scalable Model for Algorithmic Harmonization for Four-part Baroque Chorales." arXiv:2109.07623, 2021.
+* Stable identifier: https://arxiv.org/abs/2109.07623
+* Source type: article
+* Accessed: 2026-07-16
+* Verification: high - arXiv metadata and abstract were checked for authors, date, theory-guided/data-driven model boundary, and interpretability scope.
+* Cache key: `zhu-bachmmmachine-2021`
+* Notes: Theory-guided probabilistic harmonization model that separates explicit compositional structure from learned corpus distributions.
+
+## shapira-voice-leading-fugue-2023
+
+* Citation: Shapira, Yuval. "Voice Leading in Fugue." Doctoral dissertation, CUNY Graduate Center, 2023.
+* Stable identifier: https://academicworks.cuny.edu/gc_etds/5186/
+* Source type: dissertation
+* Accessed: 2026-07-16
+* Verification: high - institutional repository metadata and abstract were checked for author, degree date, repertoire, and context-dependent fugal-entry claim.
+* Cache key: `shapira-fugue-voice-leading-2023`
+* Notes: Analytical study of voice leading in Bach WTC fugues that distinguishes recurring thematic material from its changing tonal and voice-leading context.
+
+## marlowe-fugue-form-2020
+
+* Citation: Marlowe, Sarah. "Resolving Tensions between Outer Form and Inner Form in Fugue: A Comparative Analysis of J. S. Bach's Fugue in D minor (WTC I)." *Music Theory Online* 26, no. 3, 2020.
+* Stable identifier: https://mtosmt.org/issues/mto.20.26.3/mto.20.26.3.marlowe.html
+* Source type: article
+* Accessed: 2026-07-16
+* Verification: high - journal issue metadata, article page, and abstract were checked for author, publication details, repertoire, and formal/tonal analytical scope.
+* Cache key: `marlowe-fugue-form-2020`
+* Notes: Comparative analysis separating foreground formal design from deeper tonal structure in a Bach fugue.

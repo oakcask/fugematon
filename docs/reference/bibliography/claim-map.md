@@ -99,3 +99,13 @@ Fugematon 固有の設計判断、review 判断、quality policy と文献根拠
 * Verification state: license-page-checked
 * Limits: This claim assumes browser playback remains the primary target and does not compare native audio engines, paid sample libraries, or server-side rendering.
 * Used by: `docs/phases/playback-source-realism-feasibility.md`
+
+## reference-evaluation-learning-loop
+
+* Claim: Fugematon should compare historical four-voice works and generated scores through the same contextual, normalized, explainable feature vocabulary, while keeping hard constraints, score-window blockers, reference-relative evidence, and pairwise preference as separate adoption layers. The first learned pairwise model should run in shadow mode and must not change generated output or become the default from sparse listening data.
+* Applies to: design | scoring | diagnostics | review | phase-scope | license
+* Evidence: `reference-corpus-and-generative-evaluation`; `common-practice-fugue-subjects`; `common-practice-fugue-episodes`; `species-dissonance-treatment`; existing quality-vector and score-window false-acceptance reviews.
+* Confidence: medium
+* Verification state: page-checked
+* Limits: This claim does not treat chorales as fugue-form positives, does not authorize redistribution of external scores, does not prove a Bradley-Terry-style model will outperform current heuristics, and does not make manual pairwise listening an implementation completion blocker.
+* Used by: `docs/phases/reference-evaluation-learning-loop.md`, `docs/phases/pairwise-listening-review-tool.md`, `docs/reference/design.md`, `docs/reference/technical-plan-full.md`, future implementation completion review.
