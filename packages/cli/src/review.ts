@@ -1,4 +1,5 @@
-import { mkdir, writeFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import type {
   CandidatePoolOracleSummary,
@@ -24,6 +25,7 @@ import {
   evaluateReviewGatePolicy,
   evaluateRotationRobustnessGate,
   evaluateVoiceIndependenceGate,
+  GENERATOR_VERSION,
   generateScore,
   type HistoricalReferenceCalibrationSummary,
   type MelodyTextureGateResult,
@@ -42,6 +44,21 @@ import {
   TICKS_PER_QUARTER,
   type VoiceIndependenceGateResult,
 } from "@fugematon/core";
+import {
+  ACTIVE_LEARNING_QUEUE_SCHEMA,
+  type ActiveLearningQueue,
+  createBlindedComparison,
+  EVALUATION_FEATURE_SCHEMA_VERSION,
+  type EvaluationFeatureVector,
+  extractEvaluationFeatures,
+  normalizeGeneratedScore,
+  PAIRWISE_BUNDLE_SCHEMA,
+  PAIRWISE_RESPONSE_SCHEMA,
+  type PairwiseBundleManifest,
+  type PairwiseHiddenMapping,
+  type PairwiseResponseSet,
+  validatePairwiseBundle,
+} from "@fugematon/evaluation";
 import { exportMidi } from "@fugematon/midi";
 import {
   DEFAULT_PERFORMANCE_PROFILE_ID,
@@ -98,12 +115,13 @@ export async function writeReviewBundle(
     const safeSeed = seed.replaceAll(/[^a-z0-9-]/gi, "-");
     const diagnosticsFile = `${safeSeed}.diagnostics.json`;
     const midiFile = `${safeSeed}.mid`;
+    const scoreFile = `${safeSeed}.score.json`;
 
     await writeFile(join(outDirectory, diagnosticsFile), `${JSON.stringify(output.diagnostics, null, 2)}\n`, "utf8");
-    await writeFile(
-      join(outDirectory, midiFile),
-      exportMidi(output.events, { seed, performanceProfileId: performanceProfile.id }),
-    );
+    const midiBytes = exportMidi(output.events, { seed, performanceProfileId: performanceProfile.id });
+    const scoreBytes = new TextEncoder().encode(`${JSON.stringify(output.events)}\n`);
+    await writeFile(join(outDirectory, midiFile), midiBytes);
+    await writeFile(join(outDirectory, scoreFile), scoreBytes);
     const { summarySeed, referenceComparison } = createReviewSummarySeed({
       seed,
       category,
@@ -113,6 +131,12 @@ export async function writeReviewBundle(
       constraintProfile,
       generationTimeMs,
       output,
+      midiSha256: sha256(midiBytes),
+      scoreFile,
+      scoreSha256: sha256(scoreBytes),
+      featureVector: extractEvaluationFeatures(
+        normalizeGeneratedScore({ scoreId: opaqueId("score", `${selectionModel}:${seed}`), events: output.events }),
+      ),
     });
     referenceComparisons.push(referenceComparison);
     summarySeeds.push(summarySeed);
@@ -162,6 +186,7 @@ export async function writeAbReviewBundle(
   performanceProfileId: PerformanceProfileId = DEFAULT_PERFORMANCE_PROFILE_ID,
   writingProfileId?: WritingProfileId,
   constraintProfileId: SectionConstraintScoringProfileId = DEFAULT_SECTION_CONSTRAINT_SCORING_PROFILE_ID,
+  seedList?: readonly string[],
 ): Promise<void> {
   const baselineDirectory = join(outDirectory, "baseline");
   const variantDirectory = join(outDirectory, "variant");
@@ -174,6 +199,7 @@ export async function writeAbReviewBundle(
     performanceProfileId,
     writingProfileId,
     constraintProfileId,
+    seedList,
   );
   const variantSummary = await writeReviewBundle(
     variantDirectory,
@@ -182,6 +208,7 @@ export async function writeAbReviewBundle(
     performanceProfileId,
     writingProfileId,
     constraintProfileId,
+    seedList,
   );
   const comparison = compareReviewSummaries({
     lengthTicks,
@@ -204,6 +231,243 @@ export async function writeAbReviewBundle(
     `${JSON.stringify(pairwisePreferences, null, 2)}\n`,
     "utf8",
   );
+  await writeBlindAbArtifacts({ outDirectory, baselineSummary, variantSummary });
+}
+
+async function writeBlindAbArtifacts({
+  outDirectory,
+  baselineSummary,
+  variantSummary,
+}: {
+  outDirectory: string;
+  baselineSummary: ReviewSummary;
+  variantSummary: ReviewSummary;
+}): Promise<void> {
+  const assetsDirectory = join(outDirectory, "assets");
+  await mkdir(assetsDirectory, { recursive: true });
+  const bundleId = opaqueId(
+    "bundle",
+    JSON.stringify({
+      seeds: baselineSummary.seeds.map((seed) => seed.seed),
+      lengthTicks: baselineSummary.lengthTicks,
+      baselineModel: baselineSummary.selectionModel,
+      variantModel: variantSummary.selectionModel,
+      performanceProfile: baselineSummary.performanceProfile,
+    }),
+  );
+  const comparisons: PairwiseBundleManifest["comparisons"] = [];
+  const mappings: PairwiseHiddenMapping["comparisons"] = [];
+  const analysis: HiddenComparisonAnalysis[] = [];
+  for (const [index, baselineSeed] of baselineSummary.seeds.entries()) {
+    const variantSeed = findSummarySeed(variantSummary.seeds, baselineSeed.seed);
+    const comparisonId = opaqueId("comparison", `${bundleId}:${index}:${baselineSeed.seed}`);
+    const baselineSideId = opaqueId("side", `${comparisonId}:baseline:${baselineSeed.midiSha256}`);
+    const variantSideId = opaqueId("side", `${comparisonId}:variant:${variantSeed.midiSha256}`);
+    const baselineAsset = `assets/${baselineSideId}.mid`;
+    const variantAsset = `assets/${variantSideId}.mid`;
+    const baselineScoreAsset = `assets/${baselineSideId}.score.json`;
+    const variantScoreAsset = `assets/${variantSideId}.score.json`;
+    await writeFile(
+      join(outDirectory, baselineAsset),
+      await readFile(join(outDirectory, "baseline", baselineSeed.midiFile)),
+    );
+    await writeFile(
+      join(outDirectory, variantAsset),
+      await readFile(join(outDirectory, "variant", variantSeed.midiFile)),
+    );
+    await writeFile(
+      join(outDirectory, baselineScoreAsset),
+      await readFile(join(outDirectory, "baseline", baselineSeed.scoreFile)),
+    );
+    await writeFile(
+      join(outDirectory, variantScoreAsset),
+      await readFile(join(outDirectory, "variant", variantSeed.scoreFile)),
+    );
+    const blinded = createBlindedComparison({
+      id: comparisonId,
+      context: {
+        seed: baselineSeed.seed,
+        seedClass: normalizeSeedClass(baselineSeed.category),
+        subjectInputHash: sha256(JSON.stringify(baselineSeed.initialSubjectProfile)),
+        subjectFamilyGroup: opaqueId("subject-family", JSON.stringify(baselineSeed.initialSubjectProfile)),
+        styleProfile: "hybrid",
+        writingProfile: baselineSummary.writingProfile.id,
+        constraintProfile: baselineSummary.constraintProfile.id,
+        performanceProfile: baselineSummary.performanceProfile.id,
+        lengthTicks: baselineSummary.lengthTicks,
+        renderSettingsHash: sha256(
+          JSON.stringify({
+            performanceProfile: baselineSummary.performanceProfile,
+            writingProfile: baselineSummary.writingProfile,
+            constraintProfile: baselineSummary.constraintProfile,
+          }),
+        ),
+      },
+      baseline: {
+        id: baselineSideId,
+        midiAsset: baselineAsset,
+        midiSha256: baselineSeed.midiSha256,
+        scoreAsset: baselineScoreAsset,
+        scoreSha256: baselineSeed.scoreSha256,
+        featureVector: baselineSeed.featureVector,
+      },
+      variant: {
+        id: variantSideId,
+        midiAsset: variantAsset,
+        midiSha256: variantSeed.midiSha256,
+        scoreAsset: variantScoreAsset,
+        scoreSha256: variantSeed.scoreSha256,
+        featureVector: variantSeed.featureVector,
+      },
+      orderSalt: bundleId,
+    });
+    comparisons.push(blinded.comparison);
+    mappings.push(blinded.mapping);
+    analysis.push({
+      comparisonId,
+      baseline: hiddenAnalysisSide(baselineSeed),
+      variant: hiddenAnalysisSide(variantSeed),
+    });
+  }
+  const bundle: PairwiseBundleManifest = {
+    schema: PAIRWISE_BUNDLE_SCHEMA,
+    bundleId,
+    bundleVersion: "1",
+    featureSchemaVersion: EVALUATION_FEATURE_SCHEMA_VERSION,
+    modelVersion: opaqueId(
+      "model-comparison",
+      `${baselineSummary.selectionModel}:${variantSummary.selectionModel}:${bundleId}`,
+    ),
+    generatorVersion: GENERATOR_VERSION,
+    performanceProfileVersion: baselineSummary.performanceProfile.version,
+    comparisons,
+  };
+  const hiddenMapping: PairwiseHiddenMapping & {
+    models: { baseline: SelectionModel; variant: SelectionModel };
+    analysis: HiddenComparisonAnalysis[];
+  } = {
+    bundleId,
+    comparisons: mappings,
+    models: { baseline: baselineSummary.selectionModel, variant: variantSummary.selectionModel },
+    analysis,
+  };
+  const responses: PairwiseResponseSet = {
+    schema: PAIRWISE_RESPONSE_SCHEMA,
+    bundleId,
+    responses: [],
+  };
+  await writeFile(join(outDirectory, "blind-session.json"), `${JSON.stringify(bundle, null, 2)}\n`, "utf8");
+  await writeFile(
+    join(outDirectory, "hidden-side-mapping.json"),
+    `${JSON.stringify(hiddenMapping, null, 2)}\n`,
+    "utf8",
+  );
+  await writeFile(join(outDirectory, "pairwise-responses.json"), `${JSON.stringify(responses, null, 2)}\n`, "utf8");
+}
+
+export async function writeQueuedAbReviewBundle(input: {
+  queueFile: string;
+  sourceBundleFile: string;
+  hiddenMappingFile: string;
+  outDirectory: string;
+}): Promise<void> {
+  const queue = JSON.parse(await readFile(input.queueFile, "utf8")) as ActiveLearningQueue;
+  if (queue.schema !== ACTIVE_LEARNING_QUEUE_SCHEMA || queue.items.length === 0) {
+    throw new Error(
+      "evaluation.queue.invalid-source: A prioritized review bundle requires a non-empty supported queue. Action: rerun evaluation-loop and choose its next-review-queue.json artifact.",
+    );
+  }
+  const sourceBundle = JSON.parse(await readFile(input.sourceBundleFile, "utf8")) as PairwiseBundleManifest;
+  const hidden = JSON.parse(await readFile(input.hiddenMappingFile, "utf8")) as PairwiseHiddenMapping & {
+    models?: { baseline?: SelectionModel; variant?: SelectionModel };
+  };
+  validatePairwiseBundle(sourceBundle, hidden);
+  const context = sourceBundle.comparisons[0]?.context;
+  const baselineModel = hidden.models?.baseline;
+  const variantModel = hidden.models?.variant;
+  if (context === undefined || baselineModel === undefined || variantModel === undefined) {
+    throw new Error(
+      "evaluation.queue.missing-generation-context: The source bundle cannot reproduce both controlled model sides. Action: use the source bundle and hidden mapping created by review-ab.",
+    );
+  }
+  const sourceComparisons = new Map(sourceBundle.comparisons.map((comparison) => [comparison.id, comparison]));
+  if (
+    queue.items.some((item) => {
+      const source = sourceComparisons.get(item.comparisonId);
+      return source === undefined || source.context.seed !== item.seed;
+    })
+  ) {
+    throw new Error(
+      "evaluation.queue.source-mismatch: Queue items do not belong to the declared immutable source bundle. Action: use the queue emitted for this exact source bundle.",
+    );
+  }
+  getPerformanceProfile(context.performanceProfile as PerformanceProfileId);
+  resolveWritingProfileMetadata(context.writingProfile as WritingProfileId);
+  resolveSectionConstraintScoringProfile(
+    (context.constraintProfile as SectionConstraintScoringProfileId | undefined) ??
+      DEFAULT_SECTION_CONSTRAINT_SCORING_PROFILE_ID,
+  );
+  await writeAbReviewBundle(
+    input.outDirectory,
+    context.lengthTicks,
+    "queued-baseline",
+    "queued-variant",
+    baselineModel,
+    variantModel,
+    context.performanceProfile as PerformanceProfileId,
+    context.writingProfile as WritingProfileId,
+    (context.constraintProfile as SectionConstraintScoringProfileId | undefined) ??
+      DEFAULT_SECTION_CONSTRAINT_SCORING_PROFILE_ID,
+    queue.items.map((item) => item.seed),
+  );
+}
+
+type HiddenComparisonAnalysis = {
+  comparisonId: string;
+  baseline: ReturnType<typeof hiddenAnalysisSide>;
+  variant: ReturnType<typeof hiddenAnalysisSide>;
+};
+
+function hiddenAnalysisSide(seed: ReviewSummarySeed): {
+  diagnosticsSummary: ReviewDiagnosticsSummary;
+  referenceComparison: ReferenceDiagnosticsComparison;
+  reviewGatePolicy: {
+    adoptionReady: boolean;
+    hardFailures: ReviewGatePolicyResult["hardFailures"];
+    reviewSignals: ReviewGatePolicyResult["reviewSignals"];
+  };
+} {
+  return {
+    diagnosticsSummary: seed.diagnosticsSummary,
+    referenceComparison: seed.referenceComparison,
+    reviewGatePolicy: {
+      adoptionReady: seed.reviewGatePolicy.adoptionReady,
+      hardFailures: seed.reviewGatePolicy.hardFailures,
+      reviewSignals: seed.reviewGatePolicy.reviewSignals,
+    },
+  };
+}
+
+function normalizeSeedClass(category: string): PairwiseBundleManifest["comparisons"][number]["context"]["seedClass"] {
+  if (
+    category === "fixed" ||
+    category === "representative" ||
+    category === "boundary" ||
+    category === "rotation" ||
+    category === "adversarial" ||
+    category === "composer-holdout"
+  ) {
+    return category;
+  }
+  return "targeted";
+}
+
+function opaqueId(prefix: string, value: string): string {
+  return `${prefix}-${createHash("sha256").update(value).digest("hex").slice(0, 16)}`;
+}
+
+function sha256(value: string | Uint8Array): string {
+  return `sha256:${createHash("sha256").update(value).digest("hex")}`;
 }
 
 type ReviewSummary = {
@@ -228,6 +492,10 @@ type ReviewSummarySeed = {
   performanceProfile: PerformanceProfileMetadata;
   constraintProfile: SectionConstraintScoringProfileMetadata;
   generationTimeMs: number;
+  midiSha256: string;
+  scoreFile: string;
+  scoreSha256: string;
+  featureVector: EvaluationFeatureVector;
   initialSubjectProfile: InitialSubjectProfile;
   diagnosticsSummary: ReviewDiagnosticsSummary;
   referenceComparison: ReferenceDiagnosticsComparison;
@@ -248,6 +516,10 @@ function createReviewSummarySeed({
   constraintProfile,
   generationTimeMs,
   output,
+  midiSha256,
+  scoreFile,
+  scoreSha256,
+  featureVector,
 }: {
   seed: string;
   category: string;
@@ -257,6 +529,10 @@ function createReviewSummarySeed({
   constraintProfile: SectionConstraintScoringProfileMetadata;
   generationTimeMs: number;
   output: GenerationOutput;
+  midiSha256: string;
+  scoreFile: string;
+  scoreSha256: string;
+  featureVector: EvaluationFeatureVector;
 }): {
   summarySeed: ReviewSummarySeed;
   referenceComparison: ReferenceDiagnosticsComparison;
@@ -283,6 +559,10 @@ function createReviewSummarySeed({
       performanceProfile,
       constraintProfile,
       generationTimeMs,
+      midiSha256,
+      scoreFile,
+      scoreSha256,
+      featureVector,
       initialSubjectProfile: summarizeInitialSubjectProfile(output),
       diagnosticsSummary: summarizeDiagnostics(diagnostics),
       referenceComparison,

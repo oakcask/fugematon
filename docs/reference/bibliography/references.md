@@ -350,6 +350,36 @@
 * Cache key: `kernscores-home`
 * Notes: Public score library and potential Humdrum `**kern` ingestion source.
 
+## humdrum-project-home
+
+* Citation: Humdrum. "Humdrum."
+* Stable identifier: https://www.humdrum.org/
+* Source type: project-documentation
+* Accessed: 2026-07-16
+* Verification: high - official project documentation was checked for the relationship between Humdrum, KernScores, and the maintained data repositories.
+* Cache key: `sources/reference-corpus-pinned-sources-2026-07-16.json`
+* Notes: Project entry point for Humdrum tooling and its score-data ecosystem.
+
+## humdrum-bach-wtc-data
+
+* Citation: Humdrum data repository. "bach-wtc."
+* Stable identifier: https://github.com/humdrum-tools/bach-wtc
+* Source type: score-corpus-repository
+* Accessed: 2026-07-16
+* Verification: high - official repository metadata, pinned revision, selected score paths, and embedded source-rights records were checked.
+* Cache key: `sources/reference-corpus-pinned-sources-2026-07-16.json`
+* Notes: Digital WTC score data. Availability in the repository does not by itself grant downstream redistribution rights.
+
+## humdrum-mozart-quartets-data
+
+* Citation: MuseData Humdrum repository. "humdrum-mozart-quartets."
+* Stable identifier: https://github.com/musedata/humdrum-mozart-quartets
+* Source type: score-corpus-repository
+* Accessed: 2026-07-16
+* Verification: high - official repository metadata, pinned revision, selected movement path, four-voice layout, and embedded source-rights records were checked.
+* Cache key: `sources/reference-corpus-pinned-sources-2026-07-16.json`
+* Notes: Digital Mozart quartet score data including the K. 546 fugue movement. Availability does not by itself grant downstream redistribution rights.
+
 ## fang-bach-or-mock-2020
 
 * Citation: Fang, Alexander, Alisa Liu, Prem Seetharaman, and Bryan Pardo. "Bach or Mock? A Grading Function for Chorales in the Style of J.S. Bach." arXiv:2006.13329, 2020.

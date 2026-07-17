@@ -153,6 +153,131 @@ test("helpText includes the selection A/B review command", () => {
   assert.match(helpText(), /--performance-profile organ-default\|strict-counterpoint/);
   assert.match(helpText(), /--writing-profile four-voice-default\|piano-two-hand/);
   assert.match(helpText(), /--constraint-profile current\|entry-soft\|entry-balanced\|entry-strict\|entry-strict-leap/);
+  assert.match(helpText(), /fugematon listen --bundle <directory>/);
+  assert.match(helpText(), /fugematon evaluation-loop --bundle <file>/);
+  assert.match(helpText(), /fugematon review-ab-queue --queue <file>/);
+  assert.match(helpText(), /fugematon reference-import --manifest <file>/);
+});
+
+test("parseArgs parses evaluation, listening, and reference corpus commands", () => {
+  assert.deepEqual(
+    parseArgs([
+      "evaluation-loop",
+      "--bundle",
+      "bundle.json",
+      "--responses",
+      "responses.json",
+      "--out",
+      "loop",
+      "--training-seed",
+      "17",
+      "--queue-limit",
+      "8",
+    ]),
+    {
+      name: "evaluation-loop",
+      bundleFile: "bundle.json",
+      responsesFile: "responses.json",
+      out: "loop",
+      modelVersion: "shadow-v1",
+      corpusManifestVersion: "reference-corpus-v1",
+      trainingSeed: 17,
+      queueLimit: 8,
+    },
+  );
+  assert.deepEqual(parseArgs(["listen", "--bundle", "review", "--read-only", "true", "--port", "4174"]), {
+    name: "listen",
+    bundleDirectory: "review",
+    readOnly: true,
+    port: 4174,
+  });
+  assert.deepEqual(parseArgs(["reference-validate", "--manifest", "manifest.json"]), {
+    name: "reference-validate",
+    manifestFile: "manifest.json",
+  });
+  assert.deepEqual(
+    parseArgs([
+      "review-ab-queue",
+      "--queue",
+      "queue.json",
+      "--source-bundle",
+      "bundle.json",
+      "--hidden-mapping",
+      "mapping.json",
+      "--out",
+      "next-review",
+    ]),
+    {
+      name: "review-ab-queue",
+      queueFile: "queue.json",
+      sourceBundleFile: "bundle.json",
+      hiddenMappingFile: "mapping.json",
+      out: "next-review",
+    },
+  );
+  assert.deepEqual(
+    parseArgs([
+      "reference-import",
+      "--manifest",
+      "manifest.json",
+      "--work-id",
+      "fixture",
+      "--source",
+      "source.krn",
+      "--out",
+      "reference-output",
+    ]),
+    {
+      name: "reference-import",
+      manifestFile: "manifest.json",
+      workId: "fixture",
+      sourceFile: "source.krn",
+      out: "reference-output",
+    },
+  );
+});
+
+test("parseArgs parses pairwise response merge workflow", () => {
+  assert.deepEqual(
+    parseArgs([
+      "pairwise-responses-merge",
+      "--bundle",
+      "bundle.json",
+      "--responses",
+      "first.json,second.json",
+      "--out",
+      "merged.json",
+      "--summary-out",
+      "summary.json",
+    ]),
+    {
+      name: "pairwise-responses-merge",
+      bundleFile: "bundle.json",
+      responseFiles: ["first.json", "second.json"],
+      out: "merged.json",
+      summaryOut: "summary.json",
+    },
+  );
+});
+
+test("parseArgs accepts explicit previous-shadow comparison and separate adoption review", () => {
+  const command = parseArgs([
+    "evaluation-loop",
+    "--bundle",
+    "bundle.json",
+    "--responses",
+    "responses.json",
+    "--out",
+    "loop",
+    "--previous-shadow",
+    "previous.json",
+    "--adoption-review",
+    "adoption.json",
+  ]);
+  assert.equal(command.name, "evaluation-loop");
+  if (command.name !== "evaluation-loop") return;
+  assert.equal(command.previousShadowFile, "previous.json");
+  assert.equal(command.adoptionReviewFile, "adoption.json");
 });
 
 test("parseArgs rejects invalid arguments", () => {

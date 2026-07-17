@@ -9,6 +9,7 @@
   "types": "./dist/index.d.ts",
   "dependencies": {
     "@fugematon/core": "workspace:*",
+    "@fugematon/evaluation": "workspace:*",
     "@fugematon/midi": "workspace:*",
     "@fugematon/performance": "workspace:*"
   },

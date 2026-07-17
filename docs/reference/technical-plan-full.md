@@ -293,12 +293,19 @@ function generateScore(input: GenerationInput): GenerationOutput;
   * seed とパラメータから MIDI を生成する。
   * diagnostics を JSON または標準出力に出す。
   * 代表 seed セットを一括生成して CI 成果物にする。
+  * governed reference scoreを検証・importし、blind A/B responseをatomic saveして、deterministic shadow / active-learning workflowを再実行する。
 * CLI のコマンド例：
 
 ```sh
 pnpm fugematon generate --seed bach-001 --ticks 7680 --out score.json
 pnpm fugematon midi --seed bach-001 --ticks 7680 --out bach-001.mid
 pnpm fugematon diagnose --seed bach-001 --ticks 7680
+pnpm fugematon reference-validate --manifest reference-corpus/manifest.json
+pnpm fugematon review-ab --out review
+pnpm fugematon listen --bundle review
+pnpm fugematon pairwise-responses-merge --bundle review/blind-session.json --responses review/first.json,review/second.json --out review/merged.json --summary-out review/label-summary.json
+pnpm fugematon evaluation-loop --bundle review/blind-session.json --responses review/pairwise-responses.json --out evaluation
+pnpm fugematon evaluation-loop --bundle review/blind-session.json --responses review/pairwise-responses.json --out evaluation-next --previous-shadow evaluation/shadow-summary.json --adoption-review evaluation-next/adoption-review.json
 ```
 
 * CLI の出力は、ブラウザ UI と同じ core API から得られるものに限定する。
@@ -317,6 +324,9 @@ pnpm fugematon diagnose --seed bach-001 --ticks 7680
   * packages/cli
     * core API を呼び出す CLI。
     * ScoreEvent JSON、diagnostics、MIDI export 呼び出しを担当する。
+    * Reference importer、blind review orchestration、loopback listening server、evaluation workflowを担当する。
+  * packages/evaluation
+    * DOM、WebAudio、MIDI encoderへ依存しないnormalized score、contextual feature、pairwise model、shadow report、active-learning queueの純粋変換を担当する。
   * apps/web
     * Vite ベースの Web UI。
     * Canvas ビジュアライザ、WebAudio 再生、操作 UI を持つ。

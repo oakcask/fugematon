@@ -1,6 +1,6 @@
 # Reference Evaluation Learning Loop
 
-Status: planned.
+Status: implementation complete; adoption deferred. Evidence: [completion review](../reviews/reference-evaluation-learning-loop-completion.md).
 
 この計画は、Phase 10 から継続 quality lane に残っている実参照譜の取り込み、共通 feature extraction、blind A/B、pairwise preference model、shadow evaluation、active-learning queue を、一つの再現可能な改善ループとして実装完了する。
 

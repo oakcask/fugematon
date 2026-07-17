@@ -15,6 +15,7 @@
     "test": "pnpm build && node scripts/run-node-tests.mjs",
     "test:review": "pnpm build && FUGEMATON_TEST_PROFILE=review node scripts/run-node-tests.mjs",
     "ui:inspect": "playwright test --project=chromium",
+    "ui:inspect:listening": "playwright test --config playwright.listening.config.ts --project=chromium",
     "ui:inspect:prod": "playwright test --config playwright.prod.config.ts --project=chromium",
     "web:soundfont:prepare": "node workflow-scripts/web-playback-assets.mjs prepare-ubuntu-soundfont",
     "web:dev:soundfont": "pnpm web:soundfont:prepare && VITE_FUGEMATON_SOUNDFONT_URL=/soundfonts/MuseScore_General.sf3 pnpm build && VITE_FUGEMATON_SOUNDFONT_URL=/soundfonts/MuseScore_General.sf3 pnpm web:dev",

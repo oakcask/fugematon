@@ -58,9 +58,55 @@ export type CliCommand =
       performanceProfileId: PerformanceProfileId;
       writingProfileId: WritingProfileId;
       constraintProfileId: SectionConstraintScoringProfileId;
+      seedList?: readonly string[];
     }
   | {
       name: "help";
+    }
+  | {
+      name: "evaluation-loop";
+      bundleFile: string;
+      responsesFile: string;
+      out: string;
+      modelVersion: string;
+      corpusManifestVersion: string;
+      trainingSeed: number;
+      queueLimit: number;
+      previousShadowFile?: string;
+      adoptionReviewFile?: string;
+    }
+  | {
+      name: "listen";
+      bundleDirectory: string;
+      responseFile?: string;
+      readOnly: boolean;
+      startComparison?: string;
+      port: number;
+    }
+  | {
+      name: "reference-import";
+      manifestFile: string;
+      workId: string;
+      sourceFile: string;
+      out: string;
+    }
+  | {
+      name: "reference-validate";
+      manifestFile: string;
+    }
+  | {
+      name: "review-ab-queue";
+      queueFile: string;
+      sourceBundleFile: string;
+      hiddenMappingFile: string;
+      out: string;
+    }
+  | {
+      name: "pairwise-responses-merge";
+      bundleFile: string;
+      responseFiles: string[];
+      out: string;
+      summaryOut: string;
     };
 
 const DEFAULT_REVIEW_TICKS = 129600;
@@ -77,18 +123,99 @@ export function parseArgs(argv: readonly string[]): CliCommand {
     command !== "diagnose" &&
     command !== "midi" &&
     command !== "review" &&
-    command !== "review-ab"
+    command !== "review-ab" &&
+    command !== "review-ab-queue" &&
+    command !== "pairwise-responses-merge" &&
+    command !== "evaluation-loop" &&
+    command !== "listen" &&
+    command !== "reference-import" &&
+    command !== "reference-validate"
   ) {
     throw new Error(`unknown command: ${command}`);
   }
 
   const options = parseOptions(rest);
+  if (command === "pairwise-responses-merge") {
+    const responseFiles = requiredOption(options, "responses")
+      .split(",")
+      .map((file) => file.trim())
+      .filter((file) => file.length > 0);
+    if (responseFiles.length === 0) throw new Error("--responses must include at least one response file");
+    return {
+      name: "pairwise-responses-merge",
+      bundleFile: requiredOption(options, "bundle"),
+      responseFiles,
+      out: requiredOption(options, "out"),
+      summaryOut: requiredOption(options, "summary-out"),
+    };
+  }
+  if (command === "review-ab-queue") {
+    return {
+      name: "review-ab-queue",
+      queueFile: requiredOption(options, "queue"),
+      sourceBundleFile: requiredOption(options, "source-bundle"),
+      hiddenMappingFile: requiredOption(options, "hidden-mapping"),
+      out: requiredOption(options, "out"),
+    };
+  }
+  if (command === "reference-import") {
+    return {
+      name: "reference-import",
+      manifestFile: requiredOption(options, "manifest"),
+      workId: requiredOption(options, "work-id"),
+      sourceFile: requiredOption(options, "source"),
+      out: requiredOption(options, "out"),
+    };
+  }
+  if (command === "reference-validate") {
+    return { name: "reference-validate", manifestFile: requiredOption(options, "manifest") };
+  }
+  if (command === "listen") {
+    const port = Number(options.get("port") ?? "0");
+    if (!Number.isSafeInteger(port) || port < 0 || port > 65535) {
+      throw new Error("--port must be an integer from 0 through 65535");
+    }
+    const readOnlyValue = options.get("read-only") ?? "false";
+    if (readOnlyValue !== "true" && readOnlyValue !== "false") {
+      throw new Error("--read-only must be true or false");
+    }
+    const responseFile = options.get("response");
+    const startComparison = options.get("start-comparison");
+    return {
+      name: "listen",
+      bundleDirectory: requiredOption(options, "bundle"),
+      ...(responseFile === undefined ? {} : { responseFile }),
+      readOnly: readOnlyValue === "true",
+      ...(startComparison === undefined ? {} : { startComparison }),
+      port,
+    };
+  }
+  if (command === "evaluation-loop") {
+    const trainingSeed = Number(options.get("training-seed") ?? "1");
+    const queueLimit = Number(options.get("queue-limit") ?? "22");
+    if (!Number.isSafeInteger(trainingSeed) || !Number.isSafeInteger(queueLimit) || queueLimit <= 0) {
+      throw new Error("--training-seed and --queue-limit must be safe integers, and queue limit must be positive");
+    }
+    return {
+      name: "evaluation-loop",
+      bundleFile: requiredOption(options, "bundle"),
+      responsesFile: requiredOption(options, "responses"),
+      out: requiredOption(options, "out"),
+      modelVersion: options.get("model-version") ?? "shadow-v1",
+      corpusManifestVersion: options.get("corpus-version") ?? "reference-corpus-v1",
+      trainingSeed,
+      queueLimit,
+      ...(options.get("previous-shadow") === undefined ? {} : { previousShadowFile: options.get("previous-shadow")! }),
+      ...(options.get("adoption-review") === undefined ? {} : { adoptionReviewFile: options.get("adoption-review")! }),
+    };
+  }
   if (command === "review" || command === "review-ab") {
     const lengthTicks = Number(options.get("ticks") ?? options.get("lengthTicks") ?? DEFAULT_REVIEW_TICKS);
     if (!Number.isSafeInteger(lengthTicks) || lengthTicks <= 0) {
       throw new Error("--ticks must be a positive safe integer");
     }
     if (command === "review-ab") {
+      const seedList = parseSeedList(options.get("seed-list"));
       return {
         name: "review-ab",
         lengthTicks,
@@ -103,6 +230,7 @@ export function parseArgs(argv: readonly string[]): CliCommand {
         performanceProfileId: parsePerformanceProfileId(options.get("performance-profile")),
         writingProfileId: parseWritingProfileId(options.get("writing-profile")),
         constraintProfileId: parseConstraintProfileId(options.get("constraint-profile")),
+        ...(seedList === undefined ? {} : { seedList }),
       };
     }
     return {
@@ -159,7 +287,13 @@ export function helpText(): string {
     "  fugematon diagnose --seed <seed> --ticks <lengthTicks> [--writing-profile four-voice-default|piano-two-hand|harpsichord-manual|music-box-n20|music-box-n40]",
     "  fugematon midi --seed <seed> --ticks <lengthTicks> --out <file> [--performance-profile organ-default|strict-counterpoint] [--writing-profile four-voice-default|piano-two-hand|harpsichord-manual|music-box-n20|music-box-n40]",
     "  fugematon review --out <directory> [--ticks <lengthTicks>] [--seed-list <comma-separated-seeds>] [--performance-profile organ-default|strict-counterpoint] [--writing-profile four-voice-default|piano-two-hand|harpsichord-manual|music-box-n20|music-box-n40] [--constraint-profile current|entry-soft|entry-balanced|entry-strict|entry-strict-leap]",
-    "  fugematon review-ab --out <directory> [--ticks <lengthTicks>] [--baseline-label <label>] [--variant-label <label>] [--baseline-model baseline|candidate-oracle-selection|section-local-planner] [--variant-model baseline|candidate-oracle-selection|section-local-planner] [--performance-profile organ-default|strict-counterpoint] [--writing-profile four-voice-default|piano-two-hand|harpsichord-manual|music-box-n20|music-box-n40] [--constraint-profile current|entry-soft|entry-balanced|entry-strict|entry-strict-leap]",
+    "  fugematon review-ab --out <directory> [--ticks <lengthTicks>] [--seed-list <comma-separated-seeds>] [--baseline-label <label>] [--variant-label <label>] [--baseline-model baseline|candidate-oracle-selection|section-local-planner] [--variant-model baseline|candidate-oracle-selection|section-local-planner] [--performance-profile organ-default|strict-counterpoint] [--writing-profile four-voice-default|piano-two-hand|harpsichord-manual|music-box-n20|music-box-n40] [--constraint-profile current|entry-soft|entry-balanced|entry-strict|entry-strict-leap]",
+    "  fugematon review-ab-queue --queue <file> --source-bundle <file> --hidden-mapping <file> --out <directory>",
+    "  fugematon pairwise-responses-merge --bundle <file> --responses <comma-separated-files> --out <file> --summary-out <file>",
+    "  fugematon evaluation-loop --bundle <file> --responses <file> --out <directory> [--model-version <version>] [--corpus-version <version>] [--training-seed <integer>] [--queue-limit <integer>] [--previous-shadow <file>] [--adoption-review <file>]",
+    "  fugematon listen --bundle <directory> [--response <file>] [--read-only true|false] [--start-comparison <id>] [--port <integer>]",
+    "  fugematon reference-validate --manifest <file>",
+    "  fugematon reference-import --manifest <file> --work-id <id> --source <file> --out <directory>",
   ].join("\n");
 }
 

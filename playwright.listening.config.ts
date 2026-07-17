@@ -2,27 +2,25 @@ import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./tests",
-  testMatch: "ui-inspection.spec.ts",
-  outputDir: "test-results",
+  testMatch: "listening-ui.spec.ts",
+  outputDir: "test-results/listening",
   preserveOutput: "always",
   reporter: [["list"]],
   use: {
-    baseURL: "http://127.0.0.1:5173",
+    baseURL: "http://127.0.0.1:4174",
     screenshot: "only-on-failure",
     trace: "retain-on-failure",
   },
   webServer: {
-    command: "pnpm web:dev",
-    url: "http://127.0.0.1:5173",
-    reuseExistingServer: !process.env.CI,
+    command: "pnpm build && node scripts/start-listening-ui-fixture.mjs",
+    url: "http://127.0.0.1:4174",
+    reuseExistingServer: false,
     timeout: 120_000,
   },
   projects: [
     {
       name: "chromium",
-      use: {
-        ...devices["Desktop Chrome"],
-      },
+      use: { ...devices["Desktop Chrome"] },
     },
   ],
 });
