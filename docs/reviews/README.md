@@ -4,6 +4,7 @@
 
 ## Read First
 
+* [Reference evaluation learning loop completion review](reference-evaluation-learning-loop-completion.md): current corpus, shared feature, blind listening, shadow model, active-learning queue, score review, and deferred-adoption evidence.
 * [Generator constraint rebuild important-entry-tail review](generator-constraint-rebuild-important-entry-tail.md): current exposition solver-ownership evidence. Finalized held, staggered, linear, and oblique support candidates remove unexplained first-bass-answer tail collapse while preserving hard contracts and keeping small localized voice-pair tradeoffs review-visible.
 * [Generator constraint rebuild voice-pair independence review](generator-constraint-rebuild-voice-pair-independence.md): current continuation-CSP independence evidence. Functional imitation stays distinct from mechanical coupling, off-measure planned entries gain local preparation candidates, and melody / phrase tradeoffs remain review-visible.
 * [Generator constraint rebuild metrical-boundary review](generator-constraint-rebuild-metrical-boundary.md): current continuation-CSP boundary evidence. Duration candidates restore unprepared transitions toward measure boundaries while planned-entry pickup and cadence rhetoric remain accepted context.

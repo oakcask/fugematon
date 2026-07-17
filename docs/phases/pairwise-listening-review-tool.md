@@ -1,6 +1,6 @@
 # Pairwise Listening Review Tool
 
-Status: planned.
+Status: implementation complete; human preference remains a non-blocking gap. Evidence: [completion review](../reviews/reference-evaluation-learning-loop-completion.md).
 
 この計画は、[Reference Evaluation Learning Loop](reference-evaluation-learning-loop.md) が生成する blind A/B bundle を、人間が再生、比較、回答、保存、再開できる local review tool の要件と実装完了条件を定義する。
 

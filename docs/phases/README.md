@@ -5,8 +5,8 @@
 ## Read First
 
 * [Generator constraint rebuild](generator-constraint-rebuild.md): in-progress architecture rewrite. Continuation generation is moving toward section-slot CSP construction with deterministic backtracking, so unexplained voice silence and unsupported texture collapse are avoided during candidate construction instead of repaired after generation.
-* [Reference evaluation learning loop](reference-evaluation-learning-loop.md): planned reference-corpus, shared-feature, blind A/B, pairwise-model, shadow-evaluation, and active-learning work that closes the Phase 10 quality-lane remainder without allowing learned preference to override hard constraints.
-* [Pairwise listening review tool](pairwise-listening-review-tool.md): planned local blind-listening application for controlled A/B playback, bias-resistant response capture, atomic save/resume, and validated export into the evaluation loop.
+* [Reference evaluation learning loop](reference-evaluation-learning-loop.md): implemented reference-corpus, shared-feature, blind A/B, shadow-evaluation, and active-learning workflow. Default model adoption remains separate.
+* [Pairwise listening review tool](pairwise-listening-review-tool.md): implemented local blind-listening application. Human preference and cross-device audio remain non-blocking review gaps.
 * [Endless program terminal stretta planner](endless-program-terminal-stretta-planner.md): planned follow-up for `endless-program` endings. It treats the current coda as cadence-safe but still potentially appended, and makes terminal stretta the preferred fugal ending when constraints allow it.
 * [Playback source realism feasibility](playback-source-realism-feasibility.md): current playback-source and notices/licensing basis. Read it before changing SoundFont, sampler, notices, or audio-asset delivery policy.
 

@@ -94,8 +94,9 @@
 
 * Phase 7B により Phase 8 は開始可能になったが、現在は無限再生 operational lane より音楽美を優先する。
 * Phase 10 では、reference corpus、candidate pool oracle、A/B review、pairwise preference、section-local planner を使い、生成器そのものの品質を上げる。
-* Phase 10 で継続 lane に残した実 reference ingestion、shared contextual features、blind pairwise labels、learned shadow evaluation、active-learning queue は、current [Reference evaluation learning loop](../phases/reference-evaluation-learning-loop.md) で実装完了まで扱う。Shadow model は hard constraints や score-window blocker を上書きせず、default selection への昇格には別の adoption review を必要とする。
-* Human pairwise review は [Pairwise listening review tool](../phases/pairwise-listening-review-tool.md) の local blind session を使う。回答前は model identity、diagnostics、piano roll を隠し、A/B の performance context と musical position をそろえる。Rendering-only issue、cannot-judge、analysis-assisted revision は composition preference label と分ける。
+* Phase 10 で継続 lane に残した実 reference ingestion、shared contextual features、blind pairwise labels、learned shadow evaluation、active-learning queue は [Reference evaluation learning loop](../phases/reference-evaluation-learning-loop.md) で実装した。Shadow model は hard constraints や score-window blocker を上書きせず、default selection への昇格には別の adoption review を必要とする。
+* Human pairwise review は実装済みの [Pairwise listening review tool](../phases/pairwise-listening-review-tool.md) の local blind session を使う。回答前は model identity、diagnostics、piano rollを隠し、A/Bのperformance contextとmusical positionをそろえる。Rendering-only issue、cannot-judge、analysis-assisted revisionはcomposition preference labelと分ける。
+* Shared evaluation featureは作品固有のwork、seed、section idを列名にせず、voice pair、entry role、section roleなどのversioned semantic idへ集約する。Unknown / missing featureはloaderでfail closedにし、annotation欠落はavailabilityとconfidenceで表現する。
 * oracle が `selection-model` と分類する blocker は scoring、tie-break、weight、Pareto guard で扱う。
 * oracle が `generator-or-section-planner` と分類する blocker は、weight tuning ではなく candidate generation または section-local planner で扱う。
 * 成功条件は「model update が hard constraints、determinism、schema compatibility、reference diagnostics summary、candidate-pool oracle shape を維持しつつ、代表 seed と境界 seed の review evidence で音楽的改善を説明できること」とする。

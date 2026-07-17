@@ -30,6 +30,9 @@ importers:
       '@fugematon/core':
         specifier: workspace:*
         version: link:../core
+      '@fugematon/evaluation':
+        specifier: workspace:*
+        version: link:../evaluation
       '@fugematon/midi':
         specifier: workspace:*
         version: link:../midi
@@ -38,6 +41,12 @@ importers:
         version: link:../performance
 
   packages/core: {}
+
+  packages/evaluation:
+    dependencies:
+      '@fugematon/core':
+        specifier: workspace:*
+        version: link:../core
 
   packages/midi:
     dependencies:
