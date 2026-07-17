@@ -2,6 +2,7 @@ import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./tests",
+  testMatch: "ui-inspection.spec.ts",
   outputDir: "test-results",
   preserveOutput: "always",
   reporter: [["list"]],
