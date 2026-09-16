@@ -7,7 +7,7 @@
     "@fugematon/core": "workspace:*",
     "@fugematon/performance": "workspace:*",
     "spessasynth_core": "4.3.22",
-    "spessasynth_lib": "4.3.6"
+    "spessasynth_lib": "4.3.14"
   },
   "devDependencies": {
     "vite": "^8.0.13"
