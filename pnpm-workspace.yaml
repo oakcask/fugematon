@@ -3,4 +3,4 @@ packages:
 storeDir: .pnpm-store
 overrides:
   spessasynth_lib>spessasynth_core: 4.3.22
-  spessasynth_core: 4.3.7
+  spessasynth_core: 4.3.22
