@@ -10,7 +10,7 @@
     "spessasynth_lib": "4.3.14"
   },
   "devDependencies": {
-    "vite": "^8.0.13"
+    "vite": "^8.3.0"
   },
   "scripts": {
     "dev": "tsc -b && node ../../workflow-scripts/web-playback-assets.mjs write-notice && vite --host 127.0.0.1",
