@@ -30,7 +30,7 @@ permissions:
 
 env:
   # renovate: datasource=npm depName=pnpm
-  PNPM_VERSION: "11.26.0"
+  PNPM_VERSION: "11.27.0"
 
 jobs:
   code-metrics:
