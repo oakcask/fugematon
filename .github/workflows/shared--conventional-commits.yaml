@@ -13,7 +13,7 @@ permissions:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    container: openpolicyagent/conftest:v0.68.2@sha256:5fd81e332d7e4bc01daf3ef35371800a9a9720a30c0c37a78de0c5fbe4b6d622
+    container: openpolicyagent/conftest:v0.70.0@sha256:1d5b939a6310fbc18a66165f436f763c57a568822bfe449cb0b9d89a70a0334b
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
       - name: Write Conventional Commits input
