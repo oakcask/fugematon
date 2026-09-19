@@ -43,7 +43,7 @@ jobs:
         run: node workflow-scripts/list-node-test-files.mjs --profile review --github-output test-files
       - name: Distribute test files
         id: parallel-test
-        uses: int128/parallel-test-action@822fd2b06160f441ff11ba29e6aa2fb0e573a910 # v1.130.0
+        uses: int128/parallel-test-action@2b4985b3d40f5c8920c0154c131a98456a9e130d # v1.131.0
         with:
           test-files: ${{ steps.node-test-files.outputs.test-files }}
           test-report-artifact-name-prefix: node-test-review-v2-junit-
