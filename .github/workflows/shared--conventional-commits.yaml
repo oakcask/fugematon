@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     container: openpolicyagent/conftest:v0.70.0@sha256:1d5b939a6310fbc18a66165f436f763c57a568822bfe449cb0b9d89a70a0334b
     steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Write Conventional Commits input
         shell: sh
         env:
