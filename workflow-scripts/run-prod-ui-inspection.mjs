@@ -127,7 +127,7 @@ function runPlaywright() {
       },
     );
 
-    observePlaywrightOutput(testRun.stdout, process.stdout, (line) => {
+    const observePassLine = (line) => {
       if (!/\u2713\s+\d+\s+\[chromium\]/.test(line)) {
         return;
       }
@@ -154,8 +154,9 @@ function runPlaywright() {
         testRun.stderr?.destroy();
         resolve(0);
       }, playwrightExitGraceMs);
-    });
-    observePlaywrightOutput(testRun.stderr, process.stderr, () => {});
+    };
+    observePlaywrightOutput(testRun.stdout, process.stdout, observePassLine);
+    observePlaywrightOutput(testRun.stderr, process.stderr, observePassLine);
 
     testRun.on("exit", (code, signal) => {
       if (forceExitTimer !== undefined) {
