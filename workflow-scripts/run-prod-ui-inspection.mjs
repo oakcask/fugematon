@@ -5,6 +5,8 @@ const port = 4173;
 const url = `http://${host}:${port}`;
 const startupTimeoutMs = 120_000;
 const shutdownTimeoutMs = 2_000;
+const expectedProdUiTestCount = 10;
+const playwrightExitGraceMs = 5_000;
 
 const preview = spawn(
   "pnpm",
@@ -109,19 +111,60 @@ async function waitForPreview() {
 
 function runPlaywright() {
   return new Promise((resolve) => {
+    let resolved = false;
+    let passedProdUiTests = 0;
+    let forceExitTimer;
     const testRun = spawn(
       "pnpm",
       ["exec", "playwright", "test", "--config", "playwright.prod.config.ts", "--project=chromium"],
       {
+        detached: process.platform !== "win32",
         env: {
           ...process.env,
           FUGEMATON_PLAYWRIGHT_EXTERNAL_SERVER: "1",
         },
-        stdio: "inherit",
+        stdio: ["ignore", "pipe", "pipe"],
       },
     );
 
+    observePlaywrightOutput(testRun.stdout, process.stdout, (line) => {
+      if (!/\u2713\s+\d+\s+\[chromium\]/.test(line)) {
+        return;
+      }
+
+      passedProdUiTests += 1;
+      if (passedProdUiTests < expectedProdUiTestCount || forceExitTimer !== undefined) {
+        return;
+      }
+
+      forceExitTimer = setTimeout(async () => {
+        if (resolved) {
+          return;
+        }
+
+        resolved = true;
+        console.error(
+          "ci.prod-ui.playwright-forced-exit: Playwright did not exit after all production UI smoke tests passed; why=the deploy gate must not hang after successful browser assertions; action=inspect Playwright or browser process cleanup, then remove this wrapper fallback when the runner exits cleanly",
+        );
+        signalProcessGroup(testRun, "SIGTERM");
+        await Promise.race([onceExit(testRun), sleep(shutdownTimeoutMs)]);
+        signalProcessGroup(testRun, "SIGKILL");
+        testRun.unref();
+        testRun.stdout?.destroy();
+        testRun.stderr?.destroy();
+        resolve(0);
+      }, playwrightExitGraceMs);
+    });
+    observePlaywrightOutput(testRun.stderr, process.stderr, () => {});
+
     testRun.on("exit", (code, signal) => {
+      if (forceExitTimer !== undefined) {
+        clearTimeout(forceExitTimer);
+      }
+      if (resolved) {
+        return;
+      }
+      resolved = true;
       if (signal !== null) {
         console.error(
           `ci.prod-ui.playwright-signaled: Playwright exited from signal ${signal}; why=production UI inspection did not complete cleanly; action=rerun node workflow-scripts/run-prod-ui-inspection.mjs and inspect Playwright output`,
@@ -132,6 +175,38 @@ function runPlaywright() {
       resolve(code ?? 1);
     });
   });
+}
+
+function observePlaywrightOutput(stream, target, onLine) {
+  let buffered = "";
+  stream.on("data", (chunk) => {
+    const text = chunk.toString();
+    target.write(text);
+    buffered += text;
+    const lines = buffered.split(/\r?\n/);
+    buffered = lines.pop() ?? "";
+    for (const line of lines) {
+      onLine(line);
+    }
+  });
+}
+
+function onceExit(child) {
+  return new Promise((resolve) => {
+    child.once("exit", resolve);
+  });
+}
+
+function signalProcessGroup(child, signal) {
+  try {
+    if (process.platform === "win32") {
+      child.kill(signal);
+      return;
+    }
+    process.kill(-child.pid, signal);
+  } catch {
+    child.kill(signal);
+  }
 }
 
 function sleep(ms) {
