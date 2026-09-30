@@ -122,6 +122,7 @@ function runPlaywright() {
         env: {
           ...process.env,
           FUGEMATON_PLAYWRIGHT_EXTERNAL_SERVER: "1",
+          FUGEMATON_PLAYWRIGHT_FORCE_EXIT: "1",
         },
         stdio: ["ignore", "pipe", "pipe"],
       },
