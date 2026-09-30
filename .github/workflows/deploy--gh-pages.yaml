@@ -75,7 +75,7 @@ jobs:
       - name: Verify Open Graph preview image
         run: test -s packages/web/app-dist/og-image.png
       - name: Run production UI smoke inspection
-        run: pnpm ui:inspect:prod
+        run: node workflow-scripts/run-prod-ui-inspection.mjs
       - name: Upload Playwright output
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
