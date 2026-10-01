@@ -73,7 +73,7 @@ jobs:
         run: node workflow-scripts/list-node-test-files.mjs --profile regular --github-output test-files
       - name: Distribute test files
         id: parallel-test
-        uses: int128/parallel-test-action@a880232165823a056f39656051f76950a9322be6 # v1.132.0
+        uses: int128/parallel-test-action@37d2a9dbadece996e2ac094df8f287ab7578c202 # v1.133.0
         with:
           test-files: ${{ steps.node-test-files.outputs.test-files }}
           test-report-artifact-name-prefix: node-test-junit-
